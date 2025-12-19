@@ -3,19 +3,17 @@ import { ContractCard } from '@/components/contract-card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
-import { useCollection, useFirebase } from '@/firebase';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
-import { useMemo } from 'react';
 
 export default function ContractsAutoPage() {
   const { firestore, user } = useFirebase();
 
-  const contractsQuery = useMemo(() => {
+  const contractsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return query(
-      collection(firestore, 'contracts'), 
-      where('userId', '==', user.uid), 
+      collection(firestore, `clients/${user.uid}/contracts`), 
       where('type', '==', 'Curso Auto')
     );
   }, [firestore, user]);

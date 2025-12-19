@@ -6,10 +6,9 @@ import { PlusCircle, FileText, CalendarClock, Users, Car, Bike, ChevronRight } f
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { isPast } from 'date-fns';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { useCollection, useFirebase } from '@/firebase';
+import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Contract, Deadline } from '@/lib/types';
-import { useMemo } from 'react';
 
 function toDate(date: any): Date {
   if (date instanceof Date) {
@@ -24,9 +23,9 @@ function toDate(date: any): Date {
 export default function DashboardPage() {
   const { firestore, user } = useFirebase();
 
-  const contractsQuery = useMemo(() => {
+  const contractsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return query(collection(firestore, 'contracts'), where('userId', '==', user.uid));
+    return query(collection(firestore, `clients/${user.uid}/contracts`));
   }, [firestore, user]);
 
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
@@ -35,7 +34,7 @@ export default function DashboardPage() {
   const upcomingDeadlines =
     contracts
       ?.flatMap((c) => c.deadlines as Deadline[])
-      .filter((d) => !isPast(toDate(d.date))).length || 0;
+      .filter((d) => d && d.date && !isPast(toDate(d.date))).length || 0;
   
   const totalClients = contracts ? new Set(contracts.map((c) => c.clientId)).size : 0;
 

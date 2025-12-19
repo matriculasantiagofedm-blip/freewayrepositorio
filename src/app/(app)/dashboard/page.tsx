@@ -9,6 +9,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Contract, Deadline } from '@/lib/types';
+import { ContractForm } from '@/components/contract-form';
 
 function toDate(date: any): Date {
   if (date instanceof Date) {
@@ -60,13 +61,23 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
         <h1 className="font-headline text-3xl font-bold">Panel de Control</h1>
-        <Button asChild>
-          <Link href="/contracts/new">
-            <PlusCircle />
-            Nuevo Contrato
-          </Link>
-        </Button>
       </div>
+
+      <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="new-contract" className="border rounded-lg bg-card">
+                <AccordionTrigger className="text-lg px-6 hover:no-underline [&[data-state=open]>svg]:rotate-90">
+                    <div className="flex items-center">
+                        <PlusCircle className="mr-4 h-8 w-8" />
+                        Datos del Contrato (Nuevo)
+                    </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                    <div className="p-6 border-t">
+                      <ContractForm />
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
+      </Accordion>
 
       <div className="grid gap-4 md:grid-cols-3">
         {stats.map((stat) => (

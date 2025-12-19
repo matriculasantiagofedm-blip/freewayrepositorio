@@ -7,11 +7,12 @@ import {
   SidebarTrigger,
   SidebarRail,
 } from '@/components/ui/sidebar';
-import { GanttChartSquare } from 'lucide-react';
+import { GanttChartSquare, PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import { UserNav } from '@/components/user-nav';
 import { MainNav } from '@/components/main-nav';
 import { FirebaseClientProvider } from '@/firebase';
+import { Button } from '@/components/ui/button';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -36,6 +37,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 sm:pt-4">
             <SidebarTrigger className="sm:hidden" />
             <div className="flex-1" />
+            <Button asChild>
+                <Link href="/contracts/new">
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Nuevo Contrato
+                </Link>
+            </Button>
             <UserNav />
           </header>
           <main className="flex-1 p-4 sm:px-6">{children}</main>

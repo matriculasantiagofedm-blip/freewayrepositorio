@@ -8,12 +8,10 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow, isPast } from 'date-fns';
 import { CalendarClock } from 'lucide-react';
 import { es } from 'date-fns/locale';
-import Link from 'next/link';
 
 function toDate(date: any): Date {
   if (date instanceof Date) {

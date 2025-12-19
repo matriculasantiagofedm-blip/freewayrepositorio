@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { PlusCircle, FileText, CalendarClock, Users, Car, Bike, Combine } from 'lucide-react';
+import { PlusCircle, FileText, CalendarClock, Users, Car, Bike, Combine, Star, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { isPast } from 'date-fns';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -97,7 +97,7 @@ export default function DashboardPage() {
         <h2 className="mb-4 font-headline text-2xl font-semibold">
           Tipos de Contratos
         </h2>
-        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-5">
           <Button asChild variant="outline" className="h-24 text-lg">
               <Link href="/contracts/auto" className="flex items-center gap-4">
                   <Car className="h-8 w-8" />
@@ -114,6 +114,18 @@ export default function DashboardPage() {
               <Link href="/contracts/mixto" className="flex items-center gap-4">
                   <Combine className="h-8 w-8" />
                   Curso Mixto
+              </Link>
+          </Button>
+           <Button asChild variant="outline" className="h-24 text-lg">
+              <Link href="/contracts/deluxe" className="flex items-center gap-4">
+                  <Star className="h-8 w-8" />
+                  Curso Deluxe
+              </Link>
+          </Button>
+           <Button asChild variant="outline" className="h-24 text-lg">
+              <Link href="/contracts/ampliaciones" className="flex items-center gap-4">
+                  <Plus className="h-8 w-8" />
+                  Ampliaciones
               </Link>
           </Button>
         </div>

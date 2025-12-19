@@ -23,7 +23,9 @@ export type ContractStatus = 'draft' | 'active' | 'completed' | 'expired';
 export type ContractType = 
   | 'Curso Auto' 
   | 'Curso Moto' 
-  | 'Curso Mixto';
+  | 'Curso Mixto'
+  | 'Curso Deluxe'
+  | 'Ampliaciones';
 
 export interface DeluxeContractDetails {
   studentIdNumber: string;

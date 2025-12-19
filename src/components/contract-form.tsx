@@ -44,7 +44,9 @@ const contractFormSchema = z.object({
   type: z.enum([
     'Curso Auto', 
     'Curso Moto', 
-    'Curso Mixto'
+    'Curso Mixto',
+    'Curso Deluxe',
+    'Ampliaciones',
   ], { required_error: 'Debes seleccionar un tipo de contrato.'}),
   deadlines: z.array(
     z.object({
@@ -133,7 +135,7 @@ export function ContractForm() {
   const onFormAction = (formData: FormData) => {
     // Stringify deluxeDetails before dispatching
     const formValues = form.getValues();
-    if (formValues.type === 'Curso Mixto') {
+    if (formValues.type === 'Curso Deluxe') {
       formData.set('deluxeDetails', JSON.stringify(formValues.deluxeDetails));
     }
     dispatch(formData);
@@ -166,6 +168,8 @@ export function ContractForm() {
                       <SelectItem value="Curso Auto">Curso Auto</SelectItem>
                       <SelectItem value="Curso Moto">Curso Moto</SelectItem>
                       <SelectItem value="Curso Mixto">Curso Mixto</SelectItem>
+                      <SelectItem value="Curso Deluxe">Curso Deluxe</SelectItem>
+                      <SelectItem value="Ampliaciones">Ampliaciones</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -211,7 +215,7 @@ export function ContractForm() {
                 </FormItem>
               )}
             />
-            {contractType === 'Curso Mixto' ? (
+            {contractType === 'Curso Deluxe' ? (
                 <div className="space-y-6 pt-4">
                   <FormField
                     control={form.control}
@@ -424,7 +428,7 @@ export function ContractForm() {
           </CardContent>
         </Card>
 
-        {contractType !== 'Curso Mixto' && (
+        {contractType !== 'Curso Deluxe' && (
           <Card>
             <CardHeader>
               <CardTitle className="font-headline">Vencimientos y Reuniones</CardTitle>

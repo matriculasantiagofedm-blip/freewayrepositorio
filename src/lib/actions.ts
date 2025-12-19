@@ -17,7 +17,9 @@ const FormSchema = z.object({
   type: z.enum([
     'Curso Auto', 
     'Curso Moto', 
-    'Curso Mixto'
+    'Curso Mixto',
+    'Curso Deluxe',
+    'Ampliaciones',
   ]),
   deadlines: z.array(z.object({
     description: z.string().min(3, 'La descripción es demasiado corta.'),
@@ -127,7 +129,7 @@ export async function createContract(prevState: State, formData: FormData) {
     
     const contractsCollection = collection(firestore, 'clients', user.uid, 'contracts');
     
-    const contractContent = type === 'Curso Mixto' ? '' : content;
+    const contractContent = type === 'Curso Deluxe' ? '' : content;
 
     const newContractData: any = {
         title,
@@ -142,7 +144,7 @@ export async function createContract(prevState: State, formData: FormData) {
         createdAt: serverTimestamp(),
     };
 
-    if (type === 'Curso Mixto' && parsedDeluxeDetails) {
+    if (type === 'Curso Deluxe' && parsedDeluxeDetails) {
         newContractData.deluxeDetails = parsedDeluxeDetails;
     }
 

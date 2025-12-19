@@ -1,0 +1,248 @@
+{
+  "entities": {
+    "Contract": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Contract",
+      "type": "object",
+      "description": "Represents a contract between the company and a client.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Contract entity."
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Reference to Client. (Relationship: Client 1:N Contract)"
+        },
+        "contractName": {
+          "type": "string",
+          "description": "The name of the contract."
+        },
+        "contractDescription": {
+          "type": "string",
+          "description": "A description of the contract terms."
+        },
+        "clauses": {
+          "type": "string",
+          "description": "Clauses and terms of the contract."
+        },
+        "creationDate": {
+          "type": "string",
+          "description": "The date the contract was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "clientId",
+        "contractName",
+        "contractDescription",
+        "clauses",
+        "creationDate"
+      ]
+    },
+    "Client": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Client",
+      "type": "object",
+      "description": "Represents a client.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Client entity."
+        },
+        "clientName": {
+          "type": "string",
+          "description": "The name of the client."
+        },
+        "clientEmail": {
+          "type": "string",
+          "description": "The email address of the client.",
+          "format": "email"
+        },
+        "clientPhone": {
+          "type": "string",
+          "description": "The phone number of the client."
+        }
+      },
+      "required": [
+        "id",
+        "clientName",
+        "clientEmail",
+        "clientPhone"
+      ]
+    },
+    "Meeting": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Meeting",
+      "type": "object",
+      "description": "Represents a scheduled meeting related to a contract.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Meeting entity."
+        },
+        "contractId": {
+          "type": "string",
+          "description": "Reference to Contract. (Relationship: Contract 1:N Meeting)"
+        },
+        "meetingDateTime": {
+          "type": "string",
+          "description": "The date and time of the meeting.",
+          "format": "date-time"
+        },
+        "meetingLocation": {
+          "type": "string",
+          "description": "The location of the meeting."
+        },
+        "meetingNotes": {
+          "type": "string",
+          "description": "Notes about the meeting."
+        }
+      },
+      "required": [
+        "id",
+        "contractId",
+        "meetingDateTime",
+        "meetingLocation",
+        "meetingNotes"
+      ]
+    },
+    "Reminder": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Reminder",
+      "type": "object",
+      "description": "Represents a reminder for a deadline or meeting.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Reminder entity."
+        },
+        "contractId": {
+          "type": "string",
+          "description": "Reference to Contract. (Relationship: Contract 1:N Reminder)"
+        },
+        "reminderDateTime": {
+          "type": "string",
+          "description": "The date and time to send the reminder.",
+          "format": "date-time"
+        },
+        "reminderType": {
+          "type": "string",
+          "description": "Type of reminder (e.g., deadline, meeting)."
+        },
+        "reminderMessage": {
+          "type": "string",
+          "description": "The message to be sent in the reminder."
+        },
+        "isSent": {
+          "type": "boolean",
+          "description": "Flag that indicates reminder was sent or not."
+        }
+      },
+      "required": [
+        "id",
+        "contractId",
+        "reminderDateTime",
+        "reminderType",
+        "reminderMessage",
+        "isSent"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/clients/{clientId}",
+        "definition": {
+          "entityName": "Client",
+          "schema": {
+            "$ref": "#/backend/entities/Client"
+          },
+          "description": "Stores client information. Uses path-based ownership.",
+          "params": [
+            {
+              "name": "clientId",
+              "description": "The unique identifier for the client."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/clients/{clientId}/contracts/{contractId}",
+        "definition": {
+          "entityName": "Contract",
+          "schema": {
+            "$ref": "#/backend/entities/Contract"
+          },
+          "description": "Stores contract information, using a subcollection of clients.  This follows path-based ownership. All contracts are owned by a client.",
+          "params": [
+            {
+              "name": "clientId",
+              "description": "The unique identifier for the client."
+            },
+            {
+              "name": "contractId",
+              "description": "The unique identifier for the contract."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/clients/{clientId}/contracts/{contractId}/meetings/{meetingId}",
+        "definition": {
+          "entityName": "Meeting",
+          "schema": {
+            "$ref": "#/backend/entities/Meeting"
+          },
+          "description": "Stores meeting information related to a specific contract, using a subcollection. All meetings are owned by a contract and a client.",
+          "params": [
+            {
+              "name": "clientId",
+              "description": "The unique identifier for the client."
+            },
+            {
+              "name": "contractId",
+              "description": "The unique identifier for the contract."
+            },
+            {
+              "name": "meetingId",
+              "description": "The unique identifier for the meeting."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/clients/{clientId}/contracts/{contractId}/reminders/{reminderId}",
+        "definition": {
+          "entityName": "Reminder",
+          "schema": {
+            "$ref": "#/backend/entities/Reminder"
+          },
+          "description": "Stores reminder information related to a specific contract, using a subcollection. All reminders are owned by a contract and a client.",
+          "params": [
+            {
+              "name": "clientId",
+              "description": "The unique identifier for the client."
+            },
+            {
+              "name": "contractId",
+              "description": "The unique identifier for the contract."
+            },
+            {
+              "name": "reminderId",
+              "description": "The unique identifier for the reminder."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to manage contracts, clients, meetings, and reminders efficiently, focusing on scalability for a potentially large number of contracts. The structure emphasizes path-based ownership for user-specific data and leverages denormalization to ensure authorization independence, critical for maintaining data integrity and simplifying security rules.\n\nClients are stored in a top-level `/clients` collection.  Contracts are stored as subcollections of clients `/clients/{clientId}/contracts/{contractId}`.  This structure facilitates easy querying of a client's contracts and scales well with a large number of contracts per client. Meetings and Reminders are stored as subcollections of Contracts, following the same ownership pattern.\n\n**Authorization Independence and DBAC:** All authorization is based on `request.auth.uid`. Path-based ownership (`/clients/{clientId}/contracts/{contractId}`) is used to secure the contract documents to a client.\n\n**QAPs (Rules Are Not Filters):** List operations are secured by the path-based ownership. Listing contracts under a client will only return those contracts."
+  }
+}

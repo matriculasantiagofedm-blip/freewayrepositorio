@@ -1,8 +1,6 @@
 'use client';
 import { ContractCard } from '@/components/contract-card';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { PlusCircle } from 'lucide-react';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
@@ -21,12 +19,6 @@ export default function AllContractsPage() {
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
         <h1 className="font-headline text-3xl font-bold">Todos los Contratos</h1>
-        <Button asChild>
-          <Link href="/contracts/new">
-            <PlusCircle />
-            Nuevo Contrato
-          </Link>
-        </Button>
       </div>
       {isLoading && <p>Cargando contratos...</p>}
       {!isLoading && contracts && contracts.length > 0 ? (

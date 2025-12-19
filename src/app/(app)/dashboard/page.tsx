@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { PlusCircle, FileText, CalendarClock, Users, Car, Motorcycle } from 'lucide-react';
+import { PlusCircle, FileText, CalendarClock, Users, Car, Bike } from 'lucide-react';
 import { contracts } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { isPast } from 'date-fns';
@@ -69,7 +69,7 @@ export default function DashboardPage() {
            </Button>
            <Button asChild className="h-24 text-lg" variant="outline">
               <Link href="/contracts/moto">
-                <Motorcycle className="mr-4 h-8 w-8" />
+                <Bike className="mr-4 h-8 w-8" />
                 Curso Moto
               </Link>
            </Button>

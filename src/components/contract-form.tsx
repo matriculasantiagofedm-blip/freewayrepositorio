@@ -40,7 +40,7 @@ const contractFormSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
   clientName: z.string().min(3, 'El nombre del cliente debe tener al menos 3 caracteres.'),
   clientEmail: z.string().email('Por favor, introduce una dirección de correo electrónico válida.'),
-  content: z.string().optional(),
+  content: z.string().optional().nullable(),
   type: z.enum([
     'Curso Auto', 
     'Curso Moto', 
@@ -129,9 +129,18 @@ export function ContractForm() {
     }
   }, [state, toast]);
 
+  const onFormAction = (formData: FormData) => {
+    // Stringify deluxeDetails before dispatching
+    const formValues = form.getValues();
+    if (formValues.type === 'Curso Auto Deluxe') {
+      formData.set('deluxeDetails', JSON.stringify(formValues.deluxeDetails));
+    }
+    dispatch(formData);
+  };
+
   return (
     <Form {...form}>
-      <form action={dispatch} className="space-y-8">
+      <form action={onFormAction} className="space-y-8">
         <Card>
           <CardHeader>
             <CardTitle className="font-headline">Detalles del Contrato</CardTitle>
@@ -364,7 +373,7 @@ export function ContractForm() {
                               </FormItem>
                             )}
                           />
-                           <Button variant="ghost" size="icon" onClick={() => removeClass(index)} className="col-start-4">
+                           <Button type="button" variant="ghost" size="icon" onClick={() => removeClass(index)} className="col-start-4">
                               <Trash2 className="h-4 w-4 text-destructive" />
                            </Button>
                         </div>
@@ -433,7 +442,7 @@ export function ContractForm() {
                 <div key={field.id} className="space-y-4 rounded-lg border p-4">
                   <div className="flex items-start justify-between">
                       <h4 className="font-medium">Vencimiento #{index + 1}</h4>
-                      <Button variant="ghost" size="icon" onClick={() => remove(index)}>
+                      <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                           <span className="sr-only">Eliminar Vencimiento</span>
                       </Button>

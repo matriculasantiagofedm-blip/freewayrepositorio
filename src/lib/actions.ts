@@ -14,7 +14,7 @@ const FormSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
   clientName: z.string().min(3, 'El nombre del cliente es obligatorio.'),
   clientEmail: z.string().email('Por favor, introduce un correo electrónico válido.'),
-  content: z.string().min(10, 'El contenido del contrato es demasiado corto.').optional(),
+  content: z.string().min(10, 'El contenido del contrato es demasiado corto.').optional().nullable(),
   type: z.enum([
     'Curso Auto', 
     'Curso Moto', 
@@ -30,22 +30,19 @@ const FormSchema = z.object({
     description: z.string().min(3, 'La descripción es demasiado corta.'),
     date: z.date(),
   })).optional(),
-  deluxeDetails: z.preprocess(
-    (val) => (typeof val === 'string' ? JSON.parse(val) : val),
-    z.object({
+  deluxeDetails: z.object({
       studentIdNumber: z.string().optional(),
       studentAddress: z.string().optional(),
       studentPhone1: z.string().optional(),
       studentPhone2: z.string().optional(),
       vehicleTransmission: z.enum(['Automático', 'Manual']).optional(),
-      licenseCategory: z.enum(['A, C', 'A, C_D']).optional(),
+      licenseCategory: z.enum(['A, C', 'A, C, D']).optional(),
       classSchedules: z.array(z.object({
-        date: z.string().optional().transform((val) => val ? new Date(val) : undefined),
+        date: z.date().optional(),
         time: z.string().optional(),
       })).optional(),
       paymentDetails: z.string().optional(),
-    }).optional()
-  ),
+    }).optional(),
 });
 
 export type State = {
@@ -107,26 +104,20 @@ export async function createContract(prevState: State, formData: FormData) {
     date: new Date(deadlineDates[index] as string),
   })).filter(d => d.description && d.date);
 
-  // FormData doesn't natively handle nested objects, so we stringify it on the client
-  // and parse it here.
-   const deluxeDetailsRaw = formData.get('deluxeDetails');
-   const deluxeDetails = deluxeDetailsRaw ? JSON.parse(deluxeDetailsRaw as string) : undefined;
-   
-   if (deluxeDetails && deluxeDetails.classSchedules) {
-       deluxeDetails.classSchedules = deluxeDetails.classSchedules.map((s: any) => ({
-           ...s,
-           date: s.date ? new Date(s.date) : undefined
-       }));
-   }
+  const deluxeDetailsString = formData.get('deluxeDetails');
+  let deluxeDetails;
+  if (deluxeDetailsString && typeof deluxeDetailsString === 'string') {
+    deluxeDetails = JSON.parse(deluxeDetailsString);
+  }
 
   const validatedFields = FormSchema.safeParse({
     title: formData.get('title'),
     clientName: formData.get('clientName'),
     clientEmail: formData.get('clientEmail'),
-    content: formData.get('content'),
+    content: formData.get('content') || null,
     type: formData.get('type'),
     deadlines: deadlines,
-    deluxeDetails: deluxeDetails,
+    deluxeDetails: deluxeDetails
   });
 
   if (!validatedFields.success) {

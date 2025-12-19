@@ -9,7 +9,7 @@ const Line = ({ children }: { children?: React.ReactNode }) => (
     {children || <>&nbsp;</>}
   </span>
 );
-const LongLine = () => <span className="border-b-2 border-dotted border-black flex-1 h-4" />;
+const LongLine = () => <span className="border-b-2 border-dotted border-black flex-1 h-4 min-w-40" />;
 const Value = ({ children }: { children: React.ReactNode }) => <span className="px-2 font-semibold">{children}</span>;
 
 interface DeluxePremiumContractPreviewProps {
@@ -111,21 +111,21 @@ export function DeluxePremiumContractPreview({ clientName, clientEmail, deluxeDe
         <h3 className="font-bold">CLÁUSULA DÉCIMA CUARTA- VIGENCIA DEL CURSO</h3>
         <p>Si EL ESTUDIANTE no establece contacto para finalizar su curso en un plazo de tres (3) meses desde la fecha de inicio, se entenderá que renuncia a continuar, sin derecho a devolución del dinero ni a reclamos posteriores.</p>
 
-        <h3 className="font-bold">CLÁUSULA DÉCima QUINTA- ACEPTACIÓN</h3>
+        <h3 className="font-bold">CLÁUSULA DÉCIMA QUINTA- ACEPTACIÓN</h3>
         <p>Ambas partes declaran haber leído, entendido y aceptado el presente contrato, firmándolo en señal de conformidad.</p>
         <p className="text-center">
             En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los {format(now, 'd')} días del mes de {format(now, 'LLLL', { locale: es })}, de {format(now, 'yyyy')}, a las {format(now, 'p', { locale: es })}.
         </p>
 
         <div className="flex justify-around pt-16">
-            <div className="text-center">
+            <div className="text-center flex flex-col items-center">
                 <LongLine />
                 <p>Por la Empresa</p>
             </div>
-            <div className="text-center">
+            <div className="text-center flex flex-col items-center">
                 <LongLine />
                 <p>El Cliente</p>
-                <p>N° de identificación</p>
+                <p>N° de identificación: {deluxeDetails?.studentIdNumber}</p>
             </div>
         </div>
 

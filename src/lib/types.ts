@@ -6,6 +6,11 @@ export interface Deadline {
   date: Date | Timestamp;
 }
 
+export interface ClassSchedule {
+  date: Date | Timestamp;
+  time: string;
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -27,6 +32,17 @@ export type ContractType =
   | 'Curso Moto Plus'
   | 'Curso Moto Premium';
 
+export interface DeluxeContractDetails {
+  studentIdNumber: string;
+  studentAddress: string;
+  studentPhone1: string;
+  studentPhone2: string;
+  vehicleTransmission: 'Automático' | 'Manual';
+  licenseCategory: 'A, C' | 'A, C, D';
+  classSchedules: ClassSchedule[];
+  paymentDetails: string;
+}
+
 export interface Contract {
   id: string;
   title: string;
@@ -40,4 +56,5 @@ export interface Contract {
   type: ContractType;
   userId: string;
   createdAt: Timestamp;
+  deluxeDetails?: DeluxeContractDetails;
 }

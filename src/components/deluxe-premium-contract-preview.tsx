@@ -2,13 +2,30 @@
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Card, CardContent } from './ui/card';
+import type { DeluxeContractDetails } from '@/lib/types';
 
-const Line = () => <span className="border-b-2 border-dotted border-black flex-1" />;
+const Line = ({ children }: { children?: React.ReactNode }) => (
+  <span className="border-b-2 border-dotted border-black flex-1 min-w-10 text-center font-semibold">
+    {children || <>&nbsp;</>}
+  </span>
+);
 const LongLine = () => <span className="border-b-2 border-dotted border-black flex-1 h-4" />;
 const Value = ({ children }: { children: React.ReactNode }) => <span className="px-2 font-semibold">{children}</span>;
 
-export function DeluxePremiumContractPreview({ clientName, clientEmail }: { clientName?: string, clientEmail?: string }) {
+interface DeluxePremiumContractPreviewProps {
+  clientName?: string;
+  clientEmail?: string;
+  deluxeDetails?: Partial<DeluxeContractDetails>;
+}
+
+export function DeluxePremiumContractPreview({ clientName, clientEmail, deluxeDetails }: DeluxePremiumContractPreviewProps) {
   const now = new Date();
+
+  const Checkbox = ({ checked }: { checked: boolean }) => (
+    <span className={`border-2 border-black inline-block w-4 h-4 text-center leading-none ${checked ? 'bg-black text-white' : ''}`}>
+        {checked ? 'X' : ''}
+    </span>
+  );
 
   return (
     <Card className="p-8 print:shadow-none print:border-none print:p-0 font-serif text-sm">
@@ -18,39 +35,50 @@ export function DeluxePremiumContractPreview({ clientName, clientEmail }: { clie
         </p>
 
         <h3 className="font-bold text-center">DECLARAN:</h3>
-        <div className="flex items-center">
-            <Value>{clientName || '________________'}</Value>
-            , identificado con cédula/pasaporte N.°
-            <Line />
-            , con domicilio en 
-            <Line />
-            , teléfonos:
-            <Line />/<Line />
-            , correo electrónico:
-            <Value>{clientEmail || '________________'}</Value>
-            , en adelante denominado EL ESTUDIANTE.
+        <div className="space-y-2">
+            <div className="flex items-center flex-wrap">
+                <Value>{clientName || '________________'}</Value>
+                , identificado con cédula/pasaporte N.°
+                <Line>{deluxeDetails?.studentIdNumber}</Line>
+                , con domicilio en 
+                <Line>{deluxeDetails?.studentAddress}</Line>
+            </div>
+             <div className="flex items-center flex-wrap">
+                , teléfonos:
+                <Line>{deluxeDetails?.studentPhone1}</Line>/<Line>{deluxeDetails?.studentPhone2}</Line>
+                , correo electrónico:
+                <Value>{clientEmail || '________________'}</Value>
+                , en adelante denominado EL ESTUDIANTE.
+            </div>
         </div>
         
         <h3 className="font-bold">CLÁUSULA PRIMERA - OBJETO DEL CONTRATO</h3>
         {/* Included in intro */}
 
         <h3 className="font-bold">CLÁUSULA SEGUNDA - VALOR, MATRÍCULA Y FORMA DE PAGO</h3>
-        {/* User needs to fill this */}
+        <p className='p-4 border border-dashed min-h-24'>{deluxeDetails?.paymentDetails || '...'}</p>
         
         <h3 className="font-bold">CLÁUSULA TERCERA - DETALLES DEL CURSO</h3>
         <div className="space-y-2 pl-4">
-            <p>1. Transmisión del vehículo: Automático <span className='border-2 border-black inline-block w-4 h-4'></span> / Manual <span className='border-2 border-black inline-block w-4 h-4'></span></p>
-            <p>2. Categoría de licencia a aplicar: A, C <span className='border-2 border-black inline-block w-4 h-4'></span> / A, C, D <span className='border-2 border-black inline-block w-4 h-4'></span></p>
+            <p>1. Transmisión del vehículo: Automático <Checkbox checked={deluxeDetails?.vehicleTransmission === 'Automático'} /> / Manual <Checkbox checked={deluxeDetails?.vehicleTransmission === 'Manual'} /></p>
+            <p>2. Categoría de licencia a aplicar: A, C <Checkbox checked={deluxeDetails?.licenseCategory === 'A, C'} /> / A, C, D <Checkbox checked={deluxeDetails?.licenseCategory === 'A, C, D'} /></p>
         </div>
 
         <h3 className="font-bold">CLÁUSULA CUARTA - HORARIO DE CAPACITACIÓN</h3>
         <div className="grid grid-cols-2 gap-x-8 gap-y-2 pl-4">
-            <div className="flex items-center gap-2">Clase 1: <Line/> Hora <Line/></div>
-            <div className="flex items-center gap-2">Clase 2: <Line/> Hora <Line/></div>
-            <div className="flex items-center gap-2">Clase 3: <Line/> Hora <Line/></div>
-            <div className="flex items-center gap-2">Clase 4: <Line/> Hora <Line/></div>
-            <div className="flex items-center gap-2">Clase 5: <Line/> Hora <Line/></div>
-            <div className="flex items-center gap-2">Clase 6: <Line/> Hora <Line/></div>
+          {deluxeDetails?.classSchedules?.map((clase, index) => (
+            <div key={index} className="flex items-center gap-2">
+              Clase {index + 1}: <Line>{clase.date ? format(new Date(clase.date), 'P', { locale: es }) : ''}</Line> 
+              Hora <Line>{clase.time}</Line>
+            </div>
+          ))}
+          {(!deluxeDetails?.classSchedules || deluxeDetails.classSchedules.length < 6) && 
+            Array.from({ length: 6 - (deluxeDetails?.classSchedules?.length || 0) }).map((_, index) => (
+              <div key={index} className="flex items-center gap-2">
+                Clase {index + (deluxeDetails?.classSchedules?.length || 0) + 1}: <Line /> Hora <Line />
+              </div>
+            ))
+          }
         </div>
         
         <h3 className="font-bold">CLÁUSULA QUINTA - POLÍTICA DE PAGOS Y MOROSIDAD</h3>
@@ -83,7 +111,7 @@ export function DeluxePremiumContractPreview({ clientName, clientEmail }: { clie
         <h3 className="font-bold">CLÁUSULA DÉCIMA CUARTA- VIGENCIA DEL CURSO</h3>
         <p>Si EL ESTUDIANTE no establece contacto para finalizar su curso en un plazo de tres (3) meses desde la fecha de inicio, se entenderá que renuncia a continuar, sin derecho a devolución del dinero ni a reclamos posteriores.</p>
 
-        <h3 className="font-bold">CLÁUSULA DÉCIMA QUINTA- ACEPTACIÓN</h3>
+        <h3 className="font-bold">CLÁUSULA DÉCima QUINTA- ACEPTACIÓN</h3>
         <p>Ambas partes declaran haber leído, entendido y aceptado el presente contrato, firmándolo en señal de conformidad.</p>
         <p className="text-center">
             En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los {format(now, 'd')} días del mes de {format(now, 'LLLL', { locale: es })}, de {format(now, 'yyyy')}, a las {format(now, 'p', { locale: es })}.

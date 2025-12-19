@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache';
 import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, doc, setDoc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import { getAuth } from 'firebase/auth';
-import type { Client } from '@/lib/types';
+import type { Client, DeluxeContractDetails } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const FormSchema = z.object({
@@ -30,6 +30,22 @@ const FormSchema = z.object({
     description: z.string().min(3, 'La descripción es demasiado corta.'),
     date: z.date(),
   })).optional(),
+  deluxeDetails: z.preprocess(
+    (val) => (typeof val === 'string' ? JSON.parse(val) : val),
+    z.object({
+      studentIdNumber: z.string().optional(),
+      studentAddress: z.string().optional(),
+      studentPhone1: z.string().optional(),
+      studentPhone2: z.string().optional(),
+      vehicleTransmission: z.enum(['Automático', 'Manual']).optional(),
+      licenseCategory: z.enum(['A, C', 'A, C_D']).optional(),
+      classSchedules: z.array(z.object({
+        date: z.string().optional().transform((val) => val ? new Date(val) : undefined),
+        time: z.string().optional(),
+      })).optional(),
+      paymentDetails: z.string().optional(),
+    }).optional()
+  ),
 });
 
 export type State = {
@@ -40,6 +56,7 @@ export type State = {
     content?: string[];
     type?: string[];
     deadlines?: string[];
+    deluxeDetails?: string[];
     _form?: string[];
   };
   message?: string | null;
@@ -82,7 +99,6 @@ export async function createContract(prevState: State, formData: FormData) {
     };
   }
 
-
   const deadlineDescriptions = formData.getAll('deadline.description');
   const deadlineDates = formData.getAll('deadline.date');
 
@@ -91,6 +107,18 @@ export async function createContract(prevState: State, formData: FormData) {
     date: new Date(deadlineDates[index] as string),
   })).filter(d => d.description && d.date);
 
+  // FormData doesn't natively handle nested objects, so we stringify it on the client
+  // and parse it here.
+   const deluxeDetailsRaw = formData.get('deluxeDetails');
+   const deluxeDetails = deluxeDetailsRaw ? JSON.parse(deluxeDetailsRaw as string) : undefined;
+   
+   if (deluxeDetails && deluxeDetails.classSchedules) {
+       deluxeDetails.classSchedules = deluxeDetails.classSchedules.map((s: any) => ({
+           ...s,
+           date: s.date ? new Date(s.date) : undefined
+       }));
+   }
+
   const validatedFields = FormSchema.safeParse({
     title: formData.get('title'),
     clientName: formData.get('clientName'),
@@ -98,37 +126,45 @@ export async function createContract(prevState: State, formData: FormData) {
     content: formData.get('content'),
     type: formData.get('type'),
     deadlines: deadlines,
+    deluxeDetails: deluxeDetails,
   });
 
   if (!validatedFields.success) {
+    console.log(validatedFields.error.flatten().fieldErrors);
     return {
       errors: validatedFields.error.flatten().fieldErrors,
       message: 'No se pudo crear el contrato. Por favor, revisa los campos.',
     };
   }
 
-  const { title, clientName, clientEmail, content, type, deadlines: parsedDeadlines } = validatedFields.data;
-
+  const { title, clientName, clientEmail, content, type, deadlines: parsedDeadlines, deluxeDetails: parsedDeluxeDetails } = validatedFields.data;
+  
   try {
     const clientId = await findOrCreateClient(firestore, clientName, clientEmail, user.uid);
     
-    // Contracts are now in a subcollection of the user
     const contractsCollection = collection(firestore, 'clients', user.uid, 'contracts');
     
     const contractContent = type === 'Curso Auto Deluxe' ? '' : content;
 
-    const newContractRef = await addDoc(contractsCollection, {
-      title,
-      content: contractContent,
-      type,
-      deadlines: parsedDeadlines || [],
-      clientId: clientId, // Reference to the client document in the top-level /clients collection
-      clientEmail: clientEmail,
-      clientName: clientName,
-      userId: user.uid,
-      status: 'active', // Changed from draft to active
-      createdAt: serverTimestamp(),
-    });
+    const newContractData: any = {
+        title,
+        content: contractContent,
+        type,
+        deadlines: parsedDeadlines || [],
+        clientId: clientId,
+        clientEmail: clientEmail,
+        clientName: clientName,
+        userId: user.uid,
+        status: 'active',
+        createdAt: serverTimestamp(),
+    };
+
+    if (type === 'Curso Auto Deluxe' && parsedDeluxeDetails) {
+        newContractData.deluxeDetails = parsedDeluxeDetails;
+    }
+
+
+    const newContractRef = await addDoc(contractsCollection, newContractData);
 
     const contractId = newContractRef.id;
 

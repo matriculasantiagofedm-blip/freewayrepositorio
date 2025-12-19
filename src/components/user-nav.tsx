@@ -1,6 +1,6 @@
 'use client';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,13 +11,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { CreditCard, LogOut, Settings, User } from 'lucide-react';
 import { useAuth, useUser, initiateAnonymousSignIn } from '@/firebase';
 import { useEffect } from 'react';
 
 export function UserNav() {
-  const userAvatar = PlaceHolderImages.find((img) => img.id === 'user-avatar');
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
 
@@ -42,11 +40,6 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9">
-            <AvatarImage
-              src={userAvatar?.imageUrl}
-              alt="User Avatar"
-              data-ai-hint={userAvatar?.imageHint}
-            />
             <AvatarFallback>U</AvatarFallback>
           </Avatar>
         </Button>

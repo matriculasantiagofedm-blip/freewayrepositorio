@@ -3,7 +3,6 @@ import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Client } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 
 export default function ClientsPage() {
@@ -27,11 +26,7 @@ export default function ClientsPage() {
           {clients.map((client) => (
             <Link key={client.id} href={`/clients/${client.id}`} className="no-underline">
                 <Card className="hover:shadow-lg transition-shadow">
-                    <CardHeader className="flex flex-row items-center gap-4">
-                        <Avatar className="h-12 w-12">
-                            <AvatarImage src={client.avatarUrl} alt={client.name} />
-                            <AvatarFallback>{client.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
+                    <CardHeader>
                         <div>
                             <CardTitle>{client.name}</CardTitle>
                             <CardDescription>{client.email}</CardDescription>

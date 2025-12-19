@@ -3,7 +3,6 @@ import { useParams } from 'next/navigation';
 import { useDoc, useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { doc, collection, query } from 'firebase/firestore';
 import type { Client, Contract } from '@/lib/types';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
@@ -46,10 +45,6 @@ export default function ClientDetailPage() {
       {isClientLoading && <p>Cargando cliente...</p>}
       {client && (
         <div className="flex flex-col gap-2 items-center text-center">
-            <Avatar className="h-24 w-24">
-                <AvatarImage src={client.avatarUrl} alt={client.name} />
-                <AvatarFallback className="text-3xl">{client.name.charAt(0)}</AvatarFallback>
-            </Avatar>
             <h1 className="font-headline text-3xl font-bold">{client.name}</h1>
             <p className="text-muted-foreground">{client.email}</p>
         </div>

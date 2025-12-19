@@ -33,6 +33,7 @@ import { useToast } from '@/hooks/use-toast';
 import { es } from 'date-fns/locale';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
+import { DeluxePremiumContractPreview } from './deluxe-premium-contract-preview';
 
 const contractFormSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
@@ -81,6 +82,8 @@ export function ContractForm() {
   });
 
   const contractType = form.watch('type');
+  const clientName = form.watch('clientName');
+  const clientEmail = form.watch('clientEmail');
 
   useEffect(() => {
     if (state.message) {
@@ -172,7 +175,12 @@ export function ContractForm() {
                 </FormItem>
               )}
             />
-            {contractType !== 'Curso Auto Deluxe' && (
+            {contractType === 'Curso Auto Deluxe' ? (
+                <div className="mt-6">
+                    <h3 className="text-lg font-medium mb-2">Vista Previa del Contrato</h3>
+                    <DeluxePremiumContractPreview clientName={clientName} clientEmail={clientEmail} />
+                </div>
+            ) : (
               <FormField
                 control={form.control}
                 name="content"

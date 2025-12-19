@@ -38,17 +38,6 @@ export const contracts: Contract[] = [
     type: 'Curso Moto',
   },
   {
-    id: '3',
-    title: 'Proyecto de Rediseño de Sitio Web',
-    client: clients[2],
-    content: 'Rediseño completo del sitio web corporativo de Apex Industries, centrándose en una interfaz de usuario/experiencia de usuario moderna y un enfoque móvil.',
-    deadlines: [
-      { id: 'd3-1', description: 'Aprobación final del diseño', date: sub(new Date(), { days: 20 }) },
-    ],
-    status: 'completed',
-    type: 'Otro',
-  },
-  {
     id: '4',
     title: 'Mantenimiento y Soporte Anual',
     client: clients[3],
@@ -58,16 +47,5 @@ export const contracts: Contract[] = [
     ],
     status: 'draft',
     type: 'Curso Auto',
-  },
-    {
-    id: '5',
-    title: 'Retainer de Servicios de Consultoría',
-    client: clients[0],
-    content: 'Retainer mensual para servicios de consultoría estratégica de negocios.',
-    deadlines: [
-      { id: 'd5-1', description: 'Contrato expirado', date: sub(new Date(), { days: 10 }) },
-    ],
-    status: 'expired',
-    type: 'Otro',
   },
 ];

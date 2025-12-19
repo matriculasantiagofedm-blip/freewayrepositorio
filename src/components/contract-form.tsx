@@ -38,7 +38,7 @@ const contractFormSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
   clientEmail: z.string().email('Por favor, introduce una dirección de correo electrónico válida.'),
   content: z.string().min(10, 'El contenido del contrato debe tener al menos 10 caracteres.'),
-  type: z.enum(['Curso Auto', 'Curso Moto', 'Otro'], { required_error: 'Debes seleccionar un tipo de contrato.'}),
+  type: z.enum(['Curso Auto', 'Curso Moto'], { required_error: 'Debes seleccionar un tipo de contrato.'}),
   deadlines: z.array(
     z.object({
       description: z.string().min(3, 'La descripción del plazo es obligatoria.'),
@@ -133,7 +133,6 @@ export function ContractForm() {
                     <SelectContent>
                       <SelectItem value="Curso Auto">Curso Auto</SelectItem>
                       <SelectItem value="Curso Moto">Curso Moto</SelectItem>
-                      <SelectItem value="Otro">Otro</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

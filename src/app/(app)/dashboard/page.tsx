@@ -32,7 +32,7 @@ export default function DashboardPage() {
     },
   ];
   
-  const contractTypes: ContractType[] = ['Curso Auto', 'Curso Moto', 'Otro'];
+  const contractTypes: ContractType[] = ['Curso Auto', 'Curso Moto'];
   const contractsByType = contractTypes.map(type => ({
     type,
     contracts: contracts.filter(c => c.type === type),

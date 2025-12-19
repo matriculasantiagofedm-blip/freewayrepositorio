@@ -9,7 +9,7 @@ const FormSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
   clientEmail: z.string().email('Por favor, introduce un correo electrónico válido.'),
   content: z.string().min(10, 'El contenido del contrato es demasiado corto.'),
-  type: z.enum(['Curso Auto', 'Curso Moto', 'Otro']),
+  type: z.enum(['Curso Auto', 'Curso Moto']),
   deadlines: z.array(z.object({
     description: z.string().min(3, 'La descripción es demasiado corta.'),
     date: z.date(),

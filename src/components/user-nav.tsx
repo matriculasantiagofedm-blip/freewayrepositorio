@@ -44,21 +44,21 @@ export function UserNav() {
         <DropdownMenuGroup>
           <DropdownMenuItem>
             <User />
-            Profile
+            Perfil
           </DropdownMenuItem>
           <DropdownMenuItem>
             <CreditCard />
-            Billing
+            Facturación
           </DropdownMenuItem>
           <DropdownMenuItem>
             <Settings />
-            Settings
+            Ajustes
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem>
           <LogOut />
-          Log out
+          Cerrar sesión
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

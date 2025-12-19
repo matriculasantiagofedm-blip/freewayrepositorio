@@ -33,15 +33,16 @@ import { Calendar } from '@/components/ui/calendar';
 import { Separator } from './ui/separator';
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { es } from 'date-fns/locale';
 
 const contractFormSchema = z.object({
-  title: z.string().min(3, 'Title must be at least 3 characters long.'),
-  clientEmail: z.string().email('Please enter a valid email address.'),
-  content: z.string().min(10, 'Contract content must be at least 10 characters long.'),
+  title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
+  clientEmail: z.string().email('Por favor, introduce una dirección de correo electrónico válida.'),
+  content: z.string().min(10, 'El contenido del contrato debe tener al menos 10 caracteres.'),
   deadlines: z.array(
     z.object({
-      description: z.string().min(3, 'Deadline description is required.'),
-      date: z.date({ required_error: 'A date is required.' }),
+      description: z.string().min(3, 'La descripción del plazo es obligatoria.'),
+      date: z.date({ required_error: 'Se requiere una fecha.' }),
     })
   ).optional(),
 });
@@ -85,9 +86,9 @@ export function ContractForm() {
       <form action={dispatch} className="space-y-8">
         <Card>
           <CardHeader>
-            <CardTitle className="font-headline">Contract Details</CardTitle>
+            <CardTitle className="font-headline">Detalles del Contrato</CardTitle>
             <CardDescription>
-              Fill out the main details of your agreement.
+              Completa los detalles principales de tu acuerdo.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -96,9 +97,9 @@ export function ContractForm() {
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Contract Title</FormLabel>
+                  <FormLabel>Título del Contrato</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Q4 Marketing Services" {...field} />
+                    <Input placeholder="ej., Servicios de Marketing Q4" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -109,9 +110,9 @@ export function ContractForm() {
               name="clientEmail"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Client Email</FormLabel>
+                  <FormLabel>Email del Cliente</FormLabel>
                   <FormControl>
-                    <Input placeholder="client@example.com" {...field} />
+                    <Input placeholder="cliente@ejemplo.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -122,10 +123,10 @@ export function ContractForm() {
               name="content"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Contract Content</FormLabel>
+                  <FormLabel>Contenido del Contrato</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Describe the terms of the contract..."
+                      placeholder="Describe los términos del contrato..."
                       className="min-h-32"
                       {...field}
                     />
@@ -139,19 +140,19 @@ export function ContractForm() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="font-headline">Deadlines & Meetings</CardTitle>
+            <CardTitle className="font-headline">Vencimientos y Reuniones</CardTitle>
             <CardDescription>
-              Add important dates. Automated reminders will be sent for each deadline.
+              Añade fechas importantes. Se enviarán recordatorios automáticos para cada vencimiento.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {fields.map((field, index) => (
               <div key={field.id} className="space-y-4 rounded-lg border p-4">
                 <div className="flex items-start justify-between">
-                    <h4 className="font-medium">Deadline #{index + 1}</h4>
+                    <h4 className="font-medium">Vencimiento #{index + 1}</h4>
                     <Button variant="ghost" size="icon" onClick={() => remove(index)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
-                        <span className="sr-only">Remove Deadline</span>
+                        <span className="sr-only">Eliminar Vencimiento</span>
                     </Button>
                 </div>
                 <FormField
@@ -159,9 +160,9 @@ export function ContractForm() {
                   name={`deadlines.${index}.description`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Description</FormLabel>
+                      <FormLabel>Descripción</FormLabel>
                       <FormControl>
-                        <Input {...field} name="deadline.description" placeholder="e.g., First Draft Due" />
+                        <Input {...field} name="deadline.description" placeholder="ej., Entrega del Primer Borrador" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -172,7 +173,7 @@ export function ContractForm() {
                   name={`deadlines.${index}.date`}
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
-                      <FormLabel>Date</FormLabel>
+                      <FormLabel>Fecha</FormLabel>
                         <input type="hidden" name="deadline.date" value={field.value?.toISOString() ?? ''} />
                         <Popover>
                         <PopoverTrigger asChild>
@@ -185,7 +186,7 @@ export function ContractForm() {
                               )}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
-                              {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
+                              {field.value ? format(field.value, 'PPP', { locale: es }) : <span>Elige una fecha</span>}
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
@@ -195,6 +196,7 @@ export function ContractForm() {
                             selected={field.value}
                             onSelect={field.onChange}
                             initialFocus
+                            locale={es}
                           />
                         </PopoverContent>
                       </Popover>
@@ -212,7 +214,7 @@ export function ContractForm() {
                 onClick={() => append({ description: '', date: new Date() })}
                 >
                 <PlusCircle className="mr-2 h-4 w-4" />
-                Add Deadline
+                Añadir Vencimiento
             </Button>
           </CardContent>
         </Card>
@@ -226,7 +228,7 @@ export function ContractForm() {
         <div className="flex justify-end">
           <Button type="submit">
             <Save className="mr-2 h-4 w-4" />
-            Create Contract
+            Crear Contrato
           </Button>
         </div>
       </form>

@@ -13,17 +13,17 @@ import { cn } from '@/lib/utils';
 const links = [
   {
     href: '/dashboard',
-    label: 'Dashboard',
+    label: 'Panel de Control',
     icon: GanttChartSquare,
   },
   {
     href: '/contracts',
-    label: 'Contracts',
+    label: 'Contratos',
     icon: FileText,
   },
   {
     href: '/clients',
-    label: 'Clients',
+    label: 'Clientes',
     icon: Users,
   },
 ];

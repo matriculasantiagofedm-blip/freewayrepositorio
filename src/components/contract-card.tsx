@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow, isPast } from 'date-fns';
 import { CalendarClock } from 'lucide-react';
+import { es } from 'date-fns/locale';
 
 function getNextDeadline(contract: Contract): {
   deadline: { description: string; date: Date } | null;
@@ -26,7 +27,7 @@ function getNextDeadline(contract: Contract): {
     const next = upcomingDeadlines[0];
     return {
       deadline: next,
-      distance: formatDistanceToNow(next.date, { addSuffix: true }),
+      distance: formatDistanceToNow(next.date, { addSuffix: true, locale: es }),
       isOverdue: false,
     };
   }
@@ -39,12 +40,12 @@ function getNextDeadline(contract: Contract): {
     const last = pastDeadlines[0];
      return {
       deadline: last,
-      distance: formatDistanceToNow(last.date, { addSuffix: true }),
+      distance: formatDistanceToNow(last.date, { addSuffix: true, locale: es }),
       isOverdue: true,
     };
   }
 
-  return { deadline: null, distance: 'No deadlines', isOverdue: false };
+  return { deadline: null, distance: 'Sin vencimientos', isOverdue: false };
 }
 
 export function ContractCard({ contract }: { contract: Contract }) {
@@ -56,6 +57,13 @@ export function ContractCard({ contract }: { contract: Contract }) {
     completed: 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700',
     expired: 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700',
   };
+
+  const statusTranslations: { [key: string]: string } = {
+    active: 'Activo',
+    draft: 'Borrador',
+    completed: 'Completado',
+    expired: 'Expirado',
+  }
 
   const isUrgent = !isOverdue && deadline && (deadline.date.getTime() - new Date().getTime()) < 7 * 24 * 60 * 60 * 1000;
 
@@ -69,7 +77,7 @@ export function ContractCard({ contract }: { contract: Contract }) {
         <div className="flex items-start justify-between">
             <CardTitle className="font-headline text-lg">{contract.title}</CardTitle>
             <Badge variant="outline" className={cn("capitalize shrink-0", statusColors[contract.status])}>
-                {contract.status}
+                {statusTranslations[contract.status]}
             </Badge>
         </div>
         <CardDescription className="flex items-center gap-2 pt-2">
@@ -91,7 +99,7 @@ export function ContractCard({ contract }: { contract: Contract }) {
         )}>
           <CalendarClock className="h-4 w-4" />
           <p>
-            {deadline ? `${deadline.description}: ${distance}` : 'No deadlines'}
+            {deadline ? `${deadline.description}: ${distance}` : 'Sin vencimientos'}
           </p>
         </div>
       </CardFooter>

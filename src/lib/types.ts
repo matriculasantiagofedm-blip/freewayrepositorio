@@ -11,11 +11,13 @@ export interface Client {
   avatarUrl: string;
 }
 
+export type ContractStatus = 'draft' | 'active' | 'completed' | 'expired';
+
 export interface Contract {
   id: string;
   title: string;
   client: Client;
   content: string;
   deadlines: Deadline[];
-  status: 'draft' | 'active' | 'completed' | 'expired';
+  status: ContractStatus;
 }

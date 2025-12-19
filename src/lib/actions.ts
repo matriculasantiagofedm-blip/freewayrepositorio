@@ -6,11 +6,11 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
 const FormSchema = z.object({
-  title: z.string().min(3, 'Title must be at least 3 characters.'),
-  clientEmail: z.string().email('Please enter a valid email.'),
-  content: z.string().min(10, 'Contract content is too short.'),
+  title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
+  clientEmail: z.string().email('Por favor, introduce un correo electrónico válido.'),
+  content: z.string().min(10, 'El contenido del contrato es demasiado corto.'),
   deadlines: z.array(z.object({
-    description: z.string().min(3, 'Description is too short.'),
+    description: z.string().min(3, 'La descripción es demasiado corta.'),
     date: z.date(),
   })).optional(),
 });
@@ -46,7 +46,7 @@ export async function createContract(prevState: State, formData: FormData) {
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
-      message: 'Failed to create contract. Please check the fields.',
+      message: 'No se pudo crear el contrato. Por favor, revisa los campos.',
     };
   }
 
@@ -56,7 +56,7 @@ export async function createContract(prevState: State, formData: FormData) {
     // Here you would typically save the contract to your database.
     // For this demo, we'll just log it.
     const contractId = `CTR-${Date.now()}`;
-    console.log('Creating contract:', { contractId, title, clientEmail, content, parsedDeadlines });
+    console.log('Creando contrato:', { contractId, title, clientEmail, content, parsedDeadlines });
 
     // Trigger the GenAI flow for automated reminders if there are deadlines
     if (parsedDeadlines && parsedDeadlines.length > 0) {
@@ -69,13 +69,13 @@ export async function createContract(prevState: State, formData: FormData) {
             date: d.date.toISOString().split('T')[0] // Format date to YYYY-MM-DD
         })),
       });
-      console.log('Automated reminders scheduled.');
+      console.log('Recordatorios automáticos programados.');
     }
   } catch (error) {
-    console.error('Error creating contract or scheduling reminders:', error);
+    console.error('Error creando contrato o programando recordatorios:', error);
     return {
-      errors: { _form: ['An unexpected error occurred. Please try again.'] },
-      message: 'Database or AI Error: Failed to Create Contract.',
+      errors: { _form: ['Ocurrió un error inesperado. Por favor, inténtalo de nuevo.'] },
+      message: 'Error de base de datos o IA: No se pudo crear el contrato.',
     };
   }
   

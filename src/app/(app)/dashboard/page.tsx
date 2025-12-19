@@ -15,17 +15,17 @@ export default function DashboardPage() {
 
   const stats = [
     {
-      title: 'Active Contracts',
+      title: 'Contratos Activos',
       value: activeContracts,
       icon: FileText,
     },
     {
-      title: 'Upcoming Deadlines',
+      title: 'Próximos Vencimientos',
       value: upcomingDeadlines,
       icon: CalendarClock,
     },
     {
-      title: 'Total Clients',
+      title: 'Clientes Totales',
       value: totalClients,
       icon: Users,
     },
@@ -34,11 +34,11 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
-        <h1 className="font-headline text-3xl font-bold">Dashboard</h1>
+        <h1 className="font-headline text-3xl font-bold">Panel de Control</h1>
         <Button asChild>
           <Link href="/contracts/new">
             <PlusCircle />
-            New Contract
+            Nuevo Contrato
           </Link>
         </Button>
       </div>
@@ -59,7 +59,7 @@ export default function DashboardPage() {
 
       <div>
         <h2 className="mb-4 font-headline text-2xl font-semibold">
-          Your Contracts
+          Tus Contratos
         </h2>
         <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {contracts.map((contract) => (
@@ -70,15 +70,15 @@ export default function DashboardPage() {
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
             <FileText className="h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 text-lg font-semibold text-foreground">
-              No contracts yet
+              Aún no hay contratos
             </h3>
             <p className="mt-2 text-sm text-muted-foreground">
-              Get started by creating a new contract.
+              Comienza creando un nuevo contrato.
             </p>
             <Button asChild className="mt-6">
               <Link href="/contracts/new">
                 <PlusCircle />
-                Create Contract
+                Crear Contrato
               </Link>
             </Button>
           </div>

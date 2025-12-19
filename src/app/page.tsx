@@ -13,20 +13,19 @@ export default function LoginPage() {
           ContractTime
         </h1>
         <p className="text-lg text-muted-foreground">
-          Streamline Your Agreements. Manage contracts, track deadlines, and
-          ensure timely execution with ease.
+          Optimiza Tus Acuerdos. Gestiona contratos, sigue los plazos y asegura una ejecución puntual con facilidad.
         </p>
         <div className="flex flex-col gap-4">
           <Button asChild size="lg">
-            <Link href="/dashboard">Login &rarr;</Link>
+            <Link href="/dashboard">Iniciar Sesión &rarr;</Link>
           </Button>
           <p className="text-xs text-muted-foreground">
-            This is a demo application. Clicking login will take you to the dashboard.
+            Esta es una aplicación de demostración. Al hacer clic en Iniciar Sesión, irás al panel de control.
           </p>
         </div>
       </div>
       <footer className="absolute bottom-4 text-center text-sm text-muted-foreground">
-        <p>Built for professionals who value their time.</p>
+        <p>Creado para profesionales que valoran su tiempo.</p>
       </footer>
     </div>
   );

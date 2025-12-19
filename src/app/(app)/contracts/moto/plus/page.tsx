@@ -4,19 +4,19 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 
-export default function ContractsMotoPage() {
-  const motoContracts = contracts.filter((c) => c.type.startsWith('Curso Moto'));
+export default function ContractsMotoPlusPage() {
+  const motoContracts = contracts.filter((c) => c.type === 'Curso Moto Plus');
 
   return (
     <div className="flex flex-col gap-8">
-       <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4">
         <Button variant="outline" size="icon" asChild>
           <Link href="/dashboard">
             <ChevronLeft className="h-4 w-4" />
             <span className="sr-only">Volver</span>
           </Link>
         </Button>
-        <h1 className="font-headline text-3xl font-bold">Contratos de Curso Moto</h1>
+        <h1 className="font-headline text-3xl font-bold">Contratos de Curso Moto Plus</h1>
       </div>
       {motoContracts.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
@@ -25,9 +25,9 @@ export default function ContractsMotoPage() {
           ))}
         </div>
       ) : (
-         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
+        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
             <h3 className="mt-4 text-lg font-semibold text-foreground">
-              No hay contratos de Curso Moto
+              No hay contratos de Curso Moto Plus
             </h3>
             <p className="mt-2 text-sm text-muted-foreground">
               Comienza creando un nuevo contrato.

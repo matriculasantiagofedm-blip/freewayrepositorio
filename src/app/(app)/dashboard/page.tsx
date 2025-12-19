@@ -88,13 +88,29 @@ export default function DashboardPage() {
                 </AccordionContent>
             </AccordionItem>
            </Accordion>
-
-           <Button asChild className="h-24 text-lg" variant="outline">
-              <Link href="/contracts/moto">
-                <Bike className="mr-4 h-8 w-8" />
-                Curso Moto
-              </Link>
-           </Button>
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="item-1" className="border rounded-lg">
+                  <AccordionTrigger className="h-24 text-lg px-6 hover:no-underline [&[data-state=open]>svg]:rotate-90">
+                      <div className="flex items-center">
+                          <Bike className="mr-4 h-8 w-8" />
+                          Curso Moto
+                      </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                      <div className="flex flex-col gap-2 px-4 pb-4">
+                          <Button asChild variant="ghost" className="justify-start">
+                            <Link href="/contracts/moto/basico"><ChevronRight className="mr-2 h-4 w-4" />Curso Básico</Link>
+                          </Button>
+                          <Button asChild variant="ghost" className="justify-start">
+                            <Link href="/contracts/moto/plus"><ChevronRight className="mr-2 h-4 w-4" />Curso Plus</Link>
+                          </Button>
+                          <Button asChild variant="ghost" className="justify-start">
+                            <Link href="/contracts/moto/premium"><ChevronRight className="mr-2 h-4 w-4" />Curso Premium</Link>
+                          </Button>
+                      </div>
+                  </AccordionContent>
+              </AccordionItem>
+            </Accordion>
         </div>
       </div>
     </div>

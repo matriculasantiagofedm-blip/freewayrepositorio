@@ -38,7 +38,17 @@ const contractFormSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
   clientEmail: z.string().email('Por favor, introduce una dirección de correo electrónico válida.'),
   content: z.string().min(10, 'El contenido del contrato debe tener al menos 10 caracteres.'),
-  type: z.enum(['Curso Auto', 'Curso Moto', 'Curso Auto Básico', 'Curso Auto Plus', 'Curso Auto Premium', 'Curso Auto Deluxe'], { required_error: 'Debes seleccionar un tipo de contrato.'}),
+  type: z.enum([
+    'Curso Auto', 
+    'Curso Moto', 
+    'Curso Auto Básico', 
+    'Curso Auto Plus', 
+    'Curso Auto Premium', 
+    'Curso Auto Deluxe',
+    'Curso Moto Básico',
+    'Curso Moto Plus',
+    'Curso Moto Premium'
+  ], { required_error: 'Debes seleccionar un tipo de contrato.'}),
   deadlines: z.array(
     z.object({
       description: z.string().min(3, 'La descripción del plazo es obligatoria.'),
@@ -132,11 +142,14 @@ export function ContractForm() {
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="Curso Auto">Curso Auto</SelectItem>
-                      <SelectItem value="Curso Auto Básico">Curso Auto Básico</SelectItem>
-                      <SelectItem value="Curso Auto Plus">Curso Auto Plus</SelectItem>
-                      <SelectItem value="Curso Auto Premium">Curso Auto Premium</SelectItem>
-                      <SelectItem value="Curso Auto Deluxe">Curso Auto Deluxe</SelectItem>
+                      <SelectItem value="Curso Auto Básico">Curso Auto - Básico</SelectItem>
+                      <SelectItem value="Curso Auto Plus">Curso Auto - Plus</SelectItem>
+                      <SelectItem value="Curso Auto Premium">Curso Auto - Premium</SelectItem>
+                      <SelectItem value="Curso Auto Deluxe">Curso Auto - Deluxe</SelectItem>
                       <SelectItem value="Curso Moto">Curso Moto</SelectItem>
+                      <SelectItem value="Curso Moto Básico">Curso Moto - Básico</SelectItem>
+                      <SelectItem value="Curso Moto Plus">Curso Moto - Plus</SelectItem>
+                      <SelectItem value="Curso Moto Premium">Curso Moto - Premium</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

@@ -18,7 +18,7 @@ export function ContractView({ contract }: { contract: Contract }) {
             </Button>
         </div>
       
-      {contract.type === 'Curso Auto Deluxe' ? (
+      {contract.type === 'Curso Mixto' ? (
         <DeluxePremiumContractTemplate contract={contract} />
       ) : (
         // Fallback for other contract types

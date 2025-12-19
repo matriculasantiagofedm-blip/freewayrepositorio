@@ -19,7 +19,7 @@ export default function ContractsAutoDeluxePage() {
                             <span className="sr-only">Volver</span>
                         </Link>
                     </Button>
-                    <h1 className="font-headline text-3xl font-bold">Plantilla: Curso Auto Deluxe</h1>
+                    <h1 className="font-headline text-3xl font-bold">Plantilla: Curso Mixto</h1>
                 </div>
                 <Button onClick={handlePrint}>
                     <Printer className="mr-2 h-4 w-4" />

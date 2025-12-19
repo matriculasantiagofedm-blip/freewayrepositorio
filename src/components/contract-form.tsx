@@ -44,13 +44,7 @@ const contractFormSchema = z.object({
   type: z.enum([
     'Curso Auto', 
     'Curso Moto', 
-    'Curso Auto Básico', 
-    'Curso Auto Plus', 
-    'Curso Auto Premium', 
-    'Curso Auto Deluxe',
-    'Curso Moto Básico',
-    'Curso Moto Plus',
-    'Curso Moto Premium'
+    'Curso Mixto'
   ], { required_error: 'Debes seleccionar un tipo de contrato.'}),
   deadlines: z.array(
     z.object({
@@ -139,7 +133,7 @@ export function ContractForm() {
   const onFormAction = (formData: FormData) => {
     // Stringify deluxeDetails before dispatching
     const formValues = form.getValues();
-    if (formValues.type === 'Curso Auto Deluxe') {
+    if (formValues.type === 'Curso Mixto') {
       formData.set('deluxeDetails', JSON.stringify(formValues.deluxeDetails));
     }
     dispatch(formData);
@@ -170,14 +164,8 @@ export function ContractForm() {
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="Curso Auto">Curso Auto</SelectItem>
-                      <SelectItem value="Curso Auto Básico">Curso Auto - Básico</SelectItem>
-                      <SelectItem value="Curso Auto Plus">Curso Auto - Plus</SelectItem>
-                      <SelectItem value="Curso Auto Premium">Curso Auto - Premium</SelectItem>
-                      <SelectItem value="Curso Auto Deluxe">Curso Auto - Deluxe</SelectItem>
                       <SelectItem value="Curso Moto">Curso Moto</SelectItem>
-                      <SelectItem value="Curso Moto Básico">Curso Moto - Básico</SelectItem>
-                      <SelectItem value="Curso Moto Plus">Curso Moto - Plus</SelectItem>
-                      <SelectItem value="Curso Moto Premium">Curso Moto - Premium</SelectItem>
+                      <SelectItem value="Curso Mixto">Curso Mixto</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -191,7 +179,7 @@ export function ContractForm() {
                 <FormItem>
                   <FormLabel>Título del Contrato</FormLabel>
                   <FormControl>
-                    <Input placeholder="ej., Contrato de Curso Auto Deluxe" {...field} readOnly />
+                    <Input placeholder="ej., Contrato de Curso Auto" {...field} readOnly />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -223,7 +211,7 @@ export function ContractForm() {
                 </FormItem>
               )}
             />
-            {contractType === 'Curso Auto Deluxe' ? (
+            {contractType === 'Curso Mixto' ? (
                 <div className="space-y-6 pt-4">
                   <FormField
                     control={form.control}
@@ -436,7 +424,7 @@ export function ContractForm() {
           </CardContent>
         </Card>
 
-        {contractType !== 'Curso Auto Deluxe' && (
+        {contractType !== 'Curso Mixto' && (
           <Card>
             <CardHeader>
               <CardTitle className="font-headline">Vencimientos y Reuniones</CardTitle>

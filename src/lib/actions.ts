@@ -8,7 +8,6 @@ import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDoc
 import { initializeFirebase } from '@/firebase';
 import { getAuth } from 'firebase/auth';
 import type { Client, DeluxeContractDetails } from '@/lib/types';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const FormSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
@@ -18,13 +17,7 @@ const FormSchema = z.object({
   type: z.enum([
     'Curso Auto', 
     'Curso Moto', 
-    'Curso Auto Básico', 
-    'Curso Auto Plus', 
-    'Curso Auto Premium', 
-    'Curso Auto Deluxe',
-    'Curso Moto Básico',
-    'Curso Moto Plus',
-    'Curso Moto Premium'
+    'Curso Mixto'
   ]),
   deadlines: z.array(z.object({
     description: z.string().min(3, 'La descripción es demasiado corta.'),
@@ -75,7 +68,6 @@ async function findOrCreateClient(db: any, clientName: string, clientEmail: stri
             name: clientName,
             email: clientEmail,
             userId: userId,
-            avatarUrl: PlaceHolderImages.find(img => img.id.startsWith('client-'))?.imageUrl || 'https://picsum.photos/seed/placeholder/100/100',
             createdAt: serverTimestamp()
         };
         await setDoc(newClientRef, newClient);
@@ -135,7 +127,7 @@ export async function createContract(prevState: State, formData: FormData) {
     
     const contractsCollection = collection(firestore, 'clients', user.uid, 'contracts');
     
-    const contractContent = type === 'Curso Auto Deluxe' ? '' : content;
+    const contractContent = type === 'Curso Mixto' ? '' : content;
 
     const newContractData: any = {
         title,
@@ -150,7 +142,7 @@ export async function createContract(prevState: State, formData: FormData) {
         createdAt: serverTimestamp(),
     };
 
-    if (type === 'Curso Auto Deluxe' && parsedDeluxeDetails) {
+    if (type === 'Curso Mixto' && parsedDeluxeDetails) {
         newContractData.deluxeDetails = parsedDeluxeDetails;
     }
 

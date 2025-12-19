@@ -88,7 +88,14 @@ export function ContractForm() {
       clientEmail: '',
       deadlines: [],
       deluxeDetails: {
+        studentIdNumber: '',
+        studentAddress: '',
+        studentPhone1: '',
+        studentPhone2: '',
+        vehicleTransmission: undefined,
+        licenseCategory: undefined,
         classSchedules: [{ date: undefined, time: '' }],
+        paymentDetails: '',
       }
     },
   });

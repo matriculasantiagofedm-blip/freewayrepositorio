@@ -1,7 +1,9 @@
+import type { Timestamp } from 'firebase/firestore';
+
 export interface Deadline {
   id: string;
   description: string;
-  date: Date;
+  date: Date | Timestamp;
 }
 
 export interface Client {
@@ -27,8 +29,10 @@ export interface Contract {
   id: string;
   title: string;
   client: Client;
+  clientId: string;
   content: string;
   deadlines: Deadline[];
   status: ContractStatus;
   type: ContractType;
+  userId: string;
 }

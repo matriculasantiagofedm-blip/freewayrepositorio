@@ -1,4 +1,4 @@
-import type { Contract } from '@/lib/types';
+import type { Contract, Deadline } from '@/lib/types';
 import {
   Card,
   CardContent,
@@ -14,12 +14,25 @@ import { formatDistanceToNow, isPast } from 'date-fns';
 import { CalendarClock } from 'lucide-react';
 import { es } from 'date-fns/locale';
 
+function toDate(date: any): Date {
+  if (date instanceof Date) {
+    return date;
+  }
+  if (date && date.toDate) {
+    return date.toDate();
+  }
+  return new Date();
+}
+
+
 function getNextDeadline(contract: Contract): {
-  deadline: { description: string; date: Date } | null;
+  deadline: Deadline | null;
   distance: string;
   isOverdue: boolean;
 } {
-  const upcomingDeadlines = contract.deadlines
+  const deadlines = (contract.deadlines as Deadline[] || []).map(d => ({...d, date: toDate(d.date)}));
+
+  const upcomingDeadlines = deadlines
     .filter((d) => !isPast(d.date))
     .sort((a, b) => a.date.getTime() - b.date.getTime());
 
@@ -32,7 +45,7 @@ function getNextDeadline(contract: Contract): {
     };
   }
 
-  const pastDeadlines = contract.deadlines
+  const pastDeadlines = deadlines
     .filter((d) => isPast(d.date))
     .sort((a, b) => b.date.getTime() - a.date.getTime());
     
@@ -66,6 +79,8 @@ export function ContractCard({ contract }: { contract: Contract }) {
   }
 
   const isUrgent = !isOverdue && deadline && (deadline.date.getTime() - new Date().getTime()) < 7 * 24 * 60 * 60 * 1000;
+  
+  const client = 'client' in contract ? contract.client : { name: 'Unknown', avatarUrl: '' };
 
   return (
     <Card className={cn(
@@ -82,10 +97,10 @@ export function ContractCard({ contract }: { contract: Contract }) {
         </div>
         <CardDescription className="flex items-center gap-2 pt-2">
           <Avatar className="h-6 w-6">
-            <AvatarImage src={contract.client.avatarUrl} alt={contract.client.name} />
-            <AvatarFallback>{contract.client.name.charAt(0)}</AvatarFallback>
+            <AvatarImage src={client.avatarUrl} alt={client.name} />
+            <AvatarFallback>{client.name.charAt(0)}</AvatarFallback>
           </Avatar>
-          <span>{contract.client.name}</span>
+          <span>{client.name}</span>
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">

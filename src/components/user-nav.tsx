@@ -13,9 +13,29 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { CreditCard, LogOut, Settings, User } from 'lucide-react';
+import { useAuth, useUser, initiateAnonymousSignIn } from '@/firebase';
+import { useEffect } from 'react';
 
 export function UserNav() {
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'user-avatar');
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [auth, user, isUserLoading]);
+
+  if (isUserLoading) {
+    return <div>Cargando...</div>;
+  }
+
+  if (!user) {
+    return (
+      <Button onClick={() => initiateAnonymousSignIn(auth)}>Iniciar Sesión</Button>
+    );
+  }
 
   return (
     <DropdownMenu>
@@ -34,9 +54,11 @@ export function UserNav() {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">Legal Eagle</p>
+            <p className="text-sm font-medium leading-none">
+              {user.isAnonymous ? 'Usuario Anónimo' : 'Legal Eagle'}
+            </p>
             <p className="text-xs leading-none text-muted-foreground">
-              legaleagle@example.com
+              {user.isAnonymous ? user.uid : user.email || 'legaleagle@example.com'}
             </p>
           </div>
         </DropdownMenuLabel>
@@ -56,7 +78,7 @@ export function UserNav() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => auth.signOut()}>
           <LogOut />
           Cerrar sesión
         </DropdownMenuItem>

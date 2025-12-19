@@ -1,32 +1,58 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { PlusCircle, FileText, CalendarClock, Users, Car, Bike, ChevronRight } from 'lucide-react';
-import { contracts } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { isPast } from 'date-fns';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { useCollection, useFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+import type { Contract, Deadline } from '@/lib/types';
+import { useMemo } from 'react';
+
+function toDate(date: any): Date {
+  if (date instanceof Date) {
+    return date;
+  }
+  if (date && date.toDate) {
+    return date.toDate();
+  }
+  return new Date();
+}
 
 export default function DashboardPage() {
-  const activeContracts = contracts.filter((c) => c.status === 'active').length;
-  const upcomingDeadlines = contracts
-    .flatMap((c) => c.deadlines)
-    .filter((d) => !isPast(d.date)).length;
-  const totalClients = new Set(contracts.map((c) => c.client.id)).size;
+  const { firestore, user } = useFirebase();
+
+  const contractsQuery = useMemo(() => {
+    if (!firestore || !user) return null;
+    return query(collection(firestore, 'contracts'), where('userId', '==', user.uid));
+  }, [firestore, user]);
+
+  const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
+
+  const activeContracts = contracts?.filter((c) => c.status === 'active').length || 0;
+  const upcomingDeadlines =
+    contracts
+      ?.flatMap((c) => c.deadlines as Deadline[])
+      .filter((d) => !isPast(toDate(d.date))).length || 0;
+  
+  const totalClients = contracts ? new Set(contracts.map((c) => c.clientId)).size : 0;
 
   const stats = [
     {
       title: 'Contratos Activos',
-      value: activeContracts,
+      value: isLoading ? '...' : activeContracts,
       icon: FileText,
     },
     {
       title: 'Próximos Vencimientos',
-      value: upcomingDeadlines,
+      value: isLoading ? '...' : upcomingDeadlines,
       icon: CalendarClock,
     },
     {
       title: 'Clientes Totales',
-      value: totalClients,
+      value: isLoading ? '...' : totalClients,
       icon: Users,
     },
   ];

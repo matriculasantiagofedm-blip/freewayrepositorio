@@ -4,6 +4,9 @@ import { z } from 'zod';
 import { sendAutomatedDeadlineReminders } from '@/ai/flows/automated-deadline-reminders';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { initializeFirebase } from '@/firebase';
+import { getAuth } from 'firebase/auth';
 
 const FormSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
@@ -40,6 +43,18 @@ export type State = {
 
 
 export async function createContract(prevState: State, formData: FormData) {
+  // This is a server action, we can initialize firebase here
+  const { firestore, auth } = initializeFirebase();
+  const user = auth.currentUser;
+
+  if (!user) {
+    return {
+      errors: { _form: ['Debes iniciar sesión para crear un contrato.'] },
+      message: 'Authentication error.',
+    };
+  }
+
+
   const deadlineDescriptions = formData.getAll('deadline.description');
   const deadlineDates = formData.getAll('deadline.date');
 
@@ -66,9 +81,22 @@ export async function createContract(prevState: State, formData: FormData) {
   const { title, clientEmail, content, type, deadlines: parsedDeadlines } = validatedFields.data;
 
   try {
-    // Here you would typically save the contract to your database.
-    // For this demo, we'll just log it.
-    const contractId = `CTR-${Date.now()}`;
+    const contractsCollection = collection(firestore, 'contracts');
+    const newContractRef = await addDoc(contractsCollection, {
+      title,
+      clientEmail,
+      content,
+      type,
+      deadlines: parsedDeadlines || [],
+      userId: user.uid,
+      status: 'draft',
+      createdAt: serverTimestamp(),
+      // In a real app, you'd probably look up the client by email
+      // and get their ID, or create a new client.
+      clientId: 'temp-client-id', 
+    });
+
+    const contractId = newContractRef.id;
     console.log('Creando contrato:', { contractId, title, clientEmail, content, type, parsedDeadlines });
 
     // Trigger the GenAI flow for automated reminders if there are deadlines
@@ -76,7 +104,7 @@ export async function createContract(prevState: State, formData: FormData) {
       await sendAutomatedDeadlineReminders({
         contractId,
         clientEmail,
-        userEmail: 'legaleagle@example.com', // Assuming a static user email
+        userEmail: user.email || 'legaleagle@example.com', // Assuming a static user email
         deadlines: parsedDeadlines.map(d => ({
             ...d,
             date: d.date.toISOString().split('T')[0] // Format date to YYYY-MM-DD
@@ -86,15 +114,13 @@ export async function createContract(prevState: State, formData: FormData) {
     }
   } catch (error) {
     console.error('Error creando contrato o programando recordatorios:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error inesperado.';
     return {
-      errors: { _form: ['Ocurrió un error inesperado. Por favor, inténtalo de nuevo.'] },
+      errors: { _form: [errorMessage] },
       message: 'Error de base de datos o IA: No se pudo crear el contrato.',
     };
   }
   
-  // Revalidate the dashboard path to show the new contract (if it were real)
   revalidatePath('/dashboard');
-  
-  // Redirect to the dashboard
   redirect('/dashboard');
 }

@@ -1,9 +1,10 @@
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { PlusCircle, FileText, CalendarClock, Users, Car, Bike } from 'lucide-react';
+import { PlusCircle, FileText, CalendarClock, Users, Car, Bike, ChevronRight } from 'lucide-react';
 import { contracts } from '@/lib/data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { isPast } from 'date-fns';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 export default function DashboardPage() {
   const activeContracts = contracts.filter((c) => c.status === 'active').length;
@@ -61,12 +62,33 @@ export default function DashboardPage() {
           Tipos de Contratos
         </h2>
         <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
-           <Button asChild className="h-24 text-lg" variant="outline">
-              <Link href="/contracts/auto">
-                <Car className="mr-4 h-8 w-8" />
-                Curso Auto
-              </Link>
-           </Button>
+           <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="item-1" className="border rounded-lg">
+                <AccordionTrigger className="h-24 text-lg px-6 hover:no-underline [&[data-state=open]>svg]:rotate-90">
+                    <div className="flex items-center">
+                        <Car className="mr-4 h-8 w-8" />
+                        Curso Auto
+                    </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                    <div className="flex flex-col gap-2 px-4 pb-4">
+                        <Button asChild variant="ghost" className="justify-start">
+                           <Link href="/contracts/auto/basico"><ChevronRight className="mr-2 h-4 w-4" />Curso Básico</Link>
+                        </Button>
+                        <Button asChild variant="ghost" className="justify-start">
+                           <Link href="/contracts/auto/plus"><ChevronRight className="mr-2 h-4 w-4" />Curso Plus</Link>
+                        </Button>
+                        <Button asChild variant="ghost" className="justify-start">
+                           <Link href="/contracts/auto/premium"><ChevronRight className="mr-2 h-4 w-4" />Curso Premium</Link>
+                        </Button>
+                        <Button asChild variant="ghost" className="justify-start">
+                           <Link href="/contracts/auto/deluxe"><ChevronRight className="mr-2 h-4 w-4" />Curso Deluxe</Link>
+                        </Button>
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
+           </Accordion>
+
            <Button asChild className="h-24 text-lg" variant="outline">
               <Link href="/contracts/moto">
                 <Bike className="mr-4 h-8 w-8" />

@@ -12,7 +12,7 @@ export interface Client {
 }
 
 export type ContractStatus = 'draft' | 'active' | 'completed' | 'expired';
-export type ContractType = 'Curso Auto' | 'Curso Moto';
+export type ContractType = 'Curso Auto' | 'Curso Moto' | 'Curso Auto Básico' | 'Curso Auto Plus' | 'Curso Auto Premium' | 'Curso Auto Deluxe';
 
 export interface Contract {
   id: string;

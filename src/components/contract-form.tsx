@@ -83,7 +83,7 @@ export function ContractForm() {
   const form = useForm<ContractFormValues>({
     resolver: zodResolver(contractFormSchema),
     defaultValues: {
-      title: 'Contrato de Curso de Manejo',
+      title: '',
       clientName: '',
       clientEmail: '',
       deadlines: [],
@@ -107,6 +107,14 @@ export function ContractForm() {
   const clientName = form.watch('clientName');
   const clientEmail = form.watch('clientEmail');
   const deluxeDetails = form.watch('deluxeDetails');
+
+  useEffect(() => {
+    if (contractType) {
+        form.setValue('title', `Contrato de ${contractType}`);
+    } else {
+        form.setValue('title', '');
+    }
+  }, [contractType, form]);
 
 
   useEffect(() => {
@@ -132,6 +140,34 @@ export function ContractForm() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+             <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de Contrato</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un tipo de contrato" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Curso Auto">Curso Auto</SelectItem>
+                      <SelectItem value="Curso Auto Básico">Curso Auto - Básico</SelectItem>
+                      <SelectItem value="Curso Auto Plus">Curso Auto - Plus</SelectItem>
+                      <SelectItem value="Curso Auto Premium">Curso Auto - Premium</SelectItem>
+                      <SelectItem value="Curso Auto Deluxe">Curso Auto - Deluxe</SelectItem>
+                      <SelectItem value="Curso Moto">Curso Moto</SelectItem>
+                      <SelectItem value="Curso Moto Básico">Curso Moto - Básico</SelectItem>
+                      <SelectItem value="Curso Moto Plus">Curso Moto - Plus</SelectItem>
+                      <SelectItem value="Curso Moto Premium">Curso Moto - Premium</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="title"
@@ -139,7 +175,7 @@ export function ContractForm() {
                 <FormItem>
                   <FormLabel>Título del Contrato</FormLabel>
                   <FormControl>
-                    <Input placeholder="ej., Servicios de Marketing Q4" {...field} />
+                    <Input placeholder="ej., Contrato de Curso Auto Deluxe" {...field} readOnly />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -167,34 +203,6 @@ export function ContractForm() {
                   <FormControl>
                     <Input placeholder="cliente@ejemplo.com" {...field} />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo de Contrato</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona un tipo de contrato" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Curso Auto">Curso Auto</SelectItem>
-                      <SelectItem value="Curso Auto Básico">Curso Auto - Básico</SelectItem>
-                      <SelectItem value="Curso Auto Plus">Curso Auto - Plus</SelectItem>
-                      <SelectItem value="Curso Auto Premium">Curso Auto - Premium</SelectItem>
-                      <SelectItem value="Curso Auto Deluxe">Curso Auto - Deluxe</SelectItem>
-                      <SelectItem value="Curso Moto">Curso Moto</SelectItem>
-                      <SelectItem value="Curso Moto Básico">Curso Moto - Básico</SelectItem>
-                      <SelectItem value="Curso Moto Plus">Curso Moto - Plus</SelectItem>
-                      <SelectItem value="Curso Moto Premium">Curso Moto - Premium</SelectItem>
-                    </SelectContent>
-                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

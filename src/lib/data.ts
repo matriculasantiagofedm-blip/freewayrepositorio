@@ -22,6 +22,7 @@ export const contracts: Contract[] = [
       { id: 'd1-2', description: 'Lanzamiento final de la campaña', date: add(new Date(), { days: 25 }) },
     ],
     status: 'active',
+    type: 'Curso Auto',
   },
   {
     id: '2',
@@ -34,6 +35,7 @@ export const contracts: Contract[] = [
       { id: 'd2-3', description: 'Lanzamiento final', date: add(new Date(), { days: 80 }) },
     ],
     status: 'active',
+    type: 'Curso Moto',
   },
   {
     id: '3',
@@ -44,6 +46,7 @@ export const contracts: Contract[] = [
       { id: 'd3-1', description: 'Aprobación final del diseño', date: sub(new Date(), { days: 20 }) },
     ],
     status: 'completed',
+    type: 'Otro',
   },
   {
     id: '4',
@@ -54,6 +57,7 @@ export const contracts: Contract[] = [
       { id: 'd4-1', description: 'Renovación de contrato pendiente', date: add(new Date(), { days: 120 }) },
     ],
     status: 'draft',
+    type: 'Curso Auto',
   },
     {
     id: '5',
@@ -64,5 +68,6 @@ export const contracts: Contract[] = [
       { id: 'd5-1', description: 'Contrato expirado', date: sub(new Date(), { days: 10 }) },
     ],
     status: 'expired',
+    type: 'Otro',
   },
 ];

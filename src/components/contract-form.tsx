@@ -4,7 +4,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { State, createContract } from '@/lib/actions';
-import { useActionState } from 'react';
+import { useActionState, useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,14 +30,15 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
-import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { es } from 'date-fns/locale';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 const contractFormSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
   clientEmail: z.string().email('Por favor, introduce una dirección de correo electrónico válida.'),
   content: z.string().min(10, 'El contenido del contrato debe tener al menos 10 caracteres.'),
+  type: z.enum(['Curso Auto', 'Curso Moto', 'Otro'], { required_error: 'Debes seleccionar un tipo de contrato.'}),
   deadlines: z.array(
     z.object({
       description: z.string().min(3, 'La descripción del plazo es obligatoria.'),
@@ -113,6 +114,28 @@ export function ContractForm() {
                   <FormControl>
                     <Input placeholder="cliente@ejemplo.com" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de Contrato</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un tipo de contrato" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Curso Auto">Curso Auto</SelectItem>
+                      <SelectItem value="Curso Moto">Curso Moto</SelectItem>
+                      <SelectItem value="Otro">Otro</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

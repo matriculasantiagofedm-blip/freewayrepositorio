@@ -12,6 +12,7 @@ export interface Client {
 }
 
 export type ContractStatus = 'draft' | 'active' | 'completed' | 'expired';
+export type ContractType = 'Curso Auto' | 'Curso Moto' | 'Otro';
 
 export interface Contract {
   id: string;
@@ -20,4 +21,5 @@ export interface Contract {
   content: string;
   deadlines: Deadline[];
   status: ContractStatus;
+  type: ContractType;
 }

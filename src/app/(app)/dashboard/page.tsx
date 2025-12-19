@@ -5,6 +5,7 @@ import { contracts } from '@/lib/data';
 import { ContractCard } from '@/components/contract-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { isPast } from 'date-fns';
+import type { Contract, ContractType } from '@/lib/types';
 
 export default function DashboardPage() {
   const activeContracts = contracts.filter((c) => c.status === 'active').length;
@@ -30,6 +31,12 @@ export default function DashboardPage() {
       icon: Users,
     },
   ];
+  
+  const contractTypes: ContractType[] = ['Curso Auto', 'Curso Moto', 'Otro'];
+  const contractsByType = contractTypes.map(type => ({
+    type,
+    contracts: contracts.filter(c => c.type === type),
+  }));
 
   return (
     <div className="flex flex-col gap-8">
@@ -57,16 +64,8 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div>
-        <h2 className="mb-4 font-headline text-2xl font-semibold">
-          Tus Contratos
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {contracts.map((contract) => (
-            <ContractCard key={contract.id} contract={contract} />
-          ))}
-        </div>
-        {contracts.length === 0 && (
+      <div className="space-y-8">
+        {contracts.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
             <FileText className="h-12 w-12 text-muted-foreground" />
             <h3 className="mt-4 text-lg font-semibold text-foreground">
@@ -82,6 +81,21 @@ export default function DashboardPage() {
               </Link>
             </Button>
           </div>
+        ) : (
+          contractsByType.map(({ type, contracts: typedContracts }) => (
+            typedContracts.length > 0 && (
+              <div key={type}>
+                <h2 className="mb-4 font-headline text-2xl font-semibold">
+                  {type}
+                </h2>
+                <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                  {typedContracts.map((contract) => (
+                    <ContractCard key={contract.id} contract={contract} />
+                  ))}
+                </div>
+              </div>
+            )
+          ))
         )}
       </div>
     </div>

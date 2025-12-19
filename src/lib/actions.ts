@@ -9,6 +9,7 @@ const FormSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
   clientEmail: z.string().email('Por favor, introduce un correo electrónico válido.'),
   content: z.string().min(10, 'El contenido del contrato es demasiado corto.'),
+  type: z.enum(['Curso Auto', 'Curso Moto', 'Otro']),
   deadlines: z.array(z.object({
     description: z.string().min(3, 'La descripción es demasiado corta.'),
     date: z.date(),
@@ -20,6 +21,7 @@ export type State = {
     title?: string[];
     clientEmail?: string[];
     content?: string[];
+    type?: string[];
     deadlines?: string[];
     _form?: string[];
   };
@@ -40,6 +42,7 @@ export async function createContract(prevState: State, formData: FormData) {
     title: formData.get('title'),
     clientEmail: formData.get('clientEmail'),
     content: formData.get('content'),
+    type: formData.get('type'),
     deadlines: deadlines,
   });
 
@@ -50,13 +53,13 @@ export async function createContract(prevState: State, formData: FormData) {
     };
   }
 
-  const { title, clientEmail, content, deadlines: parsedDeadlines } = validatedFields.data;
+  const { title, clientEmail, content, type, deadlines: parsedDeadlines } = validatedFields.data;
 
   try {
     // Here you would typically save the contract to your database.
     // For this demo, we'll just log it.
     const contractId = `CTR-${Date.now()}`;
-    console.log('Creando contrato:', { contractId, title, clientEmail, content, parsedDeadlines });
+    console.log('Creando contrato:', { contractId, title, clientEmail, content, type, parsedDeadlines });
 
     // Trigger the GenAI flow for automated reminders if there are deadlines
     if (parsedDeadlines && parsedDeadlines.length > 0) {

@@ -3,10 +3,14 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Card, CardContent } from './ui/card';
 import { useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 
-const Line = () => <span className="border-b-2 border-dotted border-black flex-1" />;
-const LongLine = () => <span className="border-b-2 border-dotted border-black flex-1 h-4" />;
-const Value = ({ children }: { children: React.ReactNode }) => <span className="px-2 font-semibold">{children}</span>;
+const Line = ({ children, className }: { children?: React.ReactNode, className?: string }) => (
+  <span className={cn("border-b-2 border-dotted border-black flex-1 min-w-10 text-center font-semibold", className)}>
+    {children || <>&nbsp;</>}
+  </span>
+);
+const LongLine = () => <span className="border-b-2 border-dotted border-black flex-1 h-4 min-w-40" />;
 
 export function DeluxePremiumContractTemplatePreview() {
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
@@ -24,41 +28,70 @@ export function DeluxePremiumContractTemplatePreview() {
         </Card>
     );
   }
+  
+  const Checkbox = () => (
+    <span className='border-2 border-black inline-block w-4 h-4'></span>
+  );
 
   return (
     <Card className="p-8 print:shadow-none print:border-none print:p-0 font-serif text-sm">
       <CardContent className="p-0 space-y-4">
+        <h2 className="text-center font-bold text-lg">CONTRATO DE SERVICIOS EDUCATIVOS</h2>
+
         <p>
-          La empresa FREEWAY ESCUELA DE MANEJO S.A., con ubicación en La Chorrera, Vía Interamericana, Costa Verde, PH Green Plaza, Local #20, debidamente inscrita RUC 155628022-2-2016 DV 2, en adelante denominada LA EMPRESA, y LA ESCUELA se compromete a brindar a EL ESTUDIANTE la capacitación teórico-práctica del curso “PAQUETE DELUXE: PLAN PREMIUM”, con una duración total de 12 semanas, que incluye: 20 horas teóricas (clases presenciales nocturnas). 12 horas prácticas (entrenamiento en circuito cerrado). Certificación según categoría: A, C o A, C, D.
+          La empresa FREEWAY ESCUELA DE MANEJO S.A., con ubicación en La Chorrera, Vía Interamericana, Costa Verde, PH Green Plaza, Local #20, debidamente inscrita RUC 155628022-2-2016 DV 2, en adelante denominada LA EMPRESA, y LA ESCUELA se compromete a brindar a EL ESTUDIANTE la capacitación teórico-práctica del curso “PAQUETE DELUXE: PLAN PREMIUM”, con una duración total de 12 semanas, que incluye: 20 horas teóricas (clases presenciales nocturnas), 12 horas prácticas (entrenamiento en circuito cerrado), y Certificación según categoría: A, C o A, C, D.
         </p>
 
-        <h3 className="font-bold text-center">DECLARAN:</h3>
-        <div className="flex items-center">
-            <span className="font-semibold">{'________________'}</span>
-            , identificado con cédula/pasaporte N.°
-            <Line />
-            , con domicilio en 
-            <Line />
-            , teléfonos:
-            <Line />/<Line />
-            , correo electrónico:
-            <span className="font-semibold">{'________________'}</span>
-            , en adelante denominado EL ESTUDIANTE.
+        <div className="space-y-2">
+            <div className="flex items-center flex-wrap">
+                , con domicilio en 
+                <Line />
+                , teléfonos:
+                <Line />/<Line />
+            </div>
+             <div className="flex items-center flex-wrap">
+                , correo electrónico:
+                <Line />
+                , en adelante denominado EL ESTUDIANTE.
+            </div>
         </div>
-        
-        <h3 className="font-bold">CLÁUSULA PRIMERA - OBJETO DEL CONTRATO</h3>
-        {/* Included in intro */}
 
-        <h3 className="font-bold">CLÁUSULA SEGUNDA - VALOR, MATRÍCULA Y FORMA DE PAGO</h3>
-        {/* User needs to fill this */}
+        <h3 className="font-bold">CLÁUSULA PRIMERA - OBJETO DEL CONTRATO</h3>
+        <p>Ambas partes convienen celebrar este contrato en el cual la empresa se compromete a brindar al cliente, un servicio de capacitación y adiestramiento teórico y práctico relacionado con el aprendizaje de conducción de vehículos a motor. El mismo se regirá bajo los términos y condiciones que se detallan en las siguientes cláusulas.</p>
         
+        <h3 className="font-bold">CLÁUSULA SEGUNDA - VALOR, MATRÍCULA Y FORMA DE PAGO</h3>
+        <p>El pago se realizará de la siguiente manera: 6 cuotas de B/.33.50 cada una, con fechas de pago establecidas cada dos semanas a partir del inicio del curso.</p>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-1">
+          <span>CUOTA 1: <Line className="min-w-24" /></span>
+          <span>CUOTA 4: <Line className="min-w-24" /></span>
+          <span>CUOTA 2: <Line className="min-w-24" /></span>
+          <span>CUOTA 5: <Line className="min-w-24" /></span>
+          <span>CUOTA 3: <Line className="min-w-24" /></span>
+          <span>CUOTA 6: <Line className="min-w-24" /></span>
+        </div>
+        <p>la de B/.15.00.</p>
+
         <h3 className="font-bold">CLÁUSULA TERCERA - DETALLES DEL CURSO</h3>
         <div className="space-y-2 pl-4">
-            <p>1. Transmisión del vehículo: Automático <span className='border-2 border-black inline-block w-4 h-4'></span> / Manual <span className='border-2 border-black inline-block w-4 h-4'></span></p>
-            <p>2. Categoría de licencia a aplicar: A, C <span className='border-2 border-black inline-block w-4 h-4'></span> / A, C, D <span className='border-2 border-black inline-block w-4 h-4'></span></p>
+            <p>1. Transmisión del vehículo: Automático <Checkbox /> / Manual <Checkbox /></p>
+            <p>2. Categoría de licencia a aplicar: A, C <Checkbox /> / A, C, D <Checkbox /></p>
         </div>
 
         <h3 className="font-bold">CLÁUSULA CUARTA - HORARIO DE CAPACITACIÓN</h3>
+        <p className="font-semibold">Clases teóricas: Miércoles, de 6:00 p.m. a 8:00 p.m.</p>
+        <div className="grid grid-cols-3 gap-x-4 gap-y-1">
+          <span>Semana 1: <Line /></span>
+          <span>Semana 2: <Line /></span>
+          <span>Semana 3: <Line /></span>
+          <span>Semana 4: <Line /></span>
+          <span>Semana 5: <Line /></span>
+          <span>Semana 6: <Line /></span>
+          <span>Semana 7: <Line /></span>
+          <span>Semana 8: <Line /></span>
+          <span>Semana 9: <Line /></span>
+          <span>Semana 10: <Line /></span>
+        </div>
+        <p>Clases prácticas: Se programarán a partir de la semana 8 de la capacitación teórica, en horario diurno o vespertino, de acuerdo con la disponibilidad de LA ESCUELA.</p>
         <div className="grid grid-cols-2 gap-x-8 gap-y-2 pl-4">
             <div className="flex items-center gap-2">Clase 1: <Line/> Hora <Line/></div>
             <div className="flex items-center gap-2">Clase 2: <Line/> Hora <Line/></div>
@@ -105,17 +138,16 @@ export function DeluxePremiumContractTemplatePreview() {
         </p>
 
         <div className="flex justify-around pt-16">
-            <div className="text-center">
+            <div className="text-center flex flex-col items-center">
                 <LongLine />
                 <p>Por la Empresa</p>
             </div>
-            <div className="text-center">
+            <div className="text-center flex flex-col items-center">
                 <LongLine />
                 <p>El Cliente</p>
                 <p>N° de identificación</p>
             </div>
         </div>
-
       </CardContent>
     </Card>
   );

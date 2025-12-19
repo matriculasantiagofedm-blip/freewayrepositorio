@@ -1,0 +1,107 @@
+'use client';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { Card, CardContent } from './ui/card';
+
+const Line = () => <span className="border-b-2 border-dotted border-black flex-1" />;
+const LongLine = () => <span className="border-b-2 border-dotted border-black flex-1 h-4" />;
+const Value = ({ children }: { children: React.ReactNode }) => <span className="px-2 font-semibold">{children}</span>;
+
+export function DeluxePremiumContractTemplatePreview() {
+  const now = new Date();
+
+  return (
+    <Card className="p-8 print:shadow-none print:border-none print:p-0 font-serif text-sm">
+      <CardContent className="p-0 space-y-4">
+        <p>
+          La empresa FREEWAY ESCUELA DE MANEJO S.A., con ubicación en La Chorrera, Vía Interamericana, Costa Verde, PH Green Plaza, Local #20, debidamente inscrita RUC 155628022-2-2016 DV 2, en adelante denominada LA EMPRESA, y LA ESCUELA se compromete a brindar a EL ESTUDIANTE la capacitación teórico-práctica del curso “PAQUETE DELUXE: PLAN PREMIUM”, con una duración total de 12 semanas, que incluye: 20 horas teóricas (clases presenciales nocturnas). 12 horas prácticas (entrenamiento en circuito cerrado). Certificación según categoría: A, C o A, C, D.
+        </p>
+
+        <h3 className="font-bold text-center">DECLARAN:</h3>
+        <div className="flex items-center">
+            <span className="font-semibold">{'________________'}</span>
+            , identificado con cédula/pasaporte N.°
+            <Line />
+            , con domicilio en 
+            <Line />
+            , teléfonos:
+            <Line />/<Line />
+            , correo electrónico:
+            <span className="font-semibold">{'________________'}</span>
+            , en adelante denominado EL ESTUDIANTE.
+        </div>
+        
+        <h3 className="font-bold">CLÁUSULA PRIMERA - OBJETO DEL CONTRATO</h3>
+        {/* Included in intro */}
+
+        <h3 className="font-bold">CLÁUSULA SEGUNDA - VALOR, MATRÍCULA Y FORMA DE PAGO</h3>
+        {/* User needs to fill this */}
+        
+        <h3 className="font-bold">CLÁUSULA TERCERA - DETALLES DEL CURSO</h3>
+        <div className="space-y-2 pl-4">
+            <p>1. Transmisión del vehículo: Automático <span className='border-2 border-black inline-block w-4 h-4'></span> / Manual <span className='border-2 border-black inline-block w-4 h-4'></span></p>
+            <p>2. Categoría de licencia a aplicar: A, C <span className='border-2 border-black inline-block w-4 h-4'></span> / A, C, D <span className='border-2 border-black inline-block w-4 h-4'></span></p>
+        </div>
+
+        <h3 className="font-bold">CLÁUSULA CUARTA - HORARIO DE CAPACITACIÓN</h3>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-2 pl-4">
+            <div className="flex items-center gap-2">Clase 1: <Line/> Hora <Line/></div>
+            <div className="flex items-center gap-2">Clase 2: <Line/> Hora <Line/></div>
+            <div className="flex items-center gap-2">Clase 3: <Line/> Hora <Line/></div>
+            <div className="flex items-center gap-2">Clase 4: <Line/> Hora <Line/></div>
+            <div className="flex items-center gap-2">Clase 5: <Line/> Hora <Line/></div>
+            <div className="flex items-center gap-2">Clase 6: <Line/> Hora <Line/></div>
+        </div>
+        
+        <h3 className="font-bold">CLÁUSULA QUINTA - POLÍTICA DE PAGOS Y MOROSIDAD</h3>
+        <p>EL ESTUDIANTE deberá mantener sus pagos al día para poder asistir a sus clases. Si el estudiante no cancela su cuota correspondiente en la semana establecida, no podrá ingresar a sus clases teóricas ni prácticas hasta regularizar su situación. En caso de atraso, EL ESTUDIANTE tiene dos opciones: Opción 1: Cancelar las dos cuotas pendientes (la atrasada y la vigente) para reincorporarse a sus clases. Opción 2: Cancelar una sola cuota, quedando pendiente de ser notificado sobre la próxima clase disponible, la cual deberá ser pagada antes de su inicio.</p>
+
+        <h3 className="font-bold">CLÁUSULA SEXTA- INASISTENCIAS Y REPROGRAMACIONES</h3>
+        <p>EL ESTUDIANTE que no asista a una clase práctica en el horario establecido perderá automáticamente la clase práctica sin derecho a reposición ni reclamo. Excepción: Si la falta es por motivo de salud, deberá presentar constancia médica válida y coordinar con la administración para una reprogramación, la cual dependerá de la disponibilidad de horarios. Si EL ESTUDIANTE falta a más de una clase práctica sin justificar médicamente, no tendrá derecho a certificado y deberá pagar un recargo de $20.00 por cada clase perdida para poder reprogramarla.</p>
+
+        <h3 className="font-bold">CLÁUSULA SEPTIMA - PUNTUALIDAD</h3>
+        <p>En caso de que EL ESTUDIANTE llegue tarde a su clase, solo recibirá el tiempo restante de las 2 horas programadas, sin derecho a reposición.</p>
+
+        <h3 className="font-bold">CLÁUSULA OCTAVA- LUGAR DE INICIO Y TRASLADO</h3>
+        <p>Las clases prácticas iniciarán en la oficina de LA ESCUELA. Desde allí, EL ESTUDIANTE será trasladado al circuito de prácticas y posteriormente de regreso. Dicho traslado se encuentra incluido dentro del tiempo de las 2 horas de clase práctica.</p>
+
+        <h3 className="font-bold">CLÁUSULA NOVENA - NORMAS DE COMPORTAMIENTO Y VESTIMENTA</h3>
+        <p>EL ESTUDIANTE se compromete a: Seguir las instrucciones del instructor, mantener una actitud respetuosa y adecuada durante las clases y asistir en estado óptimo de salud física, mental y emocional. Para las clases prácticas y teóricas, EL ESTUDIANTE deberá asistir con ropa adecuada. Se prohíbe presentarse con: Escotes pronunciados, minifaldas, camisetas sin mangas, pantalones cortos, leggins, chancletas o sandalias. El incumplimiento de esta norma implica la pérdida automática de la clase, sin derecho a reposición.</p>
+
+        <h3 className="font-bold">CLÁUSULA DÉCIMA- ACOMPAÑANTES Y ACCESO</h3>
+        <p>Durante las clases teóricas y prácticas no se permite la presencia de acompañantes, niños, mascotas o terceras personas ajenas al proceso de enseñanza.</p>
+        
+        <h3 className="font-bold">CLÁUSULA DÉCIMA PRIMERA- CONDICIONES DE APTITUD</h3>
+        <p>EL ESTUDIANTE declara estar en pleno uso de sus facultades físicas, mentales y emocionales, siendo responsable de informar a LA ESCUELA sobre cualquier condición médica que limite su desempeño.</p>
+
+        <h3 className="font-bold">CLÁUSULA DÉCIMA SEGUNDA - CANCELACIÓN DEL CONTRATO</h3>
+        <p>En caso de que EL ESTUDIANTE decida cancelar el curso o el contrato, no habrá devolución de dinero bajo ninguna circunstancia.</p>
+
+        <h3 className="font-bold">CLÁUSULA DÉCIMA TERCERA - CERTIFICACIÓN</h3>
+        <p>El certificado de aprobación del curso será entregado únicamente si EL ESTUDIANTE: Está paz y salvo en sus pagos y ha completado la totalidad del curso teórico y práctico.</p>
+
+        <h3 className="font-bold">CLÁUSULA DÉCIMA CUARTA- VIGENCIA DEL CURSO</h3>
+        <p>Si EL ESTUDIANTE no establece contacto para finalizar su curso en un plazo de tres (3) meses desde la fecha de inicio, se entenderá que renuncia a continuar, sin derecho a devolución del dinero ni a reclamos posteriores.</p>
+
+        <h3 className="font-bold">CLÁUSULA DÉCIMA QUINTA- ACEPTACIÓN</h3>
+        <p>Ambas partes declaran haber leído, entendido y aceptado el presente contrato, firmándolo en señal de conformidad.</p>
+        <p className="text-center">
+            En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los {format(now, 'd')} días del mes de {format(now, 'LLLL', { locale: es })}, de {format(now, 'yyyy')}, a las {format(now, 'p', { locale: es })}.
+        </p>
+
+        <div className="flex justify-around pt-16">
+            <div className="text-center">
+                <LongLine />
+                <p>Por la Empresa</p>
+            </div>
+            <div className="text-center">
+                <LongLine />
+                <p>El Cliente</p>
+                <p>N° de identificación</p>
+            </div>
+        </div>
+
+      </CardContent>
+    </Card>
+  );
+}

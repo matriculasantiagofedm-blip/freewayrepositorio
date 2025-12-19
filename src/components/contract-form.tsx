@@ -3,8 +3,8 @@
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useFormState } from 'react-dom';
 import { State, createContract } from '@/lib/actions';
+import { useActionState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,7 +30,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
-import { Separator } from './ui/separator';
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { es } from 'date-fns/locale';
@@ -51,7 +50,7 @@ type ContractFormValues = z.infer<typeof contractFormSchema>;
 
 export function ContractForm() {
   const initialState: State = { message: null, errors: {} };
-  const [state, dispatch] = useFormState(createContract, initialState);
+  const [state, dispatch] = useActionState(createContract, initialState);
   const { toast } = useToast();
 
   const form = useForm<ContractFormValues>({

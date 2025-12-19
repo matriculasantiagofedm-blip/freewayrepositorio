@@ -2,13 +2,28 @@
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Card, CardContent } from './ui/card';
+import { useState, useEffect } from 'react';
 
 const Line = () => <span className="border-b-2 border-dotted border-black flex-1" />;
 const LongLine = () => <span className="border-b-2 border-dotted border-black flex-1 h-4" />;
 const Value = ({ children }: { children: React.ReactNode }) => <span className="px-2 font-semibold">{children}</span>;
 
 export function DeluxePremiumContractTemplatePreview() {
-  const now = new Date();
+  const [currentDate, setCurrentDate] = useState<Date | null>(null);
+
+  useEffect(() => {
+    setCurrentDate(new Date());
+  }, []);
+
+  if (!currentDate) {
+    return (
+        <Card className="p-8 print:shadow-none print:border-none print:p-0 font-serif text-sm">
+            <CardContent>
+                <p>Generando vista previa del contrato...</p>
+            </CardContent>
+        </Card>
+    );
+  }
 
   return (
     <Card className="p-8 print:shadow-none print:border-none print:p-0 font-serif text-sm">
@@ -86,7 +101,7 @@ export function DeluxePremiumContractTemplatePreview() {
         <h3 className="font-bold">CLÁUSULA DÉCIMA QUINTA- ACEPTACIÓN</h3>
         <p>Ambas partes declaran haber leído, entendido y aceptado el presente contrato, firmándolo en señal de conformidad.</p>
         <p className="text-center">
-            En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los {format(now, 'd')} días del mes de {format(now, 'LLLL', { locale: es })}, de {format(now, 'yyyy')}, a las {format(now, 'p', { locale: es })}.
+            En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los {format(currentDate, 'd')} días del mes de {format(currentDate, 'LLLL', { locale: es })}, de {format(currentDate, 'yyyy')}, a las {format(currentDate, 'p', { locale: es })}.
         </p>
 
         <div className="flex justify-around pt-16">

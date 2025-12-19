@@ -36,6 +36,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 
 const contractFormSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
+  clientName: z.string().min(3, 'El nombre del cliente debe tener al menos 3 caracteres.'),
   clientEmail: z.string().email('Por favor, introduce una dirección de correo electrónico válida.'),
   content: z.string().min(10, 'El contenido del contrato debe tener al menos 10 caracteres.'),
   type: z.enum([
@@ -68,6 +69,7 @@ export function ContractForm() {
     resolver: zodResolver(contractFormSchema),
     defaultValues: {
       title: '',
+      clientName: '',
       clientEmail: '',
       content: '',
       deadlines: [],
@@ -98,7 +100,7 @@ export function ContractForm() {
           <CardHeader>
             <CardTitle className="font-headline">Detalles del Contrato</CardTitle>
             <CardDescription>
-              Completa los detalles principales de tu acuerdo.
+              Completa los detalles principales de tu acuerdo. Se creará un nuevo cliente si el email no existe.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -110,6 +112,19 @@ export function ContractForm() {
                   <FormLabel>Título del Contrato</FormLabel>
                   <FormControl>
                     <Input placeholder="ej., Servicios de Marketing Q4" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="clientName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nombre del Cliente</FormLabel>
+                  <FormControl>
+                    <Input placeholder="ej., Innovate Corp" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

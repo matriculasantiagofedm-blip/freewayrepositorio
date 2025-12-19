@@ -1,5 +1,5 @@
 'use client';
-import type { Contract, Deadline } from '@/lib/types';
+import type { Contract, Deadline, Client } from '@/lib/types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 import { Printer } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { useDoc, useFirebase, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 function toDate(date: any): Date {
   if (date instanceof Date) {
@@ -21,6 +23,14 @@ function toDate(date: any): Date {
 }
 
 export function ContractView({ contract }: { contract: Contract }) {
+    const { firestore } = useFirebase();
+    const clientRef = useMemoFirebase(() => {
+        if (!firestore || !contract.clientId) return null;
+        return doc(firestore, 'clients', contract.clientId);
+    }, [firestore, contract.clientId]);
+
+    const { data: client } = useDoc<Client>(clientRef);
+
     const statusColors = {
         active: 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
         draft: 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700',
@@ -38,8 +48,6 @@ export function ContractView({ contract }: { contract: Contract }) {
   const handlePrint = () => {
     window.print();
   };
-  
-  const client = 'client' in contract ? contract.client : { name: 'Unknown', avatarUrl: '' };
 
   return (
     <div className="max-w-4xl mx-auto bg-background">

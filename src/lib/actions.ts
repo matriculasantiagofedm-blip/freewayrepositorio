@@ -4,12 +4,15 @@ import { z } from 'zod';
 import { sendAutomatedDeadlineReminders } from '@/ai/flows/automated-deadline-reminders';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
-import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs, doc, setDoc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import { getAuth } from 'firebase/auth';
+import type { Client } from '@/lib/types';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const FormSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
+  clientName: z.string().min(3, 'El nombre del cliente es obligatorio.'),
   clientEmail: z.string().email('Por favor, introduce un correo electrónico válido.'),
   content: z.string().min(10, 'El contenido del contrato es demasiado corto.'),
   type: z.enum([
@@ -32,6 +35,7 @@ const FormSchema = z.object({
 export type State = {
   errors?: {
     title?: string[];
+    clientName?: string[];
     clientEmail?: string[];
     content?: string[];
     type?: string[];
@@ -40,6 +44,30 @@ export type State = {
   };
   message?: string | null;
 };
+
+async function findOrCreateClient(db: any, clientName: string, clientEmail: string, userId: string): Promise<string> {
+    const clientsRef = collection(db, 'clients');
+    const q = query(clientsRef, where("email", "==", clientEmail), where("userId", "==", userId));
+    
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+        // Client exists
+        return querySnapshot.docs[0].id;
+    } else {
+        // Client does not exist, create a new one
+        const newClientRef = doc(collection(db, 'clients'));
+        const newClient: Omit<Client, 'id'> = {
+            name: clientName,
+            email: clientEmail,
+            userId: userId,
+            avatarUrl: PlaceHolderImages.find(img => img.id.startsWith('client-'))?.imageUrl || 'https://picsum.photos/seed/placeholder/100/100',
+            createdAt: serverTimestamp()
+        };
+        await setDoc(newClientRef, newClient);
+        return newClientRef.id;
+    }
+}
 
 
 export async function createContract(prevState: State, formData: FormData) {
@@ -59,12 +87,13 @@ export async function createContract(prevState: State, formData: FormData) {
   const deadlineDates = formData.getAll('deadline.date');
 
   const deadlines = deadlineDescriptions.map((desc, index) => ({
-    description: desc,
+    description: desc as string,
     date: new Date(deadlineDates[index] as string),
-  }));
+  })).filter(d => d.description && d.date);
 
   const validatedFields = FormSchema.safeParse({
     title: formData.get('title'),
+    clientName: formData.get('clientName'),
     clientEmail: formData.get('clientEmail'),
     content: formData.get('content'),
     type: formData.get('type'),
@@ -78,49 +107,50 @@ export async function createContract(prevState: State, formData: FormData) {
     };
   }
 
-  const { title, clientEmail, content, type, deadlines: parsedDeadlines } = validatedFields.data;
+  const { title, clientName, clientEmail, content, type, deadlines: parsedDeadlines } = validatedFields.data;
 
   try {
-    const contractsCollection = collection(firestore, 'contracts');
+    const clientId = await findOrCreateClient(firestore, clientName, clientEmail, user.uid);
+    
+    // Contracts are now in a subcollection of the client who is a subcollection of the user
+    const contractsCollection = collection(firestore, 'clients', user.uid, 'contracts');
+
     const newContractRef = await addDoc(contractsCollection, {
       title,
-      clientEmail,
       content,
       type,
       deadlines: parsedDeadlines || [],
+      clientId: clientId, // Reference to the client document in the top-level /clients collection
+      clientEmail: clientEmail,
+      clientName: clientName,
       userId: user.uid,
       status: 'draft',
       createdAt: serverTimestamp(),
-      // In a real app, you'd probably look up the client by email
-      // and get their ID, or create a new client.
-      clientId: 'temp-client-id', 
     });
 
     const contractId = newContractRef.id;
-    console.log('Creando contrato:', { contractId, title, clientEmail, content, type, parsedDeadlines });
 
-    // Trigger the GenAI flow for automated reminders if there are deadlines
     if (parsedDeadlines && parsedDeadlines.length > 0) {
       await sendAutomatedDeadlineReminders({
         contractId,
         clientEmail,
-        userEmail: user.email || 'legaleagle@example.com', // Assuming a static user email
+        userEmail: user.email || 'legaleagle@example.com', 
         deadlines: parsedDeadlines.map(d => ({
             ...d,
             date: d.date.toISOString().split('T')[0] // Format date to YYYY-MM-DD
         })),
       });
-      console.log('Recordatorios automáticos programados.');
     }
   } catch (error) {
-    console.error('Error creando contrato o programando recordatorios:', error);
+    console.error('Error creating contract:', error);
     const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error inesperado.';
     return {
       errors: { _form: [errorMessage] },
-      message: 'Error de base de datos o IA: No se pudo crear el contrato.',
+      message: 'Error de base de datos: No se pudo crear el contrato.',
     };
   }
   
   revalidatePath('/dashboard');
+  revalidatePath('/contracts');
   redirect('/dashboard');
 }

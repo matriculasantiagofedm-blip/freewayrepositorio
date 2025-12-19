@@ -81,8 +81,6 @@ export function ContractCard({ contract }: { contract: Contract }) {
 
   const isUrgent = !isOverdue && deadline && (deadline.date.getTime() - new Date().getTime()) < 7 * 24 * 60 * 60 * 1000;
   
-  const client = 'client' in contract ? contract.client : { name: 'Unknown', avatarUrl: '' };
-
   return (
     <Card className={cn(
       "flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1 h-full",
@@ -97,11 +95,7 @@ export function ContractCard({ contract }: { contract: Contract }) {
             </Badge>
         </div>
         <CardDescription className="flex items-center gap-2 pt-2">
-          <Avatar className="h-6 w-6">
-            <AvatarImage src={client?.avatarUrl} alt={client?.name} />
-            <AvatarFallback>{client?.name?.charAt(0)}</AvatarFallback>
-          </Avatar>
-          <span>{client?.name}</span>
+           <span>{contract.clientName}</span>
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">

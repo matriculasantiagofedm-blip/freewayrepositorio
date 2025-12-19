@@ -35,6 +35,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Textarea } from './ui/textarea';
 import { DeluxePremiumContractPreview } from './deluxe-premium-contract-preview';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
+import type { DeluxeContractDetails } from '@/lib/types';
 
 const contractFormSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
@@ -224,7 +225,7 @@ export function ContractForm() {
                       <FormItem>
                         <FormLabel>Cédula/Pasaporte del Estudiante</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Input {...field} value={field.value || ''} />
                         </FormControl>
                       </FormItem>
                     )}
@@ -236,7 +237,7 @@ export function ContractForm() {
                       <FormItem>
                         <FormLabel>Domicilio del Estudiante</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Input {...field} value={field.value || ''} />
                         </FormControl>
                       </FormItem>
                     )}
@@ -249,7 +250,7 @@ export function ContractForm() {
                         <FormItem>
                           <FormLabel>Teléfono 1</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} value={field.value || ''} />
                           </FormControl>
                         </FormItem>
                       )}
@@ -261,7 +262,7 @@ export function ContractForm() {
                         <FormItem>
                           <FormLabel>Teléfono 2</FormLabel>
                           <FormControl>
-                            <Input {...field} />
+                            <Input {...field} value={field.value || ''} />
                           </FormControl>
                         </FormItem>
                       )}
@@ -367,7 +368,7 @@ export function ContractForm() {
                             render={({ field }) => (
                               <FormItem>
                                 <FormControl>
-                                  <Input type="time" {...field} />
+                                  <Input type="time" {...field} value={field.value || ''} />
                                 </FormControl>
                               </FormItem>
                             )}
@@ -390,7 +391,7 @@ export function ContractForm() {
                       <FormItem>
                         <FormLabel>Valor, Matrícula y Forma de Pago</FormLabel>
                         <FormControl>
-                          <Textarea placeholder="Describe los detalles del pago..." {...field} />
+                          <Textarea placeholder="Describe los detalles del pago..." {...field} value={field.value || ''} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -402,7 +403,7 @@ export function ContractForm() {
                       <DeluxePremiumContractPreview 
                         clientName={clientName} 
                         clientEmail={clientEmail} 
-                        deluxeDetails={deluxeDetails} 
+                        deluxeDetails={deluxeDetails as DeluxeContractDetails}
                       />
                   </div>
                 </div>
@@ -418,6 +419,7 @@ export function ContractForm() {
                         placeholder="Describe los términos del contrato..."
                         className="min-h-32"
                         {...field}
+                        value={field.value || ''}
                       />
                     </FormControl>
                     <FormMessage />

@@ -14,7 +14,7 @@ const FormSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
   clientName: z.string().min(3, 'El nombre del cliente es obligatorio.'),
   clientEmail: z.string().email('Por favor, introduce un correo electrónico válido.'),
-  content: z.string().min(10, 'El contenido del contrato es demasiado corto.'),
+  content: z.string().min(10, 'El contenido del contrato es demasiado corto.').optional(),
   type: z.enum([
     'Curso Auto', 
     'Curso Moto', 
@@ -112,19 +112,21 @@ export async function createContract(prevState: State, formData: FormData) {
   try {
     const clientId = await findOrCreateClient(firestore, clientName, clientEmail, user.uid);
     
-    // Contracts are now in a subcollection of the client who is a subcollection of the user
+    // Contracts are now in a subcollection of the user
     const contractsCollection = collection(firestore, 'clients', user.uid, 'contracts');
+    
+    const contractContent = type === 'Curso Auto Deluxe' ? '' : content;
 
     const newContractRef = await addDoc(contractsCollection, {
       title,
-      content,
+      content: contractContent,
       type,
       deadlines: parsedDeadlines || [],
       clientId: clientId, // Reference to the client document in the top-level /clients collection
       clientEmail: clientEmail,
       clientName: clientName,
       userId: user.uid,
-      status: 'draft',
+      status: 'active', // Changed from draft to active
       createdAt: serverTimestamp(),
     });
 

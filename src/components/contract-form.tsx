@@ -8,7 +8,6 @@ import { useActionState, useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Form,
   FormControl,
@@ -33,12 +32,13 @@ import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { es } from 'date-fns/locale';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Textarea } from './ui/textarea';
 
 const contractFormSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
   clientName: z.string().min(3, 'El nombre del cliente debe tener al menos 3 caracteres.'),
   clientEmail: z.string().email('Por favor, introduce una dirección de correo electrónico válida.'),
-  content: z.string().min(10, 'El contenido del contrato debe tener al menos 10 caracteres.'),
+  content: z.string().optional(), // Content is now optional as it can be a template
   type: z.enum([
     'Curso Auto', 
     'Curso Moto', 
@@ -68,10 +68,9 @@ export function ContractForm() {
   const form = useForm<ContractFormValues>({
     resolver: zodResolver(contractFormSchema),
     defaultValues: {
-      title: '',
+      title: 'Contrato de Curso de Manejo',
       clientName: '',
       clientEmail: '',
-      content: '',
       deadlines: [],
     },
   });
@@ -80,6 +79,8 @@ export function ContractForm() {
     control: form.control,
     name: 'deadlines',
   });
+
+  const contractType = form.watch('type');
 
   useEffect(() => {
     if (state.message) {
@@ -171,23 +172,25 @@ export function ContractForm() {
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="content"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Contenido del Contrato</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Describe los términos del contrato..."
-                      className="min-h-32"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {contractType !== 'Curso Auto Deluxe' && (
+              <FormField
+                control={form.control}
+                name="content"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contenido del Contrato</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Describe los términos del contrato..."
+                        className="min-h-32"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
           </CardContent>
         </Card>
 

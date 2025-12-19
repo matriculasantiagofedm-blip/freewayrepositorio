@@ -2,8 +2,8 @@
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Card, CardContent } from './ui/card';
-import type { DeluxeContractDetails } from '@/lib/types';
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 
 const Line = ({ children, className }: { children?: React.ReactNode, className?: string }) => (
   <span className={cn("border-b-2 border-dotted border-black flex-1 min-w-10 text-center font-semibold", className)}>
@@ -11,25 +11,26 @@ const Line = ({ children, className }: { children?: React.ReactNode, className?:
   </span>
 );
 const LongLine = () => <span className="border-b-2 border-dotted border-black flex-1 h-4 min-w-40" />;
-const Value = ({ children }: { children: React.ReactNode }) => <span className="px-2 font-semibold">{children}</span>;
 
-interface DeluxePremiumContractPreviewProps {
-  clientName?: string;
-  clientEmail?: string;
-  deluxeDetails?: Partial<DeluxeContractDetails>;
-}
-
-export function DeluxePremiumContractPreview({ clientName, clientEmail, deluxeDetails }: DeluxePremiumContractPreviewProps) {
-  const [currentDate, setCurrentDate] = useState(new Date());
+export function DeluxePremiumContractTemplatePreview() {
+  const [currentDate, setCurrentDate] = useState<Date | null>(null);
 
   useEffect(() => {
     setCurrentDate(new Date());
   }, []);
 
-  const Checkbox = ({ checked }: { checked: boolean }) => (
-    <span className={`border-2 border-black inline-block w-4 h-4 text-center leading-none ${checked ? 'bg-black text-white' : ''}`}>
-        {checked ? 'X' : ''}
-    </span>
+  if (!currentDate) {
+    return (
+        <Card className="p-8 print:shadow-none print:border-none print:p-0 font-serif text-sm">
+            <CardContent>
+                <p>Generando vista previa del contrato...</p>
+            </CardContent>
+        </Card>
+    );
+  }
+  
+  const Checkbox = () => (
+    <span className='border-2 border-black inline-block w-4 h-4'></span>
   );
 
   return (
@@ -44,13 +45,13 @@ export function DeluxePremiumContractPreview({ clientName, clientEmail, deluxeDe
         <div className="space-y-2">
             <div className="flex items-center flex-wrap">
                 , con domicilio en 
-                <Line>{deluxeDetails?.studentAddress}</Line>
+                <Line />
                 , teléfonos:
-                <Line>{deluxeDetails?.studentPhone1}</Line>/<Line>{deluxeDetails?.studentPhone2}</Line>
+                <Line />/<Line />
             </div>
              <div className="flex items-center flex-wrap">
                 , correo electrónico:
-                <Value>{clientEmail || '________________'}</Value>
+                <Line />
                 , en adelante denominado EL ESTUDIANTE.
             </div>
         </div>
@@ -68,12 +69,12 @@ export function DeluxePremiumContractPreview({ clientName, clientEmail, deluxeDe
           <span>CUOTA 3: <Line className="min-w-24" /></span>
           <span>CUOTA 6: <Line className="min-w-24" /></span>
         </div>
-        <p className='p-4 border border-dashed min-h-24'>{deluxeDetails?.paymentDetails || 'la de B/.15.00.'}</p>
+        <p>la de B/.15.00.</p>
 
         <h3 className="font-bold">CLÁUSULA TERCERA - DETALLES DEL CURSO</h3>
         <div className="space-y-2 pl-4">
-            <p>1. Transmisión del vehículo: Automático <Checkbox checked={deluxeDetails?.vehicleTransmission === 'Automático'} /> / Manual <Checkbox checked={deluxeDetails?.vehicleTransmission === 'Manual'} /></p>
-            <p>2. Categoría de licencia a aplicar: A, C <Checkbox checked={deluxeDetails?.licenseCategory === 'A, C'} /> / A, C, D <Checkbox checked={deluxeDetails?.licenseCategory === 'A, C, D'} /></p>
+            <p>1. Transmisión del vehículo: Automático <Checkbox /> / Manual <Checkbox /></p>
+            <p>2. Categoría de licencia a aplicar: A, C <Checkbox /> / A, C, D <Checkbox /></p>
         </div>
 
         <h3 className="font-bold">CLÁUSULA CUARTA - HORARIO DE CAPACITACIÓN</h3>
@@ -92,19 +93,12 @@ export function DeluxePremiumContractPreview({ clientName, clientEmail, deluxeDe
         </div>
         <p>Clases prácticas: Se programarán a partir de la semana 8 de la capacitación teórica, en horario diurno o vespertino, de acuerdo con la disponibilidad de LA ESCUELA.</p>
         <div className="grid grid-cols-2 gap-x-8 gap-y-2 pl-4">
-          {deluxeDetails?.classSchedules?.map((clase, index) => (
-            <div key={index} className="flex items-center gap-2">
-              Clase {index + 1}: <Line>{clase.date ? format(new Date(clase.date), 'P', { locale: es }) : ''}</Line> 
-              Hora <Line>{clase.time}</Line>
-            </div>
-          ))}
-          {(!deluxeDetails?.classSchedules || deluxeDetails.classSchedules.length < 6) && 
-            Array.from({ length: 6 - (deluxeDetails?.classSchedules?.length || 0) }).map((_, index) => (
-              <div key={index} className="flex items-center gap-2">
-                Clase {index + (deluxeDetails?.classSchedules?.length || 0) + 1}: <Line /> Hora <Line />
-              </div>
-            ))
-          }
+            <div className="flex items-center gap-2">Clase 1: <Line/> Hora <Line/></div>
+            <div className="flex items-center gap-2">Clase 2: <Line/> Hora <Line/></div>
+            <div className="flex items-center gap-2">Clase 3: <Line/> Hora <Line/></div>
+            <div className="flex items-center gap-2">Clase 4: <Line/> Hora <Line/></div>
+            <div className="flex items-center gap-2">Clase 5: <Line/> Hora <Line/></div>
+            <div className="flex items-center gap-2">Clase 6: <Line/> Hora <Line/></div>
         </div>
         
         <h3 className="font-bold">CLÁUSULA QUINTA - POLÍTICA DE PAGOS Y MOROSIDAD</h3>
@@ -151,10 +145,9 @@ export function DeluxePremiumContractPreview({ clientName, clientEmail, deluxeDe
             <div className="text-center flex flex-col items-center">
                 <LongLine />
                 <p>El Cliente</p>
-                <p>N° de identificación: {deluxeDetails?.studentIdNumber}</p>
+                <p>N° de identificación</p>
             </div>
         </div>
-
       </CardContent>
     </Card>
   );

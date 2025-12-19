@@ -28,11 +28,13 @@ export type ContractType =
 export interface Contract {
   id: string;
   title: string;
-  client: Client;
+  client?: Client;
+  clientEmail: string;
   clientId: string;
   content: string;
   deadlines: Deadline[];
   status: ContractStatus;
   type: ContractType;
   userId: string;
+  createdAt: Timestamp;
 }

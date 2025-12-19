@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow, isPast } from 'date-fns';
 import { CalendarClock } from 'lucide-react';
 import { es } from 'date-fns/locale';
+import Link from 'next/link';
 
 function toDate(date: any): Date {
   if (date instanceof Date) {
@@ -84,7 +85,7 @@ export function ContractCard({ contract }: { contract: Contract }) {
 
   return (
     <Card className={cn(
-      "flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1",
+      "flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1 h-full",
       isUrgent && "border-primary ring-2 ring-primary/50",
       isOverdue && contract.status !== 'completed' && "border-destructive/50"
     )}>
@@ -97,10 +98,10 @@ export function ContractCard({ contract }: { contract: Contract }) {
         </div>
         <CardDescription className="flex items-center gap-2 pt-2">
           <Avatar className="h-6 w-6">
-            <AvatarImage src={client.avatarUrl} alt={client.name} />
-            <AvatarFallback>{client.name.charAt(0)}</AvatarFallback>
+            <AvatarImage src={client?.avatarUrl} alt={client?.name} />
+            <AvatarFallback>{client?.name?.charAt(0)}</AvatarFallback>
           </Avatar>
-          <span>{client.name}</span>
+          <span>{client?.name}</span>
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">

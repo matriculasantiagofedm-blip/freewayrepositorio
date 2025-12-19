@@ -35,7 +35,9 @@ export default function ContractsMotoPremiumPage() {
             {!isLoading && motoContracts && motoContracts.length > 0 ? (
                 <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                     {motoContracts.map((contract) => (
-                        <ContractCard key={contract.id} contract={contract} />
+                        <Link key={contract.id} href={`/contracts/${contract.id}`} className="no-underline">
+                            <ContractCard contract={contract} />
+                        </Link>
                     ))}
                 </div>
             ) : (

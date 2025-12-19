@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Card, CardContent } from './ui/card';
 import type { DeluxeContractDetails } from '@/lib/types';
+import { useEffect, useState } from 'react';
 
 const Line = ({ children }: { children?: React.ReactNode }) => (
   <span className="border-b-2 border-dotted border-black flex-1 min-w-10 text-center font-semibold">
@@ -19,7 +20,11 @@ interface DeluxePremiumContractPreviewProps {
 }
 
 export function DeluxePremiumContractPreview({ clientName, clientEmail, deluxeDetails }: DeluxePremiumContractPreviewProps) {
-  const now = new Date();
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  useEffect(() => {
+    setCurrentDate(new Date());
+  }, []);
 
   const Checkbox = ({ checked }: { checked: boolean }) => (
     <span className={`border-2 border-black inline-block w-4 h-4 text-center leading-none ${checked ? 'bg-black text-white' : ''}`}>
@@ -100,7 +105,7 @@ export function DeluxePremiumContractPreview({ clientName, clientEmail, deluxeDe
         <p>Durante las clases teóricas y prácticas no se permite la presencia de acompañantes, niños, mascotas o terceras personas ajenas al proceso de enseñanza.</p>
         
         <h3 className="font-bold">CLÁUSULA DÉCIMA PRIMERA- CONDICIONES DE APTITUD</h3>
-        <p>EL ESTUDIANTE declara estar en pleno uso de sus facultades físicas, mentales y emocionales, siendo responsable de informar a LA ESCUELA sobre cualquier condición médica que limite su desempeño.</p>
+        <p>EL ESTUDIante declara estar en pleno uso de sus facultades físicas, mentales y emocionales, siendo responsable de informar a LA ESCUELA sobre cualquier condición médica que limite su desempeño.</p>
 
         <h3 className="font-bold">CLÁUSULA DÉCIMA SEGUNDA - CANCELACIÓN DEL CONTRATO</h3>
         <p>En caso de que EL ESTUDIANTE decida cancelar el curso o el contrato, no habrá devolución de dinero bajo ninguna circunstancia.</p>
@@ -114,7 +119,7 @@ export function DeluxePremiumContractPreview({ clientName, clientEmail, deluxeDe
         <h3 className="font-bold">CLÁUSULA DÉCIMA QUINTA- ACEPTACIÓN</h3>
         <p>Ambas partes declaran haber leído, entendido y aceptado el presente contrato, firmándolo en señal de conformidad.</p>
         <p className="text-center">
-            En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los {format(now, 'd')} días del mes de {format(now, 'LLLL', { locale: es })}, de {format(now, 'yyyy')}, a las {format(now, 'p', { locale: es })}.
+            En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los {format(currentDate, 'd')} días del mes de {format(currentDate, 'LLLL', { locale: es })}, de {format(currentDate, 'yyyy')}, a las {format(currentDate, 'p', { locale: es })}.
         </p>
 
         <div className="flex justify-around pt-16">

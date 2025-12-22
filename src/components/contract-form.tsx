@@ -3,8 +3,21 @@
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { State, createContract } from '@/lib/actions';
-import { useActionState, useEffect } from 'react';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  query,
+  where,
+  getDocs,
+  doc,
+  setDoc,
+} from 'firebase/firestore';
+import { useFirebase } from '@/firebase';
+import { sendAutomatedDeadlineReminders } from '@/ai/flows/automated-deadline-reminders';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,9 +46,10 @@ import { useToast } from '@/hooks/use-toast';
 import { es } from 'date-fns/locale';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
-import { DeluxePremiumContractPreview } from './deluxe-premium-contract-preview';
+import { DeluxePremiumContractTemplatePreview } from './deluxe-premium-contract-template-preview';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import type { DeluxeContractDetails } from '@/lib/types';
+import type { Client, DeluxeContractDetails } from '@/lib/types';
+
 
 const contractFormSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
@@ -73,9 +87,9 @@ const contractFormSchema = z.object({
 type ContractFormValues = z.infer<typeof contractFormSchema>;
 
 export function ContractForm() {
-  const initialState: State = { message: null, errors: {} };
-  const [state, dispatch] = useActionState(createContract, initialState);
   const { toast } = useToast();
+  const { firestore, user } = useFirebase();
+  const router = useRouter();
 
   const form = useForm<ContractFormValues>({
     resolver: zodResolver(contractFormSchema),
@@ -83,6 +97,7 @@ export function ContractForm() {
       title: '',
       clientName: '',
       clientEmail: '',
+      content: '',
       deadlines: [],
       deluxeDetails: {
         studentIdNumber: '',
@@ -108,9 +123,8 @@ export function ContractForm() {
   });
 
   const contractType = form.watch('type');
-  const clientName = form.watch('clientName');
-  const clientEmail = form.watch('clientEmail');
   const deluxeDetails = form.watch('deluxeDetails');
+  const allFormValues = form.watch();
 
   useEffect(() => {
     if (contractType) {
@@ -120,31 +134,98 @@ export function ContractForm() {
     }
   }, [contractType, form]);
 
+  async function findOrCreateClient(clientName: string, clientEmail: string, userId: string): Promise<string> {
+    const clientsRef = collection(firestore, 'clients');
+    const q = query(clientsRef, where("email", "==", clientEmail), where("userId", "==", userId));
+    
+    const querySnapshot = await getDocs(q);
 
-  useEffect(() => {
-    if (state.message) {
-      if (state.errors) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: state.message,
+    if (!querySnapshot.empty) {
+        return querySnapshot.docs[0].id;
+    } else {
+        const newClientRef = doc(collection(firestore, 'clients'));
+        const newClient: Omit<Client, 'id'> = {
+            name: clientName,
+            email: clientEmail,
+            userId: userId,
+            createdAt: serverTimestamp() as any
+        };
+        await setDoc(newClientRef, newClient);
+        return newClientRef.id;
+    }
+  }
+
+  async function onSubmit(data: ContractFormValues) {
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: 'Error de autenticación',
+        description: 'Debes iniciar sesión para crear un contrato.',
+      });
+      return;
+    }
+
+    try {
+      const clientId = await findOrCreateClient(data.clientName, data.clientEmail, user.uid);
+      
+      const contractsCollection = collection(firestore, 'clients', user.uid, 'contracts');
+      
+      const contractContent = data.type === 'Curso Deluxe' ? '' : data.content;
+
+      const newContractData: any = {
+          title: data.title,
+          content: contractContent,
+          type: data.type,
+          deadlines: data.deadlines || [],
+          clientId: clientId,
+          clientEmail: data.clientEmail,
+          clientName: data.clientName,
+          userId: user.uid,
+          status: 'active',
+          createdAt: serverTimestamp(),
+      };
+
+      if (data.type === 'Curso Deluxe' && data.deluxeDetails) {
+          newContractData.deluxeDetails = data.deluxeDetails;
+      }
+
+      const newContractRef = await addDoc(contractsCollection, newContractData);
+      const contractId = newContractRef.id;
+
+      if (data.deadlines && data.deadlines.length > 0) {
+        await sendAutomatedDeadlineReminders({
+          contractId,
+          clientEmail: data.clientEmail,
+          userEmail: user.email || 'legaleagle@example.com', 
+          deadlines: data.deadlines.map(d => ({
+              ...d,
+              date: d.date.toISOString().split('T')[0] // Format date to YYYY-MM-DD
+          })),
         });
       }
-    }
-  }, [state, toast]);
 
-  const onFormAction = (formData: FormData) => {
-    // Stringify deluxeDetails before dispatching
-    const formValues = form.getValues();
-    if (formValues.type === 'Curso Deluxe') {
-      formData.set('deluxeDetails', JSON.stringify(formValues.deluxeDetails));
+      toast({
+        title: '¡Contrato Creado!',
+        description: `El contrato "${data.title}" ha sido creado exitosamente.`,
+      });
+
+      router.push('/dashboard');
+
+    } catch (error) {
+      console.error('Error creating contract:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error inesperado.';
+      toast({
+        variant: 'destructive',
+        title: 'Error al crear el contrato',
+        description: errorMessage,
+      });
     }
-    dispatch(formData);
-  };
+  }
+
 
   return (
     <Form {...form}>
-      <form action={onFormAction} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <Card>
           <CardHeader>
             <CardTitle className="font-headline">Detalles del Contrato</CardTitle>
@@ -400,10 +481,10 @@ export function ContractForm() {
 
                   <div className="mt-6">
                       <h3 className="text-lg font-medium mb-2">Vista Previa del Contrato</h3>
-                      <DeluxePremiumContractPreview 
-                        clientName={clientName} 
-                        clientEmail={clientEmail} 
-                        deluxeDetails={deluxeDetails as DeluxeContractDetails}
+                      <DeluxePremiumContractTemplatePreview 
+                        clientName={allFormValues.clientName} 
+                        clientEmail={allFormValues.clientEmail} 
+                        deluxeDetails={allFormValues.deluxeDetails as DeluxeContractDetails}
                       />
                   </div>
                 </div>
@@ -455,7 +536,7 @@ export function ContractForm() {
                       <FormItem>
                         <FormLabel>Descripción</FormLabel>
                         <FormControl>
-                          <Input {...field} name="deadline.description" placeholder="ej., Entrega del Primer Borrador" />
+                          <Input {...field} placeholder="ej., Entrega del Primer Borrador" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -467,7 +548,6 @@ export function ContractForm() {
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
                         <FormLabel>Fecha</FormLabel>
-                          <input type="hidden" name="deadline.date" value={field.value?.toISOString() ?? ''} />
                           <Popover>
                           <PopoverTrigger asChild>
                             <FormControl>
@@ -513,12 +593,6 @@ export function ContractForm() {
           </Card>
         )}
         
-        {state.errors?._form && (
-            <p className="text-sm font-medium text-destructive">
-                {state.errors._form.join(', ')}
-            </p>
-        )}
-
         <div className="flex justify-end">
           <Button type="submit">
             <Save className="mr-2 h-4 w-4" />
@@ -529,3 +603,5 @@ export function ContractForm() {
     </Form>
   );
 }
+
+    

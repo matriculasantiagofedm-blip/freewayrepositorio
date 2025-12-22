@@ -9,8 +9,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu';
 import { LogOut, User, ChevronsUpDown } from 'lucide-react';
 import { useAuth, useUser, initiateAnonymousSignIn } from '@/firebase';
@@ -40,14 +38,6 @@ export function UserNav() {
         localStorage.setItem('currentUser', defaultRole);
     }
   }, []);
-
-  const handleRoleChange = (role: string) => {
-      setCurrentUser(role);
-      localStorage.setItem('currentUser', role);
-      // Dispara un evento para notificar a otros componentes del cambio de rol
-      window.dispatchEvent(new Event('storage'));
-  };
-
 
   if (isUserLoading || !currentUser) {
     return <div>Cargando...</div>;
@@ -89,17 +79,6 @@ export function UserNav() {
               <span>Perfil</span>
             </Link>
           </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-            <DropdownMenuLabel>Seleccionar Rol</DropdownMenuLabel>
-            <DropdownMenuRadioGroup value={currentUser} onValueChange={handleRoleChange}>
-                {roles.map(role => (
-                    <DropdownMenuRadioItem key={role} value={role}>
-                        {role}
-                    </DropdownMenuRadioItem>
-                ))}
-            </DropdownMenuRadioGroup>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => auth.signOut()}>

@@ -2,13 +2,10 @@
 import { DeluxePremiumContractTemplatePreview } from '@/components/deluxe-premium-contract-template-preview';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ChevronLeft, Printer } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
+import { PrintButton } from '@/components/print-button';
 
 export default function ContractsAutoDeluxePage() {
-    const handlePrint = () => {
-        window.print();
-    };
-
     return (
         <div className="flex flex-col gap-8">
             <div className="flex items-center justify-between print:hidden">
@@ -21,10 +18,7 @@ export default function ContractsAutoDeluxePage() {
                     </Button>
                     <h1 className="font-headline text-3xl font-bold">Plantilla: Curso Mixto</h1>
                 </div>
-                <Button onClick={handlePrint}>
-                    <Printer className="mr-2 h-4 w-4" />
-                    Imprimir Plantilla
-                </Button>
+                <PrintButton text="Imprimir Plantilla" />
             </div>
             <div className="max-w-4xl mx-auto w-full">
                <DeluxePremiumContractTemplatePreview />

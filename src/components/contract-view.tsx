@@ -1,23 +1,15 @@
 'use client';
-import type { Contract, Client } from '@/lib/types';
-import { Button } from './ui/button';
-import { Printer } from 'lucide-react';
+import type { Contract } from '@/lib/types';
 import { DeluxePremiumContractTemplate } from './deluxe-premium-contract';
+import { PrintButton } from './print-button';
 
 export function ContractView({ contract }: { contract: Contract }) {
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
     <div className="max-w-4xl mx-auto bg-background">
-        <div className="flex justify-end mb-4 print:hidden">
-            <Button onClick={handlePrint}>
-                <Printer className="mr-2 h-4 w-4" />
-                Imprimir Contrato
-            </Button>
-        </div>
-      
+      <div className="flex justify-end mb-4 print:hidden">
+        <PrintButton text="Imprimir Contrato" />
+      </div>
+
       {contract.type === 'Curso Deluxe' ? (
         <DeluxePremiumContractTemplate contract={contract} />
       ) : (

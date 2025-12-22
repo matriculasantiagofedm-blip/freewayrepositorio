@@ -58,6 +58,10 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
 
   const paymentAmount = deluxeDetails?.paymentAmount || 33.50;
 
+  const theoreticalScheduleText = deluxeDetails?.theoreticalClassSchedule === 'Lunes'
+    ? 'Clases teóricas: Lunes, de 8:00 a.m. a 10:00 a.m.'
+    : 'Clases teóricas: Miércoles, de 7:00 p.m. a 9:00 p.m.';
+
   return (
     <Card className="p-8 print:shadow-none print:border-none print:p-0 font-serif text-sm">
       <CardContent className="p-0 space-y-4">
@@ -104,7 +108,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
         </div>
 
         <h3 className="font-bold">CLÁUSULA CUARTA - HORARIO DE CAPACITACIÓN</h3>
-        <p className="font-semibold">Clases teóricas: Miércoles, de 6:00 p.m. a 8:00 p.m.</p>
+        <p className="font-semibold">{theoreticalScheduleText}</p>
         <div className="grid grid-cols-3 gap-x-4 gap-y-1">
             {Array.from({ length: 10 }).map((_, index) => (
                 <span key={index}>Semana {index + 1}: {formatDate(deluxeDetails?.theoreticalClasses?.[index])}</span>
@@ -142,7 +146,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
         <h3 className="font-bold">CLÁUSULA NOVENA - NORMAS DE COMPORTAMIENTO Y VESTIMENTA</h3>
         <p>EL ESTUDIANTE se compromete a: Seguir las instrucciones del instructor, mantener una actitud respetuosa y adecuada durante las clases y asistir en estado óptimo de salud física, mental y emocional. Para las clases prácticas y teóricas, EL ESTUDIANTE deberá asistir con ropa adecuada. Se prohíbe presentarse con: Escotes pronunciados, minifaldas, camisetas sin mangas, pantalones cortos, leggins, chancletas o sandalias. El incumplimiento de esta norma implica la pérdida automática de la clase, sin derecho a reposición.</p>
 
-        <h3 className="font-bold">CLÁUSULA DÉCIMA- ACOMPAÑANTES Y ACCESO</h3>
+        <h3 className="font-bold">CLÁUSULA DÉCIMA- ACOMPAñANTES Y ACCESO</h3>
         <p>Durante las clases teóricas y prácticas no se permite la presencia de acompañantes, niños, mascotas o terceras personas ajenas al proceso de enseñanza.</p>
         
         <h3 className="font-bold">CLÁUSULA DÉCIMA PRIMERA- CONDICIONES DE APTITUD</h3>

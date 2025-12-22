@@ -72,6 +72,7 @@ const contractFormSchema = z.object({
     studentPhone2: z.string().optional(),
     vehicleTransmission: z.enum(['Automático', 'Manual']).optional(),
     licenseCategory: z.enum(['A, C', 'A, C, D']).optional(),
+    theoreticalClassSchedule: z.enum(['Lunes', 'Miércoles']).optional(),
     theoreticalClasses: z.array(z.string().optional()).optional(),
     classSchedules: z.array(z.object({
       date: z.string().optional(),
@@ -111,6 +112,7 @@ export function ContractForm() {
         studentPhone2: '',
         vehicleTransmission: undefined,
         licenseCategory: undefined,
+        theoreticalClassSchedule: undefined,
         theoreticalClasses: Array(10).fill(''),
         classSchedules: [{ date: '', time: '' }],
         paymentDetails: '',
@@ -298,7 +300,7 @@ export function ContractForm() {
               )}
             />
             <FormField
-              control={form.control}
+              control-form.control}
               name="clientEmail"
               render={({ field }) => (
                 <FormItem>
@@ -425,8 +427,36 @@ export function ContractForm() {
 
                   <div>
                     <h4 className="font-medium text-base mb-2">Horario de Capacitación Teórica</h4>
-                    <p className="text-sm text-muted-foreground mb-4">Clases teóricas: Miércoles, de 6:00 p.m. a 8:00 p.m.</p>
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                    <FormField
+                      control={form.control}
+                      name="deluxeDetails.theoreticalClassSchedule"
+                      render={({ field }) => (
+                        <FormItem>
+                           <FormControl>
+                            <RadioGroup
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                              className="flex gap-4"
+                            >
+                              <FormItem className="flex items-center space-x-2">
+                                <FormControl>
+                                  <RadioGroupItem value="Lunes" id="lunes" />
+                                </FormControl>
+                                <FormLabel htmlFor="lunes" className="font-normal">Lunes de 8:00 AM a 10:00 AM</FormLabel>
+                              </FormItem>
+                               <FormItem className="flex items-center space-x-2">
+                                <FormControl>
+                                  <RadioGroupItem value="Miércoles" id="miercoles" />
+                                </FormControl>
+                                <FormLabel htmlFor="miercoles" className="font-normal">Miércoles de 7:00 PM a 9:00 PM</FormLabel>
+                              </FormItem>
+                            </RadioGroup>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-4 pt-4">
                         {Array.from({ length: 10 }).map((_, i) => (
                             <FormField
                                 key={i}

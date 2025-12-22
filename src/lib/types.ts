@@ -34,6 +34,7 @@ export interface DeluxeContractDetails {
   studentPhone2: string;
   vehicleTransmission: 'Automático' | 'Manual';
   licenseCategory: 'A, C' | 'A, C, D';
+  theoreticalClassSchedule?: 'Lunes' | 'Miércoles';
   theoreticalClasses?: string[];
   classSchedules: ClassSchedule[];
   paymentDetails: string;

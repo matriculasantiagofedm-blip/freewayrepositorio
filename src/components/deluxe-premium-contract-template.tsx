@@ -56,7 +56,7 @@ export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, 
     </span>
 );
 
-  const formatInstallmentDate = (dateString?: string) => {
+  const formatDate = (dateString?: string) => {
     if (!dateString) return <Line className="min-w-24" />;
     try {
         const date = toDate(dateString);
@@ -98,12 +98,12 @@ export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, 
         <h3 className="font-bold">CLÁUSULA SEGUNDA - VALOR, MATRÍCULA Y FORMA DE PAGO</h3>
         <p>El pago se realizará de la siguiente manera: 6 cuotas de B/.{paymentAmount.toFixed(2)} cada una, con fechas de pago establecidas cada dos semanas a partir del inicio del curso.</p>
         <div className="grid grid-cols-2 gap-x-8 gap-y-1">
-          <span>CUOTA 1: {formatInstallmentDate(deluxeDetails?.paymentInstallments?.[0])}</span>
-          <span>CUOTA 4: {formatInstallmentDate(deluxeDetails?.paymentInstallments?.[3])}</span>
-          <span>CUOTA 2: {formatInstallmentDate(deluxeDetails?.paymentInstallments?.[1])}</span>
-          <span>CUOTA 5: {formatInstallmentDate(deluxeDetails?.paymentInstallments?.[4])}</span>
-          <span>CUOTA 3: {formatInstallmentDate(deluxeDetails?.paymentInstallments?.[2])}</span>
-          <span>CUOTA 6: {formatInstallmentDate(deluxeDetails?.paymentInstallments?.[5])}</span>
+          <span>CUOTA 1: {formatDate(deluxeDetails?.paymentInstallments?.[0])}</span>
+          <span>CUOTA 4: {formatDate(deluxeDetails?.paymentInstallments?.[3])}</span>
+          <span>CUOTA 2: {formatDate(deluxeDetails?.paymentInstallments?.[1])}</span>
+          <span>CUOTA 5: {formatDate(deluxeDetails?.paymentInstallments?.[4])}</span>
+          <span>CUOTA 3: {formatDate(deluxeDetails?.paymentInstallments?.[2])}</span>
+          <span>CUOTA 6: {formatDate(deluxeDetails?.paymentInstallments?.[5])}</span>
         </div>
         <p className='p-4 border border-dashed min-h-24'>{deluxeDetails?.paymentDetails || 'la de B/.15.00.'}</p>
 
@@ -116,16 +116,9 @@ export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, 
         <h3 className="font-bold">CLÁUSULA CUARTA - HORARIO DE CAPACITACIÓN</h3>
         <p className="font-semibold">Clases teóricas: Miércoles, de 6:00 p.m. a 8:00 p.m.</p>
         <div className="grid grid-cols-3 gap-x-4 gap-y-1">
-          <span>Semana 1: <Line /></span>
-          <span>Semana 2: <Line /></span>
-          <span>Semana 3: <Line /></span>
-          <span>Semana 4: <Line /></span>
-          <span>Semana 5: <Line /></span>
-          <span>Semana 6: <Line /></span>
-          <span>Semana 7: <Line /></span>
-          <span>Semana 8: <Line /></span>
-          <span>Semana 9: <Line /></span>
-          <span>Semana 10: <Line /></span>
+          {Array.from({ length: 10 }).map((_, index) => (
+                <span key={index}>Semana {index + 1}: {formatDate(deluxeDetails?.theoreticalClasses?.[index])}</span>
+            ))}
         </div>
         <p>Clases prácticas: Se programarán a partir de la semana 8 de la capacitación teórica, en horario diurno o vespertino, de acuerdo con la disponibilidad de LA ESCUELA.</p>
         <div className="grid grid-cols-2 gap-x-8 gap-y-2 pl-4">

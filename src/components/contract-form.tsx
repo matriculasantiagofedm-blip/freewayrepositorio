@@ -72,6 +72,7 @@ const contractFormSchema = z.object({
     studentPhone2: z.string().optional(),
     vehicleTransmission: z.enum(['Automático', 'Manual']).optional(),
     licenseCategory: z.enum(['A, C', 'A, C, D']).optional(),
+    theoreticalClasses: z.array(z.string().optional()).optional(),
     classSchedules: z.array(z.object({
       date: z.string().optional(),
       time: z.string().optional(),
@@ -110,6 +111,7 @@ export function ContractForm() {
         studentPhone2: '',
         vehicleTransmission: undefined,
         licenseCategory: undefined,
+        theoreticalClasses: Array(10).fill(''),
         classSchedules: [{ date: '', time: '' }],
         paymentDetails: '',
         paymentInstallments: Array(6).fill(''),
@@ -422,7 +424,31 @@ export function ContractForm() {
                   />
 
                   <div>
-                     <FormLabel>Horario de Capacitación</FormLabel>
+                    <h4 className="font-medium text-base mb-2">Horario de Capacitación Teórica</h4>
+                    <p className="text-sm text-muted-foreground mb-4">Clases teóricas: Miércoles, de 6:00 p.m. a 8:00 p.m.</p>
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                        {Array.from({ length: 10 }).map((_, i) => (
+                            <FormField
+                                key={i}
+                                control={form.control}
+                                name={`deluxeDetails.theoreticalClasses.${i}`}
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Semana {i + 1}</FormLabel>
+                                        <FormControl>
+                                            <Input type="date" {...field} value={field.value || ''} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        ))}
+                    </div>
+                  </div>
+
+
+                  <div>
+                     <h4 className="font-medium text-base mb-2 pt-4">Horario de Capacitación Práctica</h4>
                      <div className="space-y-4 pt-2">
                       {classFields.map((field, index) => (
                         <div key={field.id} className="space-y-4 rounded-lg border p-4 relative">
@@ -475,7 +501,7 @@ export function ContractForm() {
                         </div>
                       ))}
                       <Button type="button" variant="outline" size="sm" onClick={() => appendClass({ date: '', time: '' })} className="mt-4">
-                          <PlusCircle className="mr-2 h-4 w-4" /> Añadir Clase
+                          <PlusCircle className="mr-2 h-4 w-4" /> Añadir Clase Práctica
                       </Button>
                      </div>
                   </div>
@@ -514,13 +540,13 @@ export function ContractForm() {
                                         <FormControl>
                                             <RadioGroupItem value="45.00" id="amount-45" />
                                         </FormControl>
-                                        <FormLabel htmlFor="amount-45" className="font-normal">Deluxe 16 Hrs - B/.45.00</FormLabel>
+                                        <FormLabel htmlFor="amount-45" className="font-normal">Deluxe 16 Hrs</FormLabel>
                                     </FormItem>
                                     <FormItem className="flex items-center space-x-2">
                                         <FormControl>
                                             <RadioGroupItem value="33.50" id="amount-33" />
                                         </FormControl>
-                                        <FormLabel htmlFor="amount-33" className="font-normal">Deluxe 12 Hrs - B/.33.50</FormLabel>
+                                        <FormLabel htmlFor="amount-33" className="font-normal">Deluxe 12 Hrs</FormLabel>
                                     </FormItem>
                                 </RadioGroup>
                                 </FormControl>

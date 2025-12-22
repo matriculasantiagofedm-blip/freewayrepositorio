@@ -10,6 +10,7 @@ import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Contract, Deadline } from '@/lib/types';
 import { ContractForm } from '@/components/contract-form';
+import { AccordionWrapper } from '@/components/accordion-wrapper';
 
 function toDate(date: any): Date {
   if (date instanceof Date) {
@@ -63,7 +64,8 @@ export default function DashboardPage() {
         <h1 className="font-headline text-3xl font-bold">Panel de Control</h1>
       </div>
 
-      <Accordion type="single" collapsible className="w-full">
+      <AccordionWrapper>
+        <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="new-contract" className="border rounded-lg bg-card">
                 <AccordionTrigger className="text-lg px-6 hover:no-underline [&[data-state=open]>svg]:rotate-90">
                     <div className="flex items-center">
@@ -77,7 +79,8 @@ export default function DashboardPage() {
                     </div>
                 </AccordionContent>
             </AccordionItem>
-      </Accordion>
+        </Accordion>
+      </AccordionWrapper>
 
       <div className="grid gap-4 md:grid-cols-3">
         {stats.map((stat) => (

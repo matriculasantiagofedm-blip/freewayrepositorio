@@ -19,6 +19,7 @@ import {
   query,
   orderBy,
   limit,
+  getDocs,
 } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { sendAutomatedDeadlineReminders } from '@/ai/flows/automated-deadline-reminders';
@@ -179,14 +180,16 @@ export function ContractForm() {
   async function getNextFolio(userId: string): Promise<string> {
     const contractsCollection = collection(firestore, `clients/${userId}/contracts`);
     const q = query(contractsCollection, orderBy('folio', 'desc'), limit(1));
-    const querySnapshot = await getDoc(q.docs[0]);
+    const querySnapshot = await getDocs(q);
 
     let lastFolioNumber = 0;
-    if (querySnapshot.exists()) {
-      const lastContract = querySnapshot.data() as Contract;
-      const lastNumberStr = lastContract.folio.split('-').pop();
-      if (lastNumberStr) {
-        lastFolioNumber = parseInt(lastNumberStr, 10);
+    if (!querySnapshot.empty) {
+      const lastContract = querySnapshot.docs[0].data() as Contract;
+      if (lastContract.folio) {
+        const lastNumberStr = lastContract.folio.split('-').pop();
+        if (lastNumberStr) {
+          lastFolioNumber = parseInt(lastNumberStr, 10);
+        }
       }
     }
     

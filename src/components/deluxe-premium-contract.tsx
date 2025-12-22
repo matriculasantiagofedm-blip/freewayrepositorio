@@ -65,7 +65,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
   return (
     <Card className="p-6 print:shadow-none print:border-none print:p-0 font-serif text-xs">
       <CardContent className="p-0 space-y-1 relative">
-        <p className="absolute top-0 right-0 text-xs font-semibold text-destructive">Folio: {contract.folio}</p>
+        {contract.folio && <p className="absolute top-0 right-0 text-xs font-semibold text-destructive">Folio: {contract.folio}</p>}
 
         <h2 className="text-center font-bold text-sm mb-2 pt-4">CONTRATO DE SERVICIOS EDUCATIVOS</h2>
 
@@ -166,7 +166,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
         <h3 className="font-bold">CLÁUSULA DÉCIMA QUINTA- ACEPTACIÓN</h3>
         <p>Ambas partes declaran haber leído, entendido y aceptado el presente contrato, firmándolo en señal de conformidad.</p>
         <p className="text-center !mt-4">
-            En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los {format(toDate(contract.createdAt), 'd')} días del mes de {format(toDate(contract.createdAt), 'LLLL', { locale: es })}, de {format(toDate(contract.createdAt), 'yyyy')}, a las {format(toDate(contract.createdAt), 'p', { locale: es })}.
+            En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los <Value>{format(toDate(contract.createdAt), 'd')}</Value> días del mes de <Value>{format(toDate(contract.createdAt), 'LLLL', { locale: es })}</Value>, de <Value>{format(toDate(contract.createdAt), 'yyyy')}</Value>, a las <Value>{format(toDate(contract.createdAt), 'p', { locale: es })}</Value>.
         </p>
 
         <div className="flex justify-around pt-6">

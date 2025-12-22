@@ -178,7 +178,7 @@ export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, 
         <h3 className="font-bold">CLÁUSULA DÉCIMA QUINTA- ACEPTACIÓN</h3>
         <p>Ambas partes declaran haber leído, entendido y aceptado el presente contrato, firmándolo en señal de conformidad.</p>
         <p className="text-center !mt-4">
-            En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los {format(currentDate, 'd')} días del mes de {format(currentDate, 'LLLL', { locale: es })}, de {format(currentDate, 'yyyy')}, a las {format(currentDate, 'p', { locale: es })}.
+            En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los <Value>{format(currentDate, 'd')}</Value> días del mes de <Value>{format(currentDate, 'LLLL', { locale: es })}</Value>, de <Value>{format(currentDate, 'yyyy')}</Value>, a las <Value>{format(currentDate, 'p', { locale: es })}</Value>.
         </p>
 
         <div className="flex justify-around pt-6">

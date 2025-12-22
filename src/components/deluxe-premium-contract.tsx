@@ -65,7 +65,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
   return (
     <Card className="p-6 print:shadow-none print:border-none print:p-0 font-serif text-xs">
       <CardContent className="p-0 space-y-2 relative">
-        <p className="absolute top-0 right-0 text-xs font-semibold text-muted-foreground">Folio: <Value>{contract.folio}</Value></p>
+        <p className="absolute top-0 right-0 text-xs font-semibold text-muted-foreground">Folio: <span className="font-semibold text-destructive">{contract.folio}</span></p>
 
         <h2 className="text-center font-bold text-base mb-3 pt-4">CONTRATO DE SERVICIOS EDUCATIVOS</h2>
 

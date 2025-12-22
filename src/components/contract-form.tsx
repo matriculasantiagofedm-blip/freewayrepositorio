@@ -149,8 +149,8 @@ export function ContractForm() {
         studentIdNumber: '',
         studentAddress: '',
         studentPhone: '',
-        courseValue: 0,
-        downPayment: 0,
+        courseValue: undefined,
+        downPayment: undefined,
         balance: 0,
         paymentDeadline: '',
         vehicleTransmission: undefined,
@@ -377,7 +377,7 @@ export function ContractForm() {
                 </FormItem>
               )}
             />
-            {(contractType !== 'Curso Auto' && contractType !== 'Curso Moto') && (
+            {(contractType !== 'Curso Auto' && contractType !== 'Curso Moto' && contractType !== 'Curso Deluxe') && (
               <>
                  <FormField
                     control={form.control}
@@ -473,15 +473,23 @@ export function ContractForm() {
                  <div className="space-y-4">
                     <h3 className="text-lg font-medium text-primary border-b pb-2">Cláusula Primera: Valor y Forma de Pago</h3>
                     <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                            control={form.control}
-                            name="autoMotoDetails.courseValue"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Valor Total del Curso (B/.)</FormLabel>
-                                    <FormControl><Input type="number" {...field} value={field.value || 0} onChange={e => field.onChange(parseFloat(e.target.value))} /></FormControl>
-                                </FormItem>
-                            )}
+                       <FormField
+                          control={form.control}
+                          name="autoMotoDetails.courseValue"
+                          render={({ field }) => (
+                              <FormItem>
+                                  <FormLabel>Valor Total del Curso (B/.)</FormLabel>
+                                  <FormControl>
+                                      <Input 
+                                          type="number" 
+                                          {...field} 
+                                          value={field.value ?? ''}
+                                          onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
+                                          placeholder="0.00"
+                                      />
+                                  </FormControl>
+                              </FormItem>
+                          )}
                         />
                         <FormField
                             control={form.control}
@@ -489,7 +497,15 @@ export function ContractForm() {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Abono (B/.)</FormLabel>
-                                    <FormControl><Input type="number" {...field} value={field.value || 0} onChange={e => field.onChange(parseFloat(e.target.value))} /></FormControl>
+                                    <FormControl>
+                                        <Input 
+                                            type="number" 
+                                            {...field} 
+                                            value={field.value ?? ''}
+                                            onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
+                                            placeholder="0.00"
+                                        />
+                                    </FormControl>
                                 </FormItem>
                             )}
                         />
@@ -997,3 +1013,5 @@ export function ContractForm() {
     </Form>
   );
 }
+
+    

@@ -50,7 +50,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
     if (!dateString) return <Line className="min-w-20" />;
     try {
         const date = toDate(dateString);
-        return <span className="font-semibold text-primary">{format(date, 'P', { locale: es })}</span>;
+        return <Value>{format(date, 'P', { locale: es })}</Value>;
     } catch {
         return <Line className="min-w-20" />;
     }
@@ -65,7 +65,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
   return (
     <Card className="p-6 print:shadow-none print:border-none print:p-0 font-serif text-xs">
       <CardContent className="p-0 space-y-2 relative">
-        <p className="absolute top-0 right-0 text-xs font-semibold text-muted-foreground">Folio: <span className="font-semibold text-destructive">{contract.folio}</span></p>
+        <p className="absolute top-0 right-0 text-xs font-semibold text-destructive">Folio: {contract.folio}</p>
 
         <h2 className="text-center font-bold text-base mb-3 pt-4">CONTRATO DE SERVICIOS EDUCATIVOS</h2>
 
@@ -93,7 +93,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
 
         <h3 className="font-bold text-sm">CLÁUSULA SEGUNDA - VALOR, MATRÍCULA Y FORMA DE PAGO</h3>
         <p className="text-primary">{deluxeDetails?.paymentDetails}</p>
-        <p>El pago se realizará de la siguiente manera: 6 cuotas de B/.<span className="font-semibold text-primary">{paymentAmount.toFixed(2)}</span> cada una, con fechas de pago establecidas cada dos semanas a partir del inicio del curso.</p>
+        <p>El pago se realizará de la siguiente manera: 6 cuotas de B/.<Value>{paymentAmount.toFixed(2)}</Value> cada una, con fechas de pago establecidas cada dos semanas a partir del inicio del curso.</p>
         <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 text-[11px]">
           <span>CUOTA 1: {formatDate(deluxeDetails?.paymentInstallments?.[0])}</span>
           <span>CUOTA 4: {formatDate(deluxeDetails?.paymentInstallments?.[3])}</span>
@@ -120,8 +120,8 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
          <div className="grid grid-cols-2 gap-x-6 gap-y-1 pl-4 text-[11px]">
           {deluxeDetails?.classSchedules?.map((clase, index) => (
             <div key={index} className="flex items-center gap-1">
-              Clase {index + 1}: <Line>{clase.date ? format(toDate(clase.date), 'P', { locale: es }) : ''}</Line> 
-              Hora <Line>{clase.time}</Line>
+              Clase {index + 1}: <Line><Value>{clase.date ? format(toDate(clase.date), 'P', { locale: es }) : ''}</Value></Line> 
+              Hora <Line><Value>{clase.time}</Value></Line>
             </div>
           ))}
           {(!deluxeDetails?.classSchedules || deluxeDetails.classSchedules.length < 6) && 
@@ -166,7 +166,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
         <h3 className="font-bold text-sm">CLÁUSULA DÉCIMA QUINTA- ACEPTACIÓN</h3>
         <p>Ambas partes declaran haber leído, entendido y aceptado el presente contrato, firmándolo en señal de conformidad.</p>
         <p className="text-center">
-            En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los {format(toDate(contract.createdAt), 'd')} días del mes de {format(toDate(contract.createdAt), 'LLLL', { locale: es })}, de {format(toDate(contract.createdAt), 'yyyy')}, a las {format(toDate(contract.createdAt), 'p', { locale: es })}.
+            En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los {format(toDate(contract.createdAt), 'd')} días del mes de {format(toDate(contract.createdAt), 'LLLL', { locale: es })}, de {format(toDate(contract.createdAt), 'yyyy')}, a las {format(toDate(contract.createdAt), 'HH:mm')}.
         </p>
 
         <div className="flex justify-around pt-8">

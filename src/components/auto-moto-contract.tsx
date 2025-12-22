@@ -69,7 +69,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
         <div className='space-y-1 text-[10px] pl-4'>
              <p>1. Transmisión del vehículo: Automático <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Automático'} /> / Manual <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Manual'} /> / Moto <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Moto'} /></p>
              <p>2. Categoría de licencia a aplicar: A, C <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C'} /> / A, C, D <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C, D'} /> / A, B <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, B'} /></p>
-            <div className="flex items-center gap-2">3. Horario para clases teóricas: <Line>{autoMotoDetails?.theoreticalClassSchedule}</Line> Hora <Line>&nbsp;</Line></div>
+            <div className="flex items-center gap-2">3. Horario para clases teóricas: <Line>{autoMotoDetails?.theoreticalClassSchedule}</Line></div>
             <p>4. Horario para clases practicas:</p>
             <div className="pl-4 space-y-0.5">
                 <div className="flex items-center gap-2">○ Clase 1: <Line>&nbsp;</Line> Hora <Line>{autoMotoDetails?.practicalClassSchedules?.[0]?.time}</Line></div>

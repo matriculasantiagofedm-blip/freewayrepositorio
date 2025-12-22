@@ -507,7 +507,7 @@ export function ContractForm() {
                                     <FormLabel>Abono (B/.)</FormLabel>
                                     <FormControl>
                                         <Input 
-                                            type="number" 
+                                            type="text" 
                                             {...field} 
                                             value={field.value?.toFixed(2) ?? ''}
                                             readOnly
@@ -578,14 +578,26 @@ export function ContractForm() {
                       )}
                     />
                     <FormField
-                        control={form.control}
-                        name="autoMotoDetails.theoreticalClassSchedule"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Horario para clases teóricas</FormLabel>
-                                <FormControl><Input {...field} value={field.value || ''} placeholder="Ej: Lunes, 8-10 AM" /></FormControl>
-                            </FormItem>
-                        )}
+                      control={form.control}
+                      name="autoMotoDetails.theoreticalClassSchedule"
+                      render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Horario para clases teóricas</FormLabel>
+                            <FormControl>
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col gap-2">
+                                <FormItem className="flex items-center space-x-2">
+                                    <FormControl><RadioGroupItem value="Lunes a Viernes de 8:00 am a 10:00 am" id="teorico-semana" /></FormControl>
+                                    <FormLabel htmlFor="teorico-semana" className="font-normal">Lunes a Viernes de 8:00 am a 10:00 am</FormLabel>
+                                </FormItem>
+                                <FormItem className="flex items-center space-x-2">
+                                    <FormControl><RadioGroupItem value="Sábados de 3:00 pm a 5:00 pm" id="teorico-sabado" /></FormControl>
+                                    <FormLabel htmlFor="teorico-sabado" className="font-normal">Sábados de 3:00 pm a 5:00 pm</FormLabel>
+                                </FormItem>
+                                </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                      )}
                     />
                     <div>
                         <h4 className="font-medium text-base mb-2">Horario para clases prácticas</h4>

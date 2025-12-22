@@ -76,6 +76,7 @@ const contractFormSchema = z.object({
       time: z.string().optional(),
     })).optional(),
     paymentDetails: z.string().optional(),
+    paymentInstallments: z.array(z.string().optional()).optional(),
   }).optional(),
 });
 
@@ -109,6 +110,7 @@ export function ContractForm() {
         licenseCategory: undefined,
         classSchedules: [{ date: '', time: '' }],
         paymentDetails: '',
+        paymentInstallments: Array(6).fill(''),
       }
     },
   });
@@ -489,6 +491,48 @@ export function ContractForm() {
                     )}
                   />
 
+                  <div>
+                     <FormLabel>Plan de Pagos</FormLabel>
+                     <p className="text-sm text-muted-foreground">
+                        El pago se realizará de la siguiente manera: 6 cuotas de B/.33.50 cada una, con fechas de pago establecidas cada dos semanas a partir del inicio del curso.
+                     </p>
+                     <div className="space-y-4 pt-2">
+                        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                            {[1, 2, 3].map(i => (
+                                <React.Fragment key={i}>
+                                    <FormField
+                                        control={form.control}
+                                        name={`deluxeDetails.paymentInstallments.${i - 1}`}
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Cuota {i}</FormLabel>
+                                                <FormControl>
+                                                    <Input type="date" {...field} value={field.value || ''} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                     <FormField
+                                        control={form.control}
+                                        name={`deluxeDetails.paymentInstallments.${i + 2}`}
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Cuota {i + 3}</FormLabel>
+                                                <FormControl>
+                                                    <Input type="date" {...field} value={field.value || ''} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </React.Fragment>
+                            ))}
+                        </div>
+                     </div>
+                  </div>
+
+
                   <div className="mt-6">
                       <h3 className="text-lg font-medium mb-2">Vista Previa del Contrato</h3>
                       <DeluxePremiumContractTemplatePreview 
@@ -572,7 +616,7 @@ export function ContractForm() {
                   variant="outline"
                   size="sm"
                   className="w-full"
-                  onClick={() => append({ description: '', date: new Date().toISOString().split('T')[0] })}
+                  onClick={() => append({ description: '', date: '' })}
                   >
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Añadir Vencimiento
@@ -591,5 +635,3 @@ export function ContractForm() {
     </Form>
   );
 }
-
-    

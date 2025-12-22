@@ -16,15 +16,17 @@ const LongLine = () => <span className="border-b-2 border-dotted border-black fl
 function toDate(date: any): Date {
   if (date instanceof Date) return date;
   if (date && date.toDate) return date.toDate();
-  // Attempt to parse string dates that might come from the form
   if (typeof date === 'string') {
     const parsed = new Date(date);
     if (!isNaN(parsed.getTime())) {
-      return parsed;
+      // Adjust for timezone offset if the string is just a date (YYYY-MM-DD)
+      const timezoneOffset = parsed.getTimezoneOffset() * 60000;
+      return new Date(parsed.getTime() + timezoneOffset);
     }
   }
   return new Date();
 }
+
 
 interface DeluxePremiumContractPreviewProps {
     clientName?: string;
@@ -54,6 +56,16 @@ export function DeluxePremiumContractPreview({ clientName, clientEmail, deluxeDe
         {checked ? 'X' : ''}
     </span>
 );
+
+  const formatInstallmentDate = (dateString?: string) => {
+    if (!dateString) return <Line className="min-w-24" />;
+    try {
+        const date = toDate(dateString);
+        return <span className="font-semibold">{format(date, 'P', { locale: es })}</span>;
+    } catch {
+        return <Line className="min-w-24" />;
+    }
+  };
 
   return (
     <Card className="p-8 print:shadow-none print:border-none print:p-0 font-serif text-sm">
@@ -85,12 +97,12 @@ export function DeluxePremiumContractPreview({ clientName, clientEmail, deluxeDe
         <h3 className="font-bold">CLÁUSULA SEGUNDA - VALOR, MATRÍCULA Y FORMA DE PAGO</h3>
         <p>El pago se realizará de la siguiente manera: 6 cuotas de B/.33.50 cada una, con fechas de pago establecidas cada dos semanas a partir del inicio del curso.</p>
         <div className="grid grid-cols-2 gap-x-8 gap-y-1">
-          <span>CUOTA 1: <Line className="min-w-24" /></span>
-          <span>CUOTA 4: <Line className="min-w-24" /></span>
-          <span>CUOTA 2: <Line className="min-w-24" /></span>
-          <span>CUOTA 5: <Line className="min-w-24" /></span>
-          <span>CUOTA 3: <Line className="min-w-24" /></span>
-          <span>CUOTA 6: <Line className="min-w-24" /></span>
+          <span>CUOTA 1: {formatInstallmentDate(deluxeDetails?.paymentInstallments?.[0])}</span>
+          <span>CUOTA 4: {formatInstallmentDate(deluxeDetails?.paymentInstallments?.[3])}</span>
+          <span>CUOTA 2: {formatInstallmentDate(deluxeDetails?.paymentInstallments?.[1])}</span>
+          <span>CUOTA 5: {formatInstallmentDate(deluxeDetails?.paymentInstallments?.[4])}</span>
+          <span>CUOTA 3: {formatInstallmentDate(deluxeDetails?.paymentInstallments?.[2])}</span>
+          <span>CUOTA 6: {formatInstallmentDate(deluxeDetails?.paymentInstallments?.[5])}</span>
         </div>
         <p className='p-4 border border-dashed min-h-24'>{deluxeDetails?.paymentDetails || 'la de B/.15.00.'}</p>
 

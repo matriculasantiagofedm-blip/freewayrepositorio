@@ -3,11 +3,11 @@ import type { Timestamp } from 'firebase/firestore';
 export interface Deadline {
   id: string;
   description: string;
-  date: Date | Timestamp | string;
+  date: string;
 }
 
 export interface ClassSchedule {
-  date: Date | Timestamp | string;
+  date: string;
   time: string;
 }
 
@@ -36,6 +36,7 @@ export interface DeluxeContractDetails {
   licenseCategory: 'A, C' | 'A, C, D';
   classSchedules: ClassSchedule[];
   paymentDetails: string;
+  paymentInstallments?: string[];
 }
 
 export interface Contract {

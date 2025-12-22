@@ -9,22 +9,42 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu';
-import { CreditCard, LogOut, Settings, User } from 'lucide-react';
+import { CreditCard, LogOut, Settings, User, Users } from 'lucide-react';
 import { useAuth, useUser, initiateAnonymousSignIn } from '@/firebase';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+
+const roles = ['Ventas', 'Ventas Externas', 'Administrador'];
 
 export function UserNav() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
       initiateAnonymousSignIn(auth);
     }
   }, [auth, user, isUserLoading]);
+  
+  useEffect(() => {
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser && roles.includes(storedUser)) {
+        setCurrentUser(storedUser);
+    } else {
+        setCurrentUser(roles[0]); // Default to first role
+    }
+  }, []);
 
-  if (isUserLoading) {
+  const handleRoleChange = (role: string) => {
+      setCurrentUser(role);
+      localStorage.setItem('currentUser', role);
+  };
+
+
+  if (isUserLoading || !currentUser) {
     return <div>Cargando...</div>;
   }
 
@@ -38,30 +58,30 @@ export function UserNav() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          U
+            <User className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
-              {user.isAnonymous ? 'Usuario Anónimo' : 'Legal Eagle'}
+              {currentUser}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
-              {user.isAnonymous ? user.uid : user.email || 'legaleagle@example.com'}
+              {user.isAnonymous ? user.uid.slice(0,10) + '...' : user.email || 'legaleagle@example.com'}
             </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <CreditCard />
-            Facturación
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <Settings />
-            Ajustes
-          </DropdownMenuItem>
+            <DropdownMenuLabel>Seleccionar Rol</DropdownMenuLabel>
+            <DropdownMenuRadioGroup value={currentUser} onValueChange={handleRoleChange}>
+                {roles.map(role => (
+                    <DropdownMenuRadioItem key={role} value={role}>
+                        {role}
+                    </DropdownMenuRadioItem>
+                ))}
+            </DropdownMenuRadioGroup>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => auth.signOut()}>

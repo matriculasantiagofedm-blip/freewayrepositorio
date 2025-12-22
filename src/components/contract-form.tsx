@@ -172,7 +172,7 @@ export function ContractForm() {
         licenseCategory: undefined,
         theoreticalClassSchedule: undefined,
         theoreticalClassDates: [],
-        practicalClassSchedules: Array(6).fill({ date: '', time: '' }),
+        practicalClassSchedules: [],
       }
     },
   });
@@ -197,6 +197,18 @@ export function ContractForm() {
     theoreticalClassSchedule === 'Lunes a Viernes de 8:00 am a 10:00 am' ? 5 
     : theoreticalClassSchedule === 'Sábados de 3:00 pm a 5:00 pm' ? 3
     : 0;
+
+  const getNumberOfPracticalClasses = (value?: number) => {
+    if (!value) return 0;
+    const allCourses = [...autoCourseValues, ...motoCourseValues];
+    const selectedCourse = allCourses.find(c => c.value === value);
+    if (selectedCourse?.label.includes('Basico')) return 4;
+    if (selectedCourse?.label.includes('Plus')) return 5;
+    if (selectedCourse?.label.includes('Premium')) return 6;
+    return 0;
+  };
+
+  const numberOfPracticalClasses = getNumberOfPracticalClasses(courseValue);
 
   useEffect(() => {
     if (contractType) {
@@ -227,6 +239,11 @@ export function ContractForm() {
       form.setValue('autoMotoDetails.balance', 0);
       setBalance('0.00');
     }
+    
+    const numClasses = getNumberOfPracticalClasses(cv);
+    const currentSchedules = form.getValues('autoMotoDetails.practicalClassSchedules') || [];
+    const newSchedules = Array.from({ length: numClasses }, (_, i) => currentSchedules[i] || { date: '', time: '' });
+    form.setValue('autoMotoDetails.practicalClassSchedules', newSchedules);
   }, [courseValue, form]);
 
   useEffect(() => {
@@ -636,7 +653,7 @@ export function ContractForm() {
                     <div>
                         <h4 className="font-medium text-base my-2">Horario para clases prácticas</h4>
                         <div className="space-y-4">
-                          {Array.from({ length: 6 }).map((_, index) => (
+                          {Array.from({ length: numberOfPracticalClasses }).map((_, index) => (
                             <div key={index} className="space-y-4 rounded-lg border p-4">
                                 <h4 className="font-medium pt-1">Clase Práctica #{index + 1}</h4>
                                 <div className="grid grid-cols-2 gap-4">

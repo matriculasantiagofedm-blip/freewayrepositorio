@@ -82,7 +82,7 @@ const contractFormSchema = z.object({
 type ContractFormValues = z.infer<typeof contractFormSchema>;
 
 const generateTimeSlots = () => {
-    return ['08:00', '10:00', '13:00', '15:00'];
+    return ['08:00 AM', '10:00 AM', '01:00 PM', '03:00 PM'];
 };
 
 export function ContractForm() {
@@ -591,3 +591,5 @@ export function ContractForm() {
     </Form>
   );
 }
+
+    

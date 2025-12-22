@@ -7,16 +7,10 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { GanttChartSquare, FileText, Users, User } from 'lucide-react';
+import { GanttChartSquare, FileText, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SidebarSeparator } from './ui/sidebar';
 
 const links = [
-    {
-        href: '/profile',
-        label: 'Perfil',
-        icon: User,
-    },
     {
         href: '/dashboard',
         label: 'Panel de Control',

@@ -15,6 +15,7 @@ import {
 import { LogOut, User } from 'lucide-react';
 import { useAuth, useUser, initiateAnonymousSignIn } from '@/firebase';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 const roles = ['Ventas', 'Ventas Externas', 'Administrador'];
 
@@ -74,6 +75,15 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
+           <DropdownMenuItem asChild>
+            <Link href="/profile">
+              <User className="mr-2 h-4 w-4" />
+              <span>Perfil</span>
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
             <DropdownMenuLabel>Seleccionar Rol</DropdownMenuLabel>
             <DropdownMenuRadioGroup value={currentUser} onValueChange={handleRoleChange}>
                 {roles.map(role => (
@@ -85,7 +95,7 @@ export function UserNav() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => auth.signOut()}>
-          <LogOut />
+          <LogOut className="mr-2 h-4 w-4" />
           Cerrar sesión
         </DropdownMenuItem>
       </DropdownMenuContent>

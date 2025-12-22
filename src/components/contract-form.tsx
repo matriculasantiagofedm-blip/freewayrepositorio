@@ -37,13 +37,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { CalendarIcon, PlusCircle, Save, Trash2 } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { Calendar } from '@/components/ui/calendar';
+import { PlusCircle, Save, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { es } from 'date-fns/locale';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
 import { DeluxePremiumContractTemplatePreview } from './deluxe-premium-contract-template-preview';
@@ -66,7 +61,7 @@ const contractFormSchema = z.object({
   deadlines: z.array(
     z.object({
       description: z.string().min(3, 'La descripción del plazo es obligatoria.'),
-      date: z.date({ required_error: 'Se requiere una fecha.' }),
+      date: z.string({ required_error: 'Se requiere una fecha.' }),
     })
   ).optional(),
   deluxeDetails: z.object({
@@ -77,7 +72,7 @@ const contractFormSchema = z.object({
     vehicleTransmission: z.enum(['Automático', 'Manual']).optional(),
     licenseCategory: z.enum(['A, C', 'A, C, D']).optional(),
     classSchedules: z.array(z.object({
-      date: z.date().optional(),
+      date: z.string().optional(),
       time: z.string().optional(),
     })).optional(),
     paymentDetails: z.string().optional(),
@@ -107,7 +102,7 @@ export function ContractForm() {
         studentPhone2: '',
         vehicleTransmission: undefined,
         licenseCategory: undefined,
-        classSchedules: [{ date: undefined, time: '' }],
+        classSchedules: [{ date: '', time: '' }],
         paymentDetails: '',
       }
     },
@@ -176,7 +171,7 @@ export function ContractForm() {
           title: data.title,
           content: contractContent,
           type: data.type,
-          deadlines: data.deadlines || [],
+          deadlines: data.deadlines?.map(d => ({...d, date: new Date(d.date)})) || [],
           clientId: clientId,
           clientEmail: data.clientEmail,
           clientName: data.clientName,
@@ -186,7 +181,10 @@ export function ContractForm() {
       };
 
       if (data.type === 'Curso Deluxe' && data.deluxeDetails) {
-          newContractData.deluxeDetails = data.deluxeDetails;
+          newContractData.deluxeDetails = {
+            ...data.deluxeDetails,
+            classSchedules: data.deluxeDetails.classSchedules?.map(cs => ({...cs, date: cs.date ? new Date(cs.date) : new Date() }))
+          };
       }
 
       const newContractRef = await addDoc(contractsCollection, newContractData);
@@ -202,7 +200,7 @@ export function ContractForm() {
           userEmail: user.email || 'legaleagle@example.com', 
           deadlines: data.deadlines.map(d => ({
               ...d,
-              date: d.date.toISOString().split('T')[0] // Format date to YYYY-MM-DD
+              date: d.date // Date is already a string in YYYY-MM-DD format
           })),
         });
       }
@@ -429,27 +427,11 @@ export function ContractForm() {
                             control={form.control}
                             name={`deluxeDetails.classSchedules.${index}.date`}
                             render={({ field }) => (
-                              <FormItem className="flex flex-col">
+                              <FormItem>
                                  <FormLabel>Fecha</FormLabel>
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <FormControl>
-                                      <Button
-                                        variant={'outline'}
-                                        className={cn(
-                                          'w-full justify-start text-left font-normal',
-                                          !field.value && 'text-muted-foreground'
-                                        )}
-                                      >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {field.value ? format(field.value, 'PPP', { locale: es }) : <span>Elige una fecha</span>}
-                                      </Button>
-                                    </FormControl>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar locale={es} weekStartsOn={1} mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-                                  </PopoverContent>
-                                </Popover>
+                                <FormControl>
+                                  <Input type="date" {...field} value={field.value || ''} />
+                                </FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -468,7 +450,7 @@ export function ContractForm() {
                           />
                         </div>
                       ))}
-                      <Button type="button" variant="outline" size="sm" onClick={() => appendClass({ date: undefined, time: '' })} className="mt-4">
+                      <Button type="button" variant="outline" size="sm" onClick={() => appendClass({ date: '', time: '' })} className="mt-4">
                           <PlusCircle className="mr-2 h-4 w-4" /> Añadir Clase
                       </Button>
                      </div>
@@ -555,34 +537,11 @@ export function ContractForm() {
                     control={form.control}
                     name={`deadlines.${index}.date`}
                     render={({ field }) => (
-                      <FormItem className="flex flex-col">
+                      <FormItem>
                         <FormLabel>Fecha</FormLabel>
-                          <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant={'outline'}
-                                className={cn(
-                                  'w-full justify-start text-left font-normal',
-                                  !field.value && 'text-muted-foreground'
-                                )}
-                              >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {field.value ? format(field.value, 'PPP', { locale: es }) : <span>Elige una fecha</span>}
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              locale={es}
-                              weekStartsOn={1}
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
+                        <FormControl>
+                          <Input type="date" {...field} value={field.value || ''} />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -594,7 +553,7 @@ export function ContractForm() {
                   variant="outline"
                   size="sm"
                   className="w-full"
-                  onClick={() => append({ description: '', date: new Date() })}
+                  onClick={() => append({ description: '', date: new Date().toISOString().split('T')[0] })}
                   >
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Añadir Vencimiento
@@ -613,5 +572,3 @@ export function ContractForm() {
     </Form>
   );
 }
-
-    

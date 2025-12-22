@@ -3,11 +3,11 @@ import type { Timestamp } from 'firebase/firestore';
 export interface Deadline {
   id: string;
   description: string;
-  date: Date | Timestamp;
+  date: Date | Timestamp | string;
 }
 
 export interface ClassSchedule {
-  date: Date | Timestamp;
+  date: Date | Timestamp | string;
   time: string;
 }
 

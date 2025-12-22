@@ -175,6 +175,7 @@ export function ContractForm() {
   const allFormValues = form.watch();
   const paymentAmount = form.watch('deluxeDetails.paymentAmount');
   const courseValue = form.watch('autoMotoDetails.courseValue');
+  const downPayment = form.watch('autoMotoDetails.downPayment');
 
   useEffect(() => {
     if (contractType) {
@@ -193,10 +194,15 @@ export function ContractForm() {
   }, [paymentAmount, form]);
   
   useEffect(() => {
-      if (courseValue !== undefined && courseValue > 0) {
-          form.setValue('autoMotoDetails.downPayment', courseValue / 2);
+      const cv = courseValue || 0;
+      const dp = downPayment || 0;
+      if (cv > 0) {
+          const half = cv / 2;
+          form.setValue('autoMotoDetails.downPayment', half);
+          form.setValue('autoMotoDetails.balance', cv - half);
       } else {
           form.setValue('autoMotoDetails.downPayment', undefined);
+          form.setValue('autoMotoDetails.balance', 0);
       }
   }, [courseValue, form]);
 
@@ -451,7 +457,7 @@ export function ContractForm() {
 
                  <div className="space-y-4">
                     <h3 className="text-lg font-medium text-primary border-b pb-2">Cláusula Primera: Valor y Forma de Pago</h3>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                        <FormField
                           control={form.control}
                           name="autoMotoDetails.courseValue"
@@ -476,6 +482,25 @@ export function ContractForm() {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Abono (B/.)</FormLabel>
+                                    <FormControl>
+                                        <Input 
+                                            type="number" 
+                                            {...field} 
+                                            value={field.value ?? ''}
+                                            onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
+                                            placeholder="0.00"
+                                            readOnly
+                                        />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="autoMotoDetails.balance"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Saldo (B/.)</FormLabel>
                                     <FormControl>
                                         <Input 
                                             type="number" 

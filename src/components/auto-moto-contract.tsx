@@ -37,7 +37,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
   const autoMotoDetails = contract.autoMotoDetails;
   const creationDate = toDate(contract.createdAt);
   const paymentDeadline = autoMotoDetails?.paymentDeadline ? toDate(autoMotoDetails.paymentDeadline) : null;
-  const balance = (autoMotoDetails?.courseValue || 0) - (autoMotoDetails?.downPayment || 0);
+  const balance = autoMotoDetails?.balance || 0;
 
   return (
     <Card className="p-6 print:shadow-none print:border-none print:p-0 font-serif text-xs">

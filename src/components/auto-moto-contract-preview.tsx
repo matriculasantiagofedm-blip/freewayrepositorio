@@ -42,7 +42,7 @@ interface AutoMotoContractTemplatePreviewProps {
 }
 
 export function AutoMotoContractTemplatePreview({ folio, clientName, clientEmail, autoMotoDetails, createdBy }: AutoMotoContractTemplatePreviewProps) {
-  const balance = (autoMotoDetails?.courseValue || 0) - (autoMotoDetails?.downPayment || 0);
+  const balance = autoMotoDetails?.balance || 0;
   const creationDate = new Date(); // Use current date for preview
   const paymentDeadline = autoMotoDetails?.paymentDeadline ? toDate(autoMotoDetails.paymentDeadline) : null;
 

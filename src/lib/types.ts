@@ -42,6 +42,10 @@ export interface DeluxeContractDetails {
   paymentAmount?: number;
 }
 
+export interface AutoMotoContractDetails {
+  studentIdNumber?: string;
+}
+
 export interface Contract {
   id: string;
   folio: string;
@@ -58,4 +62,5 @@ export interface Contract {
   createdAt: Timestamp;
   createdBy?: string; // User role who created the contract
   deluxeDetails?: DeluxeContractDetails;
+  autoMotoDetails?: AutoMotoContractDetails;
 }

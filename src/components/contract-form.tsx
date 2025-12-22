@@ -20,6 +20,7 @@ import {
   orderBy,
   limit,
   getDocs,
+  where,
 } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { sendAutomatedDeadlineReminders } from '@/ai/flows/automated-deadline-reminders';
@@ -48,8 +49,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Textarea } from './ui/textarea';
 import { DeluxePremiumContractTemplatePreview } from './deluxe-premium-contract-preview';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import type { Client, DeluxeContractDetails, ContractType, Contract } from '@/lib/types';
+import type { Client, DeluxeContractDetails, ContractType, Contract, AutoMotoContractDetails } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
+import { AutoMotoContractTemplatePreview } from './auto-moto-contract-preview';
 
 
 const contractFormSchema = z.object({
@@ -86,6 +88,9 @@ const contractFormSchema = z.object({
       date: z.string().optional(),
       time: z.string().optional(),
     })).optional(),
+  }).optional(),
+  autoMotoDetails: z.object({
+    studentIdNumber: z.string().optional(),
   }).optional(),
 });
 
@@ -127,6 +132,9 @@ export function ContractForm() {
         theoreticalClassSchedule: undefined,
         theoreticalClasses: Array(10).fill(''),
         classSchedules: [{ date: '', time: '' }],
+      },
+      autoMotoDetails: {
+        studentIdNumber: '',
       }
     },
   });
@@ -230,7 +238,7 @@ export function ContractForm() {
       
       const contractsCollection = collection(firestore, 'clients', user.uid, 'contracts');
       
-      const contractContent = data.type === 'Curso Deluxe' ? '' : data.content;
+      const contractContent = (data.type === 'Curso Deluxe' || data.type === 'Curso Auto' || data.type === 'Curso Moto' ) ? '' : data.content;
 
       const newContractData: any = {
           folio: folio,
@@ -256,6 +264,12 @@ export function ContractForm() {
             ...sanitizedDeluxeDetails,
             classSchedules: data.deluxeDetails.classSchedules?.map(cs => ({...cs, date: cs.date ? new Date(cs.date) : new Date() }))
           };
+      }
+      
+      if ((data.type === 'Curso Auto' || data.type === 'Curso Moto') && data.autoMotoDetails) {
+          newContractData.autoMotoDetails = {
+              studentIdNumber: data.autoMotoDetails.studentIdNumber || '',
+          }
       }
 
       const newContractRef = await addDoc(contractsCollection, newContractData);
@@ -374,6 +388,32 @@ export function ContractForm() {
                 </>
             )}
 
+            {(contractType === 'Curso Auto' || contractType === 'Curso Moto') && (
+              <div className="space-y-6 pt-4">
+                  <FormField
+                      control={form.control}
+                      name="autoMotoDetails.studentIdNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>N° de identificación</FormLabel>
+                          <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                  <div className="mt-6">
+                      <h3 className="text-lg font-medium mb-2">Vista Previa del Contrato</h3>
+                      <AutoMotoContractTemplatePreview 
+                        folio={"CT-XXXX-XXXX"}
+                        clientName={allFormValues.clientName}
+                        autoMotoDetails={allFormValues.autoMotoDetails as AutoMotoContractDetails}
+                        createdBy={role}
+                      />
+                  </div>
+              </div>
+            )}
+            
             {contractType === 'Curso Deluxe' ? (
                 <div className="space-y-6 pt-4">
 
@@ -692,7 +732,7 @@ export function ContractForm() {
                       />
                   </div>
                 </div>
-            ) : (
+            ) : contractType !== 'Curso Auto' && contractType !== 'Curso Moto' && (
               <FormField
                 control={form.control}
                 name="content"
@@ -715,7 +755,7 @@ export function ContractForm() {
           </CardContent>
         </Card>
 
-        {contractType !== 'Curso Deluxe' && (
+        {contractType !== 'Curso Deluxe' && contractType !== 'Curso Auto' && contractType !== 'Curso Moto' && (
           <Card>
             <CardHeader>
               <CardTitle className="font-headline">Vencimientos y Reuniones</CardTitle>

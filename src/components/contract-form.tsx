@@ -108,7 +108,7 @@ export function ContractForm() {
         studentAddress: '',
         studentPhone1: '',
         studentPhone2: '',
-        paymentDetails: '',
+        paymentDetails: 'El valor total del curso es de B/201.00, mas una matricula de B/15.00',
         paymentInstallments: Array(6).fill(''),
         paymentAmount: 33.50,
         vehicleTransmission: undefined,
@@ -132,6 +132,7 @@ export function ContractForm() {
 
   const contractType = form.watch('type');
   const allFormValues = form.watch();
+  const paymentAmount = form.watch('deluxeDetails.paymentAmount');
 
   useEffect(() => {
     if (contractType) {
@@ -140,6 +141,15 @@ export function ContractForm() {
         form.setValue('title', '');
     }
   }, [contractType, form]);
+
+  useEffect(() => {
+    if (paymentAmount === 45.00) {
+      form.setValue('deluxeDetails.paymentDetails', 'El valor total del curso es de B/270.00, mas una matricula de B/15.00');
+    } else if (paymentAmount === 33.50) {
+      form.setValue('deluxeDetails.paymentDetails', 'El valor total del curso es de B/201.00, mas una matricula de B/15.00');
+    }
+  }, [paymentAmount, form]);
+
 
   async function findOrCreateClient(clientName: string, clientEmail: string, userId: string): Promise<string> {
     const clientRef = doc(firestore, 'clients', userId);
@@ -391,29 +401,27 @@ export function ContractForm() {
                   {/* CLAUSULA SEGUNDA */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-medium text-primary border-b pb-2">Cláusula Segunda: Valor, Matrícula y Forma de Pago</h3>
-                    <FormField
-                      control={form.control}
-                      name="deluxeDetails.paymentDetails"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Detalles Adicionales del Pago</FormLabel>
-                          <FormControl>
-                            <Textarea placeholder="Describe los detalles del pago..." {...field} value={field.value || ''} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
                     <div>
                       <FormLabel>Plan de Pagos</FormLabel>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground pb-2">
                           Seleccione el plan. El pago se realizará en 6 cuotas con fechas de pago establecidas cada dos semanas.
                       </p>
+                      <FormField
+                        control={form.control}
+                        name="deluxeDetails.paymentDetails"
+                        render={({ field }) => (
+                            <FormItem className='p-4 border border-dashed rounded-md min-h-16'>
+                                <FormControl>
+                                    <Input {...field} className="border-none p-0 h-auto bg-transparent" readOnly/>
+                                </FormControl>
+                            </FormItem>
+                        )}
+                        />
                       <FormField
                           control={form.control}
                           name="deluxeDetails.paymentAmount"
                           render={({ field }) => (
-                              <FormItem className="pt-2">
+                              <FormItem className="pt-4">
                                   <FormControl>
                                   <RadioGroup
                                       onValueChange={(value) => field.onChange(parseFloat(value))}
@@ -424,13 +432,13 @@ export function ContractForm() {
                                           <FormControl>
                                               <RadioGroupItem value="45.00" id="amount-45" />
                                           </FormControl>
-                                          <FormLabel htmlFor="amount-45" className="font-normal">Deluxe 16 Hrs (B/.45.00)</FormLabel>
+                                          <FormLabel htmlFor="amount-45" className="font-normal">Deluxe 16 Hrs (Total B/.270.00)</FormLabel>
                                       </FormItem>
                                       <FormItem className="flex items-center space-x-2">
                                           <FormControl>
                                               <RadioGroupItem value="33.50" id="amount-33" />
                                           </FormControl>
-                                          <FormLabel htmlFor="amount-33" className="font-normal">Deluxe 12 Hrs (B/.33.50)</FormLabel>
+                                          <FormLabel htmlFor="amount-33" className="font-normal">Deluxe 12 Hrs (Total B/.201.00)</FormLabel>
                                       </FormItem>
                                   </RadioGroup>
                                   </FormControl>
@@ -439,6 +447,7 @@ export function ContractForm() {
                           )}
                           />
                       <div className="space-y-4 pt-4">
+                          <h4 className="font-medium text-base">Fechas de Cuotas</h4>
                           <div className="grid grid-cols-2 gap-x-8 gap-y-4">
                               {[1, 2, 3].map(i => (
                                   <React.Fragment key={i}>

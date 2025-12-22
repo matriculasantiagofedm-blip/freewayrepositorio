@@ -65,6 +65,8 @@ export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, 
         return <Line className="min-w-24" />;
     }
   };
+  
+    const paymentAmount = deluxeDetails?.paymentAmount || 33.50;
 
   return (
     <Card className="p-8 print:shadow-none print:border-none print:p-0 font-serif text-sm">
@@ -94,8 +96,8 @@ export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, 
         <p>Ambas partes convienen celebrar este contrato en el cual la empresa se compromete a brindar al cliente, un servicio de capacitación y adiestramiento teórico y práctico relacionado con el aprendizaje de conducción de vehículos a motor. El mismo se regirá bajo los términos y condiciones que se detallan en las siguientes cláusulas.</p>
         
         <h3 className="font-bold">CLÁUSULA SEGUNDA - VALOR, MATRÍCULA Y FORMA DE PAGO</h3>
-        <p className='p-4 border border-dashed min-h-24'>{deluxeDetails?.paymentDetails || ''}</p>
-        <p>El pago se realizará de la siguiente manera: 6 cuotas de B/.33.50 cada una, con fechas de pago establecidas cada dos semanas a partir del inicio del curso.</p>
+        <p>{deluxeDetails?.paymentDetails}</p>
+        <p>El pago se realizará de la siguiente manera: 6 cuotas de B/.{paymentAmount.toFixed(2)} cada una, con fechas de pago establecidas cada dos semanas a partir del inicio del curso.</p>
         <div className="grid grid-cols-2 gap-x-8 gap-y-1">
           <span>CUOTA 1: {formatInstallmentDate(deluxeDetails?.paymentInstallments?.[0])}</span>
           <span>CUOTA 4: {formatInstallmentDate(deluxeDetails?.paymentInstallments?.[3])}</span>

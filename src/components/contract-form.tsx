@@ -112,8 +112,16 @@ const generateTimeSlots = () => {
     return ['08:00 AM', '10:00 AM', '01:00 PM', '03:00 PM'];
 };
 
-const autoCourseValues = [133.00, 150.00, 175.00];
-const motoCourseValues = [115.00, 135.00, 155.00];
+const autoCourseValues = [
+  { label: 'Basico Auto 133.00', value: 133.00 },
+  { label: 'Plus Auto 150.00', value: 150.00 },
+  { label: 'Premium Auto 175.00', value: 175.00 },
+];
+const motoCourseValues = [
+  { label: 'Basico Moto 115.00', value: 115.00 },
+  { label: 'Plus Moto 135.00', value: 135.00 },
+  { label: 'Premium Moto 155.00', value: 155.00 },
+];
 
 export function ContractForm() {
   const { toast } = useToast();
@@ -476,13 +484,13 @@ export function ContractForm() {
                                     >
                                         <FormControl>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Seleccione un monto" />
+                                                <SelectValue placeholder="Seleccione un plan" />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            {(contractType === 'Curso Auto' ? autoCourseValues : motoCourseValues).map(value => (
-                                                <SelectItem key={value} value={value.toString()}>
-                                                    {value.toFixed(2)}
+                                            {(contractType === 'Curso Auto' ? autoCourseValues : motoCourseValues).map(option => (
+                                                <SelectItem key={option.value} value={option.value.toString()}>
+                                                    {option.label}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>

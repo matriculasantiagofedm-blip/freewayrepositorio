@@ -1,5 +1,5 @@
 'use client';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useDoc, useFirebase, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
@@ -7,12 +7,15 @@ import { ContractView } from '@/components/contract-view';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
+import { useEffect } from 'react';
 
 export default function ContractDetailPage() {
   const { id } = useParams();
+  const searchParams = useSearchParams();
   const { firestore, user } = useFirebase();
 
   const contractId = Array.isArray(id) ? id[0] : id;
+  const shouldPrint = searchParams.get('print') === 'true';
 
   const contractRef = useMemoFirebase(() => {
     if (!firestore || !user || !contractId) return null;
@@ -20,6 +23,14 @@ export default function ContractDetailPage() {
   }, [firestore, user, contractId]);
 
   const { data: contract, isLoading, error } = useDoc<Contract>(contractRef);
+
+  useEffect(() => {
+    if (shouldPrint && contract && !isLoading) {
+      setTimeout(() => {
+        window.print();
+      }, 500); // Delay to allow content to render
+    }
+  }, [shouldPrint, contract, isLoading]);
 
   return (
     <div className="flex flex-col gap-8">

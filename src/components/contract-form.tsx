@@ -14,6 +14,7 @@ import {
   doc,
   setDoc,
   getDoc,
+  updateDoc,
 } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { sendAutomatedDeadlineReminders } from '@/ai/flows/automated-deadline-reminders';
@@ -214,6 +215,9 @@ export function ContractForm() {
 
       const newContractRef = await addDoc(contractsCollection, newContractData);
       const contractId = newContractRef.id;
+      
+      await updateDoc(newContractRef, { id: contractId });
+
 
       if (data.deadlines && data.deadlines.length > 0) {
         await sendAutomatedDeadlineReminders({
@@ -228,11 +232,11 @@ export function ContractForm() {
       }
 
       toast({
-        title: '¡Contrato Creado!',
+        title: '¡Contrato Guardado!',
         description: `El contrato "${data.title}" ha sido creado exitosamente.`,
       });
-
-      router.push('/dashboard');
+      
+      router.push(`/contracts/${contractId}?print=true`);
 
     } catch (error) {
       console.error('Error creating contract:', error);
@@ -727,7 +731,7 @@ export function ContractForm() {
         <div className="flex justify-end">
           <Button type="submit">
             <Save className="mr-2 h-4 w-4" />
-            Crear Contrato
+            Guardar e Imprimir
           </Button>
         </div>
       </form>

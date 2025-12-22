@@ -4,7 +4,7 @@ import React from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import {
@@ -119,6 +119,8 @@ export function ContractForm() {
   const searchParams = useSearchParams();
   const timeSlots = generateTimeSlots();
   const { role } = useCurrentRole();
+  const [balance, setBalance] = useState<string>('0.00');
+
   
   const contractTypeParam = searchParams.get('type') as ContractType | null;
 
@@ -194,16 +196,18 @@ export function ContractForm() {
   }, [paymentAmount, form]);
   
   useEffect(() => {
-      const cv = courseValue || 0;
-      const dp = downPayment || 0;
-      if (cv > 0) {
-          const half = cv / 2;
-          form.setValue('autoMotoDetails.downPayment', half);
-          form.setValue('autoMotoDetails.balance', cv - half);
-      } else {
-          form.setValue('autoMotoDetails.downPayment', undefined);
-          form.setValue('autoMotoDetails.balance', 0);
-      }
+    const cv = courseValue || 0;
+    if (cv > 0) {
+      const half = cv / 2;
+      const newBalance = cv - half;
+      form.setValue('autoMotoDetails.downPayment', parseFloat(half.toFixed(2)));
+      form.setValue('autoMotoDetails.balance', parseFloat(newBalance.toFixed(2)));
+      setBalance(newBalance.toFixed(2));
+    } else {
+      form.setValue('autoMotoDetails.downPayment', undefined);
+      form.setValue('autoMotoDetails.balance', 0);
+      setBalance('0.00');
+    }
   }, [courseValue, form]);
 
 
@@ -467,6 +471,7 @@ export function ContractForm() {
                                   <FormControl>
                                       <Input 
                                           type="number" 
+                                          step="0.01"
                                           {...field} 
                                           value={field.value ?? ''}
                                           onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
@@ -485,35 +490,28 @@ export function ContractForm() {
                                     <FormControl>
                                         <Input 
                                             type="number" 
+                                            step="0.01"
                                             {...field} 
-                                            value={field.value ?? ''}
-                                            onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
-                                            placeholder="0.00"
+                                            value={field.value?.toFixed(2) ?? ''}
                                             readOnly
+                                            className="bg-muted"
                                         />
                                     </FormControl>
                                 </FormItem>
                             )}
                         />
-                        <FormField
-                            control={form.control}
-                            name="autoMotoDetails.balance"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Saldo (B/.)</FormLabel>
-                                    <FormControl>
-                                        <Input 
-                                            type="number" 
-                                            {...field} 
-                                            value={field.value ?? ''}
-                                            onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
-                                            placeholder="0.00"
-                                            readOnly
-                                        />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
+                         <FormItem>
+                            <FormLabel>Saldo (B/.)</FormLabel>
+                            <FormControl>
+                                <Input 
+                                    type="number" 
+                                    step="0.01"
+                                    value={balance}
+                                    readOnly
+                                    className="bg-muted"
+                                />
+                            </FormControl>
+                        </FormItem>
                     </div>
                      <FormField
                         control={form.control}
@@ -1046,5 +1044,3 @@ export function ContractForm() {
     </Form>
   );
 }
-
-    

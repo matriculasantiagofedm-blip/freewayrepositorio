@@ -18,6 +18,8 @@ const Checkbox = ({ checked }: { checked: boolean }) => (
     </span>
 );
 
+const LongLine = () => <span className="border-b border-dotted border-black flex-1 h-4 min-w-40" />;
+
 function toDate(date: any): Date {
   if (date instanceof Date) return date;
   if (date && date.toDate) return date.toDate();
@@ -87,7 +89,43 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
         <h3 className="font-bold">CLÁUSULA CUARTA - LUGAR DE INICIO Y TRASLADO</h3>
         <p className='text-[10px]'>Las clases prácticas iniciarán en la oficina de LA ESCUELA. Desde allí, EL ESTUDIANTE será trasladado al circuito de prácticas y posteriormente de regreso. Dicho traslado se encuentra incluido dentro del tiempo de las 2 horas de clase práctica.</p>
         
-        {/* The rest of the template from the second image will be added here */}
+        <h3 className="font-bold">CLÁUSULA QUINTA - PUNTUALIDAD</h3>
+        <p className='text-[10px]'>En caso de que EL ESTUDIANTE llegue tarde a su clase, solo recibirá el tiempo restante de las 2 horas programadas, sin derecho a reposición.</p>
+        
+        <h3 className="font-bold">CLÁUSULA SEXTA - NORMAS DE COMPORTAMIENTO Y VESTIMENTA</h3>
+        <p className='text-[10px]'>EL ESTUDIANTE se compromete a: Seguir las instrucciones del instructor, mantener una actitud respetuosa y adecuada durante las clases y asistir en estado óptimo de salud física, mental y emocional. Para las clases prácticas y teóricas, EL ESTUDIANTE deberá asistir con ropa adecuada. Se prohíbe presentarse con: Escotes pronunciados, minifaldas, camisetas sin mangas, pantalones cortos, leggins, chancletas o sandalias. El incumplimiento de esta norma implica la pérdida automática de la clase, sin derecho a reposición.</p>
+
+        <h3 className="font-bold">CLÁUSULA SÉPTIMA - ACOMPAÑANTES Y ACCESO</h3>
+        <p className='text-[10px]'>Durante las clases teóricas y prácticas no se permite la presencia de acompañantes, niños, mascotas o terceras personas ajenas al proceso de enseñanza.</p>
+
+        <h3 className="font-bold">CLÁUSULA OCTAVA - CONDICIONES DE APTITUD</h3>
+        <p className='text-[10px]'>EL ESTUDIANTE declara estar en pleno uso de sus facultades físicas, mentales y emocionales, siendo responsable de informar a LA ESCUELA sobre cualquier condición médica que limite su desempeño.</p>
+
+        <h3 className="font-bold">CLÁUSULA NOVENA - CANCELACIÓN DEL CONTRATO</h3>
+        <p className='text-[10px]'>En caso de que EL ESTUDIANTE decida cancelar el curso o el contrato, no habrá devolución de dinero bajo ninguna circunstancia.</p>
+        
+        <h3 className="font-bold">CLÁUSULA DÉCIMA - CERTIFICACIÓN</h3>
+        <p className='text-[10px]'>El certificado de aprobación del curso será entregado únicamente si EL ESTUDIANTE: Está paz y salvo en sus pagos y ha completado la totalidad del curso teórico y práctico.</p>
+
+        <h3 className="font-bold">CLÁUSULA DÉCIMA PRIMERA - VIGENCIA DEL CURSO</h3>
+        <p className='text-[10px]'>Si EL ESTUDIANTE no establece contacto para finalizar su curso en un plazo de tres (3) meses desde la fecha de inicio, se entenderá que renuncia a continuar, sin derecho a devolución del dinero ni a reclamos posteriores.</p>
+
+        <h3 className="font-bold">CLÁUSULA DÉCIMA SEGUNDA - ACEPTACIÓN</h3>
+        <p className="text-center text-[10px]">
+            En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los <Value>{format(creationDate, 'd', { locale: es })}</Value> días del mes de <Value>{format(creationDate, 'LLLL', { locale: es })}</Value>, de <Value>{format(creationDate, 'yyyy', { locale: es })}</Value>, a las <Value>{format(creationDate, 'p', { locale: es })}</Value>.
+        </p>
+
+        <div className="flex justify-around pt-6">
+            <div className="text-center flex flex-col items-center">
+                <LongLine />
+                <p className="text-[10px]">Por la Empresa</p>
+            </div>
+            <div className="text-center flex flex-col items-center">
+                <LongLine />
+                <p className="text-[10px]">El Cliente</p>
+                <p className="text-[10px]">N° de identificación: <Value>{autoMotoDetails?.studentIdNumber}</Value></p>
+            </div>
+        </div>
 
         {contract.createdBy && (
           <div className="text-xs text-muted-foreground pt-8">

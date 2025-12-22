@@ -12,7 +12,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, ChevronsUpDown } from 'lucide-react';
 import { useAuth, useUser, initiateAnonymousSignIn } from '@/firebase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -58,8 +58,12 @@ export function UserNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-            <User className="h-4 w-4" />
+        <Button variant="outline" className="w-full justify-between">
+            <div className='flex items-center gap-2'>
+                 <User className="h-4 w-4" />
+                 <span className="truncate">{currentUser}</span>
+            </div>
+            <ChevronsUpDown className="h-4 w-4 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>

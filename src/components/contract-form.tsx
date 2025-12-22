@@ -314,141 +314,112 @@ export function ContractForm() {
             />
             {contractType === 'Curso Deluxe' ? (
                 <div className="space-y-6 pt-4">
-                  <FormField
-                    control={form.control}
-                    name="deluxeDetails.studentIdNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Cédula/Pasaporte del Estudiante</FormLabel>
-                        <FormControl>
-                          <Input {...field} value={field.value || ''} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                   <FormField
-                    control={form.control}
-                    name="deluxeDetails.studentAddress"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Domicilio del Estudiante</FormLabel>
-                        <FormControl>
-                          <Input {...field} value={field.value || ''} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <div className="grid grid-cols-2 gap-4">
-                     <FormField
-                      control={form.control}
-                      name="deluxeDetails.studentPhone1"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Teléfono 1</FormLabel>
-                          <FormControl>
-                            <Input {...field} value={field.value || ''} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                     <FormField
-                      control={form.control}
-                      name="deluxeDetails.studentPhone2"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Teléfono 2</FormLabel>
-                          <FormControl>
-                            <Input {...field} value={field.value || ''} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="deluxeDetails.vehicleTransmission"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Transmisión del Vehículo</FormLabel>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                            className="flex gap-4"
-                          >
-                            <FormItem className="flex items-center space-x-2">
-                              <FormControl>
-                                <RadioGroupItem value="Automático" id="auto" />
-                              </FormControl>
-                              <FormLabel htmlFor="auto" className="font-normal">Automático</FormLabel>
-                            </FormItem>
-                             <FormItem className="flex items-center space-x-2">
-                              <FormControl>
-                                <RadioGroupItem value="Manual" id="manual" />
-                              </FormControl>
-                              <FormLabel htmlFor="manual" className="font-normal">Manual</FormLabel>
-                            </FormItem>
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                   <FormField
-                    control={form.control}
-                    name="deluxeDetails.licenseCategory"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Categoría de Licencia a Aplicar</FormLabel>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                            className="flex gap-4"
-                          >
-                            <FormItem className="flex items-center space-x-2">
-                              <FormControl>
-                                <RadioGroupItem value="A, C" id="ac" />
-                              </FormControl>
-                              <FormLabel htmlFor="ac" className="font-normal">A, C</FormLabel>
-                            </FormItem>
-                             <FormItem className="flex items-center space-x-2">
-                              <FormControl>
-                                <RadioGroupItem value="A, C, D" id="acd" />
-                              </FormControl>
-                              <FormLabel htmlFor="acd" className="font-normal">A, C, D</FormLabel>
-                            </FormItem>
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
 
-                  <div>
-                    <h4 className="font-medium text-base mb-2">Horario de Capacitación Teórica</h4>
+                  {/* CLAUSULA SEGUNDA */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium text-primary border-b pb-2">Cláusula Segunda: Valor, Matrícula y Forma de Pago</h3>
                     <FormField
                       control={form.control}
-                      name="deluxeDetails.theoreticalClassSchedule"
+                      name="deluxeDetails.paymentDetails"
                       render={({ field }) => (
                         <FormItem>
-                           <FormControl>
-                            <RadioGroup
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                              className="flex gap-4"
-                            >
-                              <FormItem className="flex items-center space-x-2">
-                                <FormControl>
-                                  <RadioGroupItem value="Lunes" id="lunes" />
-                                </FormControl>
-                                <FormLabel htmlFor="lunes" className="font-normal">Lunes de 8:00 AM a 10:00 AM</FormLabel>
+                          <FormLabel>Detalles Adicionales del Pago</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Describe los detalles del pago..." {...field} value={field.value || ''} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div>
+                      <FormLabel>Plan de Pagos</FormLabel>
+                      <p className="text-sm text-muted-foreground">
+                          Seleccione el plan. El pago se realizará en 6 cuotas con fechas de pago establecidas cada dos semanas.
+                      </p>
+                      <FormField
+                          control={form.control}
+                          name="deluxeDetails.paymentAmount"
+                          render={({ field }) => (
+                              <FormItem className="pt-2">
+                                  <FormControl>
+                                  <RadioGroup
+                                      onValueChange={(value) => field.onChange(parseFloat(value))}
+                                      defaultValue={field.value?.toString()}
+                                      className="flex gap-4"
+                                  >
+                                      <FormItem className="flex items-center space-x-2">
+                                          <FormControl>
+                                              <RadioGroupItem value="45.00" id="amount-45" />
+                                          </FormControl>
+                                          <FormLabel htmlFor="amount-45" className="font-normal">Deluxe 16 Hrs (B/.45.00)</FormLabel>
+                                      </FormItem>
+                                      <FormItem className="flex items-center space-x-2">
+                                          <FormControl>
+                                              <RadioGroupItem value="33.50" id="amount-33" />
+                                          </FormControl>
+                                          <FormLabel htmlFor="amount-33" className="font-normal">Deluxe 12 Hrs (B/.33.50)</FormLabel>
+                                      </FormItem>
+                                  </RadioGroup>
+                                  </FormControl>
+                                  <FormMessage />
                               </FormItem>
-                               <FormItem className="flex items-center space-x-2">
-                                <FormControl>
-                                  <RadioGroupItem value="Miércoles" id="miercoles" />
-                                </FormControl>
-                                <FormLabel htmlFor="miercoles" className="font-normal">Miércoles de 7:00 PM a 9:00 PM</FormLabel>
+                          )}
+                          />
+                      <div className="space-y-4 pt-4">
+                          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                              {[1, 2, 3].map(i => (
+                                  <React.Fragment key={i}>
+                                      <FormField
+                                          control={form.control}
+                                          name={`deluxeDetails.paymentInstallments.${i - 1}`}
+                                          render={({ field }) => (
+                                              <FormItem>
+                                                  <FormLabel>Fecha Cuota {i}</FormLabel>
+                                                  <FormControl>
+                                                      <Input type="date" {...field} value={field.value || ''} />
+                                                  </FormControl>
+                                                  <FormMessage />
+                                              </FormItem>
+                                          )}
+                                      />
+                                      <FormField
+                                          control={form.control}
+                                          name={`deluxeDetails.paymentInstallments.${i + 2}`}
+                                          render={({ field }) => (
+                                              <FormItem>
+                                                  <FormLabel>Fecha Cuota {i + 3}</FormLabel>
+                                                  <FormControl>
+                                                      <Input type="date" {...field} value={field.value || ''} />
+                                                  </FormControl>
+                                                  <FormMessage />
+                                              </FormItem>
+                                          )}
+                                      />
+                                  </React.Fragment>
+                              ))}
+                          </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CLAUSULA TERCERA */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium text-primary border-b pb-2">Cláusula Tercera: Detalles del Curso</h3>
+                    <FormField
+                      control={form.control}
+                      name="deluxeDetails.vehicleTransmission"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Transmisión del Vehículo</FormLabel>
+                          <FormControl>
+                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
+                              <FormItem className="flex items-center space-x-2">
+                                <FormControl><RadioGroupItem value="Automático" id="auto" /></FormControl>
+                                <FormLabel htmlFor="auto" className="font-normal">Automático</FormLabel>
+                              </FormItem>
+                              <FormItem className="flex items-center space-x-2">
+                                <FormControl><RadioGroupItem value="Manual" id="manual" /></FormControl>
+                                <FormLabel htmlFor="manual" className="font-normal">Manual</FormLabel>
                               </FormItem>
                             </RadioGroup>
                           </FormControl>
@@ -456,171 +427,173 @@ export function ContractForm() {
                         </FormItem>
                       )}
                     />
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-4 pt-4">
-                        {Array.from({ length: 10 }).map((_, i) => (
-                            <FormField
-                                key={i}
-                                control={form.control}
-                                name={`deluxeDetails.theoreticalClasses.${i}`}
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Semana {i + 1}</FormLabel>
-                                        <FormControl>
-                                            <Input type="date" {...field} value={field.value || ''} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        ))}
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name="deluxeDetails.licenseCategory"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Categoría de Licencia a Aplicar</FormLabel>
+                          <FormControl>
+                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
+                              <FormItem className="flex items-center space-x-2">
+                                <FormControl><RadioGroupItem value="A, C" id="ac" /></FormControl>
+                                <FormLabel htmlFor="ac" className="font-normal">A, C</FormLabel>
+                              </FormItem>
+                              <FormItem className="flex items-center space-x-2">
+                                <FormControl><RadioGroupItem value="A, C, D" id="acd" /></FormControl>
+                                <FormLabel htmlFor="acd" className="font-normal">A, C, D</FormLabel>
+                              </FormItem>
+                            </RadioGroup>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
 
-
-                  <div>
-                     <h4 className="font-medium text-base mb-2 pt-4">Horario de Capacitación Práctica</h4>
-                     <div className="space-y-4 pt-2">
-                      {classFields.map((field, index) => (
-                        <div key={field.id} className="space-y-4 rounded-lg border p-4 relative">
-                           <div className="flex items-start justify-between mb-4">
-                              <h4 className="font-medium pt-1">Clase #{index + 1}</h4>
-                              <Button type="button" variant="ghost" size="icon" onClick={() => removeClass(index)} className="absolute top-1 right-1">
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                                  <span className="sr-only">Eliminar Clase</span>
-                              </Button>
-                          </div>
-                           <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                              control={form.control}
-                              name={`deluxeDetails.classSchedules.${index}.date`}
-                              render={({ field }) => (
-                                <FormItem>
-                                   <FormLabel>Fecha</FormLabel>
-                                  <FormControl>
-                                    <Input type="date" {...field} value={field.value || ''} />
-                                  </FormControl>
-                                  <FormMessage />
+                   {/* CLAUSULA CUARTA */}
+                   <div className="space-y-4">
+                    <h3 className="text-lg font-medium text-primary border-b pb-2">Cláusula Cuarta: Horario de Capacitación</h3>
+                    <div>
+                      <h4 className="font-medium text-base mb-2">Capacitación Teórica</h4>
+                      <FormField
+                        control={form.control}
+                        name="deluxeDetails.theoreticalClassSchedule"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Horario de Clases Teóricas</FormLabel>
+                            <FormControl>
+                              <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
+                                <FormItem className="flex items-center space-x-2">
+                                  <FormControl><RadioGroupItem value="Lunes" id="lunes" /></FormControl>
+                                  <FormLabel htmlFor="lunes" className="font-normal">Lunes de 8:00 AM a 10:00 AM</FormLabel>
                                 </FormItem>
-                              )}
-                            />
-                            <FormField
+                                <FormItem className="flex items-center space-x-2">
+                                  <FormControl><RadioGroupItem value="Miércoles" id="miercoles" /></FormControl>
+                                  <FormLabel htmlFor="miercoles" className="font-normal">Miércoles de 7:00 PM a 9:00 PM</FormLabel>
+                                </FormItem>
+                              </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="grid grid-cols-2 gap-x-8 gap-y-4 pt-4">
+                          {Array.from({ length: 10 }).map((_, i) => (
+                              <FormField
+                                  key={i}
+                                  control={form.control}
+                                  name={`deluxeDetails.theoreticalClasses.${i}`}
+                                  render={({ field }) => (
+                                      <FormItem>
+                                          <FormLabel>Fecha Semana {i + 1}</FormLabel>
+                                          <FormControl>
+                                              <Input type="date" {...field} value={field.value || ''} />
+                                          </FormControl>
+                                          <FormMessage />
+                                      </FormItem>
+                                  )}
+                              />
+                          ))}
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-base mb-2 pt-4">Capacitación Práctica</h4>
+                      <div className="space-y-4 pt-2">
+                        {classFields.map((field, index) => (
+                          <div key={field.id} className="space-y-4 rounded-lg border p-4 relative">
+                            <div className="flex items-start justify-between mb-4">
+                                <h4 className="font-medium pt-1">Clase Práctica #{index + 1}</h4>
+                                <Button type="button" variant="ghost" size="icon" onClick={() => removeClass(index)} className="absolute top-1 right-1">
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                    <span className="sr-only">Eliminar Clase</span>
+                                </Button>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <FormField
                                 control={form.control}
-                                name={`deluxeDetails.classSchedules.${index}.time`}
+                                name={`deluxeDetails.classSchedules.${index}.date`}
                                 render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Hora</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Selecciona una hora" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {timeSlots.map(time => (
-                                                    <SelectItem key={time} value={time}>
-                                                        {time}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
+                                  <FormItem>
+                                    <FormLabel>Fecha</FormLabel>
+                                    <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                                    <FormMessage />
+                                  </FormItem>
                                 )}
-                            />
-                           </div>
-                        </div>
-                      ))}
-                      <Button type="button" variant="outline" size="sm" onClick={() => appendClass({ date: '', time: '' })} className="mt-4">
-                          <PlusCircle className="mr-2 h-4 w-4" /> Añadir Clase Práctica
-                      </Button>
-                     </div>
-                  </div>
+                              />
+                              <FormField
+                                  control={form.control}
+                                  name={`deluxeDetails.classSchedules.${index}.time`}
+                                  render={({ field }) => (
+                                      <FormItem>
+                                          <FormLabel>Hora</FormLabel>
+                                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                              <FormControl><SelectTrigger><SelectValue placeholder="Selecciona una hora" /></SelectTrigger></FormControl>
+                                              <SelectContent>
+                                                  {timeSlots.map(time => (<SelectItem key={time} value={time}>{time}</SelectItem>))}
+                                              </SelectContent>
+                                          </Select>
+                                          <FormMessage />
+                                      </FormItem>
+                                  )}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                        <Button type="button" variant="outline" size="sm" onClick={() => appendClass({ date: '', time: '' })} className="mt-4">
+                            <PlusCircle className="mr-2 h-4 w-4" /> Añadir Clase Práctica
+                        </Button>
+                      </div>
+                    </div>
+                   </div>
 
-                  <FormField
-                    control={form.control}
-                    name="deluxeDetails.paymentDetails"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Valor, Matrícula y Forma de Pago</FormLabel>
-                        <FormControl>
-                          <Textarea placeholder="Describe los detalles del pago..." {...field} value={field.value || ''} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div>
-                     <FormLabel>Plan de Pagos</FormLabel>
-                     <p className="text-sm text-muted-foreground">
-                        El pago se realizará de la siguiente manera: 6 cuotas de B/.{allFormValues.deluxeDetails?.paymentAmount?.toFixed(2) || '33.50'} cada una, con fechas de pago establecidas cada dos semanas a partir del inicio del curso.
-                     </p>
+                   {/* DATOS DEL ESTUDIANTE */}
+                  <div className="space-y-4">
+                     <h3 className="text-lg font-medium text-primary border-b pb-2">Datos del Estudiante</h3>
                      <FormField
                         control={form.control}
-                        name="deluxeDetails.paymentAmount"
+                        name="deluxeDetails.studentIdNumber"
                         render={({ field }) => (
-                            <FormItem className="pt-2">
-                                <FormControl>
-                                <RadioGroup
-                                    onValueChange={(value) => field.onChange(parseFloat(value))}
-                                    defaultValue={field.value?.toString()}
-                                    className="flex gap-4"
-                                >
-                                    <FormItem className="flex items-center space-x-2">
-                                        <FormControl>
-                                            <RadioGroupItem value="45.00" id="amount-45" />
-                                        </FormControl>
-                                        <FormLabel htmlFor="amount-45" className="font-normal">Deluxe 16 Hrs</FormLabel>
-                                    </FormItem>
-                                    <FormItem className="flex items-center space-x-2">
-                                        <FormControl>
-                                            <RadioGroupItem value="33.50" id="amount-33" />
-                                        </FormControl>
-                                        <FormLabel htmlFor="amount-33" className="font-normal">Deluxe 12 Hrs</FormLabel>
-                                    </FormItem>
-                                </RadioGroup>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
+                          <FormItem>
+                            <FormLabel>Cédula/Pasaporte del Estudiante</FormLabel>
+                            <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                          </FormItem>
                         )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="deluxeDetails.studentAddress"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Domicilio del Estudiante</FormLabel>
+                            <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="deluxeDetails.studentPhone1"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Teléfono 1</FormLabel>
+                              <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                            </FormItem>
+                          )}
                         />
-                     <div className="space-y-4 pt-4">
-                        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-                            {[1, 2, 3].map(i => (
-                                <React.Fragment key={i}>
-                                    <FormField
-                                        control={form.control}
-                                        name={`deluxeDetails.paymentInstallments.${i - 1}`}
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Cuota {i}</FormLabel>
-                                                <FormControl>
-                                                    <Input type="date" {...field} value={field.value || ''} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                     <FormField
-                                        control={form.control}
-                                        name={`deluxeDetails.paymentInstallments.${i + 2}`}
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Cuota {i + 3}</FormLabel>
-                                                <FormControl>
-                                                    <Input type="date" {...field} value={field.value || ''} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </React.Fragment>
-                            ))}
-                        </div>
-                     </div>
-                  </div>
-
-
+                        <FormField
+                          control={form.control}
+                          name="deluxeDetails.studentPhone2"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Teléfono 2</FormLabel>
+                              <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                   </div>
+                  
                   <div className="mt-6">
                       <h3 className="text-lg font-medium mb-2">Vista Previa del Contrato</h3>
                       <DeluxePremiumContractTemplatePreview 

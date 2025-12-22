@@ -16,7 +16,7 @@ const allLinks = [
         href: '/dashboard',
         label: 'Panel de Control',
         icon: GanttChartSquare,
-        roles: ['Ventas', 'Ventas Externas'],
+        roles: ['Ventas', 'Ventas Externas', 'Administrador'],
     },
     {
         href: '/contracts',
@@ -28,7 +28,7 @@ const allLinks = [
         href: '/clients',
         label: 'Clientes',
         icon: Users,
-        roles: ['Ventas', 'Ventas Externas'],
+        roles: ['Ventas', 'Ventas Externas', 'Administrador'],
     },
 ];
 

@@ -18,11 +18,6 @@ const links = [
         icon: User,
     },
     {
-        href: '/clients',
-        label: 'Clientes',
-        icon: Users,
-    },
-    {
         href: '/dashboard',
         label: 'Panel de Control',
         icon: GanttChartSquare,
@@ -31,6 +26,11 @@ const links = [
         href: '/contracts',
         label: 'Contratos',
         icon: FileText,
+    },
+    {
+        href: '/clients',
+        label: 'Clientes',
+        icon: Users,
     },
 ];
 

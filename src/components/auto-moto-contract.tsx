@@ -56,7 +56,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
 
         <h3 className="font-bold">CLÁUSULA PRIMERA - VALOR Y FORMA DE PAGO</h3>
         <div className='space-y-1 text-[10px]'>
-            <p>El valor total del curso es de <Line>{autoMotoDetails?.courseValue ? `B/.${autoMotoDetails.courseValue.toFixed(2)}` : ''}</Line> (B/ <Line>{autoMotoDetails?.courseValue?.toFixed(2)}</Line>).</p>
+            <p>El valor total del curso es de B/. <Line>{autoMotoDetails?.courseValue?.toFixed(2)}</Line>.</p>
             <p>"El estudiante ha efectuado un abono por la suma de B/. <Line>{autoMotoDetails?.downPayment?.toFixed(2)}</Line>, quedando un saldo pendiente de B/. <Line>{balance > 0 ? balance.toFixed(2) : '0.00'}</Line>, el cual se compromete a cancelar en su totalidad el día <Line>{paymentDeadline ? format(paymentDeadline, 'P', { locale: es }) : ''}</Line>."</p>
             <ul className="list-disc list-inside pl-2">
                 <li>Para la inscripción, EL ESTUDIANTE deberá abonar el 50% del valor total como reserva de su cupo y horario.</li>

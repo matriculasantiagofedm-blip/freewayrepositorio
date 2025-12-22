@@ -98,6 +98,7 @@ export function ContractForm() {
       clientName: '',
       clientEmail: '',
       content: '',
+      type: undefined,
       deadlines: [],
       deluxeDetails: {
         studentIdNumber: '',
@@ -123,7 +124,6 @@ export function ContractForm() {
   });
 
   const contractType = form.watch('type');
-  const deluxeDetails = form.watch('deluxeDetails');
   const allFormValues = form.watch();
 
   useEffect(() => {
@@ -144,7 +144,7 @@ export function ContractForm() {
         return querySnapshot.docs[0].id;
     } else {
         const newClientRef = doc(collection(firestore, 'clients'));
-        const newClient: Omit<Client, 'id'> = {
+        const newClient: Omit<Client, 'id'|'avatarUrl'> = {
             name: clientName,
             email: clientEmail,
             userId: userId,
@@ -414,12 +414,20 @@ export function ContractForm() {
                      <FormLabel>Horario de Capacitación</FormLabel>
                      <div className="space-y-4 pt-2">
                       {classFields.map((field, index) => (
-                        <div key={field.id} className="grid grid-cols-3 gap-2 items-center">
+                        <div key={field.id} className="space-y-4 rounded-lg border p-4 relative">
+                           <div className="flex items-start justify-between">
+                              <h4 className="font-medium pt-1">Clase #{index + 1}</h4>
+                              <Button type="button" variant="ghost" size="icon" onClick={() => removeClass(index)} className="absolute top-1 right-1">
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                  <span className="sr-only">Eliminar Clase</span>
+                              </Button>
+                          </div>
                            <FormField
                             control={form.control}
                             name={`deluxeDetails.classSchedules.${index}.date`}
                             render={({ field }) => (
-                              <FormItem className="col-span-2">
+                              <FormItem>
+                                 <FormLabel>Fecha</FormLabel>
                                 <Popover>
                                   <PopoverTrigger asChild>
                                     <FormControl>
@@ -431,7 +439,7 @@ export function ContractForm() {
                                         )}
                                       >
                                         <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {field.value ? format(field.value, 'PPP', { locale: es }) : <span>Clase #{index + 1}</span>}
+                                        {field.value ? format(field.value, 'PPP', { locale: es }) : <span>Elige una fecha</span>}
                                       </Button>
                                     </FormControl>
                                   </PopoverTrigger>
@@ -448,18 +456,16 @@ export function ContractForm() {
                             name={`deluxeDetails.classSchedules.${index}.time`}
                             render={({ field }) => (
                               <FormItem>
+                                <FormLabel>Hora</FormLabel>
                                 <FormControl>
                                   <Input type="time" {...field} value={field.value || ''} />
                                 </FormControl>
                               </FormItem>
                             )}
                           />
-                           <Button type="button" variant="ghost" size="icon" onClick={() => removeClass(index)} className="col-start-4">
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                           </Button>
                         </div>
                       ))}
-                      <Button type="button" variant="outline" size="sm" onClick={() => appendClass({ date: undefined, time: '' })}>
+                      <Button type="button" variant="outline" size="sm" onClick={() => appendClass({ date: undefined, time: '' })} className="mt-4">
                           <PlusCircle className="mr-2 h-4 w-4" /> Añadir Clase
                       </Button>
                      </div>

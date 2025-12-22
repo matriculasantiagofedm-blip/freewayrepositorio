@@ -81,10 +81,23 @@ const contractFormSchema = z.object({
 
 type ContractFormValues = z.infer<typeof contractFormSchema>;
 
+const generateTimeSlots = () => {
+    const slots = [];
+    for (let hour = 7; hour <= 20; hour++) {
+        for (let minute = 0; minute < 60; minute += 30) {
+            const hh = hour.toString().padStart(2, '0');
+            const mm = minute.toString().padStart(2, '0');
+            slots.push(`${hh}:${mm}`);
+        }
+    }
+    return slots;
+};
+
 export function ContractForm() {
   const { toast } = useToast();
   const { firestore, user } = useFirebase();
   const router = useRouter();
+  const timeSlots = generateTimeSlots();
 
   const form = useForm<ContractFormValues>({
     resolver: zodResolver(contractFormSchema),
@@ -438,16 +451,28 @@ export function ContractForm() {
                               )}
                             />
                             <FormField
-                              control={form.control}
-                              name={`deluxeDetails.classSchedules.${index}.time`}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Hora</FormLabel>
-                                  <FormControl>
-                                    <Input type="time" {...field} value={field.value || ''} />
-                                  </FormControl>
-                                </FormItem>
-                              )}
+                                control={form.control}
+                                name={`deluxeDetails.classSchedules.${index}.time`}
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Hora</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Selecciona una hora" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {timeSlots.map(time => (
+                                                    <SelectItem key={time} value={time}>
+                                                        {time}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
                             />
                            </div>
                         </div>

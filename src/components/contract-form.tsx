@@ -112,6 +112,9 @@ const generateTimeSlots = () => {
     return ['08:00 AM', '10:00 AM', '01:00 PM', '03:00 PM'];
 };
 
+const autoCourseValues = [133.00, 150.00, 175.00];
+const motoCourseValues = [115.00, 135.00, 155.00];
+
 export function ContractForm() {
   const { toast } = useToast();
   const { firestore, user } = useFirebase();
@@ -177,7 +180,6 @@ export function ContractForm() {
   const allFormValues = form.watch();
   const paymentAmount = form.watch('deluxeDetails.paymentAmount');
   const courseValue = form.watch('autoMotoDetails.courseValue');
-  const downPayment = form.watch('autoMotoDetails.downPayment');
 
   useEffect(() => {
     if (contractType) {
@@ -463,23 +465,31 @@ export function ContractForm() {
                     <h3 className="text-lg font-medium text-primary border-b pb-2">Cláusula Primera: Valor y Forma de Pago</h3>
                     <div className="grid grid-cols-3 gap-4">
                        <FormField
-                          control={form.control}
-                          name="autoMotoDetails.courseValue"
-                          render={({ field }) => (
-                              <FormItem>
-                                  <FormLabel>Valor Total del Curso (B/.)</FormLabel>
-                                  <FormControl>
-                                      <Input 
-                                          type="number" 
-                                          step="0.01"
-                                          {...field} 
-                                          value={field.value ?? ''}
-                                          onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
-                                          placeholder="0.00"
-                                      />
-                                  </FormControl>
-                              </FormItem>
-                          )}
+                            control={form.control}
+                            name="autoMotoDetails.courseValue"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Valor Total del Curso (B/.)</FormLabel>
+                                    <Select
+                                        onValueChange={(value) => field.onChange(value ? parseFloat(value) : undefined)}
+                                        defaultValue={field.value?.toString()}
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Seleccione un monto" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {(contractType === 'Curso Auto' ? autoCourseValues : motoCourseValues).map(value => (
+                                                <SelectItem key={value} value={value.toString()}>
+                                                    {value.toFixed(2)}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
                         <FormField
                             control={form.control}
@@ -490,7 +500,6 @@ export function ContractForm() {
                                     <FormControl>
                                         <Input 
                                             type="number" 
-                                            step="0.01"
                                             {...field} 
                                             value={field.value?.toFixed(2) ?? ''}
                                             readOnly
@@ -504,8 +513,7 @@ export function ContractForm() {
                             <FormLabel>Saldo (B/.)</FormLabel>
                             <FormControl>
                                 <Input 
-                                    type="number" 
-                                    step="0.01"
+                                    type="text" 
                                     value={balance}
                                     readOnly
                                     className="bg-muted"

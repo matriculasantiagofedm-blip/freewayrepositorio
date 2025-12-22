@@ -416,38 +416,40 @@ export function ContractForm() {
                      <div className="space-y-4 pt-2">
                       {classFields.map((field, index) => (
                         <div key={field.id} className="space-y-4 rounded-lg border p-4 relative">
-                           <div className="flex items-start justify-between">
+                           <div className="flex items-start justify-between mb-4">
                               <h4 className="font-medium pt-1">Clase #{index + 1}</h4>
                               <Button type="button" variant="ghost" size="icon" onClick={() => removeClass(index)} className="absolute top-1 right-1">
                                   <Trash2 className="h-4 w-4 text-destructive" />
                                   <span className="sr-only">Eliminar Clase</span>
                               </Button>
                           </div>
-                           <FormField
-                            control={form.control}
-                            name={`deluxeDetails.classSchedules.${index}.date`}
-                            render={({ field }) => (
-                              <FormItem>
-                                 <FormLabel>Fecha</FormLabel>
-                                <FormControl>
-                                  <Input type="date" {...field} value={field.value || ''} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name={`deluxeDetails.classSchedules.${index}.time`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Hora</FormLabel>
-                                <FormControl>
-                                  <Input type="time" {...field} value={field.value || ''} />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
+                           <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                              control={form.control}
+                              name={`deluxeDetails.classSchedules.${index}.date`}
+                              render={({ field }) => (
+                                <FormItem>
+                                   <FormLabel>Fecha</FormLabel>
+                                  <FormControl>
+                                    <Input type="date" {...field} value={field.value || ''} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name={`deluxeDetails.classSchedules.${index}.time`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Hora</FormLabel>
+                                  <FormControl>
+                                    <Input type="time" {...field} value={field.value || ''} />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                           </div>
                         </div>
                       ))}
                       <Button type="button" variant="outline" size="sm" onClick={() => appendClass({ date: '', time: '' })} className="mt-4">

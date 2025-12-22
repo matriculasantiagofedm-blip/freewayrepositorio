@@ -47,6 +47,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
         </p>
 
         <div className="space-y-2">
+            <p>Entre <span className='font-bold'>{contract.clientName}</span>, con cédula <span className='font-bold'>{deluxeDetails?.studentIdNumber}</span>,</p>
             <div className="flex items-center flex-wrap">
                 , con domicilio en 
                 <Line>{deluxeDetails?.studentAddress}</Line>

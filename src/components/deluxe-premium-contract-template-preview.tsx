@@ -4,6 +4,7 @@ import { es } from 'date-fns/locale';
 import { Card, CardContent } from './ui/card';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import type { DeluxeContractDetails } from '@/lib/types';
 
 const Line = ({ children, className }: { children?: React.ReactNode, className?: string }) => (
   <span className={cn("border-b-2 border-dotted border-black flex-1 min-w-10 text-center font-semibold", className)}>
@@ -12,7 +13,13 @@ const Line = ({ children, className }: { children?: React.ReactNode, className?:
 );
 const LongLine = () => <span className="border-b-2 border-dotted border-black flex-1 h-4 min-w-40" />;
 
-export function DeluxePremiumContractTemplatePreview() {
+interface DeluxePremiumContractTemplatePreviewProps {
+    clientName?: string;
+    clientEmail?: string;
+    deluxeDetails?: DeluxeContractDetails;
+}
+
+export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, deluxeDetails }: DeluxePremiumContractTemplatePreviewProps) {
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -29,9 +36,11 @@ export function DeluxePremiumContractTemplatePreview() {
     );
   }
   
-  const Checkbox = () => (
-    <span className='border-2 border-black inline-block w-4 h-4'></span>
-  );
+  const Checkbox = ({ checked }: { checked: boolean }) => (
+    <span className={`border-2 border-black inline-block w-4 h-4 text-center leading-none ${checked ? 'bg-black text-white' : ''}`}>
+        {checked ? 'X' : ''}
+    </span>
+);
 
   return (
     <Card className="p-8 print:shadow-none print:border-none print:p-0 font-serif text-sm">
@@ -43,15 +52,16 @@ export function DeluxePremiumContractTemplatePreview() {
         </p>
 
         <div className="space-y-2">
+            <p>Entre <span className='font-bold'>{clientName || '________________'}</span>, con cédula <span className='font-bold'>{deluxeDetails?.studentIdNumber || '________________'}</span>,</p>
             <div className="flex items-center flex-wrap">
-                , con domicilio en 
-                <Line />
+                con domicilio en 
+                <Line>{deluxeDetails?.studentAddress}</Line>
                 , teléfonos:
-                <Line />/<Line />
+                <Line>{deluxeDetails?.studentPhone1}</Line>/<Line>{deluxeDetails?.studentPhone2}</Line>
             </div>
              <div className="flex items-center flex-wrap">
                 , correo electrónico:
-                <Line />
+                <Line>{clientEmail}</Line>
                 , en adelante denominado EL ESTUDIANTE.
             </div>
         </div>
@@ -69,12 +79,12 @@ export function DeluxePremiumContractTemplatePreview() {
           <span>CUOTA 3: <Line className="min-w-24" /></span>
           <span>CUOTA 6: <Line className="min-w-24" /></span>
         </div>
-        <p>la de B/.15.00.</p>
+        <p className='p-4 border border-dashed min-h-24'>{deluxeDetails?.paymentDetails || 'la de B/.15.00.'}</p>
 
         <h3 className="font-bold">CLÁUSULA TERCERA - DETALLES DEL CURSO</h3>
         <div className="space-y-2 pl-4">
-            <p>1. Transmisión del vehículo: Automático <Checkbox /> / Manual <Checkbox /></p>
-            <p>2. Categoría de licencia a aplicar: A, C <Checkbox /> / A, C, D <Checkbox /></p>
+            <p>1. Transmisión del vehículo: Automático <Checkbox checked={deluxeDetails?.vehicleTransmission === 'Automático'} /> / Manual <Checkbox checked={deluxeDetails?.vehicleTransmission === 'Manual'} /></p>
+            <p>2. Categoría de licencia a aplicar: A, C <Checkbox checked={deluxeDetails?.licenseCategory === 'A, C'} /> / A, C, D <Checkbox checked={deluxeDetails?.licenseCategory === 'A, C, D'} /></p>
         </div>
 
         <h3 className="font-bold">CLÁUSULA CUARTA - HORARIO DE CAPACITACIÓN</h3>
@@ -93,12 +103,19 @@ export function DeluxePremiumContractTemplatePreview() {
         </div>
         <p>Clases prácticas: Se programarán a partir de la semana 8 de la capacitación teórica, en horario diurno o vespertino, de acuerdo con la disponibilidad de LA ESCUELA.</p>
         <div className="grid grid-cols-2 gap-x-8 gap-y-2 pl-4">
-            <div className="flex items-center gap-2">Clase 1: <Line/> Hora <Line/></div>
-            <div className="flex items-center gap-2">Clase 2: <Line/> Hora <Line/></div>
-            <div className="flex items-center gap-2">Clase 3: <Line/> Hora <Line/></div>
-            <div className="flex items-center gap-2">Clase 4: <Line/> Hora <Line/></div>
-            <div className="flex items-center gap-2">Clase 5: <Line/> Hora <Line/></div>
-            <div className="flex items-center gap-2">Clase 6: <Line/> Hora <Line/></div>
+            {deluxeDetails?.classSchedules?.map((clase, index) => (
+                <div key={index} className="flex items-center gap-2">
+                Clase {index + 1}: <Line>{clase.date ? format(clase.date, 'P', { locale: es }) : ''}</Line> 
+                Hora <Line>{clase.time}</Line>
+                </div>
+            ))}
+            {(!deluxeDetails?.classSchedules || deluxeDetails.classSchedules.length < 6) && 
+                Array.from({ length: 6 - (deluxeDetails?.classSchedules?.length || 0) }).map((_, index) => (
+                <div key={index} className="flex items-center gap-2">
+                    Clase {index + (deluxeDetails?.classSchedules?.length || 0) + 1}: <Line /> Hora <Line />
+                </div>
+                ))
+            }
         </div>
         
         <h3 className="font-bold">CLÁUSULA QUINTA - POLÍTICA DE PAGOS Y MOROSIDAD</h3>
@@ -145,7 +162,7 @@ export function DeluxePremiumContractTemplatePreview() {
             <div className="text-center flex flex-col items-center">
                 <LongLine />
                 <p>El Cliente</p>
-                <p>N° de identificación</p>
+                <p>N° de identificación: {deluxeDetails?.studentIdNumber}</p>
             </div>
         </div>
       </CardContent>

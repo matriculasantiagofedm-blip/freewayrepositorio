@@ -11,11 +11,9 @@ import {
   collection,
   addDoc,
   serverTimestamp,
-  query,
-  where,
-  getDocs,
   doc,
   setDoc,
+  getDoc,
 } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { sendAutomatedDeadlineReminders } from '@/ai/flows/automated-deadline-reminders';
@@ -144,25 +142,21 @@ export function ContractForm() {
   }, [contractType, form]);
 
   async function findOrCreateClient(clientName: string, clientEmail: string, userId: string): Promise<string> {
-    const clientsRef = collection(firestore, 'clients');
-    const q = query(clientsRef, where("email", "==", clientEmail), where("userId", "==", userId));
-    
-    const querySnapshot = await getDocs(q);
+    const clientRef = doc(firestore, 'clients', userId);
+    const clientSnap = await getDoc(clientRef);
 
-    if (!querySnapshot.empty) {
-        return querySnapshot.docs[0].id;
-    } else {
-        const newClientRef = doc(collection(firestore, 'clients'));
+    if (!clientSnap.exists()) {
         const newClient: Omit<Client, 'id'> = {
+            id: userId,
             name: clientName,
             email: clientEmail,
             userId: userId,
             createdAt: serverTimestamp() as any
         };
-        await setDoc(newClientRef, newClient);
-        return newClientRef.id;
+        await setDoc(clientRef, newClient);
     }
-  }
+    return userId;
+}
 
   async function onSubmit(data: ContractFormValues) {
     if (!user) {
@@ -203,9 +197,6 @@ export function ContractForm() {
 
       const newContractRef = await addDoc(contractsCollection, newContractData);
       const contractId = newContractRef.id;
-
-      await setDoc(doc(firestore, 'clients', clientId), { id: clientId, name: data.clientName, email: data.clientEmail, userId: user.uid }, { merge: true });
-
 
       if (data.deadlines && data.deadlines.length > 0) {
         await sendAutomatedDeadlineReminders({

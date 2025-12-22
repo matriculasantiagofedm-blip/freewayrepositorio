@@ -1,7 +1,7 @@
 'use client';
 import { useParams } from 'next/navigation';
 import { useDoc, useCollection, useFirebase, useMemoFirebase } from '@/firebase';
-import { doc, collection, query } from 'firebase/firestore';
+import { doc, collection, query, where } from 'firebase/firestore';
 import type { Client, Contract } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -23,13 +23,14 @@ export default function ClientDetailPage() {
     if (!firestore || !user || !clientId) return null;
     return query(
         collection(firestore, `clients/${user.uid}/contracts`),
+        where('clientId', '==', clientId)
     );
   }, [firestore, user, clientId]);
 
   const { data: client, isLoading: isClientLoading } = useDoc<Client>(clientRef);
   const { data: contracts, isLoading: areContractsLoading } = useCollection<Contract>(contractsQuery);
 
-  const clientContracts = contracts?.filter(c => c.clientId === clientId);
+  const clientContracts = contracts;
 
   return (
     <div className="flex flex-col gap-8">

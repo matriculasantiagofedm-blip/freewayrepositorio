@@ -17,21 +17,21 @@ const links = [
         label: 'Perfil',
         icon: User,
     },
-  {
-    href: '/dashboard',
-    label: 'Panel de Control',
-    icon: GanttChartSquare,
-  },
-  {
-    href: '/contracts',
-    label: 'Contratos',
-    icon: FileText,
-  },
-  {
-    href: '/clients',
-    label: 'Clientes',
-    icon: Users,
-  },
+    {
+        href: '/clients',
+        label: 'Clientes',
+        icon: Users,
+    },
+    {
+        href: '/dashboard',
+        label: 'Panel de Control',
+        icon: GanttChartSquare,
+    },
+    {
+        href: '/contracts',
+        label: 'Contratos',
+        icon: FileText,
+    },
 ];
 
 export function MainNav({ className }: { className?: string }) {

@@ -12,7 +12,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu';
-import { CreditCard, LogOut, Settings, User, Users } from 'lucide-react';
+import { LogOut, User } from 'lucide-react';
 import { useAuth, useUser, initiateAnonymousSignIn } from '@/firebase';
 import { useEffect, useState } from 'react';
 

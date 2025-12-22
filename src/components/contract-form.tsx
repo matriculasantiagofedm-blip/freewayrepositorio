@@ -328,9 +328,9 @@ export function ContractForm() {
                         name="clientName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Nombre del Cliente</FormLabel>
+                            <FormLabel>Nombre del Estudiante</FormLabel>
                             <FormControl>
-                              <Input placeholder="ej., Innovate Corp" {...field} />
+                              <Input placeholder="ej., Juan Pérez" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -341,9 +341,9 @@ export function ContractForm() {
                         name="clientEmail"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Email del Cliente</FormLabel>
+                            <FormLabel>Email del Estudiante</FormLabel>
                             <FormControl>
-                              <Input placeholder="cliente@ejemplo.com" {...field} />
+                              <Input placeholder="estudiante@ejemplo.com" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

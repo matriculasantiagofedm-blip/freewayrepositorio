@@ -13,6 +13,19 @@ const Line = ({ children, className }: { children?: React.ReactNode, className?:
 );
 const LongLine = () => <span className="border-b-2 border-dotted border-black flex-1 h-4 min-w-40" />;
 
+function toDate(date: any): Date {
+  if (date instanceof Date) return date;
+  if (date && date.toDate) return date.toDate();
+  // Attempt to parse string dates that might come from the form
+  if (typeof date === 'string') {
+    const parsed = new Date(date);
+    if (!isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+  return new Date();
+}
+
 interface DeluxePremiumContractTemplatePreviewProps {
     clientName?: string;
     clientEmail?: string;
@@ -105,7 +118,7 @@ export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, 
         <div className="grid grid-cols-2 gap-x-8 gap-y-2 pl-4">
             {deluxeDetails?.classSchedules?.map((clase, index) => (
                 <div key={index} className="flex items-center gap-2">
-                Clase {index + 1}: <Line>{clase.date ? format(clase.date, 'P', { locale: es }) : ''}</Line> 
+                Clase {index + 1}: <Line>{clase.date ? format(toDate(clase.date), 'P', { locale: es }) : ''}</Line> 
                 Hora <Line>{clase.time}</Line>
                 </div>
             ))}

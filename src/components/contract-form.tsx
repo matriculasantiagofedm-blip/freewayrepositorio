@@ -447,7 +447,7 @@ export function ContractForm() {
                                     </FormControl>
                                   </PopoverTrigger>
                                   <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                                    <Calendar locale={es} weekStartsOn={1} mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
                                   </PopoverContent>
                                 </Popover>
                                 <FormMessage />
@@ -574,6 +574,8 @@ export function ContractForm() {
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
                             <Calendar
+                              locale={es}
+                              weekStartsOn={1}
                               mode="single"
                               selected={field.value}
                               onSelect={field.onChange}

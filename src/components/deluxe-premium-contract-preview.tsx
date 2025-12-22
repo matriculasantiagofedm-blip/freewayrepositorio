@@ -6,12 +6,6 @@ import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import type { DeluxeContractDetails } from '@/lib/types';
 
-interface DeluxePremiumContractPreviewProps {
-    clientName?: string;
-    clientEmail?: string;
-    deluxeDetails?: DeluxeContractDetails;
-}
-
 const Line = ({ children, className }: { children?: React.ReactNode, className?: string }) => (
   <span className={cn("border-b-2 border-dotted border-black flex-1 min-w-10 text-center font-semibold", className)}>
     {children || <>&nbsp;</>}
@@ -30,6 +24,12 @@ function toDate(date: any): Date {
     }
   }
   return new Date();
+}
+
+interface DeluxePremiumContractPreviewProps {
+    clientName?: string;
+    clientEmail?: string;
+    deluxeDetails?: DeluxeContractDetails;
 }
 
 export function DeluxePremiumContractPreview({ clientName, clientEmail, deluxeDetails }: DeluxePremiumContractPreviewProps) {

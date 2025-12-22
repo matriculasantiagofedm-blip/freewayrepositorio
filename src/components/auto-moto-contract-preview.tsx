@@ -95,10 +95,11 @@ export function AutoMotoContractTemplatePreview({ folio, clientName, clientEmail
             </div>
             <p>4. Horario para clases practicas:</p>
             <div className="pl-4 space-y-0.5">
-                <div className="flex items-center gap-2">○ Clase 1: <Line>&nbsp;</Line> Hora <Line>{autoMotoDetails?.practicalClassSchedules?.[0]?.time}</Line></div>
-                <div className="flex items-center gap-2">○ Clase 2: <Line>&nbsp;</Line> Hora <Line>{autoMotoDetails?.practicalClassSchedules?.[1]?.time}</Line></div>
-                <div className="flex items-center gap-2">○ Clase 3: <Line>&nbsp;</Line> Hora <Line>{autoMotoDetails?.practicalClassSchedules?.[2]?.time}</Line></div>
-                <div className="flex items-center gap-2">○ Clase 4: <Line>&nbsp;</Line> Hora <Line>{autoMotoDetails?.practicalClassSchedules?.[3]?.time}</Line></div>
+                {Array.from({ length: 6 }).map((_, index) => (
+                     <div key={index} className="flex items-center gap-2">
+                        ○ Clase {index + 1}: Fecha <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.date ? formatDate(autoMotoDetails?.practicalClassSchedules?.[index]?.date) : <>&nbsp;</>}</Line> Hora <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.time}</Line>
+                    </div>
+                ))}
             </div>
         </div>
 

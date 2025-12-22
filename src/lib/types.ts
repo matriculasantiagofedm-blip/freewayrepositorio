@@ -54,7 +54,7 @@ export interface AutoMotoContractDetails {
   licenseCategory?: 'A, C' | 'A, C, D' | 'A, B';
   theoreticalClassSchedule?: string;
   theoreticalClassDates?: string[];
-  practicalClassSchedules?: { time?: string }[];
+  practicalClassSchedules?: { date?: string; time?: string }[];
 }
 
 

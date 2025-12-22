@@ -102,6 +102,7 @@ const contractFormSchema = z.object({
     theoreticalClassSchedule: z.enum(['Lunes a Viernes de 8:00 am a 10:00 am', 'Sábados de 3:00 pm a 5:00 pm']).optional(),
     theoreticalClassDates: z.array(z.string().optional()).optional(),
     practicalClassSchedules: z.array(z.object({
+      date: z.string().optional(),
       time: z.string().optional(),
     })).optional(),
   }).optional(),
@@ -171,7 +172,7 @@ export function ContractForm() {
         licenseCategory: undefined,
         theoreticalClassSchedule: undefined,
         theoreticalClassDates: [],
-        practicalClassSchedules: Array(4).fill({ time: '' }),
+        practicalClassSchedules: Array(6).fill({ date: '', time: '' }),
       }
     },
   });
@@ -633,21 +634,37 @@ export function ContractForm() {
                         )}
                     </div>
                     <div>
-                        <h4 className="font-medium text-base mb-2">Horario para clases prácticas</h4>
-                        <div className="grid grid-cols-2 gap-4">
-                            {Array.from({ length: 4 }).map((_, index) => (
-                                <FormField
-                                    key={index}
+                        <h4 className="font-medium text-base my-2">Horario para clases prácticas</h4>
+                        <div className="space-y-4">
+                          {Array.from({ length: 6 }).map((_, index) => (
+                            <div key={index} className="space-y-4 rounded-lg border p-4">
+                                <h4 className="font-medium pt-1">Clase Práctica #{index + 1}</h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <FormField
+                                    control={form.control}
+                                    name={`autoMotoDetails.practicalClassSchedules.${index}.date`}
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Fecha</FormLabel>
+                                        <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <FormField
                                     control={form.control}
                                     name={`autoMotoDetails.practicalClassSchedules.${index}.time`}
                                     render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Hora Clase {index + 1}</FormLabel>
-                                            <FormControl><Input {...field} value={field.value || ''} placeholder="Ej: 10:00 AM" /></FormControl>
-                                        </FormItem>
+                                      <FormItem>
+                                        <FormLabel>Hora</FormLabel>
+                                        <FormControl><Input {...field} value={field.value || ''} placeholder="Ej: 10:00 AM" /></FormControl>
+                                        <FormMessage />
+                                      </FormItem>
                                     )}
-                                />
-                            ))}
+                                  />
+                                </div>
+                              </div>
+                          ))}
                         </div>
                     </div>
                  </div>

@@ -15,6 +15,10 @@ import {
   setDoc,
   getDoc,
   updateDoc,
+  runTransaction,
+  query,
+  orderBy,
+  limit,
 } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { sendAutomatedDeadlineReminders } from '@/ai/flows/automated-deadline-reminders';
@@ -43,7 +47,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Textarea } from './ui/textarea';
 import { DeluxePremiumContractTemplatePreview } from './deluxe-premium-contract-preview';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import type { Client, DeluxeContractDetails, ContractType } from '@/lib/types';
+import type { Client, DeluxeContractDetails, ContractType, Contract } from '@/lib/types';
 
 
 const contractFormSchema = z.object({
@@ -172,6 +176,27 @@ export function ContractForm() {
     return userId;
 }
 
+  async function getNextFolio(userId: string): Promise<string> {
+    const contractsCollection = collection(firestore, `clients/${userId}/contracts`);
+    const q = query(contractsCollection, orderBy('folio', 'desc'), limit(1));
+    const querySnapshot = await getDoc(q.docs[0]);
+
+    let lastFolioNumber = 0;
+    if (querySnapshot.exists()) {
+      const lastContract = querySnapshot.data() as Contract;
+      const lastNumberStr = lastContract.folio.split('-').pop();
+      if (lastNumberStr) {
+        lastFolioNumber = parseInt(lastNumberStr, 10);
+      }
+    }
+    
+    const year = new Date().getFullYear();
+    const nextNumber = (lastFolioNumber + 1).toString().padStart(4, '0');
+    
+    return `CT-${year}-${nextNumber}`;
+  }
+
+
   async function onSubmit(data: ContractFormValues) {
     if (!user) {
       toast({
@@ -183,6 +208,7 @@ export function ContractForm() {
     }
 
     try {
+      const folio = await getNextFolio(user.uid);
       const clientId = await findOrCreateClient(data.clientName, data.clientEmail, user.uid);
       
       const contractsCollection = collection(firestore, 'clients', user.uid, 'contracts');
@@ -190,6 +216,7 @@ export function ContractForm() {
       const contractContent = data.type === 'Curso Deluxe' ? '' : data.content;
 
       const newContractData: any = {
+          folio: folio,
           title: data.title,
           content: contractContent,
           type: data.type,
@@ -233,7 +260,7 @@ export function ContractForm() {
 
       toast({
         title: '¡Contrato Guardado!',
-        description: `El contrato "${data.title}" ha sido creado exitosamente.`,
+        description: `El contrato "${data.title}" ha sido creado exitosamente con el folio ${folio}.`,
       });
       
       router.push(`/contracts/${contractId}?print=true`);
@@ -639,6 +666,7 @@ export function ContractForm() {
                   <div className="mt-6">
                       <h3 className="text-lg font-medium mb-2">Vista Previa del Contrato</h3>
                       <DeluxePremiumContractTemplatePreview 
+                        folio={"CT-XXXX-XXXX"}
                         clientName={allFormValues.clientName} 
                         clientEmail={allFormValues.clientEmail} 
                         deluxeDetails={allFormValues.deluxeDetails as DeluxeContractDetails}

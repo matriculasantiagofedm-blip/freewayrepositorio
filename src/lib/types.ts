@@ -44,6 +44,7 @@ export interface DeluxeContractDetails {
 
 export interface Contract {
   id: string;
+  folio: string;
   title: string;
   client?: Client; // This might be populated after fetching
   clientName: string;

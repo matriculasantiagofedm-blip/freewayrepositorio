@@ -70,6 +70,9 @@ const contractFormSchema = z.object({
     studentAddress: z.string().optional(),
     studentPhone1: z.string().optional(),
     studentPhone2: z.string().optional(),
+    paymentDetails: z.string().optional(),
+    paymentInstallments: z.array(z.string().optional()).optional(),
+    paymentAmount: z.number().optional(),
     vehicleTransmission: z.enum(['Automático', 'Manual']).optional(),
     licenseCategory: z.enum(['A, C', 'A, C, D']).optional(),
     theoreticalClassSchedule: z.enum(['Lunes', 'Miércoles']).optional(),
@@ -78,9 +81,6 @@ const contractFormSchema = z.object({
       date: z.string().optional(),
       time: z.string().optional(),
     })).optional(),
-    paymentDetails: z.string().optional(),
-    paymentInstallments: z.array(z.string().optional()).optional(),
-    paymentAmount: z.number().optional(),
   }).optional(),
 });
 
@@ -110,14 +110,14 @@ export function ContractForm() {
         studentAddress: '',
         studentPhone1: '',
         studentPhone2: '',
+        paymentDetails: '',
+        paymentInstallments: Array(6).fill(''),
+        paymentAmount: 33.50,
         vehicleTransmission: undefined,
         licenseCategory: undefined,
         theoreticalClassSchedule: undefined,
         theoreticalClasses: Array(10).fill(''),
         classSchedules: [{ date: '', time: '' }],
-        paymentDetails: '',
-        paymentInstallments: Array(6).fill(''),
-        paymentAmount: 33.50,
       }
     },
   });
@@ -286,38 +286,69 @@ export function ContractForm() {
                 </FormItem>
               )}
             />
-             <FormField
-              control={form.control}
-              name="clientName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nombre del Cliente</FormLabel>
-                  <FormControl>
-                    <Input placeholder="ej., Innovate Corp" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="clientEmail"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email del Cliente</FormLabel>
-                  <FormControl>
-                    <Input placeholder="cliente@ejemplo.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+             {contractType !== 'Curso Deluxe' && (
+                <>
+                    <FormField
+                        control={form.control}
+                        name="clientName"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Nombre del Cliente</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="ej., Innovate Corp" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="clientEmail"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Email del Cliente</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="cliente@ejemplo.com" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </>
+            )}
+
             {contractType === 'Curso Deluxe' ? (
                 <div className="space-y-6 pt-4">
 
                   {/* DATOS DEL ESTUDIANTE */}
                   <div className="space-y-4">
                      <h3 className="text-lg font-medium text-primary border-b pb-2">Datos del Estudiante</h3>
+                      <FormField
+                        control={form.control}
+                        name="clientName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nombre del Cliente</FormLabel>
+                            <FormControl>
+                              <Input placeholder="ej., Innovate Corp" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="clientEmail"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email del Cliente</FormLabel>
+                            <FormControl>
+                              <Input placeholder="cliente@ejemplo.com" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                      <FormField
                         control={form.control}
                         name="deluxeDetails.studentIdNumber"

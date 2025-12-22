@@ -300,7 +300,7 @@ export function ContractForm() {
               )}
             />
             <FormField
-              control-form.control}
+              control={form.control}
               name="clientEmail"
               render={({ field }) => (
                 <FormItem>

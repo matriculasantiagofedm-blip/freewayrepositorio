@@ -35,13 +35,17 @@ export function UserNav() {
     if (storedUser && roles.includes(storedUser)) {
         setCurrentUser(storedUser);
     } else {
-        setCurrentUser(roles[0]); // Default to first role
+        const defaultRole = roles[0];
+        setCurrentUser(defaultRole);
+        localStorage.setItem('currentUser', defaultRole);
     }
   }, []);
 
   const handleRoleChange = (role: string) => {
       setCurrentUser(role);
       localStorage.setItem('currentUser', role);
+      // Dispara un evento para notificar a otros componentes del cambio de rol
+      window.dispatchEvent(new Event('storage'));
   };
 
 

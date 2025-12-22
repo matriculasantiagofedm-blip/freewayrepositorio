@@ -9,32 +9,43 @@ import {
 } from '@/components/ui/sidebar';
 import { GanttChartSquare, FileText, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useCurrentRole } from '@/hooks/use-current-role';
 
-const links = [
+const allLinks = [
     {
         href: '/dashboard',
         label: 'Panel de Control',
         icon: GanttChartSquare,
+        roles: ['Ventas', 'Ventas Externas'],
     },
     {
         href: '/contracts',
         label: 'Contratos',
         icon: FileText,
+        roles: ['Administrador'],
     },
     {
         href: '/clients',
         label: 'Clientes',
         icon: Users,
+        roles: ['Ventas', 'Ventas Externas'],
     },
 ];
 
 export function MainNav({ className }: { className?: string }) {
   const pathname = usePathname();
+  const { role } = useCurrentRole();
+
+  const filteredLinks = allLinks.filter(link => role && link.roles.includes(role));
+
+  if (!role) {
+      return null;
+  }
 
   return (
     <nav className={cn('flex flex-col h-full', className)}>
       <SidebarMenu className="flex-1">
-        {links.map((link) => (
+        {filteredLinks.map((link) => (
           <SidebarMenuItem key={link.href}>
             <SidebarMenuButton
               asChild

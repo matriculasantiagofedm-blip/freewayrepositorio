@@ -514,13 +514,13 @@ export function ContractForm() {
                                         <FormControl>
                                             <RadioGroupItem value="45.00" id="amount-45" />
                                         </FormControl>
-                                        <FormLabel htmlFor="amount-45" className="font-normal">B/.45.00</FormLabel>
+                                        <FormLabel htmlFor="amount-45" className="font-normal">Deluxe 16 Hrs - B/.45.00</FormLabel>
                                     </FormItem>
                                     <FormItem className="flex items-center space-x-2">
                                         <FormControl>
                                             <RadioGroupItem value="33.50" id="amount-33" />
                                         </FormControl>
-                                        <FormLabel htmlFor="amount-33" className="font-normal">B/.33.50</FormLabel>
+                                        <FormLabel htmlFor="amount-33" className="font-normal">Deluxe 12 Hrs - B/.33.50</FormLabel>
                                     </FormItem>
                                 </RadioGroup>
                                 </FormControl>

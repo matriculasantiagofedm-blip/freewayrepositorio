@@ -82,15 +82,7 @@ const contractFormSchema = z.object({
 type ContractFormValues = z.infer<typeof contractFormSchema>;
 
 const generateTimeSlots = () => {
-    const slots = [];
-    for (let hour = 7; hour <= 20; hour++) {
-        for (let minute = 0; minute < 60; minute += 30) {
-            const hh = hour.toString().padStart(2, '0');
-            const mm = minute.toString().padStart(2, '0');
-            slots.push(`${hh}:${mm}`);
-        }
-    }
-    return slots;
+    return ['08:00', '10:00', '13:00', '15:00'];
 };
 
 export function ContractForm() {

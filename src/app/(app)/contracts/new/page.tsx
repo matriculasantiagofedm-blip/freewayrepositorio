@@ -1,9 +1,16 @@
 'use client';
 import { Suspense } from 'react';
-import { ContractForm } from "@/components/contract-form";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import dynamic from 'next/dynamic';
+
+// Carga dinámica del formulario para evitar errores de hidratación (hydration)
+const ContractForm = dynamic(() => import('@/components/contract-form').then(mod => mod.ContractForm), {
+    ssr: false,
+    loading: () => <p>Cargando formulario...</p>
+});
+
 
 function NewContractPageContent() {
     return (

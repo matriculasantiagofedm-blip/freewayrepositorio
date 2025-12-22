@@ -63,58 +63,54 @@ const automatedDeadlineRemindersFlow = ai.defineFlow(
     const { clientEmail, userEmail, deadlines, contractId } = input;
     let remindersSent = true;
 
+    // Get the current date in UTC to have a consistent reference
+    const now = new Date();
+    const today = new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+
     for (const deadline of deadlines) {
-      const deadlineDate = new Date(deadline.date);
-      const oneWeekBefore = new Date(deadlineDate.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const oneDayBefore = new Date(deadlineDate.getTime() - 1 * 24 * 60 * 60 * 1000);
+        // Dates from the form are YYYY-MM-DD. Parsing them this way treats them as UTC midnight.
+        const deadlineDate = new Date(`${deadline.date}T00:00:00Z`);
 
-      const now = new Date();
+        const oneWeekBefore = new Date(deadlineDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const oneDayBefore = new Date(deadlineDate.getTime() - 1 * 24 * 60 * 60 * 1000);
 
-      // Check if it's time to send the one-week reminder
-      if (
-        oneWeekBefore <= now &&
-        new Date(now.getTime() - oneWeekBefore.getTime()).getDate() === now.getDate()
-      ) {
-        // Send one-week reminder
-        const weekReminderSubject = `Contract ${contractId}: Deadline approaching in one week!`;
-        const weekReminderBody = `This is a reminder that the deadline for ${deadline.description} is approaching in one week, on ${deadline.date}.`;
+        // Check if today is exactly one week before the deadline
+        if (today.getTime() === oneWeekBefore.getTime()) {
+            const weekReminderSubject = `Contract ${contractId}: Deadline approaching in one week!`;
+            const weekReminderBody = `This is a reminder that the deadline for ${deadline.description} is approaching in one week, on ${deadline.date}.`;
 
-        const clientWeekResult = await sendReminderEmail({
-          recipient: clientEmail,
-          subject: weekReminderSubject,
-          body: weekReminderBody,
-        });
-        const userWeekResult = await sendReminderEmail({
-          recipient: userEmail,
-          subject: weekReminderSubject,
-          body: weekReminderBody,
-        });
+            const clientWeekResult = await sendReminderEmail({
+                recipient: clientEmail,
+                subject: weekReminderSubject,
+                body: weekReminderBody,
+            });
+            const userWeekResult = await sendReminderEmail({
+                recipient: userEmail,
+                subject: weekReminderSubject,
+                body: weekReminderBody,
+            });
 
-        remindersSent = remindersSent && clientWeekResult && userWeekResult;
-      }
+            remindersSent = remindersSent && clientWeekResult && userWeekResult;
+        }
 
-      // Check if it's time to send the one-day reminder
-      if (
-        oneDayBefore <= now &&
-        new Date(now.getTime() - oneDayBefore.getTime()).getDate() === now.getDate()
-      ) {
-        // Send one-day reminder
-        const dayReminderSubject = `Contract ${contractId}: Deadline approaching tomorrow!`;
-        const dayReminderBody = `This is a reminder that the deadline for ${deadline.description} is approaching tomorrow, on ${deadline.date}.`;
+        // Check if today is exactly one day before the deadline
+        if (today.getTime() === oneDayBefore.getTime()) {
+            const dayReminderSubject = `Contract ${contractId}: Deadline approaching tomorrow!`;
+            const dayReminderBody = `This is a reminder that the deadline for ${deadline.description} is approaching tomorrow, on ${deadline.date}.`;
 
-        const clientDayResult = await sendReminderEmail({
-          recipient: clientEmail,
-          subject: dayReminderSubject,
-          body: dayReminderBody,
-        });
-        const userDayResult = await sendReminderEmail({
-          recipient: userEmail,
-          subject: dayReminderSubject,
-          body: dayReminderBody,
-        });
+            const clientDayResult = await sendReminderEmail({
+                recipient: clientEmail,
+                subject: dayReminderSubject,
+                body: dayReminderBody,
+            });
+            const userDayResult = await sendReminderEmail({
+                recipient: userEmail,
+                subject: dayReminderSubject,
+                body: dayReminderBody,
+            });
 
-        remindersSent = remindersSent && clientDayResult && userDayResult;
-      }
+            remindersSent = remindersSent && clientDayResult && userDayResult;
+        }
     }
 
     return { remindersSent };

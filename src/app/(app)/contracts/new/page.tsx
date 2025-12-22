@@ -1,9 +1,11 @@
+'use client';
+import { Suspense } from 'react';
 import { ContractForm } from "@/components/contract-form";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function NewContractPage() {
+function NewContractPageContent() {
     return (
         <div className="flex flex-col gap-8">
             <div className="flex items-center gap-4">
@@ -19,5 +21,14 @@ export default function NewContractPage() {
                 <ContractForm />
             </div>
         </div>
+    );
+}
+
+
+export default function NewContractPage() {
+    return (
+        <Suspense fallback={<div>Cargando...</div>}>
+            <NewContractPageContent />
+        </Suspense>
     );
 }

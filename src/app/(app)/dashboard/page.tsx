@@ -5,12 +5,9 @@ import Link from 'next/link';
 import { PlusCircle, FileText, CalendarClock, Users, Car, Bike, Combine, Star, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { isPast } from 'date-fns';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
 import type { Contract, Deadline } from '@/lib/types';
-import { ContractForm } from '@/components/contract-form';
-import { AccordionWrapper } from '@/components/accordion-wrapper';
 
 function toDate(date: any): Date {
   if (date instanceof Date) {
@@ -60,27 +57,9 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
+      <div className="flex justify-between items-center">
         <h1 className="font-headline text-3xl font-bold">Panel de Control</h1>
       </div>
-
-      <AccordionWrapper>
-        <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="new-contract" className="border rounded-lg bg-card">
-                <AccordionTrigger className="text-lg px-6 hover:no-underline [&[data-state=open]>svg]:rotate-90">
-                    <div className="flex items-center">
-                        <PlusCircle className="mr-4 h-8 w-8" />
-                        Datos del Contrato (Nuevo)
-                    </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                    <div className="p-6 border-t">
-                      <ContractForm />
-                    </div>
-                </AccordionContent>
-            </AccordionItem>
-        </Accordion>
-      </AccordionWrapper>
 
       <div className="grid gap-4 md:grid-cols-3">
         {stats.map((stat) => (
@@ -98,35 +77,35 @@ export default function DashboardPage() {
 
       <div>
         <h2 className="mb-4 font-headline text-2xl font-semibold">
-          Tipos de Contratos
+          Crear Nuevo Contrato
         </h2>
         <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-5">
           <Button asChild variant="outline" className="h-24 text-lg">
-              <Link href="/contracts/auto" className="flex items-center gap-4">
+              <Link href="/contracts/new?type=Curso%20Auto" className="flex items-center gap-4">
                   <Car className="h-8 w-8" />
                   Curso Auto
               </Link>
           </Button>
            <Button asChild variant="outline" className="h-24 text-lg">
-              <Link href="/contracts/moto" className="flex items-center gap-4">
+              <Link href="/contracts/new?type=Curso%20Moto" className="flex items-center gap-4">
                   <Bike className="h-8 w-8" />
                   Curso Moto
               </Link>
           </Button>
            <Button asChild variant="outline" className="h-24 text-lg">
-              <Link href="/contracts/mixto" className="flex items-center gap-4">
+              <Link href="/contracts/new?type=Curso%20Mixto" className="flex items-center gap-4">
                   <Combine className="h-8 w-8" />
                   Curso Mixto
               </Link>
           </Button>
            <Button asChild variant="outline" className="h-24 text-lg">
-              <Link href="/contracts/deluxe" className="flex items-center gap-4">
+              <Link href="/contracts/new?type=Curso%20Deluxe" className="flex items-center gap-4">
                   <Star className="h-8 w-8" />
                   Curso Deluxe
               </Link>
           </Button>
            <Button asChild variant="outline" className="h-24 text-lg">
-              <Link href="/contracts/ampliaciones" className="flex items-center gap-4">
+              <Link href="/contracts/new?type=Ampliaciones" className="flex items-center gap-4">
                   <Plus className="h-8 w-8" />
                   Ampliaciones
               </Link>

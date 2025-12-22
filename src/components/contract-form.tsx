@@ -5,7 +5,7 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import {
   collection,
@@ -42,7 +42,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Textarea } from './ui/textarea';
 import { DeluxePremiumContractTemplatePreview } from './deluxe-premium-contract-preview';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import type { Client, DeluxeContractDetails } from '@/lib/types';
+import type { Client, DeluxeContractDetails, ContractType } from '@/lib/types';
 
 
 const contractFormSchema = z.object({
@@ -92,7 +92,10 @@ export function ContractForm() {
   const { toast } = useToast();
   const { firestore, user } = useFirebase();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const timeSlots = generateTimeSlots();
+  
+  const contractTypeParam = searchParams.get('type') as ContractType | null;
 
   const form = useForm<ContractFormValues>({
     resolver: zodResolver(contractFormSchema),
@@ -101,7 +104,7 @@ export function ContractForm() {
       clientName: '',
       clientEmail: '',
       content: '',
-      type: undefined,
+      type: contractTypeParam || undefined,
       deadlines: [],
       deluxeDetails: {
         studentIdNumber: '',

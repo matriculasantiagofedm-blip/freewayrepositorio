@@ -126,10 +126,10 @@ const motoCourseValues = [
 ];
 
 const practicalClassTimeSlots = [
-    'de 8:00 am a 10:00 am',
-    'de 10:00 am a 12:00 md',
-    'de 1:00 pm a 3:00 pm',
-    'de 3:00 pm a 5:00 pm',
+    '8:00 am a 10:00 am',
+    '10:00 am a 12:00 md',
+    '1:00 pm a 3:00 pm',
+    '3:00 pm a 5:00 pm',
 ];
 
 export function ContractForm() {

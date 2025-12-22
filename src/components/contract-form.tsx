@@ -144,7 +144,7 @@ export function ContractForm() {
         return querySnapshot.docs[0].id;
     } else {
         const newClientRef = doc(collection(firestore, 'clients'));
-        const newClient: Omit<Client, 'id'|'avatarUrl'> = {
+        const newClient: Omit<Client, 'id'> = {
             name: clientName,
             email: clientEmail,
             userId: userId,
@@ -191,6 +191,9 @@ export function ContractForm() {
 
       const newContractRef = await addDoc(contractsCollection, newContractData);
       const contractId = newContractRef.id;
+
+      await setDoc(doc(firestore, 'clients', clientId), { id: clientId, name: data.clientName, email: data.clientEmail, userId: user.uid }, { merge: true });
+
 
       if (data.deadlines && data.deadlines.length > 0) {
         await sendAutomatedDeadlineReminders({
@@ -426,7 +429,7 @@ export function ContractForm() {
                             control={form.control}
                             name={`deluxeDetails.classSchedules.${index}.date`}
                             render={({ field }) => (
-                              <FormItem>
+                              <FormItem className="flex flex-col">
                                  <FormLabel>Fecha</FormLabel>
                                 <Popover>
                                   <PopoverTrigger asChild>

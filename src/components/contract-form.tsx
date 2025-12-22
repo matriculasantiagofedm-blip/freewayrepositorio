@@ -174,6 +174,7 @@ export function ContractForm() {
   const contractType = form.watch('type');
   const allFormValues = form.watch();
   const paymentAmount = form.watch('deluxeDetails.paymentAmount');
+  const courseValue = form.watch('autoMotoDetails.courseValue');
 
   useEffect(() => {
     if (contractType) {
@@ -190,6 +191,14 @@ export function ContractForm() {
       form.setValue('deluxeDetails.paymentDetails', 'El valor total del curso es de B/201.00, mas una matricula de B/15.00');
     }
   }, [paymentAmount, form]);
+  
+  useEffect(() => {
+      if (courseValue !== undefined && courseValue > 0) {
+          form.setValue('autoMotoDetails.downPayment', courseValue / 2);
+      } else {
+          form.setValue('autoMotoDetails.downPayment', undefined);
+      }
+  }, [courseValue, form]);
 
 
   async function findOrCreateClient(clientName: string, clientEmail: string, userId: string): Promise<string> {
@@ -377,36 +386,6 @@ export function ContractForm() {
                 </FormItem>
               )}
             />
-            {(contractType !== 'Curso Auto' && contractType !== 'Curso Moto' && contractType !== 'Curso Deluxe') && (
-              <>
-                 <FormField
-                    control={form.control}
-                    name="clientName"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Nombre del Cliente</FormLabel>
-                            <FormControl>
-                                <Input placeholder="ej., Innovate Corp" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="clientEmail"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Email del Cliente</FormLabel>
-                            <FormControl>
-                                <Input placeholder="cliente@ejemplo.com" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-              </>
-            )}
            
             {(contractType === 'Curso Auto' || contractType === 'Curso Moto') && (
               <div className="space-y-6 pt-4">
@@ -504,6 +483,7 @@ export function ContractForm() {
                                             value={field.value ?? ''}
                                             onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
                                             placeholder="0.00"
+                                            readOnly
                                         />
                                     </FormControl>
                                 </FormItem>
@@ -920,30 +900,58 @@ export function ContractForm() {
                       />
                   </div>
                 </div>
-            ) : contractType !== 'Curso Auto' && contractType !== 'Curso Moto' && (
-              <FormField
-                control={form.control}
-                name="content"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Contenido del Contrato</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Describe los términos del contrato..."
-                        className="min-h-32"
-                        {...field}
-                        value={field.value || ''}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            ) : (contractType !== 'Curso Auto' && contractType !== 'Curso Moto' && contractType !== 'Curso Mixto') && (
+              <>
+                 <FormField
+                    control={form.control}
+                    name="clientName"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Nombre del Cliente</FormLabel>
+                            <FormControl>
+                                <Input placeholder="ej., Innovate Corp" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="clientEmail"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Email del Cliente</FormLabel>
+                            <FormControl>
+                                <Input placeholder="cliente@ejemplo.com" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="content"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Contenido del Contrato</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Describe los términos del contrato..."
+                          className="min-h-32"
+                          {...field}
+                          value={field.value || ''}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
             )}
           </CardContent>
         </Card>
 
-        {contractType !== 'Curso Deluxe' && contractType !== 'Curso Auto' && contractType !== 'Curso Moto' && contractType !== 'Curso Mixto' && (
+        {(contractType !== 'Curso Deluxe' && contractType !== 'Curso Auto' && contractType !== 'Curso Moto' && contractType !== 'Curso Mixto') && (
           <Card>
             <CardHeader>
               <CardTitle className="font-headline">Vencimientos y Reuniones</CardTitle>

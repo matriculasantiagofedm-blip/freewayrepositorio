@@ -1,93 +1,83 @@
 'use client';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { Card, CardContent } from './ui/card';
-import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import type { AutoMotoContractDetails } from '@/lib/types';
 
-const Value = ({ children, className }: { children: React.ReactNode, className?: string }) => <span className={cn("px-1 font-semibold text-primary", className)}>{children}</span>;
+const Line = ({ children, className }: { children?: React.ReactNode, className?: string }) => (
+  <span className={cn("border-b border-dotted border-black flex-1 min-w-8 text-center font-semibold text-primary", className)}>
+    {children || <>&nbsp;</>}
+  </span>
+);
+const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary">{children}</span>;
+
+const Checkbox = ({ checked }: { checked: boolean }) => (
+    <span className={`border border-black inline-block w-3 h-3 text-center leading-none align-middle ${checked ? 'bg-black text-white' : ''}`}>
+        {checked ? 'X' : ''}
+    </span>
+);
 
 interface AutoMotoContractTemplatePreviewProps {
     folio: string;
     clientName?: string;
+    clientEmail?: string;
     autoMotoDetails?: AutoMotoContractDetails;
     createdBy?: string | null;
 }
 
-export function AutoMotoContractTemplatePreview({ folio, clientName, autoMotoDetails, createdBy }: AutoMotoContractTemplatePreviewProps) {
-  const [currentDate, setCurrentDate] = useState<Date | null>(null);
+export function AutoMotoContractTemplatePreview({ folio, clientName, clientEmail, autoMotoDetails, createdBy }: AutoMotoContractTemplatePreviewProps) {
+  const balance = (autoMotoDetails?.courseValue || 0) - (autoMotoDetails?.downPayment || 0);
 
-  useEffect(() => {
-    setCurrentDate(new Date());
-  }, []);
-
-  if (!currentDate) {
-    return (
-        <Card className="p-6 print:shadow-none print:border-none print:p-0 font-serif text-xs">
-            <CardContent>
-                <p>Generando vista previa del contrato...</p>
-            </CardContent>
-        </Card>
-    );
-  }
-  
   return (
     <Card className="p-6 print:shadow-none print:border-none print:p-0 font-serif text-xs">
       <CardContent className="p-0 space-y-2 relative">
         <p className="absolute top-0 right-0 text-xs font-semibold text-destructive">Folio: {folio}</p>
-
-        <h2 className="text-center font-bold text-sm mb-2 pt-4">CONTRATO DE SERVICIOS EDUCATIVOS</h2>
+        <div className="flex items-center gap-2 justify-center pb-2">
+            <h2 className="text-center font-bold text-sm">CONTRATO POR SERVICIO DE CURSO DE MANEJO</h2>
+        </div>
         
-        <h3 className="font-bold">CLÁUSULA QUINTA - RESTRICCIONES DE ACOMPAÑANTES</h3>
-        <p>No se permitirá bajo ningún concepto el ingreso de acompañantes, niños, mascotas o terceras personas durante las clases teóricas o prácticas.</p>
-        
-        <h3 className="font-bold">CLÁUSULA SEXTA - PUNTUALIDAD</h3>
-        <p>En caso de que EL ESTUDIANTE llegue tarde a su clase, solo recibirá el tiempo restante de las 2 horas programadas, sin derecho a reposición.</p>
-
-        <h3 className="font-bold">CLÁUSULA SÉPTIMA - CANCELACIÓN DEL CURSO</h3>
-        <p>Si EL ESTUDIANTE decide cancelar el curso una vez iniciada la inscripción, no habrá devolución de dinero bajo ninguna circunstancia.</p>
-
-        <h3 className="font-bold">CLÁUSULA OCTAVA - OBLIGACIONES DEL ESTUDIANTE</h3>
-        <p>EL ESTUDIANTE se compromete a:</p>
-        <ol className="list-decimal list-inside pl-4">
-            <li>Seguir las instrucciones del instructor.</li>
-            <li>Mantener una actitud respetuosa y adecuada durante las clases.</li>
-            <li>Asistir en estado óptimo de salud física, mental y emocional.</li>
-        </ol>
-
-        <h3 className="font-bold">CLÁUSULA NOVENA - VESTIMENTA</h3>
-        <p>Para las clases prácticas y teóricas, EL ESTUDIANTE deberá asistir con ropa adecuada. Se prohíbe presentarse con: Escotes pronunciados, minifaldas, camisetas sin mangas, pantalones cortos, leggins, chancletas o sandalias. El incumplimiento de esta norma implica la pérdida automática de la clase, sin derecho a reposición.</p>
-
-        <h3 className="font-bold">CLÁUSULA DÉCIMA - CERTIFICACIÓN</h3>
-        <p>El certificado de aprobación del curso será entregado únicamente si EL ESTUDIANTE:</p>
-        <ol className="list-decimal list-inside pl-4">
-            <li>Está paz y salvo en sus pagos.</li>
-            <li>Ha completado la totalidad del curso teórico y práctico.</li>
-        </ol>
-        
-        <h3 className="font-bold">CLÁUSULA DÉCIMA PRIMERA - VIGENCIA DEL CURSO</h3>
-        <p>Si EL ESTUDIANTE no establece contacto para finalizar su curso en un plazo de tres (3) meses desde la fecha de inicio, se entenderá que renuncia a continuar, sin derecho a devolución del dinero ni a reclamos posteriores.</p>
-        
-        <h3 className="font-bold">CLÁUSULA DÉCIMA SEGUNDA - ACEPTACIÓN</h3>
-        <p>Ambas partes declaran haber leído, entendido y aceptado el presente contrato, firmándolo en señal de conformidad.</p>
-
-        <p className="text-center !mt-4">
-            En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los <Value>{format(currentDate, 'd')}</Value> días del mes de <Value>{format(currentDate, 'LLLL', { locale: es })}</Value>, de <Value>{format(currentDate, 'yyyy')}</Value>, a las <Value>{format(currentDate, 'p', { locale: es })}</Value>.
+        <p className='text-[10px] leading-tight'>
+            La empresa FREEWAY ESCUELA DE MANEJO S.A., con ubicación en La Chorrera, Vía Interamericana, Costa Verde, PH Green Plaza, Local #20, debidamente inscrita RUC 155628022-2-2016 DV 2, en adelante denominada LA EMPRESA, y <Line>{clientName}</Line>, identificado con cédula/pasaporte N.° <Line>{autoMotoDetails?.studentIdNumber}</Line>, con domicilio en <Line>{autoMotoDetails?.studentAddress}</Line>, teléfonos: <Line>{autoMotoDetails?.studentPhone}</Line>, correo electrónico: <Line>{clientEmail}</Line>, en adelante denominado EL ESTUDIANTE.
         </p>
 
-        <div className="flex justify-around pt-12">
-            <div className="text-center flex flex-col items-center">
-                <span className="border-b border-black w-48 block">&nbsp;</span>
-                <p className="text-[10px]">Por la Empresa</p>
-            </div>
-            <div className="text-center flex flex-col items-center">
-                <span className="border-b border-black w-48 block"><Value className="text-black">{clientName}</Value></span>
-                <p className="text-[10px]">El Cliente</p>
-                <span className="border-b border-black w-48 block mt-4"><Value className="text-black">{autoMotoDetails?.studentIdNumber}</Value></span>
-                <p className="text-[10px]">N° de identificación</p>
+        <h3 className="font-bold text-center pt-1">DECLARAN:</h3>
+        <p className='text-[10px] leading-tight'>Ambas partes convienen celebrar este contrato en el cual la empresa se compromete a brindar al cliente, un servicio de capacitación y adiestramiento teórico y práctico relacionado con el aprendizaje de conducción de vehículos a motor. El mismo se regirá bajo los términos y condiciones que se detallan en las siguientes cláusulas:</p>
+
+        <h3 className="font-bold">CLÁUSULA PRIMERA - VALOR Y FORMA DE PAGO</h3>
+        <div className='space-y-1 text-[10px]'>
+            <p>El valor total del curso es de <Line>{autoMotoDetails?.courseValue ? `B/.${autoMotoDetails.courseValue.toFixed(2)}` : ''}</Line> (B/ <Line>{autoMotoDetails?.courseValue?.toFixed(2)}</Line>).</p>
+            <p>"El estudiante ha efectuado un abono por la suma de B/. <Line>{autoMotoDetails?.downPayment?.toFixed(2)}</Line>, quedando un saldo pendiente de B/. <Line>{balance > 0 ? balance.toFixed(2) : '0.00'}</Line>, el cual se compromete a cancelar en su totalidad el día <Line>{autoMotoDetails?.paymentDeadline}</Line>."</p>
+            <ul className="list-disc list-inside pl-2">
+                <li>Para la inscripción, EL ESTUDIANTE deberá abonar el 50% del valor total como reserva de su cupo y horario.</li>
+                <li>El 50% restante deberá cancelarse antes de iniciar la primera clase práctica.</li>
+                <li>En caso de incumplimiento en los pagos, EL ESTUDIANTE no podrá continuar el curso.</li>
+            </ul>
+        </div>
+        
+        <h3 className="font-bold">CLÁUSULA SEGUNDA - DETALLES DEL CURSO</h3>
+        <div className='space-y-1 text-[10px] pl-4'>
+             <p>1. Transmisión del vehículo: Automático <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Automático'} /> / Manual <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Manual'} /> / Moto <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Moto'} /></p>
+             <p>2. Categoría de licencia a aplicar: A, C <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C'} /> / A, C, D <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C, D'} /> / A, B <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, B'} /></p>
+            <div className="flex items-center gap-2">3. Horario para clases teóricas: <Line>{autoMotoDetails?.theoreticalClassSchedule}</Line> Hora <Line>&nbsp;</Line></div>
+            <p>4. Horario para clases practicas:</p>
+            <div className="pl-4 space-y-0.5">
+                <div className="flex items-center gap-2">○ Clase 1: <Line>&nbsp;</Line> Hora <Line>{autoMotoDetails?.practicalClassSchedules?.[0]?.time}</Line></div>
+                <div className="flex items-center gap-2">○ Clase 2: <Line>&nbsp;</Line> Hora <Line>{autoMotoDetails?.practicalClassSchedules?.[1]?.time}</Line></div>
+                <div className="flex items-center gap-2">○ Clase 3: <Line>&nbsp;</Line> Hora <Line>{autoMotoDetails?.practicalClassSchedules?.[2]?.time}</Line></div>
+                <div className="flex items-center gap-2">○ Clase 4: <Line>&nbsp;</Line> Hora <Line>{autoMotoDetails?.practicalClassSchedules?.[3]?.time}</Line></div>
             </div>
         </div>
+
+        <h3 className="font-bold">CLÁUSULA TERCERA - INASISTENCIAS Y REPROGRAMACIONES</h3>
+        <div className='text-[10px] space-y-0.5'>
+            <p>EL ESTUDIANTE que no asista a una clase práctica en el horario establecido perderá automáticamente la clase práctica sin derecho a reposición ni reclamo.</p>
+            <p>Excepción: Si la falta es por motivo de salud, deberá presentar constancia médica válida y coordinar con la administración para una reprogramación, la cual dependerá de la disponibilidad de horarios.</p>
+            <p>SI EL ESTUDIANTE falta a más de una clase práctica sin justificar médicamente, no tendrá derecho a certificado y deberá pagar un recargo de $20.00 por cada clase perdida para poder reprogramarla.</p>
+        </div>
+
+        <h3 className="font-bold">CLÁUSULA CUARTA - LUGAR DE INICIO Y TRASLADO</h3>
+        <p className='text-[10px]'>Las clases prácticas iniciarán en la oficina de LA ESCUELA. Desde allí, EL ESTUDIANTE será trasladado al circuito de prácticas y posteriormente de regreso. Dicho traslado se encuentra incluido dentro del tiempo de las 2 horas de clase práctica.</p>
+
+        {/* The rest of the template will be added later */}
 
         {createdBy && (
           <div className="text-xs text-muted-foreground pt-8">

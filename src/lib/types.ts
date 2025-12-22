@@ -44,7 +44,18 @@ export interface DeluxeContractDetails {
 
 export interface AutoMotoContractDetails {
   studentIdNumber?: string;
+  studentAddress?: string;
+  studentPhone?: string;
+  courseValue?: number;
+  downPayment?: number;
+  balance?: number;
+  paymentDeadline?: string;
+  vehicleTransmission?: 'Automático' | 'Manual' | 'Moto';
+  licenseCategory?: 'A, C' | 'A, C, D' | 'A, B';
+  theoreticalClassSchedule?: string;
+  practicalClassSchedules?: { time?: string }[];
 }
+
 
 export interface Contract {
   id: string;

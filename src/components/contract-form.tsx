@@ -91,6 +91,18 @@ const contractFormSchema = z.object({
   }).optional(),
   autoMotoDetails: z.object({
     studentIdNumber: z.string().optional(),
+    studentAddress: z.string().optional(),
+    studentPhone: z.string().optional(),
+    courseValue: z.number().optional(),
+    downPayment: z.number().optional(),
+    balance: z.number().optional(),
+    paymentDeadline: z.string().optional(),
+    vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).optional(),
+    licenseCategory: z.enum(['A, C', 'A, C, D', 'A, B']).optional(),
+    theoreticalClassSchedule: z.string().optional(),
+    practicalClassSchedules: z.array(z.object({
+      time: z.string().optional(),
+    })).optional(),
   }).optional(),
 });
 
@@ -135,6 +147,16 @@ export function ContractForm() {
       },
       autoMotoDetails: {
         studentIdNumber: '',
+        studentAddress: '',
+        studentPhone: '',
+        courseValue: 0,
+        downPayment: 0,
+        balance: 0,
+        paymentDeadline: '',
+        vehicleTransmission: undefined,
+        licenseCategory: undefined,
+        theoreticalClassSchedule: '',
+        practicalClassSchedules: Array(4).fill({ time: '' }),
       }
     },
   });
@@ -267,9 +289,7 @@ export function ContractForm() {
       }
       
       if ((data.type === 'Curso Auto' || data.type === 'Curso Moto') && data.autoMotoDetails) {
-          newContractData.autoMotoDetails = {
-              studentIdNumber: data.autoMotoDetails.studentIdNumber || '',
-          }
+          newContractData.autoMotoDetails = data.autoMotoDetails;
       }
 
       const newContractRef = await addDoc(contractsCollection, newContractData);
@@ -357,56 +377,178 @@ export function ContractForm() {
                 </FormItem>
               )}
             />
-             {contractType !== 'Curso Deluxe' && (
-                <>
-                    <FormField
-                        control={form.control}
-                        name="clientName"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Nombre del Cliente</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="ej., Innovate Corp" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="clientEmail"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Email del Cliente</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="cliente@ejemplo.com" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </>
-            )}
+            <FormField
+                control={form.control}
+                name="clientName"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Nombre del Cliente</FormLabel>
+                        <FormControl>
+                            <Input placeholder="ej., Innovate Corp" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <FormField
+                control={form.control}
+                name="clientEmail"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Email del Cliente</FormLabel>
+                        <FormControl>
+                            <Input placeholder="cliente@ejemplo.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
 
             {(contractType === 'Curso Auto' || contractType === 'Curso Moto') && (
               <div className="space-y-6 pt-4">
-                  <FormField
+                 <div className="space-y-4">
+                   <h3 className="text-lg font-medium text-primary border-b pb-2">Datos del Estudiante</h3>
+                    <FormField
+                        control={form.control}
+                        name="autoMotoDetails.studentIdNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Cédula/Pasaporte</FormLabel>
+                            <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="autoMotoDetails.studentAddress"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Domicilio</FormLabel>
+                            <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="autoMotoDetails.studentPhone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Teléfono</FormLabel>
+                            <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                          </FormItem>
+                        )}
+                      />
+                 </div>
+
+                 <div className="space-y-4">
+                    <h3 className="text-lg font-medium text-primary border-b pb-2">Cláusula Primera: Valor y Forma de Pago</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="autoMotoDetails.courseValue"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Valor Total del Curso (B/.)</FormLabel>
+                                    <FormControl><Input type="number" {...field} value={field.value || 0} onChange={e => field.onChange(parseFloat(e.target.value))} /></FormControl>
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="autoMotoDetails.downPayment"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Abono (B/.)</FormLabel>
+                                    <FormControl><Input type="number" {...field} value={field.value || 0} onChange={e => field.onChange(parseFloat(e.target.value))} /></FormControl>
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+                     <FormField
+                        control={form.control}
+                        name="autoMotoDetails.paymentDeadline"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Fecha Límite de Pago del Saldo</FormLabel>
+                                <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                            </FormItem>
+                        )}
+                      />
+                 </div>
+                 
+                 <div className="space-y-4">
+                    <h3 className="text-lg font-medium text-primary border-b pb-2">Cláusula Segunda: Detalles del Curso</h3>
+                    <FormField
                       control={form.control}
-                      name="autoMotoDetails.studentIdNumber"
+                      name="autoMotoDetails.vehicleTransmission"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>N° de identificación</FormLabel>
-                          <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                          <FormLabel>Transmisión del Vehículo</FormLabel>
+                          <FormControl>
+                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
+                              <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Automático" id="auto" /></FormControl><FormLabel htmlFor="auto" className="font-normal">Automático</FormLabel></FormItem>
+                              <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Manual" id="manual" /></FormControl><FormLabel htmlFor="manual" className="font-normal">Manual</FormLabel></FormItem>
+                              <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Moto" id="moto" /></FormControl><FormLabel htmlFor="moto" className="font-normal">Moto</FormLabel></FormItem>
+                            </RadioGroup>
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                    <FormField
+                      control={form.control}
+                      name="autoMotoDetails.licenseCategory"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Categoría de Licencia a Aplicar</FormLabel>
+                          <FormControl>
+                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
+                              <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="A, C" id="ac" /></FormControl><FormLabel htmlFor="ac" className="font-normal">A, C</FormLabel></FormItem>
+                              <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="A, C, D" id="acd" /></FormControl><FormLabel htmlFor="acd" className="font-normal">A, C, D</FormLabel></FormItem>
+                              <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="A, B" id="ab" /></FormControl><FormLabel htmlFor="ab" className="font-normal">A, B</FormLabel></FormItem>
+                            </RadioGroup>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="autoMotoDetails.theoreticalClassSchedule"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Horario para clases teóricas</FormLabel>
+                                <FormControl><Input {...field} value={field.value || ''} placeholder="Ej: Lunes, 8-10 AM" /></FormControl>
+                            </FormItem>
+                        )}
+                    />
+                    <div>
+                        <h4 className="font-medium text-base mb-2">Horario para clases prácticas</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                            {Array.from({ length: 4 }).map((_, index) => (
+                                <FormField
+                                    key={index}
+                                    control={form.control}
+                                    name={`autoMotoDetails.practicalClassSchedules.${index}.time`}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Hora Clase {index + 1}</FormLabel>
+                                            <FormControl><Input {...field} value={field.value || ''} placeholder="Ej: 10:00 AM" /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                 </div>
+
 
                   <div className="mt-6">
                       <h3 className="text-lg font-medium mb-2">Vista Previa del Contrato</h3>
                       <AutoMotoContractTemplatePreview 
                         folio={"CT-XXXX-XXXX"}
                         clientName={allFormValues.clientName}
+                        clientEmail={allFormValues.clientEmail}
                         autoMotoDetails={allFormValues.autoMotoDetails as AutoMotoContractDetails}
                         createdBy={role}
                       />
@@ -420,32 +562,6 @@ export function ContractForm() {
                   {/* DATOS DEL ESTUDIANTE */}
                   <div className="space-y-4">
                      <h3 className="text-lg font-medium text-primary border-b pb-2">Datos del Estudiante</h3>
-                      <FormField
-                        control={form.control}
-                        name="clientName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nombre del Estudiante</FormLabel>
-                            <FormControl>
-                              <Input placeholder="ej., Juan Pérez" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="clientEmail"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email del Estudiante</FormLabel>
-                            <FormControl>
-                              <Input placeholder="estudiante@ejemplo.com" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
                      <FormField
                         control={form.control}
                         name="deluxeDetails.studentIdNumber"

@@ -260,7 +260,7 @@ export function ContractForm() {
       
       const contractsCollection = collection(firestore, 'clients', user.uid, 'contracts');
       
-      const contractContent = (data.type === 'Curso Deluxe' || data.type === 'Curso Auto' || data.type === 'Curso Moto' ) ? '' : data.content;
+      const contractContent = (data.type === 'Curso Deluxe' || data.type === 'Curso Auto' || data.type === 'Curso Moto' || data.type === 'Curso Mixto' ) ? '' : data.content;
 
       const newContractData: any = {
           folio: folio,
@@ -336,7 +336,7 @@ export function ContractForm() {
           <CardHeader>
             <CardTitle className="font-headline">Detalles del Contrato</CardTitle>
             <CardDescription>
-              Completa los detalles principales de tu acuerdo. Se creará un nuevo cliente si el email no existe.
+              Completa los detalles principales de tu acuerdo.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -377,37 +377,67 @@ export function ContractForm() {
                 </FormItem>
               )}
             />
-            <FormField
-                control={form.control}
-                name="clientName"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Nombre del Cliente</FormLabel>
-                        <FormControl>
-                            <Input placeholder="ej., Innovate Corp" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-            <FormField
-                control={form.control}
-                name="clientEmail"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Email del Cliente</FormLabel>
-                        <FormControl>
-                            <Input placeholder="cliente@ejemplo.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-
+            {(contractType !== 'Curso Auto' && contractType !== 'Curso Moto') && (
+              <>
+                 <FormField
+                    control={form.control}
+                    name="clientName"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Nombre del Cliente</FormLabel>
+                            <FormControl>
+                                <Input placeholder="ej., Innovate Corp" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="clientEmail"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Email del Cliente</FormLabel>
+                            <FormControl>
+                                <Input placeholder="cliente@ejemplo.com" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+              </>
+            )}
+           
             {(contractType === 'Curso Auto' || contractType === 'Curso Moto') && (
               <div className="space-y-6 pt-4">
                  <div className="space-y-4">
                    <h3 className="text-lg font-medium text-primary border-b pb-2">Datos del Estudiante</h3>
+                    <FormField
+                      control={form.control}
+                      name="clientName"
+                      render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Nombre del Estudiante</FormLabel>
+                              <FormControl>
+                                  <Input placeholder="ej., Juan Pérez" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                          </FormItem>
+                      )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="clientEmail"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Email del Estudiante</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="estudiante@ejemplo.com" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                     <FormField
                         control={form.control}
                         name="autoMotoDetails.studentIdNumber"
@@ -562,6 +592,32 @@ export function ContractForm() {
                   {/* DATOS DEL ESTUDIANTE */}
                   <div className="space-y-4">
                      <h3 className="text-lg font-medium text-primary border-b pb-2">Datos del Estudiante</h3>
+                     <FormField
+                        control={form.control}
+                        name="clientName"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Nombre del Estudiante</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="ej., Juan Pérez" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                      />
+                      <FormField
+                          control={form.control}
+                          name="clientEmail"
+                          render={({ field }) => (
+                              <FormItem>
+                                  <FormLabel>Email del Estudiante</FormLabel>
+                                  <FormControl>
+                                      <Input placeholder="estudiante@ejemplo.com" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                              </FormItem>
+                          )}
+                      />
                      <FormField
                         control={form.control}
                         name="deluxeDetails.studentIdNumber"
@@ -871,7 +927,7 @@ export function ContractForm() {
           </CardContent>
         </Card>
 
-        {contractType !== 'Curso Deluxe' && contractType !== 'Curso Auto' && contractType !== 'Curso Moto' && (
+        {contractType !== 'Curso Deluxe' && contractType !== 'Curso Auto' && contractType !== 'Curso Moto' && contractType !== 'Curso Mixto' && (
           <Card>
             <CardHeader>
               <CardTitle className="font-headline">Vencimientos y Reuniones</CardTitle>

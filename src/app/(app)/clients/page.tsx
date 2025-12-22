@@ -1,6 +1,6 @@
 'use client';
-import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useDoc, useFirebase, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import type { Client } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
@@ -8,12 +8,16 @@ import Link from 'next/link';
 export default function ClientsPage() {
   const { firestore, user } = useFirebase();
 
-  const clientsQuery = useMemoFirebase(() => {
+  const clientRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return query(collection(firestore, 'clients'), where('userId', '==', user.uid));
+    // Directly reference the client document using the user's UID
+    return doc(firestore, 'clients', user.uid);
   }, [firestore, user]);
 
-  const { data: clients, isLoading } = useCollection<Client>(clientsQuery);
+  const { data: client, isLoading } = useDoc<Client>(clientRef);
+
+  // Since we are fetching a single document, we'll wrap it in an array to fit the existing map structure.
+  const clients = client ? [client] : [];
 
   return (
     <div className="flex flex-col gap-8">
@@ -21,7 +25,7 @@ export default function ClientsPage() {
         <h1 className="font-headline text-3xl font-bold">Clientes</h1>
       </div>
       {isLoading && <p>Cargando clientes...</p>}
-      {!isLoading && clients && clients.length > 0 ? (
+      {!isLoading && clients.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {clients.map((client) => (
             <Link key={client.id} href={`/clients/${client.id}`} className="no-underline">

@@ -189,8 +189,12 @@ export function ContractForm() {
       };
 
       if (data.type === 'Curso Deluxe' && data.deluxeDetails) {
+          const sanitizedDeluxeDetails = Object.fromEntries(
+            Object.entries(data.deluxeDetails).map(([key, value]) => [key, value === undefined ? null : value])
+          );
+          
           newContractData.deluxeDetails = {
-            ...data.deluxeDetails,
+            ...sanitizedDeluxeDetails,
             classSchedules: data.deluxeDetails.classSchedules?.map(cs => ({...cs, date: cs.date ? new Date(cs.date) : new Date() }))
           };
       }

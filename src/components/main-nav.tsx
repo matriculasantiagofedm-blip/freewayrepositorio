@@ -12,6 +12,11 @@ import { cn } from '@/lib/utils';
 import { SidebarSeparator } from './ui/sidebar';
 
 const links = [
+    {
+        href: '/profile',
+        label: 'Perfil',
+        icon: User,
+    },
   {
     href: '/dashboard',
     label: 'Panel de Control',
@@ -29,14 +34,6 @@ const links = [
   },
 ];
 
-const profileLinks = [
-    {
-        href: '/profile',
-        label: 'Perfil',
-        icon: User,
-    }
-]
-
 export function MainNav({ className }: { className?: string }) {
   const pathname = usePathname();
 
@@ -47,7 +44,7 @@ export function MainNav({ className }: { className?: string }) {
           <SidebarMenuItem key={link.href}>
             <SidebarMenuButton
               asChild
-              isActive={pathname.startsWith(link.href)}
+              isActive={pathname === link.href || (link.href !== '/dashboard' && pathname.startsWith(link.href))}
               tooltip={link.label}
             >
               <Link href={link.href}>
@@ -58,25 +55,6 @@ export function MainNav({ className }: { className?: string }) {
           </SidebarMenuItem>
         ))}
       </SidebarMenu>
-
-        <SidebarSeparator />
-
-        <SidebarMenu>
-            {profileLinks.map((link) => (
-            <SidebarMenuItem key={link.href}>
-                <SidebarMenuButton
-                asChild
-                isActive={pathname.startsWith(link.href)}
-                tooltip={link.label}
-                >
-                <Link href={link.href}>
-                    <link.icon />
-                    <span>{link.label}</span>
-                </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            ))}
-        </SidebarMenu>
     </nav>
   );
 }

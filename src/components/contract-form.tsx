@@ -315,6 +315,53 @@ export function ContractForm() {
             {contractType === 'Curso Deluxe' ? (
                 <div className="space-y-6 pt-4">
 
+                  {/* DATOS DEL ESTUDIANTE */}
+                  <div className="space-y-4">
+                     <h3 className="text-lg font-medium text-primary border-b pb-2">Datos del Estudiante</h3>
+                     <FormField
+                        control={form.control}
+                        name="deluxeDetails.studentIdNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Cédula/Pasaporte del Estudiante</FormLabel>
+                            <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="deluxeDetails.studentAddress"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Domicilio del Estudiante</FormLabel>
+                            <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="deluxeDetails.studentPhone1"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Teléfono 1</FormLabel>
+                              <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="deluxeDetails.studentPhone2"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Teléfono 2</FormLabel>
+                              <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                   </div>
+
                   {/* CLAUSULA SEGUNDA */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-medium text-primary border-b pb-2">Cláusula Segunda: Valor, Matrícula y Forma de Pago</h3>
@@ -545,53 +592,6 @@ export function ContractForm() {
                         </Button>
                       </div>
                     </div>
-                   </div>
-
-                   {/* DATOS DEL ESTUDIANTE */}
-                  <div className="space-y-4">
-                     <h3 className="text-lg font-medium text-primary border-b pb-2">Datos del Estudiante</h3>
-                     <FormField
-                        control={form.control}
-                        name="deluxeDetails.studentIdNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Cédula/Pasaporte del Estudiante</FormLabel>
-                            <FormControl><Input {...field} value={field.value || ''} /></FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="deluxeDetails.studentAddress"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Domicilio del Estudiante</FormLabel>
-                            <FormControl><Input {...field} value={field.value || ''} /></FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="deluxeDetails.studentPhone1"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Teléfono 1</FormLabel>
-                              <FormControl><Input {...field} value={field.value || ''} /></FormControl>
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="deluxeDetails.studentPhone2"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Teléfono 2</FormLabel>
-                              <FormControl><Input {...field} value={field.value || ''} /></FormControl>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
                    </div>
                   
                   <div className="mt-6">

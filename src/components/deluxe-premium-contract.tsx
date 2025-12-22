@@ -90,6 +90,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
         <p>Ambas partes convienen celebrar este contrato en el cual la empresa se compromete a brindar al cliente, un servicio de capacitación y adiestramiento teórico y práctico relacionado con el aprendizaje de conducción de vehículos a motor. El mismo se regirá bajo los términos y condiciones que se detallan en las siguientes cláusulas.</p>
 
         <h3 className="font-bold">CLÁUSULA SEGUNDA - VALOR, MATRÍCULA Y FORMA DE PAGO</h3>
+        <p className='p-4 border border-dashed min-h-24'>{deluxeDetails?.paymentDetails || ''}</p>
         <p>El pago se realizará de la siguiente manera: 6 cuotas de B/.{paymentAmount.toFixed(2)} cada una, con fechas de pago establecidas cada dos semanas a partir del inicio del curso.</p>
         <div className="grid grid-cols-2 gap-x-8 gap-y-1">
           <span>CUOTA 1: {formatDate(deluxeDetails?.paymentInstallments?.[0])}</span>
@@ -99,7 +100,6 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
           <span>CUOTA 3: {formatDate(deluxeDetails?.paymentInstallments?.[2])}</span>
           <span>CUOTA 6: {formatDate(deluxeDetails?.paymentInstallments?.[5])}</span>
         </div>
-        <p className='p-4 border border-dashed min-h-24'>{deluxeDetails?.paymentDetails || 'la de B/.15.00.'}</p>
         
         <h3 className="font-bold">CLÁUSULA TERCERA - DETALLES DEL CURSO</h3>
         <div className="space-y-2 pl-4">
@@ -144,7 +144,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
         <p>Las clases prácticas iniciarán en la oficina de LA ESCUELA. Desde allí, EL ESTUDIANTE será trasladado al circuito de prácticas y posteriormente de regreso. Dicho traslado se encuentra incluido dentro del tiempo de las 2 horas de clase práctica.</p>
 
         <h3 className="font-bold">CLÁUSULA NOVENA - NORMAS DE COMPORTAMIENTO Y VESTIMENTA</h3>
-        <p>EL ESTUDIANTE se compromete a: Seguir las instrucciones del instructor, mantener una actitud respetuosa y adecuada durante las clases y asistir en estado óptimo de salud física, mental y emocional. Para las clases prácticas y teóricas, EL ESTUDIANTE deberá asistir con ropa adecuada. Se prohíbe presentarse con: Escotes pronunciados, minifaldas, camisetas sin mangas, pantalones cortos, leggins, chancletas o sandalias. El incumplimiento de esta norma implica la pérdida automática de la clase, sin derecho a reposición.</p>
+        <p>EL ESTUDIANTE se compromete a: Seguir las instructions del instructor, mantener una actitud respetuosa y adecuada durante las clases y asistir en estado óptimo de salud física, mental y emocional. Para las clases prácticas y teóricas, EL ESTUDIANTE deberá asistir con ropa adecuada. Se prohíbe presentarse con: Escotes pronunciados, minifaldas, camisetas sin mangas, pantalones cortos, leggins, chancletas o sandalias. El incumplimiento de esta norma implica la pérdida automática de la clase, sin derecho a reposición.</p>
 
         <h3 className="font-bold">CLÁUSULA DÉCIMA- ACOMPAñANTES Y ACCESO</h3>
         <p>Durante las clases teóricas y prácticas no se permite la presencia de acompañantes, niños, mascotas o terceras personas ajenas al proceso de enseñanza.</p>

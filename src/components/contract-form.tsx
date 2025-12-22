@@ -125,6 +125,13 @@ const motoCourseValues = [
   { label: 'Premium Moto 155.00', value: 155.00 },
 ];
 
+const practicalClassTimeSlots = [
+    'de 8:00 am a 10:00 am',
+    'de 10:00 am a 12:00 md',
+    'de 1:00 pm a 3:00 pm',
+    'de 3:00 pm a 5:00 pm',
+];
+
 export function ContractForm() {
   const { toast } = useToast();
   const { firestore, user } = useFirebase();
@@ -248,8 +255,10 @@ export function ContractForm() {
 
   useEffect(() => {
     // Cuando cambia el horario, reiniciamos las fechas
-    form.setValue('autoMotoDetails.theoreticalClassDates', []);
-  }, [theoreticalClassSchedule, form]);
+    const currentDates = form.getValues('autoMotoDetails.theoreticalClassDates') || [];
+    const newDates = Array.from({ length: numberOfTheoreticalClasses }, (_, i) => currentDates[i] || '');
+    form.setValue('autoMotoDetails.theoreticalClassDates', newDates);
+  }, [theoreticalClassSchedule, form, numberOfTheoreticalClasses]);
 
 
   async function findOrCreateClient(clientName: string, clientEmail: string, userId: string): Promise<string> {
@@ -674,7 +683,20 @@ export function ContractForm() {
                                     render={({ field }) => (
                                       <FormItem>
                                         <FormLabel>Hora</FormLabel>
-                                        <FormControl><Input {...field} value={field.value || ''} placeholder="Ej: 10:00 AM" /></FormControl>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Seleccione un horario" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {practicalClassTimeSlots.map(slot => (
+                                                    <SelectItem key={slot} value={slot}>
+                                                        {slot}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                         <FormMessage />
                                       </FormItem>
                                     )}

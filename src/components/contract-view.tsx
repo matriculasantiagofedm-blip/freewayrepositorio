@@ -14,9 +14,9 @@ export function ContractView({ contract }: { contract: Contract }) {
         <DeluxePremiumContractTemplate contract={contract} />
       ) : (
         // Fallback for other contract types
-        <div className="prose prose-lg max-w-none text-foreground leading-relaxed">
-           {contract.folio && <p className="text-right text-sm font-semibold text-destructive">Folio: {contract.folio}</p>}
-          <h1 className="font-headline text-4xl">{contract.title}</h1>
+        <div className="prose prose-lg max-w-none text-foreground leading-relaxed relative">
+           {contract.folio && <p className="absolute top-0 right-0 text-sm font-semibold text-destructive">Folio: {contract.folio}</p>}
+          <h1 className="font-headline text-4xl pt-8">{contract.title}</h1>
           <p>{contract.content}</p>
         </div>
       )}

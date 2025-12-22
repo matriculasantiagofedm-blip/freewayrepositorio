@@ -176,7 +176,6 @@ export function DeluxePremiumContractTemplatePreview({ folio, clientName, client
         <p>Si EL ESTUDIANTE no establece contacto para finalizar su curso en un plazo de tres (3) meses desde la fecha de inicio, se entenderá que renuncia a continuar, sin derecho a devolución del dinero ni a reclamos posteriores.</p>
 
         <h3 className="font-bold">CLÁUSULA DÉCIMA QUINTA- ACEPTACIÓN</h3>
-        <p>Ambas partes declaran haber leído, entendido y aceptado el presente contrato, firmándolo en señal de conformidad.</p>
         <p className="text-center !mt-4">
             En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los <Value>{format(currentDate, 'd')}</Value> días del mes de <Value>{format(currentDate, 'LLLL', { locale: es })}</Value>, de <Value>{format(currentDate, 'yyyy')}</Value>, a las <Value>{format(currentDate, 'p', { locale: es })}</Value>.
         </p>

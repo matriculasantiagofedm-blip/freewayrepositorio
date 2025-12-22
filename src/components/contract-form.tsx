@@ -178,14 +178,25 @@ export function ContractForm() {
 }
 
   async function getNextFolio(userId: string): Promise<string> {
+    const year = new Date().getFullYear();
+    const folioPrefix = `CT-${year}-`;
+  
     const contractsCollection = collection(firestore, `clients/${userId}/contracts`);
-    const q = query(contractsCollection, orderBy('folio', 'desc'), limit(1));
+    
+    // Create a query to find contracts for the current year, ordered by folio descending
+    const q = query(
+      contractsCollection, 
+      orderBy('folio', 'desc'),
+      limit(1)
+    );
+  
     const querySnapshot = await getDocs(q);
-
+  
     let lastFolioNumber = 0;
     if (!querySnapshot.empty) {
       const lastContract = querySnapshot.docs[0].data() as Contract;
-      if (lastContract.folio) {
+      // Check if the last contract is from the current year
+      if (lastContract.folio && lastContract.folio.startsWith(folioPrefix)) {
         const lastNumberStr = lastContract.folio.split('-').pop();
         if (lastNumberStr) {
           lastFolioNumber = parseInt(lastNumberStr, 10);
@@ -193,10 +204,9 @@ export function ContractForm() {
       }
     }
     
-    const year = new Date().getFullYear();
     const nextNumber = (lastFolioNumber + 1).toString().padStart(4, '0');
     
-    return `CT-${year}-${nextNumber}`;
+    return `${folioPrefix}${nextNumber}`;
   }
 
 

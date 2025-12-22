@@ -38,6 +38,16 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
   const creationDate = toDate(contract.createdAt);
   const paymentDeadline = autoMotoDetails?.paymentDeadline ? toDate(autoMotoDetails.paymentDeadline) : null;
   const balance = autoMotoDetails?.balance || 0;
+  
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return <Line />;
+    try {
+        const date = toDate(dateString);
+        return <Value>{format(date, 'P', { locale: es })}</Value>;
+    } catch {
+        return <Line />;
+    }
+  };
 
   return (
     <Card className="p-6 print:shadow-none print:border-none print:p-0 font-serif text-xs">
@@ -70,6 +80,11 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
              <p>1. Transmisión del vehículo: Automático <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Automático'} /> / Manual <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Manual'} /> / Moto <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Moto'} /></p>
              <p>2. Categoría de licencia a aplicar: A, C <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C'} /> / A, C, D <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C, D'} /> / A, B <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, B'} /></p>
             <div className="flex items-center gap-2">3. Horario para clases teóricas: <Line>{autoMotoDetails?.theoreticalClassSchedule}</Line></div>
+             <div className="pl-4">
+                {Array.from({ length: 4 }).map((_, index) => (
+                    <span key={index} className="mr-4">Clase {index + 1}: {formatDate(autoMotoDetails?.theoreticalClassDates?.[index])}</span>
+                ))}
+            </div>
             <p>4. Horario para clases practicas:</p>
             <div className="pl-4 space-y-0.5">
                 <div className="flex items-center gap-2">○ Clase 1: <Line>&nbsp;</Line> Hora <Line>{autoMotoDetails?.practicalClassSchedules?.[0]?.time}</Line></div>

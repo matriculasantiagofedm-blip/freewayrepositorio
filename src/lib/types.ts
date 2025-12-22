@@ -53,6 +53,7 @@ export interface AutoMotoContractDetails {
   vehicleTransmission?: 'Automático' | 'Manual' | 'Moto';
   licenseCategory?: 'A, C' | 'A, C, D' | 'A, B';
   theoreticalClassSchedule?: string;
+  theoreticalClassDates?: string[];
   practicalClassSchedules?: { time?: string }[];
 }
 

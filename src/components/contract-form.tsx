@@ -100,6 +100,7 @@ const contractFormSchema = z.object({
     vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).optional(),
     licenseCategory: z.enum(['A, C', 'A, C, D', 'A, B']).optional(),
     theoreticalClassSchedule: z.string().optional(),
+    theoreticalClassDates: z.array(z.string().optional()).optional(),
     practicalClassSchedules: z.array(z.object({
       time: z.string().optional(),
     })).optional(),
@@ -169,6 +170,7 @@ export function ContractForm() {
         vehicleTransmission: undefined,
         licenseCategory: undefined,
         theoreticalClassSchedule: '',
+        theoreticalClassDates: Array(4).fill(''),
         practicalClassSchedules: Array(4).fill({ time: '' }),
       }
     },
@@ -577,28 +579,46 @@ export function ContractForm() {
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={form.control}
-                      name="autoMotoDetails.theoreticalClassSchedule"
-                      render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Horario para clases teóricas</FormLabel>
-                            <FormControl>
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col gap-2">
-                                <FormItem className="flex items-center space-x-2">
-                                    <FormControl><RadioGroupItem value="Lunes a Viernes de 8:00 am a 10:00 am" id="teorico-semana" /></FormControl>
-                                    <FormLabel htmlFor="teorico-semana" className="font-normal">Lunes a Viernes de 8:00 am a 10:00 am</FormLabel>
-                                </FormItem>
-                                <FormItem className="flex items-center space-x-2">
-                                    <FormControl><RadioGroupItem value="Sábados de 3:00 pm a 5:00 pm" id="teorico-sabado" /></FormControl>
-                                    <FormLabel htmlFor="teorico-sabado" className="font-normal">Sábados de 3:00 pm a 5:00 pm</FormLabel>
-                                </FormItem>
-                                </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                     <div>
+                        <h4 className="font-medium text-base mb-2">Horario y Fechas para clases teóricas</h4>
+                        <FormField
+                        control={form.control}
+                        name="autoMotoDetails.theoreticalClassSchedule"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Horario para clases teóricas</FormLabel>
+                                <FormControl>
+                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col gap-2">
+                                    <FormItem className="flex items-center space-x-2">
+                                        <FormControl><RadioGroupItem value="Lunes a Viernes de 8:00 am a 10:00 am" id="teorico-semana" /></FormControl>
+                                        <FormLabel htmlFor="teorico-semana" className="font-normal">Lunes a Viernes de 8:00 am a 10:00 am</FormLabel>
+                                    </FormItem>
+                                    <FormItem className="flex items-center space-x-2">
+                                        <FormControl><RadioGroupItem value="Sábados de 3:00 pm a 5:00 pm" id="teorico-sabado" /></FormControl>
+                                        <FormLabel htmlFor="teorico-sabado" className="font-normal">Sábados de 3:00 pm a 5:00 pm</FormLabel>
+                                    </FormItem>
+                                    </RadioGroup>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                            {Array.from({ length: 4 }).map((_, index) => (
+                                <FormField
+                                    key={index}
+                                    control={form.control}
+                                    name={`autoMotoDetails.theoreticalClassDates.${index}`}
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Fecha Clase Teórica {index + 1}</FormLabel>
+                                            <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                            ))}
+                        </div>
+                    </div>
                     <div>
                         <h4 className="font-medium text-base mb-2">Horario para clases prácticas</h4>
                         <div className="grid grid-cols-2 gap-4">

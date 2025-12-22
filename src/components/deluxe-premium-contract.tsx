@@ -180,6 +180,12 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
             </div>
         </div>
 
+        {contract.createdBy && (
+          <div className="text-xs text-muted-foreground mt-8">
+            Confeccionado por: {contract.createdBy}
+          </div>
+        )}
+
       </CardContent>
     </Card>
   );

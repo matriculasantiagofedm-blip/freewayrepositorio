@@ -33,9 +33,10 @@ interface DeluxePremiumContractPreviewProps {
     clientName?: string;
     clientEmail?: string;
     deluxeDetails?: DeluxeContractDetails;
+    createdBy?: string | null;
 }
 
-export function DeluxePremiumContractTemplatePreview({ folio, clientName, clientEmail, deluxeDetails }: DeluxePremiumContractPreviewProps) {
+export function DeluxePremiumContractTemplatePreview({ folio, clientName, clientEmail, deluxeDetails, createdBy }: DeluxePremiumContractPreviewProps) {
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -191,6 +192,12 @@ export function DeluxePremiumContractTemplatePreview({ folio, clientName, client
                 <p className="text-[10px]">N° de identificación: <Value>{deluxeDetails?.studentIdNumber}</Value></p>
             </div>
         </div>
+
+        {createdBy && (
+          <div className="text-xs text-muted-foreground mt-8">
+            Confeccionado por: {createdBy}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -56,5 +56,6 @@ export interface Contract {
   type: ContractType;
   userId: string;
   createdAt: Timestamp;
+  createdBy?: string; // User role who created the contract
   deluxeDetails?: DeluxeContractDetails;
 }

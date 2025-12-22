@@ -49,6 +49,7 @@ import { Textarea } from './ui/textarea';
 import { DeluxePremiumContractTemplatePreview } from './deluxe-premium-contract-preview';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import type { Client, DeluxeContractDetails, ContractType, Contract } from '@/lib/types';
+import { useCurrentRole } from '@/hooks/use-current-role';
 
 
 const contractFormSchema = z.object({
@@ -100,6 +101,7 @@ export function ContractForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const timeSlots = generateTimeSlots();
+  const { role } = useCurrentRole();
   
   const contractTypeParam = searchParams.get('type') as ContractType | null;
 
@@ -186,6 +188,8 @@ export function ContractForm() {
     // Create a query to find contracts for the current year, ordered by folio descending
     const q = query(
       contractsCollection, 
+      where('folio', '>=', folioPrefix),
+      where('folio', '<', `CT-${year+1}-`),
       orderBy('folio', 'desc'),
       limit(1)
     );
@@ -240,6 +244,7 @@ export function ContractForm() {
           userId: user.uid,
           status: 'active',
           createdAt: serverTimestamp(),
+          createdBy: role,
       };
 
       if (data.type === 'Curso Deluxe' && data.deluxeDetails) {
@@ -683,6 +688,7 @@ export function ContractForm() {
                         clientName={allFormValues.clientName} 
                         clientEmail={allFormValues.clientEmail} 
                         deluxeDetails={allFormValues.deluxeDetails as DeluxeContractDetails}
+                        createdBy={role}
                       />
                   </div>
                 </div>

@@ -24,6 +24,7 @@ import {
 } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { sendAutomatedDeadlineReminders } from '@/ai/flows/automated-deadline-reminders';
+import { syncWithGoogleCalendar } from '@/ai/flows/sync-google-calendar';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -365,6 +366,23 @@ export function ContractForm() {
       const contractId = newContractRef.id;
       
       await updateDoc(newContractRef, { id: contractId });
+
+      if ((data.type === 'Curso Auto' || data.type === 'Curso Moto') && data.autoMotoDetails?.practicalClassSchedules?.length) {
+        const practicalClasses = data.autoMotoDetails.practicalClassSchedules.filter(
+          (c): c is { date: string; time: string } => !!c.date && !!c.time
+        );
+        if (practicalClasses.length > 0) {
+          await syncWithGoogleCalendar({
+            clientName: data.clientName,
+            contractTitle: data.title,
+            practicalClasses: practicalClasses,
+          });
+          toast({
+            title: 'Sincronizando con Calendario',
+            description: 'Las clases prácticas se están añadiendo a Google Calendar.',
+          });
+        }
+      }
 
 
       if (data.deadlines && data.deadlines.length > 0) {

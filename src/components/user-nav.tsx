@@ -14,13 +14,14 @@ import { LogOut, User, ChevronsUpDown } from 'lucide-react';
 import { useAuth, useUser, initiateAnonymousSignIn } from '@/firebase';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-
-const roles = ['Ventas', 'Ventas Externas', 'Administrador'];
+import { useRouter } from 'next/navigation';
 
 export function UserNav() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const router = useRouter();
+
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -30,14 +31,19 @@ export function UserNav() {
   
   useEffect(() => {
     const storedUser = localStorage.getItem('currentUser');
-    if (storedUser && roles.includes(storedUser)) {
+    if (storedUser) {
         setCurrentUser(storedUser);
     } else {
-        const defaultRole = roles[0];
+        const defaultRole = 'Ventas';
         setCurrentUser(defaultRole);
         localStorage.setItem('currentUser', defaultRole);
     }
   }, []);
+
+  const handleLogout = () => {
+    auth.signOut();
+    router.push('/');
+  }
 
   if (isUserLoading || !currentUser) {
     return <div>Cargando...</div>;
@@ -81,7 +87,7 @@ export function UserNav() {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => auth.signOut()}>
+        <DropdownMenuItem onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
           Cerrar sesión
         </DropdownMenuItem>

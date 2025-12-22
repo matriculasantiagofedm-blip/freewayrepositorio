@@ -1,11 +1,10 @@
 'use client';
-import type { Contract, Client, DeluxeContractDetails } from '@/lib/types';
-import { useDoc, useFirebase, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Card, CardContent } from './ui/card';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import type { DeluxeContractDetails } from '@/lib/types';
 
 const Line = ({ children, className }: { children?: React.ReactNode, className?: string }) => (
   <span className={cn("border-b-2 border-dotted border-black flex-1 min-w-10 text-center font-semibold", className)}>
@@ -13,7 +12,6 @@ const Line = ({ children, className }: { children?: React.ReactNode, className?:
   </span>
 );
 const LongLine = () => <span className="border-b-2 border-dotted border-black flex-1 h-4 min-w-40" />;
-const Value = ({ children }: { children: React.ReactNode }) => <span className="px-2 font-semibold">{children}</span>;
 
 function toDate(date: any): Date {
   if (date instanceof Date) return date;
@@ -29,22 +27,34 @@ function toDate(date: any): Date {
   return new Date();
 }
 
+interface DeluxePremiumContractTemplatePreviewProps {
+    clientName?: string;
+    clientEmail?: string;
+    deluxeDetails?: DeluxeContractDetails;
+}
 
-const Checkbox = ({ checked }: { checked: boolean }) => (
+export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, deluxeDetails }: DeluxePremiumContractTemplatePreviewProps) {
+  const [currentDate, setCurrentDate] = useState<Date | null>(null);
+
+  useEffect(() => {
+    setCurrentDate(new Date());
+  }, []);
+
+  if (!currentDate) {
+    return (
+        <Card className="p-8 print:shadow-none print:border-none print:p-0 font-serif text-sm">
+            <CardContent>
+                <p>Generando vista previa del contrato...</p>
+            </CardContent>
+        </Card>
+    );
+  }
+  
+  const Checkbox = ({ checked }: { checked: boolean }) => (
     <span className={`border-2 border-black inline-block w-4 h-4 text-center leading-none ${checked ? 'bg-black text-white' : ''}`}>
         {checked ? 'X' : ''}
     </span>
 );
-
-export function DeluxePremiumContractTemplate({ contract }: { contract: Contract }) {
-  const { firestore } = useFirebase();
-  const clientRef = useMemoFirebase(() => {
-    if (!firestore || !contract.clientId) return null;
-    return doc(firestore, 'clients', contract.clientId);
-  }, [firestore, contract.clientId]);
-
-  const { data: client } = useDoc<Client>(clientRef);
-  const deluxeDetails = contract.deluxeDetails;
 
   const formatInstallmentDate = (dateString?: string) => {
     if (!dateString) return <Line className="min-w-24" />;
@@ -68,23 +78,23 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
         </p>
 
         <div className="space-y-2">
-            <p>Entre <span className='font-bold'>{contract.clientName}</span>, con cédula <span className='font-bold'>{deluxeDetails?.studentIdNumber}</span>,</p>
+            <p>Entre <span className='font-bold'>{clientName || '________________'}</span>, con cédula <span className='font-bold'>{deluxeDetails?.studentIdNumber || '________________'}</span>,</p>
             <div className="flex items-center flex-wrap">
-                , con domicilio en 
+                con domicilio en 
                 <Line>{deluxeDetails?.studentAddress}</Line>
                 , teléfonos:
                 <Line>{deluxeDetails?.studentPhone1}</Line>/<Line>{deluxeDetails?.studentPhone2}</Line>
             </div>
              <div className="flex items-center flex-wrap">
                 , correo electrónico:
-                <Value>{client?.email}</Value>
+                <Line>{clientEmail}</Line>
                 , en adelante denominado EL ESTUDIANTE.
             </div>
         </div>
-        
+
         <h3 className="font-bold">CLÁUSULA PRIMERA - OBJETO DEL CONTRATO</h3>
         <p>Ambas partes convienen celebrar este contrato en el cual la empresa se compromete a brindar al cliente, un servicio de capacitación y adiestramiento teórico y práctico relacionado con el aprendizaje de conducción de vehículos a motor. El mismo se regirá bajo los términos y condiciones que se detallan en las siguientes cláusulas.</p>
-
+        
         <h3 className="font-bold">CLÁUSULA SEGUNDA - VALOR, MATRÍCULA Y FORMA DE PAGO</h3>
         <p>El pago se realizará de la siguiente manera: 6 cuotas de B/.{paymentAmount.toFixed(2)} cada una, con fechas de pago establecidas cada dos semanas a partir del inicio del curso.</p>
         <div className="grid grid-cols-2 gap-x-8 gap-y-1">
@@ -96,7 +106,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
           <span>CUOTA 6: {formatInstallmentDate(deluxeDetails?.paymentInstallments?.[5])}</span>
         </div>
         <p className='p-4 border border-dashed min-h-24'>{deluxeDetails?.paymentDetails || 'la de B/.15.00.'}</p>
-        
+
         <h3 className="font-bold">CLÁUSULA TERCERA - DETALLES DEL CURSO</h3>
         <div className="space-y-2 pl-4">
             <p>1. Transmisión del vehículo: Automático <Checkbox checked={deluxeDetails?.vehicleTransmission === 'Automático'} /> / Manual <Checkbox checked={deluxeDetails?.vehicleTransmission === 'Manual'} /></p>
@@ -118,20 +128,20 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
           <span>Semana 10: <Line /></span>
         </div>
         <p>Clases prácticas: Se programarán a partir de la semana 8 de la capacitación teórica, en horario diurno o vespertino, de acuerdo con la disponibilidad de LA ESCUELA.</p>
-         <div className="grid grid-cols-2 gap-x-8 gap-y-2 pl-4">
-          {deluxeDetails?.classSchedules?.map((clase, index) => (
-            <div key={index} className="flex items-center gap-2">
-              Clase {index + 1}: <Line>{clase.date ? format(toDate(clase.date), 'P', { locale: es }) : ''}</Line> 
-              Hora <Line>{clase.time}</Line>
-            </div>
-          ))}
-          {(!deluxeDetails?.classSchedules || deluxeDetails.classSchedules.length < 6) && 
-            Array.from({ length: 6 - (deluxeDetails?.classSchedules?.length || 0) }).map((_, index) => (
-              <div key={index} className="flex items-center gap-2">
-                Clase {index + (deluxeDetails?.classSchedules?.length || 0) + 1}: <Line /> Hora <Line />
-              </div>
-            ))
-          }
+        <div className="grid grid-cols-2 gap-x-8 gap-y-2 pl-4">
+            {deluxeDetails?.classSchedules?.map((clase, index) => (
+                <div key={index} className="flex items-center gap-2">
+                Clase {index + 1}: <Line>{clase.date ? format(toDate(clase.date), 'P', { locale: es }) : ''}</Line> 
+                Hora <Line>{clase.time}</Line>
+                </div>
+            ))}
+            {(!deluxeDetails?.classSchedules || deluxeDetails.classSchedules.length < 6) && 
+                Array.from({ length: 6 - (deluxeDetails?.classSchedules?.length || 0) }).map((_, index) => (
+                <div key={index} className="flex items-center gap-2">
+                    Clase {index + (deluxeDetails?.classSchedules?.length || 0) + 1}: <Line /> Hora <Line />
+                </div>
+                ))
+            }
         </div>
         
         <h3 className="font-bold">CLÁUSULA QUINTA - POLÍTICA DE PAGOS Y MOROSIDAD</h3>
@@ -167,7 +177,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
         <h3 className="font-bold">CLÁUSULA DÉCIMA QUINTA- ACEPTACIÓN</h3>
         <p>Ambas partes declaran haber leído, entendido y aceptado el presente contrato, firmándolo en señal de conformidad.</p>
         <p className="text-center">
-            En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los {format(toDate(contract.createdAt), 'd')} días del mes de {format(toDate(contract.createdAt), 'LLLL', { locale: es })}, de {format(toDate(contract.createdAt), 'yyyy')}, a las {format(toDate(contract.createdAt), 'p', { locale: es })}.
+            En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los {format(currentDate, 'd')} días del mes de {format(currentDate, 'LLLL', { locale: es })}, de {format(currentDate, 'yyyy')}, a las {format(currentDate, 'p', { locale: es })}.
         </p>
 
         <div className="flex justify-around pt-16">
@@ -181,7 +191,6 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
                 <p>N° de identificación: {deluxeDetails?.studentIdNumber}</p>
             </div>
         </div>
-
       </CardContent>
     </Card>
   );

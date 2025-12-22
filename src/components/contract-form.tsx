@@ -42,7 +42,7 @@ import { PlusCircle, Save, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
-import { DeluxePremiumContractTemplatePreview } from './deluxe-premium-contract-template-preview';
+import { DeluxePremiumContractTemplatePreview } from './deluxe-premium-contract-preview';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import type { Client, DeluxeContractDetails } from '@/lib/types';
 
@@ -78,6 +78,7 @@ const contractFormSchema = z.object({
     })).optional(),
     paymentDetails: z.string().optional(),
     paymentInstallments: z.array(z.string().optional()).optional(),
+    paymentAmount: z.number().optional(),
   }).optional(),
 });
 
@@ -112,6 +113,7 @@ export function ContractForm() {
         classSchedules: [{ date: '', time: '' }],
         paymentDetails: '',
         paymentInstallments: Array(6).fill(''),
+        paymentAmount: 33.50,
       }
     },
   });
@@ -495,9 +497,38 @@ export function ContractForm() {
                   <div>
                      <FormLabel>Plan de Pagos</FormLabel>
                      <p className="text-sm text-muted-foreground">
-                        El pago se realizará de la siguiente manera: 6 cuotas de B/.33.50 cada una, con fechas de pago establecidas cada dos semanas a partir del inicio del curso.
+                        El pago se realizará de la siguiente manera: 6 cuotas de B/.{allFormValues.deluxeDetails?.paymentAmount?.toFixed(2) || '33.50'} cada una, con fechas de pago establecidas cada dos semanas a partir del inicio del curso.
                      </p>
-                     <div className="space-y-4 pt-2">
+                     <FormField
+                        control={form.control}
+                        name="deluxeDetails.paymentAmount"
+                        render={({ field }) => (
+                            <FormItem className="pt-2">
+                                <FormControl>
+                                <RadioGroup
+                                    onValueChange={(value) => field.onChange(parseFloat(value))}
+                                    defaultValue={field.value?.toString()}
+                                    className="flex gap-4"
+                                >
+                                    <FormItem className="flex items-center space-x-2">
+                                        <FormControl>
+                                            <RadioGroupItem value="45.00" id="amount-45" />
+                                        </FormControl>
+                                        <FormLabel htmlFor="amount-45" className="font-normal">B/.45.00</FormLabel>
+                                    </FormItem>
+                                    <FormItem className="flex items-center space-x-2">
+                                        <FormControl>
+                                            <RadioGroupItem value="33.50" id="amount-33" />
+                                        </FormControl>
+                                        <FormLabel htmlFor="amount-33" className="font-normal">B/.33.50</FormLabel>
+                                    </FormItem>
+                                </RadioGroup>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                     <div className="space-y-4 pt-4">
                         <div className="grid grid-cols-2 gap-x-8 gap-y-4">
                             {[1, 2, 3].map(i => (
                                 <React.Fragment key={i}>

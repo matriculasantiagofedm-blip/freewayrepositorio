@@ -37,6 +37,7 @@ export interface DeluxeContractDetails {
   classSchedules: ClassSchedule[];
   paymentDetails: string;
   paymentInstallments?: string[];
+  paymentAmount?: number;
 }
 
 export interface Contract {

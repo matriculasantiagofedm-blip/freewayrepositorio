@@ -8,12 +8,12 @@ import { Card, CardContent } from './ui/card';
 import { cn } from '@/lib/utils';
 
 const Line = ({ children, className }: { children?: React.ReactNode, className?: string }) => (
-  <span className={cn("border-b border-dotted border-black flex-1 min-w-8 text-center font-semibold", className)}>
+  <span className={cn("border-b border-dotted border-black flex-1 min-w-8 text-center font-semibold text-primary", className)}>
     {children || <>&nbsp;</>}
   </span>
 );
 const LongLine = () => <span className="border-b border-dotted border-black flex-1 h-4 min-w-40" />;
-const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold">{children}</span>;
+const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary">{children}</span>;
 
 function toDate(date: any): Date {
   if (date instanceof Date) return date;
@@ -50,7 +50,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
     if (!dateString) return <Line className="min-w-20" />;
     try {
         const date = toDate(dateString);
-        return <span className="font-semibold">{format(date, 'P', { locale: es })}</span>;
+        return <span className="font-semibold text-primary">{format(date, 'P', { locale: es })}</span>;
     } catch {
         return <Line className="min-w-20" />;
     }
@@ -72,7 +72,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
         </p>
 
         <div className="space-y-1">
-            <p>Entre <span className='font-bold'>{contract.clientName}</span>, con cédula <span className='font-bold'>{deluxeDetails?.studentIdNumber}</span>,</p>
+            <p>Entre <Value>{contract.clientName}</Value>, con cédula <Value>{deluxeDetails?.studentIdNumber}</Value>,</p>
             <div className="flex items-center flex-wrap">
                 , con domicilio en 
                 <Line>{deluxeDetails?.studentAddress}</Line>
@@ -90,8 +90,8 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
         <p>Ambas partes convienen celebrar este contrato en el cual la empresa se compromete a brindar al cliente, un servicio de capacitación y adiestramiento teórico y práctico relacionado con el aprendizaje de conducción de vehículos a motor. El mismo se regirá bajo los términos y condiciones que se detallan en las siguientes cláusulas.</p>
 
         <h3 className="font-bold text-sm">CLÁUSULA SEGUNDA - VALOR, MATRÍCULA Y FORMA DE PAGO</h3>
-        <p>{deluxeDetails?.paymentDetails}</p>
-        <p>El pago se realizará de la siguiente manera: 6 cuotas de B/.{paymentAmount.toFixed(2)} cada una, con fechas de pago establecidas cada dos semanas a partir del inicio del curso.</p>
+        <p className="text-primary">{deluxeDetails?.paymentDetails}</p>
+        <p>El pago se realizará de la siguiente manera: 6 cuotas de B/.<span className="font-semibold text-primary">{paymentAmount.toFixed(2)}</span> cada una, con fechas de pago establecidas cada dos semanas a partir del inicio del curso.</p>
         <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 text-[11px]">
           <span>CUOTA 1: {formatDate(deluxeDetails?.paymentInstallments?.[0])}</span>
           <span>CUOTA 4: {formatDate(deluxeDetails?.paymentInstallments?.[3])}</span>
@@ -108,7 +108,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
         </div>
 
         <h3 className="font-bold text-sm">CLÁUSULA CUARTA - HORARIO DE CAPACITACIÓN</h3>
-        <p className="font-semibold">{theoreticalScheduleText}</p>
+        <p className="font-semibold text-primary">{theoreticalScheduleText}</p>
         <div className="grid grid-cols-3 gap-x-4 gap-y-0.5 text-[11px]">
             {Array.from({ length: 10 }).map((_, index) => (
                 <span key={index}>Semana {index + 1}: {formatDate(deluxeDetails?.theoreticalClasses?.[index])}</span>
@@ -175,7 +175,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
             <div className="text-center flex flex-col items-center">
                 <LongLine />
                 <p>El Cliente</p>
-                <p>N° de identificación: {deluxeDetails?.studentIdNumber}</p>
+                <p>N° de identificación: <Value>{deluxeDetails?.studentIdNumber}</Value></p>
             </div>
         </div>
 

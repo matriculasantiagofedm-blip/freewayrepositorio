@@ -207,7 +207,7 @@ const syncGoogleCalendarFlow = ai.defineFlow(
                 errorMessage = error.message;
                 const gapiError = error as any;
                 if (gapiError.response?.data?.error?.message) {
-                    errorMessage = gapiError.response.data.error.message;
+                    errorMessage = `(${gapiError.response.status}) ${gapiError.response.data.error.message}`;
                 } else if (gapiError.errors?.[0]?.message) {
                     errorMessage = gapiError.errors[0].message;
                 }

@@ -19,7 +19,7 @@ Cada aplicación de Firebase/Google Cloud tiene una cuenta de servicio especial 
 Ahora, necesitas darle permiso a esa identidad para que pueda ver y modificar tu calendario.
 
 1.  **Abrir Google Calendar:**
-    *   Ve a [https://calendar.google.com/](https://calendar.google.com/) e inicia sesión con la cuenta de Google que posee el calendario que quieres sincronizar (por ejemplo, `freewayseptiembre@gmail.com`).
+    *   Ve a [https://calendar.google.com/](https://calendar.google.com/) e inicia sesión con la cuenta de Google que posee el calendario que quieres sincronizar (es decir, **matriculas.freeway@gmail.com**).
 
 2.  **Ir a la configuración del calendario:**
     *   En el panel izquierdo, en "Mis calendarios", pasa el cursor sobre el calendario que quieres usar (el que tiene el ID que termina en `...be588@group.calendar.google.com`).

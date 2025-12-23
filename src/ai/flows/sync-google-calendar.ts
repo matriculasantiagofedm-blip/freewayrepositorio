@@ -54,7 +54,7 @@ const createGoogleCalendarEvent = ai.defineTool({
     }),
 }, async (input) => {
     try {
-        // Autenticación directa usando la cuenta de servicio predeterminada del entorno.
+        // Use the default service account credentials from the execution environment.
         const auth = new google.auth.GoogleAuth({
             scopes: ['https://www.googleapis.com/auth/calendar'],
         });
@@ -62,7 +62,7 @@ const createGoogleCalendarEvent = ai.defineTool({
         const authClient = await auth.getClient();
         const calendar = google.calendar({ version: 'v3', auth: authClient });
         
-        // Este es el ID del calendario específico al que queremos escribir.
+        // This is the specific calendar ID we want to write to.
         const calendarId = 'caa22a55efb4ec8120e449941e8df3d2731613826485af050c0b7ec0b60be588@group.calendar.google.com';
 
         const event = {
@@ -101,7 +101,7 @@ const createGoogleCalendarEvent = ai.defineTool({
 
     } catch (error) {
         console.error("Error creating Google Calendar event:", error);
-        // Relanzar el error para que el flujo principal lo capture.
+        // Re-throw the error so the main flow can catch it and report details.
         throw error;
     }
 });
@@ -119,22 +119,34 @@ const syncGoogleCalendarFlow = ai.defineFlow(
 
     // Helper to parse time slots like "8:00 am a 10:00 am"
     const parseTime = (timeSlot: string): [string, string] | null => {
-        // Normalize input: lowercase, remove "a", trim spaces
-        const normalized = timeSlot.toLowerCase().replace('a', '').replace('md', 'pm').trim();
-        const timeParts = normalized.match(/(\d{1,2}:\d{2})\s*(am|pm)/g);
+        // Normalize input: lowercase, remove "a", trim spaces, handle "md" -> "pm"
+        const normalized = timeSlot.toLowerCase().replace(/\s*a\s*/, ' ').replace('md', 'pm').trim();
+        const timeParts = normalized.match(/(\d{1,2}:\d{2})\s*(am|pm)?/g);
 
         if (!timeParts || timeParts.length < 2) return null;
-
+        
         try {
-            const startTime = parse(timeParts[0], 'h:mm a', new Date());
-            const endTime = parse(timeParts[1], 'h:mm a', new Date());
-
-            // Handle cases where the second part might miss am/pm, like "8:00 am a 10:00"
-            // and date-fns parses it as 10:00 AM. If start is PM and end is AM, adjust.
-            if (startTime > endTime && timeParts[0].includes('pm')) {
-              endTime.setHours(endTime.getHours() + 12);
+            // Parse start time
+            let startTimeStr = timeParts[0];
+            if (!/am|pm/.test(startTimeStr)) {
+                // If start time is missing am/pm, try to infer from end time
+                const endTimeStr = timeParts[1];
+                if (endTimeStr && /pm/.test(endTimeStr)) startTimeStr += ' pm';
+                else startTimeStr += ' am';
             }
+            const startTime = parse(startTimeStr, 'h:mm a', new Date());
 
+            // Parse end time
+            let endTimeStr = timeParts[1];
+             if (!/am|pm/.test(endTimeStr)) {
+                // If end time is missing am/pm, check if it should be PM
+                const endHour = parseInt(endTimeStr.split(':')[0], 10);
+                const startHour = startTime.getHours();
+                if (endHour < startHour || (startHour >= 12 && endHour < 12)) endTimeStr += ' pm';
+                else endTimeStr += ' am';
+            }
+            const endTime = parse(endTimeStr, 'h:mm a', new Date());
+            
             return [format(startTime, 'HH:mm:ss'), format(endTime, 'HH:mm:ss')];
         } catch (e) {
             console.error('Error parsing time slot:', timeSlot, e);
@@ -147,7 +159,7 @@ const syncGoogleCalendarFlow = ai.defineFlow(
 
         const timeParts = parseTime(practicalClass.time);
         if (!timeParts) {
-            errors.push(`Invalid time format for class on ${practicalClass.date}: ${practicalClass.time}`);
+            errors.push(`Formato de hora inválido para la clase del ${practicalClass.date}: "${practicalClass.time}"`);
             continue;
         }
         
@@ -172,11 +184,23 @@ const syncGoogleCalendarFlow = ai.defineFlow(
             if (result.success) {
                 eventsCreated++;
             } else {
-                errors.push(`Failed to create event for class on ${practicalClass.date}`);
+                errors.push(`Fallo al crear evento para la clase del ${practicalClass.date}`);
             }
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-            errors.push(`Exception creating event for ${practicalClass.date}: ${errorMessage}`);
+             let errorMessage = 'Ocurrió un error desconocido.';
+            if (error instanceof Error) {
+                errorMessage = error.message;
+                // If it's a Google API error, the message might be in a nested object
+                const gapiError = error as any;
+                if (gapiError.response?.data?.error_description) {
+                    errorMessage = gapiError.response.data.error_description;
+                } else if (gapiError.response?.data?.error?.message) {
+                    errorMessage = gapiError.response.data.error.message;
+                } else if (gapiError.errors?.[0]?.message) {
+                    errorMessage = gapiError.errors[0].message;
+                }
+            }
+            errors.push(`Error al crear evento para ${practicalClass.date}: ${errorMessage}`);
         }
     }
 

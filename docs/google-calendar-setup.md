@@ -2,17 +2,13 @@
 
 Sigue estos pasos para autorizar de forma segura que tu aplicación gestione eventos en tu Google Calendar. Este método usa la identidad del entorno de ejecución de Firebase, que es más seguro porque no requiere gestionar archivos de claves privadas.
 
-## Paso 1: Identificar la Cuenta de Servicio de tu Aplicación
+## Paso 1: Usar la Cuenta de Servicio Correcta
 
-Cada aplicación de Firebase/Google Cloud tiene una cuenta de servicio especial que usa para ejecutarse y autenticarse. Necesitamos encontrar la dirección de correo de esa cuenta.
+La identidad que tu aplicación usará para conectarse a Google Calendar es la siguiente cuenta de servicio:
 
-1.  **Ir a la página de Cuentas de Servicio:**
-    *   Abre la consola de Google Cloud usando este enlace directo: [https://console.cloud.google.com/iam-admin/service-accounts](https://console.cloud.google.com/iam-admin/service-accounts)
-    *   Asegúrate de que el proyecto seleccionado en la parte superior de la página sea `project-c95d505f-7783-4848-afe`.
+**`freeways@project-c95d505f-7783-4848-afe.iam.gserviceaccount.com`**
 
-2.  **Encontrar y copiar el correo de la cuenta de servicio:**
-    *   En la lista de cuentas, busca una que se llame **"Firebase App Hosting service agent"**. El "Principal" terminará en `@gcp-sa-apphosting.iam.gserviceaccount.com`.
-    *   **Copia la dirección de correo electrónico completa de esa cuenta.** Esta es la identidad de tu aplicación. No la confundas con la que tiene el rol de "Propietario", que es tu cuenta personal.
+Copia esta dirección de correo electrónico completa. La necesitarás en el siguiente paso.
 
 ## Paso 2: Compartir tu Google Calendar con la Cuenta de Servicio
 
@@ -34,4 +30,4 @@ Ahora, necesitas darle permiso a esa identidad para que pueda ver y modificar tu
     *   En el menú desplegable de "Permisos", asegúrate de seleccionar **Hacer cambios en los eventos**. Esto es fundamental.
     *   Haz clic en **Enviar**. Acepta cualquier advertencia sobre compartir fuera de tu organización si aparece.
 
-¡Listo! Con estos pasos, tu aplicación usará la identidad que le provee Google Cloud para autenticarse de forma segura. Después de hacer esto, usa el botón "Probar Conexión" en el panel de control.
+¡Listo! Con estos pasos, tu aplicación usará la identidad correcta para autenticarse de forma segura. Después de hacer esto, usa el botón "Probar Conexión" en el panel de control.

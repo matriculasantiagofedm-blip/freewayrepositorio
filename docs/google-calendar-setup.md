@@ -49,4 +49,39 @@ Ahora necesitas darle permiso a esa cuenta de servicio para que pueda ver y modi
     *   En el menú desplegable de "Permisos", asegúrate de seleccionar **Hacer cambios en los eventos**. Esto es fundamental para que la aplicación pueda crear, editar y eliminar las clases.
     *   Haz clic en **Enviar**. Te podría aparecer una advertencia sobre compartir fuera de tu organización; acéptala.
 
-¡Y listo! Con estos pasos, tu aplicación tendrá los permisos necesarios para gestionar los eventos del calendario de forma automática y segura.
+## Paso 3: Obtener y Configurar la Clave Privada (GOOGLE_PRIVATE_KEY)
+
+La clave privada es la credencial secreta que permite a tu aplicación autenticarse de forma segura.
+
+1.  **Volver a la página de Cuentas de Servicio:**
+    *   Regresa a la sección **IAM y Administración** > **Cuentas de servicio** en la consola de Google Cloud.
+
+2.  **Seleccionar la cuenta de servicio:**
+    *   Haz clic en el correo de la cuenta que creaste (`agenda-freeway@...`).
+
+3.  **Ir a la pestaña "Claves":**
+    *   En el menú de detalles de la cuenta, selecciona la pestaña **CLAVES**.
+
+4.  **Crear una nueva clave:**
+    *   Haz clic en el botón **AGREGAR CLAVE** y selecciona **Crear nueva clave**.
+
+5.  **Elegir el formato JSON:**
+    *   Asegúrate de que el tipo de clave seleccionado sea **JSON** (es la opción por defecto).
+    *   Haz clic en **CREAR**.
+
+6.  **Descargar y abrir el archivo JSON:**
+    *   Se descargará automáticamente un archivo JSON. Este archivo contiene todas las credenciales necesarias.
+    *   Abre el archivo con un editor de texto.
+
+7.  **Encontrar y copiar la `private_key`:**
+    *   Dentro del archivo JSON, busca la propiedad `"private_key"`.
+    *   Copia **todo el valor** de esa propiedad, incluyendo `-----BEGIN PRIVATE KEY-----` y `-----END PRIVATE KEY-----\n`.
+
+8.  **Configurar la variable de entorno:**
+    *   En la raíz de tu proyecto, abre o crea un archivo llamado `.env`.
+    *   Añade la siguiente línea, pegando la clave que copiaste:
+        ```bash
+        GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...el largo contenido de tu clave...\n-----END PRIVATE KEY-----\n"
+        ```
+
+¡Y listo! Con estos pasos, tu aplicación tendrá los permisos y las credenciales necesarias para gestionar los eventos del calendario de forma automática y segura.

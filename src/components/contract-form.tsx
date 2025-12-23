@@ -377,6 +377,7 @@ export function ContractForm() {
         if (practicalClasses.length > 0) {
           await syncWithGoogleCalendar({
             clientName: data.clientName,
+            clientEmail: data.clientEmail,
             contractTitle: data.title,
             practicalClasses: practicalClasses,
           });
@@ -644,13 +645,12 @@ export function ContractForm() {
                           <FormLabel>Transmisión del Vehículo</FormLabel>
                           <FormControl>
                             <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
-                               {vehicle !== 'Moto' && (
+                               {vehicle !== 'Moto' ? (
                                 <>
                                   <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Automático" id="auto" /></FormControl><FormLabel htmlFor="auto" className="font-normal">Automático</FormLabel></FormItem>
                                   <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Manual" id="manual" /></FormControl><FormLabel htmlFor="manual" className="font-normal">Manual</FormLabel></FormItem>
                                 </>
-                               )}
-                               {vehicle === 'Moto' && (
+                               ) : (
                                 <FormItem className="flex items-center space-x-2">
                                   <FormControl><RadioGroupItem value="Moto" id="moto" /></FormControl>
                                   <FormLabel htmlFor="moto" className="font-normal">Moto</FormLabel>

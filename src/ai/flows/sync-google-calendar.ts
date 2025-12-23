@@ -15,6 +15,7 @@ import { google } from 'googleapis';
 
 const SyncCalendarInputSchema = z.object({
   clientName: z.string().describe('The name of the client/student.'),
+  clientEmail: z.string().email().describe("The client's email address."),
   contractTitle: z.string().describe('The title of the contract.'),
   practicalClasses: z.array(
     z.object({
@@ -161,7 +162,7 @@ const syncGoogleCalendarFlow = ai.defineFlow(
                 description: eventDescription,
                 startTime: startDateTimeISO,
                 endTime: endDateTimeISO,
-                attendeeEmail: 'student@example.com' // Placeholder, you might want to pass the actual client email here
+                attendeeEmail: input.clientEmail 
             });
 
             if (result.success) {

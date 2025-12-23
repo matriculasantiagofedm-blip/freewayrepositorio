@@ -91,6 +91,7 @@ const createGoogleCalendarEvent = ai.defineTool({
         const response = await calendar.events.insert({
             calendarId: calendarId,
             requestBody: event,
+            sendUpdates: 'all',
         });
 
         return {
@@ -118,25 +119,27 @@ const syncGoogleCalendarFlow = ai.defineFlow(
 
     // Helper to parse time slots like "8:00 am a 10:00 am"
     const parseTime = (timeSlot: string): [string, string] | null => {
-        // Match times with am/pm, allowing for "md" as noon/midnight
-        const timeParts = timeSlot.match(/(\d{1,2}:\d{2})\s*(am|pm|md)/gi);
+        // Normalize input: lowercase, remove "a", trim spaces
+        const normalized = timeSlot.toLowerCase().replace('a', '').replace('md', 'pm').trim();
+        const timeParts = normalized.match(/(\d{1,2}:\d{2})\s*(am|pm)/g);
+
         if (!timeParts || timeParts.length < 2) return null;
 
-        const parseTimePart = (part: string) => {
-            // Treat "md" as "pm" for parsing noon.
-            let sanitizedPart = part.replace('md', 'pm');
-            // Ensure format is hh:mm aa for parsing consistency
-            if (!/(\d{1,2}:\d{2})\s*(am|pm)/i.test(sanitizedPart)) {
-                 // If am/pm is missing, assume it follows the pattern (e.g., from "1:00 a 3:00 pm")
-                 sanitizedPart = sanitizedPart.replace(/(\d{1,2}:\d{2})/, '$1 pm');
-            }
-            return parse(sanitizedPart, 'h:mm a', new Date());
-        }
-        
-        const startTime = parseTimePart(timeParts[0]);
-        const endTime = parseTimePart(timeParts[1]);
+        try {
+            const startTime = parse(timeParts[0], 'h:mm a', new Date());
+            const endTime = parse(timeParts[1], 'h:mm a', new Date());
 
-        return [format(startTime, 'HH:mm:ss'), format(endTime, 'HH:mm:ss')];
+            // Handle cases where the second part might miss am/pm, like "8:00 am a 10:00"
+            // and date-fns parses it as 10:00 AM. If start is PM and end is AM, adjust.
+            if (startTime > endTime && timeParts[0].includes('pm')) {
+              endTime.setHours(endTime.getHours() + 12);
+            }
+
+            return [format(startTime, 'HH:mm:ss'), format(endTime, 'HH:mm:ss')];
+        } catch (e) {
+            console.error('Error parsing time slot:', timeSlot, e);
+            return null;
+        }
     };
     
     for (const practicalClass of input.practicalClasses) {

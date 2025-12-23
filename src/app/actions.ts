@@ -11,9 +11,12 @@ export async function pingCalendarsAction(params: { calendarId: string }) {
     // Validar la entrada usando Zod (aunque en este caso es simple)
     PingParamsSchema.parse({});
 
-    // Autenticar usando las credenciales del entorno de ejecución de Google Cloud
+    // Autenticar usando las credenciales del entorno de ejecución de Google Cloud,
+    // suplantando al usuario que tiene acceso al calendario.
     const auth = new google.auth.GoogleAuth({
       scopes: ['https://www.googleapis.com/auth/calendar.readonly'],
+      // CRÍTICO: Especificar el 'subject' para la suplantación de identidad de la cuenta de servicio.
+      // Esto le dice a Google que actúe en nombre de la cuenta que tiene acceso al calendario.
       clientOptions: {
         subject: 'freewayseptiembre@gmail.com'
       }

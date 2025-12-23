@@ -69,6 +69,9 @@ const createGoogleCalendarEvent = ai.defineTool({
     try {
         const auth = new google.auth.GoogleAuth({
             scopes: ['https://www.googleapis.com/auth/calendar'],
+            clientOptions: {
+              subject: 'freeways@project-c95d505f-7783-4848-afe.iam.gserviceaccount.com'
+            }
         });
 
         const authClient = await auth.getClient();

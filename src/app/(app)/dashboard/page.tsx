@@ -16,7 +16,15 @@ function toDate(date: any): Date {
   if (date && date.toDate) {
     return date.toDate();
   }
-  return new Date();
+  if (typeof date === 'string') {
+    const parsedDate = new Date(date);
+    if (!isNaN(parsedDate.getTime())) {
+      // Adjust for timezone issues with date-only strings
+      const timezoneOffset = parsedDate.getTimezoneOffset() * 60000;
+      return new Date(parsedDate.getTime() + timezoneOffset);
+    }
+  }
+  return new Date(0); // Return an invalid date if parsing fails
 }
 
 export default function DashboardPage() {
@@ -30,10 +38,26 @@ export default function DashboardPage() {
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
 
   const activeContracts = contracts?.filter((c) => c.status === 'active').length || 0;
+  
   const upcomingDeadlines =
-    contracts
-      ?.flatMap((c) => c.deadlines as Deadline[])
-      .filter((d) => d && d.date && !isPast(toDate(d.date))).length || 0;
+    contracts?.reduce((acc, contract) => {
+      // 1. Add standard deadlines
+      const generalDeadlines = (contract.deadlines as Deadline[] || [])
+        .filter(d => d && d.date && !isPast(toDate(d.date)));
+      
+      acc += generalDeadlines.length;
+
+      // 2. Add payment deadline from auto/moto contracts
+      if ((contract.type === 'Curso Auto' || contract.type === 'Curso Moto') && contract.autoMotoDetails?.paymentDeadline) {
+        const paymentDate = toDate(contract.autoMotoDetails.paymentDeadline);
+        if (paymentDate.getTime() > 0 && !isPast(paymentDate)) {
+          acc += 1;
+        }
+      }
+      
+      return acc;
+    }, 0) || 0;
+
   
   const totalClients = contracts ? new Set(contracts.map((c) => c.clientId)).size : 0;
 

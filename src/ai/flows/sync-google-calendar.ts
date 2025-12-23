@@ -54,6 +54,7 @@ const createGoogleCalendarEvent = ai.defineTool({
     }),
 }, async (input) => {
     try {
+        // Autenticación directa usando la cuenta de servicio predeterminada del entorno.
         const auth = new google.auth.GoogleAuth({
             scopes: ['https://www.googleapis.com/auth/calendar'],
         });
@@ -61,7 +62,7 @@ const createGoogleCalendarEvent = ai.defineTool({
         const authClient = await auth.getClient();
         const calendar = google.calendar({ version: 'v3', auth: authClient });
         
-        // This is the specific calendar ID we want to write to.
+        // Este es el ID del calendario específico al que queremos escribir.
         const calendarId = 'caa22a55efb4ec8120e449941e8df3d2731613826485af050c0b7ec0b60be588@group.calendar.google.com';
 
         const event = {
@@ -78,6 +79,13 @@ const createGoogleCalendarEvent = ai.defineTool({
             attendees: [
                 { email: input.attendeeEmail }
             ],
+            reminders: {
+                useDefault: false,
+                overrides: [
+                    { method: 'email', minutes: 24 * 60 }, // 1 day before
+                    { method: 'popup', minutes: 120 },     // 2 hours before
+                ],
+            },
         };
 
         const response = await calendar.events.insert({
@@ -92,6 +100,7 @@ const createGoogleCalendarEvent = ai.defineTool({
 
     } catch (error) {
         console.error("Error creating Google Calendar event:", error);
+        // Relanzar el error para que el flujo principal lo capture.
         throw error;
     }
 });

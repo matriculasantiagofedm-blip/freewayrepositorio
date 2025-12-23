@@ -1,4 +1,4 @@
-# Guía de Configuración de Google Calendar - Método Recomendado (Sin Claves)
+# Guía de Configuración de Google Calendar - Método Recomendado
 
 Sigue estos pasos para autorizar de forma segura que tu aplicación gestione eventos en tu Google Calendar. Este método usa la identidad del entorno de ejecución de Firebase, que es más seguro porque no requiere gestionar archivos de claves privadas.
 
@@ -11,10 +11,8 @@ Cada aplicación de Firebase/Google Cloud tiene una cuenta de servicio especial 
     *   Asegúrate de que el proyecto seleccionado en la parte superior de la página sea `studio-127944656-2105f`.
 
 2.  **Encontrar y copiar el correo de la cuenta de servicio:**
-    *   En la lista de cuentas, busca una que se llame **"Firebase App Hosting service agent"** o similar.
-    *   El correo electrónico de esa cuenta se verá así:
-        `service-[NUMERO_DE_PROYECTO]@gcp-sa-apphosting.iam.gserviceaccount.com`
-    *   **Copia esta dirección de correo electrónico.** Esta es la identidad de tu aplicación. No la confundas con la que tiene el rol de "Propietario", que es tu cuenta personal.
+    *   En la lista de cuentas, busca una que se llame **"Firebase App Hosting service agent"**. El "Principal" terminará en `@gcp-sa-apphosting.iam.gserviceaccount.com`.
+    *   **Copia la dirección de correo electrónico completa de esa cuenta.** Esta es la identidad de tu aplicación. No la confundas con la que tiene el rol de "Propietario", que es tu cuenta personal.
 
 ## Paso 2: Compartir tu Google Calendar con la Cuenta de Servicio
 
@@ -24,7 +22,7 @@ Ahora, necesitas darle permiso a esa identidad para que pueda ver y modificar tu
     *   Ve a [https://calendar.google.com/](https://calendar.google.com/) e inicia sesión con la cuenta de Google que posee el calendario que quieres sincronizar (por ejemplo, `freewayseptiembre@gmail.com`).
 
 2.  **Ir a la configuración del calendario:**
-    *   En el panel izquierdo, en "Mis calendarios", pasa el cursor sobre el calendario que quieres usar.
+    *   En el panel izquierdo, en "Mis calendarios", pasa el cursor sobre el calendario que quieres usar (el que tiene el ID que termina en `...be588@group.calendar.google.com`).
     *   Haz clic en los tres puntos verticales (⋮) y selecciona **Configurar y compartir**.
 
 3.  **Compartir con la cuenta de servicio:**
@@ -36,4 +34,4 @@ Ahora, necesitas darle permiso a esa identidad para que pueda ver y modificar tu
     *   En el menú desplegable de "Permisos", asegúrate de seleccionar **Hacer cambios en los eventos**. Esto es fundamental.
     *   Haz clic en **Enviar**. Acepta cualquier advertencia sobre compartir fuera de tu organización si aparece.
 
-¡Listo! Con estos pasos, tu aplicación usará la identidad que le provee Google Cloud para autenticarse de forma segura, sin necesidad de claves.
+¡Listo! Con estos pasos, tu aplicación usará la identidad que le provee Google Cloud para autenticarse de forma segura. Después de hacer esto, usa el botón "Probar Conexión" en el panel de control.

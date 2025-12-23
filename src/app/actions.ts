@@ -13,11 +13,10 @@ export async function pingCalendarsAction(params: { calendarId: string }) {
     // Validar la entrada usando Zod
     PingParamsSchema.parse(params);
 
-    // Autenticación directa usando la cuenta de servicio que tiene acceso al calendario.
-    // Este método es más robusto ya que no depende de la suplantación.
+    // Autenticación directa usando la cuenta de servicio del entorno de ejecución.
+    // Este es el método más simple y recomendado para App Hosting.
     const auth = new google.auth.GoogleAuth({
         scopes: ['https://www.googleapis.com/auth/calendar.readonly'],
-        // Usar las credenciales predeterminadas del entorno de ejecución (App Hosting)
     });
 
     const authClient = await auth.getClient();

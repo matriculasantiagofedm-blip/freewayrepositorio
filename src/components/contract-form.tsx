@@ -619,10 +619,16 @@ export function ContractForm() {
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="Spark">Spark</SelectItem>
-                                        <SelectItem value="P. Blanco">P. Blanco</SelectItem>
-                                        <SelectItem value="P. Bronce">P. Bronce</SelectItem>
-                                        <SelectItem value="Moto">Moto</SelectItem>
+                                        {contractType === 'Curso Auto' && (
+                                            <>
+                                                <SelectItem value="Spark">Spark</SelectItem>
+                                                <SelectItem value="P. Blanco">P. Blanco</SelectItem>
+                                                <SelectItem value="P. Bronce">P. Bronce</SelectItem>
+                                            </>
+                                        )}
+                                        {contractType === 'Curso Moto' && (
+                                            <SelectItem value="Moto">Moto</SelectItem>
+                                        )}
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />

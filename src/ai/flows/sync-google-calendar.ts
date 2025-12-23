@@ -61,7 +61,7 @@ const createGoogleCalendarEvent = ai.defineTool({
 
         const calendar = google.calendar({ version: 'v3', auth });
         // The calendar to modify must be shared with the runtime service account.
-        const calendarId = 'freewayseptiembre@gmail.com';
+        const calendarId = 'caa22a55efb4ec8120e449941e8df3d2731613826485af050c0b7ec0b60be588@group.calendar.google.com';
 
         const event = {
             summary: input.summary,

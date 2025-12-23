@@ -1,22 +1,20 @@
 # Guía de Configuración de Google Calendar - Método Recomendado (Sin Claves)
 
-Sigue estos pasos para autorizar de forma segura que tu aplicación gestione eventos en tu Google Calendar utilizando la identidad del entorno de ejecución de Firebase. Este método es más seguro porque no requiere gestionar archivos de claves privadas.
+Sigue estos pasos para autorizar de forma segura que tu aplicación gestione eventos en tu Google Calendar. Este método usa la identidad del entorno de ejecución de Firebase, que es más seguro porque no requiere gestionar archivos de claves privadas.
 
-## Paso 1: Identificar la Cuenta de Servicio Principal de tu Aplicación
+## Paso 1: Identificar la Cuenta de Servicio de tu Aplicación
 
-Cada aplicación de Firebase/Google Cloud tiene una cuenta de servicio principal que usa para ejecutarse. Necesitamos encontrar su dirección de correo.
+Cada aplicación de Firebase/Google Cloud tiene una cuenta de servicio especial que usa para ejecutarse y autenticarse. Necesitamos encontrar la dirección de correo de esa cuenta.
 
-1.  **Ir a la página de IAM:**
-    *   Abre la consola de Google Cloud: [https://console.cloud.google.com/](https://console.cloud.google.com/)
-    *   Asegúrate de que el proyecto seleccionado en la parte superior sea `studio-127944656-2105f`.
-    *   En el menú de navegación (☰), ve a **IAM y Administración** > **IAM**.
+1.  **Ir a la página de Cuentas de Servicio:**
+    *   Abre la consola de Google Cloud usando este enlace directo: [https://console.cloud.google.com/iam-admin/service-accounts](https://console.cloud.google.com/iam-admin/service-accounts)
+    *   Asegúrate de que el proyecto seleccionado en la parte superior de la página sea `studio-127944656-2105f`.
 
-2.  **Encontrar la cuenta de servicio:**
-    *   En la lista de "Principales", busca una cuenta que tenga el rol **"Firebase App Hosting Admin"** o uno similar como **"Editor"**.
-    *   El correo electrónico se verá parecido a uno de estos formatos:
-        *   `service-[PROJECT_NUMBER]@gcp-sa-apphosting.iam.gserviceaccount.com`
-        *   `[PROJECT_ID]@appspot.gserviceaccount.com` (para entornos más antiguos).
-    *   **Copia esta dirección de correo electrónico.** Esta es la identidad de tu aplicación.
+2.  **Encontrar y copiar el correo de la cuenta de servicio:**
+    *   En la lista de cuentas, busca una que se llame **"Firebase App Hosting service agent"** o similar.
+    *   El correo electrónico de esa cuenta se verá así:
+        `service-[NUMERO_DE_PROYECTO]@gcp-sa-apphosting.iam.gserviceaccount.com`
+    *   **Copia esta dirección de correo electrónico.** Esta es la identidad de tu aplicación. No la confundas con la que tiene el rol de "Propietario", que es tu cuenta personal.
 
 ## Paso 2: Compartir tu Google Calendar con la Cuenta de Servicio
 
@@ -38,4 +36,4 @@ Ahora, necesitas darle permiso a esa identidad para que pueda ver y modificar tu
     *   En el menú desplegable de "Permisos", asegúrate de seleccionar **Hacer cambios en los eventos**. Esto es fundamental.
     *   Haz clic en **Enviar**. Acepta cualquier advertencia sobre compartir fuera de tu organización si aparece.
 
-¡Listo! Con estos pasos, tu aplicación usará la identidad que le provee Google Cloud para autenticarse de forma segura. No se necesitan claves privadas, lo que elimina el riesgo de que se filtren.
+¡Listo! Con estos pasos, tu aplicación usará la identidad que le provee Google Cloud para autenticarse de forma segura, sin necesidad de claves.

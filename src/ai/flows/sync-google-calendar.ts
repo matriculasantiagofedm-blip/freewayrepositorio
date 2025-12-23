@@ -9,7 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import { format, parse } from 'date-fns';
 import { google } from 'googleapis';
 
@@ -53,15 +53,14 @@ const createGoogleCalendarEvent = ai.defineTool({
     }),
 }, async (input) => {
     try {
+        // Use Application Default Credentials. This authenticates using the
+        // runtime service account identity when deployed on Google Cloud.
         const auth = new google.auth.GoogleAuth({
-            credentials: {
-                client_email: 'freeways@project-c95d505f-7783-4848-afe.iam.gserviceaccount.com',
-                private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-            },
             scopes: ['https://www.googleapis.com/auth/calendar'],
         });
 
         const calendar = google.calendar({ version: 'v3', auth });
+        // The calendar to modify must be shared with the runtime service account.
         const calendarId = 'freewayseptiembre@gmail.com';
 
         const event = {

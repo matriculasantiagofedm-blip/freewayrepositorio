@@ -39,18 +39,18 @@ export default function DashboardPage() {
 
   const activeContracts = contracts?.filter((c) => c.status === 'active').length || 0;
   
-  const upcomingDeadlines =
+  const overdueDeadlines =
     contracts?.reduce((acc, contract) => {
-      // 1. Add standard deadlines
+      // 1. Add overdue standard deadlines
       const generalDeadlines = (contract.deadlines as Deadline[] || [])
-        .filter(d => d && d.date && !isPast(toDate(d.date)));
+        .filter(d => d && d.date && isPast(toDate(d.date)));
       
       acc += generalDeadlines.length;
 
-      // 2. Add payment deadline from auto/moto contracts
+      // 2. Add overdue payment deadline from auto/moto contracts
       if ((contract.type === 'Curso Auto' || contract.type === 'Curso Moto') && contract.autoMotoDetails?.paymentDeadline) {
         const paymentDate = toDate(contract.autoMotoDetails.paymentDeadline);
-        if (paymentDate.getTime() > 0 && !isPast(paymentDate)) {
+        if (paymentDate.getTime() > 0 && isPast(paymentDate)) {
           acc += 1;
         }
       }
@@ -68,8 +68,8 @@ export default function DashboardPage() {
       icon: FileText,
     },
     {
-      title: 'Próximos Vencimientos',
-      value: isLoading ? '...' : upcomingDeadlines,
+      title: 'Contratos Vencidos',
+      value: isLoading ? '...' : overdueDeadlines,
       icon: CalendarClock,
     },
     {

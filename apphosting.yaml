@@ -2,6 +2,9 @@
 # https://firebase.google.com/docs/app-hosting/configure
 
 runConfig:
+  # Defines the desired CPU resources for the backend.
+  # https://firebase.google.com/docs/app-hosting/configure#cpu
+  cpu: 1
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1

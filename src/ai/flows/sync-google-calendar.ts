@@ -11,6 +11,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { format, parse } from 'date-fns';
+import { google } from 'googleapis';
 
 const SyncCalendarInputSchema = z.object({
   clientName: z.string().describe('The name of the client/student.'),
@@ -51,17 +52,49 @@ const createGoogleCalendarEvent = ai.defineTool({
         eventId: z.string().optional(),
     }),
 }, async (input) => {
-    // In a real implementation, this would interact with the Google Calendar API.
-    // For now, we'll just log the action and simulate success.
-    console.log(`[Simulating] Creating Google Calendar event:`);
-    console.log(`  Summary: ${input.summary}`);
-    console.log(`  Start: ${input.startTime}`);
-    console.log(`  End: ${input.endTime}`);
-    console.log(`  Attendee: ${input.attendeeEmail}`);
-    return {
-        success: true,
-        eventId: `simulated-event-${Math.random().toString(36).substring(7)}`,
-    };
+    try {
+        const auth = new google.auth.GoogleAuth({
+            credentials: {
+                client_email: 'freeways@project-c95d505f-7783-4848-afe.iam.gserviceaccount.com',
+                private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+            },
+            scopes: ['https://www.googleapis.com/auth/calendar'],
+        });
+
+        const calendar = google.calendar({ version: 'v3', auth });
+        const calendarId = 'freewayseptiembre@gmail.com';
+
+        const event = {
+            summary: input.summary,
+            description: input.description,
+            start: {
+                dateTime: input.startTime,
+                timeZone: 'America/Panama',
+            },
+            end: {
+                dateTime: input.endTime,
+                timeZone: 'America/Panama',
+            },
+            attendees: [
+                { email: input.attendeeEmail }
+            ],
+        };
+
+        const response = await calendar.events.insert({
+            calendarId: calendarId,
+            requestBody: event,
+        });
+
+        return {
+            success: true,
+            eventId: response.data.id || undefined,
+        };
+
+    } catch (error) {
+        console.error("Error creating Google Calendar event:", error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error during calendar event creation';
+        throw new Error(errorMessage);
+    }
 });
 
 

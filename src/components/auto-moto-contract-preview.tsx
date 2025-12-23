@@ -89,7 +89,6 @@ export function AutoMotoContractTemplatePreview({ folio, clientName, clientEmail
              <p>1. Transmisión del vehículo: Automático <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Automático'} /> / Manual <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Manual'} /> {type === 'Curso Moto' && <> / Moto <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Moto'} /></>}</p>
              <p>2. Categoría de licencia a aplicar: A, C <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C'} /> / A, C, D <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C, D'} /> {type === 'Curso Moto' && <> / A, B <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, B'} /></>}</p>
             <div className="flex items-center gap-2">3. Horario para clases teóricas: <Line>{autoMotoDetails?.theoreticalClassSchedule}</Line></div>
-            <div className="flex items-center gap-2">4. Vehículo: <Line>{autoMotoDetails?.vehicle}</Line></div>
             <div className="pl-4">
                 {autoMotoDetails?.theoreticalClassDates?.map((date, index) => (
                     <span key={index} className="mr-4">Clase {index + 1}: {formatDate(date)}</span>
@@ -118,7 +117,7 @@ export function AutoMotoContractTemplatePreview({ folio, clientName, clientEmail
         <h3 className="font-bold">CLÁUSULA QUINTA - PUNTUALIDAD</h3>
         <p className='text-[10px]'>En caso de que EL ESTUDIANTE llegue tarde a su clase, solo recibirá el tiempo restante de las 2 horas programadas, sin derecho a reposición.</p>
         
-        <h3 className="font-bold">CLÁUSULA SEXTA - NORMAS DE COMPORTAMIENTO Y VESTIMENTA</h3>
+        <h3 className="font-bold">CLÁUSULA SEXTA - NORMAS DE COMPORTAMIENTO E VESTIMENTA</h3>
         <p className='text-[10px]'>EL ESTUDIANTE se compromete a: Seguir las instrucciones del instructor, mantener una actitud respetuosa y adecuada durante las clases y asistir en estado óptimo de salud física, mental y emocional. Para las clases prácticas y teóricas, EL ESTUDIANTE deberá asistir con ropa adecuada. Se prohíbe presentarse con: Escotes pronunciados, minifaldas, camisetas sin mangas, pantalones cortos, leggins, chancletas o sandalias. El incumplimiento de esta norma implica la pérdida automática de la clase, sin derecho a reposición.</p>
 
         <h3 className="font-bold">CLÁUSULA SÉPTIMA - ACOMPAÑANTES Y ACCESO</h3>

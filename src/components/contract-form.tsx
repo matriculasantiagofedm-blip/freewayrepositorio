@@ -604,6 +604,32 @@ export function ContractForm() {
                  <div className="space-y-4">
                     <h3 className="text-lg font-medium text-primary border-b pb-2">Cláusula Segunda: Detalles del Curso</h3>
                     <FormField
+                        control={form.control}
+                        name="autoMotoDetails.vehicle"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Vehículo</FormLabel>
+                                <Select
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                >
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Seleccione un vehículo" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="Spark">Spark</SelectItem>
+                                        <SelectItem value="P. Blanco">P. Blanco</SelectItem>
+                                        <SelectItem value="P. Bronce">P. Bronce</SelectItem>
+                                        <SelectItem value="Moto">Moto</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
                       control={form.control}
                       name="autoMotoDetails.vehicleTransmission"
                       render={({ field }) => (
@@ -646,32 +672,6 @@ export function ContractForm() {
                     />
                      <div>
                         <h4 className="font-medium text-base mb-2">Horario y Fechas para clases teóricas</h4>
-                         <FormField
-                            control={form.control}
-                            name="autoMotoDetails.vehicle"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Vehículo</FormLabel>
-                                    <Select
-                                        onValueChange={field.onChange}
-                                        defaultValue={field.value}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Seleccione un vehículo" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="Spark">Spark</SelectItem>
-                                            <SelectItem value="P. Blanco">P. Blanco</SelectItem>
-                                            <SelectItem value="P. Bronce">P. Bronce</SelectItem>
-                                            <SelectItem value="Moto">Moto</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
                         <FormField
                             control={form.control}
                             name="autoMotoDetails.theoreticalClassSchedule"

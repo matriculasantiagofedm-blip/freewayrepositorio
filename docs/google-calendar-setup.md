@@ -8,7 +8,7 @@ Cada aplicación de Firebase/Google Cloud tiene una cuenta de servicio especial 
 
 1.  **Ir a la página de Cuentas de Servicio:**
     *   Abre la consola de Google Cloud usando este enlace directo: [https://console.cloud.google.com/iam-admin/service-accounts](https://console.cloud.google.com/iam-admin/service-accounts)
-    *   Asegúrate de que el proyecto seleccionado en la parte superior de la página sea `studio-127944656-2105f`.
+    *   Asegúrate de que el proyecto seleccionado en la parte superior de la página sea `project-c95d505f-7783-4848-afe`.
 
 2.  **Encontrar y copiar el correo de la cuenta de servicio:**
     *   En la lista de cuentas, busca una que se llame **"Firebase App Hosting service agent"**. El "Principal" terminará en `@gcp-sa-apphosting.iam.gserviceaccount.com`.

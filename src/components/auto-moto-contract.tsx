@@ -80,12 +80,13 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
              <p>1. Transmisión del vehículo: Automático <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Automático'} /> / Manual <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Manual'} /> {contract.type === 'Curso Moto' && <> / Moto <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Moto'} /></>}</p>
              <p>2. Categoría de licencia a aplicar: A, C <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C'} /> / A, C, D <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C, D'} /> {contract.type === 'Curso Moto' && <> / A, B <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, B'} /></>}</p>
             <div className="flex items-center gap-2">3. Horario para clases teóricas: <Line>{autoMotoDetails?.theoreticalClassSchedule}</Line></div>
+            <div className="flex items-center gap-2">4. Vehículo: <Line>{autoMotoDetails?.vehicle}</Line></div>
              <div className="pl-4">
                 {autoMotoDetails?.theoreticalClassDates?.map((date, index) => (
                     <span key={index} className="mr-4">Clase {index + 1}: {formatDate(date)}</span>
                 ))}
             </div>
-            <p>4. Horario para clases practicas:</p>
+            <p>5. Horario para clases practicas:</p>
             <div className="pl-4 space-y-0.5">
                 {Array.from({ length: autoMotoDetails?.practicalClassSchedules?.length || 0 }).map((_, index) => (
                      <div key={index} className="flex items-center gap-2">

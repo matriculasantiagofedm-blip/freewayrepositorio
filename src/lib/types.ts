@@ -50,6 +50,7 @@ export interface AutoMotoContractDetails {
   downPayment?: number;
   balance?: number;
   paymentDeadline?: string;
+  vehicle?: 'Spark' | 'P. Blanco' | 'P. Bronce' | 'Moto';
   vehicleTransmission?: 'Automático' | 'Manual' | 'Moto';
   licenseCategory?: 'A, C' | 'A, C, D' | 'A, B';
   theoreticalClassSchedule?: string;

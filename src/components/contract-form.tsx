@@ -98,6 +98,7 @@ const contractFormSchema = z.object({
     downPayment: z.number().optional(),
     balance: z.number().optional(),
     paymentDeadline: z.string().optional(),
+    vehicle: z.enum(['Spark', 'P. Blanco', 'P. Bronce', 'Moto']).optional(),
     vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).optional(),
     licenseCategory: z.enum(['A, C', 'A, C, D', 'A, B']).optional(),
     theoreticalClassSchedule: z.enum(['Dias de Semana de 8:00 am a 10:00 am', 'Sábados de 3:00 pm a 5:00 pm']).optional(),
@@ -176,6 +177,7 @@ export function ContractForm() {
         downPayment: undefined,
         balance: 0,
         paymentDeadline: '',
+        vehicle: undefined,
         vehicleTransmission: undefined,
         licenseCategory: undefined,
         theoreticalClassSchedule: undefined,
@@ -644,11 +646,37 @@ export function ContractForm() {
                     />
                      <div>
                         <h4 className="font-medium text-base mb-2">Horario y Fechas para clases teóricas</h4>
+                         <FormField
+                            control={form.control}
+                            name="autoMotoDetails.vehicle"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Vehículo</FormLabel>
+                                    <Select
+                                        onValueChange={field.onChange}
+                                        defaultValue={field.value}
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Seleccione un vehículo" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="Spark">Spark</SelectItem>
+                                            <SelectItem value="P. Blanco">P. Blanco</SelectItem>
+                                            <SelectItem value="P. Bronce">P. Bronce</SelectItem>
+                                            <SelectItem value="Moto">Moto</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                         <FormField
                             control={form.control}
                             name="autoMotoDetails.theoreticalClassSchedule"
                             render={({ field }) => (
-                                <FormItem>
+                                <FormItem className="mt-4">
                                     <FormLabel>Horario para clases teóricas</FormLabel>
                                     <FormControl>
                                         <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col gap-2">

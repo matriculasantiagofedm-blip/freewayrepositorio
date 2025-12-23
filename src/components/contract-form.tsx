@@ -375,16 +375,27 @@ export function ContractForm() {
           (c): c is { date: string; time: string } => !!c.date && !!c.time
         );
         if (practicalClasses.length > 0) {
-          await syncWithGoogleCalendar({
+          const syncResult = await syncWithGoogleCalendar({
             clientName: data.clientName,
             clientEmail: data.clientEmail,
             contractTitle: data.title,
+            vehicle: data.autoMotoDetails.vehicle,
             practicalClasses: practicalClasses,
           });
-          toast({
-            title: 'Sincronizando con Calendario',
-            description: 'Las clases prácticas se están añadiendo a Google Calendar.',
-          });
+
+           if (syncResult.errors && syncResult.errors.length > 0) {
+              toast({
+                  title: 'Error de Sincronización Parcial',
+                  description: `Se crearon ${syncResult.eventsCreated} eventos, pero ocurrieron errores: ${syncResult.errors.join(', ')}`,
+                  variant: 'destructive',
+                  duration: 10000,
+              });
+          } else {
+              toast({
+                  title: 'Sincronizando con Calendario',
+                  description: `Se crearon ${syncResult.eventsCreated} clases prácticas en Google Calendar.`,
+              });
+          }
         }
       }
 
@@ -624,8 +635,8 @@ export function ContractForm() {
                                         {contractType === 'Curso Auto' && (
                                             <>
                                                 <SelectItem value="Spark">Spark</SelectItem>
-                                                <SelectItem value="P. Blanco">P. Blanco</SelectItem>
-                                                <SelectItem value="P. Bronce">P. Bronce</SelectItem>
+                                                <SelectItem value="P. Blanco">Picanto Blanco</SelectItem>
+                                                <SelectItem value="P. Bronce">Picanto Bronce</SelectItem>
                                             </>
                                         )}
                                         {contractType === 'Curso Moto' && (

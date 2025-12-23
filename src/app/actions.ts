@@ -13,18 +13,15 @@ export async function pingCalendarsAction(params: { calendarId: string }) {
     // Validar la entrada usando Zod
     PingParamsSchema.parse(params);
 
-    // Autenticar usando las credenciales del entorno de ejecución de Google Cloud.
-    // Esta es la forma recomendada y más segura en App Hosting.
-    // Al especificar 'subject', le decimos que actúe en nombre de la cuenta de servicio
-    // que tiene acceso al calendario compartido.
+    // Autenticación directa usando la cuenta de servicio que tiene acceso al calendario.
+    // Este método es más robusto ya que no depende de la suplantación.
     const auth = new google.auth.GoogleAuth({
-      scopes: ['https://www.googleapis.com/auth/calendar.readonly'],
-      clientOptions: {
-        subject: 'freeways@project-c95d505f-7783-4848-afe.iam.gserviceaccount.com'
-      }
+        scopes: ['https://www.googleapis.com/auth/calendar.readonly'],
+        // Usar las credenciales predeterminadas del entorno de ejecución (App Hosting)
     });
 
-    const calendar = google.calendar({ version: 'v3', auth });
+    const authClient = await auth.getClient();
+    const calendar = google.calendar({ version: 'v3', auth: authClient });
 
     // Intentar obtener información del calendario específico.
     // Esta es una operación de solo lectura, perfecta para un "ping".
@@ -54,8 +51,10 @@ export async function pingCalendarsAction(params: { calendarId: string }) {
         const gapiError = error as any;
         if (gapiError.response?.data?.error_description) {
             errorMessage = gapiError.response.data.error_description;
-        } else if (gapiError.response?.data?.error) {
-            errorMessage = `${gapiError.response.data.error.message} (Code: ${gapiError.response.data.error.code})`;
+        } else if (gapiError.response?.data?.error?.message) {
+            errorMessage = gapiError.response.data.error.message;
+        } else if (gapiError.errors?.[0]?.message) {
+            errorMessage = gapiError.errors[0].message;
         }
     }
     

@@ -56,13 +56,10 @@ const createGoogleCalendarEvent = ai.defineTool({
     try {
         const auth = new google.auth.GoogleAuth({
             scopes: ['https://www.googleapis.com/auth/calendar'],
-            // Usa la cuenta de servicio específica que tiene acceso al calendario
-            clientOptions: {
-              subject: 'freeways@project-c95d505f-7783-4848-afe.iam.gserviceaccount.com'
-            }
         });
 
-        const calendar = google.calendar({ version: 'v3', auth });
+        const authClient = await auth.getClient();
+        const calendar = google.calendar({ version: 'v3', auth: authClient });
         
         // This is the specific calendar ID we want to write to.
         const calendarId = 'caa22a55efb4ec8120e449941e8df3d2731613826485af050c0b7ec0b60be588@group.calendar.google.com';

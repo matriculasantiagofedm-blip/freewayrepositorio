@@ -1,7 +1,7 @@
 'use client';
 import { Card, CardContent } from './ui/card';
 import { cn } from '@/lib/utils';
-import type { AutoMotoContractDetails } from '@/lib/types';
+import type { AutoMotoContractDetails, ContractType } from '@/lib/types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -39,9 +39,10 @@ interface AutoMotoContractTemplatePreviewProps {
     clientEmail?: string;
     autoMotoDetails?: AutoMotoContractDetails;
     createdBy?: string | null;
+    type?: ContractType;
 }
 
-export function AutoMotoContractTemplatePreview({ folio, clientName, clientEmail, autoMotoDetails, createdBy }: AutoMotoContractTemplatePreviewProps) {
+export function AutoMotoContractTemplatePreview({ folio, clientName, clientEmail, autoMotoDetails, createdBy, type }: AutoMotoContractTemplatePreviewProps) {
   const balance = autoMotoDetails?.balance || 0;
   const creationDate = new Date(); // Use current date for preview
   const paymentDeadline = autoMotoDetails?.paymentDeadline ? toDate(autoMotoDetails.paymentDeadline) : null;
@@ -85,7 +86,7 @@ export function AutoMotoContractTemplatePreview({ folio, clientName, clientEmail
         
         <h3 className="font-bold">CLÁUSULA SEGUNDA - DETALLES DEL CURSO</h3>
         <div className='space-y-1 text-[10px] pl-4'>
-             <p>1. Transmisión del vehículo: Automático <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Automático'} /> / Manual <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Manual'} /> / Moto <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Moto'} /></p>
+             <p>1. Transmisión del vehículo: Automático <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Automático'} /> / Manual <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Manual'} /> {type === 'Curso Moto' && <> / Moto <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Moto'} /></>}</p>
              <p>2. Categoría de licencia a aplicar: A, C <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C'} /> / A, C, D <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C, D'} /> / A, B <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, B'} /></p>
             <div className="flex items-center gap-2">3. Horario para clases teóricas: <Line>{autoMotoDetails?.theoreticalClassSchedule}</Line></div>
             <div className="pl-4">
@@ -95,7 +96,7 @@ export function AutoMotoContractTemplatePreview({ folio, clientName, clientEmail
             </div>
             <p>4. Horario para clases practicas:</p>
             <div className="pl-4 space-y-0.5">
-                {Array.from({ length: 6 }).map((_, index) => (
+                {Array.from({ length: autoMotoDetails?.practicalClassSchedules?.length || 0 }).map((_, index) => (
                      <div key={index} className="flex items-center gap-2">
                         ○ Clase {index + 1}: Fecha <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.date ? formatDate(autoMotoDetails?.practicalClassSchedules?.[index]?.date) : <>&nbsp;</>}</Line> Hora <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.time}</Line>
                     </div>

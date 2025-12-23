@@ -611,7 +611,12 @@ export function ContractForm() {
                             <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
                               <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Automático" id="auto" /></FormControl><FormLabel htmlFor="auto" className="font-normal">Automático</FormLabel></FormItem>
                               <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Manual" id="manual" /></FormControl><FormLabel htmlFor="manual" className="font-normal">Manual</FormLabel></FormItem>
-                              <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Moto" id="moto" /></FormControl><FormLabel htmlFor="moto" className="font-normal">Moto</FormLabel></FormItem>
+                               {contractType === 'Curso Moto' && (
+                                <FormItem className="flex items-center space-x-2">
+                                  <FormControl><RadioGroupItem value="Moto" id="moto" /></FormControl>
+                                  <FormLabel htmlFor="moto" className="font-normal">Moto</FormLabel>
+                                </FormItem>
+                              )}
                             </RadioGroup>
                           </FormControl>
                           <FormMessage />
@@ -735,6 +740,7 @@ export function ContractForm() {
                         clientEmail={allFormValues.clientEmail}
                         autoMotoDetails={allFormValues.autoMotoDetails as AutoMotoContractDetails}
                         createdBy={role}
+                        type={contractType}
                       />
                   </div>
               </div>

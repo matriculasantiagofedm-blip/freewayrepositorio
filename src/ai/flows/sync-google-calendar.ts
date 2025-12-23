@@ -53,14 +53,18 @@ const createGoogleCalendarEvent = ai.defineTool({
     }),
 }, async (input) => {
     try {
-        // Use Application Default Credentials. This authenticates using the
-        // runtime service account identity when deployed on Google Cloud.
+        const serviceAccountEmail = 'freeways@project-c95d505f-7783-4848-afe.iam.gserviceaccount.com';
+        
+        // Use Application Default Credentials but specify the service account to impersonate.
         const auth = new google.auth.GoogleAuth({
             scopes: ['https://www.googleapis.com/auth/calendar'],
+            clientOptions: {
+              subject: serviceAccountEmail,
+            },
         });
 
         const calendar = google.calendar({ version: 'v3', auth });
-        // The calendar to modify must be shared with the runtime service account.
+        // The calendar to modify must be shared with the specified service account.
         const calendarId = 'caa22a55efb4ec8120e449941e8df3d2731613826485af050c0b7ec0b60be588@group.calendar.google.com';
 
         const event = {

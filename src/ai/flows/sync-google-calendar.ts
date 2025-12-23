@@ -91,6 +91,9 @@ const createGoogleCalendarEvent = ai.defineTool({
 
     } catch (error) {
         console.error("Error creating Google Calendar event:", error);
+        // Do not expose detailed internal errors to the client-side flow.
+        // Log them server-side for debugging.
+        // A general error message is sufficient for the flow's output.
         const errorMessage = error instanceof Error ? error.message : 'Unknown error during calendar event creation';
         throw new Error(errorMessage);
     }
@@ -107,19 +110,23 @@ const syncGoogleCalendarFlow = ai.defineFlow(
     let eventsCreated = 0;
     const errors: string[] = [];
 
+    // Helper to parse time slots like "8:00 am a 10:00 am"
     const parseTime = (timeSlot: string): [string, string] | null => {
+        // Match times with am/pm, allowing for "md" as noon/midnight
         const timeParts = timeSlot.match(/(\d{1,2}:\d{2})\s*(am|pm|md)/gi);
         if (!timeParts || timeParts.length < 2) return null;
 
         const parseTimePart = (part: string) => {
+            // Treat "md" as "pm" for parsing noon.
             let sanitizedPart = part.replace('md', 'pm');
-            // Ensure format is hh:mm aa
+            // Ensure format is hh:mm aa for parsing consistency
             if (!/(\d{1,2}:\d{2})\s*(am|pm)/i.test(sanitizedPart)) {
+                 // If am/pm is missing, assume it follows the pattern (e.g., from "1:00 a 3:00 pm")
                  sanitizedPart = sanitizedPart.replace(/(\d{1,2}:\d{2})/, '$1 pm');
             }
             return parse(sanitizedPart, 'h:mm a', new Date());
         }
-
+        
         const startTime = parseTimePart(timeParts[0]);
         const endTime = parseTimePart(timeParts[1]);
 
@@ -137,6 +144,7 @@ const syncGoogleCalendarFlow = ai.defineFlow(
         
         const [startTime, endTime] = timeParts;
 
+        // Combine date and time to form a full ISO string
         const startDateTimeISO = `${practicalClass.date}T${startTime}`;
         const endDateTimeISO = `${practicalClass.date}T${endTime}`;
 
@@ -149,7 +157,7 @@ const syncGoogleCalendarFlow = ai.defineFlow(
                 description: eventDescription,
                 startTime: startDateTimeISO,
                 endTime: endDateTimeISO,
-                attendeeEmail: 'student@example.com' // Placeholder email
+                attendeeEmail: 'student@example.com' // Placeholder, you might want to pass the actual client email here
             });
 
             if (result.success) {

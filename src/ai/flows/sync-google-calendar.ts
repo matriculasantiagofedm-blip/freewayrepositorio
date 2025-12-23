@@ -53,19 +53,15 @@ const createGoogleCalendarEvent = ai.defineTool({
         eventId: z.string().optional(),
     }),
 }, async (input) => {
+    // This logic has been updated to re-throw the original error for better debugging.
     try {
-        const serviceAccountEmail = 'freeways@project-c95d505f-7783-4848-afe.iam.gserviceaccount.com';
-        
-        // Use Application Default Credentials but specify the service account to impersonate.
         const auth = new google.auth.GoogleAuth({
             scopes: ['https://www.googleapis.com/auth/calendar'],
-            clientOptions: {
-              subject: serviceAccountEmail,
-            },
         });
 
         const calendar = google.calendar({ version: 'v3', auth });
-        // The calendar to modify must be shared with the specified service account.
+        
+        // This is the specific calendar ID we want to write to.
         const calendarId = 'caa22a55efb4ec8120e449941e8df3d2731613826485af050c0b7ec0b60be588@group.calendar.google.com';
 
         const event = {
@@ -95,12 +91,9 @@ const createGoogleCalendarEvent = ai.defineTool({
         };
 
     } catch (error) {
-        console.error("Error creating Google Calendar event:", error);
-        // Do not expose detailed internal errors to the client-side flow.
-        // Log them server-side for debugging.
-        // A general error message is sufficient for the flow's output.
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error during calendar event creation';
-        throw new Error(errorMessage);
+        // Re-throw the original error to get detailed information in the client logs.
+        // This is better for debugging than creating a generic error.
+        throw error;
     }
 });
 

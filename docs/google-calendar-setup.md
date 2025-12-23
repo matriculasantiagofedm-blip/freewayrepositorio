@@ -22,7 +22,7 @@ Ahora, necesitas darle permiso a esa identidad para que pueda ver y modificar tu
     *   Ve a [https://calendar.google.com/](https://calendar.google.com/) e inicia sesión con la cuenta de Google que posee el calendario que quieres sincronizar (es decir, **matriculas.freeway@gmail.com**).
 
 2.  **Ir a la configuración del calendario:**
-    *   En el panel izquierdo, en "Mis calendarios", pasa el cursor sobre el calendario que quieres usar (el que tiene el ID que termina en `...be588@group.calendar.google.com`).
+    *   En el panel izquierdo, en "Mis calendarios", pasa el cursor sobre el calendario que quieres usar (el que tiene el ID `caa22a55efb4ec8120e449941e8df3d2731613826485af050c0b7ec0b60be588@group.calendar.google.com`).
     *   Haz clic en los tres puntos verticales (⋮) y selecciona **Configurar y compartir**.
 
 3.  **Compartir con la cuenta de servicio:**

@@ -53,10 +53,13 @@ const createGoogleCalendarEvent = ai.defineTool({
         eventId: z.string().optional(),
     }),
 }, async (input) => {
-    // This logic has been updated to re-throw the original error for better debugging.
     try {
         const auth = new google.auth.GoogleAuth({
             scopes: ['https://www.googleapis.com/auth/calendar'],
+            // Usa la cuenta de servicio específica que tiene acceso al calendario
+            clientOptions: {
+              subject: 'freeways@project-c95d505f-7783-4848-afe.iam.gserviceaccount.com'
+            }
         });
 
         const calendar = google.calendar({ version: 'v3', auth });
@@ -91,8 +94,7 @@ const createGoogleCalendarEvent = ai.defineTool({
         };
 
     } catch (error) {
-        // Re-throw the original error to get detailed information in the client logs.
-        // This is better for debugging than creating a generic error.
+        console.error("Error creating Google Calendar event:", error);
         throw error;
     }
 });

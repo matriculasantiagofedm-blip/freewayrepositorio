@@ -38,9 +38,11 @@ export default function DashboardPage() {
     
     const contractsCollection = collection(firestore, 'contracts');
 
-    // IMPORTANT: The query now *always* filters by the current user's ID.
-    // This is required to satisfy the new, stricter security rules.
-    // The "Admin" role no longer grants special query permissions here.
+    // Admin can see all contracts, others see only their own.
+    if (role === 'Administrador') {
+        return query(contractsCollection);
+    }
+
     return query(contractsCollection, where('userId', '==', user.uid));
   }, [firestore, user, role]);
 

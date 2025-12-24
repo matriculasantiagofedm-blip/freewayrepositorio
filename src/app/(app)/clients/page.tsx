@@ -15,10 +15,13 @@ export default function ClientsPage() {
     
     const clientsCollection = collection(firestore, 'clients');
     
-    // For all roles, we only fetch clients associated with the current user.
-    // The main use-case for listing clients is for non-admins to see who they've created.
-    // Admins can search or view clients via contracts.
-    return query(clientsCollection, where('userId', '==', user.uid));
+    // For non-admin roles, we only fetch clients associated with the current user.
+    if (role !== 'Administrador') {
+      return query(clientsCollection, where('userId', '==', user.uid));
+    }
+    
+    // Admin can see all clients
+    return query(clientsCollection);
     
   }, [firestore, user, role]);
 

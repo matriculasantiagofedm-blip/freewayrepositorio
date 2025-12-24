@@ -76,16 +76,19 @@ service cloud.firestore {
     // ------------------------------------------------------------------------
 
     match /clients/{clientId} {
-      // Only the user who created the client can access it.
-      allow read, write, delete: if isOwner(clientId);
-      allow list: if false; // Disallow listing all clients.
+      // Any signed-in user can create a client, as long as they set themselves as owner.
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      // Only the user who created the client can access or delete it.
+      allow read, update, delete: if isOwner(resource.data.userId);
+      // Disallow listing all clients for security.
+      allow list: if false;
     }
     
     match /contracts/{contractId} {
       // A user can get a contract if they are the owner.
       allow get: if isOwner(resource.data.userId);
 
-      // A user can list contracts only if the query explicitly filters by their own UID.
+      // A user can list contracts ONLY if the query explicitly filters by their own UID.
       // This is the key rule to prevent permission errors on list operations.
       allow list: if isSignedIn() && request.query.where.find(field => field[0] == 'userId' && field[2] == request.auth.uid) != null;
       

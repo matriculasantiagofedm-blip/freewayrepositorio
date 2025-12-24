@@ -15,9 +15,12 @@ export default function AllContractsPage() {
     
     const contractsCollection = collection(firestore, `contracts`);
 
-    // Admin role is no longer special for this query.
-    // To see all contracts, an admin would need different UI/rules.
-    // This query now ONLY fetches contracts for the currently logged-in user.
+    // Admin role can see all contracts
+    if (role === 'Administrador') {
+      return query(contractsCollection);
+    }
+    
+    // Other users only see their own contracts
     return query(contractsCollection, where('userId', '==', user.uid));
   }, [firestore, user, role]);
 

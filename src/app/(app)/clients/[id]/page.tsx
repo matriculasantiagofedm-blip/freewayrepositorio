@@ -18,25 +18,26 @@ export default function ClientDetailPage() {
 
   const clientRef = useMemoFirebase(() => {
     if (!firestore || !clientId) return null;
-    // The security rules for `clients` are owner-only, so this will only work
-    // if the current user is the one who created the client.
     return doc(firestore, `clients`, clientId);
   }, [firestore, clientId]);
 
   const contractsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (!firestore || !user || !role) return null;
 
     const contractsCollection = collection(firestore, 'contracts');
 
-    // ALL users, including Admins, can only see contracts for this client
-    // that they themselves have created. This aligns with the security rules.
-    // An admin wanting to see all contracts for a client would need a different view/tool.
+    // Admin sees all contracts for this client
+    if (role === 'Administrador') {
+        return query(contractsCollection, where('clientId', '==', clientId));
+    }
+
+    // Other users see only contracts they created for this client.
     return query(
       contractsCollection,
       where('clientId', '==', clientId),
       where('userId', '==', user.uid)
     );
-  }, [firestore, user, clientId]);
+  }, [firestore, user, clientId, role]);
 
   const { data: client, isLoading: isClientLoading } = useDoc<Client>(clientRef);
   const { data: contracts, isLoading: areContractsLoading } = useCollection<Contract>(contractsQuery);
@@ -90,7 +91,7 @@ export default function ClientDetailPage() {
                         No hay contratos para este cliente
                     </h3>
                     <p className="mt-2 text-sm text-muted-foreground">
-                        No has creado contratos para este cliente.
+                        {role === 'Administrador' ? 'No se han creado contratos para este cliente.' : 'No has creado contratos para este cliente.'}
                     </p>
                 </div>
              )

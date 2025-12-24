@@ -741,9 +741,15 @@ export function ContractForm() {
                                     <FormLabel>Categoría de Licencia a Aplicar</FormLabel>
                                     <FormControl>
                                         <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4 pt-2">
-                                            <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="A, C" id="ac" /></FormControl><FormLabel htmlFor="ac" className="font-normal">A, C</FormLabel></FormItem>
-                                            <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="A, C, D" id="acd" /></FormControl><FormLabel htmlFor="acd" className="font-normal">A, C, D</FormLabel></FormItem>
-                                            {contractType === 'Curso Moto' && (<FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="A, B" id="ab" /></FormControl><FormLabel htmlFor="ab" className="font-normal">A, B</FormLabel></FormItem>)}
+                                            {contractType === 'Curso Auto' && (
+                                                <>
+                                                    <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="A, C" id="ac" /></FormControl><FormLabel htmlFor="ac" className="font-normal">A, C</FormLabel></FormItem>
+                                                    <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="A, C, D" id="acd" /></FormControl><FormLabel htmlFor="acd" className="font-normal">A, C, D</FormLabel></FormItem>
+                                                </>
+                                            )}
+                                            {contractType === 'Curso Moto' && (
+                                                <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="A, B" id="ab" /></FormControl><FormLabel htmlFor="ab" className="font-normal">A, B</FormLabel></FormItem>
+                                            )}
                                         </RadioGroup>
                                     </FormControl>
                                     <FormMessage />

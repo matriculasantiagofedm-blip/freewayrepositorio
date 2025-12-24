@@ -34,6 +34,7 @@ export default function ClientsPage() {
                         <div>
                             <CardTitle>{client.name}</CardTitle>
                             <CardDescription>{client.email}</CardDescription>
+                            {client.idNumber && <CardDescription className="font-medium text-foreground pt-1">Cédula: {client.idNumber}</CardDescription>}
                         </div>
                     </CardHeader>
                 </Card>

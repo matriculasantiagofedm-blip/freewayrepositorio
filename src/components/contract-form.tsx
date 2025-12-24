@@ -265,19 +265,25 @@ export function ContractForm() {
   }, [theoreticalClassSchedule, form, numberOfTheoreticalClasses]);
 
 
-  async function findOrCreateClient(clientName: string, clientEmail: string, userId: string): Promise<string> {
+  async function findOrCreateClient(clientName: string, clientEmail: string, userId: string, idNumber?: string): Promise<string> {
     const clientRef = doc(firestore, 'clients', userId);
     const clientSnap = await getDoc(clientRef);
 
     if (!clientSnap.exists()) {
-        const newClient: Omit<Client, 'id'> = {
+        const newClient: Omit<Client, 'id' | 'createdAt'> & { createdAt: any } = {
             id: userId,
             name: clientName,
             email: clientEmail,
+            idNumber: idNumber || '',
             userId: userId,
-            createdAt: serverTimestamp() as any
+            createdAt: serverTimestamp()
         };
         await setDoc(clientRef, newClient);
+    } else {
+        // If client exists, update their idNumber if it's provided and different
+        if (idNumber && clientSnap.data()?.idNumber !== idNumber) {
+            await updateDoc(clientRef, { idNumber: idNumber });
+        }
     }
     return userId;
 }
@@ -328,8 +334,9 @@ export function ContractForm() {
     }
 
     try {
+      const studentIdNumber = data.deluxeDetails?.studentIdNumber || data.autoMotoDetails?.studentIdNumber;
       const folio = await getNextFolio(user.uid);
-      const clientId = await findOrCreateClient(data.clientName, data.clientEmail, user.uid);
+      const clientId = await findOrCreateClient(data.clientName, data.clientEmail, user.uid, studentIdNumber);
       
       const contractsCollection = collection(firestore, 'clients', user.uid, 'contracts');
       

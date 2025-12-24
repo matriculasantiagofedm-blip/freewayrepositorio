@@ -15,6 +15,7 @@ export interface Client {
   id: string;
   name: string;
   email: string;
+  idNumber?: string;
   userId: string;
   createdAt: Timestamp;
 }

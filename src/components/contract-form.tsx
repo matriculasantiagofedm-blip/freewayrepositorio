@@ -282,8 +282,8 @@ export function ContractForm() {
     const clientsRef = collection(firestore, 'clients');
 
     if (idNumber) {
-        // First, check if a client with this ID number already exists.
-        const q = query(clientsRef, where("idNumber", "==", idNumber));
+        // Find if a client with this ID number, created by the current user, already exists.
+        const q = query(clientsRef, where("idNumber", "==", idNumber), where("userId", "==", userId));
         const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {

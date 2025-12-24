@@ -42,12 +42,14 @@ service cloud.firestore {
     // ------------------------------------------------------------------------
 
     match /clients/{clientId} {
-      // Any signed-in user can create a client.
+      // Any signed-in user can create a client. The ownership is set by the userId field.
       allow create: if isSignedIn();
+      
       // Only the user who created the client can access or delete it.
       allow read, update, delete: if isOwner(resource.data.userId);
-      // Disallow listing all clients for security.
-      allow list: if false;
+      
+      // A user can list clients only if they are querying for their own clients.
+      allow list: if isSignedIn() && request.query.where.find(field => field[0] == 'userId' && field[2] == request.auth.uid) != null;
     }
     
     match /contracts/{contractId} {

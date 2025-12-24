@@ -294,7 +294,8 @@ export function ContractForm() {
     }
     
     // If no ID number or client not found, create a new one.
-    const newClientId = doc(clientsRef).id;
+    const newClientDocRef = doc(clientsRef);
+    const newClientId = newClientDocRef.id;
     const newClientData: Client = {
         id: newClientId,
         name: clientName,
@@ -304,7 +305,7 @@ export function ContractForm() {
         createdAt: serverTimestamp() as any, // Cast because serverTimestamp is not a Timestamp
     };
 
-    await setDoc(doc(clientsRef, newClientId), newClientData);
+    await setDoc(newClientDocRef, newClientData);
     return newClientId;
 }
 

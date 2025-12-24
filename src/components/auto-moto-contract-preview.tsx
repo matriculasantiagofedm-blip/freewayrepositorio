@@ -1,3 +1,4 @@
+
 'use client';
 import { Card, CardContent } from './ui/card';
 import { cn } from '@/lib/utils';
@@ -67,7 +68,7 @@ export function AutoMotoContractTemplatePreview({ folio, clientName, clientEmail
         </div>
         
         <p className='text-[10px] leading-tight'>
-            La empresa FREEWAY ESCUELA DE MANEJO S.A., con ubicación en La Chorrera, Vía Interamericana, Costa Verde, PH Green Plaza, Local #20, debidamente inscrita RUC 155628022-2-2016 DV 2, en adelante denominada LA EMPRESA, y <Line>{clientName}</Line>, identificado con cédula/pasaporte N.° <Line>{autoMotoDetails?.studentIdNumber}</Line>, con domicilio en <Line>{autoMotoDetails?.studentAddress}</Line>, teléfonos: <Line>{autoMotoDetails?.studentPhone}</Line>, correo electrónico: <Line>{clientEmail}</Line>, en adelante denominado EL ESTUDIANTE.
+            La empresa FREEWAY ESCUELA DE MANEJO S.A., con ubicación en La Chorrera, Vía Interamericana, Costa Verde, PH Green Plaza, Local #20, debidamente inscrita RUC 155628022-2-2016 DV 2, en adelante denominada LA EMPRESA, y <Line>{clientName}</Line>, identificado con cédula/pasaporte N.° <Line>{autoMotoDetails?.studentIdNumber}</Line>, con domicilio en <Line>{autoMotoDetails?.studentAddress}</Line>, teléfonos: <Line>{autoMotoDetails?.studentPhone1}</Line>/<Line>{autoMotoDetails?.studentPhone2}</Line>, correo electrónico: <Line>{clientEmail}</Line>, en adelante denominado EL ESTUDIANTE.
         </p>
 
         <h3 className="font-bold text-center pt-1">DECLARAN:</h3>

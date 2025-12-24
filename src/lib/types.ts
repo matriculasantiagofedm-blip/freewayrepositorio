@@ -1,3 +1,4 @@
+
 import type { Timestamp } from 'firebase/firestore';
 
 export interface Deadline {
@@ -46,7 +47,8 @@ export interface DeluxeContractDetails {
 export interface AutoMotoContractDetails {
   studentIdNumber?: string;
   studentAddress?: string;
-  studentPhone?: string;
+  studentPhone1?: string;
+  studentPhone2?: string;
   courseValue?: number;
   downPayment?: number;
   balance?: number;

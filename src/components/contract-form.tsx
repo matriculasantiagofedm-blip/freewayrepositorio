@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -95,7 +96,8 @@ const contractFormSchema = z.object({
   autoMotoDetails: z.object({
     studentIdNumber: z.string().optional(),
     studentAddress: z.string().optional(),
-    studentPhone: z.string().optional(),
+    studentPhone1: z.string().optional(),
+    studentPhone2: z.string().optional(),
     courseValue: z.number().optional(),
     downPayment: z.number().optional(),
     balance: z.number().optional(),
@@ -176,7 +178,8 @@ export function ContractForm() {
       autoMotoDetails: {
         studentIdNumber: '',
         studentAddress: '',
-        studentPhone: '',
+        studentPhone1: '',
+        studentPhone2: '',
         courseValue: undefined,
         downPayment: undefined,
         balance: 0,
@@ -216,7 +219,7 @@ export function ContractForm() {
 
   const getNumberOfPracticalClasses = (value?: number) => {
     if (!value) return 0;
-    if (value === 57.00) return 0; // "Ya se manejar" options have 0 classes
+    if (value === 57.00) return 0;
     const allCourses = [...autoCourseValues, ...motoCourseValues];
     const selectedCourse = allCourses.find(c => c.value === value);
     if (selectedCourse?.label.includes('Basico')) return 4;
@@ -584,10 +587,20 @@ export function ContractForm() {
                         />
                         <FormField
                             control={form.control}
-                            name="autoMotoDetails.studentPhone"
+                            name="autoMotoDetails.studentPhone1"
                             render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Teléfono</FormLabel>
+                                <FormLabel>Teléfono 1</FormLabel>
+                                <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                            </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="autoMotoDetails.studentPhone2"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Teléfono 2</FormLabel>
                                 <FormControl><Input {...field} value={field.value || ''} /></FormControl>
                             </FormItem>
                             )}
@@ -1334,5 +1347,3 @@ export function ContractForm() {
     </Form>
   );
 }
-
-    

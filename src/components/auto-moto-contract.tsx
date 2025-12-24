@@ -1,3 +1,4 @@
+
 'use client';
 import type { Contract } from '@/lib/types';
 import { format, parseISO } from 'date-fns';
@@ -58,7 +59,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
         </div>
         
         <p className='text-[10px] leading-tight'>
-            La empresa FREEWAY ESCUELA DE MANEJO S.A., con ubicación en La Chorrera, Vía Interamericana, Costa Verde, PH Green Plaza, Local #20, debidamente inscrita RUC 155628022-2-2016 DV 2, en adelante denominada LA EMPRESA, y <Line>{contract.clientName}</Line>, identificado con cédula/pasaporte N.° <Line>{autoMotoDetails?.studentIdNumber}</Line>, con domicilio en <Line>{autoMotoDetails?.studentAddress}</Line>, teléfonos: <Line>{autoMotoDetails?.studentPhone}</Line>, correo electrónico: <Line>{contract.clientEmail}</Line>, en adelante denominado EL ESTUDIANTE.
+            La empresa FREEWAY ESCUELA DE MANEJO S.A., con ubicación en La Chorrera, Vía Interamericana, Costa Verde, PH Green Plaza, Local #20, debidamente inscrita RUC 155628022-2-2016 DV 2, en adelante denominada LA EMPRESA, y <Line>{contract.clientName}</Line>, identificado con cédula/pasaporte N.° <Line>{autoMotoDetails?.studentIdNumber}</Line>, con domicilio en <Line>{autoMotoDetails?.studentAddress}</Line>, teléfonos: <Line>{autoMotoDetails?.studentPhone1}</Line>/<Line>{autoMotoDetails?.studentPhone2}</Line>, correo electrónico: <Line>{contract.clientEmail}</Line>, en adelante denominado EL ESTUDIANTE.
         </p>
 
         <h3 className="font-bold text-center pt-1">DECLARAN:</h3>
@@ -108,7 +109,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
         <h3 className="font-bold">CLÁUSULA QUINTA - PUNTUALIDAD</h3>
         <p className='text-[10px]'>En caso de que EL ESTUDIANTE llegue tarde a su clase, solo recibirá el tiempo restante de las 2 horas programadas, sin derecho a reposición.</p>
         
-        <h3 className="font-bold">CLÁUSULA SEXTA - NORMAS DE COMPORTAMIENTO Y VESTIMENTA</h3>
+        <h3 className="font-bold">CLÁUSULA SEXTA - NORMAS DE COMPORTAMIENTO E VESTIMENTA</h3>
         <p className='text-[10px]'>EL ESTUDIANTE se compromete a: Seguir las instrucciones del instructor, mantener una actitud respetuosa y adecuada durante las clases y asistir en estado óptimo de salud física, mental y emocional. Para las clases prácticas y teóricas, EL ESTUDIANTE deberá asistir con ropa adecuada. Se prohíbe presentarse con: Escotes pronunciados, minifaldas, camisetas sin mangas, pantalones cortos, leggins, chancletas o sandalias. El incumplimiento de esta norma implica la pérdida automática de la clase, sin derecho a reposición.</p>
 
         <h3 className="font-bold">CLÁUSULA SÉPTIMA - ACOMPAÑANTES Y ACCESO</h3>

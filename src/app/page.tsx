@@ -63,9 +63,12 @@ export default function LoginPage() {
         <div className="flex justify-center">
           <GanttChartSquare className="h-16 w-16 text-primary" />
         </div>
-        <h1 className="font-headline text-5xl font-bold tracking-tight text-foreground sm:text-6xl">
-          ContractTime
-        </h1>
+        <div className="flex flex-col gap-2">
+            <h1 className="font-headline text-5xl font-bold tracking-tight text-foreground sm:text-6xl">
+            ContractTime
+            </h1>
+            <p className="text-xl font-medium text-foreground">Freeway Escuela de Manejo, S.A.</p>
+        </div>
         <p className="text-lg text-muted-foreground">
           Selecciona tu rol para ingresar al sistema.
         </p>

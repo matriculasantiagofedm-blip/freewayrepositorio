@@ -18,29 +18,41 @@ export default function ClientDetailPage() {
 
   const clientRef = useMemoFirebase(() => {
     if (!firestore || !clientId) return null;
-    return doc(firestore, `clients`, clientId);
-  }, [firestore, clientId]);
-
-  const contractsQuery = useMemoFirebase(() => {
-    if (!firestore || !user || !clientId || !role) return null;
-
-    // Admin role doesn't query for contracts to avoid permission issues
-    if (role === 'Administrador') {
+    // Admins may not have a client doc, but can see contracts
+    // Non-admins should only see their own client doc
+    if (role !== 'Administrador' && user?.uid !== clientId) {
+      // This prevents a non-admin from loading another user's client page
       return null;
     }
+    return doc(firestore, `clients`, clientId);
+  }, [firestore, clientId, user, role]);
 
-    return query(
-      collection(firestore, `contracts`),
-      where('clientId', '==', clientId),
-      where('userId', '==', user.uid)
-    );
+  const contractsQuery = useMemoFirebase(() => {
+    if (!firestore || !clientId) return null;
+
+    if (role === 'Administrador') {
+      // Admin sees all contracts for this client
+       return query(
+        collection(firestore, `contracts`),
+        where('clientId', '==', clientId)
+      );
+    }
+    
+    // Other users see only their own contracts for this client
+    if (user) {
+       return query(
+        collection(firestore, `contracts`),
+        where('clientId', '==', clientId),
+        where('userId', '==', user.uid)
+      );
+    }
+    
+    return null;
 
   }, [firestore, user, clientId, role]);
 
   const { data: client, isLoading: isClientLoading } = useDoc<Client>(clientRef);
   const { data: contracts, isLoading: areContractsLoading } = useCollection<Contract>(contractsQuery);
-
-  const clientContracts = role === 'Administrador' ? [] : contracts;
 
   return (
     <div className="flex flex-col gap-8">
@@ -53,20 +65,27 @@ export default function ClientDetailPage() {
             </Button>
       </div>
 
-      {isClientLoading && <p>Cargando cliente...</p>}
+      {(isClientLoading && role !== 'Administrador') && <p>Cargando cliente...</p>}
       {client && (
         <div className="flex flex-col gap-2 items-center text-center">
             <h1 className="font-headline text-3xl font-bold">{client.name}</h1>
             <p className="text-muted-foreground">{client.email}</p>
         </div>
       )}
+       {role === 'Administrador' && !client && !isClientLoading && (
+         <div className="flex flex-col gap-2 items-center text-center">
+            <h1 className="font-headline text-3xl font-bold">Cliente ID: {clientId}</h1>
+            <p className="text-muted-foreground">Vista de Administrador</p>
+        </div>
+       )}
+
 
       <div className="mt-8">
         <h2 className="font-headline text-2xl font-bold mb-4">Contratos Asociados</h2>
         {areContractsLoading && <p>Cargando contratos...</p>}
-        {!areContractsLoading && clientContracts && clientContracts.length > 0 ? (
+        {!areContractsLoading && contracts && contracts.length > 0 ? (
              <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                {clientContracts.map((contract) => (
+                {contracts.map((contract) => (
                     <Link key={contract.id} href={`/contracts/${contract.id}`} className="no-underline">
                         <ContractCard contract={contract} />
                     </Link>

@@ -13,28 +13,28 @@ export default function AllContractsPage() {
   const contractsQuery = useMemoFirebase(() => {
     if (!firestore || !user || !role) return null;
     
+    const contractsCollection = collection(firestore, `contracts`);
+
     if (role === 'Administrador') {
-      // Admin sees no contracts to prevent permission errors
-      return null;
+      // Admin sees all contracts
+      return query(contractsCollection);
     }
     
     // Other roles see only their own contracts
-    return query(collection(firestore, `contracts`), where('userId', '==', user.uid));
+    return query(contractsCollection, where('userId', '==', user.uid));
   }, [firestore, user, role]);
 
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
-
-  const displayContracts = role === 'Administrador' ? [] : contracts;
 
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
         <h1 className="font-headline text-3xl font-bold">Todos los Contratos</h1>
       </div>
-      {isLoading && role !== 'Administrador' && <p>Cargando contratos...</p>}
-      {!isLoading && displayContracts && displayContracts.length > 0 ? (
+      {isLoading && <p>Cargando contratos...</p>}
+      {!isLoading && contracts && contracts.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {displayContracts.map((contract) => (
+          {contracts.map((contract) => (
             <Link key={contract.id} href={`/contracts/${contract.id}`} className="no-underline">
                 <ContractCard contract={contract} />
             </Link>

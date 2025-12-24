@@ -218,8 +218,7 @@ export function ContractForm() {
     : 0;
 
   const getNumberOfPracticalClasses = (value?: number) => {
-    if (!value) return 0;
-    if (value === 57.00) return 0;
+    if (!value || value === 57.00) return 0;
     const allCourses = [...autoCourseValues, ...motoCourseValues];
     const selectedCourse = allCourses.find(c => c.value === value);
     if (selectedCourse?.label.includes('Basico')) return 4;
@@ -278,48 +277,40 @@ export function ContractForm() {
 
 
   async function findOrCreateClient(clientName: string, clientEmail: string, userId: string, idNumber?: string): Promise<string> {
-    if (!idNumber) {
-        // Fallback for contracts without idNumber
-        const tempClientId = doc(collection(firestore, 'clients')).id;
-        const clientRef = doc(firestore, 'clients', tempClientId);
-        const newClient: Omit<Client, 'id' | 'createdAt'> & { createdAt: any } = {
-            id: tempClientId,
-            name: clientName,
-            email: clientEmail,
-            idNumber: '',
-            userId: userId,
-            createdAt: serverTimestamp()
-        };
-        await setDoc(clientRef, newClient);
-        return tempClientId;
-    }
-
+    if (!firestore) throw new Error("Firestore not available");
+    
     const clientsRef = collection(firestore, 'clients');
-    const q = query(clientsRef, where("idNumber", "==", idNumber));
-    const querySnapshot = await getDocs(q);
 
-    if (querySnapshot.empty) {
-        const newClientId = doc(collection(firestore, 'clients')).id;
-        const clientRef = doc(firestore, 'clients', newClientId);
-        const newClientData = {
-            id: newClientId,
-            name: clientName,
-            email: clientEmail,
-            idNumber: idNumber,
-            userId: userId, // Keep track of original creator
-            createdAt: serverTimestamp(),
-        };
-        await setDoc(clientRef, newClientData);
-        return newClientId;
-    } else {
-        const existingClient = querySnapshot.docs[0];
-        // Optional: Update client info if needed
-        // await updateDoc(existingClient.ref, { name: clientName, email: clientEmail });
-        return existingClient.id;
+    if (idNumber) {
+        // First, check if a client with this ID number already exists.
+        const q = query(clientsRef, where("idNumber", "==", idNumber));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+            // Client exists, return their ID.
+            const existingClient = querySnapshot.docs[0];
+            return existingClient.id;
+        }
     }
+    
+    // If no ID number or client not found, create a new one.
+    const newClientId = doc(clientsRef).id;
+    const newClientData: Client = {
+        id: newClientId,
+        name: clientName,
+        email: clientEmail,
+        idNumber: idNumber || '',
+        userId: userId, // The user who originally created the client
+        createdAt: serverTimestamp() as any, // Cast because serverTimestamp is not a Timestamp
+    };
+
+    await setDoc(doc(clientsRef, newClientId), newClientData);
+    return newClientId;
 }
 
+
   async function getNextFolio(): Promise<string> {
+    if (!firestore) throw new Error("Firestore not available");
     const year = new Date().getFullYear();
     const folioPrefix = `CT-${year}-`;
   
@@ -353,7 +344,7 @@ export function ContractForm() {
 
 
   async function onSubmit(data: ContractFormValues) {
-    if (!user) {
+    if (!user || !firestore) {
       toast({
         variant: 'destructive',
         title: 'Error de autenticación',
@@ -364,21 +355,6 @@ export function ContractForm() {
 
     try {
       const studentIdNumber = data.deluxeDetails?.studentIdNumber || data.autoMotoDetails?.studentIdNumber;
-
-      if (role !== 'Administrador' && studentIdNumber) {
-        const contractsRef = collection(firestore, `contracts`);
-        const q = query(contractsRef, where('autoMotoDetails.studentIdNumber', '==', studentIdNumber), where('clientName', '==', data.clientName));
-        const querySnapshot = await getDocs(q);
-
-        if (!querySnapshot.empty) {
-            toast({
-                variant: 'destructive',
-                title: 'Estudiante Duplicado',
-                description: 'Ya existe un contrato para un estudiante con el mismo nombre y número de cédula.',
-            });
-            return;
-        }
-      }
 
       const folio = await getNextFolio();
       const clientId = await findOrCreateClient(data.clientName, data.clientEmail, user.uid, studentIdNumber);

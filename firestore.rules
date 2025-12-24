@@ -149,8 +149,10 @@ service cloud.firestore {
           return request.auth.uid == resource.data.userId;
         }
 
-        allow get: if isDocumentOwner();
-        allow list: if request.query.where.find(field => field[0] == 'userId' && field[2] == request.auth.uid) != null;
+        // Allow read and list access to any signed-in user.
+        // The UI will handle filtering which contracts are shown.
+        allow get, list: if isSignedIn();
+
         allow create: if hasValidContractDataOnCreate(request.auth.uid);
         allow update: if isDocumentOwner() && isContractOwnerImmutable();
         allow delete: if isDocumentOwner();

@@ -41,7 +41,6 @@ export default function ContractDetailPage() {
                 <span className="sr-only">Volver</span>
             </Link>
             </Button>
-            <h1 className="font-headline text-3xl font-bold">Detalles del Contrato</h1>
       </div>
       
       {isLoading && <p>Cargando contrato...</p>}

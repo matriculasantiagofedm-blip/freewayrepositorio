@@ -4,7 +4,7 @@ import type { Timestamp } from 'firebase/firestore';
 export interface Deadline {
   id: string;
   description: string;
-  date: Date;
+  date: string;
 }
 
 export interface ClassSchedule {
@@ -37,10 +37,10 @@ export interface DeluxeContractDetails {
   vehicleTransmission: 'Automático' | 'Manual';
   licenseCategory: 'A, C' | 'A, C, D';
   theoreticalClassSchedule?: 'Lunes' | 'Miércoles';
-  theoreticalClasses?: (Date | undefined)[];
-  classSchedules: { date?: Date; time?: string }[];
+  theoreticalClasses?: (string | undefined)[];
+  classSchedules: { date?: string; time?: string }[];
   paymentDetails: string;
-  paymentInstallments?: (Date | undefined)[];
+  paymentInstallments?: (string | undefined)[];
   paymentAmount?: number;
 }
 
@@ -52,13 +52,14 @@ export interface AutoMotoContractDetails {
   courseValue?: number;
   downPayment?: number;
   balance?: number;
-  paymentDeadline?: Date;
+  paymentDeadline?: string;
   vehicle?: 'Spark' | 'P. Blanco' | 'P. Bronce' | 'Moto';
   vehicleTransmission?: 'Automático' | 'Manual' | 'Moto';
   licenseCategory?: 'A, C' | 'A, C, D' | 'A, B';
   theoreticalClassSchedule?: string;
-  theoreticalClassDates?: (Date | undefined)[];
-  practicalClassSchedules?: { date?: Date; time?: string }[];
+  theoreticalClassDates?: (string | undefined)[];
+  practicalClassSchedules?: { date?: string; time?: string }[];
+  motoPracticalClassSchedules?: { date?: string; time?: string }[];
 }
 
 

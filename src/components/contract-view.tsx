@@ -13,6 +13,7 @@ export function ContractView({ contract }: { contract: Contract }) {
         return <DeluxePremiumContractTemplate contract={contract} />;
       case 'Curso Auto':
       case 'Curso Moto':
+      case 'Curso Mixto':
         return <AutoMotoContractTemplate contract={contract} />;
       default:
         // Fallback for other contract types

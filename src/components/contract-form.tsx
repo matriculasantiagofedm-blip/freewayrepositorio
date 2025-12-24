@@ -59,8 +59,7 @@ const toDateString = (date?: Date | string): string => {
     if (!date) return '';
     try {
         if (typeof date === 'string') {
-            // Already in 'YYYY-MM-DD' or similar format, return as is.
-            return format(parseISO(date), 'yyyy-MM-dd');
+            return date;
         }
         return format(date, 'yyyy-MM-dd');
     } catch {
@@ -118,6 +117,10 @@ const contractFormSchema = z.object({
     theoreticalClassSchedule: z.enum(['Dias de Semana de 8:00 am a 10:00 am', 'Sábados de 3:00 pm a 5:00 pm']).optional(),
     theoreticalClassDates: z.array(z.string().optional()).optional(),
     practicalClassSchedules: z.array(z.object({
+      date: z.string().optional(),
+      time: z.string().optional(),
+    })).optional(),
+    motoPracticalClassSchedules: z.array(z.object({
       date: z.string().optional(),
       time: z.string().optional(),
     })).optional(),
@@ -201,6 +204,7 @@ export function ContractForm() {
         theoreticalClassSchedule: undefined,
         theoreticalClassDates: [],
         practicalClassSchedules: [],
+        motoPracticalClassSchedules: [],
       }
     },
   });
@@ -244,6 +248,20 @@ export function ContractForm() {
   useEffect(() => {
     if (contractType) {
         form.setValue('title', `Contrato de ${contractType}`);
+        if(contractType === 'Curso Mixto') {
+           form.setValue('autoMotoDetails.courseValue', 250);
+           const numClasses = 5;
+           const currentSchedules = form.getValues('autoMotoDetails.practicalClassSchedules') || [];
+           if (currentSchedules.length !== numClasses) {
+               const newSchedules = Array.from({ length: numClasses }, (_, i) => currentSchedules[i] || { date: '', time: '' });
+               form.setValue('autoMotoDetails.practicalClassSchedules', newSchedules, { shouldValidate: true });
+           }
+           const currentMotoSchedules = form.getValues('autoMotoDetails.motoPracticalClassSchedules') || [];
+           if (currentMotoSchedules.length !== numClasses) {
+               const newSchedules = Array.from({ length: numClasses }, (_, i) => currentMotoSchedules[i] || { date: '', time: '' });
+               form.setValue('autoMotoDetails.motoPracticalClassSchedules', newSchedules, { shouldValidate: true });
+           }
+        }
     } else {
         form.setValue('title', '');
     }
@@ -271,13 +289,15 @@ export function ContractForm() {
         form.setValue('autoMotoDetails.balance', 0);
     }
     
-    const numClasses = getNumberOfPracticalClasses(cv);
-    const currentSchedules = form.getValues('autoMotoDetails.practicalClassSchedules') || [];
-    if (currentSchedules.length !== numClasses) {
-        const newSchedules = Array.from({ length: numClasses }, (_, i) => currentSchedules[i] || { date: '', time: '' });
-        form.setValue('autoMotoDetails.practicalClassSchedules', newSchedules, { shouldValidate: true });
+    if (contractType !== 'Curso Mixto') {
+      const numClasses = getNumberOfPracticalClasses(cv);
+      const currentSchedules = form.getValues('autoMotoDetails.practicalClassSchedules') || [];
+      if (currentSchedules.length !== numClasses) {
+          const newSchedules = Array.from({ length: numClasses }, (_, i) => currentSchedules[i] || { date: '', time: '' });
+          form.setValue('autoMotoDetails.practicalClassSchedules', newSchedules, { shouldValidate: true });
+      }
     }
-}, [courseValue, payFullCourse, form]);
+}, [courseValue, payFullCourse, form, contractType]);
 
 
   useEffect(() => {
@@ -383,7 +403,7 @@ export function ContractForm() {
           title: data.title,
           content: contractContent,
           type: data.type,
-          deadlines: data.deadlines?.map(d => ({ ...d, date: parseISO(d.date) })) || [],
+          deadlines: data.deadlines?.map(d => ({ ...d, date: d.date })) || [],
           clientId: clientId,
           clientEmail: data.clientEmail,
           clientName: data.clientName,
@@ -396,19 +416,23 @@ export function ContractForm() {
       if (data.type === 'Curso Deluxe' && data.deluxeDetails) {
           newContractData.deluxeDetails = {
             ...data.deluxeDetails,
-            paymentInstallments: data.deluxeDetails.paymentInstallments?.map(d => d ? parseISO(d) : null),
-            theoreticalClasses: data.deluxeDetails.theoreticalClasses?.map(d => d ? parseISO(d) : null),
-            classSchedules: data.deluxeDetails.classSchedules?.map(cs => ({...cs, date: cs.date ? parseISO(cs.date) : new Date() })),
+            paymentInstallments: data.deluxeDetails.paymentInstallments?.map(d => d || null),
+            theoreticalClasses: data.deluxeDetails.theoreticalClasses?.map(d => d || null),
+            classSchedules: data.deluxeDetails.classSchedules?.map(cs => ({...cs, date: cs.date || new Date() })),
           };
       }
       
-      if ((data.type === 'Curso Auto' || data.type === 'Curso Moto') && data.autoMotoDetails) {
+      if ((data.type === 'Curso Auto' || data.type === 'Curso Moto' || data.type === 'Curso Mixto') && data.autoMotoDetails) {
           newContractData.autoMotoDetails = {
             ...data.autoMotoDetails,
-            paymentDeadline: data.autoMotoDetails.paymentDeadline ? parseISO(data.autoMotoDetails.paymentDeadline) : null,
-            theoreticalClassDates: data.autoMotoDetails.theoreticalClassDates?.map(d => d ? parseISO(d) : null),
+            paymentDeadline: data.autoMotoDetails.paymentDeadline || null,
+            theoreticalClassDates: data.autoMotoDetails.theoreticalClassDates?.map(d => d || null),
             practicalClassSchedules: data.autoMotoDetails.practicalClassSchedules?.map(ps => ({
-                date: ps.date ? parseISO(ps.date) : null,
+                date: ps.date || null,
+                time: ps.time || null,
+            })),
+            motoPracticalClassSchedules: data.autoMotoDetails.motoPracticalClassSchedules?.map(ps => ({
+                date: ps.date || null,
                 time: ps.time || null,
             }))
         };
@@ -419,17 +443,25 @@ export function ContractForm() {
       
       await updateDoc(newContractRef, { id: contractId });
 
-      if ((data.type === 'Curso Auto' || data.type === 'Curso Moto') && data.autoMotoDetails?.practicalClassSchedules?.length) {
+      if ((data.type === 'Curso Auto' || data.type === 'Curso Moto' || data.type === 'Curso Mixto') && data.autoMotoDetails?.practicalClassSchedules?.length) {
         const practicalClasses = data.autoMotoDetails.practicalClassSchedules
           .filter(c => c.date && c.time)
           .map(c => ({ date: c.date!, time: c.time! }));
+
+        if (data.type === 'Curso Mixto' && data.autoMotoDetails.motoPracticalClassSchedules) {
+          const motoClasses = data.autoMotoDetails.motoPracticalClassSchedules
+            .filter(c => c.date && c.time)
+            .map(c => ({ date: c.date!, time: c.time! }));
+          practicalClasses.push(...motoClasses);
+        }
           
         if (practicalClasses.length > 0) {
+          const vehicleForSync = data.type === 'Curso Mixto' ? undefined : data.autoMotoDetails.vehicle;
           const syncResult = await syncWithGoogleCalendar({
             clientName: data.clientName,
             clientEmail: data.clientEmail,
             contractTitle: data.title,
-            vehicle: data.autoMotoDetails.vehicle,
+            vehicle: vehicleForSync,
             practicalClasses: practicalClasses,
           });
 
@@ -531,7 +563,7 @@ export function ContractForm() {
               )}
             />
            
-            {(contractType === 'Curso Auto' || contractType === 'Curso Moto') && (
+            {(contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') && (
               <div className="space-y-6 pt-4">
                  <div className="space-y-4">
                    <h3 className="text-lg font-medium text-primary border-b pb-2">Datos del Estudiante</h3>
@@ -620,6 +652,7 @@ export function ContractForm() {
                                         setPayFullCourse(false); // Reset on plan change
                                     }}
                                     defaultValue={field.value?.toString()}
+                                    disabled={contractType === 'Curso Mixto'}
                                 >
                                     <FormControl>
                                         <SelectTrigger>
@@ -627,11 +660,17 @@ export function ContractForm() {
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        {(contractType === 'Curso Auto' ? autoCourseValues : motoCourseValues).map(option => (
+                                        {contractType === 'Curso Auto' ? autoCourseValues.map(option => (
                                             <SelectItem key={option.value} value={option.value.toString()}>
                                                 {option.label}
                                             </SelectItem>
-                                        ))}
+                                        )) : contractType === 'Curso Moto' ? motoCourseValues.map(option => (
+                                            <SelectItem key={option.value} value={option.value.toString()}>
+                                                {option.label}
+                                            </SelectItem>
+                                        )) : contractType === 'Curso Mixto' ? (
+                                            <SelectItem value="250">Curso Mixto B/.250.00</SelectItem>
+                                        ): null}
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -726,7 +765,7 @@ export function ContractForm() {
                             name="autoMotoDetails.vehicle"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Vehículo</FormLabel>
+                                    <FormLabel>Vehículo (para sincronización de calendario)</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
                                             <SelectTrigger><SelectValue placeholder="Seleccione un vehículo" /></SelectTrigger>
@@ -740,6 +779,14 @@ export function ContractForm() {
                                                 </>
                                             )}
                                             {contractType === 'Curso Moto' && (<SelectItem value="Moto">Moto</SelectItem>)}
+                                            {contractType === 'Curso Mixto' && (
+                                                <>
+                                                    <SelectItem value="Spark">Spark</SelectItem>
+                                                    <SelectItem value="P. Blanco">Picanto Blanco</SelectItem>
+                                                    <SelectItem value="P. Bronce">Picanto Bronce</SelectItem>
+                                                    <SelectItem value="Moto">Moto</SelectItem>
+                                                </>
+                                            )}
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />
@@ -776,12 +823,13 @@ export function ContractForm() {
                                     <FormLabel>Categoría de Licencia a Aplicar</FormLabel>
                                     <FormControl>
                                         <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4 pt-2">
-                                            {contractType === 'Curso Auto' ? (
+                                            {contractType === 'Curso Auto' || contractType === 'Curso Mixto' ? (
                                                 <>
                                                     <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="A, C" id="ac" /></FormControl><FormLabel htmlFor="ac" className="font-normal">A, C</FormLabel></FormItem>
                                                     <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="A, C, D" id="acd" /></FormControl><FormLabel htmlFor="acd" className="font-normal">A, C, D</FormLabel></FormItem>
                                                 </>
-                                            ) : contractType === 'Curso Moto' ? (
+                                            ) : null}
+                                            {contractType === 'Curso Moto' ? (
                                                 <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="A, B" id="ab" /></FormControl><FormLabel htmlFor="ab" className="font-normal">A, B</FormLabel></FormItem>
                                             ) : null}
                                         </RadioGroup>
@@ -835,7 +883,100 @@ export function ContractForm() {
                         )}
                     </div>
 
-                    {numberOfPracticalClasses > 0 && (
+                    {contractType === 'Curso Mixto' ? (
+                       <>
+                        <div className="pt-4">
+                            <h4 className="font-medium text-base mb-2">Horario para clases prácticas de Auto (5 clases)</h4>
+                            <div className="grid grid-cols-1 gap-y-4 gap-x-4 rounded-lg border p-4">
+                                {Array.from({ length: 5 }).map((_, index) => (
+                                    <div key={`auto-${index}`} className="grid grid-cols-[auto_1fr_1fr] items-center gap-4">
+                                        <h5 className="font-medium text-sm">Clase {index + 1}</h5>
+                                        <FormField
+                                            control={form.control}
+                                            name={`autoMotoDetails.practicalClassSchedules.${index}.date`}
+                                            render={({ field }) => (
+                                                <FormItem className="flex flex-col">
+                                                <FormLabel className="sr-only">Fecha</FormLabel>
+                                                <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                                                <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name={`autoMotoDetails.practicalClassSchedules.${index}.time`}
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                <FormLabel className="sr-only">Hora</FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Seleccione horario" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {practicalClassTimeSlots.map(slot => (
+                                                            <SelectItem key={slot} value={slot}>
+                                                                {slot}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                         </div>
+                         <div className="pt-4">
+                            <h4 className="font-medium text-base mb-2">Horario para clases prácticas de Moto (5 clases)</h4>
+                            <div className="grid grid-cols-1 gap-y-4 gap-x-4 rounded-lg border p-4">
+                                {Array.from({ length: 5 }).map((_, index) => (
+                                    <div key={`moto-${index}`} className="grid grid-cols-[auto_1fr_1fr] items-center gap-4">
+                                        <h5 className="font-medium text-sm">Clase {index + 1}</h5>
+                                        <FormField
+                                            control={form.control}
+                                            name={`autoMotoDetails.motoPracticalClassSchedules.${index}.date`}
+                                            render={({ field }) => (
+                                                <FormItem className="flex flex-col">
+                                                <FormLabel className="sr-only">Fecha</FormLabel>
+                                                <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                                                <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name={`autoMotoDetails.motoPracticalClassSchedules.${index}.time`}
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                <FormLabel className="sr-only">Hora</FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Seleccione horario" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {practicalClassTimeSlots.map(slot => (
+                                                            <SelectItem key={slot} value={slot}>
+                                                                {slot}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                         </div>
+                       </>
+                    ) : numberOfPracticalClasses > 0 && (
                       <div className="pt-4">
                           <h4 className="font-medium text-base mb-2">Horario para clases prácticas</h4>
                            <div className="grid grid-cols-1 gap-y-4 gap-x-4 rounded-lg border p-4">

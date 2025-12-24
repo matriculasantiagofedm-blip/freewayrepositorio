@@ -96,13 +96,34 @@ export function AutoMotoContractTemplatePreview({ folio, clientName, clientEmail
                 ))}
             </div>
             <p>5. Horario para clases practicas:</p>
-            <div className="pl-4 space-y-0.5">
-                {Array.from({ length: autoMotoDetails?.practicalClassSchedules?.length || 0 }).map((_, index) => (
-                     <div key={index} className="flex items-center gap-2">
-                        ○ Clase {index + 1}: Fecha <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.date ? formatDate(autoMotoDetails?.practicalClassSchedules?.[index]?.date) : <>&nbsp;</>}</Line> Hora <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.time}</Line>
+            {type === 'Curso Mixto' ? (
+                <>
+                    <p className="font-semibold">Clases de Auto:</p>
+                    <div className="pl-4 space-y-0.5">
+                        {Array.from({ length: autoMotoDetails?.practicalClassSchedules?.length || 0 }).map((_, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                                ○ Clase {index + 1}: Fecha <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.date ? formatDate(autoMotoDetails?.practicalClassSchedules?.[index]?.date) : <>&nbsp;</>}</Line> Hora <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.time}</Line>
+                            </div>
+                        ))}
                     </div>
-                ))}
-            </div>
+                    <p className="font-semibold pt-2">Clases de Moto:</p>
+                     <div className="pl-4 space-y-0.5">
+                        {Array.from({ length: autoMotoDetails?.motoPracticalClassSchedules?.length || 0 }).map((_, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                                ○ Clase {index + 1}: Fecha <Line>{autoMotoDetails?.motoPracticalClassSchedules?.[index]?.date ? formatDate(autoMotoDetails?.motoPracticalClassSchedules?.[index]?.date) : <>&nbsp;</>}</Line> Hora <Line>{autoMotoDetails?.motoPracticalClassSchedules?.[index]?.time}</Line>
+                            </div>
+                        ))}
+                    </div>
+                </>
+            ) : (
+                <div className="pl-4 space-y-0.5">
+                    {Array.from({ length: autoMotoDetails?.practicalClassSchedules?.length || 0 }).map((_, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                            ○ Clase {index + 1}: Fecha <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.date ? formatDate(autoMotoDetails?.practicalClassSchedules?.[index]?.date) : <>&nbsp;</>}</Line> Hora <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.time}</Line>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
 
         <h3 className="font-bold">CLÁUSULA TERCERA - INASISTENCIAS Y REPROGRAMACIONES</h3>

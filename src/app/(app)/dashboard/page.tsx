@@ -129,7 +129,7 @@ export default function DashboardPage() {
                   <span>Curso Moto</span>
               </Link>
           </Button>
-           <Button asChild className="h-24 text-lg bg-purple-600 hover:bg-purple-700 text-white" disabled>
+           <Button asChild className="h-24 text-lg bg-purple-600 hover:bg-purple-700 text-white">
               <Link href="/contracts/new?type=Curso%20Mixto" className="flex flex-col items-center justify-center gap-2">
                   <Combine className="h-8 w-8" />
                   <span>Curso Mixto</span>

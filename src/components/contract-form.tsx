@@ -278,7 +278,7 @@ export function ContractForm() {
 
   async function findOrCreateClient(clientName: string, clientEmail: string, userId: string, idNumber?: string): Promise<string> {
     if (!firestore) throw new Error("Firestore not available");
-    
+
     const clientsRef = collection(firestore, 'clients');
 
     if (idNumber) {
@@ -292,7 +292,7 @@ export function ContractForm() {
             return existingClient.id;
         }
     }
-    
+
     // If no ID number or client not found, create a new one.
     const newClientDocRef = doc(clientsRef);
     const newClientId = newClientDocRef.id;

@@ -56,7 +56,6 @@ import { useCurrentRole } from '@/hooks/use-current-role';
 import { AutoMotoContractTemplatePreview } from './auto-moto-contract-preview';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
-import { DatePicker } from './ui/date-picker';
 
 
 const contractFormSchema = z.object({
@@ -220,7 +219,7 @@ export function ContractForm() {
 
   const getNumberOfPracticalClasses = (value?: number) => {
     if (!value) return 0;
-    if (value === 57.00) return 2; // "Ya se manejar" tiene 2 clases prácticas
+    if (value === 57.00) return 0; // "Ya se manejar" no tiene clases prácticas
     const allCourses = [...autoCourseValues, ...motoCourseValues];
     const selectedCourse = allCourses.find(c => c.value === value);
     if (selectedCourse?.label.includes('Basico')) return 4;
@@ -284,18 +283,14 @@ export function ContractForm() {
     const clientsRef = collection(firestore, 'clients');
 
     if (idNumber) {
-        // Find if a client with this ID number, created by the current user, already exists.
         const q = query(clientsRef, where("idNumber", "==", idNumber), where("userId", "==", userId));
         const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {
-            // Client exists, return their ID.
-            const existingClient = querySnapshot.docs[0];
-            return existingClient.id;
+            return querySnapshot.docs[0].id;
         }
     }
 
-    // If no ID number or client not found, create a new one.
     const newClientDocRef = doc(clientsRef);
     const newClientId = newClientDocRef.id;
     const newClientData: Client = {
@@ -303,8 +298,8 @@ export function ContractForm() {
         name: clientName,
         email: clientEmail,
         idNumber: idNumber || '',
-        userId: userId, // The user who originally created the client
-        createdAt: serverTimestamp() as any, // Cast because serverTimestamp is not a Timestamp
+        userId: userId,
+        createdAt: serverTimestamp() as any,
     };
 
     await setDoc(newClientDocRef, newClientData);
@@ -699,9 +694,10 @@ export function ContractForm() {
                             <FormItem>
                                 <FormLabel>Fecha Límite de Pago del Saldo</FormLabel>
                                 <FormControl>
-                                    <DatePicker
-                                        value={field.value ? new Date(field.value) : undefined}
-                                        onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                                    <Input 
+                                        type="date" 
+                                        {...field} 
+                                        value={field.value || ''}
                                         disabled={form.getValues('autoMotoDetails.balance') === 0}
                                     />
                                 </FormControl>
@@ -821,10 +817,7 @@ export function ContractForm() {
                                             <FormItem>
                                                 <FormLabel>Fecha Teórica {index + 1}</FormLabel>
                                                 <FormControl>
-                                                    <DatePicker
-                                                        value={field.value ? new Date(field.value) : undefined}
-                                                        onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
-                                                    />
+                                                    <Input type="date" {...field} value={field.value || ''} />
                                                 </FormControl>
                                             </FormItem>
                                         )}
@@ -848,10 +841,7 @@ export function ContractForm() {
                                           <FormItem>
                                           <FormLabel className="sr-only">Fecha</FormLabel>
                                           <FormControl>
-                                            <DatePicker
-                                                value={field.value ? new Date(field.value) : undefined}
-                                                onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
-                                            />
+                                              <Input type="date" {...field} value={field.value || ''} />
                                           </FormControl>
                                           <FormMessage />
                                           </FormItem>
@@ -1039,10 +1029,7 @@ export function ContractForm() {
                                               <FormItem>
                                                   <FormLabel>Fecha Cuota {i}</FormLabel>
                                                   <FormControl>
-                                                    <DatePicker
-                                                        value={field.value ? new Date(field.value) : undefined}
-                                                        onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
-                                                    />
+                                                    <Input type="date" {...field} value={field.value || ''} />
                                                   </FormControl>
                                                   <FormMessage />
                                               </FormItem>
@@ -1055,10 +1042,7 @@ export function ContractForm() {
                                               <FormItem>
                                                   <FormLabel>Fecha Cuota {i + 3}</FormLabel>
                                                   <FormControl>
-                                                     <DatePicker
-                                                        value={field.value ? new Date(field.value) : undefined}
-                                                        onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
-                                                    />
+                                                    <Input type="date" {...field} value={field.value || ''} />
                                                   </FormControl>
                                                   <FormMessage />
                                               </FormItem>
@@ -1157,10 +1141,7 @@ export function ContractForm() {
                                       <FormItem>
                                           <FormLabel>Fecha Semana {i + 1}</FormLabel>
                                           <FormControl>
-                                              <DatePicker
-                                                  value={field.value ? new Date(field.value) : undefined}
-                                                  onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
-                                              />
+                                            <Input type="date" {...field} value={field.value || ''} />
                                           </FormControl>
                                           <FormMessage />
                                       </FormItem>
@@ -1189,10 +1170,7 @@ export function ContractForm() {
                                   <FormItem>
                                     <FormLabel>Fecha</FormLabel>
                                     <FormControl>
-                                        <DatePicker
-                                            value={field.value ? new Date(field.value) : undefined}
-                                            onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
-                                        />
+                                        <Input type="date" {...field} value={field.value || ''} />
                                     </FormControl>
                                     <FormMessage />
                                   </FormItem>
@@ -1324,10 +1302,7 @@ export function ContractForm() {
                       <FormItem>
                         <FormLabel>Fecha</FormLabel>
                         <FormControl>
-                          <DatePicker
-                                value={field.value ? new Date(field.value) : undefined}
-                                onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
-                            />
+                            <Input type="date" {...field} value={field.value || ''} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

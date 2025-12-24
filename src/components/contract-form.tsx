@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { format } from 'date-fns';
 
 import {
   collection,
@@ -55,8 +56,17 @@ import { useCurrentRole } from '@/hooks/use-current-role';
 import { AutoMotoContractTemplatePreview } from './auto-moto-contract-preview';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
-import { DatePickerField } from './ui/date-picker';
 
+const toDateString = (date?: Date): string => {
+    if (!date) return '';
+    try {
+        // The date from the form might be a string already in some cases,
+        // so we parse it to ensure it's a Date object before formatting.
+        return format(new Date(date), 'yyyy-MM-dd');
+    } catch {
+        return '';
+    }
+};
 
 const contractFormSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
@@ -698,11 +708,14 @@ export function ContractForm() {
                         render={({ field }) => (
                             <FormItem className="flex flex-col">
                                 <FormLabel>Fecha Límite de Pago del Saldo</FormLabel>
-                                <DatePickerField
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                    disabled={form.getValues('autoMotoDetails.balance') === 0}
-                                />
+                                <FormControl>
+                                    <Input
+                                        type="date"
+                                        value={toDateString(field.value)}
+                                        onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
+                                        disabled={form.getValues('autoMotoDetails.balance') === 0}
+                                    />
+                                </FormControl>
                                 <FormDescription>
                                     {form.getValues('autoMotoDetails.balance') === 0 ? 'No aplica, ya que el curso está cancelado en su totalidad.' : 'Fecha máxima para cancelar el 50% restante.'}
                                 </FormDescription>
@@ -819,7 +832,13 @@ export function ContractForm() {
                                         render={({ field }) => (
                                             <FormItem className="flex flex-col">
                                                 <FormLabel>Fecha Teórica {index + 1}</FormLabel>
-                                                <DatePickerField value={field.value} onChange={field.onChange} />
+                                                <FormControl>
+                                                    <Input
+                                                        type="date"
+                                                        value={toDateString(field.value)}
+                                                        onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
+                                                    />
+                                                </FormControl>
                                                 <FormMessage />
                                             </FormItem>
                                         )}
@@ -842,7 +861,13 @@ export function ContractForm() {
                                       render={({ field }) => (
                                           <FormItem className="flex flex-col">
                                             <FormLabel className="sr-only">Fecha</FormLabel>
-                                            <DatePickerField value={field.value} onChange={field.onChange} />
+                                            <FormControl>
+                                                <Input
+                                                    type="date"
+                                                    value={toDateString(field.value)}
+                                                    onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
+                                                />
+                                            </FormControl>
                                             <FormMessage />
                                           </FormItem>
                                       )}
@@ -1028,7 +1053,13 @@ export function ContractForm() {
                                           render={({ field }) => (
                                             <FormItem className="flex flex-col">
                                                   <FormLabel>Fecha Cuota {i}</FormLabel>
-                                                  <DatePickerField value={field.value} onChange={field.onChange} />
+                                                  <FormControl>
+                                                      <Input
+                                                          type="date"
+                                                          value={toDateString(field.value)}
+                                                          onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
+                                                      />
+                                                  </FormControl>
                                                   <FormMessage />
                                               </FormItem>
                                           )}
@@ -1039,7 +1070,13 @@ export function ContractForm() {
                                           render={({ field }) => (
                                              <FormItem className="flex flex-col">
                                                   <FormLabel>Fecha Cuota {i + 3}</FormLabel>
-                                                  <DatePickerField value={field.value} onChange={field.onChange} />
+                                                  <FormControl>
+                                                      <Input
+                                                          type="date"
+                                                          value={toDateString(field.value)}
+                                                          onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
+                                                      />
+                                                  </FormControl>
                                                   <FormMessage />
                                               </FormItem>
                                           )}
@@ -1136,7 +1173,13 @@ export function ContractForm() {
                                   render={({ field }) => (
                                     <FormItem className="flex flex-col">
                                           <FormLabel>Fecha Semana {i + 1}</FormLabel>
-                                          <DatePickerField value={field.value} onChange={field.onChange} />
+                                          <FormControl>
+                                              <Input
+                                                  type="date"
+                                                  value={toDateString(field.value)}
+                                                  onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
+                                              />
+                                          </FormControl>
                                           <FormMessage />
                                       </FormItem>
                                   )}
@@ -1163,7 +1206,13 @@ export function ContractForm() {
                                 render={({ field }) => (
                                   <FormItem className="flex flex-col">
                                     <FormLabel>Fecha</FormLabel>
-                                    <DatePickerField value={field.value} onChange={field.onChange} />
+                                     <FormControl>
+                                        <Input
+                                            type="date"
+                                            value={toDateString(field.value)}
+                                            onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
+                                        />
+                                    </FormControl>
                                     <FormMessage />
                                   </FormItem>
                                 )}
@@ -1293,7 +1342,13 @@ export function ContractForm() {
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
                         <FormLabel>Fecha</FormLabel>
-                        <DatePickerField value={field.value} onChange={field.onChange} />
+                        <FormControl>
+                            <Input
+                                type="date"
+                                value={toDateString(field.value)}
+                                onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
+                            />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}

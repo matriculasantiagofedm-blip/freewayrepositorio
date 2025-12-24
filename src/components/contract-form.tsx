@@ -245,8 +245,10 @@ export function ContractForm() {
   
   useEffect(() => {
     const cv = courseValue || 0;
+    let isFullPaymentPlan = cv === 57.00;
+
     if (cv > 0) {
-        const payment = payFullCourse ? cv : cv / 2;
+        const payment = (payFullCourse || isFullPaymentPlan) ? cv : cv / 2;
         const newBalance = cv - payment;
         form.setValue('autoMotoDetails.downPayment', parseFloat(payment.toFixed(2)));
         form.setValue('autoMotoDetails.balance', parseFloat(newBalance.toFixed(2)));
@@ -254,12 +256,15 @@ export function ContractForm() {
         form.setValue('autoMotoDetails.downPayment', undefined);
         form.setValue('autoMotoDetails.balance', 0);
     }
-
+    
     const numClasses = getNumberOfPracticalClasses(cv);
     const currentSchedules = form.getValues('autoMotoDetails.practicalClassSchedules') || [];
-    const newSchedules = Array.from({ length: numClasses }, (_, i) => currentSchedules[i] || { date: '', time: '' });
-    form.setValue('autoMotoDetails.practicalClassSchedules', newSchedules);
+    if (currentSchedules.length !== numClasses) {
+        const newSchedules = Array.from({ length: numClasses }, (_, i) => currentSchedules[i] || { date: '', time: '' });
+        form.setValue('autoMotoDetails.practicalClassSchedules', newSchedules, { shouldValidate: true });
+    }
 }, [courseValue, payFullCourse, form]);
+
 
   useEffect(() => {
     // Cuando cambia el horario, reiniciamos las fechas
@@ -634,15 +639,18 @@ export function ContractForm() {
                         )}
                     />
                     
-                    <div className="flex items-center space-x-2 pt-4">
-                        <Switch
-                            id="pay-full-course"
-                            checked={payFullCourse}
-                            onCheckedChange={setPayFullCourse}
-                            disabled={!courseValue}
-                        />
-                        <Label htmlFor="pay-full-course">¿Cancelar la totalidad del curso (100%)?</Label>
-                    </div>
+                    {courseValue !== 57.00 && (
+                      <div className="flex items-center space-x-2 pt-4">
+                          <Switch
+                              id="pay-full-course"
+                              checked={payFullCourse}
+                              onCheckedChange={setPayFullCourse}
+                              disabled={!courseValue}
+                          />
+                          <Label htmlFor="pay-full-course">¿Cancelar la totalidad del curso (100%)?</Label>
+                      </div>
+                    )}
+
 
                     <div className="grid grid-cols-3 gap-4">
                        <FormItem>
@@ -698,9 +706,9 @@ export function ContractForm() {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Fecha Límite de Pago del Saldo</FormLabel>
-                                <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                                <FormControl><Input type="date" {...field} value={field.value || ''} disabled={form.getValues('autoMotoDetails.balance') === 0} /></FormControl>
                                 <FormDescription>
-                                    {payFullCourse ? 'No aplica, ya que el curso está cancelado en su totalidad.' : 'Fecha máxima para cancelar el 50% restante.'}
+                                    {form.getValues('autoMotoDetails.balance') === 0 ? 'No aplica, ya que el curso está cancelado en su totalidad.' : 'Fecha máxima para cancelar el 50% restante.'}
                                 </FormDescription>
                             </FormItem>
                         )}
@@ -1326,3 +1334,5 @@ export function ContractForm() {
     </Form>
   );
 }
+
+    

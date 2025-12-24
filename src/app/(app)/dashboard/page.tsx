@@ -38,11 +38,9 @@ export default function DashboardPage() {
     
     const contractsCollection = collection(firestore, 'contracts');
 
-    if (role === 'Administrador') {
-      return query(contractsCollection);
-    }
-    
-    // Other roles see only their own contracts
+    // IMPORTANT: The query now *always* filters by the current user's ID.
+    // This is required to satisfy the new, stricter security rules.
+    // The "Admin" role no longer grants special query permissions here.
     return query(contractsCollection, where('userId', '==', user.uid));
   }, [firestore, user, role]);
 
@@ -74,17 +72,17 @@ export default function DashboardPage() {
 
   const stats = [
     {
-      title: 'Contratos Activos',
+      title: 'Mis Contratos Activos',
       value: isLoading ? '...' : activeContracts,
       icon: FileText,
     },
     {
-      title: 'Contratos Vencidos',
+      title: 'Mis Vencimientos',
       value: isLoading ? '...' : overdueDeadlines,
       icon: CalendarClock,
     },
     {
-      title: 'Clientes Totales',
+      title: 'Mis Clientes',
       value: isLoading ? '...' : totalClients,
       icon: Users,
     },

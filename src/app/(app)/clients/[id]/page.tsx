@@ -18,6 +18,8 @@ export default function ClientDetailPage() {
 
   const clientRef = useMemoFirebase(() => {
     if (!firestore || !clientId) return null;
+    // The security rules for `clients` are owner-only, so this will only work
+    // if the current user is the one who created the client.
     return doc(firestore, `clients`, clientId);
   }, [firestore, clientId]);
 
@@ -26,18 +28,15 @@ export default function ClientDetailPage() {
 
     const contractsCollection = collection(firestore, 'contracts');
 
-    if (role === 'Administrador') {
-      // Admin sees all contracts for this client
-       return query(contractsCollection, where('clientId', '==', clientId));
-    }
-    
-    // Other users see only their own contracts for this client
+    // ALL users, including Admins, can only see contracts for this client
+    // that they themselves have created. This aligns with the security rules.
+    // An admin wanting to see all contracts for a client would need a different view/tool.
     return query(
       contractsCollection,
       where('clientId', '==', clientId),
       where('userId', '==', user.uid)
     );
-  }, [firestore, user, clientId, role]);
+  }, [firestore, user, clientId]);
 
   const { data: client, isLoading: isClientLoading } = useDoc<Client>(clientRef);
   const { data: contracts, isLoading: areContractsLoading } = useCollection<Contract>(contractsQuery);
@@ -53,17 +52,22 @@ export default function ClientDetailPage() {
             </Button>
       </div>
 
-      {(isClientLoading && role !== 'Administrador') && <p>Cargando cliente...</p>}
+      {isClientLoading && <p>Cargando cliente...</p>}
+      
       {client && (
         <div className="flex flex-col gap-2 items-center text-center">
             <h1 className="font-headline text-3xl font-bold">{client.name}</h1>
             <p className="text-muted-foreground">{client.email}</p>
         </div>
       )}
-       {role === 'Administrador' && !client && !isClientLoading && (
-         <div className="flex flex-col gap-2 items-center text-center">
-            <h1 className="font-headline text-3xl font-bold">Cliente ID: {clientId}</h1>
-            <p className="text-muted-foreground">Vista de Administrador</p>
+       {!client && !isClientLoading && (
+         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
+            <h3 className="mt-4 text-lg font-semibold text-foreground">
+                Cliente no encontrado
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+                No tienes permiso para ver este cliente o no existe.
+            </p>
         </div>
        )}
 
@@ -86,7 +90,7 @@ export default function ClientDetailPage() {
                         No hay contratos para este cliente
                     </h3>
                     <p className="mt-2 text-sm text-muted-foreground">
-                        Crea un nuevo contrato para este cliente para verlo aquí.
+                        No has creado contratos para este cliente.
                     </p>
                 </div>
              )

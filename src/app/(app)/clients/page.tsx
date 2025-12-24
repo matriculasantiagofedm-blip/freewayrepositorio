@@ -15,12 +15,9 @@ export default function ClientsPage() {
     
     const clientsCollection = collection(firestore, 'clients');
     
-    if (role === 'Administrador') {
-      // Admin sees all clients
-      return query(clientsCollection);
-    }
-    
-    // Other roles see only clients they have created
+    // For all roles, we only fetch clients associated with the current user.
+    // The main use-case for listing clients is for non-admins to see who they've created.
+    // Admins can search or view clients via contracts.
     return query(clientsCollection, where('userId', '==', user.uid));
     
   }, [firestore, user, role]);
@@ -53,10 +50,10 @@ export default function ClientsPage() {
         !isLoading && (
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
             <h3 className="mt-4 text-lg font-semibold text-foreground">
-              {role === 'Administrador' ? 'No se encontraron clientes' : 'No tienes clientes todavía'}
+              No tienes clientes todavía
             </h3>
             <p className="mt-2 text-sm text-muted-foreground">
-              {role !== 'Administrador' && 'Crea un contrato para añadir tu primer cliente.'}
+              Crea un contrato para añadir tu primer cliente.
             </p>
           </div>
         )

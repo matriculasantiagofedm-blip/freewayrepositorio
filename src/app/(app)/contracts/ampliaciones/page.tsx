@@ -15,19 +15,20 @@ export default function ContractsAmpliacionesPage() {
   const contractsQuery = useMemoFirebase(() => {
     if (!firestore || !user || !role) return null;
 
-    const baseQuery = query(
-      collection(firestore, 'contracts'), 
-      where('type', '==', 'Ampliaciones')
-    );
-
     if (role === 'Administrador') {
-      return baseQuery;
+      return null;
     }
 
-    return query(baseQuery, where('userId', '==', user.uid));
+    return query(
+      collection(firestore, 'contracts'),
+      where('userId', '==', user.uid),
+      where('type', '==', 'Ampliaciones')
+    );
   }, [firestore, user, role]);
 
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
+  
+  const displayContracts = role === 'Administrador' ? [] : contracts;
 
   return (
     <div className="flex flex-col gap-8">
@@ -40,10 +41,10 @@ export default function ContractsAmpliacionesPage() {
         </Button>
         <h1 className="font-headline text-3xl font-bold">Contratos de Ampliaciones</h1>
       </div>
-      {isLoading && <p>Cargando contratos...</p>}
-      {!isLoading && contracts && contracts.length > 0 ? (
+      {isLoading && role !== 'Administrador' && <p>Cargando contratos...</p>}
+      {!isLoading && displayContracts && displayContracts.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {contracts.map((contract) => (
+          {displayContracts.map((contract) => (
             <Link key={contract.id} href={`/contracts/${contract.id}`} className="no-underline">
                 <ContractCard contract={contract} />
             </Link>

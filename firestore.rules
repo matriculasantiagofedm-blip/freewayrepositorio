@@ -16,8 +16,7 @@
  *   for reminders related to a specific contract.
  *
  * Key Security Decisions:
- * - User Isolation vs. Admin Access: A user can only access their own data, but
- *   an admin can access all data.
+ * - User Isolation vs. Admin Access: A user can only access their own data.
  * - Path-Based Security: All security rules derive their authority from the `{userId}`
  *   wildcard in the document path, making authorization checks simple and efficient.
  * - Ownership Integrity: On creation, documents must contain an internal ID field
@@ -40,20 +39,6 @@ service cloud.firestore {
     function isSignedIn() {
       return request.auth != null;
     }
-    
-    /**
-     * Returns true if the user has the 'Administrador' role.
-     * This is determined by checking a custom claim on the user's auth token.
-     * This claim must be set via a backend process (e.g., Cloud Function).
-     */
-    function isAdmin() {
-      // In a real app, this would check a custom claim:
-      // return request.auth.token.admin == true;
-      // For this app, we'll check a field in the user's profile document.
-      // Note: This creates a dependency on another document read.
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Administrador';
-    }
-
 
     /**
      * Returns true if the currently authenticated user's ID matches the
@@ -64,7 +49,7 @@ service cloud.firestore {
     }
     
     function isDocumentOwner(doc) {
-        return request.auth.uid == doc.data.userId;
+        return isSignedIn() && request.auth.uid == doc.data.userId;
     }
 
     /**
@@ -157,25 +142,25 @@ service cloud.firestore {
     // ------------------------------------------------------------------------
 
     match /clients/{clientId} {
-      allow read, delete: if isOwner(clientId) || isAdmin();
+      allow read, delete: if isOwner(clientId);
       allow create: if isOwner(clientId) && hasValidClientDataOnCreate(clientId);
-      allow update: if (isOwner(clientId) || isAdmin()) && isClientIdImmutable();
-      allow list: if isAdmin();
+      allow update: if isOwner(clientId) && isClientIdImmutable();
+      allow list: if false; // No one can list all clients for privacy
     }
     
     match /contracts/{contractId} {
-        allow get: if isDocumentOwner(resource) || isAdmin();
-        allow list: if isSignedIn();
+        allow get: if isDocumentOwner(resource);
+        allow list: if isSignedIn() && request.query.where.find(field => field[0] == 'userId' && field[2] == request.auth.uid) != null;
         allow create: if hasValidContractDataOnCreate(request.auth.uid);
-        allow update: if (isDocumentOwner(resource) || isAdmin()) && isContractOwnerImmutable();
-        allow delete: if isDocumentOwner(resource) || isAdmin();
+        allow update: if isDocumentOwner(resource) && isContractOwnerImmutable();
+        allow delete: if isDocumentOwner(resource);
 
         match /meetings/{meetingId} {
-          allow read, write: if get(/databases/$(database)/documents/contracts/$(contractId)).data.userId == request.auth.uid || isAdmin();
+          allow read, write: if get(/databases/$(database)/documents/contracts/$(contractId)).data.userId == request.auth.uid;
         }
 
         match /reminders/{reminderId} {
-          allow read, write: if get(/databases/$(database)/documents/contracts/$(contractId)).data.userId == request.auth.uid || isAdmin();
+          allow read, write: if get(/databases/$(database)/documents/contracts/$(contractId)).data.userId == request.auth.uid;
         }
       }
     }

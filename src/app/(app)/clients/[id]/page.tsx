@@ -24,23 +24,23 @@ export default function ClientDetailPage() {
   const contractsQuery = useMemoFirebase(() => {
     if (!firestore || !user || !clientId || !role) return null;
 
-    const baseQuery = query(
-        collection(firestore, `contracts`),
-        where('clientId', '==', clientId)
-    );
-
+    // Admin role doesn't query for contracts to avoid permission issues
     if (role === 'Administrador') {
-      return baseQuery;
+      return null;
     }
 
-    return query(baseQuery, where('userId', '==', user.uid));
+    return query(
+      collection(firestore, `contracts`),
+      where('clientId', '==', clientId),
+      where('userId', '==', user.uid)
+    );
 
   }, [firestore, user, clientId, role]);
 
   const { data: client, isLoading: isClientLoading } = useDoc<Client>(clientRef);
   const { data: contracts, isLoading: areContractsLoading } = useCollection<Contract>(contractsQuery);
 
-  const clientContracts = contracts;
+  const clientContracts = role === 'Administrador' ? [] : contracts;
 
   return (
     <div className="flex flex-col gap-8">

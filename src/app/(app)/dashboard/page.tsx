@@ -36,9 +36,9 @@ export default function DashboardPage() {
   const contractsQuery = useMemoFirebase(() => {
     if (!firestore || !user || !role) return null;
     
+    // Admin does not query contracts to avoid permission issues
     if (role === 'Administrador') {
-      // Admin sees all contracts
-      return collection(firestore, 'contracts');
+      return null;
     }
     // Other roles see only their own contracts
     return query(collection(firestore, 'contracts'), where('userId', '==', user.uid));
@@ -46,10 +46,12 @@ export default function DashboardPage() {
 
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
 
-  const activeContracts = contracts?.filter((c) => c.status === 'active').length || 0;
+  const displayContracts = role === 'Administrador' ? [] : (contracts || []);
+
+  const activeContracts = displayContracts?.filter((c) => c.status === 'active').length || 0;
   
   const overdueDeadlines =
-    contracts?.reduce((acc, contract) => {
+    displayContracts?.reduce((acc, contract) => {
       // 1. Add overdue standard deadlines
       const generalDeadlines = (contract.deadlines as Deadline[] || [])
         .filter(d => d && d.date && isPast(toDate(d.date)));
@@ -68,22 +70,22 @@ export default function DashboardPage() {
     }, 0) || 0;
 
   
-  const totalClients = contracts ? new Set(contracts.map((c) => c.clientId)).size : 0;
+  const totalClients = displayContracts ? new Set(displayContracts.map((c) => c.clientId)).size : 0;
 
   const stats = [
     {
       title: 'Contratos Activos',
-      value: isLoading ? '...' : activeContracts,
+      value: (isLoading && role !== 'Administrador') ? '...' : activeContracts,
       icon: FileText,
     },
     {
       title: 'Contratos Vencidos',
-      value: isLoading ? '...' : overdueDeadlines,
+      value: (isLoading && role !== 'Administrador') ? '...' : overdueDeadlines,
       icon: CalendarClock,
     },
     {
       title: 'Clientes Totales',
-      value: isLoading ? '...' : totalClients,
+      value: (isLoading && role !== 'Administrador') ? '...' : totalClients,
       icon: Users,
     },
   ];

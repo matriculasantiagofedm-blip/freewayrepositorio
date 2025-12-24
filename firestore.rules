@@ -1,19 +1,4 @@
-/**
- * Core Philosophy: This ruleset enforces a strict user-ownership model.
- * Users can only access data linked to their unique ID. Administrators have
- * broader access, which is determined by a custom claim, not by database reads.
- *
- * Data Structure:
- * - /clients/{clientId}: Stores client information.
- * - /contracts/{contractId}: A global collection for all contracts. Each contract
- *   has a `userId` field to link it to its owner.
- *
- * Key Security Decisions:
- * - User Isolation vs. Admin Access: A user can only access their own data.
- *   Admin access is granted via custom claims, avoiding insecure DB reads in rules.
- * - Ownership Integrity: On creation, documents must contain the user's ID.
- * - Default Deny: All operations are denied unless explicitly granted.
- */
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -37,16 +22,6 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // --- Create Validation Functions ---
-
-    /**
-     * Validates that a new client document contains an 'id' field that
-     * matches the document's path ID.
-     */
-    function hasValidClientDataOnCreate(clientId) {
-      return request.resource.data.id == clientId;
-    }
-
     /**
      * Validates that a new contract document contains a 'userId' field that
      * matches the currently authenticated user.
@@ -55,15 +30,6 @@ service cloud.firestore {
       return request.resource.data.userId == request.auth.uid;
     }
     
-    // --- Update Validation Functions ---
-
-    /**
-     * Enforces that the client's unique identifier ('id') cannot be changed.
-     */
-    function isClientIdImmutable() {
-      return request.resource.data.id == resource.data.id;
-    }
-
     /**
      * Enforces that a contract's owner ID cannot be changed.
      */
@@ -90,7 +56,7 @@ service cloud.firestore {
 
       // A user can list contracts ONLY if the query explicitly filters by their own UID.
       // This is the key rule to prevent permission errors on list operations.
-      allow list: if isSignedIn() && request.query.where.find(field => field[0] == 'userId' && field[2] == request.auth.uid) != null;
+      allow list: if isSignedIn() && (request.query.where.find(field => field[0] == 'userId' && field[2] == request.auth.uid) != null);
       
       // A user can create a contract if they are signed in and the new contract's userId is their own.
       allow create: if isSignedIn() && hasValidContractDataOnCreate();

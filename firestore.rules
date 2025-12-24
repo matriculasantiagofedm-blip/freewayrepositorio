@@ -47,10 +47,6 @@ service cloud.firestore {
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
-    
-    function isDocumentOwner(doc) {
-        return isSignedIn() && request.auth.uid == doc.data.userId;
-    }
 
     /**
      * A stricter ownership check for update/delete operations, ensuring the
@@ -149,11 +145,15 @@ service cloud.firestore {
     }
     
     match /contracts/{contractId} {
-        allow get: if isDocumentOwner(resource);
-        allow list: if isSignedIn() && request.query.where.find(field => field[0] == 'userId' && field[2] == request.auth.uid) != null;
+        function isDocumentOwner() {
+          return request.auth.uid == resource.data.userId;
+        }
+
+        allow get: if isDocumentOwner();
+        allow list: if request.query.where.find(field => field[0] == 'userId' && field[2] == request.auth.uid) != null;
         allow create: if hasValidContractDataOnCreate(request.auth.uid);
-        allow update: if isDocumentOwner(resource) && isContractOwnerImmutable();
-        allow delete: if isDocumentOwner(resource);
+        allow update: if isDocumentOwner() && isContractOwnerImmutable();
+        allow delete: if isDocumentOwner();
 
         match /meetings/{meetingId} {
           allow read, write: if get(/databases/$(database)/documents/contracts/$(contractId)).data.userId == request.auth.uid;

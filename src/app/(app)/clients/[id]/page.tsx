@@ -18,37 +18,25 @@ export default function ClientDetailPage() {
 
   const clientRef = useMemoFirebase(() => {
     if (!firestore || !clientId) return null;
-    // Admins may not have a client doc, but can see contracts
-    // Non-admins should only see their own client doc
-    if (role !== 'Administrador' && user?.uid !== clientId) {
-      // This prevents a non-admin from loading another user's client page
-      return null;
-    }
     return doc(firestore, `clients`, clientId);
-  }, [firestore, clientId, user, role]);
+  }, [firestore, clientId]);
 
   const contractsQuery = useMemoFirebase(() => {
-    if (!firestore || !clientId) return null;
+    if (!firestore || !user) return null;
+
+    const contractsCollection = collection(firestore, 'contracts');
 
     if (role === 'Administrador') {
       // Admin sees all contracts for this client
-       return query(
-        collection(firestore, `contracts`),
-        where('clientId', '==', clientId)
-      );
+       return query(contractsCollection, where('clientId', '==', clientId));
     }
     
     // Other users see only their own contracts for this client
-    if (user) {
-       return query(
-        collection(firestore, `contracts`),
-        where('clientId', '==', clientId),
-        where('userId', '==', user.uid)
-      );
-    }
-    
-    return null;
-
+    return query(
+      contractsCollection,
+      where('clientId', '==', clientId),
+      where('userId', '==', user.uid)
+    );
   }, [firestore, user, clientId, role]);
 
   const { data: client, isLoading: isClientLoading } = useDoc<Client>(clientRef);

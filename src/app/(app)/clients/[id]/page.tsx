@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { ContractCard } from '@/components/contract-card';
+import { useCurrentRole } from '@/hooks/use-current-role';
 
 export default function ClientDetailPage() {
   const { id } = useParams();
   const { firestore, user } = useFirebase();
+  const { role } = useCurrentRole();
 
   const clientId = Array.isArray(id) ? id[0] : id;
 
@@ -20,12 +22,20 @@ export default function ClientDetailPage() {
   }, [firestore, clientId]);
 
   const contractsQuery = useMemoFirebase(() => {
-    if (!firestore || !user || !clientId) return null;
-    return query(
-        collection(firestore, `clients/${user.uid}/contracts`),
+    if (!firestore || !user || !clientId || !role) return null;
+
+    const baseQuery = query(
+        collection(firestore, `contracts`),
         where('clientId', '==', clientId)
     );
-  }, [firestore, user, clientId]);
+
+    if (role === 'Administrador') {
+      return baseQuery;
+    }
+
+    return query(baseQuery, where('userId', '==', user.uid));
+
+  }, [firestore, user, clientId, role]);
 
   const { data: client, isLoading: isClientLoading } = useDoc<Client>(clientRef);
   const { data: contracts, isLoading: areContractsLoading } = useCollection<Contract>(contractsQuery);

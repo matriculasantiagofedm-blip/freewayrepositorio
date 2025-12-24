@@ -2,16 +2,25 @@
 import { ContractCard } from '@/components/contract-card';
 import Link from 'next/link';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
+import { useCurrentRole } from '@/hooks/use-current-role';
 
 export default function AllContractsPage() {
   const { firestore, user } = useFirebase();
+  const { role } = useCurrentRole();
 
   const contractsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return collection(firestore, `clients/${user.uid}/contracts`);
-  }, [firestore, user]);
+    if (!firestore || !user || !role) return null;
+    
+    if (role === 'Administrador') {
+      // Admin sees all contracts
+      return collection(firestore, `contracts`);
+    }
+    
+    // Other roles see only their own contracts
+    return query(collection(firestore, `contracts`), where('userId', '==', user.uid));
+  }, [firestore, user, role]);
 
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
 

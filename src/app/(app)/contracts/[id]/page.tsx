@@ -19,7 +19,7 @@ export default function ContractDetailPage() {
 
   const contractRef = useMemoFirebase(() => {
     if (!firestore || !user || !contractId) return null;
-    return doc(firestore, `clients/${user.uid}/contracts`, contractId);
+    return doc(firestore, `contracts`, contractId);
   }, [firestore, user, contractId]);
 
   const { data: contract, isLoading, error } = useDoc<Contract>(contractRef);

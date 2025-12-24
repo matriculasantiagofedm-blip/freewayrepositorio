@@ -267,35 +267,53 @@ export function ContractForm() {
 
 
   async function findOrCreateClient(clientName: string, clientEmail: string, userId: string, idNumber?: string): Promise<string> {
-    const clientRef = doc(firestore, 'clients', userId);
-    const clientSnap = await getDoc(clientRef);
-
-    if (!clientSnap.exists()) {
+    if (!idNumber) {
+        // Fallback for contracts without idNumber
+        const tempClientId = doc(collection(firestore, 'clients')).id;
+        const clientRef = doc(firestore, 'clients', tempClientId);
         const newClient: Omit<Client, 'id' | 'createdAt'> & { createdAt: any } = {
-            id: userId,
+            id: tempClientId,
             name: clientName,
             email: clientEmail,
-            idNumber: idNumber || '',
+            idNumber: '',
             userId: userId,
             createdAt: serverTimestamp()
         };
         await setDoc(clientRef, newClient);
-    } else {
-        // If client exists, update their idNumber if it's provided and different
-        if (idNumber && clientSnap.data()?.idNumber !== idNumber) {
-            await updateDoc(clientRef, { idNumber: idNumber });
-        }
+        return tempClientId;
     }
-    return userId;
+
+    const clientsRef = collection(firestore, 'clients');
+    const q = query(clientsRef, where("idNumber", "==", idNumber));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+        const newClientId = doc(collection(firestore, 'clients')).id;
+        const clientRef = doc(firestore, 'clients', newClientId);
+        const newClientData = {
+            id: newClientId,
+            name: clientName,
+            email: clientEmail,
+            idNumber: idNumber,
+            userId: userId, // Keep track of original creator
+            createdAt: serverTimestamp(),
+        };
+        await setDoc(clientRef, newClientData);
+        return newClientId;
+    } else {
+        const existingClient = querySnapshot.docs[0];
+        // Optional: Update client info if needed
+        // await updateDoc(existingClient.ref, { name: clientName, email: clientEmail });
+        return existingClient.id;
+    }
 }
 
-  async function getNextFolio(userId: string): Promise<string> {
+  async function getNextFolio(): Promise<string> {
     const year = new Date().getFullYear();
     const folioPrefix = `CT-${year}-`;
   
-    const contractsCollection = collection(firestore, `clients/${userId}/contracts`);
+    const contractsCollection = collection(firestore, `contracts`);
     
-    // Create a query to find contracts for the current year, ordered by folio descending
     const q = query(
       contractsCollection, 
       where('folio', '>=', folioPrefix),
@@ -309,7 +327,6 @@ export function ContractForm() {
     let lastFolioNumber = 0;
     if (!querySnapshot.empty) {
       const lastContract = querySnapshot.docs[0].data() as Contract;
-      // Check if the last contract is from the current year
       if (lastContract.folio && lastContract.folio.startsWith(folioPrefix)) {
         const lastNumberStr = lastContract.folio.split('-').pop();
         if (lastNumberStr) {
@@ -338,7 +355,7 @@ export function ContractForm() {
       const studentIdNumber = data.deluxeDetails?.studentIdNumber || data.autoMotoDetails?.studentIdNumber;
 
       if (role !== 'Administrador' && studentIdNumber) {
-        const contractsRef = collection(firestore, `clients/${user.uid}/contracts`);
+        const contractsRef = collection(firestore, `contracts`);
         const q = query(contractsRef, where('autoMotoDetails.studentIdNumber', '==', studentIdNumber), where('clientName', '==', data.clientName));
         const querySnapshot = await getDocs(q);
 
@@ -352,10 +369,10 @@ export function ContractForm() {
         }
       }
 
-      const folio = await getNextFolio(user.uid);
+      const folio = await getNextFolio();
       const clientId = await findOrCreateClient(data.clientName, data.clientEmail, user.uid, studentIdNumber);
       
-      const contractsCollection = collection(firestore, 'clients', user.uid, 'contracts');
+      const contractsCollection = collection(firestore, 'contracts');
       
       const contractContent = (data.type === 'Curso Deluxe' || data.type === 'Curso Auto' || data.type === 'Curso Moto' || data.type === 'Curso Mixto' ) ? '' : data.content;
 
@@ -745,15 +762,14 @@ export function ContractForm() {
                                     <FormLabel>Categoría de Licencia a Aplicar</FormLabel>
                                     <FormControl>
                                         <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4 pt-2">
-                                            {contractType === 'Curso Auto' && (
+                                            {contractType === 'Curso Auto' ? (
                                                 <>
                                                     <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="A, C" id="ac" /></FormControl><FormLabel htmlFor="ac" className="font-normal">A, C</FormLabel></FormItem>
                                                     <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="A, C, D" id="acd" /></FormControl><FormLabel htmlFor="acd" className="font-normal">A, C, D</FormLabel></FormItem>
                                                 </>
-                                            )}
-                                            {contractType === 'Curso Moto' && (
+                                            ) : contractType === 'Curso Moto' ? (
                                                 <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="A, B" id="ab" /></FormControl><FormLabel htmlFor="ab" className="font-normal">A, B</FormLabel></FormItem>
-                                            )}
+                                            ) : null}
                                         </RadioGroup>
                                     </FormControl>
                                     <FormMessage />

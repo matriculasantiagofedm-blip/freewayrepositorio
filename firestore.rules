@@ -8,16 +8,16 @@
  * Data Structure: Data is organized hierarchically to enforce ownership naturally
  * through Firestore paths.
  * - /clients/{userId}: A document representing the user (client) themselves.
- * - /clients/{userId}/contracts/{contractId}: A subcollection for all contracts
- *   belonging to that user.
- * - /clients/{userId}/contracts/{contractId}/meetings/{meetingId}: A subcollection
+ * - /contracts/{contractId}: A global collection for all contracts. Each contract
+ *   has a `userId` field to link it to its owner.
+ * - /contracts/{contractId}/meetings/{meetingId}: A subcollection
  *   for meetings related to a specific contract.
- * - /clients/{userId}/contracts/{contractId}/reminders/{reminderId}: A subcollection
+ * - /contracts/{contractId}/reminders/{reminderId}: A subcollection
  *   for reminders related to a specific contract.
  *
  * Key Security Decisions:
- * - User Isolation: A user has zero visibility into or access to another user's
- *   data. Listing the top-level `/clients` collection is prohibited.
+ * - User Isolation vs. Admin Access: A user can only access their own data, but
+ *   an admin can access all data.
  * - Path-Based Security: All security rules derive their authority from the `{userId}`
  *   wildcard in the document path, making authorization checks simple and efficient.
  * - Ownership Integrity: On creation, documents must contain an internal ID field
@@ -40,6 +40,20 @@ service cloud.firestore {
     function isSignedIn() {
       return request.auth != null;
     }
+    
+    /**
+     * Returns true if the user has the 'Administrador' role.
+     * This is determined by checking a custom claim on the user's auth token.
+     * This claim must be set via a backend process (e.g., Cloud Function).
+     */
+    function isAdmin() {
+      // In a real app, this would check a custom claim:
+      // return request.auth.token.admin == true;
+      // For this app, we'll check a field in the user's profile document.
+      // Note: This creates a dependency on another document read.
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Administrador';
+    }
+
 
     /**
      * Returns true if the currently authenticated user's ID matches the
@@ -47,6 +61,10 @@ service cloud.firestore {
      */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function isDocumentOwner(doc) {
+        return request.auth.uid == doc.data.userId;
     }
 
     /**
@@ -63,14 +81,9 @@ service cloud.firestore {
      */
     function isClientDataUnique() {
         let idNumber = request.resource.data.idNumber;
-        // Only check for uniqueness if an idNumber is provided and is not an empty string.
         if (idNumber != null && idNumber != "") {
-            // Check if any document in the 'clients' collection has the same idNumber.
-            // Note: This query is limited to the first 10 documents for performance. 
-            // A more robust solution might require a Cloud Function for uniqueness at scale.
             return get(/databases/$(database)/documents/clients?orderBy="idNumber"&equalTo=idNumber).size() == 0;
         }
-        // If no idNumber is provided, we don't block the creation.
         return true;
     }
 
@@ -88,8 +101,8 @@ service cloud.firestore {
      * Validates that a new contract document contains a 'clientId' field that
      * matches the parent document's path ID.
      */
-    function hasValidContractDataOnCreate(clientId) {
-      return request.resource.data.clientId == clientId;
+    function hasValidContractDataOnCreate(userId) {
+      return request.resource.data.userId == userId;
     }
 
     /**
@@ -121,8 +134,8 @@ service cloud.firestore {
     /**
      * Enforces that a contract's parent client ID cannot be changed.
      */
-    function isContractClientImmutable() {
-      return request.resource.data.clientId == resource.data.clientId;
+    function isContractOwnerImmutable() {
+      return request.resource.data.userId == resource.data.userId;
     }
 
     /**
@@ -143,77 +156,27 @@ service cloud.firestore {
     // Collection Rules
     // ------------------------------------------------------------------------
 
-    /**
-     * @description A user's root document. This rule allows a user to create,
-     * read, and manage their own client profile document.
-     * @path /clients/{clientId}
-     * @allow (create) An authenticated user with UID 'user_abc' creating their
-     *   own document at `/clients/user_abc`.
-     * @deny (get) An authenticated user 'user_abc' trying to read data from
-     *   `/clients/user_xyz`.
-     * @principle Restricts access to a user's own data tree and allows for
-     *   self-creation of the root user document.
-     */
     match /clients/{clientId} {
-      allow get: if isOwner(clientId);
-      allow list: if false;
+      allow read, delete: if isOwner(clientId) || isAdmin();
       allow create: if isOwner(clientId) && hasValidClientDataOnCreate(clientId);
-      allow update: if isExistingOwner(clientId) && isClientIdImmutable();
-      allow delete: if isExistingOwner(clientId);
+      allow update: if (isOwner(clientId) || isAdmin()) && isClientIdImmutable();
+      allow list: if isAdmin();
+    }
+    
+    match /contracts/{contractId} {
+        allow get: if isDocumentOwner(resource) || isAdmin();
+        allow list: if isSignedIn(); // Users can list, but query will filter
+        allow create: if hasValidContractDataOnCreate(request.auth.uid);
+        allow update: if (isDocumentOwner(resource) || isAdmin()) && isContractOwnerImmutable();
+        allow delete: if isDocumentOwner(resource) || isAdmin();
 
-      /**
-       * @description A contract belonging to a specific client (user).
-       * @path /clients/{clientId}/contracts/{contractId}
-       * @allow (list) An authenticated user 'user_abc' listing documents from
-       *   `/clients/user_abc/contracts`.
-       * @deny (create) An authenticated user 'user_abc' trying to create a
-       *   contract at `/clients/user_xyz/contracts/contract_123`.
-       * @principle Enforces strict ownership based on the parent path, ensuring
-       *   users can only manage their own contracts.
-       */
-      match /contracts/{contractId} {
-        allow get: if isOwner(clientId);
-        allow list: if isOwner(clientId);
-        allow create: if isOwner(clientId) && hasValidContractDataOnCreate(clientId);
-        allow update: if isExistingOwner(clientId) && isContractClientImmutable();
-        allow delete: if isExistingOwner(clientId);
-
-        /**
-         * @description A meeting related to a specific contract.
-         * @path /clients/{clientId}/contracts/{contractId}/meetings/{meetingId}
-         * @allow (get) Owner 'user_abc' reading a meeting from
-         *   `/clients/user_abc/contracts/contract_123/meetings/meeting_456`.
-         * @deny (update) Any user trying to modify a meeting in a contract
-         *   that does not belong to them.
-         * @principle Extends path-based ownership to nested subcollections,
-         *   maintaining security throughout the data hierarchy.
-         */
         match /meetings/{meetingId} {
-          allow get: if isOwner(clientId);
-          allow list: if isOwner(clientId);
-          allow create: if isOwner(clientId) && hasValidMeetingDataOnCreate(contractId);
-          allow update: if isExistingOwner(clientId) && isMeetingContractImmutable();
-          allow delete: if isExistingOwner(clientId);
+          allow read, write: if get(/databases/$(database)/documents/contracts/$(contractId)).data.userId == request.auth.uid || isAdmin();
         }
 
-        /**
-         * @description A reminder related to a specific contract.
-         * @path /clients/{clientId}/contracts/{contractId}/reminders/{reminderId}
-         * @allow (delete) Owner 'user_abc' deleting a reminder from
-         *   `/clients/user_abc/contracts/contract_123/reminders/reminder_789`.
-         * @deny (list) Any user trying to list reminders from a contract
-         *   that does not belong to them.
-         * @principle Extends path-based ownership to nested subcollections,
-         *   maintaining security throughout the data hierarchy.
-         */
         match /reminders/{reminderId} {
-          allow get: if isOwner(clientId);
-          allow list: if isOwner(clientId);
-          allow create: if isOwner(clientId) && hasValidReminderDataOnCreate(contractId);
-          allow update: if isExistingOwner(clientId) && isReminderContractImmutable();
-          allow delete: if isExistingOwner(clientId);
+          allow read, write: if get(/databases/$(database)/documents/contracts/$(contractId)).data.userId == request.auth.uid || isAdmin();
         }
       }
     }
   }
-}

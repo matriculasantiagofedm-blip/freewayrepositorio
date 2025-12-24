@@ -10,6 +10,10 @@
           "type": "string",
           "description": "Unique identifier for the Contract entity."
         },
+        "userId": {
+            "type": "string",
+            "description": "The UID of the user who created the contract."
+        },
         "clientId": {
           "type": "string",
           "description": "Reference to Client. (Relationship: Client 1:N Contract)"
@@ -34,6 +38,7 @@
       },
       "required": [
         "id",
+        "userId",
         "clientId",
         "contractName",
         "contractDescription",
@@ -165,7 +170,7 @@
           "schema": {
             "$ref": "#/backend/entities/Client"
           },
-          "description": "Stores client information. Uses path-based ownership.",
+          "description": "Stores client information.",
           "params": [
             {
               "name": "clientId",
@@ -175,18 +180,14 @@
         }
       },
       {
-        "path": "/clients/{clientId}/contracts/{contractId}",
+        "path": "/contracts/{contractId}",
         "definition": {
           "entityName": "Contract",
           "schema": {
             "$ref": "#/backend/entities/Contract"
           },
-          "description": "Stores contract information, using a subcollection of clients.  This follows path-based ownership. All contracts are owned by a client.",
+          "description": "Top-level collection for all contracts. Access is controlled by the `userId` field within the document and security rules.",
           "params": [
-            {
-              "name": "clientId",
-              "description": "The unique identifier for the client."
-            },
             {
               "name": "contractId",
               "description": "The unique identifier for the contract."
@@ -195,18 +196,14 @@
         }
       },
       {
-        "path": "/clients/{clientId}/contracts/{contractId}/meetings/{meetingId}",
+        "path": "/contracts/{contractId}/meetings/{meetingId}",
         "definition": {
           "entityName": "Meeting",
           "schema": {
             "$ref": "#/backend/entities/Meeting"
           },
-          "description": "Stores meeting information related to a specific contract, using a subcollection. All meetings are owned by a contract and a client.",
+          "description": "Stores meeting information related to a specific contract.",
           "params": [
-            {
-              "name": "clientId",
-              "description": "The unique identifier for the client."
-            },
             {
               "name": "contractId",
               "description": "The unique identifier for the contract."
@@ -219,18 +216,14 @@
         }
       },
       {
-        "path": "/clients/{clientId}/contracts/{contractId}/reminders/{reminderId}",
+        "path": "/contracts/{contractId}/reminders/{reminderId}",
         "definition": {
           "entityName": "Reminder",
           "schema": {
             "$ref": "#/backend/entities/Reminder"
           },
-          "description": "Stores reminder information related to a specific contract, using a subcollection. All reminders are owned by a contract and a client.",
+          "description": "Stores reminder information related to a specific contract.",
           "params": [
-            {
-              "name": "clientId",
-              "description": "The unique identifier for the client."
-            },
             {
               "name": "contractId",
               "description": "The unique identifier for the contract."
@@ -243,6 +236,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to manage contracts, clients, meetings, and reminders efficiently, focusing on scalability for a potentially large number of contracts. The structure emphasizes path-based ownership for user-specific data and leverages denormalization to ensure authorization independence, critical for maintaining data integrity and simplifying security rules.\n\nClients are stored in a top-level `/clients` collection.  Contracts are stored as subcollections of clients `/clients/{clientId}/contracts/{contractId}`.  This structure facilitates easy querying of a client's contracts and scales well with a large number of contracts per client. Meetings and Reminders are stored as subcollections of Contracts, following the same ownership pattern.\n\n**Authorization Independence and DBAC:** All authorization is based on `request.auth.uid`. Path-based ownership (`/clients/{clientId}/contracts/{contractId}`) is used to secure the contract documents to a client.\n\n**QAPs (Rules Are Not Filters):** List operations are secured by the path-based ownership. Listing contracts under a client will only return those contracts."
+    "reasoning": "The Firestore structure has been updated to support role-based access. Contracts are now in a top-level collection `/contracts` to allow administrators to query all documents. Each contract contains a `userId` field to enforce ownership for non-admin users. This hybrid approach enables both global administrative access and per-user data restrictions, which is a common pattern for multi-tenant applications with administrative oversight."
   }
 }

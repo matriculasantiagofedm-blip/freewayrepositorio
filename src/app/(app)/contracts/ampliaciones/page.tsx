@@ -6,17 +6,26 @@ import { ChevronLeft } from 'lucide-react';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
+import { useCurrentRole } from '@/hooks/use-current-role';
 
 export default function ContractsAmpliacionesPage() {
   const { firestore, user } = useFirebase();
+  const { role } = useCurrentRole();
 
   const contractsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return query(
-      collection(firestore, `clients/${user.uid}/contracts`), 
+    if (!firestore || !user || !role) return null;
+
+    const baseQuery = query(
+      collection(firestore, 'contracts'), 
       where('type', '==', 'Ampliaciones')
     );
-  }, [firestore, user]);
+
+    if (role === 'Administrador') {
+      return baseQuery;
+    }
+
+    return query(baseQuery, where('userId', '==', user.uid));
+  }, [firestore, user, role]);
 
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
 

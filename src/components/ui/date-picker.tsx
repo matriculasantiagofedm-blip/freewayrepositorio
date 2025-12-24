@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { format, isPast, isSaturday, isSunday } from 'date-fns';
+import { format, isPast, isSunday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -83,7 +83,7 @@ export function DatePicker({ date, onDateChange, disabled }: DatePickerProps) {
           {date ? format(date, 'PPP', { locale: es }) : <span>Selecciona una fecha</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+      <PopoverContent className="w-auto p-0 z-[9999]">
         <Calendar
           mode="single"
           selected={date}

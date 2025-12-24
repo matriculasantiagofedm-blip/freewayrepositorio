@@ -122,11 +122,13 @@ const autoCourseValues = [
   { label: 'Basico Auto 133.00', value: 133.00 },
   { label: 'Plus Auto 150.00', value: 150.00 },
   { label: 'Premium Auto 175.00', value: 175.00 },
+  { label: 'Ya se manejar auto B/.57.00', value: 57.00 },
 ];
 const motoCourseValues = [
   { label: 'Basico Moto 115.00', value: 115.00 },
   { label: 'Plus Moto 135.00', value: 135.00 },
   { label: 'Premium Moto 155.00', value: 155.00 },
+  { label: 'Ya se manejar moto B/.57.00', value: 57.00 },
 ];
 
 const practicalClassTimeSlots = [
@@ -214,6 +216,7 @@ export function ContractForm() {
 
   const getNumberOfPracticalClasses = (value?: number) => {
     if (!value) return 0;
+    if (value === 57.00) return 2; // "Ya se manejar" options have 2 classes
     const allCourses = [...autoCourseValues, ...motoCourseValues];
     const selectedCourse = allCourses.find(c => c.value === value);
     if (selectedCourse?.label.includes('Basico')) return 4;

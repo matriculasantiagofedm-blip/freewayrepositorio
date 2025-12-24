@@ -14,14 +14,12 @@ import {
   serverTimestamp,
   doc,
   setDoc,
-  getDoc,
+  getDocs,
   updateDoc,
-  runTransaction,
   query,
+  where,
   orderBy,
   limit,
-  getDocs,
-  where,
 } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { sendAutomatedDeadlineReminders } from '@/ai/flows/automated-deadline-reminders';
@@ -45,7 +43,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { CalendarIcon, PlusCircle, Save, Trash2 } from 'lucide-react';
+import { PlusCircle, Save, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
@@ -56,6 +54,8 @@ import { useCurrentRole } from '@/hooks/use-current-role';
 import { AutoMotoContractTemplatePreview } from './auto-moto-contract-preview';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
+import { DatePicker } from './ui/date-picker';
+
 
 const toDateString = (date?: Date): string => {
     if (!date) return '';
@@ -303,7 +303,10 @@ export function ContractForm() {
     const querySnapshot = await getDocs(clientQuery);
 
     if (!querySnapshot.empty) {
-        return querySnapshot.docs[0].id;
+        // Actualizar el cliente existente si es necesario (nombre, email)
+        const clientDoc = querySnapshot.docs[0];
+        await updateDoc(clientDoc.ref, { name: clientName, email: clientEmail });
+        return clientDoc.id;
     }
 
     const newClientDocRef = doc(clientsRef);
@@ -708,14 +711,11 @@ export function ContractForm() {
                         render={({ field }) => (
                             <FormItem className="flex flex-col">
                                 <FormLabel>Fecha Límite de Pago del Saldo</FormLabel>
-                                <FormControl>
-                                    <Input
-                                        type="date"
-                                        value={toDateString(field.value)}
-                                        onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
-                                        disabled={form.getValues('autoMotoDetails.balance') === 0}
-                                    />
-                                </FormControl>
+                                <DatePicker 
+                                    date={field.value}
+                                    onDateChange={field.onChange}
+                                    disabled={form.getValues('autoMotoDetails.balance') === 0}
+                                />
                                 <FormDescription>
                                     {form.getValues('autoMotoDetails.balance') === 0 ? 'No aplica, ya que el curso está cancelado en su totalidad.' : 'Fecha máxima para cancelar el 50% restante.'}
                                 </FormDescription>
@@ -832,13 +832,7 @@ export function ContractForm() {
                                         render={({ field }) => (
                                             <FormItem className="flex flex-col">
                                                 <FormLabel>Fecha Teórica {index + 1}</FormLabel>
-                                                <FormControl>
-                                                    <Input
-                                                        type="date"
-                                                        value={toDateString(field.value)}
-                                                        onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
-                                                    />
-                                                </FormControl>
+                                                <DatePicker date={field.value} onDateChange={field.onChange} />
                                                 <FormMessage />
                                             </FormItem>
                                         )}
@@ -861,13 +855,7 @@ export function ContractForm() {
                                       render={({ field }) => (
                                           <FormItem className="flex flex-col">
                                             <FormLabel className="sr-only">Fecha</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    type="date"
-                                                    value={toDateString(field.value)}
-                                                    onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
-                                                />
-                                            </FormControl>
+                                            <DatePicker date={field.value} onDateChange={field.onChange} />
                                             <FormMessage />
                                           </FormItem>
                                       )}
@@ -1053,13 +1041,7 @@ export function ContractForm() {
                                           render={({ field }) => (
                                             <FormItem className="flex flex-col">
                                                   <FormLabel>Fecha Cuota {i}</FormLabel>
-                                                  <FormControl>
-                                                      <Input
-                                                          type="date"
-                                                          value={toDateString(field.value)}
-                                                          onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
-                                                      />
-                                                  </FormControl>
+                                                   <DatePicker date={field.value} onDateChange={field.onChange} />
                                                   <FormMessage />
                                               </FormItem>
                                           )}
@@ -1070,13 +1052,7 @@ export function ContractForm() {
                                           render={({ field }) => (
                                              <FormItem className="flex flex-col">
                                                   <FormLabel>Fecha Cuota {i + 3}</FormLabel>
-                                                  <FormControl>
-                                                      <Input
-                                                          type="date"
-                                                          value={toDateString(field.value)}
-                                                          onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
-                                                      />
-                                                  </FormControl>
+                                                  <DatePicker date={field.value} onDateChange={field.onChange} />
                                                   <FormMessage />
                                               </FormItem>
                                           )}
@@ -1173,13 +1149,7 @@ export function ContractForm() {
                                   render={({ field }) => (
                                     <FormItem className="flex flex-col">
                                           <FormLabel>Fecha Semana {i + 1}</FormLabel>
-                                          <FormControl>
-                                              <Input
-                                                  type="date"
-                                                  value={toDateString(field.value)}
-                                                  onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
-                                              />
-                                          </FormControl>
+                                          <DatePicker date={field.value} onDateChange={field.onChange} />
                                           <FormMessage />
                                       </FormItem>
                                   )}
@@ -1206,13 +1176,7 @@ export function ContractForm() {
                                 render={({ field }) => (
                                   <FormItem className="flex flex-col">
                                     <FormLabel>Fecha</FormLabel>
-                                     <FormControl>
-                                        <Input
-                                            type="date"
-                                            value={toDateString(field.value)}
-                                            onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
-                                        />
-                                    </FormControl>
+                                    <DatePicker date={field.value} onDateChange={field.onChange} />
                                     <FormMessage />
                                   </FormItem>
                                 )}
@@ -1342,13 +1306,7 @@ export function ContractForm() {
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
                         <FormLabel>Fecha</FormLabel>
-                        <FormControl>
-                            <Input
-                                type="date"
-                                value={toDateString(field.value)}
-                                onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
-                            />
-                        </FormControl>
+                        <DatePicker date={field.value} onDateChange={field.onChange} />
                         <FormMessage />
                       </FormItem>
                     )}

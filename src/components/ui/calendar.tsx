@@ -3,12 +3,15 @@
 import * as React from "react"
 import { es } from "date-fns/locale"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { DayPicker } from "react-day-picker"
+import { DayPicker, type DateFormatter } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
+import { format } from "date-fns"
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
+
+const formatDay: DateFormatter = (day) => format(day, 'd');
 
 function Calendar({
   className,
@@ -22,6 +25,7 @@ function Calendar({
       weekStartsOn={1}
       showOutsideDays={showOutsideDays}
       className={cn("p-3", className)}
+      formatters={{ formatDay }}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",

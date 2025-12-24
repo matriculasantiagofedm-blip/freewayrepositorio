@@ -57,8 +57,8 @@ import { useCurrentRole } from '@/hooks/use-current-role';
 import { AutoMotoContractTemplatePreview } from './auto-moto-contract-preview';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
-import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 
 
@@ -151,6 +151,7 @@ const panamaHolidays: Date[] = [
   new Date(2025, 11, 25), // Navidad
 ];
 
+const holidaysMatcher = { daysOfWeek: [0, 6], ...panamaHolidays.map(d => new Date(d)) };
 
 const DatePickerField = ({
   value,
@@ -182,11 +183,13 @@ const DatePickerField = ({
           selected={value}
           onSelect={onChange}
           initialFocus
-          disabled={[
-            ...panamaHolidays,
-            { dayOfWeek: [0, 6] }, // Sábados y Domingos
-            { before: new Date() } // Días pasados
-          ]}
+          disabled={{ before: new Date() }}
+          modifiers={{
+            holiday: holidaysMatcher,
+          }}
+          modifiersStyles={{
+            holiday: { color: 'red' },
+          }}
         />
       </PopoverContent>
     </Popover>

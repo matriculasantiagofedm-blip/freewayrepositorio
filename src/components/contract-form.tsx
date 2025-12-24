@@ -491,62 +491,64 @@ export function ContractForm() {
               <div className="space-y-6 pt-4">
                  <div className="space-y-4">
                    <h3 className="text-lg font-medium text-primary border-b pb-2">Datos del Estudiante</h3>
-                    <FormField
-                      control={form.control}
-                      name="clientName"
-                      render={({ field }) => (
-                          <FormItem>
-                              <FormLabel>Nombre del Estudiante</FormLabel>
-                              <FormControl>
-                                  <Input placeholder="ej., Juan Pérez" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                          </FormItem>
-                      )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="clientEmail"
-                        render={({ field }) => (
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="clientName"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Nombre del Estudiante</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="ej., Juan Pérez" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="clientEmail"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Email del Estudiante</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="estudiante@ejemplo.com" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="autoMotoDetails.studentIdNumber"
+                            render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Email del Estudiante</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="estudiante@ejemplo.com" {...field} />
-                                </FormControl>
-                                <FormMessage />
+                                <FormLabel>Cédula/Pasaporte</FormLabel>
+                                <FormControl><Input {...field} value={field.value || ''} /></FormControl>
                             </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="autoMotoDetails.studentIdNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Cédula/Pasaporte</FormLabel>
-                            <FormControl><Input {...field} value={field.value || ''} /></FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="autoMotoDetails.studentAddress"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Domicilio</FormLabel>
-                            <FormControl><Input {...field} value={field.value || ''} /></FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="autoMotoDetails.studentPhone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Teléfono</FormLabel>
-                            <FormControl><Input {...field} value={field.value || ''} /></FormControl>
-                          </FormItem>
-                        )}
-                      />
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="autoMotoDetails.studentPhone"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Teléfono</FormLabel>
+                                <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                            </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="autoMotoDetails.studentAddress"
+                            render={({ field }) => (
+                            <FormItem className="md:col-span-2">
+                                <FormLabel>Domicilio</FormLabel>
+                                <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                            </FormItem>
+                            )}
+                        />
+                    </div>
                  </div>
 
                  <div className="space-y-4">
@@ -811,74 +813,74 @@ export function ContractForm() {
                   {/* DATOS DEL ESTUDIANTE */}
                   <div className="space-y-4">
                      <h3 className="text-lg font-medium text-primary border-b pb-2">Datos del Estudiante</h3>
-                     <FormField
-                        control={form.control}
-                        name="clientName"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Nombre del Estudiante</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="ej., Juan Pérez" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                      />
-                      <FormField
-                          control={form.control}
-                          name="clientEmail"
-                          render={({ field }) => (
-                              <FormItem>
-                                  <FormLabel>Email del Estudiante</FormLabel>
-                                  <FormControl>
-                                      <Input placeholder="estudiante@ejemplo.com" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                              </FormItem>
-                          )}
-                      />
-                     <FormField
-                        control={form.control}
-                        name="deluxeDetails.studentIdNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Cédula/Pasaporte del Estudiante</FormLabel>
-                            <FormControl><Input {...field} value={field.value || ''} /></FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="deluxeDetails.studentAddress"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Domicilio del Estudiante</FormLabel>
-                            <FormControl><Input {...field} value={field.value || ''} /></FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <div className="grid grid-cols-2 gap-4">
+                     <div className="grid md:grid-cols-2 gap-4">
                         <FormField
-                          control={form.control}
-                          name="deluxeDetails.studentPhone1"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Teléfono 1</FormLabel>
-                              <FormControl><Input {...field} value={field.value || ''} /></FormControl>
-                            </FormItem>
-                          )}
+                            control={form.control}
+                            name="clientName"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Nombre del Estudiante</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="ej., Juan Pérez" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
                         <FormField
-                          control={form.control}
-                          name="deluxeDetails.studentPhone2"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Teléfono 2</FormLabel>
-                              <FormControl><Input {...field} value={field.value || ''} /></FormControl>
-                            </FormItem>
-                          )}
+                            control={form.control}
+                            name="clientEmail"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Email del Estudiante</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="estudiante@ejemplo.com" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
-                      </div>
+                        <FormField
+                            control={form.control}
+                            name="deluxeDetails.studentIdNumber"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Cédula/Pasaporte</FormLabel>
+                                <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="deluxeDetails.studentPhone1"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Teléfono 1</FormLabel>
+                                <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="deluxeDetails.studentPhone2"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Teléfono 2</FormLabel>
+                                <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="deluxeDetails.studentAddress"
+                            render={({ field }) => (
+                            <FormItem className="md:col-span-2">
+                                <FormLabel>Domicilio</FormLabel>
+                                <FormControl><Input {...field} value={field.value || ''} /></FormControl>
+                            </FormItem>
+                            )}
+                        />
+                    </div>
                    </div>
 
                   {/* CLAUSULA SEGUNDA */}

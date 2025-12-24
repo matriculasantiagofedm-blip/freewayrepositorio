@@ -480,7 +480,11 @@ export function ContractForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Tipo de Contrato</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                   <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    disabled={!!contractTypeParam}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecciona un tipo de contrato" />

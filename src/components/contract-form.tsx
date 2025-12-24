@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -56,6 +55,7 @@ import { useCurrentRole } from '@/hooks/use-current-role';
 import { AutoMotoContractTemplatePreview } from './auto-moto-contract-preview';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
+import { DatePicker } from './ui/date-picker';
 
 
 const contractFormSchema = z.object({
@@ -73,7 +73,7 @@ const contractFormSchema = z.object({
   deadlines: z.array(
     z.object({
       description: z.string().min(3, 'La descripción del plazo es obligatoria.'),
-      date: z.string({ required_error: 'Se requiere una fecha.' }),
+      date: z.date({ required_error: 'Se requiere una fecha.' }),
     })
   ).optional(),
   deluxeDetails: z.object({
@@ -82,14 +82,14 @@ const contractFormSchema = z.object({
     studentPhone1: z.string().optional(),
     studentPhone2: z.string().optional(),
     paymentDetails: z.string().optional(),
-    paymentInstallments: z.array(z.string().optional()).optional(),
+    paymentInstallments: z.array(z.date().optional()).optional(),
     paymentAmount: z.number().optional(),
     vehicleTransmission: z.enum(['Automático', 'Manual']).optional(),
     licenseCategory: z.enum(['A, C', 'A, C, D']).optional(),
     theoreticalClassSchedule: z.enum(['Lunes', 'Miércoles']).optional(),
-    theoreticalClasses: z.array(z.string().optional()).optional(),
+    theoreticalClasses: z.array(z.date().optional()).optional(),
     classSchedules: z.array(z.object({
-      date: z.string().optional(),
+      date: z.date().optional(),
       time: z.string().optional(),
     })).optional(),
   }).optional(),
@@ -101,14 +101,14 @@ const contractFormSchema = z.object({
     courseValue: z.number().optional(),
     downPayment: z.number().optional(),
     balance: z.number().optional(),
-    paymentDeadline: z.string().optional(),
+    paymentDeadline: z.date().optional(),
     vehicle: z.enum(['Spark', 'P. Blanco', 'P. Bronce', 'Moto']).optional(),
     vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).optional(),
     licenseCategory: z.enum(['A, C', 'A, C, D', 'A, B']).optional(),
     theoreticalClassSchedule: z.enum(['Dias de Semana de 8:00 am a 10:00 am', 'Sábados de 3:00 pm a 5:00 pm']).optional(),
-    theoreticalClassDates: z.array(z.string().optional()).optional(),
+    theoreticalClassDates: z.array(z.date().optional()).optional(),
     practicalClassSchedules: z.array(z.object({
-      date: z.string().optional(),
+      date: z.date().optional(),
       time: z.string().optional(),
     })).optional(),
   }).optional(),
@@ -167,13 +167,13 @@ export function ContractForm() {
         studentPhone1: '',
         studentPhone2: '',
         paymentDetails: 'El valor total del curso es de B/201.00, mas una matricula de B/15.00',
-        paymentInstallments: Array(6).fill(''),
+        paymentInstallments: Array(6).fill(undefined),
         paymentAmount: 33.50,
         vehicleTransmission: undefined,
         licenseCategory: undefined,
         theoreticalClassSchedule: undefined,
-        theoreticalClasses: Array(10).fill(''),
-        classSchedules: [{ date: '', time: '' }],
+        theoreticalClasses: Array(10).fill(undefined),
+        classSchedules: [{ date: undefined, time: '' }],
       },
       autoMotoDetails: {
         studentIdNumber: '',
@@ -183,7 +183,7 @@ export function ContractForm() {
         courseValue: undefined,
         downPayment: undefined,
         balance: 0,
-        paymentDeadline: '',
+        paymentDeadline: undefined,
         vehicle: undefined,
         vehicleTransmission: undefined,
         licenseCategory: undefined,
@@ -263,7 +263,7 @@ export function ContractForm() {
     const numClasses = getNumberOfPracticalClasses(cv);
     const currentSchedules = form.getValues('autoMotoDetails.practicalClassSchedules') || [];
     if (currentSchedules.length !== numClasses) {
-        const newSchedules = Array.from({ length: numClasses }, (_, i) => currentSchedules[i] || { date: '', time: '' });
+        const newSchedules = Array.from({ length: numClasses }, (_, i) => currentSchedules[i] || { date: undefined, time: '' });
         form.setValue('autoMotoDetails.practicalClassSchedules', newSchedules, { shouldValidate: true });
     }
 }, [courseValue, payFullCourse, form]);
@@ -272,7 +272,7 @@ export function ContractForm() {
   useEffect(() => {
     // Cuando cambia el horario, reiniciamos las fechas
     const currentDates = form.getValues('autoMotoDetails.theoreticalClassDates') || [];
-    const newDates = Array.from({ length: numberOfTheoreticalClasses }, (_, i) => currentDates[i] || '');
+    const newDates = Array.from({ length: numberOfTheoreticalClasses }, (_, i) => currentDates[i] || undefined);
     form.setValue('autoMotoDetails.theoreticalClassDates', newDates);
   }, [theoreticalClassSchedule, form, numberOfTheoreticalClasses]);
 
@@ -281,29 +281,38 @@ export function ContractForm() {
     if (!firestore) throw new Error("Firestore not available");
 
     const clientsRef = collection(firestore, 'clients');
-
+    
+    // 1. Build the query to find an existing client
+    let clientQuery;
     if (idNumber) {
-        const q = query(clientsRef, where("idNumber", "==", idNumber), where("userId", "==", userId));
-        const querySnapshot = await getDocs(q);
+        // More specific query: find by ID number and user ID
+        clientQuery = query(clientsRef, where("idNumber", "==", idNumber), where("userId", "==", userId));
+    } else {
+        // Less specific query: find by email and user ID
+        clientQuery = query(clientsRef, where("email", "==", clientEmail), where("userId", "==", userId));
+    }
+    
+    const querySnapshot = await getDocs(clientQuery);
 
-        if (!querySnapshot.empty) {
-            return querySnapshot.docs[0].id;
-        }
+    // 2. Check if a client was found
+    if (!querySnapshot.empty) {
+        // If found, return the ID of the first match
+        return querySnapshot.docs[0].id;
     }
 
+    // 3. If no client was found, create a new one
     const newClientDocRef = doc(clientsRef);
-    const newClientId = newClientDocRef.id;
     const newClientData: Client = {
-        id: newClientId,
+        id: newClientDocRef.id,
         name: clientName,
         email: clientEmail,
         idNumber: idNumber || '',
-        userId: userId,
+        userId: userId, // Ensure userId is set on creation
         createdAt: serverTimestamp() as any,
     };
 
     await setDoc(newClientDocRef, newClientData);
-    return newClientId;
+    return newClientDocRef.id;
 }
 
 
@@ -366,7 +375,7 @@ export function ContractForm() {
           title: data.title,
           content: contractContent,
           type: data.type,
-          deadlines: data.deadlines?.map(d => ({...d, date: new Date(d.date)})) || [],
+          deadlines: data.deadlines || [],
           clientId: clientId,
           clientEmail: data.clientEmail,
           clientName: data.clientName,
@@ -383,7 +392,7 @@ export function ContractForm() {
           
           newContractData.deluxeDetails = {
             ...sanitizedDeluxeDetails,
-            classSchedules: data.deluxeDetails.classSchedules?.map(cs => ({...cs, date: cs.date ? new Date(cs.date) : new Date() }))
+            classSchedules: data.deluxeDetails.classSchedules?.map(cs => ({...cs, date: cs.date || new Date() }))
           };
       }
       
@@ -405,9 +414,10 @@ export function ContractForm() {
       await updateDoc(newContractRef, { id: contractId });
 
       if ((data.type === 'Curso Auto' || data.type === 'Curso Moto') && data.autoMotoDetails?.practicalClassSchedules?.length) {
-        const practicalClasses = data.autoMotoDetails.practicalClassSchedules.filter(
-          (c): c is { date: string; time: string } => !!c.date && !!c.time
-        );
+        const practicalClasses = data.autoMotoDetails.practicalClassSchedules
+          .filter(c => c.date && c.time)
+          .map(c => ({ date: c.date!.toISOString().split('T')[0], time: c.time! }));
+          
         if (practicalClasses.length > 0) {
           const syncResult = await syncWithGoogleCalendar({
             clientName: data.clientName,
@@ -441,7 +451,7 @@ export function ContractForm() {
           userEmail: user.email || 'legaleagle@example.com', 
           deadlines: data.deadlines.map(d => ({
               ...d,
-              date: d.date // Date is already a string in YYYY-MM-DD format
+              date: d.date.toISOString().split('T')[0] // Format date to YYYY-MM-DD string
           })),
         });
       }
@@ -691,19 +701,17 @@ export function ContractForm() {
                         control={form.control}
                         name="autoMotoDetails.paymentDeadline"
                         render={({ field }) => (
-                            <FormItem>
+                            <FormItem className="flex flex-col">
                                 <FormLabel>Fecha Límite de Pago del Saldo</FormLabel>
-                                <FormControl>
-                                    <Input 
-                                        type="date" 
-                                        {...field} 
-                                        value={field.value || ''}
-                                        disabled={form.getValues('autoMotoDetails.balance') === 0}
-                                    />
-                                </FormControl>
+                                 <DatePicker
+                                    date={field.value}
+                                    onDateSelect={field.onChange}
+                                    disabled={form.getValues('autoMotoDetails.balance') === 0}
+                                />
                                 <FormDescription>
                                     {form.getValues('autoMotoDetails.balance') === 0 ? 'No aplica, ya que el curso está cancelado en su totalidad.' : 'Fecha máxima para cancelar el 50% restante.'}
                                 </FormDescription>
+                                <FormMessage />
                             </FormItem>
                         )}
                       />
@@ -814,11 +822,10 @@ export function ContractForm() {
                                         control={form.control}
                                         name={`autoMotoDetails.theoreticalClassDates.${index}`}
                                         render={({ field }) => (
-                                            <FormItem>
+                                            <FormItem className="flex flex-col">
                                                 <FormLabel>Fecha Teórica {index + 1}</FormLabel>
-                                                <FormControl>
-                                                    <Input type="date" {...field} value={field.value || ''} />
-                                                </FormControl>
+                                                <DatePicker date={field.value} onDateSelect={field.onChange} />
+                                                <FormMessage />
                                             </FormItem>
                                         )}
                                     />
@@ -838,12 +845,10 @@ export function ContractForm() {
                                       control={form.control}
                                       name={`autoMotoDetails.practicalClassSchedules.${index}.date`}
                                       render={({ field }) => (
-                                          <FormItem>
-                                          <FormLabel className="sr-only">Fecha</FormLabel>
-                                          <FormControl>
-                                              <Input type="date" {...field} value={field.value || ''} />
-                                          </FormControl>
-                                          <FormMessage />
+                                          <FormItem className="flex flex-col">
+                                            <FormLabel className="sr-only">Fecha</FormLabel>
+                                            <DatePicker date={field.value} onDateSelect={field.onChange} />
+                                            <FormMessage />
                                           </FormItem>
                                       )}
                                   />
@@ -1026,11 +1031,9 @@ export function ContractForm() {
                                           control={form.control}
                                           name={`deluxeDetails.paymentInstallments.${i - 1}`}
                                           render={({ field }) => (
-                                              <FormItem>
+                                            <FormItem className="flex flex-col">
                                                   <FormLabel>Fecha Cuota {i}</FormLabel>
-                                                  <FormControl>
-                                                    <Input type="date" {...field} value={field.value || ''} />
-                                                  </FormControl>
+                                                  <DatePicker date={field.value} onDateSelect={field.onChange} />
                                                   <FormMessage />
                                               </FormItem>
                                           )}
@@ -1039,11 +1042,9 @@ export function ContractForm() {
                                           control={form.control}
                                           name={`deluxeDetails.paymentInstallments.${i + 2}`}
                                           render={({ field }) => (
-                                              <FormItem>
+                                             <FormItem className="flex flex-col">
                                                   <FormLabel>Fecha Cuota {i + 3}</FormLabel>
-                                                  <FormControl>
-                                                    <Input type="date" {...field} value={field.value || ''} />
-                                                  </FormControl>
+                                                  <DatePicker date={field.value} onDateSelect={field.onChange} />
                                                   <FormMessage />
                                               </FormItem>
                                           )}
@@ -1138,11 +1139,9 @@ export function ContractForm() {
                                   control={form.control}
                                   name={`deluxeDetails.theoreticalClasses.${i}`}
                                   render={({ field }) => (
-                                      <FormItem>
+                                    <FormItem className="flex flex-col">
                                           <FormLabel>Fecha Semana {i + 1}</FormLabel>
-                                          <FormControl>
-                                            <Input type="date" {...field} value={field.value || ''} />
-                                          </FormControl>
+                                          <DatePicker date={field.value} onDateSelect={field.onChange} />
                                           <FormMessage />
                                       </FormItem>
                                   )}
@@ -1167,11 +1166,9 @@ export function ContractForm() {
                                 control={form.control}
                                 name={`deluxeDetails.classSchedules.${index}.date`}
                                 render={({ field }) => (
-                                  <FormItem>
+                                  <FormItem className="flex flex-col">
                                     <FormLabel>Fecha</FormLabel>
-                                    <FormControl>
-                                        <Input type="date" {...field} value={field.value || ''} />
-                                    </FormControl>
+                                    <DatePicker date={field.value} onDateSelect={field.onChange} />
                                     <FormMessage />
                                   </FormItem>
                                 )}
@@ -1195,7 +1192,7 @@ export function ContractForm() {
                             </div>
                           </div>
                         ))}
-                        <Button type="button" variant="outline" size="sm" onClick={() => appendClass({ date: '', time: '' })} className="mt-4">
+                        <Button type="button" variant="outline" size="sm" onClick={() => appendClass({ date: undefined, time: '' })} className="mt-4">
                             <PlusCircle className="mr-2 h-4 w-4" /> Añadir Clase Práctica
                         </Button>
                       </div>
@@ -1299,11 +1296,9 @@ export function ContractForm() {
                     control={form.control}
                     name={`deadlines.${index}.date`}
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="flex flex-col">
                         <FormLabel>Fecha</FormLabel>
-                        <FormControl>
-                            <Input type="date" {...field} value={field.value || ''} />
-                        </FormControl>
+                        <DatePicker date={field.value} onDateSelect={field.onChange} />
                         <FormMessage />
                       </FormItem>
                     )}
@@ -1315,7 +1310,7 @@ export function ContractForm() {
                   variant="outline"
                   size="sm"
                   className="w-full"
-                  onClick={() => append({ description: '', date: '' })}
+                  onClick={() => append({ description: '', date: new Date() })}
                   >
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Añadir Vencimiento

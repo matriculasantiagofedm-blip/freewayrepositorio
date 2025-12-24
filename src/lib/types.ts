@@ -4,11 +4,11 @@ import type { Timestamp } from 'firebase/firestore';
 export interface Deadline {
   id: string;
   description: string;
-  date: string;
+  date: Date;
 }
 
 export interface ClassSchedule {
-  date: string;
+  date: Date;
   time: string;
 }
 
@@ -37,10 +37,10 @@ export interface DeluxeContractDetails {
   vehicleTransmission: 'Automático' | 'Manual';
   licenseCategory: 'A, C' | 'A, C, D';
   theoreticalClassSchedule?: 'Lunes' | 'Miércoles';
-  theoreticalClasses?: string[];
-  classSchedules: ClassSchedule[];
+  theoreticalClasses?: (Date | undefined)[];
+  classSchedules: { date?: Date; time?: string }[];
   paymentDetails: string;
-  paymentInstallments?: string[];
+  paymentInstallments?: (Date | undefined)[];
   paymentAmount?: number;
 }
 
@@ -52,13 +52,13 @@ export interface AutoMotoContractDetails {
   courseValue?: number;
   downPayment?: number;
   balance?: number;
-  paymentDeadline?: string;
+  paymentDeadline?: Date;
   vehicle?: 'Spark' | 'P. Blanco' | 'P. Bronce' | 'Moto';
   vehicleTransmission?: 'Automático' | 'Manual' | 'Moto';
   licenseCategory?: 'A, C' | 'A, C, D' | 'A, B';
   theoreticalClassSchedule?: string;
-  theoreticalClassDates?: string[];
-  practicalClassSchedules?: { date?: string; time?: string }[];
+  theoreticalClassDates?: (Date | undefined)[];
+  practicalClassSchedules?: { date?: Date; time?: string }[];
 }
 
 

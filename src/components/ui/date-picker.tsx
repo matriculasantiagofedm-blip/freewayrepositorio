@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { format, isPast, isSunday } from 'date-fns';
+import { format, isPast, isSunday, isSaturday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -60,11 +60,13 @@ export function DatePicker({ date, onDateChange, disabled }: DatePickerProps) {
   
   const modifiers = {
     sunday: (day: Date) => isSunday(day),
+    saturday: (day: Date) => isSaturday(day),
     holiday: (day: Date) => isHoliday(day),
   };
 
   const modifiersStyles = {
     sunday: { color: 'hsl(var(--destructive))' },
+    saturday: { color: 'hsl(var(--destructive))' },
     holiday: { color: 'hsl(var(--destructive))' },
   };
 
@@ -89,8 +91,6 @@ export function DatePicker({ date, onDateChange, disabled }: DatePickerProps) {
           selected={date}
           onSelect={onDateChange}
           disabled={(day) => isPast(day) && !isToday(day)}
-          locale={es}
-          weekStartsOn={1}
           modifiers={modifiers}
           modifiersStyles={modifiersStyles}
           initialFocus

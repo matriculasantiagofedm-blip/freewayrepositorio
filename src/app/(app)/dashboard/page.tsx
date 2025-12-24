@@ -129,7 +129,7 @@ export default function DashboardPage() {
                   Curso Moto
               </Link>
           </Button>
-           <Button asChild variant="outline" className="h-24 text-lg">
+           <Button asChild variant="outline" className="h-24 text-lg" disabled>
               <Link href="/contracts/new?type=Curso%20Mixto" className="flex items-center gap-4">
                   <Combine className="h-8 w-8" />
                   Curso Mixto
@@ -141,7 +141,7 @@ export default function DashboardPage() {
                   Curso Deluxe
               </Link>
           </Button>
-           <Button asChild variant="outline" className="h-24 text-lg">
+           <Button asChild variant="outline" className="h-24 text-lg" disabled>
               <Link href="/contracts/new?type=Ampliaciones" className="flex items-center gap-4">
                   <Plus className="h-8 w-8" />
                   Ampliaciones

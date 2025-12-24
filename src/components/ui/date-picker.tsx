@@ -61,7 +61,6 @@ export function DatePicker({ date, onDateChange, disabled }: DatePickerProps) {
   const modifiers = {
     sunday: (day: Date) => isSunday(day),
     holiday: (day: Date) => isHoliday(day),
-    weekend: (day: Date) => isSaturday(day) || isSunday(day),
   };
 
   const modifiersStyles = {
@@ -91,6 +90,7 @@ export function DatePicker({ date, onDateChange, disabled }: DatePickerProps) {
           onSelect={onDateChange}
           disabled={(day) => isPast(day) && !isToday(day)}
           locale={es}
+          weekStartsOn={1}
           modifiers={modifiers}
           modifiersStyles={modifiersStyles}
           initialFocus

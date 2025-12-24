@@ -53,6 +53,7 @@ import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import type { Client, DeluxeContractDetails, ContractType, Contract, AutoMotoContractDetails } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { AutoMotoContractTemplatePreview } from './auto-moto-contract-preview';
+import { Switch } from './ui/switch';
 
 
 const contractFormSchema = z.object({
@@ -141,7 +142,7 @@ export function ContractForm() {
   const searchParams = useSearchParams();
   const timeSlots = generateTimeSlots();
   const { role } = useCurrentRole();
-  const [balance, setBalance] = useState<string>('0.00');
+  const [payFullCourse, setPayFullCourse] = useState(false);
 
   
   const contractTypeParam = searchParams.get('type') as ContractType | null;
@@ -201,6 +202,7 @@ export function ContractForm() {
   const allFormValues = form.watch();
   const paymentAmount = form.watch('deluxeDetails.paymentAmount');
   const courseValue = form.watch('autoMotoDetails.courseValue');
+  const downPayment = form.watch('autoMotoDetails.downPayment');
   const vehicle = form.watch('autoMotoDetails.vehicle');
   const theoreticalClassSchedule = form.watch('autoMotoDetails.theoreticalClassSchedule');
 
@@ -240,22 +242,20 @@ export function ContractForm() {
   useEffect(() => {
     const cv = courseValue || 0;
     if (cv > 0) {
-      const half = cv / 2;
-      const newBalance = cv - half;
-      form.setValue('autoMotoDetails.downPayment', parseFloat(half.toFixed(2)));
-      form.setValue('autoMotoDetails.balance', parseFloat(newBalance.toFixed(2)));
-      setBalance(newBalance.toFixed(2));
+        const payment = payFullCourse ? cv : cv / 2;
+        const newBalance = cv - payment;
+        form.setValue('autoMotoDetails.downPayment', parseFloat(payment.toFixed(2)));
+        form.setValue('autoMotoDetails.balance', parseFloat(newBalance.toFixed(2)));
     } else {
-      form.setValue('autoMotoDetails.downPayment', undefined);
-      form.setValue('autoMotoDetails.balance', 0);
-      setBalance('0.00');
+        form.setValue('autoMotoDetails.downPayment', undefined);
+        form.setValue('autoMotoDetails.balance', 0);
     }
-    
+
     const numClasses = getNumberOfPracticalClasses(cv);
     const currentSchedules = form.getValues('autoMotoDetails.practicalClassSchedules') || [];
     const newSchedules = Array.from({ length: numClasses }, (_, i) => currentSchedules[i] || { date: '', time: '' });
     form.setValue('autoMotoDetails.practicalClassSchedules', newSchedules);
-  }, [courseValue, form]);
+}, [courseValue, payFullCourse, form]);
 
   useEffect(() => {
     // Cuando cambia el horario, reiniciamos las fechas
@@ -553,35 +553,61 @@ export function ContractForm() {
 
                  <div className="space-y-4">
                     <h3 className="text-lg font-medium text-primary border-b pb-2">Cláusula Primera: Valor y Forma de Pago</h3>
-                    <div className="grid grid-cols-3 gap-4">
-                       <FormField
-                            control={form.control}
-                            name="autoMotoDetails.courseValue"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Valor Total del Curso (B/.)</FormLabel>
-                                    <Select
-                                        onValueChange={(value) => field.onChange(value ? parseFloat(value) : undefined)}
-                                        defaultValue={field.value?.toString()}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Seleccione un plan" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {(contractType === 'Curso Auto' ? autoCourseValues : motoCourseValues).map(option => (
-                                                <SelectItem key={option.value} value={option.value.toString()}>
-                                                    {option.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
+                     <FormField
+                        control={form.control}
+                        name="autoMotoDetails.courseValue"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Plan del Curso</FormLabel>
+                                <Select
+                                    onValueChange={(value) => {
+                                        const numValue = value ? parseFloat(value) : undefined;
+                                        field.onChange(numValue);
+                                        setPayFullCourse(false); // Reset on plan change
+                                    }}
+                                    defaultValue={field.value?.toString()}
+                                >
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Seleccione un plan" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {(contractType === 'Curso Auto' ? autoCourseValues : motoCourseValues).map(option => (
+                                            <SelectItem key={option.value} value={option.value.toString()}>
+                                                {option.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    
+                    <div className="flex items-center space-x-2 pt-4">
+                        <Switch
+                            id="pay-full-course"
+                            checked={payFullCourse}
+                            onCheckedChange={setPayFullCourse}
+                            disabled={!courseValue}
                         />
-                        <FormField
+                        <Label htmlFor="pay-full-course">¿Cancelar la totalidad del curso (100%)?</Label>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                       <FormItem>
+                            <FormLabel>Valor Total (B/.)</FormLabel>
+                            <FormControl>
+                                <Input 
+                                    type="text"
+                                    value={courseValue ? courseValue.toFixed(2) : '0.00'}
+                                    readOnly
+                                    className="bg-muted font-bold"
+                                />
+                            </FormControl>
+                        </FormItem>
+                         <FormField
                             control={form.control}
                             name="autoMotoDetails.downPayment"
                             render={({ field }) => (
@@ -591,7 +617,7 @@ export function ContractForm() {
                                         <Input 
                                             type="text" 
                                             {...field} 
-                                            value={field.value?.toFixed(2) ?? ''}
+                                            value={field.value ? field.value.toFixed(2) : '0.00'}
                                             readOnly
                                             className="bg-muted"
                                         />
@@ -599,17 +625,23 @@ export function ContractForm() {
                                 </FormItem>
                             )}
                         />
-                         <FormItem>
-                            <FormLabel>Saldo (B/.)</FormLabel>
-                            <FormControl>
-                                <Input 
-                                    type="text" 
-                                    value={balance}
-                                    readOnly
-                                    className="bg-muted"
-                                />
-                            </FormControl>
-                        </FormItem>
+                         <FormField
+                            control={form.control}
+                            name="autoMotoDetails.balance"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Saldo (B/.)</FormLabel>
+                                <FormControl>
+                                    <Input 
+                                        type="text" 
+                                        value={field.value ? field.value.toFixed(2) : '0.00'}
+                                        readOnly
+                                        className="bg-muted"
+                                    />
+                                </FormControl>
+                                </FormItem>
+                            )}
+                        />
                     </div>
                      <FormField
                         control={form.control}
@@ -618,6 +650,9 @@ export function ContractForm() {
                             <FormItem>
                                 <FormLabel>Fecha Límite de Pago del Saldo</FormLabel>
                                 <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                                <FormDescription>
+                                    {payFullCourse ? 'No aplica, ya que el curso está cancelado en su totalidad.' : 'Fecha máxima para cancelar el 50% restante.'}
+                                </FormDescription>
                             </FormItem>
                         )}
                       />

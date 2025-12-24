@@ -677,100 +677,90 @@ export function ContractForm() {
                  
                  <div className="space-y-4">
                     <h3 className="text-lg font-medium text-primary border-b pb-2">Cláusula Segunda: Detalles del Curso</h3>
-                    <FormField
-                        control={form.control}
-                        name="autoMotoDetails.vehicle"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Vehículo</FormLabel>
-                                <Select
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                >
-                                    <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Seleccione un vehículo" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {contractType === 'Curso Auto' && (
-                                            <>
-                                                <SelectItem value="Spark">Spark</SelectItem>
-                                                <SelectItem value="P. Blanco">Picanto Blanco</SelectItem>
-                                                <SelectItem value="P. Bronce">Picanto Bronce</SelectItem>
-                                            </>
-                                        )}
-                                        {contractType === 'Curso Moto' && (
-                                            <SelectItem value="Moto">Moto</SelectItem>
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="autoMotoDetails.vehicleTransmission"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Transmisión del Vehículo</FormLabel>
-                          <FormControl>
-                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
-                               {vehicle !== 'Moto' ? (
-                                <>
-                                  <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Automático" id="auto" /></FormControl><FormLabel htmlFor="auto" className="font-normal">Automático</FormLabel></FormItem>
-                                  <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Manual" id="manual" /></FormControl><FormLabel htmlFor="manual" className="font-normal">Manual</FormLabel></FormItem>
-                                </>
-                               ) : (
-                                <FormItem className="flex items-center space-x-2">
-                                  <FormControl><RadioGroupItem value="Moto" id="moto" /></FormControl>
-                                  <FormLabel htmlFor="moto" className="font-normal">Moto</FormLabel>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
+                        <FormField
+                            control={form.control}
+                            name="autoMotoDetails.vehicle"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Vehículo</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger><SelectValue placeholder="Seleccione un vehículo" /></SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {contractType === 'Curso Auto' && (
+                                                <>
+                                                    <SelectItem value="Spark">Spark</SelectItem>
+                                                    <SelectItem value="P. Blanco">Picanto Blanco</SelectItem>
+                                                    <SelectItem value="P. Bronce">Picanto Bronce</SelectItem>
+                                                </>
+                                            )}
+                                            {contractType === 'Curso Moto' && (<SelectItem value="Moto">Moto</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
                                 </FormItem>
-                              )}
-                            </RadioGroup>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="autoMotoDetails.licenseCategory"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Categoría de Licencia a Aplicar</FormLabel>
-                          <FormControl>
-                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4">
-                              <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="A, C" id="ac" /></FormControl><FormLabel htmlFor="ac" className="font-normal">A, C</FormLabel></FormItem>
-                              <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="A, C, D" id="acd" /></FormControl><FormLabel htmlFor="acd" className="font-normal">A, C, D</FormLabel></FormItem>
-                              {contractType === 'Curso Moto' && (
-                                <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="A, B" id="ab" /></FormControl><FormLabel htmlFor="ab" className="font-normal">A, B</FormLabel></FormItem>
-                              )}
-                            </RadioGroup>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                     <div>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="autoMotoDetails.vehicleTransmission"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Transmisión</FormLabel>
+                                    <FormControl>
+                                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4 pt-2">
+                                        {vehicle !== 'Moto' ? (
+                                            <>
+                                            <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Automático" id="auto" /></FormControl><FormLabel htmlFor="auto" className="font-normal">Automático</FormLabel></FormItem>
+                                            <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Manual" id="manual" /></FormControl><FormLabel htmlFor="manual" className="font-normal">Manual</FormLabel></FormItem>
+                                            </>
+                                        ) : (
+                                            <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="Moto" id="moto" /></FormControl><FormLabel htmlFor="moto" className="font-normal">Moto</FormLabel></FormItem>
+                                        )}
+                                        </RadioGroup>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="autoMotoDetails.licenseCategory"
+                            render={({ field }) => (
+                                <FormItem className="md:col-span-2">
+                                    <FormLabel>Categoría de Licencia a Aplicar</FormLabel>
+                                    <FormControl>
+                                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-4 pt-2">
+                                            <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="A, C" id="ac" /></FormControl><FormLabel htmlFor="ac" className="font-normal">A, C</FormLabel></FormItem>
+                                            <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="A, C, D" id="acd" /></FormControl><FormLabel htmlFor="acd" className="font-normal">A, C, D</FormLabel></FormItem>
+                                            {contractType === 'Curso Moto' && (<FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="A, B" id="ab" /></FormControl><FormLabel htmlFor="ab" className="font-normal">A, B</FormLabel></FormItem>)}
+                                        </RadioGroup>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+
+                    <div className="pt-4">
                         <h4 className="font-medium text-base mb-2">Horario y Fechas para clases teóricas</h4>
                         <FormField
                             control={form.control}
                             name="autoMotoDetails.theoreticalClassSchedule"
                             render={({ field }) => (
-                                <FormItem className="mt-4">
-                                    <FormLabel>Horario para clases teóricas</FormLabel>
+                                <FormItem>
                                     <FormControl>
                                         <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col gap-2">
-                                        <FormItem className="flex items-center space-x-2">
-                                            <FormControl><RadioGroupItem value="Dias de Semana de 8:00 am a 10:00 am" id="teorico-semana" /></FormControl>
-                                            <FormLabel htmlFor="teorico-semana" className="font-normal">Dias de Semana de 8:00 am a 10:00 am</FormLabel>
-                                        </FormItem>
-                                        <FormItem className="flex items-center space-x-2">
-                                            <FormControl><RadioGroupItem value="Sábados de 3:00 pm a 5:00 pm" id="teorico-sabado" /></FormControl>
-                                            <FormLabel htmlFor="teorico-sabado" className="font-normal">Sábados de 3:00 pm a 5:00 pm</FormLabel>
-                                        </FormItem>
+                                            <FormItem className="flex items-center space-x-2">
+                                                <FormControl><RadioGroupItem value="Dias de Semana de 8:00 am a 10:00 am" id="teorico-semana" /></FormControl>
+                                                <FormLabel htmlFor="teorico-semana" className="font-normal">Dias de Semana de 8:00 am a 10:00 am</FormLabel>
+                                            </FormItem>
+                                            <FormItem className="flex items-center space-x-2">
+                                                <FormControl><RadioGroupItem value="Sábados de 3:00 pm a 5:00 pm" id="teorico-sabado" /></FormControl>
+                                                <FormLabel htmlFor="teorico-sabado" className="font-normal">Sábados de 3:00 pm a 5:00 pm</FormLabel>
+                                            </FormItem>
                                         </RadioGroup>
                                     </FormControl>
                                     <FormMessage />
@@ -778,7 +768,7 @@ export function ContractForm() {
                             )}
                         />
                         {numberOfTheoreticalClasses > 0 && (
-                            <div className="grid grid-cols-2 gap-4 mt-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
                                 {Array.from({ length: numberOfTheoreticalClasses }).map((_, index) => (
                                     <FormField
                                         key={index}
@@ -786,7 +776,7 @@ export function ContractForm() {
                                         name={`autoMotoDetails.theoreticalClassDates.${index}`}
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Fecha Clase Teórica {index + 1}</FormLabel>
+                                                <FormLabel>Fecha Teórica {index + 1}</FormLabel>
                                                 <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
                                             </FormItem>
                                         )}
@@ -795,8 +785,9 @@ export function ContractForm() {
                             </div>
                         )}
                     </div>
-                    <div>
-                        <h4 className="font-medium text-base my-2">Horario para clases prácticas</h4>
+
+                    <div className="pt-4">
+                        <h4 className="font-medium text-base mb-2">Horario para clases prácticas</h4>
                         <div className="space-y-4">
                           {Array.from({ length: numberOfPracticalClasses }).map((_, index) => (
                             <div key={index} className="space-y-4 rounded-lg border p-4">

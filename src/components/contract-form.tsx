@@ -54,6 +54,7 @@ import type { Client, DeluxeContractDetails, ContractType, Contract, AutoMotoCon
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { AutoMotoContractTemplatePreview } from './auto-moto-contract-preview';
 import { Switch } from './ui/switch';
+import { Label } from './ui/label';
 
 
 const contractFormSchema = z.object({

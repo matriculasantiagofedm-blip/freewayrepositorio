@@ -56,6 +56,7 @@ import { useCurrentRole } from '@/hooks/use-current-role';
 import { AutoMotoContractTemplatePreview } from './auto-moto-contract-preview';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
+import { DatePicker } from './ui/date-picker';
 
 
 const contractFormSchema = z.object({
@@ -218,7 +219,8 @@ export function ContractForm() {
     : 0;
 
   const getNumberOfPracticalClasses = (value?: number) => {
-    if (!value || value === 57.00) return 0;
+    if (!value) return 0;
+    if (value === 57.00) return 2; // "Ya se manejar" tiene 2 clases prácticas
     const allCourses = [...autoCourseValues, ...motoCourseValues];
     const selectedCourse = allCourses.find(c => c.value === value);
     if (selectedCourse?.label.includes('Basico')) return 4;
@@ -696,7 +698,13 @@ export function ContractForm() {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Fecha Límite de Pago del Saldo</FormLabel>
-                                <FormControl><Input type="date" {...field} value={field.value || ''} disabled={form.getValues('autoMotoDetails.balance') === 0} /></FormControl>
+                                <FormControl>
+                                    <DatePicker
+                                        value={field.value ? new Date(field.value) : undefined}
+                                        onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                                        disabled={form.getValues('autoMotoDetails.balance') === 0}
+                                    />
+                                </FormControl>
                                 <FormDescription>
                                     {form.getValues('autoMotoDetails.balance') === 0 ? 'No aplica, ya que el curso está cancelado en su totalidad.' : 'Fecha máxima para cancelar el 50% restante.'}
                                 </FormDescription>
@@ -812,7 +820,12 @@ export function ContractForm() {
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Fecha Teórica {index + 1}</FormLabel>
-                                                <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                                                <FormControl>
+                                                    <DatePicker
+                                                        value={field.value ? new Date(field.value) : undefined}
+                                                        onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                                                    />
+                                                </FormControl>
                                             </FormItem>
                                         )}
                                     />
@@ -834,7 +847,12 @@ export function ContractForm() {
                                       render={({ field }) => (
                                           <FormItem>
                                           <FormLabel className="sr-only">Fecha</FormLabel>
-                                          <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                                          <FormControl>
+                                            <DatePicker
+                                                value={field.value ? new Date(field.value) : undefined}
+                                                onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                                            />
+                                          </FormControl>
                                           <FormMessage />
                                           </FormItem>
                                       )}
@@ -1021,7 +1039,10 @@ export function ContractForm() {
                                               <FormItem>
                                                   <FormLabel>Fecha Cuota {i}</FormLabel>
                                                   <FormControl>
-                                                      <Input type="date" {...field} value={field.value || ''} />
+                                                    <DatePicker
+                                                        value={field.value ? new Date(field.value) : undefined}
+                                                        onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                                                    />
                                                   </FormControl>
                                                   <FormMessage />
                                               </FormItem>
@@ -1034,7 +1055,10 @@ export function ContractForm() {
                                               <FormItem>
                                                   <FormLabel>Fecha Cuota {i + 3}</FormLabel>
                                                   <FormControl>
-                                                      <Input type="date" {...field} value={field.value || ''} />
+                                                     <DatePicker
+                                                        value={field.value ? new Date(field.value) : undefined}
+                                                        onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                                                    />
                                                   </FormControl>
                                                   <FormMessage />
                                               </FormItem>
@@ -1133,7 +1157,10 @@ export function ContractForm() {
                                       <FormItem>
                                           <FormLabel>Fecha Semana {i + 1}</FormLabel>
                                           <FormControl>
-                                              <Input type="date" {...field} value={field.value || ''} />
+                                              <DatePicker
+                                                  value={field.value ? new Date(field.value) : undefined}
+                                                  onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                                              />
                                           </FormControl>
                                           <FormMessage />
                                       </FormItem>
@@ -1161,7 +1188,12 @@ export function ContractForm() {
                                 render={({ field }) => (
                                   <FormItem>
                                     <FormLabel>Fecha</FormLabel>
-                                    <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                                    <FormControl>
+                                        <DatePicker
+                                            value={field.value ? new Date(field.value) : undefined}
+                                            onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                                        />
+                                    </FormControl>
                                     <FormMessage />
                                   </FormItem>
                                 )}
@@ -1292,7 +1324,10 @@ export function ContractForm() {
                       <FormItem>
                         <FormLabel>Fecha</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} value={field.value || ''} />
+                          <DatePicker
+                                value={field.value ? new Date(field.value) : undefined}
+                                onSelect={(date) => field.onChange(date?.toISOString().split('T')[0])}
+                            />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

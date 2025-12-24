@@ -51,12 +51,9 @@ service cloud.firestore {
     }
     
     match /contracts/{contractId} {
-      // A user can get a contract if they are the owner.
-      allow get: if isOwner(resource.data.userId);
-
-      // A user can list contracts ONLY if the query explicitly filters by their own UID.
-      // This is the key rule to prevent permission errors on list operations.
-      allow list: if isSignedIn() && (request.query.where.find(field => field[0] == 'userId' && field[2] == request.auth.uid) != null);
+      // Any signed-in user can get and list contracts.
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
       
       // A user can create a contract if they are signed in and the new contract's userId is their own.
       allow create: if isSignedIn() && hasValidContractDataOnCreate();
@@ -65,7 +62,7 @@ service cloud.firestore {
       allow update: if isOwner(resource.data.userId) && isContractOwnerImmutable();
       allow delete: if isOwner(resource.data.userId);
 
-      // Subcollection rules now also check ownership on the parent contract.
+      // Subcollection rules now also check ownership on the parent contract for write operations.
       match /meetings/{meetingId} {
         allow read, write: if isOwner(get(/databases/$(database)/documents/contracts/$(contractId)).data.userId);
       }

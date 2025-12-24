@@ -477,7 +477,7 @@ export function ContractForm() {
               control={form.control}
               name="title"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="hidden">
                   <FormLabel>Título del Contrato</FormLabel>
                   <FormControl>
                     <Input placeholder="ej., Contrato de Curso Auto" {...field} readOnly />

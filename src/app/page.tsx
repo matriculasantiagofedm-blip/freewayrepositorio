@@ -18,8 +18,8 @@ import { useRouter } from 'next/navigation';
 
 const roles = [
   { name: 'Ventas', icon: Briefcase, password: 'ventas123' },
-  { name: 'Ventas Externas', icon: UserCheck, password: 'externas123' },
-  { name: 'Administrador', icon: Shield, password: 'admin123' },
+  { name: 'Ventas Externas', icon: UserCheck, password: 'Ayax/2022' },
+  { name: 'Administrador', icon: Shield, password: 'Ayax/2022' },
 ];
 
 export default function LoginPage() {

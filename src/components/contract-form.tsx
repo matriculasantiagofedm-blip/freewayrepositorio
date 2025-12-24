@@ -336,6 +336,22 @@ export function ContractForm() {
 
     try {
       const studentIdNumber = data.deluxeDetails?.studentIdNumber || data.autoMotoDetails?.studentIdNumber;
+
+      if (role !== 'Administrador' && studentIdNumber) {
+        const contractsRef = collection(firestore, `clients/${user.uid}/contracts`);
+        const q = query(contractsRef, where('autoMotoDetails.studentIdNumber', '==', studentIdNumber), where('clientName', '==', data.clientName));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+            toast({
+                variant: 'destructive',
+                title: 'Estudiante Duplicado',
+                description: 'Ya existe un contrato para un estudiante con el mismo nombre y número de cédula.',
+            });
+            return;
+        }
+      }
+
       const folio = await getNextFolio(user.uid);
       const clientId = await findOrCreateClient(data.clientName, data.clientEmail, user.uid, studentIdNumber);
       

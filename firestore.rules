@@ -56,15 +56,32 @@ service cloud.firestore {
     function isExistingOwner(userId) {
       return isOwner(userId) && resource != null;
     }
+    
+    /**
+     * Checks if a client with the same idNumber already exists in the database.
+     * This is used to prevent creating duplicate clients.
+     */
+    function isClientDataUnique() {
+        let idNumber = request.resource.data.idNumber;
+        // Only check for uniqueness if an idNumber is provided and is not an empty string.
+        if (idNumber != null && idNumber != "") {
+            // Check if any document in the 'clients' collection has the same idNumber.
+            // Note: This query is limited to the first 10 documents for performance. 
+            // A more robust solution might require a Cloud Function for uniqueness at scale.
+            return get(/databases/$(database)/documents/clients?orderBy="idNumber"&equalTo=idNumber).size() == 0;
+        }
+        // If no idNumber is provided, we don't block the creation.
+        return true;
+    }
 
     // --- Create Validation Functions ---
 
     /**
      * Validates that a new client document contains an 'id' field that
-     * matches the document's path ID, ensuring data consistency.
+     * matches the document's path ID, and that the client data is unique.
      */
     function hasValidClientDataOnCreate(clientId) {
-      return request.resource.data.id == clientId;
+      return request.resource.data.id == clientId && isClientDataUnique();
     }
 
     /**

@@ -788,50 +788,50 @@ export function ContractForm() {
 
                     <div className="pt-4">
                         <h4 className="font-medium text-base mb-2">Horario para clases prácticas</h4>
-                        <div className="space-y-4">
-                          {Array.from({ length: numberOfPracticalClasses }).map((_, index) => (
-                            <div key={index} className="space-y-4 rounded-lg border p-4">
-                                <h4 className="font-medium pt-1">Clase Práctica #{index + 1}</h4>
-                                <div className="grid grid-cols-2 gap-4">
-                                  <FormField
-                                    control={form.control}
-                                    name={`autoMotoDetails.practicalClassSchedules.${index}.date`}
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>Fecha</FormLabel>
-                                        <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                  <FormField
-                                    control={form.control}
-                                    name={`autoMotoDetails.practicalClassSchedules.${index}.time`}
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>Hora</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccione un horario" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {practicalClassTimeSlots.map(slot => (
-                                                    <SelectItem key={slot} value={slot}>
-                                                        {slot}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
+                        {numberOfPracticalClasses > 0 && (
+                            <div className="grid grid-cols-1 gap-y-4 gap-x-4 rounded-lg border p-4">
+                                {Array.from({ length: numberOfPracticalClasses }).map((_, index) => (
+                                <div key={index} className="grid grid-cols-[auto_1fr_1fr] items-center gap-4">
+                                    <h5 className="font-medium text-sm">Clase {index + 1}</h5>
+                                    <FormField
+                                        control={form.control}
+                                        name={`autoMotoDetails.practicalClassSchedules.${index}.date`}
+                                        render={({ field }) => (
+                                            <FormItem>
+                                            <FormLabel className="sr-only">Fecha</FormLabel>
+                                            <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                                            <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name={`autoMotoDetails.practicalClassSchedules.${index}.time`}
+                                        render={({ field }) => (
+                                            <FormItem>
+                                            <FormLabel className="sr-only">Hora</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Seleccione horario" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {practicalClassTimeSlots.map(slot => (
+                                                        <SelectItem key={slot} value={slot}>
+                                                            {slot}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
                                 </div>
-                              </div>
-                          ))}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                  </div>
 

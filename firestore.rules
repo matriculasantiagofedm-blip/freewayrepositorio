@@ -165,7 +165,7 @@ service cloud.firestore {
     
     match /contracts/{contractId} {
         allow get: if isDocumentOwner(resource) || isAdmin();
-        allow list: if isSignedIn(); // Users can list, but query will filter
+        allow list: if isAdmin() || (isSignedIn() && request.query.where.find(field => field[0] == 'userId' && field[2] == request.auth.uid) != null);
         allow create: if hasValidContractDataOnCreate(request.auth.uid);
         allow update: if (isDocumentOwner(resource) || isAdmin()) && isContractOwnerImmutable();
         allow delete: if isDocumentOwner(resource) || isAdmin();

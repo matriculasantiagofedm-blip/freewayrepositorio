@@ -117,34 +117,34 @@ export default function DashboardPage() {
           Crear Nuevo Contrato
         </h2>
         <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-5">
-          <Button asChild variant="outline" className="h-24 text-lg">
-              <Link href="/contracts/new?type=Curso%20Auto" className="flex items-center gap-4">
+          <Button asChild className="h-24 text-lg bg-blue-600 hover:bg-blue-700 text-white">
+              <Link href="/contracts/new?type=Curso%20Auto" className="flex flex-col items-center justify-center gap-2">
                   <Car className="h-8 w-8" />
-                  Curso Auto
+                  <span>Curso Auto</span>
               </Link>
           </Button>
-           <Button asChild variant="outline" className="h-24 text-lg">
-              <Link href="/contracts/new?type=Curso%20Moto" className="flex items-center gap-4">
+           <Button asChild className="h-24 text-lg bg-red-600 hover:bg-red-700 text-white">
+              <Link href="/contracts/new?type=Curso%20Moto" className="flex flex-col items-center justify-center gap-2">
                   <Bike className="h-8 w-8" />
-                  Curso Moto
+                  <span>Curso Moto</span>
               </Link>
           </Button>
-           <Button asChild variant="outline" className="h-24 text-lg" disabled>
-              <Link href="/contracts/new?type=Curso%20Mixto" className="flex items-center gap-4">
+           <Button asChild className="h-24 text-lg bg-purple-600 hover:bg-purple-700 text-white" disabled>
+              <Link href="/contracts/new?type=Curso%20Mixto" className="flex flex-col items-center justify-center gap-2">
                   <Combine className="h-8 w-8" />
-                  Curso Mixto
+                  <span>Curso Mixto</span>
               </Link>
           </Button>
-           <Button asChild variant="outline" className="h-24 text-lg">
-              <Link href="/contracts/new?type=Curso%20Deluxe" className="flex items-center gap-4">
+           <Button asChild className="h-24 text-lg bg-yellow-500 hover:bg-yellow-600 text-white">
+              <Link href="/contracts/new?type=Curso%20Deluxe" className="flex flex-col items-center justify-center gap-2">
                   <Star className="h-8 w-8" />
-                  Curso Deluxe
+                  <span>Curso Deluxe</span>
               </Link>
           </Button>
-           <Button asChild variant="outline" className="h-24 text-lg" disabled>
-              <Link href="/contracts/new?type=Ampliaciones" className="flex items-center gap-4">
+           <Button asChild className="h-24 text-lg bg-gray-500 hover:bg-gray-600 text-white" disabled>
+              <Link href="/contracts/new?type=Ampliaciones" className="flex flex-col items-center justify-center gap-2">
                   <Plus className="h-8 w-8" />
-                  Ampliaciones
+                  <span>Ampliaciones</span>
               </Link>
           </Button>
         </div>

@@ -6,7 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { format, parseISO } from 'date-fns';
 
 import {
   collection,
@@ -47,7 +46,6 @@ import { PlusCircle, Save, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
-import { DeluxePremiumContractTemplatePreview } from './deluxe-premium-contract-preview';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import type { Client, DeluxeContractDetails, ContractType, Contract, AutoMotoContractDetails } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -59,9 +57,13 @@ const toDateString = (date?: Date | string): string => {
     if (!date) return '';
     try {
         if (typeof date === 'string') {
-            return date;
+            return date.split('T')[0]; // Asegurarse de que solo se use la parte de la fecha
         }
-        return format(date, 'yyyy-MM-dd');
+        const d = new Date(date);
+        const year = d.getFullYear();
+        const month = (d.getMonth() + 1).toString().padStart(2, '0');
+        const day = d.getDate().toString().padStart(2, '0');
+        return `${year}-${month}-${day}`;
     } catch {
         return '';
     }
@@ -129,11 +131,6 @@ const contractFormSchema = z.object({
 
 type ContractFormValues = z.infer<typeof contractFormSchema>;
 
-
-const generateTimeSlots = () => {
-    return ['08:00 AM', '10:00 AM', '01:00 PM', '03:00 PM'];
-};
-
 const autoCourseValues = [
   { label: 'Basico Auto 133.00', value: 133.00 },
   { label: 'Plus Auto 150.00', value: 150.00 },
@@ -147,6 +144,12 @@ const motoCourseValues = [
   { label: 'Ya se manejar moto B/.57.00', value: 57.00 },
 ];
 
+const mixtoCourseValues = [
+    { label: 'Auto - Moto Mixto B/ 290.00', value: 290.00 },
+    { label: 'Ya se manejar Mixto B/ 67.00', value: 67.00 },
+];
+
+
 const practicalClassTimeSlots = [
     '8:00 am a 10:00 am',
     '10:00 am a 12:00 md',
@@ -159,7 +162,6 @@ export function ContractForm() {
   const { firestore, user } = useFirebase();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const timeSlots = generateTimeSlots();
   const { role } = useCurrentRole();
   const [payFullCourse, setPayFullCourse] = useState(false);
 
@@ -214,16 +216,10 @@ export function ContractForm() {
     name: 'deadlines',
   });
 
-  const { fields: classFields, append: appendClass, remove: removeClass } = useFieldArray({
-    control: form.control,
-    name: 'deluxeDetails.classSchedules',
-  });
-
   const contractType = form.watch('type');
   const allFormValues = form.watch();
   const paymentAmount = form.watch('deluxeDetails.paymentAmount');
   const courseValue = form.watch('autoMotoDetails.courseValue');
-  const downPayment = form.watch('autoMotoDetails.downPayment');
   const vehicle = form.watch('autoMotoDetails.vehicle');
   const theoreticalClassSchedule = form.watch('autoMotoDetails.theoreticalClassSchedule');
 
@@ -234,7 +230,12 @@ export function ContractForm() {
 
   const getNumberOfPracticalClasses = (value?: number) => {
     if (!value) return 0;
-    if (value === 57.00) return 0; // "Ya se manejar" no tiene clases prácticas
+    if (value === 57.00 || value === 67.00) return 0;
+    
+    if (contractType === 'Curso Mixto') {
+      return value === 290 ? 5 : 0;
+    }
+
     const allCourses = [...autoCourseValues, ...motoCourseValues];
     const selectedCourse = allCourses.find(c => c.value === value);
     if (selectedCourse?.label.includes('Basico')) return 4;
@@ -249,8 +250,8 @@ export function ContractForm() {
     if (contractType) {
         form.setValue('title', `Contrato de ${contractType}`);
         if(contractType === 'Curso Mixto') {
-           form.setValue('autoMotoDetails.courseValue', 250);
-           const numClasses = 5;
+           const numClasses = getNumberOfPracticalClasses(form.getValues('autoMotoDetails.courseValue'));
+
            const currentSchedules = form.getValues('autoMotoDetails.practicalClassSchedules') || [];
            if (currentSchedules.length !== numClasses) {
                const newSchedules = Array.from({ length: numClasses }, (_, i) => currentSchedules[i] || { date: '', time: '' });
@@ -265,7 +266,7 @@ export function ContractForm() {
     } else {
         form.setValue('title', '');
     }
-  }, [contractType, form]);
+  }, [contractType, form, courseValue]);
 
   useEffect(() => {
     if (paymentAmount === 45.00) {
@@ -277,7 +278,7 @@ export function ContractForm() {
   
   useEffect(() => {
     const cv = courseValue || 0;
-    let isFullPaymentPlan = cv === 57.00;
+    let isFullPaymentPlan = cv === 57.00 || cv === 67.00;
 
     if (cv > 0) {
         const payment = (payFullCourse || isFullPaymentPlan) ? cv : cv / 2;
@@ -323,7 +324,6 @@ export function ContractForm() {
     const querySnapshot = await getDocs(clientQuery);
 
     if (!querySnapshot.empty) {
-        // Actualizar el cliente existente si es necesario (nombre, email)
         const clientDoc = querySnapshot.docs[0];
         await updateDoc(clientDoc.ref, { name: clientName, email: clientEmail });
         return clientDoc.id;
@@ -418,7 +418,7 @@ export function ContractForm() {
             ...data.deluxeDetails,
             paymentInstallments: data.deluxeDetails.paymentInstallments?.map(d => d || null),
             theoreticalClasses: data.deluxeDetails.theoreticalClasses?.map(d => d || null),
-            classSchedules: data.deluxeDetails.classSchedules?.map(cs => ({...cs, date: cs.date || new Date() })),
+            classSchedules: data.deluxeDetails.classSchedules?.map(cs => ({...cs, date: cs.date || null })),
           };
       }
       
@@ -475,7 +475,7 @@ export function ContractForm() {
           } else {
               toast({
                   title: 'Sincronizando con Calendario',
-                  description: `Se crearon ${syncResult.eventsCreated} clases prácticas en Google Calendar.`,
+                  description: `Se crearon ${syncResult.eventsCreated} eventos en Google Calendar.`,
               });
           }
         }
@@ -652,7 +652,6 @@ export function ContractForm() {
                                         setPayFullCourse(false); // Reset on plan change
                                     }}
                                     defaultValue={field.value?.toString()}
-                                    disabled={contractType === 'Curso Mixto'}
                                 >
                                     <FormControl>
                                         <SelectTrigger>
@@ -669,7 +668,11 @@ export function ContractForm() {
                                                 {option.label}
                                             </SelectItem>
                                         )) : contractType === 'Curso Mixto' ? (
-                                            <SelectItem value="250">Curso Mixto B/.250.00</SelectItem>
+                                            mixtoCourseValues.map(option => (
+                                                <SelectItem key={option.value} value={option.value.toString()}>
+                                                    {option.label}
+                                                </SelectItem>
+                                            ))
                                         ): null}
                                     </SelectContent>
                                 </Select>
@@ -678,7 +681,7 @@ export function ContractForm() {
                         )}
                     />
                     
-                    {courseValue !== 57.00 && (
+                    {courseValue !== 57.00 && courseValue !== 67.00 && (
                       <div className="flex items-center space-x-2 pt-4">
                           <Switch
                               id="pay-full-course"
@@ -746,7 +749,7 @@ export function ContractForm() {
                             <FormItem className="flex flex-col">
                                 <FormLabel>Fecha Límite de Pago del Saldo</FormLabel>
                                 <FormControl>
-                                  <Input type="date" {...field} value={field.value || ''} disabled={form.getValues('autoMotoDetails.balance') === 0} />
+                                  <Input type="date" {...field} value={toDateString(field.value)} disabled={form.getValues('autoMotoDetails.balance') === 0} />
                                 </FormControl>
                                 <FormDescription>
                                     {form.getValues('autoMotoDetails.balance') === 0 ? 'No aplica, ya que el curso está cancelado en su totalidad.' : 'Fecha máxima para cancelar el 50% restante.'}
@@ -873,7 +876,7 @@ export function ContractForm() {
                                         render={({ field }) => (
                                             <FormItem className="flex flex-col">
                                                 <FormLabel>Fecha Teórica {index + 1}</FormLabel>
-                                                <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                                                <FormControl><Input type="date" {...field} value={toDateString(field.value)} /></FormControl>
                                                 <FormMessage />
                                             </FormItem>
                                         )}
@@ -886,9 +889,9 @@ export function ContractForm() {
                     {contractType === 'Curso Mixto' ? (
                        <>
                         <div className="pt-4">
-                            <h4 className="font-medium text-base mb-2">Horario para clases prácticas de Auto (5 clases)</h4>
+                            <h4 className="font-medium text-base mb-2">Horario para clases prácticas de Auto ({numberOfPracticalClasses} clases)</h4>
                             <div className="grid grid-cols-1 gap-y-4 gap-x-4 rounded-lg border p-4">
-                                {Array.from({ length: 5 }).map((_, index) => (
+                                {Array.from({ length: numberOfPracticalClasses }).map((_, index) => (
                                     <div key={`auto-${index}`} className="grid grid-cols-[auto_1fr_1fr] items-center gap-4">
                                         <h5 className="font-medium text-sm">Clase {index + 1}</h5>
                                         <FormField
@@ -897,7 +900,7 @@ export function ContractForm() {
                                             render={({ field }) => (
                                                 <FormItem className="flex flex-col">
                                                 <FormLabel className="sr-only">Fecha</FormLabel>
-                                                <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                                                <FormControl><Input type="date" {...field} value={toDateString(field.value)} /></FormControl>
                                                 <FormMessage />
                                                 </FormItem>
                                             )}
@@ -931,9 +934,9 @@ export function ContractForm() {
                             </div>
                          </div>
                          <div className="pt-4">
-                            <h4 className="font-medium text-base mb-2">Horario para clases prácticas de Moto (5 clases)</h4>
+                            <h4 className="font-medium text-base mb-2">Horario para clases prácticas de Moto ({numberOfPracticalClasses} clases)</h4>
                             <div className="grid grid-cols-1 gap-y-4 gap-x-4 rounded-lg border p-4">
-                                {Array.from({ length: 5 }).map((_, index) => (
+                                {Array.from({ length: numberOfPracticalClasses }).map((_, index) => (
                                     <div key={`moto-${index}`} className="grid grid-cols-[auto_1fr_1fr] items-center gap-4">
                                         <h5 className="font-medium text-sm">Clase {index + 1}</h5>
                                         <FormField
@@ -942,7 +945,7 @@ export function ContractForm() {
                                             render={({ field }) => (
                                                 <FormItem className="flex flex-col">
                                                 <FormLabel className="sr-only">Fecha</FormLabel>
-                                                <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                                                <FormControl><Input type="date" {...field} value={toDateString(field.value)} /></FormControl>
                                                 <FormMessage />
                                                 </FormItem>
                                             )}
@@ -989,7 +992,7 @@ export function ContractForm() {
                                       render={({ field }) => (
                                           <FormItem className="flex flex-col">
                                             <FormLabel className="sr-only">Fecha</FormLabel>
-                                            <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                                            <FormControl><Input type="date" {...field} value={toDateString(field.value)} /></FormControl>
                                             <FormMessage />
                                           </FormItem>
                                       )}
@@ -1040,7 +1043,7 @@ export function ContractForm() {
               </div>
             )}
             
-            {contractType === 'Curso Deluxe' ? (
+            {contractType === 'Curso Deluxe' && (
                 <div className="space-y-6 pt-4">
 
                   {/* DATOS DEL ESTUDIANTE */}
@@ -1175,7 +1178,7 @@ export function ContractForm() {
                                           render={({ field }) => (
                                             <FormItem className="flex flex-col">
                                                   <FormLabel>Fecha Cuota {i}</FormLabel>
-                                                   <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                                                   <FormControl><Input type="date" {...field} value={toDateString(field.value)} /></FormControl>
                                                   <FormMessage />
                                               </FormItem>
                                           )}
@@ -1186,7 +1189,7 @@ export function ContractForm() {
                                           render={({ field }) => (
                                              <FormItem className="flex flex-col">
                                                   <FormLabel>Fecha Cuota {i + 3}</FormLabel>
-                                                  <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                                                  <FormControl><Input type="date" {...field} value={toDateString(field.value)} /></FormControl>
                                                   <FormMessage />
                                               </FormItem>
                                           )}
@@ -1283,7 +1286,7 @@ export function ContractForm() {
                                   render={({ field }) => (
                                     <FormItem className="flex flex-col">
                                           <FormLabel>Fecha Semana {i + 1}</FormLabel>
-                                          <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                                          <FormControl><Input type="date" {...field} value={toDateString(field.value)} /></FormControl>
                                           <FormMessage />
                                       </FormItem>
                                   )}
@@ -1291,66 +1294,9 @@ export function ContractForm() {
                           ))}
                       </div>
                     </div>
-                    <div>
-                      <h4 className="font-medium text-base mb-2 pt-4">Capacitación Práctica</h4>
-                      <div className="space-y-4 pt-2">
-                        {classFields.map((field, index) => (
-                          <div key={field.id} className="space-y-4 rounded-lg border p-4 relative">
-                            <div className="flex items-start justify-between mb-4">
-                                <h4 className="font-medium pt-1">Clase Práctica #{index + 1}</h4>
-                                <Button type="button" variant="ghost" size="icon" onClick={() => removeClass(index)} className="absolute top-1 right-1">
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                    <span className="sr-only">Eliminar Clase</span>
-                                </Button>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <FormField
-                                control={form.control}
-                                name={`deluxeDetails.classSchedules.${index}.date`}
-                                render={({ field }) => (
-                                  <FormItem className="flex flex-col">
-                                    <FormLabel>Fecha</FormLabel>
-                                    <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                  control={form.control}
-                                  name={`deluxeDetails.classSchedules.${index}.time`}
-                                  render={({ field }) => (
-                                      <FormItem>
-                                          <FormLabel>Hora</FormLabel>
-                                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                              <FormControl><SelectTrigger><SelectValue placeholder="Selecciona una hora" /></SelectTrigger></FormControl>
-                                              <SelectContent>
-                                                  {timeSlots.map(time => (<SelectItem key={time} value={time}>{time}</SelectItem>))}
-                                              </SelectContent>
-                                          </Select>
-                                          <FormMessage />
-                                      </FormItem>
-                                  )}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                        <Button type="button" variant="outline" size="sm" onClick={() => appendClass({ date: '', time: '' })} className="mt-4">
-                            <PlusCircle className="mr-2 h-4 w-4" /> Añadir Clase Práctica
-                        </Button>
-                      </div>
-                    </div>
                    </div>
                   
-                  <div className="mt-6">
-                      <h3 className="text-lg font-medium mb-2">Vista Previa del Contrato</h3>
-                      <DeluxePremiumContractTemplatePreview 
-                        folio={"CT-XXXX-XXXX"}
-                        clientName={allFormValues.clientName} 
-                        clientEmail={allFormValues.clientEmail} 
-                        deluxeDetails={allFormValues.deluxeDetails as DeluxeContractDetails}
-                        createdBy={role}
-                      />
-                  </div>
+                  {/* Vista Previa del Contrato Deluxe está deshabilitada ya que no existe el componente */}
                 </div>
             ) : (contractType !== 'Curso Auto' && contractType !== 'Curso Moto' && contractType !== 'Curso Mixto') && (
               <>
@@ -1440,7 +1386,7 @@ export function ContractForm() {
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
                         <FormLabel>Fecha</FormLabel>
-                         <FormControl><Input type="date" {...field} value={field.value || ''} /></FormControl>
+                         <FormControl><Input type="date" {...field} value={toDateString(field.value)} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}

@@ -386,7 +386,15 @@ export function ContractForm() {
       }
       
       if ((data.type === 'Curso Auto' || data.type === 'Curso Moto') && data.autoMotoDetails) {
-          newContractData.autoMotoDetails = data.autoMotoDetails;
+          newContractData.autoMotoDetails = {
+            ...data.autoMotoDetails,
+            paymentDeadline: data.autoMotoDetails.paymentDeadline || null,
+            theoreticalClassDates: data.autoMotoDetails.theoreticalClassDates?.map(d => d || null),
+            practicalClassSchedules: data.autoMotoDetails.practicalClassSchedules?.map(ps => ({
+                date: ps.date || null,
+                time: ps.time || null,
+            }))
+        };
       }
 
       const newContractRef = await addDoc(contractsCollection, newContractData);
@@ -789,7 +797,7 @@ export function ContractForm() {
                     <div className="pt-4">
                         <h4 className="font-medium text-base mb-2">Horario para clases prácticas</h4>
                         {numberOfPracticalClasses > 0 && (
-                            <div className="grid grid-cols-1 gap-y-4 gap-x-4 rounded-lg border p-4">
+                             <div className="grid grid-cols-1 gap-y-4 gap-x-4 rounded-lg border p-4">
                                 {Array.from({ length: numberOfPracticalClasses }).map((_, index) => (
                                 <div key={index} className="grid grid-cols-[auto_1fr_1fr] items-center gap-4">
                                     <h5 className="font-medium text-sm">Clase {index + 1}</h5>

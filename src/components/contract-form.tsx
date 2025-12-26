@@ -77,7 +77,7 @@ const autoMotoDetailsSchema = z.object({
   theoreticalClassDates: z.array(z.date().optional()).optional(),
   practicalClassSchedules: z.array(classScheduleSchema).optional(),
   motoPracticalClassSchedules: z.array(classScheduleSchema).optional(),
-});
+}).partial();
 
 const deluxeDetailsSchema = z.object({
   paymentDetails: z.string().optional(),
@@ -88,7 +88,7 @@ const deluxeDetailsSchema = z.object({
   theoreticalClassSchedule: z.enum(['Lunes', 'Miércoles']).optional(),
   theoreticalClasses: z.array(z.date().optional()).optional(),
   classSchedules: z.array(classScheduleSchema).optional(),
-});
+}).partial();
 
 const formSchema = baseSchema.merge(autoMotoDetailsSchema).merge(deluxeDetailsSchema);
 type FormValues = z.infer<typeof formSchema>;
@@ -137,22 +137,22 @@ export function ContractForm() {
     });
 
     const watchedValues = form.watch();
-    const watchedCourseValue = form.watch('courseValue');
-    const watchedDownPayment = form.watch('downPayment');
-    const watchedTheoreticalSchedule = form.watch('theoreticalClassSchedule');
+    const watchedPaidInFull = form.watch('paidInFull');
     const watchedCoursePlan = form.watch('coursePlan');
+    const watchedCourseValue = form.watch('courseValue');
+
 
     const { fields: theoreticalClassFields, replace: replaceTheoreticalClasses } = useFieldArray({
         control: form.control,
         name: "theoreticalClassDates" as any,
     });
 
-    const { fields: practicalClassFields, replace: replacePracticalClasses } = useFieldArray({
+    const { fields: practicalClassFields, replace: replacePracticalClasses, remove: removePracticalClass } = useFieldArray({
         control: form.control,
         name: "practicalClassSchedules" as any,
     });
     
-    const { fields: motoPracticalClassFields, replace: replaceMotoPracticalClasses } = useFieldArray({
+    const { fields: motoPracticalClassFields, replace: replaceMotoPracticalClasses, remove: removeMotoPracticalClass } = useFieldArray({
         control: form.control,
         name: "motoPracticalClassSchedules" as any,
     });
@@ -173,77 +173,82 @@ export function ContractForm() {
                 clientPhone1: '',
                 clientPhone2: '',
                 paidInFull: false,
-                courseValue: 0,
-                downPayment: 0,
-                balance: 0,
+                courseValue: undefined,
+                downPayment: undefined,
+                balance: undefined,
                 theoreticalClassDates: [],
                 practicalClassSchedules: [],
+                motoPracticalClassSchedules: []
             });
 
             if (contractType === 'Curso Deluxe') {
                 replaceDeluxeClasses(Array(6).fill({ date: undefined, time: undefined }));
-            } else if (contractType === 'Curso Mixto') {
-                const plan = (coursePlans as any)[contractType].find((p: any) => p.name === watchedCoursePlan);
-                 if (plan) {
-                    replacePracticalClasses(Array(plan.classes).fill({ date: undefined, time: undefined }));
-                    replaceMotoPracticalClasses(Array(plan.motoClasses).fill({ date: undefined, time: undefined }));
-                } else {
-                    replacePracticalClasses(Array(6).fill({ date: undefined, time: undefined }));
-                    replaceMotoPracticalClasses(Array(4).fill({ date: undefined, time: undefined }));
-                }
             } else {
-                // Default to 0 for Auto/Moto until a plan is selected
-                replacePracticalClasses([]);
+                 replacePracticalClasses([]);
+                 replaceMotoPracticalClasses([]);
             }
         }
-    }, [contractType, form, replaceDeluxeClasses, replacePracticalClasses, replaceMotoPracticalClasses, watchedCoursePlan]);
+    }, [contractType, form, replaceDeluxeClasses, replacePracticalClasses, replaceMotoPracticalClasses]);
 
     
      useEffect(() => {
-        const subscription = form.watch((value, { name }) => {
-            if (name === 'paidInFull' && value.courseValue) {
-                if (value.paidInFull) {
-                    form.setValue('downPayment', value.courseValue);
-                } else {
-                    form.setValue('downPayment', 0);
+        const subscription = form.watch((value, { name, type }) => {
+            if (name === 'coursePlan' || name === 'paidInFull' || name === 'downPayment') {
+                const planName = value.coursePlan;
+                const isPaidInFull = value.paidInFull;
+                const downPayment = value.downPayment || 0;
+                
+                let newCourseValue = value.courseValue || 0;
+                let newDownPayment = downPayment;
+
+                if (name === 'coursePlan' && contractType && (coursePlans as any)[contractType]) {
+                    const selectedPlan = (coursePlans as any)[contractType].find((p: any) => p.name === planName);
+                    if (selectedPlan) {
+                        newCourseValue = selectedPlan.price;
+                        form.setValue('courseValue', newCourseValue, { shouldValidate: true });
+                        
+                        // Actualizar clases prácticas
+                        if (contractType === 'Curso Auto' || contractType === 'Curso Moto') {
+                            replacePracticalClasses(Array(selectedPlan.classes).fill({ date: undefined, time: undefined }));
+                        } else if (contractType === 'Curso Mixto') {
+                            replacePracticalClasses(Array(selectedPlan.classes || 6).fill({ date: undefined, time: undefined }));
+                            replaceMotoPracticalClasses(Array(selectedPlan.motoClasses || 4).fill({ date: undefined, time: undefined }));
+                        }
+                    } else {
+                         newCourseValue = 0;
+                         form.setValue('courseValue', newCourseValue, { shouldValidate: true });
+                         replacePracticalClasses([]);
+                         replaceMotoPracticalClasses([]);
+                    }
+                }
+                
+                if (isPaidInFull) {
+                    newDownPayment = newCourseValue;
+                    if(form.getValues('downPayment') !== newDownPayment){
+                        form.setValue('downPayment', newDownPayment, { shouldValidate: true });
+                    }
+                } else if (name === 'coursePlan' || name === 'paidInFull') {
+                     // Si no está pagado por completo y cambia el plan, o se desmarca el checkbox,
+                     // y el abono no fue editado manualmente, lo reseteamos a 0.
+                     // Si el abono fue editado manualmente (name === 'downPayment'), se mantiene.
+                    if (name !== 'downPayment') {
+                        newDownPayment = 0;
+                        if(form.getValues('downPayment') !== newDownPayment){
+                            form.setValue('downPayment', newDownPayment, { shouldValidate: true });
+                        }
+                    }
+                }
+
+                const newBalance = newCourseValue - newDownPayment;
+                 if(form.getValues('balance') !== newBalance){
+                    form.setValue('balance', newBalance < 0 ? 0 : newBalance, { shouldValidate: true });
                 }
             }
         });
         return () => subscription.unsubscribe();
-    }, [form]);
-
-    useEffect(() => {
-        if (watchedCoursePlan && contractType && (coursePlans as any)[contractType]) {
-            const selectedPlan = (coursePlans as any)[contractType].find((p: any) => p.name === watchedCoursePlan);
-            if (selectedPlan) {
-                form.setValue('courseValue', selectedPlan.price);
-                if (form.getValues('paidInFull')) {
-                    form.setValue('downPayment', selectedPlan.price);
-                }
-                
-                if ((contractType === 'Curso Auto' || contractType === 'Curso Moto') && selectedPlan.classes) {
-                    replacePracticalClasses(Array(selectedPlan.classes).fill({ date: undefined, time: undefined }));
-                } else if (contractType === 'Curso Mixto') {
-                    replacePracticalClasses(Array(selectedPlan.classes || 6).fill({ date: undefined, time: undefined }));
-                    replaceMotoPracticalClasses(Array(selectedPlan.motoClasses || 4).fill({ date: undefined, time: undefined }));
-                }
-            }
-        }
-    }, [watchedCoursePlan, contractType, form, replacePracticalClasses, replaceMotoPracticalClasses]);
+    }, [form, contractType, replacePracticalClasses, replaceMotoPracticalClasses]);
 
 
-    useEffect(() => {
-        const courseValue = watchedCourseValue || 0;
-        const downPayment = watchedDownPayment || 0;
-        if (typeof courseValue === 'number' && typeof downPayment === 'number') {
-            const currentBalance = form.getValues('balance');
-            const newBalance = courseValue - downPayment;
-            if (currentBalance !== newBalance) {
-                form.setValue('balance', newBalance);
-            }
-        }
-    }, [watchedCourseValue, watchedDownPayment, form]);
-    
     useEffect(() => {
         const typePrefix = contractType?.substring(0, 3).toUpperCase() || 'GEN';
         const uniqueId = Date.now().toString().slice(-6);
@@ -251,12 +256,13 @@ export function ContractForm() {
     }, [contractType]);
 
     useEffect(() => {
-        if (watchedTheoreticalSchedule?.includes('Días de Semana')) {
+        const theoreticalSchedule = form.watch('theoreticalClassSchedule');
+        if (theoreticalSchedule?.includes('Días de Semana')) {
             replaceTheoreticalClasses(Array(5).fill(undefined));
-        } else if (watchedTheoreticalSchedule?.includes('Sábados')) {
+        } else if (theoreticalSchedule?.includes('Sábados')) {
             replaceTheoreticalClasses(Array(3).fill(undefined));
         }
-    }, [watchedTheoreticalSchedule, replaceTheoreticalClasses]);
+    }, [form, replaceTheoreticalClasses]);
 
 
     const onSubmit = async (values: FormValues) => {
@@ -309,13 +315,13 @@ export function ContractForm() {
                     studentPhone2: values.clientPhone2 || null,
                     courseValue: values.courseValue || null,
                     downPayment: values.downPayment || null,
-                    balance: (values.courseValue || 0) - (values.downPayment || 0),
+                    balance: values.balance || null,
                     paymentDeadline: values.paymentDeadline ? format(values.paymentDeadline, 'yyyy-MM-dd') : null,
                     vehicle: values.vehicle || null,
                     vehicleTransmission: values.vehicleTransmission || null,
                     licenseCategory: values.licenseCategory || null,
                     theoreticalClassSchedule: values.theoreticalClassSchedule || null,
-                    theoreticalClassDates: values.theoreticalClassDates?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(Boolean) || [],
+                    theoreticalClassDates: values.theoreticalClassDates?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(d => d !== null) || [],
                     practicalClassSchedules: values.practicalClassSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })) || [],
                     motoPracticalClassSchedules: values.motoPracticalClassSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })) || [],
                 };
@@ -327,11 +333,11 @@ export function ContractForm() {
                     studentPhone2: values.clientPhone2 || null,
                     paymentDetails: values.paymentDetails || null,
                     paymentAmount: values.paymentAmount || null,
-                    paymentInstallments: values.paymentInstallments?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(Boolean) || [],
+                    paymentInstallments: values.paymentInstallments?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(d => d !== null) || [],
                     vehicleTransmission: values.vehicleTransmission || null,
                     licenseCategory: values.licenseCategory || null,
                     theoreticalClassSchedule: values.theoreticalClassSchedule || null,
-                    theoreticalClasses: values.theoreticalClasses?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(Boolean) || [],
+                    theoreticalClasses: values.theoreticalClasses?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(d => d !== null) || [],
                     classSchedules: values.classSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })) || [],
                 };
             }
@@ -442,11 +448,17 @@ export function ContractForm() {
                     </FormItem>
                 )}
             />
-            <FormField
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField control={form.control} name="courseValue" render={({ field }) => (<FormItem><FormLabel>Valor Total (B/.)</FormLabel><FormControl><Input type="number" {...field} value={field.value || 0} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="downPayment" render={({ field }) => (<FormItem><FormLabel>Abono (B/.)</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value || ''} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={watchedPaidInFull} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="balance" render={({ field }) => (<FormItem><FormLabel>Saldo (B/.)</FormLabel><FormControl><Input type="number" {...field} value={field.value || 0} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
+            </div>
+             <FormField
                 control={form.control}
                 name="paidInFull"
                 render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 pt-2">
                         <FormControl>
                             <Checkbox
                                 checked={field.value}
@@ -462,11 +474,6 @@ export function ContractForm() {
                     </FormItem>
                 )}
             />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField control={form.control} name="courseValue" render={({ field }) => (<FormItem><FormLabel>Valor Total (B/.)</FormLabel><FormControl><Input type="number" {...field} value={field.value || 0} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="downPayment" render={({ field }) => (<FormItem><FormLabel>Abono (B/.)</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value || 0} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={watchedValues.paidInFull} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="balance" render={({ field }) => (<FormItem><FormLabel>Saldo (B/.)</FormLabel><FormControl><Input type="number" {...field} value={field.value || 0} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
-            </div>
 
             <FormField
                 control={form.control}
@@ -837,3 +844,5 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    

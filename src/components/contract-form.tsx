@@ -106,6 +106,7 @@ const ampliacionesDetailsSchema = z.object({
   balance: z.number().optional(),
   paymentDeadline: z.date().optional().nullable(),
   paidInFull: z.boolean().default(false),
+  theoreticalClassDate: z.date().optional().nullable(),
 }).partial();
 
 const formSchema = baseSchema.extend({
@@ -264,6 +265,7 @@ const getDefaultValues = (contractType: ContractType | null): FormValues => ({
         balance: 0,
         paymentDeadline: null,
         paidInFull: false,
+        theoreticalClassDate: null,
     },
 });
 
@@ -568,6 +570,7 @@ export function ContractForm() {
                 contractData.ampliacionesDetails = {
                     ...ampliacionesDetails,
                      paymentDeadline: ampliacionesDetails.paymentDeadline ? format(ampliacionesDetails.paymentDeadline, 'yyyy-MM-dd') : null,
+                     theoreticalClassDate: ampliacionesDetails.theoreticalClassDate ? format(ampliacionesDetails.theoreticalClassDate, 'yyyy-MM-dd') : null,
                 };
                  delete contractData.autoMotoDetails;
                 delete contractData.deluxeDetails;
@@ -627,6 +630,7 @@ export function ContractForm() {
         const balancePath = "ampliacionesDetails.balance";
         const paidInFullPath = "ampliacionesDetails.paidInFull";
         const paymentDeadlinePath = "ampliacionesDetails.paymentDeadline";
+        const theoreticalClassDatePath = "ampliacionesDetails.theoreticalClassDate";
 
         return (
              <>
@@ -727,6 +731,47 @@ export function ContractForm() {
                                     </AccordionContent>
                                 </AccordionItem>
                             </Accordion>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 
+                <h3 className="font-semibold text-lg pt-4 border-b pb-2">Clase Teórica</h3>
+                <FormField
+                    control={form.control}
+                    name={theoreticalClassDatePath}
+                    render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                            <FormLabel>Fecha de la Clase Teórica</FormLabel>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                        <Button
+                                            variant={"outline"}
+                                            className={cn(
+                                                "w-full pl-3 text-left font-normal",
+                                                !field.value && "text-muted-foreground"
+                                            )}
+                                        >
+                                            {field.value instanceof Date && !isNaN(field.value.getTime()) ? (
+                                                format(field.value, "PPP", { locale: es })
+                                            ) : (
+                                                <span>Seleccionar fecha</span>
+                                            )}
+                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                        </Button>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        mode="single"
+                                        selected={field.value ? new Date(field.value) : undefined}
+                                        onSelect={field.onChange}
+                                        initialFocus
+                                        locale={es}
+                                    />
+                                </PopoverContent>
+                            </Popover>
                             <FormMessage />
                         </FormItem>
                     )}
@@ -1098,7 +1143,7 @@ export function ContractForm() {
                                         <PopoverTrigger asChild>
                                             <FormControl>
                                                 <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                                    {field.value instanceof Date && !isNaN(field.value.getTime()) ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha {index + 1}</span>}
+                                                    {field.value instanceof Date && !isNaN(field.value.getTime()) ? format(new Date(field.value), "PPP", { locale: es }) : <span>Seleccionar fecha {index + 1}</span>}
                                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                 </Button>
                                             </FormControl>

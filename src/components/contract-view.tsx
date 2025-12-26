@@ -1,9 +1,27 @@
+
 'use client';
 import type { Contract } from '@/lib/types';
 import { DeluxePremiumContractTemplate } from './deluxe-premium-contract';
 import { PrintButton } from './print-button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { AutoMotoContractTemplate } from './auto-moto-contract';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+
+function toDate(date: any): Date {
+  if (date instanceof Date) return date;
+  if (date && date.toDate) return date.toDate();
+  if (typeof date === 'string') {
+    const parsed = new Date(date);
+    if (!isNaN(parsed.getTime())) {
+      // Adjust for timezone offset if the string is just a date (YYYY-MM-DD)
+      const timezoneOffset = parsed.getTimezoneOffset() * 60000;
+      return new Date(parsed.getTime() + timezoneOffset);
+    }
+  }
+  return new Date(0); // Return invalid date
+}
+
 
 export function ContractView({ contract }: { contract: Contract }) {
 
@@ -25,15 +43,25 @@ export function ContractView({ contract }: { contract: Contract }) {
             </CardHeader>
             <CardContent className="prose prose-lg max-w-none text-foreground leading-relaxed p-6">
                 <p>{contract.content}</p>
-                 {contract.type === 'Ampliaciones' && contract.ampliacionesDetails?.selectedPlans && (
+                 {contract.type === 'Ampliaciones' && contract.ampliacionesDetails && (
                     <div className='mt-6'>
-                        <h3 className='font-bold'>Planes Seleccionados</h3>
-                        <ul className='list-disc pl-5'>
-                            {contract.ampliacionesDetails.selectedPlans.map(plan => (
-                                <li key={plan.name}>{plan.name} - B/.{plan.price.toFixed(2)}</li>
-                            ))}
-                        </ul>
-                         <p className='font-bold mt-4'>Total: B/.{contract.ampliacionesDetails.courseValue?.toFixed(2)}</p>
+                        {contract.ampliacionesDetails.selectedPlans && contract.ampliacionesDetails.selectedPlans.length > 0 && (
+                             <div>
+                                <h3 className='font-bold'>Planes Seleccionados</h3>
+                                <ul className='list-disc pl-5'>
+                                    {contract.ampliacionesDetails.selectedPlans.map(plan => (
+                                        <li key={plan.name}>{plan.name} - B/.{plan.price.toFixed(2)}</li>
+                                    ))}
+                                </ul>
+                                <p className='font-bold mt-4'>Total: B/.{contract.ampliacionesDetails.courseValue?.toFixed(2)}</p>
+                            </div>
+                        )}
+                        {contract.ampliacionesDetails.theoreticalClassDate && (
+                            <div className="mt-4">
+                                <h3 className='font-bold'>Clase Teórica</h3>
+                                <p>Fecha: {format(toDate(contract.ampliacionesDetails.theoreticalClassDate), "PPP", { locale: es })}</p>
+                            </div>
+                        )}
                     </div>
                 )}
             </CardContent>

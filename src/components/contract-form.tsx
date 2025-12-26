@@ -54,8 +54,8 @@ const classScheduleSchema = z.object({
 });
 
 const baseSchema = z.object({
-  clientName: z.string().min(3, 'El nombre es requerido'),
-  clientEmail: z.string().email('Email inválido'),
+  clientName: z.string().min(3, 'El nombre del estudiante debe tener al menos 3 caracteres.'),
+  clientEmail: z.string().email('Por favor, introduce una dirección de correo electrónico válida.'),
   contractType: z.custom<ContractType>(),
 });
 
@@ -101,11 +101,11 @@ const formSchema = baseSchema.extend({
 }).superRefine((data, ctx) => {
     if (data.contractType !== 'Curso Deluxe') {
         if (!data.autoMotoDetails?.studentIdNumber) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La cédula es requerida", path: ["autoMotoDetails", "studentIdNumber"] });
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "El número de cédula o pasaporte del estudiante es un campo obligatorio.", path: ["autoMotoDetails", "studentIdNumber"] });
         }
     } else {
         if (!data.deluxeDetails?.studentIdNumber) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La cédula es requerida", path: ["deluxeDetails", "studentIdNumber"] });
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "El número de cédula o pasaporte del estudiante es un campo obligatorio.", path: ["deluxeDetails", "studentIdNumber"] });
         }
     }
 });
@@ -325,7 +325,7 @@ export function ContractForm() {
                 }
                 
                 // Set payment deadline based on paidInFull status
-                if (name === 'autoMotoDetails.paidInFull' || (name === 'autoMotoDetails.coursePlan' && isPaidInFull)) {
+                if (name === 'autoMotoDetails.paidInFull' || name === 'autoMotoDetails.coursePlan') {
                     if (isPaidInFull) {
                         form.setValue('autoMotoDetails.paymentDeadline', new Date());
                     } else {
@@ -395,7 +395,7 @@ export function ContractForm() {
 
     const onSubmit = async (values: FormValues) => {
         if (!firestore || !user) {
-            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo conectar a la base de datos. Por favor, inicie sesión.' });
+            toast({ variant: 'destructive', title: 'Error de Autenticación', description: 'No se pudo conectar a la base de datos. Por favor, inicie sesión.' });
             return;
         }
 
@@ -442,20 +442,22 @@ export function ContractForm() {
                 contractData.autoMotoDetails = {
                     ...autoMotoDetails,
                     paymentDeadline: autoMotoDetails.paymentDeadline ? format(autoMotoDetails.paymentDeadline, 'yyyy-MM-dd') : null,
-                    theoreticalClassDates: autoMotoDetails.theoreticalClassDates?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(d => d) || [],
+                    theoreticalClassDates: autoMotoDetails.theoreticalClassDates?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(Boolean) || [],
                     practicalClassSchedules: autoMotoDetails.practicalClassSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })).filter(c => c.date || c.time) || [],
                     motoPracticalClassSchedules: autoMotoDetails.motoPracticalClassSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })).filter(c => c.date || c.time) || [],
                 };
+                 delete contractData.deluxeDetails;
             } else if (contractType === 'Curso Deluxe') {
                 const { autoMotoDetails, ...restValues } = values;
                 const deluxeDetails = restValues.deluxeDetails || {};
 
                 contractData.deluxeDetails = {
                     ...deluxeDetails,
-                    paymentInstallments: deluxeDetails.paymentInstallments?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(d => d) || [],
-                    theoreticalClasses: deluxeDetails.theoreticalClasses?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(d => d) || [],
+                    paymentInstallments: deluxeDetails.paymentInstallments?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(Boolean) || [],
+                    theoreticalClasses: deluxeDetails.theoreticalClasses?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(Boolean) || [],
                     classSchedules: deluxeDetails.classSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })).filter(c => c.date || c.time) || [],
                 };
+                 delete contractData.autoMotoDetails;
             }
 
 
@@ -468,8 +470,8 @@ export function ContractForm() {
             router.push(redirectUrl);
 
         } catch (error) {
-            console.error("Error creating contract:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo crear el contrato.' });
+            console.error("Error al crear el contrato:", error);
+            toast({ variant: 'destructive', title: 'Error de Guardado', description: 'No se pudo crear el contrato. Revisa los datos e intenta de nuevo.' });
         }
     };
     

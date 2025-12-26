@@ -141,22 +141,22 @@ export function ContractForm() {
     const watchedDownPayment = form.watch('downPayment');
     const watchedTheoreticalSchedule = form.watch('theoreticalClassSchedule');
 
-    const { fields: theoreticalClassFields, append: appendTheoreticalClass, remove: removeTheoreticalClass, replace: replaceTheoreticalClasses } = useFieldArray({
+    const { fields: theoreticalClassFields, replace: replaceTheoreticalClasses } = useFieldArray({
         control: form.control,
         name: "theoreticalClassDates" as any,
     });
 
-    const { fields: practicalClassFields, append: appendPracticalClass, remove: removePracticalClass, replace: replacePracticalClasses } = useFieldArray({
+    const { fields: practicalClassFields, replace: replacePracticalClasses } = useFieldArray({
         control: form.control,
         name: "practicalClassSchedules" as any,
     });
     
-    const { fields: motoPracticalClassFields, append: appendMotoPracticalClass, remove: removeMotoPracticalClass, replace: replaceMotoPracticalClasses } = useFieldArray({
+    const { fields: motoPracticalClassFields, replace: replaceMotoPracticalClasses } = useFieldArray({
         control: form.control,
         name: "motoPracticalClassSchedules" as any,
     });
 
-    const { fields: deluxeClassFields, append: appendDeluxeClass, remove: removeDeluxeClass } = useFieldArray({
+    const { fields: deluxeClassFields, remove: removeDeluxeClass } = useFieldArray({
         control: form.control,
         name: "classSchedules" as any,
     });
@@ -627,7 +627,7 @@ export function ContractForm() {
         </>
     );
 
-    const renderPracticalClassFields = (fields: any, remove: any, append: any, title: string, namePrefix: string) => (
+    const renderPracticalClassFields = (fields: any, remove: any, namePrefix: string, title: string) => (
         <div>
             <h3 className="font-semibold text-lg pt-4 border-b pb-2 mb-4">{title}</h3>
             {fields.length > 0 ? (
@@ -637,7 +637,6 @@ export function ContractForm() {
                             <TableHead className="w-1/4">Clase</TableHead>
                             <TableHead>Fecha</TableHead>
                             <TableHead>Hora</TableHead>
-                            <TableHead className="w-10"></TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -689,23 +688,12 @@ export function ContractForm() {
                                         )}
                                     />
                                 </TableCell>
-                                <TableCell>
-                                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
-                                </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
                 </Table>
             ) : (
                 <p className="text-sm text-muted-foreground text-center py-4">Seleccione un plan para ver las clases prácticas.</p>
-            )}
-           
-            {fields.length > 0 && (
-                 <Button type="button" variant="outline" size="sm" onClick={() => append({})} className="mt-4">
-                    <PlusCircle className="mr-2 h-4 w-4" /> Añadir Clase
-                </Button>
             )}
         </div>
     );
@@ -736,7 +724,7 @@ export function ContractForm() {
                 ))}
             </div>
             
-            {renderPracticalClassFields(deluxeClassFields, removeDeluxeClass, appendDeluxeClass, 'Clases Prácticas (6 clases)', 'classSchedules')}
+            {renderPracticalClassFields(deluxeClassFields, removeDeluxeClass, 'classSchedules', 'Clases Prácticas (6 clases)')}
         </>
     );
 
@@ -745,8 +733,8 @@ export function ContractForm() {
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Datos del Estudiante</h3>
             {renderCommonFields()}
             {contractType === 'Curso Deluxe' ? renderDeluxeFields() : renderAutoMotoFields()}
-            {(contractType === 'Curso Auto' || contractType === 'Curso Mixto') && renderPracticalClassFields(practicalClassFields, removePracticalClass, appendPracticalClass, 'Clases Prácticas de Auto', 'practicalClassSchedules')}
-            {(contractType === 'Curso Moto' || contractType === 'Curso Mixto') && renderPracticalClassFields(contractType === 'Curso Mixto' ? motoPracticalClassFields : practicalClassFields, contractType === 'Curso Mixto' ? removeMotoPracticalClass : removePracticalClass, contractType === 'Curso Mixto' ? appendMotoPracticalClass : appendPracticalClass, 'Clases Prácticas de Moto', contractType === 'Curso Mixto' ? 'motoPracticalClassSchedules' : 'practicalClassSchedules')}
+            {(contractType === 'Curso Auto' || contractType === 'Curso Mixto') && renderPracticalClassFields(practicalClassFields, removePracticalClass, 'practicalClassSchedules', 'Clases Prácticas de Auto')}
+            {(contractType === 'Curso Moto' || contractType === 'Curso Mixto') && renderPracticalClassFields(contractType === 'Curso Mixto' ? motoPracticalClassFields : practicalClassFields, contractType === 'Curso Mixto' ? removeMotoPracticalClass : removePracticalClass, contractType === 'Curso Mixto' ? 'motoPracticalClassSchedules' : 'practicalClassSchedules', 'Clases Prácticas de Moto')}
         </>
     );
 
@@ -841,6 +829,8 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    
 
     
 

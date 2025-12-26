@@ -90,7 +90,12 @@ const deluxeDetailsSchema = z.object({
   classSchedules: z.array(classScheduleSchema).optional(),
 }).partial();
 
-const formSchema = baseSchema.merge(autoMotoDetailsSchema).merge(deluxeDetailsSchema);
+const formSchema = baseSchema.extend({
+  contractType: z.custom<ContractType>(),
+  autoMotoDetails: autoMotoDetailsSchema.optional(),
+  deluxeDetails: deluxeDetailsSchema.optional(),
+}).passthrough();
+
 type FormValues = z.infer<typeof formSchema>;
 
 
@@ -119,6 +124,11 @@ const practicalClassTimeSlots = [
   '3:00 pm a 5:00 pm',
 ];
 
+const formatCurrency = (value?: number) => {
+    if (value === undefined || value === null) return '0.00';
+    return value.toFixed(2);
+};
+
 export function ContractForm() {
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -138,8 +148,6 @@ export function ContractForm() {
 
     const watchedValues = form.watch();
     const watchedPaidInFull = form.watch('paidInFull');
-    const watchedCoursePlan = form.watch('coursePlan');
-    const watchedCourseValue = form.watch('courseValue');
 
 
     const { fields: theoreticalClassFields, replace: replaceTheoreticalClasses } = useFieldArray({
@@ -147,12 +155,12 @@ export function ContractForm() {
         name: "theoreticalClassDates" as any,
     });
 
-    const { fields: practicalClassFields, replace: replacePracticalClasses, remove: removePracticalClass } = useFieldArray({
+    const { fields: practicalClassFields, replace: replacePracticalClasses } = useFieldArray({
         control: form.control,
         name: "practicalClassSchedules" as any,
     });
     
-    const { fields: motoPracticalClassFields, replace: replaceMotoPracticalClasses, remove: removeMotoPracticalClass } = useFieldArray({
+    const { fields: motoPracticalClassFields, replace: replaceMotoPracticalClasses } = useFieldArray({
         control: form.control,
         name: "motoPracticalClassSchedules" as any,
     });
@@ -207,7 +215,6 @@ export function ContractForm() {
                         newCourseValue = selectedPlan.price;
                         form.setValue('courseValue', newCourseValue, { shouldValidate: true });
                         
-                        // Actualizar clases prácticas
                         if (contractType === 'Curso Auto' || contractType === 'Curso Moto') {
                             replacePracticalClasses(Array(selectedPlan.classes).fill({ date: undefined, time: undefined }));
                         } else if (contractType === 'Curso Mixto') {
@@ -228,9 +235,6 @@ export function ContractForm() {
                         form.setValue('downPayment', newDownPayment, { shouldValidate: true });
                     }
                 } else if (name === 'coursePlan' || name === 'paidInFull') {
-                     // Si no está pagado por completo y cambia el plan, o se desmarca el checkbox,
-                     // y el abono no fue editado manualmente, lo reseteamos a 0.
-                     // Si el abono fue editado manualmente (name === 'downPayment'), se mantiene.
                     if (name !== 'downPayment') {
                         newDownPayment = 0;
                         if(form.getValues('downPayment') !== newDownPayment){
@@ -321,9 +325,9 @@ export function ContractForm() {
                     vehicleTransmission: values.vehicleTransmission || null,
                     licenseCategory: values.licenseCategory || null,
                     theoreticalClassSchedule: values.theoreticalClassSchedule || null,
-                    theoreticalClassDates: values.theoreticalClassDates?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(d => d !== null) || [],
-                    practicalClassSchedules: values.practicalClassSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })) || [],
-                    motoPracticalClassSchedules: values.motoPracticalClassSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })) || [],
+                    theoreticalClassDates: values.theoreticalClassDates?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(d => d) || [],
+                    practicalClassSchedules: values.practicalClassSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })).filter(c => c.date || c.time) || [],
+                    motoPracticalClassSchedules: values.motoPracticalClassSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })).filter(c => c.date || c.time) || [],
                 };
             } else if (contractType === 'Curso Deluxe') {
                 contractData.deluxeDetails = {
@@ -333,12 +337,12 @@ export function ContractForm() {
                     studentPhone2: values.clientPhone2 || null,
                     paymentDetails: values.paymentDetails || null,
                     paymentAmount: values.paymentAmount || null,
-                    paymentInstallments: values.paymentInstallments?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(d => d !== null) || [],
+                    paymentInstallments: values.paymentInstallments?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(d => d) || [],
                     vehicleTransmission: values.vehicleTransmission || null,
                     licenseCategory: values.licenseCategory || null,
                     theoreticalClassSchedule: values.theoreticalClassSchedule || null,
-                    theoreticalClasses: values.theoreticalClasses?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(d => d !== null) || [],
-                    classSchedules: values.classSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })) || [],
+                    theoreticalClasses: values.theoreticalClasses?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(d => d) || [],
+                    classSchedules: values.classSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })).filter(c => c.date || c.time) || [],
                 };
             }
 
@@ -450,9 +454,9 @@ export function ContractForm() {
             />
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField control={form.control} name="courseValue" render={({ field }) => (<FormItem><FormLabel>Valor Total (B/.)</FormLabel><FormControl><Input type="number" {...field} value={field.value || 0} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="downPayment" render={({ field }) => (<FormItem><FormLabel>Abono (B/.)</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value || ''} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={watchedPaidInFull} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="balance" render={({ field }) => (<FormItem><FormLabel>Saldo (B/.)</FormLabel><FormControl><Input type="number" {...field} value={field.value || 0} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="courseValue" render={({ field }) => (<FormItem><FormLabel>Valor Total (B/.)</FormLabel><FormControl><Input type="number" step="0.01" value={formatCurrency(field.value)} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="downPayment" render={({ field }) => (<FormItem><FormLabel>Abono (B/.)</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={watchedPaidInFull} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="balance" render={({ field }) => (<FormItem><FormLabel>Saldo (B/.)</FormLabel><FormControl><Input type="number" step="0.01" value={formatCurrency(field.value)} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
             </div>
              <FormField
                 control={form.control}

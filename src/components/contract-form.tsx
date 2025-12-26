@@ -256,6 +256,10 @@ export function ContractForm() {
                         newCourseValue = selectedPlan.price;
                         form.setValue('autoMotoDetails.courseValue', newCourseValue, { shouldValidate: true });
                         
+                        // Set 50% down payment automatically
+                        newDownPayment = newCourseValue * 0.5;
+                        form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
+                        
                         if (contractType === 'Curso Auto') {
                             replacePracticalClasses(Array(selectedPlan.classes).fill({ date: undefined, time: undefined }));
                             replaceMotoPracticalClasses([]);
@@ -268,7 +272,9 @@ export function ContractForm() {
                         }
                     } else {
                          newCourseValue = 0;
+                         newDownPayment = 0;
                          form.setValue('autoMotoDetails.courseValue', newCourseValue, { shouldValidate: true });
+                         form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
                          replacePracticalClasses([]);
                          replaceMotoPracticalClasses([]);
                     }
@@ -279,13 +285,11 @@ export function ContractForm() {
                     if(form.getValues('autoMotoDetails.downPayment') !== newDownPayment){
                         form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
                     }
-                } else if (name === 'autoMotoDetails.coursePlan' || name === 'autoMotoDetails.paidInFull') {
-                    // Only reset if the change is not from manually editing the down payment
-                    if (name !== 'autoMotoDetails.downPayment') {
-                        newDownPayment = 0;
-                        if(form.getValues('autoMotoDetails.downPayment') !== newDownPayment){
-                            form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
-                        }
+                } else if (name === 'autoMotoDetails.coursePlan' && !isPaidInFull) {
+                    // This block will run after a plan is selected, re-calculating the 50% if needed
+                    newDownPayment = newCourseValue * 0.5;
+                    if(form.getValues('autoMotoDetails.downPayment') !== newDownPayment){
+                         form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
                     }
                 }
 
@@ -492,7 +496,7 @@ export function ContractForm() {
                                         )}
                                         disabled={!watchedValues.autoMotoDetails?.balance || watchedValues.autoMotoDetails?.balance <= 0}
                                     >
-                                        {field.value ? (
+                                        {field.value && field.value instanceof Date ? (
                                             format(field.value, "PPP", { locale: es })
                                         ) : (
                                             <span>mm/dd/aaaa</span>
@@ -636,7 +640,7 @@ export function ContractForm() {
                                         <PopoverTrigger asChild>
                                             <FormControl>
                                                 <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                                    {field.value && field.value instanceof Date ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha {index + 1}</span>}
+                                                    {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha {index + 1}</span>}
                                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                 </Button>
                                             </FormControl>
@@ -683,7 +687,7 @@ export function ContractForm() {
                                                         <FormControl>
                                                             <Button variant={"outline"} size="sm" className={cn("w-full pl-3 text-left font-normal h-9", !field.value && "text-muted-foreground")}>
                                                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                                                {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                                                                {field.value instanceof Date ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
                                                             </Button>
                                                         </FormControl>
                                                     </PopoverTrigger>
@@ -744,7 +748,7 @@ export function ContractForm() {
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Fechas de Pago (6 Cuotas)</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {Array.from({ length: 6 }).map((_, index) => (
-                    <FormField key={index} control={form.control} name={`deluxeDetails.paymentInstallments.${index}`} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Cuota {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar locale={es} mode="single" selected={field.value ?? undefined} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
+                    <FormField key={index} control={form.control} name={`deluxeDetails.paymentInstallments.${index}`} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Cuota {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value instanceof Date ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar locale={es} mode="single" selected={field.value ?? undefined} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
                 ))}
             </div>
             
@@ -758,7 +762,7 @@ export function ContractForm() {
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Clases Teóricas (10 Semanas)</h3>
              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {Array.from({ length: 10 }).map((_, index) => (
-                    <FormField key={index} control={form.control} name={`deluxeDetails.theoreticalClasses.${index}`} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Semana {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar locale={es} mode="single" selected={field.value ?? undefined} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
+                    <FormField key={index} control={form.control} name={`deluxeDetails.theoreticalClasses.${index}`} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Semana {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value instanceof Date ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar locale={es} mode="single" selected={field.value ?? undefined} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
                 ))}
             </div>
             

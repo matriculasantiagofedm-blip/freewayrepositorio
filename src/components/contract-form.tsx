@@ -42,6 +42,7 @@ import { AutoMotoContractTemplatePreview } from './auto-moto-contract-preview';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { AccordionWrapper } from './accordion-wrapper';
 import { Checkbox } from './ui/checkbox';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 
 // --- Esquemas de Validación con Zod ---
 
@@ -68,8 +69,8 @@ const autoMotoSchema = baseSchema.extend({
   balance: z.number(),
   paymentDeadline: z.date().optional(),
   vehicle: z.enum(['Spark', 'P. Blanco', 'P. Bronce', 'Moto']).optional(),
-  vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']),
-  licenseCategory: z.enum(['A, C', 'A, C, D', 'A, B']),
+  vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).optional(),
+  licenseCategory: z.enum(['A, C', 'A, C, D', 'A, B']).optional(),
   theoreticalClassSchedule: z.string().optional(),
   theoreticalClassDates: z.array(z.date().optional()).optional(),
   practicalClassSchedules: z.array(classScheduleSchema).optional(),
@@ -190,6 +191,9 @@ export function ContractForm() {
                 const selectedPlan = (coursePlans as any)[contractType].find((p: any) => p.name === value.coursePlan);
                 if (selectedPlan) {
                     form.setValue('courseValue', selectedPlan.price);
+                    if (form.getValues('paidInFull')) {
+                        form.setValue('downPayment', selectedPlan.price);
+                    }
                 }
             }
 
@@ -262,7 +266,7 @@ export function ContractForm() {
                     courseValue: values.courseValue,
                     downPayment: values.downPayment,
                     balance: (values.courseValue || 0) - (values.downPayment || 0),
-                    paymentDeadline: values.paymentDeadline ? format(values.paymentDeadline, 'yyyy-MM-dd') : undefined,
+                    paymentDeadline: values.paymentDeadline,
                     vehicle: values.vehicle,
                     vehicleTransmission: values.vehicleTransmission,
                     licenseCategory: values.licenseCategory,
@@ -377,7 +381,7 @@ export function ContractForm() {
 
     const renderAutoMotoFields = () => (
         <>
-             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Cláusula Primera: Valor y Forma de Pago</h3>
+            <h3 className="font-semibold text-lg pt-4 border-b pb-2">Cláusula Primera: Valor y Forma de Pago</h3>
             <FormField
                 control={form.control}
                 name="coursePlan"
@@ -394,21 +398,22 @@ export function ContractForm() {
                     </FormItem>
                 )}
             />
-             <FormField
+            <FormField
                 control={form.control}
                 name="paidInFull"
                 render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
                         <FormControl>
                             <Checkbox
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
+                                id="paidInFull"
                             />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                            <FormLabel>
+                            <label htmlFor='paidInFull' className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
                                ¿Cancelar la totalidad del curso (100%)?
-                            </FormLabel>
+                            </label>
                         </div>
                     </FormItem>
                 )}
@@ -419,12 +424,130 @@ export function ContractForm() {
                 <FormField control={form.control} name="balance" render={({ field }) => (<FormItem><FormLabel>Saldo (B/.)</FormLabel><FormControl><Input type="number" {...field} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
             </div>
 
-            <h3 className="font-semibold text-lg pt-4 border-b pb-2">Detalles del Vehículo y Licencia</h3>
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                 <FormField control={form.control} name="vehicle" render={({ field }) => (<FormItem><FormLabel>Vehículo Asignado</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar Vehículo" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Spark">Spark</SelectItem><SelectItem value="P. Blanco">Picanto Blanco</SelectItem><SelectItem value="P. Bronce">Picanto Bronce</SelectItem><SelectItem value="Moto">Moto</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                 <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (<FormItem><FormLabel>Transmisión</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar Transmisión" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Automático">Automático</SelectItem><SelectItem value="Manual">Manual</SelectItem>{(contractType === "Curso Moto" || contractType === "Curso Mixto") && <SelectItem value="Moto">Moto</SelectItem>}</SelectContent></Select><FormMessage /></FormItem>)} />
-                 <FormField control={form.control} name="licenseCategory" render={({ field }) => (<FormItem><FormLabel>Categoría de Licencia</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar Categoría" /></SelectTrigger></FormControl><SelectContent>{(contractType === "Curso Moto" || contractType === "Curso Mixto") ? <SelectItem value="A, B">A, B</SelectItem> : <><SelectItem value="A, C">A, C</SelectItem><SelectItem value="A, C, D">A, C, D</SelectItem></>}</SelectContent></Select><FormMessage /></FormItem>)} />
+            <FormField
+                control={form.control}
+                name="paymentDeadline"
+                render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                        <FormLabel>Fecha Límite de Pago del Saldo</FormLabel>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <FormControl>
+                                    <Button
+                                        variant={"outline"}
+                                        className={cn(
+                                            "w-full pl-3 text-left font-normal",
+                                            !field.value && "text-muted-foreground"
+                                        )}
+                                        disabled={watchedValues.balance <= 0}
+                                    >
+                                        {field.value ? (
+                                            format(field.value, "PPP", { locale: es })
+                                        ) : (
+                                            <span>mm/dd/aaaa</span>
+                                        )}
+                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                    </Button>
+                                </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    mode="single"
+                                    selected={field.value}
+                                    onSelect={field.onChange}
+                                    disabled={(date) => date < new Date() || watchedValues.balance <= 0}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                         {watchedValues.balance <= 0 && <FormDescription>No aplica, ya que el curso está cancelado en su totalidad.</FormDescription>}
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+
+            <h3 className="font-semibold text-lg pt-4 border-b pb-2">Cláusula Segunda: Detalles del Curso</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <FormField control={form.control} name="vehicle" render={({ field }) => (<FormItem><FormLabel>Vehículo</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un vehículo" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Spark">Spark</SelectItem><SelectItem value="P. Blanco">Picanto Blanco</SelectItem><SelectItem value="P. Bronce">Picanto Bronce</SelectItem><SelectItem value="Moto">Moto</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                <FormField
+                    control={form.control}
+                    name="vehicleTransmission"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Transmisión</FormLabel>
+                             <FormControl>
+                                <RadioGroup
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                                className="flex items-center space-x-4 pt-2"
+                                >
+                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                    <FormControl>
+                                    <RadioGroupItem value="Automático" />
+                                    </FormControl>
+                                    <FormLabel className="font-normal">Automático</FormLabel>
+                                </FormItem>
+                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                    <FormControl>
+                                    <RadioGroupItem value="Manual" />
+                                    </FormControl>
+                                    <FormLabel className="font-normal">Manual</FormLabel>
+                                </FormItem>
+                                </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
             </div>
+             <FormField
+                control={form.control}
+                name="licenseCategory"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Categoría de Licencia a Aplicar</FormLabel>
+                        <FormControl>
+                            <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="flex flex-col space-y-1"
+                            >
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl><RadioGroupItem value="A, B" /></FormControl>
+                                <FormLabel className="font-normal">A, B</FormLabel>
+                            </FormItem>
+                            </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+            <FormField
+                control={form.control}
+                name="theoreticalClassSchedule"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Horario y fechas para clases teóricas.</FormLabel>
+                         <FormControl>
+                            <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="flex flex-col space-y-1"
+                            >
+                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                    <FormControl><RadioGroupItem value="Días de Semana de 8:00 am a 10:00 am" /></FormControl>
+                                    <FormLabel className="font-normal">Días de Semana de 8:00 am a 10:00 am</FormLabel>
+                                </FormItem>
+                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                    <FormControl><RadioGroupItem value="Sábados de 3:00 pm a 5:00 pm" /></FormControl>
+                                    <FormLabel className="font-normal">Sábados de 3:00 pm a 5:00 pm</FormLabel>
+                                </FormItem>
+                            </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
         </>
     );
     

@@ -8,12 +8,12 @@ import { Card, CardContent } from './ui/card';
 import { cn } from '@/lib/utils';
 
 const Line = ({ children, className }: { children?: React.ReactNode, className?: string }) => (
-  <span className={cn("border-b border-dotted border-black flex-1 min-w-8 text-center font-semibold text-primary", className)}>
+  <span className={cn("border-b border-dotted border-black flex-1 min-w-8 text-center font-semibold text-primary print:text-black", className)}>
     {children || <>&nbsp;</>}
   </span>
 );
 const LongLine = () => <span className="border-b border-dotted border-black flex-1 h-4 min-w-40" />;
-const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary">{children}</span>;
+const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary print:text-black">{children}</span>;
 
 function toDate(date: any): Date {
   if (date instanceof Date) return date;
@@ -31,7 +31,7 @@ function toDate(date: any): Date {
 
 
 const Checkbox = ({ checked }: { checked: boolean }) => (
-    <span className={`border border-black inline-block w-3 h-3 text-center leading-none align-middle ${checked ? 'bg-black text-white' : ''}`}>
+    <span className={`border border-black inline-block w-3 h-3 text-center leading-none align-middle ${checked ? 'bg-black text-white print:text-black print:bg-white print:font-bold' : ''}`}>
         {checked ? 'X' : ''}
     </span>
 );
@@ -65,7 +65,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
   return (
     <Card className="p-6 print:shadow-none print:border-none print:p-0 font-serif text-xs">
       <CardContent className="p-0 space-y-1 relative">
-        {contract.folio && <p className="absolute top-0 right-0 text-xs font-semibold text-destructive">Folio: {contract.folio}</p>}
+        {contract.folio && <p className="absolute top-0 right-0 text-xs font-semibold text-destructive print:text-black">Folio: {contract.folio}</p>}
 
         <h2 className="text-center font-bold text-sm mb-2 pt-4">CONTRATO DE SERVICIOS EDUCATIVOS</h2>
 
@@ -168,7 +168,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
             En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los <Value>{format(toDate(contract.createdAt), 'd')}</Value> días del mes de <Value>{format(toDate(contract.createdAt), 'LLLL', { locale: es })}</Value>, de <Value>{format(toDate(contract.createdAt), 'yyyy')}</Value>, a las <Value>{format(toDate(contract.createdAt), 'p', { locale: es })}</Value>.
         </p>
 
-        <div className="flex justify-around pt-6">
+        <div className="flex justify-around pt-6 print:pt-12">
             <div className="text-center flex flex-col items-center">
                 <LongLine />
                 <p className="text-[10px]">Por la Empresa</p>
@@ -180,11 +180,11 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
             </div>
         </div>
 
-        {contract.createdBy && (
-          <div className="text-xs text-muted-foreground mt-8">
-            Confeccionado por: {contract.createdBy}
-          </div>
-        )}
+        <div className="print:block hidden text-xs text-muted-foreground pt-8">
+            {contract.createdBy && (
+            <span>Confeccionado por: {contract.createdBy}</span>
+            )}
+        </div>
 
       </CardContent>
     </Card>

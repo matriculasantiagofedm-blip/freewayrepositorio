@@ -20,7 +20,7 @@ export function ContractView({ contract }: { contract: Contract }) {
         return (
           <Card className="print:shadow-none print:border-none">
             <CardContent className="prose prose-lg max-w-none text-foreground leading-relaxed relative p-6">
-              {contract.folio && <p className="absolute top-4 right-6 text-sm font-semibold text-destructive">Folio: {contract.folio}</p>}
+              {contract.folio && <p className="absolute top-4 right-6 text-sm font-semibold text-destructive print:text-black">Folio: {contract.folio}</p>}
               <h1 className="font-headline text-4xl pt-8">{contract.title}</h1>
               <p>{contract.content}</p>
             </CardContent>

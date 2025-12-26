@@ -33,7 +33,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFirebase } from '@/firebase';
 import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
@@ -206,6 +206,8 @@ export function ContractForm() {
     const { firestore, user } = useFirebase();
     const { toast } = useToast();
     const [folio, setFolio] = useState('');
+    const [submissionAction, setSubmissionAction] = useState<'save' | 'saveAndPrint'>('save');
+
 
     const contractType = useMemo(() => searchParams.get('type') as ContractType | null, [searchParams]);
 
@@ -313,7 +315,7 @@ export function ContractForm() {
                     if(form.getValues('autoMotoDetails.downPayment') !== newDownPayment){
                         form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
                     }
-                } else if (name === 'autoMotoDetails.coursePlan' && !isPaidInFull && !specialPlanSelected) {
+                } else if (name === 'autoMotoDetails.coursePlan' && !isPaidInFull && !specialPlanSelected && !selectedPlan?.isCombined) {
                     newDownPayment = newCourseValue * 0.5;
                     if(form.getValues('autoMotoDetails.downPayment') !== newDownPayment){
                          form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
@@ -414,7 +416,9 @@ export function ContractForm() {
             await batch.commit();
 
             toast({ title: 'Éxito', description: 'Contrato y cliente creados correctamente.' });
-            router.push(`/contracts/${contractRef.id}`);
+            
+            const redirectUrl = `/contracts/${contractRef.id}${submissionAction === 'saveAndPrint' ? '?print=true' : ''}`;
+            router.push(redirectUrl);
 
         } catch (error) {
             console.error("Error creating contract:", error);
@@ -574,7 +578,7 @@ export function ContractForm() {
                         <SelectItem value="P. Bronce">Picanto Bronce</SelectItem>
                         </SelectContent></Select><FormMessage /></FormItem>)} />
                  )}
-                 {(contractType === 'Curso Auto' || contractType === 'Curso Mixto') && (
+                 {(contractType === 'Curso Auto' || (contractType === 'Curso Mixto' && watchedValues.autoMotoDetails?.coursePlan !== 'Basico Moto + Ya se manejar Auto' && watchedValues.autoMotoDetails?.coursePlan !== 'Plus Moto + Ya se manejar Auto' && watchedValues.autoMotoDetails?.coursePlan !== 'Premium Moto + Ya se manejar Auto')) && (
                     <FormField
                         control={form.control}
                         name="autoMotoDetails.vehicleTransmission"
@@ -606,7 +610,7 @@ export function ContractForm() {
                         )}
                     />
                  )}
-                 {(contractType === 'Curso Moto' || contractType === 'Curso Mixto') && (
+                 {(contractType === 'Curso Moto' || (contractType === 'Curso Mixto' && watchedValues.autoMotoDetails?.coursePlan !== 'Basico Auto + Ya se manejar moto' && watchedValues.autoMotoDetails?.coursePlan !== 'Plus Auto + Ya se manejar Moto' && watchedValues.autoMotoDetails?.coursePlan !== 'Premium Auto + Ya se manejar Moto')) && (
                      <FormField
                         control={form.control}
                         name="autoMotoDetails.vehicleTransmission"
@@ -851,13 +855,25 @@ export function ContractForm() {
                 {renderCommonFields()}
                 {contractType === 'Curso Deluxe' ? renderDeluxeFields() : renderAutoMotoFields()}
                 
-                {(contractType === 'Curso Auto' || contractType === 'Curso Mixto') && renderPracticalClassFields(practicalClassFields, 'autoMotoDetails.practicalClassSchedules', 'Clases Prácticas de Auto')}
+                {contractType === 'Curso Auto' && renderPracticalClassFields(practicalClassFields, 'autoMotoDetails.practicalClassSchedules', 'Clases Prácticas de Auto')}
+                
+                {contractType === 'Curso Moto' && renderPracticalClassFields(practicalClassFields, 'autoMotoDetails.practicalClassSchedules', 'Clases Prácticas de Moto')}
 
-                {(contractType === 'Curso Moto' || contractType === 'Curso Mixto') && renderPracticalClassFields(motoPracticalClassFields, 'autoMotoDetails.motoPracticalClassSchedules', 'Clases Prácticas de Moto')}
-
-                 <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
-                    {form.formState.isSubmitting ? 'Guardando...' : 'Guardar Contrato'}
-                </Button>
+                {contractType === 'Curso Mixto' && (
+                    <>
+                        {renderPracticalClassFields(practicalClassFields, 'autoMotoDetails.practicalClassSchedules', 'Clases Prácticas de Auto')}
+                        {renderPracticalClassFields(motoPracticalClassFields, 'autoMotoDetails.motoPracticalClassSchedules', 'Clases Prácticas de Moto')}
+                    </>
+                )}
+                 <div className="flex flex-col sm:flex-row gap-2 justify-end">
+                    <Button type="submit" onClick={() => setSubmissionAction('save')} disabled={form.formState.isSubmitting} variant="outline">
+                        {form.formState.isSubmitting && submissionAction === 'save' ? 'Guardando...' : 'Guardar Contrato'}
+                    </Button>
+                    <Button type="submit" onClick={() => setSubmissionAction('saveAndPrint')} disabled={form.formState.isSubmitting}>
+                        <Printer className="mr-2 h-4 w-4" />
+                        {form.formState.isSubmitting && submissionAction === 'saveAndPrint' ? 'Guardando...' : 'Guardar e Imprimir'}
+                    </Button>
+                </div>
             </CardContent>
         </Card>
     );
@@ -901,8 +917,3 @@ export function ContractForm() {
         </Form>
     );
 }
-
-    
-    
-
-    

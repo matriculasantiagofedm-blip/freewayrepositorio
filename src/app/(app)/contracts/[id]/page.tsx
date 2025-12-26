@@ -26,9 +26,11 @@ export default function ContractDetailPage() {
 
   useEffect(() => {
     if (shouldPrint && contract && !isLoading) {
-      setTimeout(() => {
+      // Short delay to ensure all content and styles are rendered before printing.
+      const timer = setTimeout(() => {
         window.print();
-      }, 500); // Delay to allow content to render
+      }, 500); 
+      return () => clearTimeout(timer);
     }
   }, [shouldPrint, contract, isLoading]);
 
@@ -47,7 +49,7 @@ export default function ContractDetailPage() {
       {error && <p className="text-destructive">Error: {error.message}</p>}
       {contract && <ContractView contract={contract} />}
       {!isLoading && !contract && (
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
+        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center print:hidden">
             <h3 className="mt-4 text-lg font-semibold text-foreground">
                 Contrato no encontrado
             </h3>

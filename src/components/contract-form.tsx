@@ -793,7 +793,7 @@ export function ContractForm() {
                                         <PopoverTrigger asChild>
                                             <FormControl>
                                                 <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                                    {field.value ? format(new Date(field.value), "PPP", { locale: es }) : <span>Seleccionar fecha {index + 1}</span>}
+                                                    {field.value && field.value instanceof Date ? format(new Date(field.value), "PPP", { locale: es }) : <span>Seleccionar fecha {index + 1}</span>}
                                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                 </Button>
                                             </FormControl>
@@ -996,6 +996,8 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    
 
     
 

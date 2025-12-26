@@ -297,10 +297,16 @@ export function ContractForm() {
     const watchedPaidInFull = form.watch('autoMotoDetails.paidInFull');
     const watchedAmpliacionesPaidInFull = form.watch('ampliacionesDetails.paidInFull');
     const watchedCoursePlan = form.watch('autoMotoDetails.coursePlan');
+    const watchedAmpliacionesCourseValue = form.watch('ampliacionesDetails.courseValue');
 
     const isSpecialPlan = useMemo(() => 
         watchedCoursePlan?.toLowerCase().includes('ya se manejar') && !watchedCoursePlan?.toLowerCase().includes('+'),
         [watchedCoursePlan]
+    );
+
+    const isAmpliacionesFullPaymentRequired = useMemo(() => 
+        (watchedAmpliacionesCourseValue || 0) <= 100 && (watchedAmpliacionesCourseValue || 0) > 0,
+        [watchedAmpliacionesCourseValue]
     );
 
 
@@ -422,21 +428,30 @@ export function ContractForm() {
             // Ampliaciones Logic
             if (name?.startsWith('ampliacionesDetails')) {
                 const selectedPlans = value.ampliacionesDetails?.selectedPlans || [];
-                const isPaidInFull = value.ampliacionesDetails?.paidInFull;
+                let isPaidInFull = value.ampliacionesDetails?.paidInFull;
                 const downPayment = value.ampliacionesDetails?.downPayment || 0;
-                
-                let newCourseValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
+
+                const newCourseValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
                 form.setValue('ampliacionesDetails.courseValue', newCourseValue, { shouldValidate: true });
 
+                const forceFullPayment = newCourseValue > 0 && newCourseValue <= 100;
+                
+                if (forceFullPayment) {
+                    isPaidInFull = true;
+                    if (form.getValues('ampliacionesDetails.paidInFull') !== true) {
+                        form.setValue('ampliacionesDetails.paidInFull', true, { shouldValidate: true });
+                    }
+                }
+                
                 let newDownPayment = downPayment;
                 if (isPaidInFull) {
                     newDownPayment = newCourseValue;
-                    if(form.getValues('ampliacionesDetails.downPayment') !== newDownPayment) {
+                    if (form.getValues('ampliacionesDetails.downPayment') !== newDownPayment) {
                         form.setValue('ampliacionesDetails.downPayment', newDownPayment, { shouldValidate: true });
                     }
                 }
 
-                if (name === 'ampliacionesDetails.paidInFull') {
+                if (name === 'ampliacionesDetails.paidInFull' || name === 'ampliacionesDetails.selectedPlans') {
                     if (isPaidInFull) {
                         form.setValue('ampliacionesDetails.paymentDeadline', new Date());
                     } else {
@@ -445,7 +460,7 @@ export function ContractForm() {
                 }
 
                 const newBalance = newCourseValue - newDownPayment;
-                if(form.getValues('ampliacionesDetails.balance') !== newBalance){
+                if (form.getValues('ampliacionesDetails.balance') !== newBalance) {
                     form.setValue('ampliacionesDetails.balance', newBalance < 0 ? 0 : newBalance, { shouldValidate: true });
                 }
             }
@@ -550,13 +565,19 @@ export function ContractForm() {
                     paymentDeadline: autoMotoDetails.paymentDeadline instanceof Date ? format(autoMotoDetails.paymentDeadline, 'yyyy-MM-dd') : null,
                     theoreticalClassDates: (autoMotoDetails.theoreticalClassDates || [])
                         .map(d => d instanceof Date ? format(d, 'yyyy-MM-dd') : null)
-                        .filter(Boolean),
+                        .filter(d => d !== null),
                     practicalClassSchedules: (autoMotoDetails.practicalClassSchedules || [])
                         .filter(c => c.date || c.time)
-                        .map(c => ({ date: c.date instanceof Date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })),
+                        .map(c => ({ 
+                            date: c.date instanceof Date ? format(c.date, 'yyyy-MM-dd') : null, 
+                            time: c.time || null 
+                        })),
                     motoPracticalClassSchedules: (autoMotoDetails.motoPracticalClassSchedules || [])
                         .filter(c => c.date || c.time)
-                        .map(c => ({ date: c.date instanceof Date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })),
+                        .map(c => ({ 
+                            date: c.date instanceof Date ? format(c.date, 'yyyy-MM-dd') : null, 
+                            time: c.time || null 
+                        })),
                 };
                 delete contractData.deluxeDetails;
                 delete contractData.ampliacionesDetails;
@@ -825,12 +846,14 @@ export function ContractForm() {
                                     checked={field.value || false}
                                     onCheckedChange={field.onChange}
                                     id="ampliacionesPaidInFull"
+                                    disabled={isAmpliacionesFullPaymentRequired}
                                 />
                             </FormControl>
                             <div className="space-y-1 leading-none">
-                                <label htmlFor='ampliacionesPaidInFull' className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
+                                <label htmlFor='ampliacionesPaidInFull' className={cn('text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70', isAmpliacionesFullPaymentRequired && 'text-muted-foreground')}>
                                    ¿Cancelar la totalidad del curso (100%)?
                                 </label>
+                                {isAmpliacionesFullPaymentRequired && <FormDescription>El pago completo es requerido para montos de B/.100.00 o menos.</FormDescription>}
                             </div>
                         </FormItem>
                     )}
@@ -1283,7 +1306,7 @@ export function ContractForm() {
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Fechas de Pago (6 Cuotas)</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {Array.from({ length: 6 }).map((_, index) => (
-                    <FormField key={index} control={form.control} name={`deluxeDetails.paymentInstallments.${index}`} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Cuota {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(new Date(field.value), "PPP", { locale: es }) : <span>Seleccionar</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar locale={es} mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
+                    <FormField key={index} control={form.control} name={`deluxeDetails.paymentInstallments.${index}`} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Cuota {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value instanceof Date && !isNaN(field.value.getTime()) ? format(new Date(field.value), "PPP", { locale: es }) : <span>Seleccionar</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar locale={es} mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
                 ))}
             </div>
             
@@ -1297,7 +1320,7 @@ export function ContractForm() {
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Clases Teóricas (10 Semanas)</h3>
              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {Array.from({ length: 10 }).map((_, index) => (
-                    <FormField key={index} control={form.control} name={`deluxeDetails.theoreticalClasses.${index}`} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Semana {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value && field.value instanceof Date && !isNaN(field.value.getTime()) ? format(new Date(field.value), "PPP", { locale: es }) : <span>Seleccionar</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar locale={es} mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
+                    <FormField key={index} control={form.control} name={`deluxeDetails.theoreticalClasses.${index}`} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Semana {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value instanceof Date && !isNaN(field.value.getTime()) ? format(new Date(field.value), "PPP", { locale: es }) : <span>Seleccionar</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar locale={es} mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
                 ))}
             </div>
             
@@ -1380,3 +1403,5 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    

@@ -325,7 +325,7 @@ export function ContractForm() {
                 }
                 
                 // Set payment deadline based on paidInFull status
-                if (name === 'autoMotoDetails.paidInFull') {
+                if (name === 'autoMotoDetails.paidInFull' || (name === 'autoMotoDetails.coursePlan' && isPaidInFull)) {
                     if (isPaidInFull) {
                         form.setValue('autoMotoDetails.paymentDeadline', new Date());
                     } else {
@@ -435,26 +435,29 @@ export function ContractForm() {
                 createdBy: currentUserRole,
             };
 
-             if (contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') {
-                const practicalSchedules = contractType === 'Curso Moto' 
-                    ? values.autoMotoDetails?.practicalClassSchedules 
-                    : values.autoMotoDetails?.practicalClassSchedules;
-
+            if (contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') {
+                const { deluxeDetails, ...restValues } = values;
+                const autoMotoDetails = restValues.autoMotoDetails || {};
+                
                 contractData.autoMotoDetails = {
-                    ...values.autoMotoDetails,
-                    paymentDeadline: values.autoMotoDetails?.paymentDeadline ? format(values.autoMotoDetails.paymentDeadline, 'yyyy-MM-dd') : null,
-                    theoreticalClassDates: values.autoMotoDetails?.theoreticalClassDates?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(d => d) || [],
-                    practicalClassSchedules: practicalSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })).filter(c => c.date || c.time) || [],
-                    motoPracticalClassSchedules: values.autoMotoDetails?.motoPracticalClassSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })).filter(c => c.date || c.time) || [],
+                    ...autoMotoDetails,
+                    paymentDeadline: autoMotoDetails.paymentDeadline ? format(autoMotoDetails.paymentDeadline, 'yyyy-MM-dd') : null,
+                    theoreticalClassDates: autoMotoDetails.theoreticalClassDates?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(d => d) || [],
+                    practicalClassSchedules: autoMotoDetails.practicalClassSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })).filter(c => c.date || c.time) || [],
+                    motoPracticalClassSchedules: autoMotoDetails.motoPracticalClassSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })).filter(c => c.date || c.time) || [],
                 };
             } else if (contractType === 'Curso Deluxe') {
+                const { autoMotoDetails, ...restValues } = values;
+                const deluxeDetails = restValues.deluxeDetails || {};
+
                 contractData.deluxeDetails = {
-                    ...values.deluxeDetails,
-                    paymentInstallments: values.deluxeDetails?.paymentInstallments?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(d => d) || [],
-                    theoreticalClasses: values.deluxeDetails?.theoreticalClasses?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(d => d) || [],
-                    classSchedules: values.deluxeDetails?.classSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })).filter(c => c.date || c.time) || [],
+                    ...deluxeDetails,
+                    paymentInstallments: deluxeDetails.paymentInstallments?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(d => d) || [],
+                    theoreticalClasses: deluxeDetails.theoreticalClasses?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(d => d) || [],
+                    classSchedules: deluxeDetails.classSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })).filter(c => c.date || c.time) || [],
                 };
             }
+
 
             batch.set(contractRef, contractData);
             await batch.commit();
@@ -793,7 +796,7 @@ export function ContractForm() {
                                         <PopoverTrigger asChild>
                                             <FormControl>
                                                 <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                                    {field.value && field.value instanceof Date ? format(new Date(field.value), "PPP", { locale: es }) : <span>Seleccionar fecha {index + 1}</span>}
+                                                    {field.value && field.value instanceof Date && !isNaN(field.value.getTime()) ? format(new Date(field.value), "PPP", { locale: es }) : <span>Seleccionar fecha {index + 1}</span>}
                                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                 </Button>
                                             </FormControl>
@@ -840,7 +843,7 @@ export function ContractForm() {
                                                         <FormControl>
                                                             <Button variant={"outline"} size="sm" className={cn("w-full pl-3 text-left font-normal h-9", !field.value && "text-muted-foreground")}>
                                                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                                                {field.value ? format(new Date(field.value), "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                                                                {field.value && field.value instanceof Date ? format(new Date(field.value), "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
                                                             </Button>
                                                         </FormControl>
                                                     </PopoverTrigger>
@@ -996,11 +999,5 @@ export function ContractForm() {
         </Form>
     );
 }
-
-    
-
-    
-
-    
 
     

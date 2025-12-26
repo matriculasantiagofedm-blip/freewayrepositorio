@@ -177,6 +177,7 @@ export function ContractForm() {
                 downPayment: 0,
                 balance: 0,
                 theoreticalClassDates: [],
+                practicalClassSchedules: [],
             });
 
             if (contractType === 'Curso Deluxe') {
@@ -307,13 +308,13 @@ export function ContractForm() {
                     downPayment: values.downPayment,
                     balance: (values.courseValue || 0) - (values.downPayment || 0),
                     paymentDeadline: values.paymentDeadline ? format(values.paymentDeadline, 'yyyy-MM-dd') : null,
-                    vehicle: values.vehicle,
-                    vehicleTransmission: values.vehicleTransmission,
-                    licenseCategory: values.licenseCategory,
-                    theoreticalClassSchedule: values.theoreticalClassSchedule,
-                    theoreticalClassDates: values.theoreticalClassDates?.map(d => d ? format(d, 'yyyy-MM-dd') : null),
-                    practicalClassSchedules: values.practicalClassSchedules?.map(c => ({...c, date: c.date ? format(c.date, 'yyyy-MM-dd') : null })),
-                    motoPracticalClassSchedules: values.motoPracticalClassSchedules?.map(c => ({...c, date: c.date ? format(c.date, 'yyyy-MM-dd') : null })),
+                    vehicle: values.vehicle || null,
+                    vehicleTransmission: values.vehicleTransmission || null,
+                    licenseCategory: values.licenseCategory || null,
+                    theoreticalClassSchedule: values.theoreticalClassSchedule || null,
+                    theoreticalClassDates: values.theoreticalClassDates?.map(d => d ? format(d, 'yyyy-MM-dd') : null) || [],
+                    practicalClassSchedules: values.practicalClassSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })) || [],
+                    motoPracticalClassSchedules: values.motoPracticalClassSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })) || [],
                 };
             } else if ('paymentDetails' in values) { // Deluxe
                 (contractData as any).deluxeDetails = {
@@ -323,12 +324,12 @@ export function ContractForm() {
                     studentPhone2: values.clientPhone2,
                     paymentDetails: values.paymentDetails,
                     paymentAmount: values.paymentAmount,
-                    paymentInstallments: values.paymentInstallments.map(d => d ? format(d, 'yyyy-MM-dd') : null),
+                    paymentInstallments: values.paymentInstallments.map(d => d ? format(d, 'yyyy-MM-dd') : null) || [],
                     vehicleTransmission: values.vehicleTransmission,
                     licenseCategory: values.licenseCategory,
                     theoreticalClassSchedule: values.theoreticalClassSchedule,
-                    theoreticalClasses: values.theoreticalClasses.map(d => d ? format(d, 'yyyy-MM-dd') : null),
-                    classSchedules: values.classSchedules.map(c => ({...c, date: c.date ? format(c.date, 'yyyy-MM-dd') : null })),
+                    theoreticalClasses: values.theoreticalClasses.map(d => d ? format(d, 'yyyy-MM-dd') : null) || [],
+                    classSchedules: values.classSchedules.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })) || [],
                 };
             }
 
@@ -656,7 +657,7 @@ export function ContractForm() {
                                                 <Popover>
                                                     <PopoverTrigger asChild>
                                                         <FormControl>
-                                                            <Button variant={"outline"} size="sm" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                            <Button variant={"outline"} size="sm" className={cn("w-full pl-3 text-left font-normal h-9", !field.value && "text-muted-foreground")}>
                                                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                                                 {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
                                                             </Button>
@@ -833,3 +834,5 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    

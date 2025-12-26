@@ -45,6 +45,7 @@ import { AutoMotoContractTemplatePreview } from './auto-moto-contract-preview';
 import { Checkbox } from './ui/checkbox';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 
 // --- Esquemas de Validación con Zod ---
 
@@ -188,13 +189,15 @@ const ampliacionesPlans = {
         { name: 'E1,E2,E3+F+I', price: 257.00 },
         { name: 'F+I', price: 150.00 },
         { name: 'G+H', price: 207.00 },
+    ],
+    otherCombos: [
         { name: 'Combo 1: B+D', price: 85.00 },
         { name: 'Combo 2: B+E1', price: 85.00 },
         { name: 'Combo 3: E2+E3', price: 85.00 },
         { name: 'Combo 4: B+F', price: 85.00 },
     ]
 };
-const allAmpliacionesPlans = [...ampliacionesPlans.individual, ...ampliacionesPlans.combos];
+const allAmpliacionesPlans = [...ampliacionesPlans.individual, ...ampliacionesPlans.combos, ...ampliacionesPlans.otherCombos];
 
 const practicalClassTimeSlots = [
   '8:00 am a 10:00 am',
@@ -536,24 +539,38 @@ export function ContractForm() {
                 contractData.autoMotoDetails = {
                     ...autoMotoDetails,
                     paymentDeadline: autoMotoDetails.paymentDeadline ? format(autoMotoDetails.paymentDeadline, 'yyyy-MM-dd') : null,
-                    theoreticalClassDates: autoMotoDetails.theoreticalClassDates?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(Boolean) || [],
-                    practicalClassSchedules: autoMotoDetails.practicalClassSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })).filter(c => c.date || c.time) || [],
-                    motoPracticalClassSchedules: autoMotoDetails.motoPracticalClassSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })).filter(c => c.date || c.time) || [],
+                    theoreticalClassDates: (autoMotoDetails.theoreticalClassDates || [])
+                        .map(d => d ? format(d, 'yyyy-MM-dd') : null)
+                        .filter(Boolean),
+                    practicalClassSchedules: (autoMotoDetails.practicalClassSchedules || [])
+                        .filter(c => c.date || c.time)
+                        .map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })),
+                    motoPracticalClassSchedules: (autoMotoDetails.motoPracticalClassSchedules || [])
+                        .filter(c => c.date || c.time)
+                        .map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })),
                 };
+                 delete contractData.deluxeDetails;
+                delete contractData.ampliacionesDetails;
             } else if (contractType === 'Curso Deluxe') {
                 const deluxeDetails = values.deluxeDetails || {};
                 contractData.deluxeDetails = {
                     ...deluxeDetails,
-                    paymentInstallments: deluxeDetails.paymentInstallments?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(Boolean) || [],
-                    theoreticalClasses: deluxeDetails.theoreticalClasses?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(Boolean) || [],
-                    classSchedules: deluxeDetails.classSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })).filter(c => c.date || c.time) || [],
+                    paymentInstallments: (deluxeDetails.paymentInstallments || []).map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(Boolean),
+                    theoreticalClasses: (deluxeDetails.theoreticalClasses || []).map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(Boolean),
+                    classSchedules: (deluxeDetails.classSchedules || [])
+                        .filter(c => c.date || c.time)
+                        .map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })),
                 };
+                delete contractData.autoMotoDetails;
+                delete contractData.ampliacionesDetails;
             } else if (contractType === 'Ampliaciones') {
                 const ampliacionesDetails = values.ampliacionesDetails || {};
                 contractData.ampliacionesDetails = {
                     ...ampliacionesDetails,
                      paymentDeadline: ampliacionesDetails.paymentDeadline ? format(ampliacionesDetails.paymentDeadline, 'yyyy-MM-dd') : null,
                 };
+                 delete contractData.autoMotoDetails;
+                delete contractData.deluxeDetails;
             }
 
             batch.set(contractRef, contractData);
@@ -633,41 +650,83 @@ export function ContractForm() {
                                     Selecciona todos los planes que apliquen. El total se calculará automáticamente.
                                 </FormDescription>
                             </div>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {allAmpliacionesPlans.map((plan) => (
-                                    <FormField
-                                        key={plan.name}
-                                        control={form.control}
-                                        name={selectedPlansPath}
-                                        render={({ field }) => {
-                                            return (
-                                                <FormItem
+                            <Accordion type="multiple" className="w-full">
+                                <AccordionItem value="individual">
+                                    <AccordionTrigger>Planes Individuales</AccordionTrigger>
+                                    <AccordionContent>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-4">
+                                            {ampliacionesPlans.individual.map((plan) => (
+                                                <FormField
                                                     key={plan.name}
-                                                    className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4"
-                                                >
-                                                    <FormControl>
-                                                        <Checkbox
-                                                            checked={field.value?.some(p => p.name === plan.name)}
-                                                            onCheckedChange={(checked) => {
-                                                                return checked
-                                                                    ? field.onChange([...(field.value || []), plan])
-                                                                    : field.onChange(
-                                                                        field.value?.filter(
-                                                                            (value) => value.name !== plan.name
-                                                                        )
-                                                                    )
-                                                            }}
-                                                        />
-                                                    </FormControl>
-                                                    <FormLabel className="font-normal">
-                                                        {plan.name} <span className="font-semibold text-primary"> (B/.{plan.price.toFixed(2)})</span>
-                                                    </FormLabel>
-                                                </FormItem>
-                                            )
-                                        }}
-                                    />
-                                ))}
-                            </div>
+                                                    control={form.control}
+                                                    name={selectedPlansPath}
+                                                    render={({ field }) => (
+                                                        <FormItem key={plan.name} className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                                                            <FormControl>
+                                                                <Checkbox
+                                                                    checked={field.value?.some(p => p.name === plan.name)}
+                                                                    onCheckedChange={(checked) => checked ? field.onChange([...(field.value || []), plan]) : field.onChange(field.value?.filter((value) => value.name !== plan.name))}
+                                                                />
+                                                            </FormControl>
+                                                            <FormLabel className="font-normal">{plan.name} <span className="font-semibold text-primary"> (B/.{plan.price.toFixed(2)})</span></FormLabel>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            ))}
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                                <AccordionItem value="combos">
+                                    <AccordionTrigger>Combos de Ampliaciones</AccordionTrigger>
+                                    <AccordionContent>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-4">
+                                            {ampliacionesPlans.combos.map((plan) => (
+                                                <FormField
+                                                    key={plan.name}
+                                                    control={form.control}
+                                                    name={selectedPlansPath}
+                                                    render={({ field }) => (
+                                                        <FormItem key={plan.name} className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                                                            <FormControl>
+                                                                <Checkbox
+                                                                    checked={field.value?.some(p => p.name === plan.name)}
+                                                                    onCheckedChange={(checked) => checked ? field.onChange([...(field.value || []), plan]) : field.onChange(field.value?.filter((value) => value.name !== plan.name))}
+                                                                />
+                                                            </FormControl>
+                                                            <FormLabel className="font-normal">{plan.name} <span className="font-semibold text-primary"> (B/.{plan.price.toFixed(2)})</span></FormLabel>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            ))}
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                                <AccordionItem value="other-combos">
+                                    <AccordionTrigger>Otros Combos</AccordionTrigger>
+                                    <AccordionContent>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-4">
+                                            {ampliacionesPlans.otherCombos.map((plan) => (
+                                                <FormField
+                                                    key={plan.name}
+                                                    control={form.control}
+                                                    name={selectedPlansPath}
+                                                    render={({ field }) => (
+                                                        <FormItem key={plan.name} className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                                                            <FormControl>
+                                                                <Checkbox
+                                                                    checked={field.value?.some(p => p.name === plan.name)}
+                                                                    onCheckedChange={(checked) => checked ? field.onChange([...(field.value || []), plan]) : field.onChange(field.value?.filter((value) => value.name !== plan.name))}
+                                                                />
+                                                            </FormControl>
+                                                            <FormLabel className="font-normal">{plan.name} <span className="font-semibold text-primary"> (B/.{plan.price.toFixed(2)})</span></FormLabel>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            ))}
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </Accordion>
                             <FormMessage />
                         </FormItem>
                     )}

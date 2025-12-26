@@ -118,13 +118,13 @@ const coursePlans = {
     { name: 'BÁSICO', price: 133.00, classes: 4 },
     { name: 'PLUS', price: 150.00, classes: 5 },
     { name: 'PREMIUM', price: 175.00, classes: 6 },
-    { name: 'Ya se manejar Auto', price: 57.00, classes: 2 },
+    { name: 'Ya se manejar Auto', price: 57.00, classes: 0 },
   ],
   'Curso Moto': [
     { name: 'BÁSICO', price: 115.00, classes: 4 },
     { name: 'PLUS', price: 135.00, classes: 5 },
     { name: 'PREMIUM', price: 155.00, classes: 6 },
-    { name: 'Ya se manejar Moto', price: 57.00, classes: 2 },
+    { name: 'Ya se manejar Moto', price: 57.00, classes: 0 },
   ],
   'Curso Mixto': [
     { name: 'PAQUETE MIXTO COMPLETO', price: 380.00, classes: 6, motoClasses: 4 },
@@ -318,9 +318,9 @@ export function ContractForm() {
             if (name === 'autoMotoDetails.theoreticalClassSchedule') {
                 const theoreticalSchedule = value.autoMotoDetails?.theoreticalClassSchedule;
                 if (theoreticalSchedule?.includes('Dias de semana')) {
-                    replaceTheoreticalClasses(Array(5).fill({ date: undefined, time: undefined }));
+                    replaceTheoreticalClasses(Array(5).fill({ date: undefined }));
                 } else if (theoreticalSchedule?.includes('Sabados')) {
-                    replaceTheoreticalClasses(Array(3).fill({ date: undefined, time: undefined }));
+                    replaceTheoreticalClasses(Array(3).fill({ date: undefined }));
                 } else {
                     replaceTheoreticalClasses([]);
                 }
@@ -514,7 +514,7 @@ export function ContractForm() {
                                         )}
                                         disabled={!watchedValues.autoMotoDetails?.balance || watchedValues.autoMotoDetails?.balance <= 0}
                                     >
-                                        {field.value && field.value instanceof Date ? (
+                                        {field.value instanceof Date ? (
                                             format(field.value, "PPP", { locale: es })
                                         ) : (
                                             <span>mm/dd/aaaa</span>

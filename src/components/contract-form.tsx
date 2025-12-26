@@ -96,8 +96,9 @@ type FormValues = z.infer<typeof formSchema>;
 // --- Datos Estáticos ---
 const coursePlans = {
   'Curso Auto': [
-    { name: 'PAQUETE COMPLETO', price: 230.00 },
-    { name: 'PAQUETE BÁSICO', price: 175.00 },
+    { name: 'BÁSICO', price: 133.00 },
+    { name: 'PLUS', price: 150.00 },
+    { name: 'PREMIUM', price: 175.00 },
   ],
   'Curso Moto': [
     { name: 'CURSO COMPLETO', price: 150.00 },
@@ -188,7 +189,7 @@ export function ContractForm() {
         setFolio(`${typePrefix}-${uniqueId}`);
     }, [contractType]);
 
-    useEffect(() => {
+     useEffect(() => {
         const subscription = form.watch((value, { name }) => {
             if (name === 'coursePlan' && contractType && (coursePlans as any)[contractType]) {
                 const selectedPlan = (coursePlans as any)[contractType].find((p: any) => p.name === value.coursePlan);
@@ -210,6 +211,7 @@ export function ContractForm() {
         });
         return () => subscription.unsubscribe();
     }, [form, contractType]);
+
 
     useEffect(() => {
         const courseValue = watchedCourseValue || 0;
@@ -525,6 +527,14 @@ export function ContractForm() {
                                 <FormControl><RadioGroupItem value="A, B" /></FormControl>
                                 <FormLabel className="font-normal">A, B</FormLabel>
                             </FormItem>
+                             <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl><RadioGroupItem value="A, C" /></FormControl>
+                                <FormLabel className="font-normal">A, C</FormLabel>
+                            </FormItem>
+                             <FormItem className="flex items-center space-x-3 space-y-0">
+                                <FormControl><RadioGroupItem value="A, C, D" /></FormControl>
+                                <FormLabel className="font-normal">A, C, D</FormLabel>
+                            </FormItem>
                             </RadioGroup>
                         </FormControl>
                         <FormMessage />
@@ -736,3 +746,5 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    

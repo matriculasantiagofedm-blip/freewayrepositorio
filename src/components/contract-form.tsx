@@ -92,14 +92,10 @@ type FormValues = z.infer<typeof formSchema>;
 const autoCourseValues = [
     { name: 'PAQUETE COMPLETO', price: 230.00 },
     { name: 'PAQUETE BÁSICO', price: 175.00 },
-    { name: 'CLASES ADICIONALES (2 HORAS)', price: 40.00 },
-    { name: 'ALQUILER DE AUTO PARA PRUEBA', price: 40.00 },
 ];
 
 const motoCourseValues = [
     { name: 'CURSO COMPLETO', price: 150.00 },
-    { name: 'CLASE ADICIONAL', price: 40.00 },
-    { name: 'ALQUILER DE MOTO PARA PRUEBA', price: 40.00 },
 ];
 
 const mixtoCourseValues = [
@@ -566,3 +562,5 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    

@@ -33,7 +33,7 @@ export interface DeluxeContractDetails {
   studentIdNumber: string;
   studentAddress: string;
   studentPhone1: string;
-  studentPhone2: string;
+  studentPhone2?: string;
   vehicleTransmission: 'Automático' | 'Manual';
   licenseCategory: 'A, C' | 'A, C, D';
   theoreticalClassSchedule?: 'Lunes' | 'Miércoles';
@@ -78,6 +78,8 @@ export interface Contract {
   userId: string;
   createdAt: Timestamp;
   createdBy?: string; // User role who created the contract
-  deluxeDetails?: DeluxeContractDetails;
-  autoMotoDetails?: AutoMotoContractDetails;
+  deluxeDetails?: Partial<DeluxeContractDetails>;
+  autoMotoDetails?: Partial<AutoMotoContractDetails>;
 }
+
+    

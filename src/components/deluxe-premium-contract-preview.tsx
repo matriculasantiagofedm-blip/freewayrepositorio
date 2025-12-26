@@ -33,7 +33,7 @@ interface DeluxePremiumContractPreviewProps {
     folio: string;
     clientName?: string;
     clientEmail?: string;
-    deluxeDetails?: DeluxeContractDetails;
+    deluxeDetails?: Partial<DeluxeContractDetails>;
     createdBy?: string | null;
 }
 
@@ -203,3 +203,5 @@ export function DeluxePremiumContractTemplatePreview({ folio, clientName, client
     </Card>
   );
 }
+
+    

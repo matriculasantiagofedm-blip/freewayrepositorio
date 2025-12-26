@@ -38,7 +38,7 @@ interface AutoMotoContractTemplatePreviewProps {
     folio: string;
     clientName?: string;
     clientEmail?: string;
-    autoMotoDetails?: AutoMotoContractDetails;
+    autoMotoDetails?: Partial<AutoMotoContractDetails>;
     createdBy?: string | null;
     type?: ContractType;
 }
@@ -184,3 +184,5 @@ export function AutoMotoContractTemplatePreview({ folio, clientName, clientEmail
     </Card>
   );
 }
+
+    

@@ -128,6 +128,14 @@ const practicalClassTimeSlots = [
   '3:00 pm a 5:00 pm',
 ];
 
+const theoreticalClassTimeSlots = [
+    'Semana: 8am-10am',
+    'Semana: 10am-12pm',
+    'Semana: 2pm-4pm',
+    'Sábado: 8am-12pm (Intensivo)',
+    'Sábado: 1pm-5pm (Intensivo)',
+];
+
 const formatCurrency = (value?: number) => {
     if (value === undefined || value === null) return '0.00';
     return value.toFixed(2);
@@ -182,9 +190,9 @@ export function ContractForm() {
                 clientEmail: '',
                 autoMotoDetails: {
                   paidInFull: false,
-                  courseValue: undefined,
-                  downPayment: undefined,
-                  balance: undefined,
+                  courseValue: 0,
+                  downPayment: 0,
+                  balance: 0,
                   theoreticalClassDates: [],
                   practicalClassSchedules: [],
                   motoPracticalClassSchedules: []
@@ -263,10 +271,10 @@ export function ContractForm() {
 
     useEffect(() => {
         const theoreticalSchedule = form.watch('autoMotoDetails.theoreticalClassSchedule');
-        if (theoreticalSchedule?.includes('Días de Semana')) {
+        if (theoreticalSchedule?.includes('Semana')) {
             replaceTheoreticalClasses(Array(5).fill(undefined));
-        } else if (theoreticalSchedule?.includes('Sábados')) {
-            replaceTheoreticalClasses(Array(3).fill(undefined));
+        } else if (theoreticalSchedule?.includes('Sábado')) {
+            replaceTheoreticalClasses(Array(2).fill(undefined)); // Assuming 2 sessions for intensive saturday
         }
     }, [form, replaceTheoreticalClasses]);
 
@@ -315,9 +323,9 @@ export function ContractForm() {
 
              if (contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') {
                 contractData.autoMotoDetails = {
-                    studentIdNumber: values.autoMotoDetails?.studentIdNumber,
-                    studentAddress: values.autoMotoDetails?.studentAddress,
-                    studentPhone1: values.autoMotoDetails?.studentPhone1,
+                    studentIdNumber: values.autoMotoDetails?.studentIdNumber || null,
+                    studentAddress: values.autoMotoDetails?.studentAddress || null,
+                    studentPhone1: values.autoMotoDetails?.studentPhone1 || null,
                     studentPhone2: values.autoMotoDetails?.studentPhone2 || null,
                     courseValue: values.autoMotoDetails?.courseValue || null,
                     downPayment: values.autoMotoDetails?.downPayment || null,
@@ -333,9 +341,9 @@ export function ContractForm() {
                 };
             } else if (contractType === 'Curso Deluxe') {
                 contractData.deluxeDetails = {
-                    studentIdNumber: values.deluxeDetails?.studentIdNumber,
-                    studentAddress: values.deluxeDetails?.studentAddress,
-                    studentPhone1: values.deluxeDetails?.studentPhone1,
+                    studentIdNumber: values.deluxeDetails?.studentIdNumber || null,
+                    studentAddress: values.deluxeDetails?.studentAddress || null,
+                    studentPhone1: values.deluxeDetails?.studentPhone1 || null,
                     studentPhone2: values.deluxeDetails?.studentPhone2 || null,
                     paymentDetails: values.deluxeDetails?.paymentDetails || null,
                     paymentAmount: values.deluxeDetails?.paymentAmount || null,
@@ -408,13 +416,6 @@ export function ContractForm() {
                     </FormItem>
                 )}
             />
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                 <FormField control={form.control} name="autoMotoDetails.studentIdNumber" render={({ field }) => (<FormItem><FormLabel>Cédula/Pasaporte</FormLabel><FormControl><Input placeholder="Ej. 8-123-456" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                 <FormField control={form.control} name="autoMotoDetails.studentPhone1" render={({ field }) => (<FormItem><FormLabel>Teléfono 1</FormLabel><FormControl><Input type="tel" placeholder="Ej. 6123-4567" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                 <FormField control={form.control} name="autoMotoDetails.studentPhone2" render={({ field }) => (<FormItem><FormLabel>Teléfono 2 (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="Ej. 399-9999" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            </div>
-             <FormField control={form.control} name="autoMotoDetails.studentAddress" render={({ field }) => (<FormItem><FormLabel>Domicilio</FormLabel><FormControl><Textarea placeholder="Dirección completa del cliente..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField control={form.control} name="autoMotoDetails.courseValue" render={({ field }) => (<FormItem><FormLabel>Valor Total (B/.)</FormLabel><FormControl><Input type="number" step="0.01" value={formatCurrency(field.value)} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
@@ -486,6 +487,13 @@ export function ContractForm() {
             />
 
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Cláusula Segunda: Detalles del Curso</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                 <FormField control={form.control} name="autoMotoDetails.studentIdNumber" render={({ field }) => (<FormItem><FormLabel>Cédula/Pasaporte</FormLabel><FormControl><Input placeholder="Ej. 8-123-456" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                 <FormField control={form.control} name="autoMotoDetails.studentPhone1" render={({ field }) => (<FormItem><FormLabel>Teléfono 1</FormLabel><FormControl><Input type="tel" placeholder="Ej. 6123-4567" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                 <FormField control={form.control} name="autoMotoDetails.studentPhone2" render={({ field }) => (<FormItem><FormLabel>Teléfono 2 (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="Ej. 399-9999" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
+             <FormField control={form.control} name="autoMotoDetails.studentAddress" render={({ field }) => (<FormItem><FormLabel>Domicilio</FormLabel><FormControl><Textarea placeholder="Dirección completa del cliente..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                  <FormField control={form.control} name="autoMotoDetails.vehicle" render={({ field }) => (<FormItem><FormLabel>Vehículo</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un vehículo" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Spark">Spark</SelectItem><SelectItem value="P. Blanco">Picanto Blanco</SelectItem><SelectItem value="P. Bronce">Picanto Bronce</SelectItem><SelectItem value="Moto">Moto</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                 <FormField
@@ -561,14 +569,12 @@ export function ContractForm() {
                             defaultValue={field.value}
                             className="flex flex-col space-y-1"
                             >
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                    <FormControl><RadioGroupItem value="Días de Semana de 8:00 am a 10:00 am" /></FormControl>
-                                    <FormLabel className="font-normal">Días de Semana de 8:00 am a 10:00 am</FormLabel>
-                                </FormItem>
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                    <FormControl><RadioGroupItem value="Sábados de 3:00 pm a 5:00 pm" /></FormControl>
-                                    <FormLabel className="font-normal">Sábados de 3:00 pm a 5:00 pm</FormLabel>
-                                </FormItem>
+                                {theoreticalClassTimeSlots.map(slot => (
+                                    <FormItem key={slot} className="flex items-center space-x-3 space-y-0">
+                                        <FormControl><RadioGroupItem value={slot} /></FormControl>
+                                        <FormLabel className="font-normal">{slot}</FormLabel>
+                                    </FormItem>
+                                ))}
                             </RadioGroup>
                         </FormControl>
                         <FormMessage />
@@ -682,14 +688,16 @@ export function ContractForm() {
     
     const renderDeluxeFields = () => (
         <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Detalles del Estudiante</h3>
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                  <FormField control={form.control} name="deluxeDetails.studentIdNumber" render={({ field }) => (<FormItem><FormLabel>Cédula/Pasaporte</FormLabel><FormControl><Input placeholder="Ej. 8-123-456" {...field} /></FormControl><FormMessage /></FormItem>)} />
                  <FormField control={form.control} name="deluxeDetails.studentPhone1" render={({ field }) => (<FormItem><FormLabel>Teléfono 1</FormLabel><FormControl><Input type="tel" placeholder="Ej. 6123-4567" {...field} /></FormControl><FormMessage /></FormItem>)} />
                  <FormField control={form.control} name="deluxeDetails.studentPhone2" render={({ field }) => (<FormItem><FormLabel>Teléfono 2 (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="Ej. 399-9999" {...field} /></FormControl><FormMessage /></FormItem>)} />
             </div>
              <FormField control={form.control} name="deluxeDetails.studentAddress" render={({ field }) => (<FormItem><FormLabel>Domicilio</FormLabel><FormControl><Textarea placeholder="Dirección completa del cliente..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             
-            <FormField control={form.control} name="deluxeDetails.paymentDetails" render={({ field }) => (<FormItem><FormLabel>Detalles del Pago</FormLabel><FormControl><Textarea placeholder="Ej. El estudiante pagará B/. 201.00 en 6 cuotas quincenales de B/.33.50..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <h3 className="font-semibold text-lg pt-4 border-b pb-2">Detalles del Pago</h3>
+            <FormField control={form.control} name="deluxeDetails.paymentDetails" render={({ field }) => (<FormItem><FormLabel>Descripción del Acuerdo de Pago</FormLabel><FormControl><Textarea placeholder="Ej. El estudiante pagará B/. 201.00 en 6 cuotas quincenales de B/.33.50..." {...field} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="deluxeDetails.paymentAmount" render={({ field }) => (<FormItem><FormLabel>Monto por Cuota (B/.)</FormLabel><FormControl><Input type="number" placeholder="33.50" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>)} />
 
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Fechas de Pago (6 Cuotas)</h3>
@@ -818,5 +826,3 @@ export function ContractForm() {
         </Form>
     );
 }
-
-    

@@ -118,11 +118,13 @@ const coursePlans = {
     { name: 'BÁSICO', price: 133.00, classes: 4 },
     { name: 'PLUS', price: 150.00, classes: 5 },
     { name: 'PREMIUM', price: 175.00, classes: 6 },
+    { name: 'Ya se manejar Auto', price: 57.00, classes: 2 },
   ],
   'Curso Moto': [
     { name: 'BÁSICO', price: 115.00, classes: 4 },
     { name: 'PLUS', price: 135.00, classes: 5 },
     { name: 'PREMIUM', price: 155.00, classes: 6 },
+    { name: 'Ya se manejar Moto', price: 57.00, classes: 2 },
   ],
   'Curso Mixto': [
     { name: 'PAQUETE MIXTO COMPLETO', price: 380.00, classes: 6, motoClasses: 4 },
@@ -250,15 +252,17 @@ export function ContractForm() {
                 let newCourseValue = value.autoMotoDetails?.courseValue || 0;
                 let newDownPayment = downPayment;
 
-                if (name === 'autoMotoDetails.coursePlan' && contractType && (coursePlans as any)[contractType]) {
+                if ((name === 'autoMotoDetails.coursePlan' || (name === 'autoMotoDetails.paidInFull' && planName)) && contractType && (coursePlans as any)[contractType]) {
                     const selectedPlan = (coursePlans as any)[contractType].find((p: any) => p.name === planName);
                     if (selectedPlan) {
                         newCourseValue = selectedPlan.price;
                         form.setValue('autoMotoDetails.courseValue', newCourseValue, { shouldValidate: true });
                         
                         // Set 50% down payment automatically
-                        newDownPayment = newCourseValue * 0.5;
-                        form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
+                        if (name === 'autoMotoDetails.coursePlan') {
+                            newDownPayment = newCourseValue * 0.5;
+                            form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
+                        }
                         
                         if (contractType === 'Curso Auto') {
                             replacePracticalClasses(Array(selectedPlan.classes).fill({ date: undefined, time: undefined }));
@@ -302,9 +306,9 @@ export function ContractForm() {
             if (name === 'autoMotoDetails.theoreticalClassSchedule') {
                 const theoreticalSchedule = value.autoMotoDetails?.theoreticalClassSchedule;
                 if (theoreticalSchedule?.includes('Dias de semana')) {
-                    replaceTheoreticalClasses(Array(5).fill({ date: undefined }));
+                    replaceTheoreticalClasses(Array(5).fill({}));
                 } else if (theoreticalSchedule?.includes('Sabados')) {
-                    replaceTheoreticalClasses(Array(3).fill({ date: undefined }));
+                    replaceTheoreticalClasses(Array(3).fill({}));
                 } else {
                     replaceTheoreticalClasses([]);
                 }
@@ -525,15 +529,14 @@ export function ContractForm() {
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Cláusula Segunda: Detalles del Curso</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 {contractType !== 'Curso Moto' && (
+                 {(contractType === 'Curso Auto' || contractType === 'Curso Mixto') && (
                     <FormField control={form.control} name="autoMotoDetails.vehicle" render={({ field }) => (<FormItem><FormLabel>Vehículo</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un vehículo" /></SelectTrigger></FormControl><SelectContent>
                         <SelectItem value="Spark">Spark</SelectItem>
                         <SelectItem value="P. Blanco">Picanto Blanco</SelectItem>
                         <SelectItem value="P. Bronce">Picanto Bronce</SelectItem>
-                        {contractType === 'Curso Mixto' && <SelectItem value="Moto">Moto</SelectItem>}
                         </SelectContent></Select><FormMessage /></FormItem>)} />
                  )}
-                 {contractType !== 'Curso Moto' && (
+                 {(contractType === 'Curso Auto' || contractType === 'Curso Mixto') && (
                     <FormField
                         control={form.control}
                         name="autoMotoDetails.vehicleTransmission"
@@ -565,6 +568,7 @@ export function ContractForm() {
                         )}
                     />
                  )}
+                 {contractType === 'Curso Moto' && <div />}
             </div>
              <FormField
                 control={form.control}
@@ -640,13 +644,13 @@ export function ContractForm() {
                                         <PopoverTrigger asChild>
                                             <FormControl>
                                                 <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                                    {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha {index + 1}</span>}
+                                                    {field.value instanceof Date ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha {index + 1}</span>}
                                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                 </Button>
                                             </FormControl>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar locale={es} mode="single" selected={field.value ?? undefined} onSelect={field.onChange} initialFocus />
+                                            <Calendar locale={es} mode="single" selected={field.value instanceof Date ? field.value : undefined} onSelect={field.onChange} initialFocus />
                                         </PopoverContent>
                                     </Popover>
                                     <FormMessage />

@@ -1,3 +1,4 @@
+
 'use client';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -59,7 +60,7 @@ export function DeluxePremiumContractTemplatePreview({ folio, clientName, client
     </span>
 );
 
-  const formatDate = (dateString?: string) => {
+  const formatDate = (dateString?: string | Date) => {
     if (!dateString) return <Line />;
     try {
         const date = toDate(dateString);

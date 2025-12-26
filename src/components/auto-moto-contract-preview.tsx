@@ -48,7 +48,7 @@ export function AutoMotoContractTemplatePreview({ folio, clientName, clientEmail
   const creationDate = new Date(); // Use current date for preview
   const paymentDeadline = autoMotoDetails?.paymentDeadline ? toDate(autoMotoDetails.paymentDeadline) : null;
 
-  const formatDate = (dateString?: string) => {
+  const formatDate = (dateString?: string | Date) => {
     if (!dateString) return <Line />;
     try {
         const date = toDate(dateString);

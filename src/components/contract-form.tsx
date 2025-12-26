@@ -563,5 +563,3 @@ export function ContractForm() {
         </Form>
     );
 }
-
-    

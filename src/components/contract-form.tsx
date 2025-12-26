@@ -31,7 +31,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, PlusCircle, Trash2 } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFirebase } from '@/firebase';
 import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
@@ -156,7 +156,7 @@ export function ContractForm() {
         name: "motoPracticalClassSchedules" as any,
     });
 
-    const { fields: deluxeClassFields, remove: removeDeluxeClass } = useFieldArray({
+    const { fields: deluxeClassFields, replace: replaceDeluxeClasses } = useFieldArray({
         control: form.control,
         name: "classSchedules" as any,
     });
@@ -188,13 +188,8 @@ export function ContractForm() {
                 replacePracticalClasses(0);
             }
         }
-    }, [contractType, form]);
+    }, [contractType, form, replaceDeluxeClasses, replacePracticalClasses, replaceMotoPracticalClasses]);
 
-    const replaceDeluxeClasses = (count: number) => {
-        const currentClasses = form.getValues('classSchedules') || [];
-        const newClasses = Array(count).fill({}).map((_, i) => currentClasses[i] || {});
-        form.setValue('classSchedules', newClasses);
-    };
     
     useEffect(() => {
         const typePrefix = contractType?.substring(0, 3).toUpperCase() || 'GEN';
@@ -227,7 +222,7 @@ export function ContractForm() {
             }
         });
         return () => subscription.unsubscribe();
-    }, [form, contractType]);
+    }, [form, contractType, replacePracticalClasses]);
 
 
     useEffect(() => {
@@ -627,7 +622,7 @@ export function ContractForm() {
         </>
     );
 
-    const renderPracticalClassFields = (fields: any, remove: any, namePrefix: string, title: string) => (
+    const renderPracticalClassFields = (fields: any, namePrefix: string, title: string) => (
         <div>
             <h3 className="font-semibold text-lg pt-4 border-b pb-2 mb-4">{title}</h3>
             {fields.length > 0 ? (
@@ -724,7 +719,7 @@ export function ContractForm() {
                 ))}
             </div>
             
-            {renderPracticalClassFields(deluxeClassFields, removeDeluxeClass, 'classSchedules', 'Clases Prácticas (6 clases)')}
+            {renderPracticalClassFields(deluxeClassFields, 'classSchedules', 'Clases Prácticas (6 clases)')}
         </>
     );
 
@@ -733,8 +728,8 @@ export function ContractForm() {
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Datos del Estudiante</h3>
             {renderCommonFields()}
             {contractType === 'Curso Deluxe' ? renderDeluxeFields() : renderAutoMotoFields()}
-            {(contractType === 'Curso Auto' || contractType === 'Curso Mixto') && renderPracticalClassFields(practicalClassFields, removePracticalClass, 'practicalClassSchedules', 'Clases Prácticas de Auto')}
-            {(contractType === 'Curso Moto' || contractType === 'Curso Mixto') && renderPracticalClassFields(contractType === 'Curso Mixto' ? motoPracticalClassFields : practicalClassFields, contractType === 'Curso Mixto' ? removeMotoPracticalClass : removePracticalClass, contractType === 'Curso Mixto' ? 'motoPracticalClassSchedules' : 'practicalClassSchedules', 'Clases Prácticas de Moto')}
+            {(contractType === 'Curso Auto' || contractType === 'Curso Mixto') && renderPracticalClassFields(practicalClassFields, 'practicalClassSchedules', 'Clases Prácticas de Auto')}
+            {(contractType === 'Curso Moto' || contractType === 'Curso Mixto') && renderPracticalClassFields(contractType === 'Curso Mixto' ? motoPracticalClassFields : practicalClassFields, contractType === 'Curso Mixto' ? 'motoPracticalClassSchedules' : 'practicalClassSchedules', 'Clases Prácticas de Moto')}
         </>
     );
 
@@ -829,9 +824,3 @@ export function ContractForm() {
         </Form>
     );
 }
-
-    
-
-    
-
-    

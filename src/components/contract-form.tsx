@@ -152,7 +152,7 @@ const mixtoCourseValues = [
 
 const practicalClassTimeSlots = [
   '8:00 am a 10:00 am',
-  '10:00 am a 12:00 md',
+  '10:00 am a 12:00 pm',
   '1:00 pm a 3:00 pm',
   '3:00 pm a 5:00 pm',
 ];

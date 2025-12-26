@@ -179,24 +179,18 @@ export function ContractForm() {
             });
 
             if (contractType === 'Curso Deluxe') {
-                replaceDeluxeClasses(6);
+                replaceDeluxeClasses(Array(6).fill({ date: undefined, time: undefined }));
             } else if (contractType === 'Curso Mixto') {
-                replacePracticalClasses(6);
-                replaceMotoPracticalClasses(4);
+                replacePracticalClasses(Array(6).fill({ date: undefined, time: undefined }));
+                replaceMotoPracticalClasses(Array(4).fill({ date: undefined, time: undefined }));
             } else {
                 // Default to 0 for Auto/Moto until a plan is selected
-                replacePracticalClasses(0);
+                replacePracticalClasses([]);
             }
         }
     }, [contractType, form, replaceDeluxeClasses, replacePracticalClasses, replaceMotoPracticalClasses]);
 
     
-    useEffect(() => {
-        const typePrefix = contractType?.substring(0, 3).toUpperCase() || 'GEN';
-        const uniqueId = Date.now().toString().slice(-6);
-        setFolio(`${typePrefix}-${uniqueId}`);
-    }, [contractType]);
-
      useEffect(() => {
         const subscription = form.watch((value, { name }) => {
             if (name === 'coursePlan' && contractType && (coursePlans as any)[contractType]) {
@@ -207,8 +201,8 @@ export function ContractForm() {
                         form.setValue('downPayment', selectedPlan.price);
                     }
                     
-                    if (contractType === 'Curso Auto' || contractType === 'Curso Moto') {
-                       replacePracticalClasses(selectedPlan.classes);
+                    if ((contractType === 'Curso Auto' || contractType === 'Curso Moto') && selectedPlan.classes) {
+                       replacePracticalClasses(Array(selectedPlan.classes).fill({ date: undefined, time: undefined }));
                     }
                 }
             }
@@ -236,6 +230,12 @@ export function ContractForm() {
             }
         }
     }, [watchedCourseValue, watchedDownPayment, form]);
+    
+    useEffect(() => {
+        const typePrefix = contractType?.substring(0, 3).toUpperCase() || 'GEN';
+        const uniqueId = Date.now().toString().slice(-6);
+        setFolio(`${typePrefix}-${uniqueId}`);
+    }, [contractType]);
 
     useEffect(() => {
         if (watchedTheoreticalSchedule?.includes('Días de Semana')) {
@@ -824,3 +824,5 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    

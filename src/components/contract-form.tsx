@@ -64,11 +64,11 @@ const baseSchema = z.object({
 });
 
 const autoMotoSchema = baseSchema.extend({
-  coursePlan: z.string().min(1, "Debe seleccionar un plan"),
+  coursePlan: z.string().optional(),
   paidInFull: z.boolean().default(false),
-  courseValue: z.number().min(0),
-  downPayment: z.number().min(0),
-  balance: z.number(),
+  courseValue: z.number().optional(),
+  downPayment: z.number().optional(),
+  balance: z.number().optional(),
   paymentDeadline: z.date().optional(),
   vehicle: z.enum(['Spark', 'P. Blanco', 'P. Bronce', 'Moto']).optional(),
   vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).optional(),
@@ -80,15 +80,16 @@ const autoMotoSchema = baseSchema.extend({
 });
 
 const deluxeSchema = baseSchema.extend({
-  paymentDetails: z.string().min(1, 'Se requieren detalles de pago'),
-  paymentAmount: z.number().positive('El monto debe ser positivo'),
-  paymentInstallments: z.array(z.date().optional()),
-  vehicleTransmission: z.enum(['Automático', 'Manual']),
-  licenseCategory: z.enum(['A, C', 'A, C, D']),
-  theoreticalClassSchedule: z.enum(['Lunes', 'Miércoles']),
-  theoreticalClasses: z.array(z.date().optional()),
-  classSchedules: z.array(classScheduleSchema),
+  paymentDetails: z.string().optional(),
+  paymentAmount: z.number().optional(),
+  paymentInstallments: z.array(z.date().optional()).optional(),
+  vehicleTransmission: z.enum(['Automático', 'Manual']).optional(),
+  licenseCategory: z.enum(['A, C', 'A, C, D']).optional(),
+  theoreticalClassSchedule: z.enum(['Lunes', 'Miércoles']).optional(),
+  theoreticalClasses: z.array(z.date().optional()).optional(),
+  classSchedules: z.array(classScheduleSchema).optional(),
 });
+
 
 const formSchema = z.union([autoMotoSchema, deluxeSchema]);
 type FormValues = z.infer<typeof formSchema>;
@@ -282,7 +283,7 @@ export function ContractForm() {
             
             const currentUserRole = localStorage.getItem('currentUser') || 'Ventas';
 
-            const contractData = {
+            const contractData: any = {
                 id: contractRef.id,
                 folio: folio,
                 title: `${values.contractType} - ${values.clientName}`,
@@ -299,13 +300,13 @@ export function ContractForm() {
             };
 
              if ('courseValue' in values) { // Auto/Moto/Mixto
-                (contractData as any).autoMotoDetails = {
+                contractData.autoMotoDetails = {
                     studentIdNumber: values.clientIdNumber,
                     studentAddress: values.clientAddress,
                     studentPhone1: values.clientPhone1,
-                    studentPhone2: values.clientPhone2,
-                    courseValue: values.courseValue,
-                    downPayment: values.downPayment,
+                    studentPhone2: values.clientPhone2 || null,
+                    courseValue: values.courseValue || null,
+                    downPayment: values.downPayment || null,
                     balance: (values.courseValue || 0) - (values.downPayment || 0),
                     paymentDeadline: values.paymentDeadline ? format(values.paymentDeadline, 'yyyy-MM-dd') : null,
                     vehicle: values.vehicle || null,
@@ -317,19 +318,19 @@ export function ContractForm() {
                     motoPracticalClassSchedules: values.motoPracticalClassSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })) || [],
                 };
             } else if ('paymentDetails' in values) { // Deluxe
-                (contractData as any).deluxeDetails = {
+                contractData.deluxeDetails = {
                     studentIdNumber: values.clientIdNumber,
                     studentAddress: values.clientAddress,
                     studentPhone1: values.clientPhone1,
-                    studentPhone2: values.clientPhone2,
-                    paymentDetails: values.paymentDetails,
-                    paymentAmount: values.paymentAmount,
-                    paymentInstallments: values.paymentInstallments.map(d => d ? format(d, 'yyyy-MM-dd') : null) || [],
-                    vehicleTransmission: values.vehicleTransmission,
-                    licenseCategory: values.licenseCategory,
-                    theoreticalClassSchedule: values.theoreticalClassSchedule,
-                    theoreticalClasses: values.theoreticalClasses.map(d => d ? format(d, 'yyyy-MM-dd') : null) || [],
-                    classSchedules: values.classSchedules.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })) || [],
+                    studentPhone2: values.clientPhone2 || null,
+                    paymentDetails: values.paymentDetails || null,
+                    paymentAmount: values.paymentAmount || null,
+                    paymentInstallments: values.paymentInstallments?.map(d => d ? format(d, 'yyyy-MM-dd') : null) || [],
+                    vehicleTransmission: values.vehicleTransmission || null,
+                    licenseCategory: values.licenseCategory || null,
+                    theoreticalClassSchedule: values.theoreticalClassSchedule || null,
+                    theoreticalClasses: values.theoreticalClasses?.map(d => d ? format(d, 'yyyy-MM-dd') : null) || [],
+                    classSchedules: values.classSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })) || [],
                 };
             }
 
@@ -399,7 +400,7 @@ export function ContractForm() {
                     name="clientPhone2"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Teléfono 2</FormLabel>
+                            <FormLabel>Teléfono 2 (Opcional)</FormLabel>
                             <FormControl><Input type="tel" placeholder="Ej. 399-9999" {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>

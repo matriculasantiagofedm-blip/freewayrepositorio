@@ -284,9 +284,11 @@ export function ContractForm() {
                         if (specialPlanSelected) {
                             newDownPayment = newCourseValue;
                             form.setValue('autoMotoDetails.paidInFull', true, { shouldValidate: true });
-                        } else {
+                        } else if (!selectedPlan.isCombined) {
                             newDownPayment = newCourseValue * 0.5;
                             form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
+                        } else {
+                             form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
                         }
                         form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
                     }
@@ -576,7 +578,7 @@ export function ContractForm() {
                                         disabled={!watchedValues.autoMotoDetails?.balance || watchedValues.autoMotoDetails?.balance <= 0}
                                     >
                                         {field.value ? (
-                                            format(new Date(field.value), "PPP", { locale: es })
+                                            format(field.value, "PPP", { locale: es })
                                         ) : (
                                             <span>mm/dd/aaaa</span>
                                         )}

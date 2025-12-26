@@ -147,6 +147,46 @@ const formatCurrency = (value?: number) => {
     return value.toFixed(2);
 };
 
+const getDefaultValues = (contractType: ContractType | null): FormValues => ({
+    contractType: contractType || 'Curso Auto',
+    clientName: '',
+    clientEmail: '',
+    autoMotoDetails: {
+      studentIdNumber: '',
+      studentAddress: '',
+      studentPhone1: '',
+      studentPhone2: '',
+      coursePlan: undefined,
+      paidInFull: false,
+      courseValue: 0,
+      downPayment: 0,
+      balance: 0,
+      paymentDeadline: null,
+      vehicle: undefined,
+      vehicleTransmission: undefined,
+      licenseCategory: undefined,
+      theoreticalClassSchedule: undefined,
+      theoreticalClassDates: [],
+      practicalClassSchedules: [],
+      motoPracticalClassSchedules: []
+    },
+    deluxeDetails: {
+        studentIdNumber: '',
+        studentAddress: '',
+        studentPhone1: '',
+        studentPhone2: '',
+        paymentDetails: '',
+        paymentAmount: 0,
+        paymentInstallments: [],
+        vehicleTransmission: undefined,
+        licenseCategory: undefined,
+        theoreticalClassSchedule: undefined,
+        theoreticalClasses: [],
+        classSchedules: [],
+    }
+});
+
+
 export function ContractForm() {
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -158,9 +198,7 @@ export function ContractForm() {
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
-        defaultValues: {
-            contractType: contractType || 'Curso Auto',
-        },
+        defaultValues: getDefaultValues(contractType),
     });
 
     const watchedValues = form.watch();
@@ -169,40 +207,27 @@ export function ContractForm() {
 
     const { fields: theoreticalClassFields, replace: replaceTheoreticalClasses } = useFieldArray({
         control: form.control,
-        name: "autoMotoDetails.theoreticalClassDates" as any,
+        name: "autoMotoDetails.theoreticalClassDates",
     });
 
     const { fields: practicalClassFields, replace: replacePracticalClasses } = useFieldArray({
         control: form.control,
-        name: "autoMotoDetails.practicalClassSchedules" as any,
+        name: "autoMotoDetails.practicalClassSchedules",
     });
     
     const { fields: motoPracticalClassFields, replace: replaceMotoPracticalClasses } = useFieldArray({
         control: form.control,
-        name: "autoMotoDetails.motoPracticalClassSchedules" as any,
+        name: "autoMotoDetails.motoPracticalClassSchedules",
     });
 
     const { fields: deluxeClassFields, replace: replaceDeluxeClasses } = useFieldArray({
         control: form.control,
-        name: "deluxeDetails.classSchedules" as any,
+        name: "deluxeDetails.classSchedules",
     });
 
     useEffect(() => {
         if (contractType) {
-            form.reset({
-                contractType: contractType,
-                clientName: '',
-                clientEmail: '',
-                autoMotoDetails: {
-                  paidInFull: false,
-                  courseValue: 0,
-                  downPayment: 0,
-                  balance: 0,
-                  theoreticalClassDates: [],
-                  practicalClassSchedules: [],
-                  motoPracticalClassSchedules: []
-                },
-            });
+            form.reset(getDefaultValues(contractType));
 
             if (contractType === 'Curso Deluxe') {
                 replaceDeluxeClasses(Array(6).fill({ date: undefined, time: undefined }));
@@ -594,7 +619,7 @@ export function ContractForm() {
                                             </FormControl>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar locale={es} mode="single" selected={field.value instanceof Date ? field.value : undefined} onSelect={field.onChange} initialFocus />
+                                            <Calendar locale={es} mode="single" selected={field.value as Date | undefined} onSelect={field.onChange} initialFocus />
                                         </PopoverContent>
                                     </Popover>
                                     <FormMessage />
@@ -690,13 +715,13 @@ export function ContractForm() {
              <FormField control={form.control} name="deluxeDetails.studentAddress" render={({ field }) => (<FormItem><FormLabel>Domicilio</FormLabel><FormControl><Textarea placeholder="Dirección completa del cliente..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
             
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Detalles del Pago</h3>
-            <FormField control={form.control} name="deluxeDetails.paymentDetails" render={({ field }) => (<FormItem><FormLabel>Descripción del Acuerdo de Pago</FormLabel><FormControl><Textarea placeholder="Ej. El estudiante pagará B/. 201.00 en 6 cuotas quincenales de B/.33.50..." {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="deluxeDetails.paymentAmount" render={({ field }) => (<FormItem><FormLabel>Monto por Cuota (B/.)</FormLabel><FormControl><Input type="number" placeholder="33.50" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="deluxeDetails.paymentDetails" render={({ field }) => (<FormItem><FormLabel>Descripción del Acuerdo de Pago</FormLabel><FormControl><Textarea placeholder="Ej. El estudiante pagará B/. 201.00 en 6 cuotas quincenales de B/.33.50..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="deluxeDetails.paymentAmount" render={({ field }) => (<FormItem><FormLabel>Monto por Cuota (B/.)</FormLabel><FormControl><Input type="number" placeholder="33.50" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>)} />
 
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Fechas de Pago (6 Cuotas)</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {Array.from({ length: 6 }).map((_, index) => (
-                    <FormField key={index} control={form.control} name={`deluxeDetails.paymentInstallments.${index}` as any} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Cuota {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar locale={es} mode="single" selected={field.value} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
+                    <FormField key={index} control={form.control} name={`deluxeDetails.paymentInstallments.${index}`} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Cuota {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar locale={es} mode="single" selected={field.value as Date | undefined} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
                 ))}
             </div>
             
@@ -710,7 +735,7 @@ export function ContractForm() {
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Clases Teóricas (10 Semanas)</h3>
              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {Array.from({ length: 10 }).map((_, index) => (
-                    <FormField key={index} control={form.control} name={`deluxeDetails.theoreticalClasses.${index}` as any} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Semana {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar locale={es} mode="single" selected={field.value} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
+                    <FormField key={index} control={form.control} name={`deluxeDetails.theoreticalClasses.${index}`} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Semana {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar locale={es} mode="single" selected={field.value as Date | undefined} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
                 ))}
             </div>
             
@@ -779,6 +804,8 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    
 
     
 

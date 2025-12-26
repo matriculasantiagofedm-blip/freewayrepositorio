@@ -140,6 +140,7 @@ export function ContractForm() {
     const watchedCourseValue = form.watch('courseValue');
     const watchedDownPayment = form.watch('downPayment');
     const watchedTheoreticalSchedule = form.watch('theoreticalClassSchedule');
+    const watchedCoursePlan = form.watch('coursePlan');
 
     const { fields: theoreticalClassFields, replace: replaceTheoreticalClasses } = useFieldArray({
         control: form.control,
@@ -193,20 +194,6 @@ export function ContractForm() {
     
      useEffect(() => {
         const subscription = form.watch((value, { name }) => {
-            if (name === 'coursePlan' && contractType && (coursePlans as any)[contractType]) {
-                const selectedPlan = (coursePlans as any)[contractType].find((p: any) => p.name === value.coursePlan);
-                if (selectedPlan) {
-                    form.setValue('courseValue', selectedPlan.price);
-                    if (form.getValues('paidInFull')) {
-                        form.setValue('downPayment', selectedPlan.price);
-                    }
-                    
-                    if ((contractType === 'Curso Auto' || contractType === 'Curso Moto') && selectedPlan.classes) {
-                       replacePracticalClasses(Array(selectedPlan.classes).fill({ date: undefined, time: undefined }));
-                    }
-                }
-            }
-
             if (name === 'paidInFull' && value.courseValue) {
                 if (value.paidInFull) {
                     form.setValue('downPayment', value.courseValue);
@@ -216,7 +203,23 @@ export function ContractForm() {
             }
         });
         return () => subscription.unsubscribe();
-    }, [form, contractType, replacePracticalClasses]);
+    }, [form]);
+
+    useEffect(() => {
+        if (watchedCoursePlan && contractType && (coursePlans as any)[contractType]) {
+            const selectedPlan = (coursePlans as any)[contractType].find((p: any) => p.name === watchedCoursePlan);
+            if (selectedPlan) {
+                form.setValue('courseValue', selectedPlan.price);
+                if (form.getValues('paidInFull')) {
+                    form.setValue('downPayment', selectedPlan.price);
+                }
+                
+                if ((contractType === 'Curso Auto' || contractType === 'Curso Moto') && selectedPlan.classes) {
+                    replacePracticalClasses(Array(selectedPlan.classes).fill({ date: undefined, time: undefined }));
+                }
+            }
+        }
+    }, [watchedCoursePlan, contractType, form, replacePracticalClasses]);
 
 
     useEffect(() => {
@@ -637,8 +640,8 @@ export function ContractForm() {
                     <TableBody>
                         {fields.map((field: any, index: number) => (
                             <TableRow key={field.id}>
-                                <TableCell className="font-medium">Clase {index + 1}</TableCell>
-                                <TableCell>
+                                <TableCell className="font-medium py-1">Clase {index + 1}</TableCell>
+                                <TableCell className="py-1">
                                     <FormField
                                         control={form.control}
                                         name={`${namePrefix}.${index}.date` as any}
@@ -647,7 +650,7 @@ export function ContractForm() {
                                                 <Popover>
                                                     <PopoverTrigger asChild>
                                                         <FormControl>
-                                                            <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                            <Button variant={"outline"} size="sm" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
                                                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                                                 {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
                                                             </Button>
@@ -662,7 +665,7 @@ export function ContractForm() {
                                         )}
                                     />
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="py-1">
                                     <FormField
                                         control={form.control}
                                         name={`${namePrefix}.${index}.time` as any}
@@ -670,7 +673,7 @@ export function ContractForm() {
                                             <FormItem>
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                     <FormControl>
-                                                        <SelectTrigger>
+                                                        <SelectTrigger className="h-9">
                                                             <SelectValue placeholder="Seleccionar hora" />
                                                         </SelectTrigger>
                                                     </FormControl>

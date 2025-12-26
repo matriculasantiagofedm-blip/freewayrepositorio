@@ -40,8 +40,6 @@ import { useToast } from '@/hooks/use-toast';
 import type { ContractType } from '@/lib/types';
 import { DeluxePremiumContractTemplatePreview } from './deluxe-premium-contract-preview';
 import { AutoMotoContractTemplatePreview } from './auto-moto-contract-preview';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { AccordionWrapper } from './accordion-wrapper';
 import { Checkbox } from './ui/checkbox';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
@@ -155,7 +153,6 @@ export function ContractForm() {
     const { firestore, user } = useFirebase();
     const { toast } = useToast();
     const [folio, setFolio] = useState('');
-    const [currentStep, setCurrentStep] = useState(0);
 
     const contractType = useMemo(() => searchParams.get('type') as ContractType | null, [searchParams]);
 
@@ -272,9 +269,9 @@ export function ContractForm() {
             if (name === 'autoMotoDetails.theoreticalClassSchedule') {
                 const theoreticalSchedule = value.autoMotoDetails?.theoreticalClassSchedule;
                 if (theoreticalSchedule?.includes('Dias de semana')) {
-                    replaceTheoreticalClasses(Array(5).fill(undefined));
+                    replaceTheoreticalClasses(Array(5).fill({ date: undefined }));
                 } else if (theoreticalSchedule?.includes('Sabados')) {
-                    replaceTheoreticalClasses(Array(3).fill(undefined));
+                    replaceTheoreticalClasses(Array(3).fill({ date: undefined }));
                 } else {
                     replaceTheoreticalClasses([]);
                 }
@@ -334,34 +331,16 @@ export function ContractForm() {
 
              if (contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') {
                 contractData.autoMotoDetails = {
-                    studentIdNumber: values.autoMotoDetails?.studentIdNumber || null,
-                    studentAddress: values.autoMotoDetails?.studentAddress || null,
-                    studentPhone1: values.autoMotoDetails?.studentPhone1 || null,
-                    studentPhone2: values.autoMotoDetails?.studentPhone2 || null,
-                    courseValue: values.autoMotoDetails?.courseValue || null,
-                    downPayment: values.autoMotoDetails?.downPayment || null,
-                    balance: values.autoMotoDetails?.balance || null,
+                    ...values.autoMotoDetails,
                     paymentDeadline: values.autoMotoDetails?.paymentDeadline ? format(values.autoMotoDetails.paymentDeadline, 'yyyy-MM-dd') : null,
-                    vehicle: values.autoMotoDetails?.vehicle || null,
-                    vehicleTransmission: values.autoMotoDetails?.vehicleTransmission || null,
-                    licenseCategory: values.autoMotoDetails?.licenseCategory || null,
-                    theoreticalClassSchedule: values.autoMotoDetails?.theoreticalClassSchedule || null,
                     theoreticalClassDates: values.autoMotoDetails?.theoreticalClassDates?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(d => d) || [],
                     practicalClassSchedules: values.autoMotoDetails?.practicalClassSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })).filter(c => c.date || c.time) || [],
                     motoPracticalClassSchedules: values.autoMotoDetails?.motoPracticalClassSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })).filter(c => c.date || c.time) || [],
                 };
             } else if (contractType === 'Curso Deluxe') {
                 contractData.deluxeDetails = {
-                    studentIdNumber: values.deluxeDetails?.studentIdNumber || null,
-                    studentAddress: values.deluxeDetails?.studentAddress || null,
-                    studentPhone1: values.deluxeDetails?.studentPhone1 || null,
-                    studentPhone2: values.deluxeDetails?.studentPhone2 || null,
-                    paymentDetails: values.deluxeDetails?.paymentDetails || null,
-                    paymentAmount: values.deluxeDetails?.paymentAmount || null,
+                    ...values.deluxeDetails,
                     paymentInstallments: values.deluxeDetails?.paymentInstallments?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(d => d) || [],
-                    vehicleTransmission: values.deluxeDetails?.vehicleTransmission || null,
-                    licenseCategory: values.deluxeDetails?.licenseCategory || null,
-                    theoreticalClassSchedule: values.deluxeDetails?.theoreticalClassSchedule || null,
                     theoreticalClasses: values.deluxeDetails?.theoreticalClasses?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(d => d) || [],
                     classSchedules: values.deluxeDetails?.classSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })).filter(c => c.date || c.time) || [],
                 };
@@ -615,7 +594,7 @@ export function ContractForm() {
                                             </FormControl>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar locale={es} mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                                            <Calendar locale={es} mode="single" selected={field.value instanceof Date ? field.value : undefined} onSelect={field.onChange} initialFocus />
                                         </PopoverContent>
                                     </Popover>
                                     <FormMessage />
@@ -740,35 +719,26 @@ export function ContractForm() {
     );
 
     const renderFormContent = () => (
-        <>
-            <h3 className="font-semibold text-lg pt-4 border-b pb-2">Datos del Estudiante</h3>
-            {renderCommonFields()}
-            {contractType === 'Curso Deluxe' ? renderDeluxeFields() : renderAutoMotoFields()}
-            {(contractType === 'Curso Auto' || contractType === 'Curso Mixto') && renderPracticalClassFields(practicalClassFields, 'autoMotoDetails.practicalClassSchedules', 'Clases Prácticas de Auto')}
-            {(contractType === 'Curso Moto' || contractType === 'Curso Mixto') && renderPracticalClassFields(contractType === 'Curso Mixto' ? motoPracticalClassFields : practicalClassFields, contractType === 'Curso Mixto' ? 'autoMotoDetails.motoPracticalClassSchedules' : 'autoMotoDetails.practicalClassSchedules', 'Clases Prácticas de Moto')}
-        </>
+        <Card>
+            <CardHeader>
+                <CardTitle>Completa los detalles principales de tu acuerdo.</CardTitle>
+                <div className='flex justify-between items-center'>
+                    <FormDescription>Tipo de Contrato: {contractType}</FormDescription>
+                    <p className='text-sm font-semibold text-destructive'>Folio: {folio}</p>
+                </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <h3 className="font-semibold text-lg pt-4 border-b pb-2">Datos del Estudiante</h3>
+                {renderCommonFields()}
+                {contractType === 'Curso Deluxe' ? renderDeluxeFields() : renderAutoMotoFields()}
+                {(contractType === 'Curso Auto' || contractType === 'Curso Mixto') && renderPracticalClassFields(practicalClassFields, 'autoMotoDetails.practicalClassSchedules', 'Clases Prácticas de Auto')}
+                {(contractType === 'Curso Moto' || contractType === 'Curso Mixto') && renderPracticalClassFields(contractType === 'Curso Mixto' ? motoPracticalClassFields : practicalClassFields, contractType === 'Curso Mixto' ? 'autoMotoDetails.motoPracticalClassSchedules' : 'autoMotoDetails.practicalClassSchedules', 'Clases Prácticas de Moto')}
+                 <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
+                    {form.formState.isSubmitting ? 'Guardando...' : 'Guardar Contrato'}
+                </Button>
+            </CardContent>
+        </Card>
     );
-
-    const steps = [
-        { title: "Detalles del Contrato", content: renderFormContent },
-        { title: "Vista Previa del Contrato", content: () => (
-            <div>
-                {contractType === 'Curso Deluxe' 
-                    ? <DeluxePremiumContractTemplatePreview folio={folio} clientName={watchedValues.clientName} clientEmail={watchedValues.clientEmail} deluxeDetails={watchedValues.deluxeDetails} createdBy={localStorage.getItem('currentUser')} />
-                    : <AutoMotoContractTemplatePreview folio={folio} clientName={watchedValues.clientName} clientEmail={watchedValues.clientEmail} autoMotoDetails={watchedValues.autoMotoDetails} createdBy={localStorage.getItem('currentUser')} type={contractType as any} />
-                }
-            </div>
-        )}
-    ];
-    
-    const handleNext = async () => {
-        const isValid = await form.trigger();
-        if (isValid) {
-            setCurrentStep(prev => prev + 1);
-        } else {
-            toast({ variant: 'destructive', title: 'Error de validación', description: 'Por favor, revisa los campos marcados en rojo.' });
-        }
-    }
 
 
     if (!contractType) {
@@ -784,61 +754,32 @@ export function ContractForm() {
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <AccordionWrapper>
-                    <Accordion type="single" collapsible className="w-full" value={String(currentStep)} onValueChange={(value) => setCurrentStep(Number(value))}>
-                         <AccordionItem value="0">
-                            <AccordionTrigger>Paso 1: {steps[0].title}</AccordionTrigger>
-                            <AccordionContent>
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Completa los detalles principales de tu acuerdo.</CardTitle>
-                                        <div className='flex justify-between items-center'>
-                                            <FormDescription>Tipo de Contrato: {contractType}</FormDescription>
-                                            <p className='text-sm font-semibold text-destructive'>Folio: {folio}</p>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className="space-y-6">
-                                        {steps[0].content()}
-                                    </CardContent>
-                                </Card>
-                            </AccordionContent>
-                        </AccordionItem>
-                        <AccordionItem value="1">
-                            <AccordionTrigger>Paso 2: {steps[1].title}</AccordionTrigger>
-                            <AccordionContent>
-                               <Card>
-                                    <CardHeader>
-                                        <CardTitle>Revisar y Confirmar</CardTitle>
-                                        <FormDescription>
-                                            Asegúrate de que toda la información en la vista previa sea correcta antes de guardar.
-                                        </FormDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        {steps[1].content()}
-                                    </CardContent>
-                                </Card>
-                            </AccordionContent>
-                        </AccordionItem>
-                    </Accordion>
-                </AccordionWrapper>
-
-                <div className="flex justify-between mt-8">
-                    <Button type="button" variant="outline" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0}>
-                        Anterior
-                    </Button>
-                    {currentStep < steps.length - 1 ? (
-                        <Button type="button" onClick={handleNext}>
-                            Siguiente: Vista Previa
-                        </Button>
-                    ) : (
-                        <Button type="submit" disabled={form.formState.isSubmitting}>
-                            {form.formState.isSubmitting ? 'Guardando...' : 'Guardar Contrato'}
-                        </Button>
-                    )}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                    <div className="space-y-6">
+                        {renderFormContent()}
+                    </div>
+                    <div className="sticky top-4">
+                        <Card>
+                             <CardHeader>
+                                <CardTitle>Vista Previa del Contrato</CardTitle>
+                                <FormDescription>
+                                    Asegúrate de que toda la información en la vista previa sea correcta antes de guardar.
+                                </FormDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {contractType === 'Curso Deluxe' 
+                                    ? <DeluxePremiumContractTemplatePreview folio={folio} clientName={watchedValues.clientName} clientEmail={watchedValues.clientEmail} deluxeDetails={watchedValues.deluxeDetails} createdBy={typeof window !== 'undefined' ? localStorage.getItem('currentUser') : 'Ventas'} />
+                                    : <AutoMotoContractTemplatePreview folio={folio} clientName={watchedValues.clientName} clientEmail={watchedValues.clientEmail} autoMotoDetails={watchedValues.autoMotoDetails} createdBy={typeof window !== 'undefined' ? localStorage.getItem('currentUser') : 'Ventas'} type={contractType as any} />
+                                }
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
             </form>
         </Form>
     );
 }
+
+    
 
     

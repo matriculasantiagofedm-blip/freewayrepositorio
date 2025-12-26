@@ -107,6 +107,7 @@ const ampliacionesDetailsSchema = z.object({
   paymentDeadline: z.date().optional().nullable(),
   paidInFull: z.boolean().default(false),
   theoreticalClassDate: z.date().optional().nullable(),
+  theoreticalClassTime: z.string().optional(),
 }).partial();
 
 const formSchema = baseSchema.extend({
@@ -212,6 +213,11 @@ const theoreticalClassTimeSlots = [
     'Sabados de 3:00 pm a 5:00 pm',
 ];
 
+const ampliacionesTheoreticalTimeSlots = [
+    '8:00 am a 10:00 am',
+    '3:00 pm a 5:00 pm'
+];
+
 const formatCurrency = (value?: number) => {
     if (value === undefined || value === null) return '0.00';
     return value.toFixed(2);
@@ -266,6 +272,7 @@ const getDefaultValues = (contractType: ContractType | null): FormValues => ({
         paymentDeadline: null,
         paidInFull: false,
         theoreticalClassDate: null,
+        theoreticalClassTime: undefined,
     },
 });
 
@@ -540,28 +547,28 @@ export function ContractForm() {
                 const autoMotoDetails = values.autoMotoDetails || {};
                 contractData.autoMotoDetails = {
                     ...autoMotoDetails,
-                    paymentDeadline: autoMotoDetails.paymentDeadline ? format(autoMotoDetails.paymentDeadline, 'yyyy-MM-dd') : null,
+                    paymentDeadline: autoMotoDetails.paymentDeadline instanceof Date ? format(autoMotoDetails.paymentDeadline, 'yyyy-MM-dd') : null,
                     theoreticalClassDates: (autoMotoDetails.theoreticalClassDates || [])
-                        .map(d => d ? format(d, 'yyyy-MM-dd') : null)
+                        .map(d => d instanceof Date ? format(d, 'yyyy-MM-dd') : null)
                         .filter(Boolean),
                     practicalClassSchedules: (autoMotoDetails.practicalClassSchedules || [])
                         .filter(c => c.date || c.time)
-                        .map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })),
+                        .map(c => ({ date: c.date instanceof Date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })),
                     motoPracticalClassSchedules: (autoMotoDetails.motoPracticalClassSchedules || [])
                         .filter(c => c.date || c.time)
-                        .map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })),
+                        .map(c => ({ date: c.date instanceof Date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })),
                 };
-                 delete contractData.deluxeDetails;
+                delete contractData.deluxeDetails;
                 delete contractData.ampliacionesDetails;
             } else if (contractType === 'Curso Deluxe') {
                 const deluxeDetails = values.deluxeDetails || {};
                 contractData.deluxeDetails = {
                     ...deluxeDetails,
-                    paymentInstallments: (deluxeDetails.paymentInstallments || []).map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(Boolean),
-                    theoreticalClasses: (deluxeDetails.theoreticalClasses || []).map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(Boolean),
+                    paymentInstallments: (deluxeDetails.paymentInstallments || []).map(d => d instanceof Date ? format(d, 'yyyy-MM-dd') : null).filter(Boolean),
+                    theoreticalClasses: (deluxeDetails.theoreticalClasses || []).map(d => d instanceof Date ? format(d, 'yyyy-MM-dd') : null).filter(Boolean),
                     classSchedules: (deluxeDetails.classSchedules || [])
                         .filter(c => c.date || c.time)
-                        .map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })),
+                        .map(c => ({ date: c.date instanceof Date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })),
                 };
                 delete contractData.autoMotoDetails;
                 delete contractData.ampliacionesDetails;
@@ -569,8 +576,8 @@ export function ContractForm() {
                 const ampliacionesDetails = values.ampliacionesDetails || {};
                 contractData.ampliacionesDetails = {
                     ...ampliacionesDetails,
-                     paymentDeadline: ampliacionesDetails.paymentDeadline ? format(ampliacionesDetails.paymentDeadline, 'yyyy-MM-dd') : null,
-                     theoreticalClassDate: ampliacionesDetails.theoreticalClassDate ? format(ampliacionesDetails.theoreticalClassDate, 'yyyy-MM-dd') : null,
+                     paymentDeadline: ampliacionesDetails.paymentDeadline instanceof Date ? format(ampliacionesDetails.paymentDeadline, 'yyyy-MM-dd') : null,
+                     theoreticalClassDate: ampliacionesDetails.theoreticalClassDate instanceof Date ? format(ampliacionesDetails.theoreticalClassDate, 'yyyy-MM-dd') : null,
                 };
                  delete contractData.autoMotoDetails;
                 delete contractData.deluxeDetails;
@@ -631,6 +638,7 @@ export function ContractForm() {
         const paidInFullPath = "ampliacionesDetails.paidInFull";
         const paymentDeadlinePath = "ampliacionesDetails.paymentDeadline";
         const theoreticalClassDatePath = "ampliacionesDetails.theoreticalClassDate";
+        const theoreticalClassTimePath = "ampliacionesDetails.theoreticalClassTime";
 
         return (
              <>
@@ -737,45 +745,69 @@ export function ContractForm() {
                 />
                  
                 <h3 className="font-semibold text-lg pt-4 border-b pb-2">Clase Teórica</h3>
-                <FormField
-                    control={form.control}
-                    name={theoreticalClassDatePath}
-                    render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                            <FormLabel>Fecha de la Clase Teórica</FormLabel>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <FormControl>
-                                        <Button
-                                            variant={"outline"}
-                                            className={cn(
-                                                "w-full pl-3 text-left font-normal",
-                                                !field.value && "text-muted-foreground"
-                                            )}
-                                        >
-                                            {field.value instanceof Date && !isNaN(field.value.getTime()) ? (
-                                                format(field.value, "PPP", { locale: es })
-                                            ) : (
-                                                <span>Seleccionar fecha</span>
-                                            )}
-                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                        </Button>
-                                    </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={field.value ? new Date(field.value) : undefined}
-                                        onSelect={field.onChange}
-                                        initialFocus
-                                        locale={es}
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                        control={form.control}
+                        name={theoreticalClassDatePath}
+                        render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                                <FormLabel>Fecha de la Clase Teórica</FormLabel>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                            <Button
+                                                variant={"outline"}
+                                                className={cn(
+                                                    "w-full pl-3 text-left font-normal",
+                                                    !field.value && "text-muted-foreground"
+                                                )}
+                                            >
+                                                {field.value instanceof Date && !isNaN(field.value.getTime()) ? (
+                                                    format(field.value, "PPP", { locale: es })
+                                                ) : (
+                                                    <span>Seleccionar fecha</span>
+                                                )}
+                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                            </Button>
+                                        </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={field.value ? new Date(field.value) : undefined}
+                                            onSelect={field.onChange}
+                                            initialFocus
+                                            locale={es}
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name={theoreticalClassTimePath}
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Horario de Clase Teórica</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Seleccione un horario" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {ampliacionesTheoreticalTimeSlots.map(slot => (
+                                        <SelectItem key={slot} value={slot}>{slot}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
 
                 <h3 className="font-semibold text-lg pt-4 border-b pb-2">Cláusula Primera: Valor y Forma de Pago</h3>
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

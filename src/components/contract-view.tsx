@@ -56,10 +56,11 @@ export function ContractView({ contract }: { contract: Contract }) {
                                 <p className='font-bold mt-4'>Total: B/.{contract.ampliacionesDetails.courseValue?.toFixed(2)}</p>
                             </div>
                         )}
-                        {contract.ampliacionesDetails.theoreticalClassDate && (
+                        {(contract.ampliacionesDetails.theoreticalClassDate || contract.ampliacionesDetails.theoreticalClassTime) && (
                             <div className="mt-4">
                                 <h3 className='font-bold'>Clase Teórica</h3>
-                                <p>Fecha: {format(toDate(contract.ampliacionesDetails.theoreticalClassDate), "PPP", { locale: es })}</p>
+                                {contract.ampliacionesDetails.theoreticalClassDate && <p>Fecha: {format(toDate(contract.ampliacionesDetails.theoreticalClassDate), "PPP", { locale: es })}</p>}
+                                {contract.ampliacionesDetails.theoreticalClassTime && <p>Horario: {contract.ampliacionesDetails.theoreticalClassTime}</p>}
                             </div>
                         )}
                     </div>

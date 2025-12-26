@@ -73,6 +73,7 @@ export interface AmpliacionesContractDetails {
     paymentDeadline?: string;
     selectedPlans?: { name: string; price: number }[];
     theoreticalClassDate?: string;
+    theoreticalClassTime?: string;
 }
 
 

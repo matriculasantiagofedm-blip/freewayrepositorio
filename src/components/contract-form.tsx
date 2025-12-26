@@ -139,6 +139,11 @@ export function ContractForm() {
     const watchedCourseValue = form.watch('courseValue');
     const watchedDownPayment = form.watch('downPayment');
 
+    const { fields: theoreticalClassFields, append: appendTheoreticalClass, remove: removeTheoreticalClass } = useFieldArray({
+        control: form.control,
+        name: "theoreticalClassDates" as any,
+    });
+
     const { fields: practicalClassFields, append: appendPracticalClass, remove: removePracticalClass } = useFieldArray({
         control: form.control,
         name: "practicalClassSchedules" as any,
@@ -548,7 +553,7 @@ export function ContractForm() {
                 name="theoreticalClassSchedule"
                 render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Horario y fechas para clases teóricas.</FormLabel>
+                        <FormLabel>Horario para clases teóricas.</FormLabel>
                          <FormControl>
                             <RadioGroup
                             onValueChange={field.onChange}
@@ -569,6 +574,43 @@ export function ContractForm() {
                     </FormItem>
                 )}
             />
+            <div>
+                <h4 className="font-medium mb-2">Fechas de Clases Teóricas</h4>
+                 <div className="space-y-2">
+                    {theoreticalClassFields.map((field, index) => (
+                        <div key={field.id} className="flex items-center gap-2">
+                            <FormField
+                                control={form.control}
+                                name={`theoreticalClassDates.${index}` as any}
+                                render={({ field }) => (
+                                <FormItem className="flex-1">
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <FormControl>
+                                                <Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                    {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                </Button>
+                                            </FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar mode="single" selected={field.value} onSelect={field.onChange} />
+                                        </PopoverContent>
+                                    </Popover>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <Button type="button" variant="ghost" size="icon" onClick={() => removeTheoreticalClass(index)}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                        </div>
+                    ))}
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={() => appendTheoreticalClass(undefined)} className="mt-2">
+                    <PlusCircle className="mr-2 h-4 w-4" /> Añadir Fecha Teórica
+                </Button>
+            </div>
         </>
     );
     
@@ -748,7 +790,3 @@ export function ContractForm() {
         </Form>
     );
 }
-
-    
-
-    

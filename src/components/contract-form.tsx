@@ -63,6 +63,7 @@ const baseSchema = z.object({
 const autoMotoSchema = baseSchema.extend({
   courseValue: z.number().min(0),
   downPayment: z.number().min(0),
+  balance: z.number(),
   paymentDeadline: z.date(),
   vehicle: z.enum(['Spark', 'P. Blanco', 'P. Bronce', 'Moto']).optional(),
   vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']),
@@ -566,7 +567,6 @@ export function ContractForm() {
         </Form>
     );
 }
-
 
     
 

@@ -101,7 +101,9 @@ const coursePlans = {
     { name: 'PREMIUM', price: 175.00 },
   ],
   'Curso Moto': [
-    { name: 'CURSO COMPLETO', price: 150.00 },
+    { name: 'BÁSICO', price: 115.00 },
+    { name: 'PLUS', price: 135.00 },
+    { name: 'PREMIUM', price: 155.00 },
   ],
   'Curso Mixto': [
     { name: 'PAQUETE MIXTO COMPLETO', price: 380.00 },
@@ -746,5 +748,7 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    
 
     

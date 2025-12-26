@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format, addWeeks } from 'date-fns';
+import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 import { Button } from '@/components/ui/button';
@@ -93,14 +93,10 @@ type FormValues = z.infer<typeof formSchema>;
 const autoCourseValues = [
     { name: 'PAQUETE COMPLETO', price: 230.00 },
     { name: 'PAQUETE BÁSICO', price: 175.00 },
-    { name: 'CLASES ADICIONALES (2 HORAS)', price: 40.00 },
-    { name: 'ALQUILER DE AUTO PARA PRUEBA', price: 40.00 },
 ];
 
 const motoCourseValues = [
     { name: 'CURSO COMPLETO', price: 150.00 },
-    { name: 'CLASES ADICIONALES (2 HORAS)', price: 30.00 },
-    { name: 'ALQUILER DE MOTO PARA PRUEBA', price: 30.00 },
 ];
 
 const mixtoCourseValues = [

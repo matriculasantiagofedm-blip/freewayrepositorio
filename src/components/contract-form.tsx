@@ -96,8 +96,9 @@ type FormValues = z.infer<typeof formSchema>;
 // --- Datos Estáticos ---
 const coursePlans = {
   'Curso Auto': [
-    { name: 'PAQUETE COMPLETO', price: 230.00 },
-    { name: 'PAQUETE BÁSICO', price: 175.00 },
+    { name: 'Basico', price: 133.00 },
+    { name: 'Plus', price: 150.00 },
+    { name: 'Premium', price: 175.00 },
   ],
   'Curso Moto': [
     { name: 'CURSO COMPLETO', price: 150.00 },

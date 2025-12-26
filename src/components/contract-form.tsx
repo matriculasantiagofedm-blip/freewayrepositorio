@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, PlusCircle, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -458,8 +458,8 @@ export function ContractForm() {
                 render={({ field }) => (
                     <FormItem className="flex flex-col">
                         <FormLabel>Fecha Límite de Pago del Saldo</FormLabel>
-                        <Dialog>
-                            <DialogTrigger asChild>
+                        <Popover>
+                            <PopoverTrigger asChild>
                                 <FormControl>
                                     <Button
                                         variant={"outline"}
@@ -477,11 +477,8 @@ export function ContractForm() {
                                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                     </Button>
                                 </FormControl>
-                            </DialogTrigger>
-                            <DialogContent className="w-auto p-0">
-                                <DialogHeader>
-                                    <DialogTitle className="sr-only">Seleccionar Fecha</DialogTitle>
-                                </DialogHeader>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
                                 <Calendar
                                     mode="single"
                                     selected={field.value}
@@ -489,8 +486,8 @@ export function ContractForm() {
                                     disabled={(date) => date < new Date() || watchedValues.balance <= 0}
                                     initialFocus
                                 />
-                            </DialogContent>
-                        </Dialog>
+                            </PopoverContent>
+                        </Popover>
                          {watchedValues.balance <= 0 && <FormDescription>No aplica, ya que el curso está cancelado en su totalidad.</FormDescription>}
                         <FormMessage />
                     </FormItem>
@@ -597,22 +594,19 @@ export function ContractForm() {
                                 name={`theoreticalClassDates.${index}` as any}
                                 render={({ field }) => (
                                 <FormItem className="flex-1">
-                                    <Dialog>
-                                        <DialogTrigger asChild>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
                                             <FormControl>
                                                 <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
                                                     {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha {index + 1}</span>}
                                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                 </Button>
                                             </FormControl>
-                                        </DialogTrigger>
-                                        <DialogContent className="w-auto p-0">
-                                            <DialogHeader>
-                                                <DialogTitle className="sr-only">Seleccionar Fecha Teórica {index + 1}</DialogTitle>
-                                            </DialogHeader>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
                                             <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-                                        </DialogContent>
-                                    </Dialog>
+                                        </PopoverContent>
+                                    </Popover>
                                     <FormMessage />
                                 </FormItem>
                                 )}
@@ -631,7 +625,7 @@ export function ContractForm() {
                 {fields.map((field: any, index: number) => (
                     <div key={field.id} className="flex items-end gap-4 p-4 border rounded-md relative">
                          <p className="absolute -top-2 left-2 bg-background px-1 text-xs text-muted-foreground">Clase {index + 1}</p>
-                        <FormField control={form.control} name={`practicalClassSchedules.${index}.date` as any} render={({ field }) => (<FormItem className="flex-1"><FormLabel>Fecha</FormLabel><Dialog><DialogTrigger asChild><FormControl><Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}</Button></FormControl></DialogTrigger><DialogContent className="w-auto p-0"><DialogHeader><DialogTitle className="sr-only">Seleccionar Fecha Práctica {index + 1}</DialogTitle></DialogHeader><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></DialogContent></Dialog><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`practicalClassSchedules.${index}.date` as any} render={({ field }) => (<FormItem className="flex-1"><FormLabel>Fecha</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`practicalClassSchedules.${index}.time` as any} render={({ field }) => (<FormItem className="flex-1"><FormLabel>Hora</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar hora" /></SelectTrigger></FormControl><SelectContent>{practicalClassTimeSlots.map(slot => <SelectItem key={slot} value={slot}>{slot}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                         <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="shrink-0"><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </div>
@@ -648,7 +642,7 @@ export function ContractForm() {
                 {motoPracticalClassFields.map((field: any, index: number) => (
                     <div key={field.id} className="flex items-end gap-4 p-4 border rounded-md relative">
                          <p className="absolute -top-2 left-2 bg-background px-1 text-xs text-muted-foreground">Clase de Moto {index + 1}</p>
-                        <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.date` as any} render={({ field }) => (<FormItem className="flex-1"><FormLabel>Fecha</FormLabel><Dialog><DialogTrigger asChild><FormControl><Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}</Button></FormControl></DialogTrigger><DialogContent className="w-auto p-0"><DialogHeader><DialogTitle className="sr-only">Seleccionar Fecha de Moto {index + 1}</DialogTitle></DialogHeader><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></DialogContent></Dialog><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.date` as any} render={({ field }) => (<FormItem className="flex-1"><FormLabel>Fecha</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.time` as any} render={({ field }) => (<FormItem className="flex-1"><FormLabel>Hora</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar hora" /></SelectTrigger></FormControl><SelectContent>{practicalClassTimeSlots.map(slot => <SelectItem key={slot} value={slot}>{slot}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                         <Button type="button" variant="ghost" size="icon" onClick={() => removeMotoPracticalClass(index)} className="shrink-0"><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </div>
@@ -666,7 +660,7 @@ export function ContractForm() {
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Fechas de Pago (6 Cuotas)</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {Array.from({ length: 6 }).map((_, index) => (
-                    <FormField key={index} control={form.control} name={`paymentInstallments.${index}` as any} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Cuota {index + 1}</FormLabel><Dialog><DialogTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar</span>}</Button></FormControl></DialogTrigger><DialogContent className="w-auto p-0"><DialogHeader><DialogTitle className="sr-only">Seleccionar Fecha de Cuota {index + 1}</DialogTitle></DialogHeader><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></DialogContent></Dialog><FormMessage /></FormItem>)} />
+                    <FormField key={index} control={form.control} name={`paymentInstallments.${index}` as any} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Cuota {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
                 ))}
             </div>
             
@@ -680,7 +674,7 @@ export function ContractForm() {
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Clases Teóricas (10 Semanas)</h3>
              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {Array.from({ length: 10 }).map((_, index) => (
-                    <FormField key={index} control={form.control} name={`theoreticalClasses.${index}` as any} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Semana {index + 1}</FormLabel><Dialog><DialogTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar</span>}</Button></FormControl></DialogTrigger><DialogContent className="w-auto p-0"><DialogHeader><DialogTitle className="sr-only">Seleccionar Fecha Teórica (Deluxe) {index + 1}</DialogTitle></DialogHeader><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></DialogContent></Dialog><FormMessage /></FormItem>)} />
+                    <FormField key={index} control={form.control} name={`theoreticalClasses.${index}` as any} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Semana {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
                 ))}
             </div>
             
@@ -690,7 +684,7 @@ export function ContractForm() {
                     {deluxeClassFields.map((field: any, index: number) => (
                         <div key={field.id} className="flex items-end gap-4 p-4 border rounded-md relative">
                             <p className="absolute -top-2 left-2 bg-background px-1 text-xs text-muted-foreground">Clase {index + 1}</p>
-                            <FormField control={form.control} name={`classSchedules.${index}.date` as any} render={({ field }) => (<FormItem className="flex-1"><FormLabel>Fecha</FormLabel><Dialog><DialogTrigger asChild><FormControl><Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}</Button></FormControl></DialogTrigger><DialogContent className="w-auto p-0"><DialogHeader><DialogTitle className="sr-only">Seleccionar Fecha Práctica (Deluxe) {index + 1}</DialogTitle></DialogHeader><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></DialogContent></Dialog><FormMessage /></FormItem>)} />
+                            <FormField control={form.control} name={`classSchedules.${index}.date` as any} render={({ field }) => (<FormItem className="flex-1"><FormLabel>Fecha</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
                             <FormField control={form.control} name={`classSchedules.${index}.time` as any} render={({ field }) => (<FormItem className="flex-1"><FormLabel>Hora</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar hora" /></SelectTrigger></FormControl><SelectContent>{practicalClassTimeSlots.map(slot => <SelectItem key={slot} value={slot}>{slot}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                         </div>
                     ))}
@@ -800,5 +794,7 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    
 
     

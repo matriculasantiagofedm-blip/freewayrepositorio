@@ -63,7 +63,7 @@ const baseSchema = z.object({
   contractType: z.custom<ContractType>(),
 });
 
-const autoMotoSchema = baseSchema.extend({
+const autoMotoDetailsSchema = z.object({
   coursePlan: z.string().optional(),
   paidInFull: z.boolean().default(false),
   courseValue: z.number().optional(),
@@ -79,7 +79,7 @@ const autoMotoSchema = baseSchema.extend({
   motoPracticalClassSchedules: z.array(classScheduleSchema).optional(),
 });
 
-const deluxeSchema = baseSchema.extend({
+const deluxeDetailsSchema = z.object({
   paymentDetails: z.string().optional(),
   paymentAmount: z.number().optional(),
   paymentInstallments: z.array(z.date().optional()).optional(),
@@ -90,8 +90,7 @@ const deluxeSchema = baseSchema.extend({
   classSchedules: z.array(classScheduleSchema).optional(),
 });
 
-
-const formSchema = z.union([autoMotoSchema, deluxeSchema]);
+const formSchema = baseSchema.merge(autoMotoDetailsSchema).merge(deluxeDetailsSchema);
 type FormValues = z.infer<typeof formSchema>;
 
 
@@ -224,10 +223,13 @@ export function ContractForm() {
                 
                 if ((contractType === 'Curso Auto' || contractType === 'Curso Moto') && selectedPlan.classes) {
                     replacePracticalClasses(Array(selectedPlan.classes).fill({ date: undefined, time: undefined }));
+                } else if (contractType === 'Curso Mixto') {
+                    replacePracticalClasses(Array(selectedPlan.classes || 6).fill({ date: undefined, time: undefined }));
+                    replaceMotoPracticalClasses(Array(selectedPlan.motoClasses || 4).fill({ date: undefined, time: undefined }));
                 }
             }
         }
-    }, [watchedCoursePlan, contractType, form, replacePracticalClasses]);
+    }, [watchedCoursePlan, contractType, form, replacePracticalClasses, replaceMotoPracticalClasses]);
 
 
     useEffect(() => {
@@ -299,7 +301,7 @@ export function ContractForm() {
                 createdBy: currentUserRole,
             };
 
-             if ('courseValue' in values) { // Auto/Moto/Mixto
+             if (contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') {
                 contractData.autoMotoDetails = {
                     studentIdNumber: values.clientIdNumber,
                     studentAddress: values.clientAddress,
@@ -313,11 +315,11 @@ export function ContractForm() {
                     vehicleTransmission: values.vehicleTransmission || null,
                     licenseCategory: values.licenseCategory || null,
                     theoreticalClassSchedule: values.theoreticalClassSchedule || null,
-                    theoreticalClassDates: values.theoreticalClassDates?.map(d => d ? format(d, 'yyyy-MM-dd') : null) || [],
+                    theoreticalClassDates: values.theoreticalClassDates?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(Boolean) || [],
                     practicalClassSchedules: values.practicalClassSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })) || [],
                     motoPracticalClassSchedules: values.motoPracticalClassSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })) || [],
                 };
-            } else if ('paymentDetails' in values) { // Deluxe
+            } else if (contractType === 'Curso Deluxe') {
                 contractData.deluxeDetails = {
                     studentIdNumber: values.clientIdNumber,
                     studentAddress: values.clientAddress,
@@ -325,11 +327,11 @@ export function ContractForm() {
                     studentPhone2: values.clientPhone2 || null,
                     paymentDetails: values.paymentDetails || null,
                     paymentAmount: values.paymentAmount || null,
-                    paymentInstallments: values.paymentInstallments?.map(d => d ? format(d, 'yyyy-MM-dd') : null) || [],
+                    paymentInstallments: values.paymentInstallments?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(Boolean) || [],
                     vehicleTransmission: values.vehicleTransmission || null,
                     licenseCategory: values.licenseCategory || null,
                     theoreticalClassSchedule: values.theoreticalClassSchedule || null,
-                    theoreticalClasses: values.theoreticalClasses?.map(d => d ? format(d, 'yyyy-MM-dd') : null) || [],
+                    theoreticalClasses: values.theoreticalClasses?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(Boolean) || [],
                     classSchedules: values.classSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })) || [],
                 };
             }
@@ -461,9 +463,9 @@ export function ContractForm() {
                 )}
             />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField control={form.control} name="courseValue" render={({ field }) => (<FormItem><FormLabel>Valor Total (B/.)</FormLabel><FormControl><Input type="number" {...field} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="downPayment" render={({ field }) => (<FormItem><FormLabel>Abono (B/.)</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={watchedValues.paidInFull} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="balance" render={({ field }) => (<FormItem><FormLabel>Saldo (B/.)</FormLabel><FormControl><Input type="number" {...field} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="courseValue" render={({ field }) => (<FormItem><FormLabel>Valor Total (B/.)</FormLabel><FormControl><Input type="number" {...field} value={field.value || 0} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="downPayment" render={({ field }) => (<FormItem><FormLabel>Abono (B/.)</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} value={field.value || 0} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={watchedValues.paidInFull} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="balance" render={({ field }) => (<FormItem><FormLabel>Saldo (B/.)</FormLabel><FormControl><Input type="number" {...field} value={field.value || 0} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
             </div>
 
             <FormField
@@ -481,7 +483,7 @@ export function ContractForm() {
                                             "w-full pl-3 text-left font-normal",
                                             !field.value && "text-muted-foreground"
                                         )}
-                                        disabled={watchedValues.balance <= 0}
+                                        disabled={!watchedValues.balance || watchedValues.balance <= 0}
                                     >
                                         {field.value ? (
                                             format(field.value, "PPP", { locale: es })
@@ -497,13 +499,13 @@ export function ContractForm() {
                                     mode="single"
                                     selected={field.value}
                                     onSelect={field.onChange}
-                                    disabled={(date) => date < new Date() || watchedValues.balance <= 0}
+                                    disabled={(date) => date < new Date() || !watchedValues.balance || watchedValues.balance <= 0}
                                     initialFocus
                                     locale={es}
                                 />
                             </PopoverContent>
                         </Popover>
-                         {watchedValues.balance <= 0 && <FormDescription>No aplica, ya que el curso está cancelado en su totalidad.</FormDescription>}
+                         {(!watchedValues.balance || watchedValues.balance <= 0) && <FormDescription>No aplica, ya que el curso está cancelado en su totalidad.</FormDescription>}
                         <FormMessage />
                     </FormItem>
                 )}
@@ -835,5 +837,3 @@ export function ContractForm() {
         </Form>
     );
 }
-
-    

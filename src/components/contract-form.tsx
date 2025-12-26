@@ -69,7 +69,7 @@ const autoMotoDetailsSchema = z.object({
   courseValue: z.number().optional(),
   downPayment: z.number().optional(),
   balance: z.number().optional(),
-  paymentDeadline: z.date().optional(),
+  paymentDeadline: z.date().optional().nullable(),
   vehicle: z.enum(['Spark', 'P. Blanco', 'P. Bronce', 'Moto']).optional(),
   vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).optional(),
   licenseCategory: z.enum(['A, C', 'A, C, D', 'A, B']).optional(),
@@ -140,9 +140,8 @@ const practicalClassTimeSlots = [
 ];
 
 const theoreticalClassTimeSlots = [
-    'Lunes y Miércoles (8am-10am)',
-    'Martes y Jueves (7pm-9pm)',
-    'Sábados (8am-12pm)',
+    'Dias de semana de 8:00 am a 10:00 am',
+    'Sabados de 3:00 pm a 5:00 pm',
 ];
 
 const formatCurrency = (value?: number) => {
@@ -281,10 +280,10 @@ export function ContractForm() {
 
     useEffect(() => {
         const theoreticalSchedule = form.watch('autoMotoDetails.theoreticalClassSchedule');
-        if (theoreticalSchedule?.includes('Lunes y Miércoles') || theoreticalSchedule?.includes('Martes y Jueves')) {
-            replaceTheoreticalClasses(Array(10).fill(undefined));
-        } else if (theoreticalSchedule?.includes('Sábados')) {
-            replaceTheoreticalClasses(Array(2).fill(undefined));
+        if (theoreticalSchedule?.includes('Dias de semana')) {
+            replaceTheoreticalClasses(Array(10).fill({ date: undefined }));
+        } else if (theoreticalSchedule?.includes('Sabados')) {
+            replaceTheoreticalClasses(Array(2).fill({ date: undefined }));
         }
     }, [form, replaceTheoreticalClasses]);
 
@@ -491,7 +490,7 @@ export function ContractForm() {
                             <PopoverContent className="w-auto p-0" align="start">
                                 <Calendar
                                     mode="single"
-                                    selected={field.value}
+                                    selected={field.value || undefined}
                                     onSelect={field.onChange}
                                     disabled={(date) => date < new Date() || !watchedValues.autoMotoDetails?.balance || watchedValues.autoMotoDetails?.balance <= 0}
                                     initialFocus
@@ -601,7 +600,7 @@ export function ContractForm() {
                         <div key={field.id} className="flex items-center gap-2">
                             <FormField
                                 control={form.control}
-                                name={`autoMotoDetails.theoreticalClassDates.${index}` as any}
+                                name={`autoMotoDetails.theoreticalClassDates.${index}`}
                                 render={({ field }) => (
                                 <FormItem className="flex-1">
                                     <Popover>

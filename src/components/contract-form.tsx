@@ -138,8 +138,9 @@ export function ContractForm() {
     const watchedValues = form.watch();
     const watchedCourseValue = form.watch('courseValue');
     const watchedDownPayment = form.watch('downPayment');
+    const watchedTheoreticalSchedule = form.watch('theoreticalClassSchedule');
 
-    const { fields: theoreticalClassFields, append: appendTheoreticalClass, remove: removeTheoreticalClass } = useFieldArray({
+    const { fields: theoreticalClassFields, append: appendTheoreticalClass, remove: removeTheoreticalClass, replace: replaceTheoreticalClasses } = useFieldArray({
         control: form.control,
         name: "theoreticalClassDates" as any,
     });
@@ -173,6 +174,7 @@ export function ContractForm() {
                 courseValue: 0,
                 downPayment: 0,
                 balance: 0,
+                theoreticalClassDates: [],
             });
 
             if (contractType === 'Curso Deluxe') {
@@ -231,6 +233,14 @@ export function ContractForm() {
             }
         }
     }, [watchedCourseValue, watchedDownPayment, form]);
+
+    useEffect(() => {
+        if (watchedTheoreticalSchedule?.includes('Días de Semana')) {
+            replaceTheoreticalClasses(Array(5).fill(undefined));
+        } else if (watchedTheoreticalSchedule?.includes('Sábados')) {
+            replaceTheoreticalClasses(Array(3).fill(undefined));
+        }
+    }, [watchedTheoreticalSchedule, replaceTheoreticalClasses]);
 
 
     const onSubmit = async (values: FormValues) => {
@@ -588,7 +598,7 @@ export function ContractForm() {
                                         <PopoverTrigger asChild>
                                             <FormControl>
                                                 <Button variant="outline" className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                                    {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                                                    {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha {index + 1}</span>}
                                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                 </Button>
                                             </FormControl>
@@ -601,15 +611,9 @@ export function ContractForm() {
                                 </FormItem>
                                 )}
                             />
-                            <Button type="button" variant="ghost" size="icon" onClick={() => removeTheoreticalClass(index)}>
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
                         </div>
                     ))}
                 </div>
-                <Button type="button" variant="outline" size="sm" onClick={() => appendTheoreticalClass(undefined)} className="mt-2">
-                    <PlusCircle className="mr-2 h-4 w-4" /> Añadir Fecha Teórica
-                </Button>
             </div>
         </>
     );

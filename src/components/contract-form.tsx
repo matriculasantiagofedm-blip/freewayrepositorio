@@ -272,9 +272,9 @@ export function ContractForm() {
             if (name === 'autoMotoDetails.theoreticalClassSchedule') {
                 const theoreticalSchedule = value.autoMotoDetails?.theoreticalClassSchedule;
                 if (theoreticalSchedule?.includes('Dias de semana')) {
-                    replaceTheoreticalClasses(Array(5).fill({ date: undefined }));
+                    replaceTheoreticalClasses(Array(5).fill(undefined));
                 } else if (theoreticalSchedule?.includes('Sabados')) {
-                    replaceTheoreticalClasses(Array(3).fill({ date: undefined }));
+                    replaceTheoreticalClasses(Array(3).fill(undefined));
                 } else {
                     replaceTheoreticalClasses([]);
                 }
@@ -598,8 +598,8 @@ export function ContractForm() {
             <div>
                 <h4 className="font-medium mb-2">Fechas de Clases Teóricas</h4>
                  <div className="space-y-2">
-                    {theoreticalClassFields.map((field, index) => (
-                        <div key={field.id} className="flex items-center gap-2">
+                    {theoreticalClassFields.map((item, index) => (
+                        <div key={item.id} className="flex items-center gap-2">
                             <FormField
                                 control={form.control}
                                 name={`autoMotoDetails.theoreticalClassDates.${index}`}

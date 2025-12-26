@@ -36,7 +36,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFirebase } from '@/firebase';
-import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, writeBatch, getDocs, query, where, limit, orderBy } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { ContractType } from '@/lib/types';
@@ -344,10 +344,43 @@ export function ContractForm() {
 
 
     useEffect(() => {
-        const typePrefix = contractType?.substring(0, 3).toUpperCase() || 'GEN';
-        const uniqueId = Date.now().toString().slice(-6);
-        setFolio(`${typePrefix}-${uniqueId}`);
-    }, [contractType]);
+        const generateFolio = async () => {
+            if (!firestore) return;
+    
+            const currentYear = new Date().getFullYear();
+            const folioPrefix = `${currentYear}-`;
+            
+            const contractsRef = collection(firestore, 'contracts');
+            const q = query(
+                contractsRef,
+                where('folio', '>=', folioPrefix),
+                where('folio', '<', `${currentYear + 1}-`),
+                orderBy('folio', 'desc'),
+                limit(1)
+            );
+    
+            try {
+                const querySnapshot = await getDocs(q);
+                let nextFolioNumber = 1;
+    
+                if (!querySnapshot.empty) {
+                    const lastFolio = querySnapshot.docs[0].data().folio;
+                    const lastNumber = parseInt(lastFolio.split('-')[1], 10);
+                    nextFolioNumber = lastNumber + 1;
+                }
+    
+                const newFolio = `${currentYear}-${String(nextFolioNumber).padStart(3, '0')}`;
+                setFolio(newFolio);
+            } catch (error) {
+                console.error("Error generating folio:", error);
+                // Fallback to a simpler folio format in case of error
+                const uniqueId = Date.now().toString().slice(-6);
+                setFolio(`${currentYear}-${uniqueId}`);
+            }
+        };
+    
+        generateFolio();
+    }, [firestore]);
 
     const onSubmit = async (values: FormValues) => {
         if (!firestore || !user) {
@@ -509,7 +542,7 @@ export function ContractForm() {
                     <FormItem className="flex flex-row items-center space-x-3 space-y-0 pt-2">
                         <FormControl>
                             <Checkbox
-                                checked={field.value}
+                                checked={field.value || false}
                                 onCheckedChange={field.onChange}
                                 id="paidInFull"
                                 disabled={isSpecialPlan}
@@ -543,7 +576,7 @@ export function ContractForm() {
                                         disabled={!watchedValues.autoMotoDetails?.balance || watchedValues.autoMotoDetails?.balance <= 0}
                                     >
                                         {field.value ? (
-                                            format(field.value, "PPP", { locale: es })
+                                            format(new Date(field.value), "PPP", { locale: es })
                                         ) : (
                                             <span>mm/dd/aaaa</span>
                                         )}
@@ -554,7 +587,7 @@ export function ContractForm() {
                             <PopoverContent className="w-auto p-0" align="start">
                                 <Calendar
                                     mode="single"
-                                    selected={field.value ?? undefined}
+                                    selected={field.value ? new Date(field.value) : undefined}
                                     onSelect={field.onChange}
                                     disabled={(date) => date < new Date() || !watchedValues.autoMotoDetails?.balance || watchedValues.autoMotoDetails?.balance <= 0}
                                     initialFocus
@@ -578,7 +611,7 @@ export function ContractForm() {
                         <SelectItem value="P. Bronce">Picanto Bronce</SelectItem>
                         </SelectContent></Select><FormMessage /></FormItem>)} />
                  )}
-                 {(contractType === 'Curso Auto' || (contractType === 'Curso Mixto' && watchedValues.autoMotoDetails?.coursePlan !== 'Basico Moto + Ya se manejar Auto' && watchedValues.autoMotoDetails?.coursePlan !== 'Plus Moto + Ya se manejar Auto' && watchedValues.autoMotoDetails?.coursePlan !== 'Premium Moto + Ya se manejar Auto')) && (
+                 {contractType === 'Curso Auto' && (
                     <FormField
                         control={form.control}
                         name="autoMotoDetails.vehicleTransmission"
@@ -610,7 +643,7 @@ export function ContractForm() {
                         )}
                     />
                  )}
-                 {(contractType === 'Curso Moto' || (contractType === 'Curso Mixto' && watchedValues.autoMotoDetails?.coursePlan !== 'Basico Auto + Ya se manejar moto' && watchedValues.autoMotoDetails?.coursePlan !== 'Plus Auto + Ya se manejar Moto' && watchedValues.autoMotoDetails?.coursePlan !== 'Premium Auto + Ya se manejar Moto')) && (
+                 {contractType === 'Curso Moto' && (
                      <FormField
                         control={form.control}
                         name="autoMotoDetails.vehicleTransmission"
@@ -624,6 +657,44 @@ export function ContractForm() {
                                     className="flex items-center space-x-4 pt-2"
                                     >
                                     <FormItem className="flex items-center space-x-2 space-y-0">
+                                        <FormControl>
+                                        <RadioGroupItem value="Moto" />
+                                        </FormControl>
+                                        <FormLabel className="font-normal">Moto</FormLabel>
+                                    </FormItem>
+                                    </RadioGroup>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                 )}
+                 {contractType === 'Curso Mixto' && (
+                    <FormField
+                        control={form.control}
+                        name="autoMotoDetails.vehicleTransmission"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Transmisión (Principal)</FormLabel>
+                                <FormControl>
+                                    <RadioGroup
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                    className="flex items-center space-x-4 pt-2"
+                                    >
+                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                        <FormControl>
+                                        <RadioGroupItem value="Automático" />
+                                        </FormControl>
+                                        <FormLabel className="font-normal">Automático</FormLabel>
+                                    </FormItem>
+                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                        <FormControl>
+                                        <RadioGroupItem value="Manual" />
+                                        </FormControl>
+                                        <FormLabel className="font-normal">Manual</FormLabel>
+                                    </FormItem>
+                                     <FormItem className="flex items-center space-x-2 space-y-0">
                                         <FormControl>
                                         <RadioGroupItem value="Moto" />
                                         </FormControl>
@@ -711,13 +782,13 @@ export function ContractForm() {
                                         <PopoverTrigger asChild>
                                             <FormControl>
                                                 <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                                    {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha {index + 1}</span>}
+                                                    {field.value ? format(new Date(field.value), "PPP", { locale: es }) : <span>Seleccionar fecha {index + 1}</span>}
                                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                 </Button>
                                             </FormControl>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar locale={es} mode="single" selected={field.value ?? undefined} onSelect={field.onChange} initialFocus />
+                                            <Calendar locale={es} mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} initialFocus />
                                         </PopoverContent>
                                     </Popover>
                                     <FormMessage />
@@ -758,12 +829,12 @@ export function ContractForm() {
                                                         <FormControl>
                                                             <Button variant={"outline"} size="sm" className={cn("w-full pl-3 text-left font-normal h-9", !field.value && "text-muted-foreground")}>
                                                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                                                {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                                                                {field.value ? format(new Date(field.value), "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
                                                             </Button>
                                                         </FormControl>
                                                     </PopoverTrigger>
                                                     <PopoverContent className="w-auto p-0" align="start">
-                                                        <Calendar locale={es} mode="single" selected={field.value ?? undefined} onSelect={field.onChange} />
+                                                        <Calendar locale={es} mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} />
                                                     </PopoverContent>
                                                 </Popover>
                                                 <FormMessage />
@@ -819,7 +890,7 @@ export function ContractForm() {
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Fechas de Pago (6 Cuotas)</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {Array.from({ length: 6 }).map((_, index) => (
-                    <FormField key={index} control={form.control} name={`deluxeDetails.paymentInstallments.${index}`} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Cuota {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar locale={es} mode="single" selected={field.value ?? undefined} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
+                    <FormField key={index} control={form.control} name={`deluxeDetails.paymentInstallments.${index}`} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Cuota {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(new Date(field.value), "PPP", { locale: es }) : <span>Seleccionar</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar locale={es} mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
                 ))}
             </div>
             
@@ -833,7 +904,7 @@ export function ContractForm() {
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Clases Teóricas (10 Semanas)</h3>
              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {Array.from({ length: 10 }).map((_, index) => (
-                    <FormField key={index} control={form.control} name={`deluxeDetails.theoreticalClasses.${index}`} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Semana {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar locale={es} mode="single" selected={field.value ?? undefined} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
+                    <FormField key={index} control={form.control} name={`deluxeDetails.theoreticalClasses.${index}`} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Semana {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(new Date(field.value), "PPP", { locale: es }) : <span>Seleccionar</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar locale={es} mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
                 ))}
             </div>
             

@@ -41,6 +41,7 @@ import { DeluxePremiumContractTemplatePreview } from './deluxe-premium-contract-
 import { AutoMotoContractTemplatePreview } from './auto-moto-contract-preview';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { AccordionWrapper } from './accordion-wrapper';
+import { Checkbox } from './ui/checkbox';
 
 // --- Esquemas de Validación con Zod ---
 
@@ -60,10 +61,12 @@ const baseSchema = z.object({
 });
 
 const autoMotoSchema = baseSchema.extend({
-  courseValue: z.number().min(0, "Debe seleccionar un valor de curso"),
+  coursePlan: z.string().min(1, "Debe seleccionar un plan"),
+  paidInFull: z.boolean().default(false),
+  courseValue: z.number().min(0),
   downPayment: z.number().min(0),
   balance: z.number(),
-  paymentDeadline: z.date({ required_error: "La fecha límite de pago es requerida." }),
+  paymentDeadline: z.date().optional(),
   vehicle: z.enum(['Spark', 'P. Blanco', 'P. Bronce', 'Moto']).optional(),
   vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']),
   licenseCategory: z.enum(['A, C', 'A, C, D', 'A, B']),
@@ -89,18 +92,19 @@ type FormValues = z.infer<typeof formSchema>;
 
 
 // --- Datos Estáticos ---
-const autoCourseValues = [
+const coursePlans = {
+  'Curso Auto': [
     { name: 'PAQUETE COMPLETO', price: 230.00 },
     { name: 'PAQUETE BÁSICO', price: 175.00 },
-];
-
-const motoCourseValues = [
+  ],
+  'Curso Moto': [
     { name: 'CURSO COMPLETO', price: 150.00 },
-];
-
-const mixtoCourseValues = [
+  ],
+  'Curso Mixto': [
     { name: 'PAQUETE MIXTO COMPLETO', price: 380.00 },
-];
+  ],
+};
+
 
 const practicalClassTimeSlots = [
   '8:00 am a 10:00 am',
@@ -153,6 +157,10 @@ export function ContractForm() {
                 clientAddress: '',
                 clientPhone1: '',
                 clientPhone2: '',
+                paidInFull: false,
+                courseValue: 0,
+                downPayment: 0,
+                balance: 0,
             });
 
             if (contractType === 'Curso Deluxe') {
@@ -178,16 +186,29 @@ export function ContractForm() {
 
     useEffect(() => {
         const subscription = form.watch((value, { name, type }) => {
-            if (name === 'courseValue' || name === 'downPayment') {
-                const courseValue = value.courseValue || 0;
-                const downPayment = value.downPayment || 0;
-                if (typeof courseValue === 'number' && typeof downPayment === 'number') {
-                    form.setValue('balance', courseValue - downPayment);
+            if (name === 'coursePlan' && contractType && (coursePlans as any)[contractType]) {
+                const selectedPlan = (coursePlans as any)[contractType].find((p: any) => p.name === value.coursePlan);
+                if (selectedPlan) {
+                    form.setValue('courseValue', selectedPlan.price);
                 }
+            }
+
+            if (name === 'paidInFull' && value.courseValue) {
+                if (value.paidInFull) {
+                    form.setValue('downPayment', value.courseValue);
+                } else {
+                    form.setValue('downPayment', 0);
+                }
+            }
+            
+            const courseValue = value.courseValue || 0;
+            const downPayment = value.downPayment || 0;
+            if (typeof courseValue === 'number' && typeof downPayment === 'number') {
+                form.setValue('balance', courseValue - downPayment);
             }
         });
         return () => subscription.unsubscribe();
-    }, [form]);
+    }, [form, contractType]);
 
 
     const onSubmit = async (values: FormValues) => {
@@ -281,51 +302,42 @@ export function ContractForm() {
     
     const renderCommonFields = () => (
         <>
-            <FormField
-                control={form.control}
-                name="clientName"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Nombre Completo del Cliente</FormLabel>
-                        <FormControl><Input placeholder="Ej. Juan Pérez" {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-            <FormField
-                control={form.control}
-                name="clientEmail"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Correo Electrónico</FormLabel>
-                        <FormControl><Input type="email" placeholder="ej. juan.perez@email.com" {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-             <FormField
-                control={form.control}
-                name="clientIdNumber"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Cédula de Identidad</FormLabel>
-                        <FormControl><Input placeholder="Ej. 8-123-456" {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-             <FormField
-                control={form.control}
-                name="clientAddress"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Dirección Residencial</FormLabel>
-                        <FormControl><Textarea placeholder="Dirección completa del cliente..." {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="clientName"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Nombre del Estudiante</FormLabel>
+                            <FormControl><Input placeholder="ej., Juan Pérez" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="clientEmail"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Correo electrónico del Estudiante</FormLabel>
+                            <FormControl><Input type="email" placeholder="estudiante@ejemplo.com" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                 <FormField
+                    control={form.control}
+                    name="clientIdNumber"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Cédula/Pasaporte</FormLabel>
+                            <FormControl><Input placeholder="Ej. 8-123-456" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
                  <FormField
                     control={form.control}
                     name="clientPhone1"
@@ -342,40 +354,69 @@ export function ContractForm() {
                     name="clientPhone2"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Teléfono 2 (Opcional)</FormLabel>
+                            <FormLabel>Teléfono 2</FormLabel>
                             <FormControl><Input type="tel" placeholder="Ej. 399-9999" {...field} /></FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
                 />
             </div>
+             <FormField
+                control={form.control}
+                name="clientAddress"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Domicilio</FormLabel>
+                        <FormControl><Textarea placeholder="Dirección completa del cliente..." {...field} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
         </>
     );
 
     const renderAutoMotoFields = () => (
         <>
+             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Cláusula Primera: Valor y Forma de Pago</h3>
             <FormField
                 control={form.control}
-                name="courseValue"
+                name="coursePlan"
                 render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Valor del Curso</FormLabel>
-                        <Select onValueChange={(value) => field.onChange(parseFloat(value))} >
-                            <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un paquete" /></SelectTrigger></FormControl>
+                        <FormLabel>Plan del Curso</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un plan" /></SelectTrigger></FormControl>
                             <SelectContent>
-                                {contractType === 'Curso Auto' && autoCourseValues.map(c => <SelectItem key={c.name} value={String(c.price)}>{c.name} - ${c.price.toFixed(2)}</SelectItem>)}
-                                {contractType === 'Curso Moto' && motoCourseValues.map(c => <SelectItem key={c.name} value={String(c.price)}>{c.name} - ${c.price.toFixed(2)}</SelectItem>)}
-                                {contractType === 'Curso Mixto' && mixtoCourseValues.map(c => <SelectItem key={c.name} value={String(c.price)}>{c.name} - ${c.price.toFixed(2)}</SelectItem>)}
+                                {contractType && (coursePlans as any)[contractType]?.map((c: any) => <SelectItem key={c.name} value={c.name}>{c.name} - ${c.price.toFixed(2)}</SelectItem>)}
                             </SelectContent>
                         </Select>
                         <FormMessage />
                     </FormItem>
                 )}
             />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <FormField control={form.control} name="downPayment" render={({ field }) => (<FormItem><FormLabel>Abono Inicial (B/.)</FormLabel><FormControl><Input type="number" placeholder="Ej. 100.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="balance" render={({ field }) => (<FormItem><FormLabel>Saldo Pendiente (B/.)</FormLabel><FormControl><Input type="number" {...field} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="paymentDeadline" render={({ field }) => (<FormItem className="flex flex-col pt-2"><FormLabel>Fecha Límite de Pago</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
+             <FormField
+                control={form.control}
+                name="paidInFull"
+                render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4">
+                        <FormControl>
+                            <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                            />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                            <FormLabel>
+                               ¿Cancelar la totalidad del curso (100%)?
+                            </FormLabel>
+                        </div>
+                    </FormItem>
+                )}
+            />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField control={form.control} name="courseValue" render={({ field }) => (<FormItem><FormLabel>Valor Total (B/.)</FormLabel><FormControl><Input type="number" {...field} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="downPayment" render={({ field }) => (<FormItem><FormLabel>Abono (B/.)</FormLabel><FormControl><Input type="number" placeholder="0.00" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={watchedValues.paidInFull} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="balance" render={({ field }) => (<FormItem><FormLabel>Saldo (B/.)</FormLabel><FormControl><Input type="number" {...field} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
             </div>
 
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Detalles del Vehículo y Licencia</h3>
@@ -464,6 +505,7 @@ export function ContractForm() {
 
     const renderFormContent = () => (
         <>
+            <h3 className="font-semibold text-lg pt-4 border-b pb-2">Datos del Estudiante</h3>
             {renderCommonFields()}
             {contractType === 'Curso Deluxe' ? renderDeluxeFields() : renderAutoMotoFields()}
             {(contractType === 'Curso Auto' || contractType === 'Curso Mixto') && renderPracticalClassFields(practicalClassFields, removePracticalClass, appendPracticalClass, 'Clases Prácticas de Auto')}
@@ -472,7 +514,7 @@ export function ContractForm() {
     );
 
     const steps = [
-        { title: "Información del Contrato", content: renderFormContent },
+        { title: "Detalles del Contrato", content: renderFormContent },
         { title: "Vista Previa del Contrato", content: () => (
             <div>
                 {contractType === 'Curso Deluxe' 
@@ -513,9 +555,9 @@ export function ContractForm() {
                             <AccordionContent>
                                 <Card>
                                     <CardHeader>
-                                        <CardTitle>Completar Formulario</CardTitle>
+                                        <CardTitle>Completa los detalles principales de tu acuerdo.</CardTitle>
                                         <div className='flex justify-between items-center'>
-                                            <FormDescription>Ingresa los detalles del cliente y del contrato.</FormDescription>
+                                            <FormDescription>Tipo de Contrato: {contractType}</FormDescription>
                                             <p className='text-sm font-semibold text-destructive'>Folio: {folio}</p>
                                         </div>
                                     </CardHeader>
@@ -562,5 +604,3 @@ export function ContractForm() {
         </Form>
     );
 }
-
-    

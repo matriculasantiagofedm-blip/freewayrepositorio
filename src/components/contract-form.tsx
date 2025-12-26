@@ -613,7 +613,7 @@ export function ContractForm() {
                                         <PopoverTrigger asChild>
                                             <FormControl>
                                                 <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                                    {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha {index + 1}</span>}
+                                                    {field.value && field.value instanceof Date ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha {index + 1}</span>}
                                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                 </Button>
                                             </FormControl>
@@ -716,7 +716,7 @@ export function ContractForm() {
             
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Detalles del Pago</h3>
             <FormField control={form.control} name="deluxeDetails.paymentDetails" render={({ field }) => (<FormItem><FormLabel>Descripción del Acuerdo de Pago</FormLabel><FormControl><Textarea placeholder="Ej. El estudiante pagará B/. 201.00 en 6 cuotas quincenales de B/.33.50..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="deluxeDetails.paymentAmount" render={({ field }) => (<FormItem><FormLabel>Monto por Cuota (B/.)</FormLabel><FormControl><Input type="number" placeholder="33.50" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="deluxeDetails.paymentAmount" render={({ field }) => (<FormItem><FormLabel>Monto por Cuota (B/.)</FormLabel><FormControl><Input type="number" placeholder="33.50" {...field} value={field.value ?? 0} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>)} />
 
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Fechas de Pago (6 Cuotas)</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -804,9 +804,5 @@ export function ContractForm() {
         </Form>
     );
 }
-
-    
-
-    
 
     

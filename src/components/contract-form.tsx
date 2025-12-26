@@ -212,9 +212,10 @@ export function ContractForm() {
             } else {
                  replacePracticalClasses([]);
                  replaceMotoPracticalClasses([]);
+                 replaceTheoreticalClasses([]);
             }
         }
-    }, [contractType, form, replaceDeluxeClasses, replacePracticalClasses, replaceMotoPracticalClasses]);
+    }, [contractType, form, replaceDeluxeClasses, replacePracticalClasses, replaceMotoPracticalClasses, replaceTheoreticalClasses]);
 
     
      useEffect(() => {
@@ -267,9 +268,20 @@ export function ContractForm() {
                     form.setValue('autoMotoDetails.balance', newBalance < 0 ? 0 : newBalance, { shouldValidate: true });
                 }
             }
+
+            if (name === 'autoMotoDetails.theoreticalClassSchedule') {
+                const theoreticalSchedule = value.autoMotoDetails?.theoreticalClassSchedule;
+                if (theoreticalSchedule?.includes('Dias de semana')) {
+                    replaceTheoreticalClasses(Array(5).fill({ date: undefined }));
+                } else if (theoreticalSchedule?.includes('Sabados')) {
+                    replaceTheoreticalClasses(Array(3).fill({ date: undefined }));
+                } else {
+                    replaceTheoreticalClasses([]);
+                }
+            }
         });
         return () => subscription.unsubscribe();
-    }, [form, contractType, replacePracticalClasses, replaceMotoPracticalClasses]);
+    }, [form, contractType, replacePracticalClasses, replaceMotoPracticalClasses, replaceTheoreticalClasses]);
 
 
     useEffect(() => {
@@ -277,16 +289,6 @@ export function ContractForm() {
         const uniqueId = Date.now().toString().slice(-6);
         setFolio(`${typePrefix}-${uniqueId}`);
     }, [contractType]);
-
-    useEffect(() => {
-        const theoreticalSchedule = form.watch('autoMotoDetails.theoreticalClassSchedule');
-        if (theoreticalSchedule?.includes('Dias de semana')) {
-            replaceTheoreticalClasses(Array(5).fill({ date: undefined }));
-        } else if (theoreticalSchedule?.includes('Sabados')) {
-            replaceTheoreticalClasses(Array(3).fill({ date: undefined }));
-        }
-    }, [form, replaceTheoreticalClasses]);
-
 
     const onSubmit = async (values: FormValues) => {
         if (!firestore || !user) {

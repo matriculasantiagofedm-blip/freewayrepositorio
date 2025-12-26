@@ -323,6 +323,15 @@ export function ContractForm() {
                          form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
                     }
                 }
+                
+                // Set payment deadline based on paidInFull status
+                if (name === 'autoMotoDetails.paidInFull') {
+                    if (isPaidInFull) {
+                        form.setValue('autoMotoDetails.paymentDeadline', new Date());
+                    } else {
+                        form.setValue('autoMotoDetails.paymentDeadline', null);
+                    }
+                }
 
                 const newBalance = newCourseValue - newDownPayment;
                  if(form.getValues('autoMotoDetails.balance') !== newBalance){
@@ -577,7 +586,7 @@ export function ContractForm() {
                                         )}
                                         disabled={!watchedValues.autoMotoDetails?.balance || watchedValues.autoMotoDetails?.balance <= 0}
                                     >
-                                        {field.value instanceof Date && !isNaN(field.value.getTime()) ? (
+                                        {field.value && field.value instanceof Date && !isNaN(field.value.getTime()) ? (
                                             format(field.value, "PPP", { locale: es })
                                         ) : (
                                             <span>mm/dd/aaaa</span>
@@ -987,6 +996,8 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    
 
     
 

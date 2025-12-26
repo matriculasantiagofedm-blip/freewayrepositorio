@@ -577,7 +577,7 @@ export function ContractForm() {
                                         )}
                                         disabled={!watchedValues.autoMotoDetails?.balance || watchedValues.autoMotoDetails?.balance <= 0}
                                     >
-                                        {field.value ? (
+                                        {field.value instanceof Date && !isNaN(field.value.getTime()) ? (
                                             format(field.value, "PPP", { locale: es })
                                         ) : (
                                             <span>mm/dd/aaaa</span>
@@ -987,5 +987,7 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    
 
     

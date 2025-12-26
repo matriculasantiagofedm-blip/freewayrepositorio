@@ -182,14 +182,20 @@ export function ContractForm() {
             if (contractType === 'Curso Deluxe') {
                 replaceDeluxeClasses(Array(6).fill({ date: undefined, time: undefined }));
             } else if (contractType === 'Curso Mixto') {
-                replacePracticalClasses(Array(6).fill({ date: undefined, time: undefined }));
-                replaceMotoPracticalClasses(Array(4).fill({ date: undefined, time: undefined }));
+                const plan = (coursePlans as any)[contractType].find((p: any) => p.name === watchedCoursePlan);
+                 if (plan) {
+                    replacePracticalClasses(Array(plan.classes).fill({ date: undefined, time: undefined }));
+                    replaceMotoPracticalClasses(Array(plan.motoClasses).fill({ date: undefined, time: undefined }));
+                } else {
+                    replacePracticalClasses(Array(6).fill({ date: undefined, time: undefined }));
+                    replaceMotoPracticalClasses(Array(4).fill({ date: undefined, time: undefined }));
+                }
             } else {
                 // Default to 0 for Auto/Moto until a plan is selected
                 replacePracticalClasses([]);
             }
         }
-    }, [contractType, form, replaceDeluxeClasses, replacePracticalClasses, replaceMotoPracticalClasses]);
+    }, [contractType, form, replaceDeluxeClasses, replacePracticalClasses, replaceMotoPracticalClasses, watchedCoursePlan]);
 
     
      useEffect(() => {
@@ -300,14 +306,14 @@ export function ContractForm() {
                     courseValue: values.courseValue,
                     downPayment: values.downPayment,
                     balance: (values.courseValue || 0) - (values.downPayment || 0),
-                    paymentDeadline: values.paymentDeadline,
+                    paymentDeadline: values.paymentDeadline ? format(values.paymentDeadline, 'yyyy-MM-dd') : null,
                     vehicle: values.vehicle,
                     vehicleTransmission: values.vehicleTransmission,
                     licenseCategory: values.licenseCategory,
                     theoreticalClassSchedule: values.theoreticalClassSchedule,
-                    theoreticalClassDates: values.theoreticalClassDates?.map(d => d ? format(d, 'yyyy-MM-dd') : undefined),
-                    practicalClassSchedules: values.practicalClassSchedules?.map(c => ({...c, date: c.date ? format(c.date, 'yyyy-MM-dd') : undefined })),
-                    motoPracticalClassSchedules: values.motoPracticalClassSchedules?.map(c => ({...c, date: c.date ? format(c.date, 'yyyy-MM-dd') : undefined })),
+                    theoreticalClassDates: values.theoreticalClassDates?.map(d => d ? format(d, 'yyyy-MM-dd') : null),
+                    practicalClassSchedules: values.practicalClassSchedules?.map(c => ({...c, date: c.date ? format(c.date, 'yyyy-MM-dd') : null })),
+                    motoPracticalClassSchedules: values.motoPracticalClassSchedules?.map(c => ({...c, date: c.date ? format(c.date, 'yyyy-MM-dd') : null })),
                 };
             } else if ('paymentDetails' in values) { // Deluxe
                 (contractData as any).deluxeDetails = {
@@ -317,12 +323,12 @@ export function ContractForm() {
                     studentPhone2: values.clientPhone2,
                     paymentDetails: values.paymentDetails,
                     paymentAmount: values.paymentAmount,
-                    paymentInstallments: values.paymentInstallments.map(d => d ? format(d, 'yyyy-MM-dd') : undefined),
+                    paymentInstallments: values.paymentInstallments.map(d => d ? format(d, 'yyyy-MM-dd') : null),
                     vehicleTransmission: values.vehicleTransmission,
                     licenseCategory: values.licenseCategory,
                     theoreticalClassSchedule: values.theoreticalClassSchedule,
-                    theoreticalClasses: values.theoreticalClasses.map(d => d ? format(d, 'yyyy-MM-dd') : undefined),
-                    classSchedules: values.classSchedules.map(c => ({...c, date: c.date ? format(c.date, 'yyyy-MM-dd') : undefined })),
+                    theoreticalClasses: values.theoreticalClasses.map(d => d ? format(d, 'yyyy-MM-dd') : null),
+                    classSchedules: values.classSchedules.map(c => ({...c, date: c.date ? format(c.date, 'yyyy-MM-dd') : null })),
                 };
             }
 
@@ -827,5 +833,3 @@ export function ContractForm() {
         </Form>
     );
 }
-
-    

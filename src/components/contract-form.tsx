@@ -60,9 +60,9 @@ const baseSchema = z.object({
 });
 
 const autoMotoDetailsSchema = z.object({
-  studentIdNumber: z.string().min(1, 'La cédula es requerida'),
-  studentAddress: z.string().min(1, 'La dirección es requerida'),
-  studentPhone1: z.string().min(1, 'Se requiere al menos un teléfono'),
+  studentIdNumber: z.string().optional(),
+  studentAddress: z.string().optional(),
+  studentPhone1: z.string().optional(),
   studentPhone2: z.string().optional(),
   coursePlan: z.string().optional(),
   paidInFull: z.boolean().default(false),
@@ -80,9 +80,9 @@ const autoMotoDetailsSchema = z.object({
 }).partial();
 
 const deluxeDetailsSchema = z.object({
-  studentIdNumber: z.string().min(1, 'La cédula es requerida'),
-  studentAddress: z.string().min(1, 'La dirección es requerida'),
-  studentPhone1: z.string().min(1, 'Se requiere al menos un teléfono'),
+  studentIdNumber: z.string().optional(),
+  studentAddress: z.string().optional(),
+  studentPhone1: z.string().optional(),
   studentPhone2: z.string().optional(),
   paymentDetails: z.string().optional(),
   paymentAmount: z.number().optional(),
@@ -96,9 +96,20 @@ const deluxeDetailsSchema = z.object({
 
 const formSchema = baseSchema.extend({
   contractType: z.custom<ContractType>(),
-  autoMotoDetails: autoMotoDetailsSchema.optional(),
-  deluxeDetails: deluxeDetailsSchema.optional(),
-}).passthrough();
+  autoMotoDetails: autoMotoDetailsSchema,
+  deluxeDetails: deluxeDetailsSchema,
+}).superRefine((data, ctx) => {
+    if (data.contractType !== 'Curso Deluxe') {
+        if (!data.autoMotoDetails?.studentIdNumber) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La cédula es requerida", path: ["autoMotoDetails", "studentIdNumber"] });
+        }
+    } else {
+        if (!data.deluxeDetails?.studentIdNumber) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "La cédula es requerida", path: ["deluxeDetails", "studentIdNumber"] });
+        }
+    }
+});
+
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -129,11 +140,9 @@ const practicalClassTimeSlots = [
 ];
 
 const theoreticalClassTimeSlots = [
-    'Semana: 8am-10am',
-    'Semana: 10am-12pm',
-    'Semana: 2pm-4pm',
-    'Sábado: 8am-12pm (Intensivo)',
-    'Sábado: 1pm-5pm (Intensivo)',
+    'Lunes y Miércoles (8am-10am)',
+    'Martes y Jueves (7pm-9pm)',
+    'Sábados (8am-12pm)',
 ];
 
 const formatCurrency = (value?: number) => {
@@ -245,6 +254,7 @@ export function ContractForm() {
                         form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
                     }
                 } else if (name === 'autoMotoDetails.coursePlan' || name === 'autoMotoDetails.paidInFull') {
+                    // Only reset if the change is not from manually editing the down payment
                     if (name !== 'autoMotoDetails.downPayment') {
                         newDownPayment = 0;
                         if(form.getValues('autoMotoDetails.downPayment') !== newDownPayment){
@@ -271,10 +281,10 @@ export function ContractForm() {
 
     useEffect(() => {
         const theoreticalSchedule = form.watch('autoMotoDetails.theoreticalClassSchedule');
-        if (theoreticalSchedule?.includes('Semana')) {
-            replaceTheoreticalClasses(Array(5).fill(undefined));
-        } else if (theoreticalSchedule?.includes('Sábado')) {
-            replaceTheoreticalClasses(Array(2).fill(undefined)); // Assuming 2 sessions for intensive saturday
+        if (theoreticalSchedule?.includes('Lunes y Miércoles') || theoreticalSchedule?.includes('Martes y Jueves')) {
+            replaceTheoreticalClasses(Array(10).fill(undefined));
+        } else if (theoreticalSchedule?.includes('Sábados')) {
+            replaceTheoreticalClasses(Array(2).fill(undefined));
         }
     }, [form, replaceTheoreticalClasses]);
 
@@ -399,6 +409,15 @@ export function ContractForm() {
 
     const renderAutoMotoFields = () => (
         <>
+            <h3 className="font-semibold text-lg pt-4 border-b pb-2">Datos Adicionales del Estudiante</h3>
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                 <FormField control={form.control} name="autoMotoDetails.studentIdNumber" render={({ field }) => (<FormItem><FormLabel>Cédula/Pasaporte</FormLabel><FormControl><Input placeholder="Ej. 8-123-456" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                 <FormField control={form.control} name="autoMotoDetails.studentPhone1" render={({ field }) => (<FormItem><FormLabel>Teléfono 1</FormLabel><FormControl><Input type="tel" placeholder="Ej. 6123-4567" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>)} />
+                 <FormField control={form.control} name="autoMotoDetails.studentPhone2" render={({ field }) => (<FormItem><FormLabel>Teléfono 2 (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="Ej. 399-9999" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+            </div>
+             <FormField control={form.control} name="autoMotoDetails.studentAddress" render={({ field }) => (<FormItem><FormLabel>Domicilio</FormLabel><FormControl><Textarea placeholder="Dirección completa del cliente..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+
+
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Cláusula Primera: Valor y Forma de Pago</h3>
             <FormField
                 control={form.control}
@@ -418,9 +437,9 @@ export function ContractForm() {
             />
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField control={form.control} name="autoMotoDetails.courseValue" render={({ field }) => (<FormItem><FormLabel>Valor Total (B/.)</FormLabel><FormControl><Input type="number" step="0.01" value={formatCurrency(field.value)} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="autoMotoDetails.courseValue" render={({ field }) => (<FormItem><FormLabel>Valor Total (B/.)</FormLabel><FormControl><Input type="text" value={formatCurrency(field.value)} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="autoMotoDetails.downPayment" render={({ field }) => (<FormItem><FormLabel>Abono (B/.)</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={watchedPaidInFull} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="autoMotoDetails.balance" render={({ field }) => (<FormItem><FormLabel>Saldo (B/.)</FormLabel><FormControl><Input type="number" step="0.01" value={formatCurrency(field.value)} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="autoMotoDetails.balance" render={({ field }) => (<FormItem><FormLabel>Saldo (B/.)</FormLabel><FormControl><Input type="text" value={formatCurrency(field.value)} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
             </div>
              <FormField
                 control={form.control}
@@ -487,12 +506,6 @@ export function ContractForm() {
             />
 
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Cláusula Segunda: Detalles del Curso</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                 <FormField control={form.control} name="autoMotoDetails.studentIdNumber" render={({ field }) => (<FormItem><FormLabel>Cédula/Pasaporte</FormLabel><FormControl><Input placeholder="Ej. 8-123-456" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                 <FormField control={form.control} name="autoMotoDetails.studentPhone1" render={({ field }) => (<FormItem><FormLabel>Teléfono 1</FormLabel><FormControl><Input type="tel" placeholder="Ej. 6123-4567" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                 <FormField control={form.control} name="autoMotoDetails.studentPhone2" render={({ field }) => (<FormItem><FormLabel>Teléfono 2 (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="Ej. 399-9999" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            </div>
-             <FormField control={form.control} name="autoMotoDetails.studentAddress" render={({ field }) => (<FormItem><FormLabel>Domicilio</FormLabel><FormControl><Textarea placeholder="Dirección completa del cliente..." {...field} /></FormControl><FormMessage /></FormItem>)} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                  <FormField control={form.control} name="autoMotoDetails.vehicle" render={({ field }) => (<FormItem><FormLabel>Vehículo</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un vehículo" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Spark">Spark</SelectItem><SelectItem value="P. Blanco">Picanto Blanco</SelectItem><SelectItem value="P. Bronce">Picanto Bronce</SelectItem><SelectItem value="Moto">Moto</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
@@ -688,13 +701,13 @@ export function ContractForm() {
     
     const renderDeluxeFields = () => (
         <>
-             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Detalles del Estudiante</h3>
+            <h3 className="font-semibold text-lg pt-4 border-b pb-2">Datos Adicionales del Estudiante</h3>
              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                 <FormField control={form.control} name="deluxeDetails.studentIdNumber" render={({ field }) => (<FormItem><FormLabel>Cédula/Pasaporte</FormLabel><FormControl><Input placeholder="Ej. 8-123-456" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                 <FormField control={form.control} name="deluxeDetails.studentPhone1" render={({ field }) => (<FormItem><FormLabel>Teléfono 1</FormLabel><FormControl><Input type="tel" placeholder="Ej. 6123-4567" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                 <FormField control={form.control} name="deluxeDetails.studentPhone2" render={({ field }) => (<FormItem><FormLabel>Teléfono 2 (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="Ej. 399-9999" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                 <FormField control={form.control} name="deluxeDetails.studentIdNumber" render={({ field }) => (<FormItem><FormLabel>Cédula/Pasaporte</FormLabel><FormControl><Input placeholder="Ej. 8-123-456" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                 <FormField control={form.control} name="deluxeDetails.studentPhone1" render={({ field }) => (<FormItem><FormLabel>Teléfono 1</FormLabel><FormControl><Input type="tel" placeholder="Ej. 6123-4567" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                 <FormField control={form.control} name="deluxeDetails.studentPhone2" render={({ field }) => (<FormItem><FormLabel>Teléfono 2 (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="Ej. 399-9999" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
             </div>
-             <FormField control={form.control} name="deluxeDetails.studentAddress" render={({ field }) => (<FormItem><FormLabel>Domicilio</FormLabel><FormControl><Textarea placeholder="Dirección completa del cliente..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+             <FormField control={form.control} name="deluxeDetails.studentAddress" render={({ field }) => (<FormItem><FormLabel>Domicilio</FormLabel><FormControl><Textarea placeholder="Dirección completa del cliente..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
             
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Detalles del Pago</h3>
             <FormField control={form.control} name="deluxeDetails.paymentDetails" render={({ field }) => (<FormItem><FormLabel>Descripción del Acuerdo de Pago</FormLabel><FormControl><Textarea placeholder="Ej. El estudiante pagará B/. 201.00 en 6 cuotas quincenales de B/.33.50..." {...field} /></FormControl><FormMessage /></FormItem>)} />

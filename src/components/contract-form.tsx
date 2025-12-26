@@ -436,27 +436,38 @@ export function ContractForm() {
                     form.setValue('ampliacionesDetails.courseValue', newCourseValue, { shouldValidate: true });
                 }
 
-
                 const forceFullPayment = newCourseValue > 0 && newCourseValue <= 100;
                 
-                if (forceFullPayment) {
-                    isPaidInFull = true;
-                    if (form.getValues('ampliacionesDetails.paidInFull') !== true) {
-                        form.setValue('ampliacionesDetails.paidInFull', true, { shouldValidate: true });
-                    }
-                }
-                
-                let newDownPayment = downPayment;
-                if (isPaidInFull) {
-                    newDownPayment = newCourseValue;
-                    if (form.getValues('ampliacionesDetails.downPayment') !== newDownPayment) {
-                        form.setValue('ampliacionesDetails.downPayment', newDownPayment, { shouldValidate: true });
+                if (name === 'ampliacionesDetails.selectedPlans') {
+                    if (forceFullPayment) {
+                        isPaidInFull = true;
+                        if (form.getValues('ampliacionesDetails.paidInFull') !== true) {
+                            form.setValue('ampliacionesDetails.paidInFull', true, { shouldValidate: true });
+                        }
+                    } else {
+                        if (form.getValues('ampliacionesDetails.paidInFull') !== false) {
+                            form.setValue('ampliacionesDetails.paidInFull', false, { shouldValidate: true });
+                        }
                     }
                 }
 
+                let newDownPayment = downPayment;
+
+                if (name === 'ampliacionesDetails.selectedPlans' || name === 'ampliacionesDetails.paidInFull') {
+                    if (isPaidInFull) {
+                        newDownPayment = newCourseValue;
+                    } else if (name === 'ampliacionesDetails.selectedPlans') {
+                        newDownPayment = newCourseValue * 0.5;
+                    }
+                }
+
+                if (form.getValues('ampliacionesDetails.downPayment') !== newDownPayment) {
+                    form.setValue('ampliacionesDetails.downPayment', newDownPayment, { shouldValidate: true });
+                }
+                
                 if (name === 'ampliacionesDetails.paidInFull' || name === 'ampliacionesDetails.selectedPlans') {
                     if (isPaidInFull) {
-                         if (form.getValues('ampliacionesDetails.paymentDeadline') === null) {
+                         if (!(form.getValues('ampliacionesDetails.paymentDeadline') instanceof Date)) {
                             form.setValue('ampliacionesDetails.paymentDeadline', new Date());
                         }
                     } else {

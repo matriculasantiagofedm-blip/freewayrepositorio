@@ -281,9 +281,9 @@ export function ContractForm() {
     useEffect(() => {
         const theoreticalSchedule = form.watch('autoMotoDetails.theoreticalClassSchedule');
         if (theoreticalSchedule?.includes('Dias de semana')) {
-            replaceTheoreticalClasses(Array(10).fill({ date: undefined }));
+            replaceTheoreticalClasses(Array(5).fill({ date: undefined }));
         } else if (theoreticalSchedule?.includes('Sabados')) {
-            replaceTheoreticalClasses(Array(2).fill({ date: undefined }));
+            replaceTheoreticalClasses(Array(3).fill({ date: undefined }));
         }
     }, [form, replaceTheoreticalClasses]);
 
@@ -838,3 +838,5 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    

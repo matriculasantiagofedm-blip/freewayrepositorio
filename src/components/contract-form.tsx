@@ -137,6 +137,7 @@ const autoCourseValues = [
   { label: 'Premium Auto 175.00', value: 175.00 },
   { label: 'Ya se manejar auto B/.57.00', value: 57.00 },
 ];
+
 const motoCourseValues = [
   { label: 'Basico Moto 115.00', value: 115.00 },
   { label: 'Plus Moto 135.00', value: 135.00 },
@@ -145,16 +146,15 @@ const motoCourseValues = [
 ];
 
 const mixtoCourseValues = [
-    { label: 'Auto - Moto Mixto B/ 290.00', value: 290.00 },
-    { label: 'Ya se manejar Mixto B/ 67.00', value: 67.00 },
+  { label: 'Auto - Moto Mixto B/ 290.00', value: 290.00 },
+  { label: 'Ya se manejar Mixto B/ 67.00', value: 67.00 },
 ];
 
-
 const practicalClassTimeSlots = [
-    '8:00 am a 10:00 am',
-    '10:00 am a 12:00 md',
-    '1:00 pm a 3:00 pm',
-    '3:00 pm a 5:00 pm',
+  '8:00 am a 10:00 am',
+  '10:00 am a 12:00 md',
+  '1:00 pm a 3:00 pm',
+  '3:00 pm a 5:00 pm',
 ];
 
 export function ContractForm() {

@@ -206,7 +206,7 @@ export function ContractForm() {
     const { firestore, user } = useFirebase();
     const { toast } = useToast();
     const [folio, setFolio] = useState('');
-    const [submissionAction, setSubmissionAction] = useState<'save' | 'saveAndPrint'>('save');
+    const [submissionAction, setSubmissionAction] = useState<'saveAndPrint'>('saveAndPrint');
 
 
     const contractType = useMemo(() => searchParams.get('type') as ContractType | null, [searchParams]);
@@ -866,9 +866,6 @@ export function ContractForm() {
                     </>
                 )}
                  <div className="flex flex-col sm:flex-row gap-2 justify-end">
-                    <Button type="submit" onClick={() => setSubmissionAction('save')} disabled={form.formState.isSubmitting} variant="outline">
-                        {form.formState.isSubmitting && submissionAction === 'save' ? 'Guardando...' : 'Guardar Contrato'}
-                    </Button>
                     <Button type="submit" onClick={() => setSubmissionAction('saveAndPrint')} disabled={form.formState.isSubmitting}>
                         <Printer className="mr-2 h-4 w-4" />
                         {form.formState.isSubmitting && submissionAction === 'saveAndPrint' ? 'Guardando...' : 'Guardar e Imprimir'}
@@ -917,3 +914,5 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    

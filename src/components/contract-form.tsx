@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -61,10 +60,10 @@ const baseSchema = z.object({
 });
 
 const autoMotoSchema = baseSchema.extend({
-  courseValue: z.number().min(0),
+  courseValue: z.number().min(0, "Debe seleccionar un valor de curso"),
   downPayment: z.number().min(0),
   balance: z.number(),
-  paymentDeadline: z.date(),
+  paymentDeadline: z.date({ required_error: "La fecha límite de pago es requerida." }),
   vehicle: z.enum(['Spark', 'P. Blanco', 'P. Bronce', 'Moto']).optional(),
   vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']),
   licenseCategory: z.enum(['A, C', 'A, C, D', 'A, B']),
@@ -93,10 +92,14 @@ type FormValues = z.infer<typeof formSchema>;
 const autoCourseValues = [
     { name: 'PAQUETE COMPLETO', price: 230.00 },
     { name: 'PAQUETE BÁSICO', price: 175.00 },
+    { name: 'CLASES ADICIONALES (2 HORAS)', price: 40.00 },
+    { name: 'ALQUILER DE AUTO PARA PRUEBA', price: 40.00 },
 ];
 
 const motoCourseValues = [
     { name: 'CURSO COMPLETO', price: 150.00 },
+    { name: 'CLASE ADICIONAL', price: 40.00 },
+    { name: 'ALQUILER DE MOTO PARA PRUEBA', price: 40.00 },
 ];
 
 const mixtoCourseValues = [
@@ -242,7 +245,7 @@ export function ContractForm() {
                     courseValue: values.courseValue,
                     downPayment: values.downPayment,
                     balance: (values.courseValue || 0) - (values.downPayment || 0),
-                    paymentDeadline: values.paymentDeadline,
+                    paymentDeadline: values.paymentDeadline ? format(values.paymentDeadline, 'yyyy-MM-dd') : undefined,
                     vehicle: values.vehicle,
                     vehicleTransmission: values.vehicleTransmission,
                     licenseCategory: values.licenseCategory,
@@ -382,8 +385,8 @@ export function ContractForm() {
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Detalles del Vehículo y Licencia</h3>
              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                  <FormField control={form.control} name="vehicle" render={({ field }) => (<FormItem><FormLabel>Vehículo Asignado</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar Vehículo" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Spark">Spark</SelectItem><SelectItem value="P. Blanco">Picanto Blanco</SelectItem><SelectItem value="P. Bronce">Picanto Bronce</SelectItem><SelectItem value="Moto">Moto</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                 <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (<FormItem><FormLabel>Transmisión</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar Transmisión" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Automático">Automático</SelectItem><SelectItem value="Manual">Manual</SelectItem>{contractType === "Curso Moto" && <SelectItem value="Moto">Moto</SelectItem>}</SelectContent></Select><FormMessage /></FormItem>)} />
-                 <FormField control={form.control} name="licenseCategory" render={({ field }) => (<FormItem><FormLabel>Categoría de Licencia</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar Categoría" /></SelectTrigger></FormControl><SelectContent>{contractType === "Curso Moto" ? <SelectItem value="A, B">A, B</SelectItem> : <><SelectItem value="A, C">A, C</SelectItem><SelectItem value="A, C, D">A, C, D</SelectItem></>}</SelectContent></Select><FormMessage /></FormItem>)} />
+                 <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (<FormItem><FormLabel>Transmisión</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar Transmisión" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Automático">Automático</SelectItem><SelectItem value="Manual">Manual</SelectItem>{(contractType === "Curso Moto" || contractType === "Curso Mixto") && <SelectItem value="Moto">Moto</SelectItem>}</SelectContent></Select><FormMessage /></FormItem>)} />
+                 <FormField control={form.control} name="licenseCategory" render={({ field }) => (<FormItem><FormLabel>Categoría de Licencia</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar Categoría" /></SelectTrigger></FormControl><SelectContent>{(contractType === "Curso Moto" || contractType === "Curso Mixto") ? <SelectItem value="A, B">A, B</SelectItem> : <><SelectItem value="A, C">A, C</SelectItem><SelectItem value="A, C, D">A, C, D</SelectItem></>}</SelectContent></Select><FormMessage /></FormItem>)} />
             </div>
         </>
     );
@@ -563,5 +566,3 @@ export function ContractForm() {
         </Form>
     );
 }
-
-    

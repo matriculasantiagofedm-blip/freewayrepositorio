@@ -511,7 +511,7 @@ export function ContractForm() {
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 <AccordionWrapper>
-                    <Accordion type="single" collapsible className="w-full" activeIndex={currentStep} onValueChange={(value) => setCurrentStep(Number(value))}>
+                    <Accordion type="single" collapsible className="w-full" value={String(currentStep)} onValueChange={(value) => setCurrentStep(Number(value))}>
                          <AccordionItem value="0">
                             <AccordionTrigger>Paso 1: {steps[0].title}</AccordionTrigger>
                             <AccordionContent>
@@ -567,5 +567,7 @@ export function ContractForm() {
     );
 }
 
+
+    
 
     

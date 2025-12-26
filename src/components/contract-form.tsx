@@ -127,7 +127,13 @@ const coursePlans = {
     { name: 'Ya se manejar Moto', price: 57.00, classes: 0 },
   ],
   'Curso Mixto': [
-    { name: 'PAQUETE MIXTO COMPLETO', price: 380.00, classes: 6, motoClasses: 4 },
+    { name: 'Curso Mixto', price: 290.00, classes: 4, motoClasses: 4 },
+    { name: 'Basico Moto + Ya se manejar Auto', price: 135.00, classes: 0, motoClasses: 4 },
+    { name: 'Plus Moto + Ya se manejar Auto', price: 155.00, classes: 0, motoClasses: 5 },
+    { name: 'Premium Moto + Ya se manejar Auto', price: 175.00, classes: 0, motoClasses: 6 },
+    { name: 'Basico Auto + Ya se manejar moto', price: 153.00, classes: 4, motoClasses: 0 },
+    { name: 'Plus Auto + Ya se manejar Moto', price: 170.00, classes: 5, motoClasses: 0 },
+    { name: 'Premium Auto + Ya se manejar Moto', price: 195.00, classes: 6, motoClasses: 0 },
   ],
 };
 
@@ -208,7 +214,7 @@ export function ContractForm() {
     const watchedCoursePlan = form.watch('autoMotoDetails.coursePlan');
 
     const isSpecialPlan = useMemo(() => 
-        watchedCoursePlan === 'Ya se manejar Auto' || watchedCoursePlan === 'Ya se manejar Moto',
+        watchedCoursePlan?.toLowerCase().includes('ya se manejar'),
         [watchedCoursePlan]
     );
 
@@ -255,7 +261,7 @@ export function ContractForm() {
                 const isPaidInFull = value.autoMotoDetails?.paidInFull;
                 const downPayment = value.autoMotoDetails?.downPayment || 0;
                 
-                const specialPlanSelected = planName === 'Ya se manejar Auto' || planName === 'Ya se manejar Moto';
+                const specialPlanSelected = planName?.toLowerCase().includes('ya se manejar');
 
                 let newCourseValue = value.autoMotoDetails?.courseValue || 0;
                 let newDownPayment = downPayment;
@@ -284,8 +290,8 @@ export function ContractForm() {
                              replacePracticalClasses(Array(selectedPlan.classes).fill({ date: undefined, time: undefined }));
                              replaceMotoPracticalClasses([]);
                         } else if (contractType === 'Curso Mixto') {
-                            replacePracticalClasses(Array(selectedPlan.classes || 6).fill({ date: undefined, time: undefined }));
-                            replaceMotoPracticalClasses(Array(selectedPlan.motoClasses || 4).fill({ date: undefined, time: undefined }));
+                            replacePracticalClasses(Array(selectedPlan.classes || 0).fill({ date: undefined, time: undefined }));
+                            replaceMotoPracticalClasses(Array(selectedPlan.motoClasses || 0).fill({ date: undefined, time: undefined }));
                         }
                     } else {
                          newCourseValue = 0;
@@ -556,7 +562,7 @@ export function ContractForm() {
                         name="autoMotoDetails.vehicleTransmission"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Transmisión</FormLabel>
+                                <FormLabel>Transmisión (Auto)</FormLabel>
                                 <FormControl>
                                     <RadioGroup
                                     onValueChange={field.onChange}
@@ -582,7 +588,32 @@ export function ContractForm() {
                         )}
                     />
                  )}
-                 {contractType === 'Curso Moto' && <div />}
+                 {(contractType === 'Curso Moto' || contractType === 'Curso Mixto') && (
+                     <FormField
+                        control={form.control}
+                        name="autoMotoDetails.vehicleTransmission"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Transmisión (Moto)</FormLabel>
+                                <FormControl>
+                                    <RadioGroup
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                    className="flex items-center space-x-4 pt-2"
+                                    >
+                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                        <FormControl>
+                                        <RadioGroupItem value="Moto" />
+                                        </FormControl>
+                                        <FormLabel className="font-normal">Moto</FormLabel>
+                                    </FormItem>
+                                    </RadioGroup>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                 )}
             </div>
              <FormField
                 control={form.control}
@@ -658,7 +689,7 @@ export function ContractForm() {
                                         <PopoverTrigger asChild>
                                             <FormControl>
                                                 <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                                    {field.value instanceof Date ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha {index + 1}</span>}
+                                                    {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha {index + 1}</span>}
                                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                 </Button>
                                             </FormControl>
@@ -804,9 +835,7 @@ export function ContractForm() {
                 
                 {(contractType === 'Curso Auto' || contractType === 'Curso Mixto') && renderPracticalClassFields(practicalClassFields, 'autoMotoDetails.practicalClassSchedules', 'Clases Prácticas de Auto')}
 
-                {(contractType === 'Curso Moto') && renderPracticalClassFields(practicalClassFields, 'autoMotoDetails.practicalClassSchedules', 'Clases Prácticas de Moto')}
-
-                {(contractType === 'Curso Mixto') && renderPracticalClassFields(motoPracticalClassFields, 'autoMotoDetails.motoPracticalClassSchedules', 'Clases Prácticas de Moto')}
+                {(contractType === 'Curso Moto' || contractType === 'Curso Mixto') && renderPracticalClassFields(motoPracticalClassFields, 'autoMotoDetails.motoPracticalClassSchedules', 'Clases Prácticas de Moto')}
 
                  <Button type="submit" disabled={form.formState.isSubmitting} className="w-full">
                     {form.formState.isSubmitting ? 'Guardando...' : 'Guardar Contrato'}

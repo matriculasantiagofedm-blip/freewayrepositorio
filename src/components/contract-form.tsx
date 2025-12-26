@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -132,6 +133,8 @@ export function ContractForm() {
     });
 
     const watchedValues = form.watch();
+    const watchedCourseValue = form.watch('courseValue');
+    const watchedDownPayment = form.watch('downPayment');
 
     const { fields: practicalClassFields, append: appendPracticalClass, remove: removePracticalClass } = useFieldArray({
         control: form.control,
@@ -186,7 +189,7 @@ export function ContractForm() {
     }, [contractType]);
 
     useEffect(() => {
-        const subscription = form.watch((value, { name, type }) => {
+        const subscription = form.watch((value, { name }) => {
             if (name === 'coursePlan' && contractType && (coursePlans as any)[contractType]) {
                 const selectedPlan = (coursePlans as any)[contractType].find((p: any) => p.name === value.coursePlan);
                 if (selectedPlan) {
@@ -204,15 +207,21 @@ export function ContractForm() {
                     form.setValue('downPayment', 0);
                 }
             }
-            
-            const courseValue = value.courseValue || 0;
-            const downPayment = value.downPayment || 0;
-            if (typeof courseValue === 'number' && typeof downPayment === 'number') {
-                form.setValue('balance', courseValue - downPayment);
-            }
         });
         return () => subscription.unsubscribe();
     }, [form, contractType]);
+
+    useEffect(() => {
+        const courseValue = watchedCourseValue || 0;
+        const downPayment = watchedDownPayment || 0;
+        if (typeof courseValue === 'number' && typeof downPayment === 'number') {
+            const currentBalance = form.getValues('balance');
+            const newBalance = courseValue - downPayment;
+            if (currentBalance !== newBalance) {
+                form.setValue('balance', newBalance);
+            }
+        }
+    }, [watchedCourseValue, watchedDownPayment, form]);
 
 
     const onSubmit = async (values: FormValues) => {

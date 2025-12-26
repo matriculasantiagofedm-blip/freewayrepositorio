@@ -205,6 +205,12 @@ export function ContractForm() {
 
     const watchedValues = form.watch();
     const watchedPaidInFull = form.watch('autoMotoDetails.paidInFull');
+    const watchedCoursePlan = form.watch('autoMotoDetails.coursePlan');
+
+    const isSpecialPlan = useMemo(() => 
+        watchedCoursePlan === 'Ya se manejar Auto' || watchedCoursePlan === 'Ya se manejar Moto',
+        [watchedCoursePlan]
+    );
 
 
     const { fields: theoreticalClassFields, replace: replaceTheoreticalClasses } = useFieldArray({
@@ -249,6 +255,8 @@ export function ContractForm() {
                 const isPaidInFull = value.autoMotoDetails?.paidInFull;
                 const downPayment = value.autoMotoDetails?.downPayment || 0;
                 
+                const specialPlanSelected = planName === 'Ya se manejar Auto' || planName === 'Ya se manejar Moto';
+
                 let newCourseValue = value.autoMotoDetails?.courseValue || 0;
                 let newDownPayment = downPayment;
 
@@ -258,9 +266,14 @@ export function ContractForm() {
                         newCourseValue = selectedPlan.price;
                         form.setValue('autoMotoDetails.courseValue', newCourseValue, { shouldValidate: true });
                         
-                        // Set 50% down payment automatically
                         if (name === 'autoMotoDetails.coursePlan') {
-                            newDownPayment = newCourseValue * 0.5;
+                            if (specialPlanSelected) {
+                                newDownPayment = newCourseValue;
+                                form.setValue('autoMotoDetails.paidInFull', true, { shouldValidate: true });
+                            } else {
+                                newDownPayment = newCourseValue * 0.5;
+                                form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
+                            }
                             form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
                         }
                         
@@ -284,13 +297,12 @@ export function ContractForm() {
                     }
                 }
                 
-                if (isPaidInFull) {
+                if (isPaidInFull && !specialPlanSelected) {
                     newDownPayment = newCourseValue;
                     if(form.getValues('autoMotoDetails.downPayment') !== newDownPayment){
                         form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
                     }
-                } else if (name === 'autoMotoDetails.coursePlan' && !isPaidInFull) {
-                    // This block will run after a plan is selected, re-calculating the 50% if needed
+                } else if (name === 'autoMotoDetails.coursePlan' && !isPaidInFull && !specialPlanSelected) {
                     newDownPayment = newCourseValue * 0.5;
                     if(form.getValues('autoMotoDetails.downPayment') !== newDownPayment){
                          form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
@@ -306,9 +318,9 @@ export function ContractForm() {
             if (name === 'autoMotoDetails.theoreticalClassSchedule') {
                 const theoreticalSchedule = value.autoMotoDetails?.theoreticalClassSchedule;
                 if (theoreticalSchedule?.includes('Dias de semana')) {
-                    replaceTheoreticalClasses(Array(5).fill({}));
+                    replaceTheoreticalClasses(Array(5).fill({ date: undefined, time: undefined }));
                 } else if (theoreticalSchedule?.includes('Sabados')) {
-                    replaceTheoreticalClasses(Array(3).fill({}));
+                    replaceTheoreticalClasses(Array(3).fill({ date: undefined, time: undefined }));
                 } else {
                     replaceTheoreticalClasses([]);
                 }
@@ -459,7 +471,7 @@ export function ContractForm() {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField control={form.control} name="autoMotoDetails.courseValue" render={({ field }) => (<FormItem><FormLabel>Valor Total (B/.)</FormLabel><FormControl><Input type="text" value={formatCurrency(field.value)} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="autoMotoDetails.downPayment" render={({ field }) => (<FormItem><FormLabel>Abono (B/.)</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={watchedPaidInFull} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="autoMotoDetails.downPayment" render={({ field }) => (<FormItem><FormLabel>Abono (B/.)</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={watchedPaidInFull || isSpecialPlan} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="autoMotoDetails.balance" render={({ field }) => (<FormItem><FormLabel>Saldo (B/.)</FormLabel><FormControl><Input type="text" value={formatCurrency(field.value)} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
             </div>
              <FormField
@@ -472,12 +484,14 @@ export function ContractForm() {
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
                                 id="paidInFull"
+                                disabled={isSpecialPlan}
                             />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                            <label htmlFor='paidInFull' className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
+                            <label htmlFor='paidInFull' className={cn('text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70', isSpecialPlan && 'text-muted-foreground')}>
                                ¿Cancelar la totalidad del curso (100%)?
                             </label>
+                            {isSpecialPlan && <FormDescription>Este plan requiere pago completo.</FormDescription>}
                         </div>
                     </FormItem>
                 )}
@@ -512,7 +526,7 @@ export function ContractForm() {
                             <PopoverContent className="w-auto p-0" align="start">
                                 <Calendar
                                     mode="single"
-                                    selected={field.value || undefined}
+                                    selected={field.value instanceof Date ? field.value : undefined}
                                     onSelect={field.onChange}
                                     disabled={(date) => date < new Date() || !watchedValues.autoMotoDetails?.balance || watchedValues.autoMotoDetails?.balance <= 0}
                                     initialFocus
@@ -696,7 +710,7 @@ export function ContractForm() {
                                                         </FormControl>
                                                     </PopoverTrigger>
                                                     <PopoverContent className="w-auto p-0" align="start">
-                                                        <Calendar locale={es} mode="single" selected={field.value} onSelect={field.onChange} />
+                                                        <Calendar locale={es} mode="single" selected={field.value instanceof Date ? field.value : undefined} onSelect={field.onChange} />
                                                     </PopoverContent>
                                                 </Popover>
                                                 <FormMessage />
@@ -841,4 +855,5 @@ export function ContractForm() {
     );
 }
 
+    
     

@@ -432,7 +432,10 @@ export function ContractForm() {
                 const downPayment = value.ampliacionesDetails?.downPayment || 0;
 
                 const newCourseValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
-                form.setValue('ampliacionesDetails.courseValue', newCourseValue, { shouldValidate: true });
+                 if (form.getValues('ampliacionesDetails.courseValue') !== newCourseValue) {
+                    form.setValue('ampliacionesDetails.courseValue', newCourseValue, { shouldValidate: true });
+                }
+
 
                 const forceFullPayment = newCourseValue > 0 && newCourseValue <= 100;
                 
@@ -453,9 +456,13 @@ export function ContractForm() {
 
                 if (name === 'ampliacionesDetails.paidInFull' || name === 'ampliacionesDetails.selectedPlans') {
                     if (isPaidInFull) {
-                        form.setValue('ampliacionesDetails.paymentDeadline', new Date());
+                         if (form.getValues('ampliacionesDetails.paymentDeadline') === null) {
+                            form.setValue('ampliacionesDetails.paymentDeadline', new Date());
+                        }
                     } else {
-                        form.setValue('ampliacionesDetails.paymentDeadline', null);
+                        if (form.getValues('ampliacionesDetails.paymentDeadline') !== null) {
+                            form.setValue('ampliacionesDetails.paymentDeadline', null);
+                        }
                     }
                 }
 

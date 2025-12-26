@@ -97,17 +97,17 @@ type FormValues = z.infer<typeof formSchema>;
 // --- Datos Estáticos ---
 const coursePlans = {
   'Curso Auto': [
-    { name: 'BÁSICO', price: 133.00 },
-    { name: 'PLUS', price: 150.00 },
-    { name: 'PREMIUM', price: 175.00 },
+    { name: 'BÁSICO', price: 133.00, classes: 4 },
+    { name: 'PLUS', price: 150.00, classes: 5 },
+    { name: 'PREMIUM', price: 175.00, classes: 6 },
   ],
   'Curso Moto': [
-    { name: 'BÁSICO', price: 115.00 },
-    { name: 'PLUS', price: 135.00 },
-    { name: 'PREMIUM', price: 155.00 },
+    { name: 'BÁSICO', price: 115.00, classes: 4 },
+    { name: 'PLUS', price: 135.00, classes: 5 },
+    { name: 'PREMIUM', price: 155.00, classes: 6 },
   ],
   'Curso Mixto': [
-    { name: 'PAQUETE MIXTO COMPLETO', price: 380.00 },
+    { name: 'PAQUETE MIXTO COMPLETO', price: 380.00, classes: 6, motoClasses: 4 },
   ],
 };
 
@@ -146,12 +146,12 @@ export function ContractForm() {
         name: "theoreticalClassDates" as any,
     });
 
-    const { fields: practicalClassFields, append: appendPracticalClass, remove: removePracticalClass } = useFieldArray({
+    const { fields: practicalClassFields, append: appendPracticalClass, remove: removePracticalClass, replace: replacePracticalClasses } = useFieldArray({
         control: form.control,
         name: "practicalClassSchedules" as any,
     });
     
-    const { fields: motoPracticalClassFields, append: appendMotoPracticalClass, remove: removeMotoPracticalClass } = useFieldArray({
+    const { fields: motoPracticalClassFields, append: appendMotoPracticalClass, remove: removeMotoPracticalClass, replace: replaceMotoPracticalClasses } = useFieldArray({
         control: form.control,
         name: "motoPracticalClassSchedules" as any,
     });
@@ -179,19 +179,22 @@ export function ContractForm() {
             });
 
             if (contractType === 'Curso Deluxe') {
-                form.setValue('classSchedules', Array(6).fill({}));
+                replaceDeluxeClasses(6);
+            } else if (contractType === 'Curso Mixto') {
+                replacePracticalClasses(6);
+                replaceMotoPracticalClasses(4);
             } else {
-                 if (contractType === 'Curso Mixto') {
-                    form.setValue('practicalClassSchedules', Array(6).fill({}));
-                    form.setValue('motoPracticalClassSchedules', Array(4).fill({}));
-                } else if (contractType === 'Curso Auto') {
-                    form.setValue('practicalClassSchedules', Array(6).fill({}));
-                } else if (contractType === 'Curso Moto') {
-                    form.setValue('practicalClassSchedules', Array(4).fill({}));
-                }
+                // Default to 0 for Auto/Moto until a plan is selected
+                replacePracticalClasses(0);
             }
         }
     }, [contractType, form]);
+
+    const replaceDeluxeClasses = (count: number) => {
+        const currentClasses = form.getValues('classSchedules') || [];
+        const newClasses = Array(count).fill({}).map((_, i) => currentClasses[i] || {});
+        form.setValue('classSchedules', newClasses);
+    };
     
     useEffect(() => {
         const typePrefix = contractType?.substring(0, 3).toUpperCase() || 'GEN';
@@ -207,6 +210,10 @@ export function ContractForm() {
                     form.setValue('courseValue', selectedPlan.price);
                     if (form.getValues('paidInFull')) {
                         form.setValue('downPayment', selectedPlan.price);
+                    }
+                    
+                    if (contractType === 'Curso Auto' || contractType === 'Curso Moto') {
+                       replacePracticalClasses(selectedPlan.classes);
                     }
                 }
             }
@@ -623,76 +630,83 @@ export function ContractForm() {
     const renderPracticalClassFields = (fields: any, remove: any, append: any, title: string, namePrefix: string) => (
         <div>
             <h3 className="font-semibold text-lg pt-4 border-b pb-2 mb-4">{title}</h3>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead className="w-1/4">Clase</TableHead>
-                        <TableHead>Fecha</TableHead>
-                        <TableHead>Hora</TableHead>
-                        <TableHead className="w-10"></TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {fields.map((field: any, index: number) => (
-                        <TableRow key={field.id}>
-                            <TableCell className="font-medium">Clase {index + 1}</TableCell>
-                            <TableCell>
-                                <FormField
-                                    control={form.control}
-                                    name={`${namePrefix}.${index}.date` as any}
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <FormControl>
-                                                        <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                                            {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
-                                                        </Button>
-                                                    </FormControl>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0" align="start">
-                                                    <Calendar locale={es} mode="single" selected={field.value} onSelect={field.onChange} />
-                                                </PopoverContent>
-                                            </Popover>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </TableCell>
-                            <TableCell>
-                                <FormField
-                                    control={form.control}
-                                    name={`${namePrefix}.${index}.time` as any}
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <FormControl>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Seleccionar hora" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    {practicalClassTimeSlots.map(slot => <SelectItem key={slot} value={slot}>{slot}</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </TableCell>
-                            <TableCell>
-                                <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                            </TableCell>
+            {fields.length > 0 ? (
+                 <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-1/4">Clase</TableHead>
+                            <TableHead>Fecha</TableHead>
+                            <TableHead>Hora</TableHead>
+                            <TableHead className="w-10"></TableHead>
                         </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-            <Button type="button" variant="outline" size="sm" onClick={() => append({})} className="mt-4">
-                <PlusCircle className="mr-2 h-4 w-4" /> Añadir Clase
-            </Button>
+                    </TableHeader>
+                    <TableBody>
+                        {fields.map((field: any, index: number) => (
+                            <TableRow key={field.id}>
+                                <TableCell className="font-medium">Clase {index + 1}</TableCell>
+                                <TableCell>
+                                    <FormField
+                                        control={form.control}
+                                        name={`${namePrefix}.${index}.date` as any}
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <FormControl>
+                                                            <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                                {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                                                            </Button>
+                                                        </FormControl>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-auto p-0" align="start">
+                                                        <Calendar locale={es} mode="single" selected={field.value} onSelect={field.onChange} />
+                                                    </PopoverContent>
+                                                </Popover>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </TableCell>
+                                <TableCell>
+                                    <FormField
+                                        control={form.control}
+                                        name={`${namePrefix}.${index}.time` as any}
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Seleccionar hora" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {practicalClassTimeSlots.map(slot => <SelectItem key={slot} value={slot}>{slot}</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </TableCell>
+                                <TableCell>
+                                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">Seleccione un plan para ver las clases prácticas.</p>
+            )}
+           
+            {fields.length > 0 && (
+                 <Button type="button" variant="outline" size="sm" onClick={() => append({})} className="mt-4">
+                    <PlusCircle className="mr-2 h-4 w-4" /> Añadir Clase
+                </Button>
+            )}
         </div>
     );
     
@@ -722,18 +736,7 @@ export function ContractForm() {
                 ))}
             </div>
             
-            <div>
-                <h3 className="font-semibold text-lg pt-4 border-b pb-2 mb-4">Clases Prácticas (6 clases)</h3>
-                <div className="space-y-4">
-                    {deluxeClassFields.map((field: any, index: number) => (
-                        <div key={field.id} className="flex items-end gap-4 p-4 border rounded-md relative">
-                            <p className="absolute -top-2 left-2 bg-background px-1 text-xs text-muted-foreground">Clase {index + 1}</p>
-                            <FormField control={form.control} name={`classSchedules.${index}.date` as any} render={({ field }) => (<FormItem className="flex-1"><FormLabel>Fecha</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar locale={es} mode="single" selected={field.value} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
-                            <FormField control={form.control} name={`classSchedules.${index}.time` as any} render={({ field }) => (<FormItem className="flex-1"><FormLabel>Hora</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar hora" /></SelectTrigger></FormControl><SelectContent>{practicalClassTimeSlots.map(slot => <SelectItem key={slot} value={slot}>{slot}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-                        </div>
-                    ))}
-                </div>
-            </div>
+            {renderPracticalClassFields(deluxeClassFields, removeDeluxeClass, appendDeluxeClass, 'Clases Prácticas (6 clases)', 'classSchedules')}
         </>
     );
 
@@ -838,5 +841,7 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    
 
     

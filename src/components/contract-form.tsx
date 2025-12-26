@@ -94,19 +94,43 @@ const deluxeDetailsSchema = z.object({
   classSchedules: z.array(classScheduleSchema).optional(),
 }).partial();
 
+const ampliacionesDetailsSchema = z.object({
+  studentIdNumber: z.string().optional(),
+  studentAddress: z.string().optional(),
+  studentPhone1: z.string().optional(),
+  studentPhone2: z.string().optional(),
+  selectedPlans: z.array(z.object({ name: z.string(), price: z.number() })).optional(),
+  courseValue: z.number().optional(),
+  downPayment: z.number().optional(),
+  balance: z.number().optional(),
+  paymentDeadline: z.date().optional().nullable(),
+  paidInFull: z.boolean().default(false),
+}).partial();
+
 const formSchema = baseSchema.extend({
   contractType: z.custom<ContractType>(),
   autoMotoDetails: autoMotoDetailsSchema,
   deluxeDetails: deluxeDetailsSchema,
+  ampliacionesDetails: ampliacionesDetailsSchema,
 }).superRefine((data, ctx) => {
-    if (data.contractType !== 'Curso Deluxe') {
-        if (!data.autoMotoDetails?.studentIdNumber) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "El número de cédula o pasaporte del estudiante es un campo obligatorio.", path: ["autoMotoDetails", "studentIdNumber"] });
-        }
-    } else {
-        if (!data.deluxeDetails?.studentIdNumber) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "El número de cédula o pasaporte del estudiante es un campo obligatorio.", path: ["deluxeDetails", "studentIdNumber"] });
-        }
+    const studentIdPath = data.contractType === 'Curso Deluxe'
+        ? ["deluxeDetails", "studentIdNumber"]
+        : data.contractType === 'Ampliaciones'
+            ? ["ampliacionesDetails", "studentIdNumber"]
+            : ["autoMotoDetails", "studentIdNumber"];
+
+    const studentIdValue = data.contractType === 'Curso Deluxe'
+        ? data.deluxeDetails?.studentIdNumber
+        : data.contractType === 'Ampliaciones'
+            ? data.ampliacionesDetails?.studentIdNumber
+            : data.autoMotoDetails?.studentIdNumber;
+
+    if (!studentIdValue) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "El número de cédula o pasaporte del estudiante es un campo obligatorio.",
+            path: studentIdPath,
+        });
     }
 });
 
@@ -142,6 +166,35 @@ const coursePlans = {
 const mixedCoursePlansRegular = coursePlans['Curso Mixto'].filter(p => !p.isCombined);
 const mixedCoursePlansCombined = coursePlans['Curso Mixto'].filter(p => p.isCombined);
 
+const ampliacionesPlans = {
+    individual: [
+        { name: 'B', price: 67.00 },
+        { name: 'C', price: 67.00 },
+        { name: 'D', price: 67.00 },
+        { name: 'E1', price: 57.00 },
+        { name: 'E2', price: 87.00 },
+        { name: 'E3', price: 87.00 },
+        { name: 'F', price: 107.00 },
+        { name: 'G', price: 180.00 },
+        { name: 'H', price: 180.00 },
+        { name: 'I', price: 107.00 },
+    ],
+    combos: [
+        { name: 'D+E1', price: 107.00 },
+        { name: 'E1+E2', price: 75.00 },
+        { name: 'E1,E2,E3', price: 117.00 },
+        { name: 'E1,E2,E3+F', price: 150.00 },
+        { name: 'D+E1,E2,E3+F', price: 187.00 },
+        { name: 'E1,E2,E3+F+I', price: 257.00 },
+        { name: 'F+I', price: 150.00 },
+        { name: 'G+H', price: 207.00 },
+        { name: 'Combo 1: B+D', price: 85.00 },
+        { name: 'Combo 2: B+E1', price: 85.00 },
+        { name: 'Combo 3: E2+E3', price: 85.00 },
+        { name: 'Combo 4: B+F', price: 85.00 },
+    ]
+};
+const allAmpliacionesPlans = [...ampliacionesPlans.individual, ...ampliacionesPlans.combos];
 
 const practicalClassTimeSlots = [
   '8:00 am a 10:00 am',
@@ -196,7 +249,19 @@ const getDefaultValues = (contractType: ContractType | null): FormValues => ({
         theoreticalClassSchedule: undefined,
         theoreticalClasses: [],
         classSchedules: [],
-    }
+    },
+    ampliacionesDetails: {
+        studentIdNumber: '',
+        studentAddress: '',
+        studentPhone1: '',
+        studentPhone2: '',
+        selectedPlans: [],
+        courseValue: 0,
+        downPayment: 0,
+        balance: 0,
+        paymentDeadline: null,
+        paidInFull: false,
+    },
 });
 
 
@@ -218,6 +283,7 @@ export function ContractForm() {
 
     const watchedValues = form.watch();
     const watchedPaidInFull = form.watch('autoMotoDetails.paidInFull');
+    const watchedAmpliacionesPaidInFull = form.watch('ampliacionesDetails.paidInFull');
     const watchedCoursePlan = form.watch('autoMotoDetails.coursePlan');
 
     const isSpecialPlan = useMemo(() => 
@@ -263,79 +329,112 @@ export function ContractForm() {
     
      useEffect(() => {
         const subscription = form.watch((value, { name, type }) => {
-            if (name === 'autoMotoDetails.coursePlan' || name === 'autoMotoDetails.paidInFull' || name === 'autoMotoDetails.downPayment') {
-                const planName = value.autoMotoDetails?.coursePlan;
-                const isPaidInFull = value.autoMotoDetails?.paidInFull;
-                const downPayment = value.autoMotoDetails?.downPayment || 0;
-                
-                const allPlans = contractType ? (coursePlans as any)[contractType] : [];
-                const selectedPlan = allPlans.find((p: any) => p.name === planName);
-                
-                const specialPlanSelected = !!selectedPlan && !selectedPlan.isCombined && planName?.toLowerCase().includes('ya se manejar');
-
-                let newCourseValue = value.autoMotoDetails?.courseValue || 0;
-                let newDownPayment = downPayment;
-
-                if ((name === 'autoMotoDetails.coursePlan' || (name === 'autoMotoDetails.paidInFull' && planName)) && selectedPlan) {
-                    newCourseValue = selectedPlan.price;
-                    form.setValue('autoMotoDetails.courseValue', newCourseValue, { shouldValidate: true });
+            // Auto/Moto/Mixto Logic
+            if (name?.startsWith('autoMotoDetails')) {
+                if (name === 'autoMotoDetails.coursePlan' || name === 'autoMotoDetails.paidInFull' || name === 'autoMotoDetails.downPayment') {
+                    const planName = value.autoMotoDetails?.coursePlan;
+                    const isPaidInFull = value.autoMotoDetails?.paidInFull;
+                    const downPayment = value.autoMotoDetails?.downPayment || 0;
                     
-                    if (name === 'autoMotoDetails.coursePlan') {
-                        if (specialPlanSelected) {
-                            newDownPayment = newCourseValue;
-                            form.setValue('autoMotoDetails.paidInFull', true, { shouldValidate: true });
-                        } else if (!selectedPlan.isCombined) {
-                            newDownPayment = newCourseValue * 0.5;
-                            form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
-                        } else {
-                             form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
+                    const allPlans = contractType ? (coursePlans as any)[contractType] : [];
+                    const selectedPlan = allPlans.find((p: any) => p.name === planName);
+                    
+                    const specialPlanSelected = !!selectedPlan && !selectedPlan.isCombined && planName?.toLowerCase().includes('ya se manejar');
+
+                    let newCourseValue = value.autoMotoDetails?.courseValue || 0;
+                    let newDownPayment = downPayment;
+
+                    if ((name === 'autoMotoDetails.coursePlan' || (name === 'autoMotoDetails.paidInFull' && planName)) && selectedPlan) {
+                        newCourseValue = selectedPlan.price;
+                        form.setValue('autoMotoDetails.courseValue', newCourseValue, { shouldValidate: true });
+                        
+                        if (name === 'autoMotoDetails.coursePlan') {
+                            if (specialPlanSelected) {
+                                newDownPayment = newCourseValue;
+                                form.setValue('autoMotoDetails.paidInFull', true, { shouldValidate: true });
+                            } else if (!selectedPlan.isCombined) {
+                                newDownPayment = newCourseValue * 0.5;
+                                form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
+                            } else {
+                                form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
+                            }
+                            form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
                         }
+                        
+                        if (contractType === 'Curso Auto') {
+                            replacePracticalClasses(Array(selectedPlan.classes).fill({ date: undefined, time: undefined }));
+                            replaceMotoPracticalClasses([]);
+                        } else if (contractType === 'Curso Moto') {
+                            replacePracticalClasses(Array(selectedPlan.classes).fill({ date: undefined, time: undefined }));
+                            replaceMotoPracticalClasses([]);
+                        } else if (contractType === 'Curso Mixto') {
+                            replacePracticalClasses(Array(selectedPlan.classes || 0).fill({ date: undefined, time: undefined }));
+                            replaceMotoPracticalClasses(Array(selectedPlan.motoClasses || 0).fill({ date: undefined, time: undefined }));
+                        }
+                    } else if (!selectedPlan && name === 'autoMotoDetails.coursePlan') {
+                        newCourseValue = 0;
+                        newDownPayment = 0;
+                        form.setValue('autoMotoDetails.courseValue', newCourseValue, { shouldValidate: true });
                         form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
+                        replacePracticalClasses([]);
+                        replaceMotoPracticalClasses([]);
                     }
                     
-                    if (contractType === 'Curso Auto') {
-                        replacePracticalClasses(Array(selectedPlan.classes).fill({ date: undefined, time: undefined }));
-                        replaceMotoPracticalClasses([]);
-                    } else if (contractType === 'Curso Moto') {
-                         replacePracticalClasses(Array(selectedPlan.classes).fill({ date: undefined, time: undefined }));
-                         replaceMotoPracticalClasses([]);
-                    } else if (contractType === 'Curso Mixto') {
-                        replacePracticalClasses(Array(selectedPlan.classes || 0).fill({ date: undefined, time: undefined }));
-                        replaceMotoPracticalClasses(Array(selectedPlan.motoClasses || 0).fill({ date: undefined, time: undefined }));
+                    if (isPaidInFull && !specialPlanSelected) {
+                        newDownPayment = newCourseValue;
+                        if(form.getValues('autoMotoDetails.downPayment') !== newDownPayment){
+                            form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
+                        }
+                    } else if (name === 'autoMotoDetails.coursePlan' && !isPaidInFull && !specialPlanSelected && !selectedPlan?.isCombined) {
+                        newDownPayment = newCourseValue * 0.5;
+                        if(form.getValues('autoMotoDetails.downPayment') !== newDownPayment){
+                            form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
+                        }
                     }
-                } else if (!selectedPlan && name === 'autoMotoDetails.coursePlan') {
-                     newCourseValue = 0;
-                     newDownPayment = 0;
-                     form.setValue('autoMotoDetails.courseValue', newCourseValue, { shouldValidate: true });
-                     form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
-                     replacePracticalClasses([]);
-                     replaceMotoPracticalClasses([]);
+                    
+                    if (name === 'autoMotoDetails.paidInFull' || name === 'autoMotoDetails.coursePlan') {
+                        if (value.autoMotoDetails?.paidInFull) {
+                            form.setValue('autoMotoDetails.paymentDeadline', new Date());
+                        } else {
+                             form.setValue('autoMotoDetails.paymentDeadline', null);
+                        }
+                    }
+
+                    const newBalance = newCourseValue - newDownPayment;
+                    if(form.getValues('autoMotoDetails.balance') !== newBalance){
+                        form.setValue('autoMotoDetails.balance', newBalance < 0 ? 0 : newBalance, { shouldValidate: true });
+                    }
                 }
+            }
+
+            // Ampliaciones Logic
+            if (name?.startsWith('ampliacionesDetails')) {
+                const selectedPlans = value.ampliacionesDetails?.selectedPlans || [];
+                const isPaidInFull = value.ampliacionesDetails?.paidInFull;
+                const downPayment = value.ampliacionesDetails?.downPayment || 0;
                 
-                if (isPaidInFull && !specialPlanSelected) {
+                let newCourseValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
+                form.setValue('ampliacionesDetails.courseValue', newCourseValue, { shouldValidate: true });
+
+                let newDownPayment = downPayment;
+                if (isPaidInFull) {
                     newDownPayment = newCourseValue;
-                    if(form.getValues('autoMotoDetails.downPayment') !== newDownPayment){
-                        form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
-                    }
-                } else if (name === 'autoMotoDetails.coursePlan' && !isPaidInFull && !specialPlanSelected && !selectedPlan?.isCombined) {
-                    newDownPayment = newCourseValue * 0.5;
-                    if(form.getValues('autoMotoDetails.downPayment') !== newDownPayment){
-                         form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
+                    if(form.getValues('ampliacionesDetails.downPayment') !== newDownPayment) {
+                        form.setValue('ampliacionesDetails.downPayment', newDownPayment, { shouldValidate: true });
                     }
                 }
-                
-                // Set payment deadline based on paidInFull status
-                if (name === 'autoMotoDetails.paidInFull' || name === 'autoMotoDetails.coursePlan') {
+
+                if (name === 'ampliacionesDetails.paidInFull') {
                     if (isPaidInFull) {
-                        form.setValue('autoMotoDetails.paymentDeadline', new Date());
+                        form.setValue('ampliacionesDetails.paymentDeadline', new Date());
                     } else {
-                        form.setValue('autoMotoDetails.paymentDeadline', null);
+                        form.setValue('ampliacionesDetails.paymentDeadline', null);
                     }
                 }
 
                 const newBalance = newCourseValue - newDownPayment;
-                 if(form.getValues('autoMotoDetails.balance') !== newBalance){
-                    form.setValue('autoMotoDetails.balance', newBalance < 0 ? 0 : newBalance, { shouldValidate: true });
+                if(form.getValues('ampliacionesDetails.balance') !== newBalance){
+                    form.setValue('ampliacionesDetails.balance', newBalance < 0 ? 0 : newBalance, { shouldValidate: true });
                 }
             }
 
@@ -384,7 +483,6 @@ export function ContractForm() {
                 setFolio(newFolio);
             } catch (error) {
                 console.error("Error generating folio:", error);
-                // Fallback to a simpler folio format in case of error
                 const uniqueId = Date.now().toString().slice(-6);
                 setFolio(`${currentYear}-${uniqueId}`);
             }
@@ -402,19 +500,17 @@ export function ContractForm() {
         try {
             const batch = writeBatch(firestore);
 
-            // 1. Crear o encontrar cliente
             const clientRef = doc(collection(firestore, 'clients'));
             const clientData = {
                 id: clientRef.id,
                 name: values.clientName,
                 email: values.clientEmail,
-                idNumber: values.autoMotoDetails?.studentIdNumber || values.deluxeDetails?.studentIdNumber,
+                idNumber: values.autoMotoDetails?.studentIdNumber || values.deluxeDetails?.studentIdNumber || values.ampliacionesDetails?.studentIdNumber,
                 userId: user.uid,
                 createdAt: serverTimestamp(),
             };
             batch.set(clientRef, clientData);
             
-            // 2. Crear contrato
             const contractRef = doc(collection(firestore, 'contracts'));
             
             const currentUserRole = localStorage.getItem('currentUser') || 'Ventas';
@@ -436,9 +532,7 @@ export function ContractForm() {
             };
 
             if (contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') {
-                const { deluxeDetails, ...restValues } = values;
-                const autoMotoDetails = restValues.autoMotoDetails || {};
-                
+                const autoMotoDetails = values.autoMotoDetails || {};
                 contractData.autoMotoDetails = {
                     ...autoMotoDetails,
                     paymentDeadline: autoMotoDetails.paymentDeadline ? format(autoMotoDetails.paymentDeadline, 'yyyy-MM-dd') : null,
@@ -446,20 +540,21 @@ export function ContractForm() {
                     practicalClassSchedules: autoMotoDetails.practicalClassSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })).filter(c => c.date || c.time) || [],
                     motoPracticalClassSchedules: autoMotoDetails.motoPracticalClassSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })).filter(c => c.date || c.time) || [],
                 };
-                 delete contractData.deluxeDetails;
             } else if (contractType === 'Curso Deluxe') {
-                const { autoMotoDetails, ...restValues } = values;
-                const deluxeDetails = restValues.deluxeDetails || {};
-
+                const deluxeDetails = values.deluxeDetails || {};
                 contractData.deluxeDetails = {
                     ...deluxeDetails,
                     paymentInstallments: deluxeDetails.paymentInstallments?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(Boolean) || [],
                     theoreticalClasses: deluxeDetails.theoreticalClasses?.map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(Boolean) || [],
                     classSchedules: deluxeDetails.classSchedules?.map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })).filter(c => c.date || c.time) || [],
                 };
-                 delete contractData.autoMotoDetails;
+            } else if (contractType === 'Ampliaciones') {
+                const ampliacionesDetails = values.ampliacionesDetails || {};
+                contractData.ampliacionesDetails = {
+                    ...ampliacionesDetails,
+                     paymentDeadline: ampliacionesDetails.paymentDeadline ? format(ampliacionesDetails.paymentDeadline, 'yyyy-MM-dd') : null,
+                };
             }
-
 
             batch.set(contractRef, contractData);
             await batch.commit();
@@ -471,7 +566,7 @@ export function ContractForm() {
 
         } catch (error) {
             console.error("Error al crear el contrato:", error);
-            toast({ variant: 'destructive', title: 'Error de Guardado', description: 'No se pudo crear el contrato. Revisa los datos e intenta de nuevo.' });
+            toast({ variant: 'destructive', title: 'Error de Guardado', description: `No se pudo crear el contrato. Revisa los datos e intenta de nuevo. Detalle: ${error instanceof Error ? error.message : 'Error desconocido'}` });
         }
     };
     
@@ -503,6 +598,152 @@ export function ContractForm() {
             </div>
         </>
     );
+
+    const renderAmpliacionesFields = () => {
+        const studentIdPath = "ampliacionesDetails.studentIdNumber";
+        const studentPhone1Path = "ampliacionesDetails.studentPhone1";
+        const studentPhone2Path = "ampliacionesDetails.studentPhone2";
+        const studentAddressPath = "ampliacionesDetails.studentAddress";
+        const selectedPlansPath = "ampliacionesDetails.selectedPlans";
+        const courseValuePath = "ampliacionesDetails.courseValue";
+        const downPaymentPath = "ampliacionesDetails.downPayment";
+        const balancePath = "ampliacionesDetails.balance";
+        const paidInFullPath = "ampliacionesDetails.paidInFull";
+        const paymentDeadlinePath = "ampliacionesDetails.paymentDeadline";
+
+        return (
+             <>
+                <h3 className="font-semibold text-lg pt-4 border-b pb-2">Datos Adicionales del Estudiante</h3>
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                     <FormField control={form.control} name={studentIdPath} render={({ field }) => (<FormItem><FormLabel>Cédula/Pasaporte</FormLabel><FormControl><Input placeholder="Ej. 8-123-456" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                     <FormField control={form.control} name={studentPhone1Path} render={({ field }) => (<FormItem><FormLabel>Teléfono 1</FormLabel><FormControl><Input type="tel" placeholder="Ej. 6123-4567" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>)} />
+                     <FormField control={form.control} name={studentPhone2Path} render={({ field }) => (<FormItem><FormLabel>Teléfono 2 (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="Ej. 399-9999" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                </div>
+                 <FormField control={form.control} name={studentAddressPath} render={({ field }) => (<FormItem><FormLabel>Domicilio</FormLabel><FormControl><Textarea placeholder="Dirección completa del cliente..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+
+                <h3 className="font-semibold text-lg pt-4 border-b pb-2">Selección de Planes de Ampliación</h3>
+                 <FormField
+                    control={form.control}
+                    name={selectedPlansPath}
+                    render={() => (
+                        <FormItem>
+                            <div className="mb-4">
+                                <FormLabel className="text-base">Planes y Combos</FormLabel>
+                                <FormDescription>
+                                    Selecciona todos los planes que apliquen. El total se calculará automáticamente.
+                                </FormDescription>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                {allAmpliacionesPlans.map((plan) => (
+                                    <FormField
+                                        key={plan.name}
+                                        control={form.control}
+                                        name={selectedPlansPath}
+                                        render={({ field }) => {
+                                            return (
+                                                <FormItem
+                                                    key={plan.name}
+                                                    className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4"
+                                                >
+                                                    <FormControl>
+                                                        <Checkbox
+                                                            checked={field.value?.some(p => p.name === plan.name)}
+                                                            onCheckedChange={(checked) => {
+                                                                return checked
+                                                                    ? field.onChange([...(field.value || []), plan])
+                                                                    : field.onChange(
+                                                                        field.value?.filter(
+                                                                            (value) => value.name !== plan.name
+                                                                        )
+                                                                    )
+                                                            }}
+                                                        />
+                                                    </FormControl>
+                                                    <FormLabel className="font-normal">
+                                                        {plan.name} <span className="font-semibold text-primary"> (B/.{plan.price.toFixed(2)})</span>
+                                                    </FormLabel>
+                                                </FormItem>
+                                            )
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+                <h3 className="font-semibold text-lg pt-4 border-b pb-2">Cláusula Primera: Valor y Forma de Pago</h3>
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <FormField control={form.control} name={courseValuePath} render={({ field }) => (<FormItem><FormLabel>Valor Total (B/.)</FormLabel><FormControl><Input type="text" value={formatCurrency(field.value)} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name={downPaymentPath} render={({ field }) => (<FormItem><FormLabel>Abono (B/.)</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={watchedAmpliacionesPaidInFull} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name={balancePath} render={({ field }) => (<FormItem><FormLabel>Saldo (B/.)</FormLabel><FormControl><Input type="text" value={formatCurrency(field.value)} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
+                </div>
+                 <FormField
+                    control={form.control}
+                    name={paidInFullPath}
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-center space-x-3 space-y-0 pt-2">
+                            <FormControl>
+                                <Checkbox
+                                    checked={field.value || false}
+                                    onCheckedChange={field.onChange}
+                                    id="ampliacionesPaidInFull"
+                                />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                                <label htmlFor='ampliacionesPaidInFull' className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
+                                   ¿Cancelar la totalidad del curso (100%)?
+                                </label>
+                            </div>
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name={paymentDeadlinePath}
+                    render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                            <FormLabel>Fecha Límite de Pago del Saldo</FormLabel>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                        <Button
+                                            variant={"outline"}
+                                            className={cn(
+                                                "w-full pl-3 text-left font-normal",
+                                                !field.value && "text-muted-foreground"
+                                            )}
+                                            disabled={!watchedValues.ampliacionesDetails?.balance || watchedValues.ampliacionesDetails?.balance <= 0}
+                                        >
+                                            {field.value instanceof Date && !isNaN(field.value.getTime()) ? (
+                                                format(field.value, "PPP", { locale: es })
+                                            ) : (
+                                                <span>mm/dd/aaaa</span>
+                                            )}
+                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                        </Button>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        mode="single"
+                                        selected={field.value ? new Date(field.value) : undefined}
+                                        onSelect={field.onChange}
+                                        disabled={(date) => date < new Date() || !watchedValues.ampliacionesDetails?.balance || watchedValues.ampliacionesDetails?.balance <= 0}
+                                        initialFocus
+                                        locale={es}
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                            {(!watchedValues.ampliacionesDetails?.balance || watchedValues.ampliacionesDetails.balance <= 0) && <FormDescription>No aplica, ya que el curso está cancelado en su totalidad.</FormDescription>}
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </>
+        )
+    };
 
     const renderAutoMotoFields = () => (
         <>
@@ -591,7 +832,7 @@ export function ContractForm() {
                                         )}
                                         disabled={!watchedValues.autoMotoDetails?.balance || watchedValues.autoMotoDetails?.balance <= 0}
                                     >
-                                        {field.value && field.value instanceof Date && !isNaN(field.value.getTime()) ? (
+                                        {field.value instanceof Date && !isNaN(field.value.getTime()) ? (
                                             format(field.value, "PPP", { locale: es })
                                         ) : (
                                             <span>mm/dd/aaaa</span>
@@ -798,7 +1039,7 @@ export function ContractForm() {
                                         <PopoverTrigger asChild>
                                             <FormControl>
                                                 <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                                    {field.value && field.value instanceof Date && !isNaN(field.value.getTime()) ? format(new Date(field.value), "PPP", { locale: es }) : <span>Seleccionar fecha {index + 1}</span>}
+                                                    {field.value instanceof Date && !isNaN(field.value.getTime()) ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha {index + 1}</span>}
                                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                 </Button>
                                             </FormControl>
@@ -845,7 +1086,7 @@ export function ContractForm() {
                                                         <FormControl>
                                                             <Button variant={"outline"} size="sm" className={cn("w-full pl-3 text-left font-normal h-9", !field.value && "text-muted-foreground")}>
                                                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                                                {field.value && field.value instanceof Date ? format(new Date(field.value), "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                                                                {field.value instanceof Date && !isNaN(field.value.getTime()) ? format(new Date(field.value), "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
                                                             </Button>
                                                         </FormControl>
                                                     </PopoverTrigger>
@@ -940,7 +1181,9 @@ export function ContractForm() {
             <CardContent className="space-y-6">
                 <h3 className="font-semibold text-lg pt-4 border-b pb-2">Datos del Estudiante</h3>
                 {renderCommonFields()}
-                {contractType === 'Curso Deluxe' ? renderDeluxeFields() : renderAutoMotoFields()}
+                {contractType === 'Curso Deluxe' ? renderDeluxeFields() 
+                    : contractType === 'Ampliaciones' ? renderAmpliacionesFields()
+                    : renderAutoMotoFields()}
                 
                 {contractType === 'Curso Auto' && renderPracticalClassFields(practicalClassFields, 'autoMotoDetails.practicalClassSchedules', 'Clases Prácticas de Auto')}
                 
@@ -1001,5 +1244,3 @@ export function ContractForm() {
         </Form>
     );
 }
-
-    

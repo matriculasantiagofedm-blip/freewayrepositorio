@@ -2,7 +2,7 @@
 import type { Contract } from '@/lib/types';
 import { DeluxePremiumContractTemplate } from './deluxe-premium-contract';
 import { PrintButton } from './print-button';
-import { Card, CardContent, CardFooter } from './ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { AutoMotoContractTemplate } from './auto-moto-contract';
 
 export function ContractView({ contract }: { contract: Contract }) {
@@ -16,13 +16,26 @@ export function ContractView({ contract }: { contract: Contract }) {
       case 'Curso Mixto':
         return <AutoMotoContractTemplate contract={contract} />;
       default:
-        // Fallback for other contract types
+        // Fallback for other contract types like Ampliaciones
         return (
           <Card className="print:shadow-none print:border-none">
-            <CardContent className="prose prose-lg max-w-none text-foreground leading-relaxed relative p-6">
-              {contract.folio && <p className="absolute top-4 right-6 text-sm font-semibold text-destructive print:text-black">Folio: {contract.folio}</p>}
-              <h1 className="font-headline text-4xl pt-8">{contract.title}</h1>
-              <p>{contract.content}</p>
+            <CardHeader>
+                {contract.folio && <p className="text-right text-sm font-semibold text-destructive print:text-black">Folio: {contract.folio}</p>}
+                <CardTitle className="font-headline text-4xl pt-8">{contract.title}</CardTitle>
+            </CardHeader>
+            <CardContent className="prose prose-lg max-w-none text-foreground leading-relaxed p-6">
+                <p>{contract.content}</p>
+                 {contract.type === 'Ampliaciones' && contract.ampliacionesDetails?.selectedPlans && (
+                    <div className='mt-6'>
+                        <h3 className='font-bold'>Planes Seleccionados</h3>
+                        <ul className='list-disc pl-5'>
+                            {contract.ampliacionesDetails.selectedPlans.map(plan => (
+                                <li key={plan.name}>{plan.name} - B/.{plan.price.toFixed(2)}</li>
+                            ))}
+                        </ul>
+                         <p className='font-bold mt-4'>Total: B/.{contract.ampliacionesDetails.courseValue?.toFixed(2)}</p>
+                    </div>
+                )}
             </CardContent>
              {contract.createdBy && (
               <CardFooter className="print:block hidden">

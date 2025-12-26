@@ -62,6 +62,18 @@ export interface AutoMotoContractDetails {
   motoPracticalClassSchedules?: { date?: string; time?: string }[];
 }
 
+export interface AmpliacionesContractDetails {
+    studentIdNumber?: string;
+    studentAddress?: string;
+    studentPhone1?: string;
+    studentPhone2?: string;
+    courseValue?: number;
+    downPayment?: number;
+    balance?: number;
+    paymentDeadline?: string;
+    selectedPlans?: { name: string; price: number }[];
+}
+
 
 export interface Contract {
   id: string;
@@ -80,6 +92,5 @@ export interface Contract {
   createdBy?: string; // User role who created the contract
   deluxeDetails?: Partial<DeluxeContractDetails>;
   autoMotoDetails?: Partial<AutoMotoContractDetails>;
+  ampliacionesDetails?: Partial<AmpliacionesContractDetails>;
 }
-
-    

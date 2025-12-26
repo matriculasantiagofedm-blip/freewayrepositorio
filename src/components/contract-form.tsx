@@ -428,7 +428,7 @@ export function ContractForm() {
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un plan" /></SelectTrigger></FormControl>
                             <SelectContent>
-                                {contractType && (coursePlans as any)[contractType]?.map((c: any) => <SelectItem key={c.name} value={c.name}>{c.name} - ${c.price.toFixed(2)}</SelectItem>)}
+                                {contractType && (coursePlans as any)[contractType]?.map((c: any) => <SelectItem key={c.name} value={c.name}>{c.name} - B/.{c.price.toFixed(2)}</SelectItem>)}
                             </SelectContent>
                         </Select>
                         <FormMessage />

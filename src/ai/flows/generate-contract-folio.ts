@@ -48,7 +48,7 @@ const GenerateContractOutputSchema = z.object({
 export type GenerateContractOutput = z.infer<typeof GenerateContractOutputSchema>;
 
 
-const generateContractWithFolioFlow = ai.defineFlow(
+export const generateContractWithFolioFlow = ai.defineFlow(
   {
     name: 'generateContractWithFolioFlow',
     inputSchema: z.custom<GenerateContractInput>(),

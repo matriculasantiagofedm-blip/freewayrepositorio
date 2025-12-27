@@ -1,13 +1,12 @@
-
 'use server';
 
-import { ai } from '@/ai/genkit';
+import { generateContractWithFolioFlow } from '@/ai/flows/generate-contract-folio';
 import type { GenerateContractInput } from '@/lib/types';
 
 
-export async function createContractAction({ contractData, details }: GenerateContractInput) {
+export async function createContractAction(input: GenerateContractInput) {
   try {
-    const result = await ai.run('generateContractWithFolioFlow', { contractData, details });
+    const result = await generateContractWithFolioFlow(input);
     
     if (result.error) {
       throw new Error(result.error);

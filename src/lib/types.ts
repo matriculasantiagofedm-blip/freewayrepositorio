@@ -1,5 +1,6 @@
 
 import type { Timestamp } from 'firebase/firestore';
+import { z } from 'zod';
 
 export interface Deadline {
   id: string;
@@ -97,4 +98,19 @@ export interface Contract {
   ampliacionesDetails?: Partial<AmpliacionesContractDetails>;
 }
 
-    
+const GenerateContractDataSchema = z.object({
+  clientName: z.string(),
+  clientEmail: z.string().email(),
+  contractType: z.string(),
+  studentIdNumber: z.string(),
+  userId: z.string(),
+  createdBy: z.string(),
+});
+
+const GenerateContractDetailsSchema = z.any();
+
+export const GenerateContractInputSchema = z.object({
+  contractData: GenerateContractDataSchema,
+  details: GenerateContractDetailsSchema,
+});
+export type GenerateContractInput = z.infer<typeof GenerateContractInputSchema>;

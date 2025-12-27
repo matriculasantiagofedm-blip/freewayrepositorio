@@ -9,10 +9,9 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestore, doc, runTransaction, serverTimestamp, collection, query, where, getDocs, limit, writeBatch, Timestamp } from 'firebase-admin/firestore';
-import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
+import { initializeApp, getApps, App } from 'firebase-admin/app';
 import { firebaseConfig } from '@/firebase/config';
-import type { Contract, ContractType } from '@/lib/types';
-import type { GenerateContractInput } from '@/app/actions';
+import type { Contract, ContractType, GenerateContractInput } from '@/lib/types';
 
 
 // --- Firebase Admin Initialization ---

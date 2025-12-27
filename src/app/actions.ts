@@ -1,26 +1,8 @@
 
 'use server';
 
-import { z } from 'zod';
 import { ai } from '@/ai/genkit';
-
-
-const GenerateContractDataSchema = z.object({
-  clientName: z.string(),
-  clientEmail: z.string().email(),
-  contractType: z.string(),
-  studentIdNumber: z.string(),
-  userId: z.string(),
-  createdBy: z.string(),
-});
-
-const GenerateContractDetailsSchema = z.any();
-
-export const GenerateContractInputSchema = z.object({
-  contractData: GenerateContractDataSchema,
-  details: GenerateContractDetailsSchema,
-});
-export type GenerateContractInput = z.infer<typeof GenerateContractInputSchema>;
+import type { GenerateContractInput } from '@/lib/types';
 
 
 export async function createContractAction({ contractData, details }: GenerateContractInput) {

@@ -574,14 +574,12 @@ export function ContractForm() {
             const clientSnapshot = await getDocs(clientQuery);
 
             let clientId: string;
+            let clientDataToCreate: any = null;
 
-            if (!clientSnapshot.empty) {
-                // Client with this idNumber exists, reuse it.
-                clientId = clientSnapshot.docs[0].id;
-            } else {
-                // No client found, create a new one.
+            if (clientSnapshot.empty) {
+                // Client with this idNumber does not exist, create a new one.
                 const newClientRef = doc(collection(firestore, 'clients'));
-                const clientData = {
+                clientDataToCreate = {
                     id: newClientRef.id,
                     name: values.clientName,
                     email: values.clientEmail,
@@ -589,8 +587,11 @@ export function ContractForm() {
                     userId: user.uid,
                     createdAt: serverTimestamp(),
                 };
-                batch.set(newClientRef, clientData);
+                batch.set(newClientRef, clientDataToCreate);
                 clientId = newClientRef.id;
+            } else {
+                // Client exists, reuse it.
+                clientId = clientSnapshot.docs[0].id;
             }
 
 
@@ -612,7 +613,7 @@ export function ContractForm() {
                 createdBy: currentUserRole,
             };
 
-             if (contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') {
+            if (contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') {
                 const autoMotoDetails = values.autoMotoDetails || {};
                 contractData.autoMotoDetails = {
                     ...autoMotoDetails,

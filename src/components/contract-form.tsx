@@ -570,16 +570,20 @@ export function ContractForm() {
             const batch = writeBatch(firestore);
             
             const clientsRef = collection(firestore, 'clients');
-            const clientQuery = query(clientsRef, where("idNumber", "==", studentIdNumber), limit(1));
+            const clientQuery = query(clientsRef, where("idNumber", "==", studentIdNumber));
             const clientSnapshot = await getDocs(clientQuery);
 
             let clientId: string;
-            let clientDataToCreate: any = null;
+            let existingClient = null;
 
-            if (clientSnapshot.empty) {
+            if (!clientSnapshot.empty) {
+                // Client exists, reuse it.
+                existingClient = clientSnapshot.docs[0];
+                clientId = existingClient.id;
+            } else {
                 // Client with this idNumber does not exist, create a new one.
                 const newClientRef = doc(collection(firestore, 'clients'));
-                clientDataToCreate = {
+                 const clientDataToCreate = {
                     id: newClientRef.id,
                     name: values.clientName,
                     email: values.clientEmail,
@@ -589,9 +593,6 @@ export function ContractForm() {
                 };
                 batch.set(newClientRef, clientDataToCreate);
                 clientId = newClientRef.id;
-            } else {
-                // Client exists, reuse it.
-                clientId = clientSnapshot.docs[0].id;
             }
 
 

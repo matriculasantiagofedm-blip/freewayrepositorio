@@ -574,12 +574,10 @@ export function ContractForm() {
             const clientSnapshot = await getDocs(clientQuery);
 
             let clientId: string;
-            let existingClient = null;
 
             if (!clientSnapshot.empty) {
                 // Client exists, reuse it.
-                existingClient = clientSnapshot.docs[0];
-                clientId = existingClient.id;
+                clientId = clientSnapshot.docs[0].id;
             } else {
                 // Client with this idNumber does not exist, create a new one.
                 const newClientRef = doc(collection(firestore, 'clients'));

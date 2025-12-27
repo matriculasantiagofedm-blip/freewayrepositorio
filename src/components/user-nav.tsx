@@ -12,14 +12,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { LogOut, User, ChevronsUpDown } from 'lucide-react';
 import { useAuth, useUser, initiateAnonymousSignIn } from '@/firebase';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useCurrentRole } from '@/hooks/use-current-role';
 
 export function UserNav() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const { role: currentUser } = useCurrentRole();
   const router = useRouter();
 
 
@@ -28,20 +29,10 @@ export function UserNav() {
       initiateAnonymousSignIn(auth);
     }
   }, [auth, user, isUserLoading]);
-  
-  useEffect(() => {
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-        setCurrentUser(storedUser);
-    } else {
-        const defaultRole = 'Ventas';
-        setCurrentUser(defaultRole);
-        localStorage.setItem('currentUser', defaultRole);
-    }
-  }, []);
 
   const handleLogout = () => {
     auth.signOut();
+    localStorage.removeItem('currentUser');
     router.push('/');
   }
 

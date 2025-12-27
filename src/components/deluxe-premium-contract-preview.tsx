@@ -6,6 +6,7 @@ import { Card, CardContent } from './ui/card';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import type { DeluxeContractDetails } from '@/lib/types';
+import { useCurrentRole } from '@/hooks/use-current-role';
 
 const Line = ({ children, className }: { children?: React.ReactNode, className?: string }) => (
   <span className={cn("border-b border-dotted border-black flex-1 min-w-8 text-center font-semibold text-primary", className)}>
@@ -37,8 +38,9 @@ interface DeluxePremiumContractPreviewProps {
     createdBy?: string | null;
 }
 
-export function DeluxePremiumContractTemplatePreview({ folio, clientName, clientEmail, deluxeDetails, createdBy }: DeluxePremiumContractPreviewProps) {
+export function DeluxePremiumContractTemplatePreview({ folio, clientName, clientEmail, deluxeDetails }: DeluxePremiumContractPreviewProps) {
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
+  const { role: createdBy } = useCurrentRole();
 
   useEffect(() => {
     setCurrentDate(new Date());
@@ -150,13 +152,13 @@ export function DeluxePremiumContractTemplatePreview({ folio, clientName, client
         <h3 className="font-bold">CLÁUSULA QUINTA - POLÍTICA DE PAGOS Y MOROSIDAD</h3>
         <p>EL ESTUDIANTE deberá mantener sus pagos al día para poder asistir a sus clases. Si el estudiante no cancela su cuota correspondiente en la semana establecida, no podrá ingresar a sus clases teóricas ni prácticas hasta regularizar su situación. En caso de atraso, EL ESTUDIANTE tiene dos opciones: Opción 1: Cancelar las dos cuotas pendientes (la atrasada y la vigente) para reincorporarse a sus clases. Opción 2: Cancelar una sola cuota, quedando pendiente de ser notificado sobre la próxima clase disponible, la cual deberá ser pagada antes de su inicio.</p>
 
-        <h3 className="font-bold">CLÁUSULA SEXTA- INASISTENCIAS Y REPROGRAMACIONES</h3>
+        <h3 className="font-bold">CLÁUSULA SEXTA- INASISTENCIAS E REPROGRAMACIONES</h3>
         <p>EL ESTUDIANTE que no asista a una clase práctica en el horario establecido perderá automáticamente la clase práctica sin derecho a reposición ni reclamo. Excepción: Si la falta es por motivo de salud, deberá presentar constancia médica válida y coordinar con la administración para una reprogramación, la cual dependerá de la disponibilidad de horarios. Si EL ESTUDIANTE falta a más de una clase práctica sin justificar médicamente, no tendrá derecho a certificado y deberá pagar un recargo de $20.00 por cada clase perdida para poder reprogramarla.</p>
 
         <h3 className="font-bold">CLÁUSULA SEPTIMA - PUNTUALIDAD</h3>
         <p>En caso de que EL ESTUDIANTE llegue tarde a su clase, solo recibirá el tiempo restante de las 2 horas programadas, sin derecho a reposición.</p>
 
-        <h3 className="font-bold">CLÁUSULA OCTAVA- LUGAR DE INICIO Y TRASLADO</h3>
+        <h3 className="font-bold">CLÁUSULA OCTAVA- LUGAR DE INICIO E TRASLADO</h3>
         <p>Las clases prácticas iniciarán en la oficina de LA ESCUELA. Desde allí, EL ESTUDIANTE será trasladado al circuito de prácticas y posteriormente de regreso. Dicho traslado se encuentra incluido dentro del tiempo de las 2 horas de clase práctica.</p>
 
         <h3 className="font-bold">CLÁUSULA NOVENA - NORMAS DE COMPORTAMIENTO Y VESTIMENTA</h3>
@@ -165,7 +167,7 @@ export function DeluxePremiumContractTemplatePreview({ folio, clientName, client
         <h3 className="font-bold">CLÁUSULA DÉCIMA- ACOMPAñANTES Y ACCESO</h3>
         <p>Durante las clases teóricas y prácticas no se permite la presencia de acompañantes, niños, mascotas o terceras personas ajenas al proceso de enseñanza.</p>
         
-        <h3 className="font-bold">CLÁUSULA DÉCIMA PRIMERA- CONDICIONES DE APTITUD</h3>
+        <h3 className="font-bold">CLÁUSULA DÉCIMA PRIMERA- CONDICiones DE APTITUD</h3>
         <p>EL ESTUDIANTE declara estar en pleno uso de sus facultades físicas, mentales y emocionales, siendo responsable de informar a LA ESCUELA sobre cualquier condición médica que limite su desempeño.</p>
 
         <h3 className="font-bold">CLÁUSULA DÉCIMA SEGUNDA - CANCELACIÓN DEL CONTRATO</h3>

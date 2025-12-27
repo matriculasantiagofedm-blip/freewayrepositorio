@@ -46,6 +46,7 @@ import { Checkbox } from './ui/checkbox';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+import { useCurrentRole } from '@/hooks/use-current-role';
 
 // --- Esquemas de Validación con Zod ---
 
@@ -284,6 +285,7 @@ export function ContractForm() {
     const { toast } = useToast();
     const [folio, setFolio] = useState('');
     const [submissionAction, setSubmissionAction] = useState<'saveAndPrint'>('saveAndPrint');
+    const { role: currentUserRole } = useCurrentRole();
 
 
     const contractType = useMemo(() => searchParams.get('type') as ContractType | null, [searchParams]);
@@ -364,7 +366,9 @@ export function ContractForm() {
 
                     if ((name === 'autoMotoDetails.coursePlan' || (name === 'autoMotoDetails.paidInFull' && planName)) && selectedPlan) {
                         newCourseValue = selectedPlan.price;
-                        form.setValue('autoMotoDetails.courseValue', newCourseValue, { shouldValidate: true });
+                        if(form.getValues('autoMotoDetails.courseValue') !== newCourseValue) {
+                            form.setValue('autoMotoDetails.courseValue', newCourseValue, { shouldValidate: true });
+                        }
                         
                         if (name === 'autoMotoDetails.coursePlan') {
                             if (specialPlanSelected) {
@@ -376,7 +380,9 @@ export function ContractForm() {
                             } else {
                                 form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
                             }
-                            form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
+                            if(form.getValues('autoMotoDetails.downPayment') !== newDownPayment) {
+                                form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
+                            }
                         }
                         
                         if (contractType === 'Curso Auto') {
@@ -392,8 +398,12 @@ export function ContractForm() {
                     } else if (!selectedPlan && name === 'autoMotoDetails.coursePlan') {
                         newCourseValue = 0;
                         newDownPayment = 0;
-                        form.setValue('autoMotoDetails.courseValue', newCourseValue, { shouldValidate: true });
-                        form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
+                        if(form.getValues('autoMotoDetails.courseValue') !== newCourseValue) {
+                           form.setValue('autoMotoDetails.courseValue', newCourseValue, { shouldValidate: true });
+                        }
+                        if(form.getValues('autoMotoDetails.downPayment') !== newDownPayment) {
+                           form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
+                        }
                         replacePracticalClasses([]);
                         replaceMotoPracticalClasses([]);
                     }
@@ -453,14 +463,14 @@ export function ContractForm() {
 
                 let newDownPayment = downPayment;
 
-                if (name === 'ampliacionesDetails.selectedPlans' || name === 'ampliacionesDetails.paidInFull') {
+                if (name === 'ampliacionesDetails.selectedPlans' || name === 'ampliacionesDetails.paidInFull' || name === 'ampliacionesDetails.downPayment') {
                     if (isPaidInFull) {
                         newDownPayment = newCourseValue;
                     } else if (name === 'ampliacionesDetails.selectedPlans') {
                         newDownPayment = newCourseValue * 0.5;
                     }
                 }
-
+                
                 if (form.getValues('ampliacionesDetails.downPayment') !== newDownPayment) {
                     form.setValue('ampliacionesDetails.downPayment', newDownPayment, { shouldValidate: true });
                 }
@@ -537,7 +547,7 @@ export function ContractForm() {
     }, [firestore]);
 
     const onSubmit = async (values: FormValues) => {
-        if (!firestore || !user) {
+        if (!firestore || !user || !currentUserRole) {
             toast({ variant: 'destructive', title: 'Error de Autenticación', description: 'No se pudo conectar a la base de datos. Por favor, inicie sesión.' });
             return;
         }
@@ -558,8 +568,6 @@ export function ContractForm() {
             
             const contractRef = doc(collection(firestore, 'contracts'));
             
-            const currentUserRole = localStorage.getItem('currentUser') || 'Ventas';
-
             const contractData: any = {
                 id: contractRef.id,
                 folio: folio,
@@ -1410,8 +1418,8 @@ export function ContractForm() {
                             </CardHeader>
                             <CardContent>
                                 {contractType === 'Curso Deluxe' 
-                                    ? <DeluxePremiumContractTemplatePreview folio={folio} clientName={watchedValues.clientName} clientEmail={watchedValues.clientEmail} deluxeDetails={watchedValues.deluxeDetails} createdBy={typeof window !== 'undefined' ? localStorage.getItem('currentUser') : 'Ventas'} />
-                                    : <AutoMotoContractTemplatePreview folio={folio} clientName={watchedValues.clientName} clientEmail={watchedValues.clientEmail} autoMotoDetails={watchedValues.autoMotoDetails} createdBy={typeof window !== 'undefined' ? localStorage.getItem('currentUser') : 'Ventas'} type={contractType as any} />
+                                    ? <DeluxePremiumContractTemplatePreview folio={folio} clientName={watchedValues.clientName} clientEmail={watchedValues.clientEmail} deluxeDetails={watchedValues.deluxeDetails} createdBy={currentUserRole || 'Ventas'} />
+                                    : <AutoMotoContractTemplatePreview folio={folio} clientName={watchedValues.clientName} clientEmail={watchedValues.clientEmail} autoMotoDetails={watchedValues.autoMotoDetails} createdBy={currentUserRole || 'Ventas'} type={contractType as any} />
                                 }
                             </CardContent>
                         </Card>

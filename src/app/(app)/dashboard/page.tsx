@@ -141,7 +141,7 @@ export default function DashboardPage() {
                   <span>Curso Deluxe</span>
               </Link>
           </Button>
-           <Button asChild className="h-24 text-lg bg-gray-500 hover:bg-gray-600 text-white" disabled>
+           <Button asChild className="h-24 text-lg bg-gray-500 hover:bg-gray-600 text-white">
               <Link href="/contracts/new?type=Ampliaciones" className="flex flex-col items-center justify-center gap-2">
                   <Plus className="h-8 w-8" />
                   <span>Ampliaciones</span>

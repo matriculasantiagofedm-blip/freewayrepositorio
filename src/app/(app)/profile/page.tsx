@@ -6,9 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User as UserIcon } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useCurrentRole } from '@/hooks/use-current-role';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
+  const { role: currentUserRole } = useCurrentRole();
   const userAvatar = PlaceHolderImages.find(img => img.id === 'user-avatar');
 
   if (isUserLoading) {
@@ -18,9 +20,6 @@ export default function ProfilePage() {
   if (!user) {
     return <p>Por favor, inicie sesión para ver su perfil.</p>;
   }
-  
-  const currentUserRole = typeof window !== 'undefined' ? localStorage.getItem('currentUser') || 'Ventas' : 'Ventas';
-
 
   return (
     <div className="flex flex-col gap-8">

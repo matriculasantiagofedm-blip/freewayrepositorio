@@ -40,6 +40,7 @@ export default function LoginPage() {
     if (selectedRole && password === selectedRole.password) {
       if (typeof window !== 'undefined') {
         localStorage.setItem('currentUser', selectedRole.name);
+        window.dispatchEvent(new Event('storage')); // Notificar a otros componentes del cambio
       }
       router.push('/dashboard');
     } else {

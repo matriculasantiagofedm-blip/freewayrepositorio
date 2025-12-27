@@ -551,7 +551,7 @@ export function ContractForm() {
             
             const batch = writeBatch(firestore);
             const clientsRef = collection(firestore, 'clients');
-            const clientQuery = query(clientsRef, where("idNumber", "==", studentIdNumber));
+            const clientQuery = query(clientsRef, where("idNumber", "==", studentIdNumber), limit(1));
             const clientSnapshot = await getDocs(clientQuery);
 
             let clientId: string;
@@ -559,8 +559,24 @@ export function ContractForm() {
 
             if (!clientSnapshot.empty) {
                 const existingClientDoc = clientSnapshot.docs[0];
-                clientId = existingClientDoc.id;
-                clientData = existingClientDoc.data();
+                if (existingClientDoc.data().userId !== user.uid) {
+                    // Client exists but belongs to another user. Create a new client for the current user.
+                    const newClientRef = doc(collection(firestore, 'clients'));
+                    clientId = newClientRef.id;
+                    clientData = {
+                        id: clientId,
+                        name: values.clientName,
+                        email: values.clientEmail,
+                        idNumber: studentIdNumber,
+                        userId: user.uid,
+                        createdAt: serverTimestamp(),
+                    };
+                    batch.set(newClientRef, clientData);
+                } else {
+                    // Client exists and belongs to the current user
+                    clientId = existingClientDoc.id;
+                    clientData = existingClientDoc.data();
+                }
             } else {
                 const newClientRef = doc(collection(firestore, 'clients'));
                 clientId = newClientRef.id;
@@ -577,7 +593,9 @@ export function ContractForm() {
 
             const contractRef = doc(collection(firestore, 'contracts'));
             
-            const contractData: any = {
+            const processDate = (date: Date | undefined | null) => date ? format(date, 'yyyy-MM-dd') : null;
+            
+            const baseContractData = {
                 id: contractRef.id,
                 folio: folio,
                 title: `${values.contractType} - ${values.clientName}`,
@@ -586,54 +604,59 @@ export function ContractForm() {
                 clientId: clientId,
                 content: `Contrato de ${values.contractType} para ${values.clientName}.`,
                 deadlines: [],
-                status: 'active',
+                status: 'active' as const,
                 type: values.contractType,
                 userId: user.uid,
-                createdAt: serverTimestamp(),
                 createdBy: currentUserRole,
             };
 
-            const processDate = (date: Date | undefined | null) => date ? format(date, 'yyyy-MM-dd') : null;
+            let specificDetails: any = {};
 
             if (contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') {
                 const { autoMotoDetails } = values;
-                contractData.autoMotoDetails = {
+                specificDetails = {
                     ...autoMotoDetails,
                     studentIdNumber,
-                    paymentDeadline: processDate(autoMotoDetails.paymentDeadline),
+                    paymentDeadline: autoMotoDetails.paymentDeadline ? processDate(autoMotoDetails.paymentDeadline) : null,
                     theoreticalClassDates: (autoMotoDetails.theoreticalClassDates || []).map(processDate).filter(Boolean),
-                    practicalClassSchedules: (autoMotoDetails.practicalClassSchedules || []).map(c => ({ date: processDate(c.date), time: c.time || null })),
-                    motoPracticalClassSchedules: (autoMotoDetails.motoPracticalClassSchedules || []).map(c => ({ date: processDate(c.date), time: c.time || null })),
+                    practicalClassSchedules: (autoMotoDetails.practicalClassSchedules || []).map(c => ({ date: c.date ? processDate(c.date) : null, time: c.time || null })),
+                    motoPracticalClassSchedules: (autoMotoDetails.motoPracticalClassSchedules || []).map(c => ({ date: c.date ? processDate(c.date) : null, time: c.time || null })),
                 };
+                baseContractData.autoMotoDetails = specificDetails;
             } else if (contractType === 'Curso Deluxe') {
                 const { deluxeDetails } = values;
-                contractData.deluxeDetails = {
+                specificDetails = {
                     ...deluxeDetails,
                     studentIdNumber,
                     paymentInstallments: (deluxeDetails.paymentInstallments || []).map(processDate).filter(Boolean),
                     theoreticalClasses: (deluxeDetails.theoreticalClasses || []).map(processDate).filter(Boolean),
-                    classSchedules: (deluxeDetails.classSchedules || []).map(c => ({ date: processDate(c.date), time: c.time || null })),
+                    classSchedules: (deluxeDetails.classSchedules || []).map(c => ({ date: c.date ? processDate(c.date) : null, time: c.time || null })),
                 };
+                baseContractData.deluxeDetails = specificDetails;
             } else if (contractType === 'Ampliaciones') {
                 const { ampliacionesDetails } = values;
-                contractData.ampliacionesDetails = {
+                specificDetails = {
                     ...ampliacionesDetails,
                      studentIdNumber,
-                     paymentDeadline: processDate(ampliacionesDetails.paymentDeadline),
-                     theoreticalClassDate: processDate(ampliacionesDetails.theoreticalClassDate),
+                     paymentDeadline: ampliacionesDetails.paymentDeadline ? processDate(ampliacionesDetails.paymentDeadline) : null,
+                     theoreticalClassDate: ampliacionesDetails.theoreticalClassDate ? processDate(ampliacionesDetails.theoreticalClassDate) : null,
                 };
+                baseContractData.ampliacionesDetails = specificDetails;
             }
 
+            const finalContractData = {
+                ...baseContractData,
+                createdAt: serverTimestamp(),
+            };
 
-            batch.set(contractRef, contractData);
+            batch.set(contractRef, finalContractData);
             await batch.commit();
 
             toast({ title: 'Éxito', description: 'Contrato y cliente creados/asociados correctamente.' });
 
             if (submissionAction === 'saveAndPrint') {
-                // We construct a temporary contract object to pass for immediate printing
                 const finalContractObjectForPrint: Contract = {
-                    ...contractData,
+                    ...baseContractData,
                     createdAt: Timestamp.now(), // Use a client-side timestamp for immediate rendering
                     client: {
                         id: clientId,
@@ -1468,3 +1491,5 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    

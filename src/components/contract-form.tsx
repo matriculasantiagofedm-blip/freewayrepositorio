@@ -523,7 +523,7 @@ export function ContractForm() {
             }
 
             let detailsPayload: any;
-            switch (contractType) {
+            switch (values.contractType) {
                 case 'Curso Auto':
                 case 'Curso Moto':
                 case 'Curso Mixto':

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -551,7 +550,7 @@ export function ContractForm() {
 
     const onSubmit = async (values: FormValues) => {
         if (!firestore || !user || !currentUserRole || isUserLoading) {
-            toast({ variant: 'destructive', title: 'Error de Autenticación', description: 'No se pudo conectar a la base de datos. Por favor, inicie sesión.' });
+            toast({ variant: 'destructive', title: 'Error de Autenticación', description: 'No se pudo conectar a la base de datos. Por favor, inicie sesión o espere a que cargue la sesión.' });
             return;
         }
 
@@ -564,7 +563,6 @@ export function ContractForm() {
             
             const batch = writeBatch(firestore);
             
-            // --- Lógica para buscar o crear el cliente ---
             const clientsRef = collection(firestore, 'clients');
             const clientQuery = query(clientsRef, where("idNumber", "==", studentIdNumber), limit(1));
             const clientSnapshot = await getDocs(clientQuery);
@@ -572,7 +570,6 @@ export function ContractForm() {
             let clientId: string;
             
             if (clientSnapshot.empty) {
-                // El cliente no existe, lo creamos
                 const newClientRef = doc(collection(firestore, 'clients'));
                 const clientData = {
                     id: newClientRef.id,
@@ -585,13 +582,8 @@ export function ContractForm() {
                 batch.set(newClientRef, clientData);
                 clientId = newClientRef.id;
             } else {
-                // El cliente ya existe, usamos su ID
                 clientId = clientSnapshot.docs[0].id;
-                // Opcional: podrías actualizar los datos del cliente si han cambiado
-                // const clientRef = clientSnapshot.docs[0].ref;
-                // batch.update(clientRef, { name: values.clientName, email: values.clientEmail });
             }
-            // --- Fin de la lógica del cliente ---
 
             const contractRef = doc(collection(firestore, 'contracts'));
             
@@ -618,21 +610,19 @@ export function ContractForm() {
                 const autoMotoDetails = values.autoMotoDetails || {};
                 contractData.autoMotoDetails = {
                     ...autoMotoDetails,
-                    studentIdNumber, // Asegurarnos de que se guarda
-                    paymentDeadline: autoMotoDetails.paymentDeadline instanceof Date ? format(autoMotoDetails.paymentDeadline, 'yyyy-MM-dd') : null,
+                    studentIdNumber,
+                    paymentDeadline: autoMotoDetails.paymentDeadline ? format(autoMotoDetails.paymentDeadline, 'yyyy-MM-dd') : null,
                     theoreticalClassDates: (autoMotoDetails.theoreticalClassDates || [])
-                        .map(d => d instanceof Date ? format(d, 'yyyy-MM-dd') : null)
-                        .filter(d => d !== null),
+                        .map(d => d ? format(d, 'yyyy-MM-dd') : null)
+                        .filter(Boolean),
                     practicalClassSchedules: (autoMotoDetails.practicalClassSchedules || [])
-                        .filter(c => c.date || c.time)
                         .map(c => ({ 
-                            date: c.date instanceof Date ? format(c.date, 'yyyy-MM-dd') : null, 
+                            date: c.date ? format(c.date, 'yyyy-MM-dd') : null, 
                             time: c.time || null 
                         })),
                     motoPracticalClassSchedules: (autoMotoDetails.motoPracticalClassSchedules || [])
-                        .filter(c => c.date || c.time)
                         .map(c => ({ 
-                            date: c.date instanceof Date ? format(c.date, 'yyyy-MM-dd') : null, 
+                            date: c.date ? format(c.date, 'yyyy-MM-dd') : null, 
                             time: c.time || null 
                         })),
                 };
@@ -640,20 +630,19 @@ export function ContractForm() {
                 const deluxeDetails = values.deluxeDetails || {};
                 contractData.deluxeDetails = {
                     ...deluxeDetails,
-                    studentIdNumber, // Asegurarnos de que se guarda
-                    paymentInstallments: (deluxeDetails.paymentInstallments || []).map(d => d instanceof Date ? format(d, 'yyyy-MM-dd') : null).filter(Boolean),
-                    theoreticalClasses: (deluxeDetails.theoreticalClasses || []).map(d => d instanceof Date ? format(d, 'yyyy-MM-dd') : null).filter(Boolean),
+                    studentIdNumber,
+                    paymentInstallments: (deluxeDetails.paymentInstallments || []).map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(Boolean),
+                    theoreticalClasses: (deluxeDetails.theoreticalClasses || []).map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(Boolean),
                     classSchedules: (deluxeDetails.classSchedules || [])
-                        .filter(c => c.date || c.time)
-                        .map(c => ({ date: c.date instanceof Date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })),
+                        .map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })),
                 };
             } else if (contractType === 'Ampliaciones') {
                 const ampliacionesDetails = values.ampliacionesDetails || {};
                 contractData.ampliacionesDetails = {
                     ...ampliacionesDetails,
-                     studentIdNumber, // Asegurarnos de que se guarda
-                     paymentDeadline: ampliacionesDetails.paymentDeadline instanceof Date ? format(ampliacionesDetails.paymentDeadline, 'yyyy-MM-dd') : null,
-                     theoreticalClassDate: ampliacionesDetails.theoreticalClassDate instanceof Date ? format(ampliacionesDetails.theoreticalClassDate, 'yyyy-MM-dd') : null,
+                     studentIdNumber,
+                     paymentDeadline: ampliacionesDetails.paymentDeadline ? format(ampliacionesDetails.paymentDeadline, 'yyyy-MM-dd') : null,
+                     theoreticalClassDate: ampliacionesDetails.theoreticalClassDate ? format(ampliacionesDetails.theoreticalClassDate, 'yyyy-MM-dd') : null,
                 };
             }
 

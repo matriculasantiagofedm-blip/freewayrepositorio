@@ -38,7 +38,9 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
   const autoMotoDetails = contract.autoMotoDetails;
   const creationDate = toDate(contract.createdAt);
   const paymentDeadline = autoMotoDetails?.paymentDeadline ? toDate(autoMotoDetails.paymentDeadline) : null;
-  const balance = autoMotoDetails?.balance || 0;
+  const balance = autoMotoDetails?.balance ?? 0;
+  const downPayment = autoMotoDetails?.downPayment ?? 0;
+  const courseValue = autoMotoDetails?.courseValue ?? 0;
   
   const formatDate = (dateString?: string | Date) => {
     if (!dateString) return <Line />;
@@ -67,9 +69,9 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
 
         <h3 className="font-bold">CLÁUSULA PRIMERA - VALOR Y FORMA DE PAGO</h3>
         <div className='space-y-1 text-[10px]'>
-            <p>"El estudiante ha efectuado un abono por la suma de B/. <Line>{autoMotoDetails?.downPayment?.toFixed(2)}</Line>, quedando un saldo pendiente de B/. <Line>{balance > 0 ? balance.toFixed(2) : '0.00'}</Line>, el cual se compromete a cancelar en su totalidad el día <Line>{paymentDeadline ? format(paymentDeadline, 'P', { locale: es }) : ''}</Line>."</p>
+            <p>"El estudiante ha efectuado un abono por la suma de B/. <Line>{downPayment.toFixed(2)}</Line>, quedando un saldo pendiente de B/. <Line>{balance > 0 ? balance.toFixed(2) : '0.00'}</Line>, el cual se compromete a cancelar en su totalidad el día <Line>{paymentDeadline ? format(paymentDeadline, 'P', { locale: es }) : ''}</Line>."</p>
             <ul className="list-disc list-inside pl-2">
-                <li>El valor total del curso es de B/. <Line>{autoMotoDetails?.courseValue?.toFixed(2)}</Line>.</li>
+                <li>El valor total del curso es de B/. <Line>{courseValue.toFixed(2)}</Line>.</li>
                 <li>Para la inscripción, EL ESTUDIANTE deberá abonar el 50% del valor total como reserva de su cupo y horario.</li>
                 <li>El 50% restante deberá cancelarse antes de iniciar la primera clase práctica.</li>
                 <li>En caso de incumplimiento en los pagos, EL ESTUDIANTE no podrá continuar el curso.</li>
@@ -108,7 +110,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
              </p>
             <div className="flex items-center gap-2">3. Horario para clases teóricas: <Line>{autoMotoDetails?.theoreticalClassSchedule}</Line></div>
              <div className="pl-4">
-                {autoMotoDetails?.theoreticalClassDates?.map((date, index) => (
+                {(autoMotoDetails?.theoreticalClassDates || []).map((date, index) => (
                     <span key={index} className="mr-4">Clase {index + 1}: {formatDate(date)}</span>
                 ))}
             </div>

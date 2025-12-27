@@ -442,7 +442,7 @@ export function ContractForm() {
                 const downPayment = value.ampliacionesDetails?.downPayment || 0;
 
                 const newCourseValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
-                 if (form.getValues('ampliacionesDetails.courseValue') !== newCourseValue) {
+                if (form.getValues('ampliacionesDetails.courseValue')?.toFixed(2) !== newCourseValue.toFixed(2)) {
                     form.setValue('ampliacionesDetails.courseValue', newCourseValue, { shouldValidate: true });
                 }
 
@@ -1451,22 +1451,19 @@ export function ContractForm() {
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 <div className="flex flex-col gap-8">
-                    <div className="space-y-6">
-                        {renderFormContent()}
-                    </div>
-                    <div>
-                        <Card>
-                             <CardHeader>
-                                <CardTitle>Vista Previa del Contrato</CardTitle>
-                                <FormDescription>
-                                    Asegúrate de que toda la información en la vista previa sea correcta antes de guardar.
-                                </FormDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <PreviewComponent />
-                            </CardContent>
-                        </Card>
-                    </div>
+                    {renderFormContent()}
+                    
+                    <Card>
+                            <CardHeader>
+                            <CardTitle>Vista Previa del Contrato</CardTitle>
+                            <FormDescription>
+                                Asegúrate de que toda la información en la vista previa sea correcta antes de guardar.
+                            </FormDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <PreviewComponent />
+                        </CardContent>
+                    </Card>
                 </div>
             </form>
         </Form>

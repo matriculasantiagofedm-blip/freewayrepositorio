@@ -356,7 +356,7 @@ export function ContractForm() {
             const currentContractType = form.getValues('contractType');
 
             // Auto/Moto/Mixto Logic
-            if (name?.startsWith('autoMotoDetails') && currentContractType && ['Curso Auto', 'Curso Moto', 'Curso Mixto'].includes(currentContractType)) {
+            if (currentContractType && ['Curso Auto', 'Curso Moto', 'Curso Mixto'].includes(currentContractType)) {
                 if (name === 'autoMotoDetails.coursePlan' || name === 'autoMotoDetails.paidInFull' || name === 'autoMotoDetails.downPayment') {
                     const allPlans = (coursePlans as any)[currentContractType];
                     if (!allPlans || !Array.isArray(allPlans)) return;
@@ -384,29 +384,21 @@ export function ContractForm() {
                         form.setValue('autoMotoDetails.courseValue', newCourseValue, { shouldValidate: true });
                     }
 
-
                     let newDownPayment = downPayment;
                     if (name === 'autoMotoDetails.coursePlan') {
                         if (specialPlanSelected) {
-                             if (!form.getValues('autoMotoDetails.paidInFull')) {
-                                form.setValue('autoMotoDetails.paidInFull', true, { shouldValidate: true });
-                            }
+                            if (!form.getValues('autoMotoDetails.paidInFull')) form.setValue('autoMotoDetails.paidInFull', true, { shouldValidate: true });
                             isPaidInFull = true;
                             newDownPayment = newCourseValue;
                         } else if (!selectedPlan.isCombined) {
-                            if (form.getValues('autoMotoDetails.paidInFull')) {
-                                form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
-                            }
+                            if (form.getValues('autoMotoDetails.paidInFull')) form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
                             isPaidInFull = false;
                             newDownPayment = newCourseValue * 0.5;
                         } else {
-                             if (form.getValues('autoMotoDetails.paidInFull')) {
-                                form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
-                            }
+                            if (form.getValues('autoMotoDetails.paidInFull')) form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
                             isPaidInFull = false;
                         }
-
-                        if (form.getValues('autoMotoDetails.downPayment') !== newDownPayment) {
+                        if (form.getValues('autoMotoDetails.downPayment')?.toFixed(2) !== newDownPayment.toFixed(2)) {
                             form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
                         }
 
@@ -419,26 +411,23 @@ export function ContractForm() {
                         }
                     } else if (name === 'autoMotoDetails.paidInFull' && isPaidInFull) {
                         newDownPayment = newCourseValue;
-                         if (form.getValues('autoMotoDetails.downPayment') !== newDownPayment) {
+                         if (form.getValues('autoMotoDetails.downPayment')?.toFixed(2) !== newDownPayment.toFixed(2)) {
                             form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
                         }
                     }
                     
                     if (name === 'autoMotoDetails.paidInFull' || name === 'autoMotoDetails.coursePlan') {
-                        if (isPaidInFull) {
-                             if (!(form.getValues('autoMotoDetails.paymentDeadline') instanceof Date)) {
-                                form.setValue('autoMotoDetails.paymentDeadline', new Date());
-                            }
-                        } else {
-                             if (form.getValues('autoMotoDetails.paymentDeadline') !== null) {
-                                form.setValue('autoMotoDetails.paymentDeadline', null);
-                            }
+                        if (isPaidInFull && !(form.getValues('autoMotoDetails.paymentDeadline') instanceof Date)) {
+                            form.setValue('autoMotoDetails.paymentDeadline', new Date());
+                        } else if (!isPaidInFull && form.getValues('autoMotoDetails.paymentDeadline') !== null) {
+                            form.setValue('autoMotoDetails.paymentDeadline', null);
                         }
                     }
 
                     const newBalance = newCourseValue - newDownPayment;
                     const finalBalance = newBalance < 0 ? 0 : newBalance;
-                    if (form.getValues('autoMotoDetails.balance') !== finalBalance) {
+                    const currentBalance = form.getValues('autoMotoDetails.balance') || 0;
+                    if (currentBalance.toFixed(2) !== finalBalance.toFixed(2)) {
                         form.setValue('autoMotoDetails.balance', finalBalance, { shouldValidate: true });
                     }
                 }
@@ -461,14 +450,10 @@ export function ContractForm() {
                     
                     if (name === 'ampliacionesDetails.selectedPlans') {
                         if (forceFullPayment) {
-                            if (form.getValues('ampliacionesDetails.paidInFull') !== true) {
-                                form.setValue('ampliacionesDetails.paidInFull', true, { shouldValidate: true });
-                            }
+                            if (form.getValues('ampliacionesDetails.paidInFull') !== true) form.setValue('ampliacionesDetails.paidInFull', true, { shouldValidate: true });
                             isPaidInFull = true;
                         } else {
-                            if (form.getValues('ampliacionesDetails.paidInFull') === true) {
-                                form.setValue('ampliacionesDetails.paidInFull', false, { shouldValidate: true });
-                            }
+                            if (form.getValues('ampliacionesDetails.paidInFull') === true) form.setValue('ampliacionesDetails.paidInFull', false, { shouldValidate: true });
                             isPaidInFull = false;
                         }
                     }
@@ -487,20 +472,17 @@ export function ContractForm() {
                     }
                     
                     if (name === 'ampliacionesDetails.paidInFull' || name === 'ampliacionesDetails.selectedPlans') {
-                         if (isPaidInFull || forceFullPayment) {
-                            if (!(form.getValues('ampliacionesDetails.paymentDeadline') instanceof Date)) {
-                                form.setValue('ampliacionesDetails.paymentDeadline', new Date());
-                            }
-                        } else {
-                            if (form.getValues('ampliacionesDetails.paymentDeadline') !== null) {
-                                form.setValue('ampliacionesDetails.paymentDeadline', null);
-                            }
+                        if ((isPaidInFull || forceFullPayment) && !(form.getValues('ampliacionesDetails.paymentDeadline') instanceof Date)) {
+                           form.setValue('ampliacionesDetails.paymentDeadline', new Date());
+                        } else if (!isPaidInFull && !forceFullPayment && form.getValues('ampliacionesDetails.paymentDeadline') !== null) {
+                           form.setValue('ampliacionesDetails.paymentDeadline', null);
                         }
                     }
 
                     const newBalance = newCourseValue - newDownPayment;
                     const finalBalance = newBalance < 0 ? 0 : newBalance;
-                    if (form.getValues('ampliacionesDetails.balance')?.toFixed(2) !== finalBalance.toFixed(2)) {
+                    const currentBalance = form.getValues('ampliacionesDetails.balance') || 0;
+                    if (currentBalance.toFixed(2) !== finalBalance.toFixed(2)) {
                         form.setValue('ampliacionesDetails.balance', finalBalance, { shouldValidate: true });
                     }
                 }
@@ -1511,3 +1493,5 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    

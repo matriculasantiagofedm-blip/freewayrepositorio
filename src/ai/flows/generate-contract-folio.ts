@@ -9,22 +9,34 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestore, doc, runTransaction, serverTimestamp, collection, query, where, getDocs, limit, writeBatch, Timestamp } from 'firebase-admin/firestore';
-import { initializeApp, getApps, App } from 'firebase-admin/app';
+import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 import { firebaseConfig } from '@/firebase/config';
 import type { Contract, ContractType } from '@/lib/types';
 import type { GenerateContractInput } from '@/app/actions';
 
 
 // --- Firebase Admin Initialization ---
-let adminApp: App;
-if (!getApps().length) {
-  adminApp = initializeApp({
-    projectId: firebaseConfig.projectId,
-  });
-} else {
-  adminApp = getApps()[0];
+// Ensure that the app is initialized only once
+function getAdminApp(): App {
+    if (getApps().length > 0) {
+        return getApps()[0];
+    }
+
+    // In a server environment like Vercel or Firebase Functions,
+    // you would use applicationDefault() instead of a service account file.
+    // For local development, you might use a service account key.
+    // We will attempt to initialize without explicit credentials first.
+    try {
+        return initializeApp();
+    } catch (e) {
+        console.warn("Default Firebase Admin initialization failed. This is expected in local dev. Falling back to config.", e);
+        // Fallback for local environments if GOOGLE_APPLICATION_CREDENTIALS is not set
+        return initializeApp({
+            projectId: firebaseConfig.projectId,
+        });
+    }
 }
-const db = getFirestore(adminApp);
+const db = getFirestore(getAdminApp());
 
 
 // --- Zod Schemas for Input/Output ---
@@ -37,29 +49,19 @@ const GenerateContractOutputSchema = z.object({
 export type GenerateContractOutput = z.infer<typeof GenerateContractOutputSchema>;
 
 
-/**
- * Main exported function to be called by the Server Action.
- * IMPORTANT: This function is NOT imported directly by client components.
- * It is wrapped in a Genkit flow and invoked via `ai.run('flowName', input)`.
- */
-export async function generateContractWithSequentialFolio(input: GenerateContractInput): Promise<GenerateContractOutput> {
-  return generateContractWithFolioFlow(input);
-}
-
-
 const generateContractWithFolioFlow = ai.defineFlow(
   {
     name: 'generateContractWithFolioFlow',
     inputSchema: z.custom<GenerateContractInput>(),
     outputSchema: GenerateContractOutputSchema,
   },
-  async (input) => {
+  async ({ contractData, details }) => {
     try {
-        if (!input.contractData.studentIdNumber) {
+        if (!contractData.studentIdNumber) {
             throw new Error("El número de cédula o pasaporte del estudiante es un campo obligatorio para generar el contrato.");
         }
-        if (!input.details || Object.keys(input.details).length === 0) {
-            throw new Error(`Los detalles para el contrato tipo '${input.contractData.contractType}' están vacíos o son inválidos.`);
+        if (!details || Object.keys(details).length === 0) {
+            throw new Error(`Los detalles para el contrato tipo '${contractData.contractType}' están vacíos o son inválidos.`);
         }
         
         const counterRef = db.doc('counters/contract_folio');
@@ -83,7 +85,7 @@ const generateContractWithFolioFlow = ai.defineFlow(
 
         // --- Client Handling (Get or Create) ---
         const clientsRef = db.collection('clients');
-        const clientQuery = query(clientsRef, where("idNumber", "==", input.contractData.studentIdNumber), limit(1));
+        const clientQuery = query(clientsRef, where("idNumber", "==", contractData.studentIdNumber), limit(1));
         const clientSnapshot = await getDocs(clientQuery);
 
         let clientId: string;
@@ -98,31 +100,28 @@ const generateContractWithFolioFlow = ai.defineFlow(
             clientId = newClientRef.id;
             const newClientData = {
                 id: clientId,
-                name: input.contractData.clientName,
-                email: input.contractData.clientEmail,
-                idNumber: input.contractData.studentIdNumber,
-                userId: input.contractData.userId,
+                name: contractData.clientName,
+                email: contractData.clientEmail,
+                idNumber: contractData.studentIdNumber,
+                userId: contractData.userId,
                 createdAt: serverTimestamp(),
             };
             batch.set(newClientRef, newClientData);
         }
 
         // --- Contract Creation ---
-        const contractCollectionPath = `users/${input.contractData.userId}/contracts`;
+        const contractCollectionPath = `users/${contractData.userId}/contracts`;
         const contractRef = db.collection(contractCollectionPath).doc();
 
         const toTimestamp = (date: any): Timestamp | null => {
             if (!date) return null;
             if (date instanceof Timestamp) return date;
-            // Handle Firestore Timestamp-like objects from client
             if (date && typeof date.seconds === 'number' && typeof date.nanoseconds === 'number') {
                 return new Timestamp(date.seconds, date.nanoseconds);
             }
-             // Handle JS Date objects
             if (date instanceof Date) {
                  return Timestamp.fromDate(date);
             }
-             // Handle ISO strings or other date strings
             const d = new Date(date);
             if (!isNaN(d.getTime())) {
                 return Timestamp.fromDate(d);
@@ -164,27 +163,27 @@ const generateContractWithFolioFlow = ai.defineFlow(
             return newDetails;
         };
         
-        const finalDetails = convertDatesToTimestamps(input.details);
+        const finalDetails = convertDatesToTimestamps(details);
 
         const newContract: Omit<Contract, 'id' | 'createdAt'> = {
             folio,
-            title: `${input.contractData.contractType} - ${input.contractData.clientName}`,
-            clientName: input.contractData.clientName,
-            clientEmail: input.contractData.clientEmail,
+            title: `${contractData.contractType} - ${contractData.clientName}`,
+            clientName: contractData.clientName,
+            clientEmail: contractData.clientEmail,
             clientId,
-            content: `Contrato de ${input.contractData.contractType} para ${input.contractData.clientName}.`,
+            content: `Contrato de ${contractData.contractType} para ${contractData.clientName}.`,
             deadlines: [],
             status: 'active',
-            type: input.contractData.contractType as ContractType,
-            userId: input.contractData.userId,
-            createdBy: input.contractData.createdBy,
+            type: contractData.contractType as ContractType,
+            userId: contractData.userId,
+            createdBy: contractData.createdBy,
         };
 
-        if (input.contractData.contractType === 'Curso Deluxe') {
+        if (contractData.contractType === 'Curso Deluxe') {
             (newContract as any).deluxeDetails = finalDetails;
-        } else if (['Curso Auto', 'Curso Moto', 'Curso Mixto'].includes(input.contractData.contractType)) {
+        } else if (['Curso Auto', 'Curso Moto', 'Curso Mixto'].includes(contractData.contractType)) {
              (newContract as any).autoMotoDetails = finalDetails;
-        } else if (input.contractData.contractType === 'Ampliaciones') {
+        } else if (contractData.contractType === 'Ampliaciones') {
             (newContract as any).ampliacionesDetails = finalDetails;
         }
         

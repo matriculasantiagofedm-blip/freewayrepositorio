@@ -1,82 +1,31 @@
+
 'use server';
 
-import { google } from 'googleapis';
 import { z } from 'zod';
 import { ai } from '@/ai/genkit';
 
 
-// Move the type definition here to avoid client components importing from a server-only file.
-const GenerateContractInputSchema = z.object({
-  contractData: z.object({
-    clientName: z.string(),
-    clientEmail: z.string().email(),
-    contractType: z.string(),
-    studentIdNumber: z.string(),
-    userId: z.string(),
-    createdBy: z.string(),
-  }),
-  details: z.any(),
+const GenerateContractDataSchema = z.object({
+  clientName: z.string(),
+  clientEmail: z.string().email(),
+  contractType: z.string(),
+  studentIdNumber: z.string(),
+  userId: z.string(),
+  createdBy: z.string(),
+});
+
+const GenerateContractDetailsSchema = z.any();
+
+export const GenerateContractInputSchema = z.object({
+  contractData: GenerateContractDataSchema,
+  details: GenerateContractDetailsSchema,
 });
 export type GenerateContractInput = z.infer<typeof GenerateContractInputSchema>;
 
 
-const PingParamsSchema = z.object({
-  calendarId: z.string().min(1, 'El ID del calendario es requerido.'),
-});
-
-export async function pingCalendarsAction(params: { calendarId: string }) {
+export async function createContractAction({ contractData, details }: GenerateContractInput) {
   try {
-    PingParamsSchema.parse(params);
-
-    const auth = new google.auth.GoogleAuth({
-        scopes: ['https://www.googleapis.com/auth/calendar.readonly'],
-    });
-
-    const authClient = await auth.getClient();
-    const calendar = google.calendar({ version: 'v3', auth: authClient });
-
-    const calendarInfo = await calendar.calendars.get({
-      calendarId: params.calendarId,
-    });
-
-    if (calendarInfo.status === 200 && calendarInfo.data) {
-      return {
-        success: true,
-        message: `Conexión exitosa con el calendario: "${calendarInfo.data.summary}"`,
-        calendarId: params.calendarId
-      };
-    } else {
-      throw new Error(
-        `La API de Google Calendar devolvió un estado inesperado: ${calendarInfo.status}`
-      );
-    }
-  } catch (error) {
-    let errorMessage = 'Ocurrió un error desconocido.';
-    if (error instanceof Error) {
-        errorMessage = error.message;
-        const gapiError = error as any;
-        if (gapiError.response?.data?.error?.message) {
-            errorMessage = `(${gapiError.response.status}) ${gapiError.response.data.error.message}`;
-        } else if (gapiError.errors?.[0]?.message) {
-            errorMessage = gapiError.errors[0].message;
-        }
-    }
-    
-    return {
-      success: false,
-      message: 'Fallo la conexión con Google Calendar.',
-      error: errorMessage,
-      calendarId: params.calendarId
-    };
-  }
-}
-
-export async function createContractAction(input: GenerateContractInput) {
-  try {
-    // IMPORTANT: We call the flow via `ai.run()` instead of importing and calling the function directly.
-    // This breaks the static import chain and prevents server-side code (firebase-admin)
-    // from being bundled with the client.
-    const result = await ai.run('generateContractWithFolioFlow', input);
+    const result = await ai.run('generateContractWithFolioFlow', { contractData, details });
     
     if (result.error) {
       throw new Error(result.error);

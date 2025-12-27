@@ -65,7 +65,7 @@ const baseSchema = z.object({
 });
 
 const autoMotoDetailsSchema = z.object({
-  studentIdNumber: z.string().min(1, 'El número de cédula es obligatorio.'),
+  studentIdNumber: z.string().optional(),
   studentAddress: z.string().optional(),
   studentPhone1: z.string().optional(),
   studentPhone2: z.string().optional(),
@@ -82,10 +82,10 @@ const autoMotoDetailsSchema = z.object({
   theoreticalClassDates: z.array(z.date().optional()).optional(),
   practicalClassSchedules: z.array(classScheduleSchema).optional(),
   motoPracticalClassSchedules: z.array(classScheduleSchema).optional(),
-}).partial();
+});
 
 const deluxeDetailsSchema = z.object({
-  studentIdNumber: z.string().min(1, 'El número de cédula es obligatorio.'),
+  studentIdNumber: z.string().optional(),
   studentAddress: z.string().optional(),
   studentPhone1: z.string().optional(),
   studentPhone2: z.string().optional(),
@@ -97,10 +97,10 @@ const deluxeDetailsSchema = z.object({
   theoreticalClassSchedule: z.enum(['Lunes', 'Miércoles']).optional(),
   theoreticalClasses: z.array(z.date().optional()).optional(),
   classSchedules: z.array(classScheduleSchema).optional(),
-}).partial();
+});
 
 const ampliacionesDetailsSchema = z.object({
-  studentIdNumber: z.string().min(1, 'El número de cédula es obligatorio.'),
+  studentIdNumber: z.string().optional(),
   studentAddress: z.string().optional(),
   studentPhone1: z.string().optional(),
   studentPhone2: z.string().optional(),
@@ -112,13 +112,40 @@ const ampliacionesDetailsSchema = z.object({
   paidInFull: z.boolean().default(false),
   theoreticalClassDate: z.date().optional().nullable(),
   theoreticalClassTime: z.string().optional(),
-}).partial();
+});
 
 const formSchema = baseSchema.extend({
-  contractType: z.custom<ContractType>(),
   autoMotoDetails: autoMotoDetailsSchema,
   deluxeDetails: deluxeDetailsSchema,
   ampliacionesDetails: ampliacionesDetailsSchema,
+}).superRefine((data, ctx) => {
+    const isAutoMoto = ['Curso Auto', 'Curso Moto', 'Curso Mixto'].includes(data.contractType);
+    const isDeluxe = data.contractType === 'Curso Deluxe';
+    const isAmpliaciones = data.contractType === 'Ampliaciones';
+    
+    if (isAutoMoto && !data.autoMotoDetails.studentIdNumber) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['autoMotoDetails.studentIdNumber'],
+            message: 'El número de cédula es obligatorio.',
+        });
+    }
+    
+    if (isDeluxe && !data.deluxeDetails.studentIdNumber) {
+         ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['deluxeDetails.studentIdNumber'],
+            message: 'El número de cédula es obligatorio.',
+        });
+    }
+
+    if (isAmpliaciones && !data.ampliacionesDetails.studentIdNumber) {
+         ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['ampliacionesDetails.studentIdNumber'],
+            message: 'El número de cédula es obligatorio.',
+        });
+    }
 });
 
 
@@ -495,19 +522,25 @@ export function ContractForm() {
             return;
         }
 
+        const detailsPayload = 
+            values.contractType === 'Curso Deluxe' ? values.deluxeDetails :
+            values.contractType === 'Ampliaciones' ? values.ampliacionesDetails :
+            values.autoMotoDetails;
+
         try {
             const result = await generateContractWithSequentialFolio({
                 contractData: {
                     clientName: values.clientName,
                     clientEmail: values.clientEmail,
                     contractType: values.contractType,
+                    studentIdNumber: 
+                        values.contractType === 'Curso Deluxe' ? values.deluxeDetails.studentIdNumber || '' :
+                        values.contractType === 'Ampliaciones' ? values.ampliacionesDetails.studentIdNumber || '' :
+                        values.autoMotoDetails.studentIdNumber || '',
                     userId: user.uid,
                     createdBy: currentUserRole,
                 },
-                details: 
-                    values.contractType === 'Curso Deluxe' ? values.deluxeDetails :
-                    values.contractType === 'Ampliaciones' ? values.ampliacionesDetails :
-                    values.autoMotoDetails
+                details: detailsPayload
             });
 
             if (result.error) {
@@ -543,7 +576,7 @@ export function ContractForm() {
             toast({ 
                 variant: 'destructive', 
                 title: 'Error de Guardado', 
-                description: `${error instanceof Error ? error.message.replace('Failed to create contract: ', '') : 'No se pudo crear el contrato.'}` 
+                description: `${error instanceof Error ? error.message : 'No se pudo crear el contrato. Revisa los datos e intenta de nuevo.'}` 
             });
         }
     };
@@ -595,11 +628,11 @@ export function ContractForm() {
              <>
                 <h3 className="font-semibold text-lg pt-4 border-b pb-2">Datos Adicionales del Estudiante</h3>
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                     <FormField control={form.control} name={studentIdPath as 'ampliacionesDetails.studentIdNumber'} render={({ field }) => (<FormItem><FormLabel>Cédula/Pasaporte</FormLabel><FormControl><Input placeholder="Ej. 8-123-456" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
-                     <FormField control={form.control} name={studentPhone1Path as 'ampliacionesDetails.studentPhone1'} render={({ field }) => (<FormItem><FormLabel>Teléfono 1</FormLabel><FormControl><Input type="tel" placeholder="Ej. 6123-4567" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>)} />
-                     <FormField control={form.control} name={studentPhone2Path as 'ampliacionesDetails.studentPhone2'} render={({ field }) => (<FormItem><FormLabel>Teléfono 2 (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="Ej. 399-9999" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                     <FormField control={form.control} name={studentIdPath} render={({ field }) => (<FormItem><FormLabel>Cédula/Pasaporte</FormLabel><FormControl><Input placeholder="Ej. 8-123-456" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                     <FormField control={form.control} name={studentPhone1Path} render={({ field }) => (<FormItem><FormLabel>Teléfono 1</FormLabel><FormControl><Input type="tel" placeholder="Ej. 6123-4567" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>)} />
+                     <FormField control={form.control} name={studentPhone2Path} render={({ field }) => (<FormItem><FormLabel>Teléfono 2 (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="Ej. 399-9999" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
                 </div>
-                 <FormField control={form.control} name={studentAddressPath as 'ampliacionesDetails.studentAddress'} render={({ field }) => (<FormItem><FormLabel>Domicilio</FormLabel><FormControl><Textarea placeholder="Dirección completa del cliente..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                 <FormField control={form.control} name={studentAddressPath} render={({ field }) => (<FormItem><FormLabel>Domicilio</FormLabel><FormControl><Textarea placeholder="Dirección completa del cliente..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
 
                 <h3 className="font-semibold text-lg pt-4 border-b pb-2">Selección de Planes de Ampliación</h3>
                  <FormField
@@ -1226,7 +1259,7 @@ export function ContractForm() {
             <>
                 <h3 className="font-semibold text-lg pt-4 border-b pb-2">Datos Adicionales del Estudiante</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField control={form.control} name={studentIdPath as 'deluxeDetails.studentIdNumber'} render={({ field }) => (<FormItem><FormLabel>Cédula/Pasaporte</FormLabel><FormControl><Input placeholder="Ej. 8-123-456" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name={studentIdPath} render={({ field }) => (<FormItem><FormLabel>Cédula/Pasaporte</FormLabel><FormControl><Input placeholder="Ej. 8-123-456" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="deluxeDetails.studentPhone1" render={({ field }) => (<FormItem><FormLabel>Teléfono 1</FormLabel><FormControl><Input type="tel" placeholder="Ej. 6123-4567" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="deluxeDetails.studentPhone2" render={({ field }) => (<FormItem><FormLabel>Teléfono 2 (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="Ej. 399-9999" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
                 </div>

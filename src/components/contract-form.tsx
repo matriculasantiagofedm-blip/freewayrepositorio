@@ -435,7 +435,7 @@ export function ContractForm() {
                 }
             }
 
-            // Ampliaciones Logic
+             // Ampliaciones Logic
             if (name?.startsWith('ampliacionesDetails')) {
                 const selectedPlans = value.ampliacionesDetails?.selectedPlans || [];
                 let isPaidInFull = value.ampliacionesDetails?.paidInFull;
@@ -463,10 +463,18 @@ export function ContractForm() {
                 }
 
                 let newDownPayment = downPayment;
-                if (isPaidInFull) {
-                    newDownPayment = newCourseValue;
-                } else if (name === 'ampliacionesDetails.selectedPlans' || (name === 'ampliacionesDetails.paidInFull' && !isPaidInFull)) {
-                     newDownPayment = newCourseValue * 0.5;
+                 if (name === 'ampliacionesDetails.paidInFull') {
+                    if (isPaidInFull) {
+                        newDownPayment = newCourseValue;
+                    } else {
+                        newDownPayment = newCourseValue * 0.5;
+                    }
+                } else if (name === 'ampliacionesDetails.selectedPlans') {
+                     if (forceFullPayment) {
+                        newDownPayment = newCourseValue;
+                    } else {
+                        newDownPayment = newCourseValue * 0.5;
+                    }
                 }
                 
                 const currentDownPayment = form.getValues('ampliacionesDetails.downPayment');
@@ -476,7 +484,7 @@ export function ContractForm() {
                 
                 if (name === 'ampliacionesDetails.paidInFull' || name === 'ampliacionesDetails.selectedPlans') {
                     const currentDeadline = form.getValues('ampliacionesDetails.paymentDeadline');
-                    if (isPaidInFull) {
+                    if (isPaidInFull || forceFullPayment) {
                          if (!(currentDeadline instanceof Date)) {
                             form.setValue('ampliacionesDetails.paymentDeadline', new Date());
                         }

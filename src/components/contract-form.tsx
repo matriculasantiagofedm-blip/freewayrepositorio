@@ -282,7 +282,7 @@ const getDefaultValues = (contractType: ContractType | null): FormValues => ({
 export function ContractForm() {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const { firestore, user } = useFirebase();
+    const { firestore, user, isUserLoading } = useFirebase();
     const { toast } = useToast();
     const [folio, setFolio] = useState('');
     const [submissionAction, setSubmissionAction] = useState<'saveAndPrint'>('saveAndPrint');
@@ -550,7 +550,7 @@ export function ContractForm() {
     }, [firestore]);
 
     const onSubmit = async (values: FormValues) => {
-        if (!firestore || !user || !currentUserRole) {
+        if (!firestore || !user || !currentUserRole || isUserLoading) {
             toast({ variant: 'destructive', title: 'Error de Autenticación', description: 'No se pudo conectar a la base de datos. Por favor, inicie sesión.' });
             return;
         }
@@ -1462,3 +1462,4 @@ export function ContractForm() {
     
 
     
+

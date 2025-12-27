@@ -33,7 +33,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Printer, Loader2 } from 'lucide-react';
+import { CalendarIcon, PlusCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFirebase } from '@/firebase';
 import { Timestamp } from 'firebase/firestore';
@@ -287,7 +287,6 @@ export function ContractForm() {
     const router = useRouter();
     const { user, isUserLoading } = useFirebase();
     const { toast } = useToast();
-    const [submissionAction, setSubmissionAction] = useState<'saveAndPrint' | 'saveOnly'>('saveOnly');
     const { role: currentUserRole } = useCurrentRole();
     const [savedContract, setSavedContract] = useState<Contract | null>(null);
 
@@ -596,11 +595,7 @@ export function ContractForm() {
                 },
             };
 
-            if (submissionAction === 'saveAndPrint') {
-                setSavedContract(finalContractObjectForPrint);
-            } else {
-                 router.push(`/contracts/${result.contract.id}`);
-            }
+            setSavedContract(finalContractObjectForPrint);
 
         } catch (error) {
             console.error("Error al crear el contrato:", error);
@@ -1384,7 +1379,17 @@ export function ContractForm() {
 
 
     if (savedContract) {
-        return <ContractView contract={savedContract} />;
+        return (
+            <div className='flex flex-col gap-4'>
+                <div className='flex justify-end gap-2'>
+                     <Button variant="outline" onClick={() => setSavedContract(null)}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Crear Nuevo Contrato
+                    </Button>
+                </div>
+                <ContractView contract={savedContract} />
+            </div>
+        );
     }
 
     if (!contractType) {
@@ -1403,13 +1408,9 @@ export function ContractForm() {
                     {renderFormContent()}
                     
                      <div className="flex flex-col sm:flex-row gap-2 justify-end">
-                        <Button type="submit" onClick={() => setSubmissionAction('saveOnly')} disabled={form.formState.isSubmitting}>
-                            {form.formState.isSubmitting && submissionAction === 'saveOnly' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            {form.formState.isSubmitting && submissionAction === 'saveOnly' ? 'Guardando...' : 'Guardar Contrato'}
-                        </Button>
-                        <Button type="submit" onClick={() => setSubmissionAction('saveAndPrint')} disabled={form.formState.isSubmitting}>
-                            {form.formState.isSubmitting && submissionAction === 'saveAndPrint' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
-                            {form.formState.isSubmitting && submissionAction === 'saveAndPrint' ? 'Guardando...' : 'Guardar y Preparar Impresión'}
+                        <Button type="submit" disabled={form.formState.isSubmitting}>
+                            {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            {form.formState.isSubmitting ? 'Guardando...' : 'Guardar Contrato'}
                         </Button>
                     </div>
 

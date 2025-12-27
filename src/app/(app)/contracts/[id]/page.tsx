@@ -23,13 +23,9 @@ export default function ContractDetailPage() {
   const contractRef = useMemoFirebase(() => {
     if (!firestore || !user || !role || !contractId) return null;
     
-    // Admin can access from the root collection
-    if (role === 'Administrador') {
-      return doc(firestore, `contracts`, contractId);
-    }
-    
-    // Regular users access from their own subcollection
-    return doc(firestore, 'users', user.uid, 'contracts', contractId);
+    // All contracts are in the root 'contracts' collection now.
+    // The security rules will handle access control.
+    return doc(firestore, 'contracts', contractId);
   }, [firestore, user, role, contractId]);
 
   const { data: contract, isLoading, error } = useDoc<Contract>(contractRef);

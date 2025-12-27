@@ -96,8 +96,8 @@ export const generateContractWithFolioFlow = ai.defineFlow(
             batch.set(newClientRef, newClientData);
         }
 
-        // --- Contract Creation ---
-        const contractCollectionPath = `users/${contractData.userId}/contracts`;
+        // --- Contract Creation in root collection ---
+        const contractCollectionPath = `contracts`;
         const contractRef = db.collection(contractCollectionPath).doc();
 
         // Helper function to safely convert various date formats to Firestore Timestamps.

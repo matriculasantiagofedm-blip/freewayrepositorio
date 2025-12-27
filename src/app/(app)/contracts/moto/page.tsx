@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query, where, collectionGroup } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
 
@@ -15,17 +15,16 @@ export default function ContractsMotoPage() {
   const contractsQuery = useMemoFirebase(() => {
     if (!firestore || !user || !role) return null;
     
-    if (role === 'Administrador') {
-      return query(
-        collectionGroup(firestore, 'contracts'),
-        where('type', '==', 'Curso Moto')
-      );
-    }
-    
-    return query(
-      collection(firestore, 'users', user.uid, 'contracts'),
+    const baseQuery = query(
+      collection(firestore, 'contracts'),
       where('type', '==', 'Curso Moto')
     );
+
+    if (role === 'Administrador') {
+      return baseQuery;
+    }
+    
+    return query(baseQuery, where('userId', '==', user.uid));
   }, [firestore, user, role]);
 
   const { data: motoContracts, isLoading } = useCollection<Contract>(contractsQuery);

@@ -1,7 +1,7 @@
 'use client';
 import { useParams } from 'next/navigation';
 import { useDoc, useCollection, useFirebase, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, where, collectionGroup } from 'firebase/firestore';
+import { doc, collection, query, where } from 'firebase/firestore';
 import type { Client, Contract } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -26,13 +26,14 @@ export default function ClientDetailPage() {
 
     // Admin sees all contracts for this client, regardless of which user created them
     if (role === 'Administrador') {
-      return query(collectionGroup(firestore, 'contracts'), where('clientId', '==', clientId));
+      return query(collection(firestore, 'contracts'), where('clientId', '==', clientId));
     }
 
     // Other users see only contracts they created for this client.
     return query(
-      collection(firestore, 'users', user.uid, 'contracts'),
-      where('clientId', '==', clientId)
+      collection(firestore, 'contracts'),
+      where('clientId', '==', clientId),
+      where('userId', '==', user.uid)
     );
   }, [firestore, user, clientId, role]);
 

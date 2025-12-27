@@ -422,9 +422,13 @@ export function ContractForm() {
                     
                     if (name === 'autoMotoDetails.paidInFull' || name === 'autoMotoDetails.coursePlan') {
                         if (value.autoMotoDetails?.paidInFull) {
-                            form.setValue('autoMotoDetails.paymentDeadline', new Date());
+                            if (!(form.getValues('autoMotoDetails.paymentDeadline') instanceof Date)) {
+                                form.setValue('autoMotoDetails.paymentDeadline', new Date());
+                            }
                         } else {
-                             form.setValue('autoMotoDetails.paymentDeadline', null);
+                            if (form.getValues('autoMotoDetails.paymentDeadline') !== null) {
+                                form.setValue('autoMotoDetails.paymentDeadline', null);
+                            }
                         }
                     }
 
@@ -478,7 +482,7 @@ export function ContractForm() {
                     }
                     
                     if (name === 'ampliacionesDetails.paidInFull' || name === 'ampliacionesDetails.selectedPlans') {
-                        if (isPaidInFull || forceFullPayment) {
+                         if (isPaidInFull || forceFullPayment) {
                             if (!(form.getValues('ampliacionesDetails.paymentDeadline') instanceof Date)) {
                                 form.setValue('ampliacionesDetails.paymentDeadline', new Date());
                             }
@@ -566,22 +570,16 @@ export function ContractForm() {
             const batch = writeBatch(firestore);
             
             const clientsRef = collection(firestore, 'clients');
-            const clientQuery = query(clientsRef, where("idNumber", "==", studentIdNumber));
+            const clientQuery = query(clientsRef, where("idNumber", "==", studentIdNumber), limit(1));
             const clientSnapshot = await getDocs(clientQuery);
 
             let clientId: string;
-            let clientForCurrentUser = null;
 
             if (!clientSnapshot.empty) {
-                // Client with this idNumber exists, check if it belongs to the current user
-                clientForCurrentUser = clientSnapshot.docs.find(doc => doc.data().userId === user.uid);
-            }
-            
-            if (clientForCurrentUser) {
-                // Use existing client for the current user
-                clientId = clientForCurrentUser.id;
+                // Client with this idNumber exists, reuse it.
+                clientId = clientSnapshot.docs[0].id;
             } else {
-                // No client found for this user with this idNumber, create a new one
+                // No client found, create a new one.
                 const newClientRef = doc(collection(firestore, 'clients'));
                 const clientData = {
                     id: newClientRef.id,
@@ -594,6 +592,7 @@ export function ContractForm() {
                 batch.set(newClientRef, clientData);
                 clientId = newClientRef.id;
             }
+
 
             const contractRef = doc(collection(firestore, 'contracts'));
             
@@ -613,7 +612,7 @@ export function ContractForm() {
                 createdBy: currentUserRole,
             };
 
-            if (contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') {
+             if (contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') {
                 const autoMotoDetails = values.autoMotoDetails || {};
                 contractData.autoMotoDetails = {
                     ...autoMotoDetails,
@@ -1404,12 +1403,6 @@ export function ContractForm() {
                         {renderPracticalClassFields(motoPracticalClassFields, 'autoMotoDetails.motoPracticalClassSchedules', 'Clases Prácticas de Moto')}
                     </>
                 )}
-                 <div className="flex flex-col sm:flex-row gap-2 justify-end">
-                    <Button type="submit" onClick={() => setSubmissionAction('saveAndPrint')} disabled={form.formState.isSubmitting}>
-                        <Printer className="mr-2 h-4 w-4" />
-                        {form.formState.isSubmitting && submissionAction === 'saveAndPrint' ? 'Guardando...' : 'Guardar e Imprimir'}
-                    </Button>
-                </div>
             </CardContent>
         </Card>
     );
@@ -1460,6 +1453,13 @@ export function ContractForm() {
                 <div className="flex flex-col gap-8">
                     {renderFormContent()}
                     
+                     <div className="flex flex-col sm:flex-row gap-2 justify-end">
+                        <Button type="submit" onClick={() => setSubmissionAction('saveAndPrint')} disabled={form.formState.isSubmitting}>
+                            <Printer className="mr-2 h-4 w-4" />
+                            {form.formState.isSubmitting && submissionAction === 'saveAndPrint' ? 'Guardando...' : 'Guardar e Imprimir'}
+                        </Button>
+                    </div>
+
                     <Card>
                             <CardHeader>
                             <CardTitle>Vista Previa del Contrato</CardTitle>

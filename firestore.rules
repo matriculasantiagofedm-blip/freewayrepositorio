@@ -43,10 +43,15 @@ service cloud.firestore {
 
     match /clients/{clientId} {
       // Any signed-in user can create a client, but they must set themselves as the owner.
+      // This is important for the first time a client is created.
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       
-      // Only the user who created the client can access or delete it.
-      allow read, update, delete: if isOwner(resource.data.userId);
+      // Any signed in user can READ a client's data. This is needed to check for existing
+      // clients by idNumber across all users to avoid duplicates.
+      allow get: if isSignedIn();
+      
+      // Only the user who created the client can update or delete it.
+      allow update, delete: if isOwner(resource.data.userId);
       
       // A user can list clients only if they are querying for their own clients.
       allow list: if isSignedIn() && request.query.where.find(field => field[0] == 'userId' && field[2] == request.auth.uid) != null;

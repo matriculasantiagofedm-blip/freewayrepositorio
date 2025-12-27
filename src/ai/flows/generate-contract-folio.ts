@@ -116,17 +116,17 @@ const generateContractWithFolioFlow = ai.defineFlow(
         const contractRef = db.collection(contractCollectionPath).doc();
 
         const convertDatesToTimestamps = (detailsObj: any): any => {
-            if (!detailsObj) return {};
-            const newDetails = { ...detailsObj };
-
             const toTimestamp = (date: any): Timestamp | null => {
                 if (!date) return null;
                 if (date instanceof Timestamp) return date;
-                if (typeof date.toDate === 'function') return date; // Firebase client-side Timestamps
-                
+                if (typeof date.toDate === 'function') return Timestamp.fromMillis(date.toMillis());
+
                 const d = new Date(date);
                 return !isNaN(d.getTime()) ? Timestamp.fromDate(d) : null;
             }
+            
+            if (!detailsObj) return {};
+            const newDetails = { ...detailsObj };
 
             if (newDetails.paymentDeadline) {
                 newDetails.paymentDeadline = toTimestamp(newDetails.paymentDeadline);
@@ -134,7 +134,7 @@ const generateContractWithFolioFlow = ai.defineFlow(
             if (newDetails.theoreticalClassDate) {
                 newDetails.theoreticalClassDate = toTimestamp(newDetails.theoreticalClassDate);
             }
-
+            
             const processDateArray = (arr: any[]) => {
                 if (!Array.isArray(arr)) return [];
                 return arr.map(toTimestamp).filter((d): d is Timestamp => d !== null);
@@ -147,8 +147,8 @@ const generateContractWithFolioFlow = ai.defineFlow(
             const processScheduleArray = (arr: any[]) => {
                 if (!Array.isArray(arr)) return [];
                 return arr
-                    .map((c: any) => ({ ...c, date: toTimestamp(c.date) }))
-                    .filter((c: any) => c.date !== null);
+                    .map((c: any) => (c ? { ...c, date: toTimestamp(c.date) } : null))
+                    .filter((c: any): c is any => c !== null && c.date !== null);
             }
 
             newDetails.practicalClassSchedules = processScheduleArray(newDetails.practicalClassSchedules);

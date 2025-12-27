@@ -1409,5 +1409,3 @@ export function ContractForm() {
         </Form>
     );
 }
-
-    

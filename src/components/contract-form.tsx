@@ -455,8 +455,8 @@ export function ContractForm() {
                         }
                         isPaidInFull = true;
                     } else {
-                         if (form.getValues('ampliacionesDetails.paidInFull') !== false) {
-                           form.setValue('ampliacionesDetails.paidInFull', false, { shouldValidate: true });
+                        if (form.getValues('ampliacionesDetails.paidInFull') !== false) {
+                            form.setValue('ampliacionesDetails.paidInFull', false, { shouldValidate: true });
                         }
                         isPaidInFull = false;
                     }
@@ -1446,8 +1446,7 @@ export function ContractForm() {
         return (
             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
                 <h3 className="mt-4 text-lg font-semibold text-foreground">Tipo de contrato no especificado</h3>
-                <p className="mt-2 text-sm text-muted-foreground">Por favor, vuelve al panel y selecciona un tipo de contrato para crear.</p>
-                 <Button asChild className="mt-4"><a href="/dashboard">Volver al Panel</a></Button>
+                <p className="mt-2 text-sm text-muted-foreground">Por favor, vuelve al panel y selecciona un tipo de contrato para crear.</p>                 <Button asChild className="mt-4"><a href="/dashboard">Volver al Panel</a></Button>
             </div>
         );
     }

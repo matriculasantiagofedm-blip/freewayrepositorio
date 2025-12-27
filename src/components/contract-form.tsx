@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -549,41 +548,21 @@ export function ContractForm() {
                 throw new Error(result.error);
             }
             
-            toast({ title: 'Éxito', description: `Contrato ${result.folio} creado correctamente.` });
+            if (!result.contract) {
+                throw new Error("La función de guardado no devolvió un contrato.");
+            }
             
-            // Helper function to recursively convert date strings to Timestamps for display
-            const convertStringsToTimestamps = (obj: any): any => {
-                 if (!obj) return obj;
-                 const newObj = { ...obj };
-                 for (const key in newObj) {
-                     if (typeof newObj[key] === 'string' && /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(newObj[key])) {
-                        newObj[key] = Timestamp.fromDate(new Date(newObj[key]));
-                     } else if (Array.isArray(newObj[key])) {
-                        newObj[key] = newObj[key].map((item: any) => {
-                           if (typeof item === 'string' && /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(item)) {
-                               return Timestamp.fromDate(new Date(item));
-                           }
-                           if(item && typeof item === 'object'){
-                               return convertStringsToTimestamps(item);
-                           }
-                           return item;
-                        });
-                     } else if (newObj[key] && typeof newObj[key] === 'object') {
-                         newObj[key] = convertStringsToTimestamps(newObj[key]);
-                     }
-                 }
-                 return newObj;
-            };
+            toast({ title: 'Éxito', description: `Contrato ${result.folio} creado correctamente.` });
             
             const contractFromDb = result.contract;
              if (contractFromDb.deluxeDetails) {
-                contractFromDb.deluxeDetails = convertStringsToTimestamps(contractFromDb.deluxeDetails);
+                contractFromDb.deluxeDetails = contractFromDb.deluxeDetails;
             }
             if (contractFromDb.autoMotoDetails) {
-                contractFromDb.autoMotoDetails = convertStringsToTimestamps(contractFromDb.autoMotoDetails);
+                contractFromDb.autoMotoDetails = contractFromDb.autoMotoDetails;
             }
             if (contractFromDb.ampliacionesDetails) {
-                contractFromDb.ampliacionesDetails = convertStringsToTimestamps(contractFromDb.ampliacionesDetails);
+                contractFromDb.ampliacionesDetails = contractFromDb.ampliacionesDetails;
             }
 
             const finalContractObjectForPrint: Contract = {
@@ -870,7 +849,7 @@ export function ContractForm() {
                                         mode="single"
                                         selected={field.value ? new Date(field.value) : undefined}
                                         onSelect={field.onChange}
-                                        disabled={(date) => date < new Date() || !watchedValues.ampliacionesDetails?.balance || watchedValues.ampliacionesDetails?.balance <= 0}
+                                        disabled={(date) => date < new Date() || !watchedValues.ampliacionesDetails?.balance || watchedValues.ampliacionesDetails.balance <= 0}
                                         initialFocus
                                         locale={es}
                                     />

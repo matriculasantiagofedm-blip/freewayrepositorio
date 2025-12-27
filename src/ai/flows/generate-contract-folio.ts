@@ -116,70 +116,46 @@ const generateContractWithFolioFlow = ai.defineFlow(
         const contractRef = db.collection(contractCollectionPath).doc();
 
         const convertDatesToTimestamps = (detailsObj: any): any => {
-             if (!detailsObj) return {};
-             const newDetails = { ...detailsObj };
+            if (!detailsObj) return {};
+            const newDetails = { ...detailsObj };
 
-             const toTimestamp = (date: any): Timestamp | null => {
+            const toTimestamp = (date: any): Timestamp | null => {
                 if (!date) return null;
-                // Handles ISO strings, Date objects, and existing Timestamps
                 if (date instanceof Timestamp) return date;
-                if (date.toDate) return date; // Handles Firestore client-side Timestamps
-
+                if (typeof date.toDate === 'function') return date; // Firebase client-side Timestamps
+                
                 const d = new Date(date);
-                if (!isNaN(d.getTime())) {
-                    return Timestamp.fromDate(d);
-                }
-                return null;
-             }
+                return !isNaN(d.getTime()) ? Timestamp.fromDate(d) : null;
+            }
 
-             if (newDetails.paymentDeadline) {
-                 newDetails.paymentDeadline = toTimestamp(newDetails.paymentDeadline);
-             }
-             if (newDetails.theoreticalClassDate) {
-                 newDetails.theoreticalClassDate = toTimestamp(newDetails.theoreticalClassDate);
-             }
+            if (newDetails.paymentDeadline) {
+                newDetails.paymentDeadline = toTimestamp(newDetails.paymentDeadline);
+            }
+            if (newDetails.theoreticalClassDate) {
+                newDetails.theoreticalClassDate = toTimestamp(newDetails.theoreticalClassDate);
+            }
 
-             if (Array.isArray(newDetails.theoreticalClassDates)) {
-                 newDetails.theoreticalClassDates = newDetails.theoreticalClassDates
-                     .map(toTimestamp)
-                     .filter((d): d is Timestamp => d !== null); 
-             }
+            const processDateArray = (arr: any[]) => {
+                if (!Array.isArray(arr)) return [];
+                return arr.map(toTimestamp).filter((d): d is Timestamp => d !== null);
+            };
 
-             if (Array.isArray(newDetails.theoreticalClasses)) {
-                 newDetails.theoreticalClasses = newDetails.theoreticalClasses
-                     .map(toTimestamp)
-                     .filter((d): d is Timestamp => d !== null);
-             }
-             
-             if (Array.isArray(newDetails.paymentInstallments)) {
-                 newDetails.paymentInstallments = newDetails.paymentInstallments
-                     .map(toTimestamp)
-                     .filter((d): d is Timestamp => d !== null);
-             }
-             
+            newDetails.theoreticalClassDates = processDateArray(newDetails.theoreticalClassDates);
+            newDetails.theoreticalClasses = processDateArray(newDetails.theoreticalClasses);
+            newDetails.paymentInstallments = processDateArray(newDetails.paymentInstallments);
 
-             if (Array.isArray(newDetails.practicalClassSchedules)) {
-                 newDetails.practicalClassSchedules = newDetails.practicalClassSchedules.map((c: any) => ({
-                     ...c,
-                     date: toTimestamp(c.date),
-                 })).filter((c: any) => c.date !== null);
-             }
+            const processScheduleArray = (arr: any[]) => {
+                if (!Array.isArray(arr)) return [];
+                return arr
+                    .map((c: any) => ({ ...c, date: toTimestamp(c.date) }))
+                    .filter((c: any) => c.date !== null);
+            }
 
-             if (Array.isArray(newDetails.motoPracticalClassSchedules)) {
-                 newDetails.motoPracticalClassSchedules = newDetails.motoPracticalClassSchedules.map((c: any) => ({
-                     ...c,
-                     date: toTimestamp(c.date),
-                 })).filter((c: any) => c.date !== null);
-             }
-
-             if (Array.isArray(newDetails.classSchedules)) {
-                 newDetails.classSchedules = newDetails.classSchedules.map((c: any) => ({
-                     ...c,
-                     date: toTimestamp(c.date),
-                 })).filter((c: any) => c.date !== null);
-             }
+            newDetails.practicalClassSchedules = processScheduleArray(newDetails.practicalClassSchedules);
+            newDetails.motoPracticalClassSchedules = processScheduleArray(newDetails.motoPracticalClassSchedules);
+            newDetails.classSchedules = processScheduleArray(newDetails.classSchedules);
             
-             return newDetails;
+            return newDetails;
         };
         
         const finalDetails = convertDatesToTimestamps(details);
@@ -238,7 +214,7 @@ const generateContractWithFolioFlow = ai.defineFlow(
 
         const finalContractForClient = {
             ...contractWithTimestamp,
-            createdAt: new Date().toISOString(), // Return as string for client compatibility
+            createdAt: new Date().toISOString(),
         };
         
         if (finalContractForClient.deluxeDetails) {

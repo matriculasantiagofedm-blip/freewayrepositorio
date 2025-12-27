@@ -574,7 +574,7 @@ export function ContractForm() {
 
         } catch (error) {
             console.error("Error al crear el contrato:", error);
-            toast({ variant: 'destructive', title: 'Error de Guardado', description: `No se pudo crear el contrato. Revisa los datos e intenta de nuevo. Detalle: ${error instanceof Error ? error.message : 'Error desconocido'}` });
+            toast({ variant: 'destructive', title: 'Error de Guardado', description: `${error instanceof Error ? error.message : 'No se pudo crear el contrato. Revisa los datos e intenta de nuevo.'}` });
         }
     };
     

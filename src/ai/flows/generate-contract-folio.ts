@@ -65,10 +65,14 @@ const generateContractWithFolioFlow = ai.defineFlow(
   },
   async ({ contractData, details }) => {
 
-    const counterRef = db.doc('counters/contract_folio');
-    const year = new Date().getFullYear();
-
     try {
+        if (!contractData.studentIdNumber) {
+            throw new Error("Student ID number is required to generate a contract.");
+        }
+        
+        const counterRef = db.doc('counters/contract_folio');
+        const year = new Date().getFullYear();
+
         const newFolioNumber = await runTransaction(db, async (transaction) => {
             const counterDoc = await transaction.get(counterRef);
 
@@ -119,10 +123,16 @@ const generateContractWithFolioFlow = ai.defineFlow(
             const toTimestamp = (date: any): Timestamp | null => {
                 if (!date) return null;
                 if (date instanceof Timestamp) return date;
-                if (typeof date.toDate === 'function') return Timestamp.fromMillis(date.toMillis());
-
-                const d = new Date(date);
-                return !isNaN(d.getTime()) ? Timestamp.fromDate(d) : null;
+                if (typeof date === 'string' || typeof date === 'number' || date instanceof Date) {
+                    const d = new Date(date);
+                    if (!isNaN(d.getTime())) {
+                        return Timestamp.fromDate(d);
+                    }
+                }
+                 if (date && typeof date.toDate === 'function') { // Handle Firebase Timestamps from client
+                    return Timestamp.fromMillis(date.toMillis());
+                }
+                return null;
             }
             
             if (!detailsObj) return {};
@@ -145,8 +155,8 @@ const generateContractWithFolioFlow = ai.defineFlow(
             newDetails.paymentInstallments = processDateArray(newDetails.paymentInstallments);
 
             const processScheduleArray = (arr: any[]) => {
-                if (!Array.isArray(arr)) return [];
-                return arr
+                 if (!Array.isArray(arr)) return [];
+                 return arr
                     .map((c: any) => (c ? { ...c, date: toTimestamp(c.date) } : null))
                     .filter((c: any): c is any => c !== null && c.date !== null);
             }

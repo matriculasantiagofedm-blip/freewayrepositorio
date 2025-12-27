@@ -1,3 +1,4 @@
+
 'use client';
 import type { Contract, Client, DeluxeContractDetails } from '@/lib/types';
 import { useDoc, useFirebase, useMemoFirebase } from '@/firebase';
@@ -21,12 +22,11 @@ function toDate(date: any): Date {
   if (typeof date === 'string') {
     const parsed = new Date(date);
     if (!isNaN(parsed.getTime())) {
-      // Adjust for timezone offset if the string is just a date (YYYY-MM-DD)
       const timezoneOffset = parsed.getTimezoneOffset() * 60000;
       return new Date(parsed.getTime() + timezoneOffset);
     }
   }
-  return new Date();
+  return new Date(0); // Return invalid date
 }
 
 
@@ -46,13 +46,12 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
   const { data: client } = useDoc<Client>(clientRef);
   const deluxeDetails = contract.deluxeDetails;
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return <Line className="min-w-20" />;
+  const formatDate = (date: Date) => {
+    if (!date || isNaN(date.getTime()) || date.getFullYear() <= 1970) return <Line />;
     try {
-        const date = toDate(dateString);
         return <Value>{format(date, 'P', { locale: es })}</Value>;
     } catch {
-        return <Line className="min-w-20" />;
+        return <Line />;
     }
   };
 
@@ -95,12 +94,12 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
         <p><Value>{deluxeDetails?.paymentDetails}</Value></p>
         <p>El pago se realizará de la siguiente manera: 6 cuotas de B/.<Value>{paymentAmount.toFixed(2)}</Value> cada una, con fechas de pago establecidas cada dos semanas a partir del inicio del curso.</p>
         <div className="grid grid-cols-2 gap-x-6 gap-y-0 text-[10px]">
-          <span>CUOTA 1: {formatDate(deluxeDetails?.paymentInstallments?.[0])}</span>
-          <span>CUOTA 4: {formatDate(deluxeDetails?.paymentInstallments?.[3])}</span>
-          <span>CUOTA 2: {formatDate(deluxeDetails?.paymentInstallments?.[1])}</span>
-          <span>CUOTA 5: {formatDate(deluxeDetails?.paymentInstallments?.[4])}</span>
-          <span>CUOTA 3: {formatDate(deluxeDetails?.paymentInstallments?.[2])}</span>
-          <span>CUOTA 6: {formatDate(deluxeDetails?.paymentInstallments?.[5])}</span>
+          <span>CUOTA 1: {formatDate(toDate(deluxeDetails?.paymentInstallments?.[0]))}</span>
+          <span>CUOTA 4: {formatDate(toDate(deluxeDetails?.paymentInstallments?.[3]))}</span>
+          <span>CUOTA 2: {formatDate(toDate(deluxeDetails?.paymentInstallments?.[1]))}</span>
+          <span>CUOTA 5: {formatDate(toDate(deluxeDetails?.paymentInstallments?.[4]))}</span>
+          <span>CUOTA 3: {formatDate(toDate(deluxeDetails?.paymentInstallments?.[2]))}</span>
+          <span>CUOTA 6: {formatDate(toDate(deluxeDetails?.paymentInstallments?.[5]))}</span>
         </div>
         
         <h3 className="font-bold">CLÁUSULA TERCERA - DETALLES DEL CURSO</h3>
@@ -113,14 +112,14 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
         <p><Value>{theoreticalScheduleText}</Value></p>
         <div className="grid grid-cols-3 gap-x-4 gap-y-0 text-[10px]">
             {Array.from({ length: 10 }).map((_, index) => (
-                <span key={index}>Semana {index + 1}: {formatDate(deluxeDetails?.theoreticalClasses?.[index])}</span>
+                <span key={index}>Semana {index + 1}: {formatDate(toDate(deluxeDetails?.theoreticalClasses?.[index]))}</span>
             ))}
         </div>
         <p>Clases prácticas: Se programarán a partir de la semana 8 de la capacitación teórica, en horario diurno o vespertino, de acuerdo con la disponibilidad de LA ESCUELA.</p>
          <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 pl-4 text-[10px]">
-          {deluxeDetails?.classSchedules?.map((clase, index) => (
+          {(deluxeDetails?.classSchedules || []).map((clase, index) => (
             <div key={index} className="flex items-center gap-1">
-              Clase {index + 1}: <Line><Value>{clase.date ? format(toDate(clase.date), 'P', { locale: es }) : ''}</Value></Line> 
+              Clase {index + 1}: <Line><Value>{clase.date ? formatDate(toDate(clase.date)) : ''}</Value></Line> 
               Hora <Line><Value>{clase.time}</Value></Line>
             </div>
           ))}
@@ -136,7 +135,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
         <h3 className="font-bold">CLÁUSULA QUINTA - POLÍTICA DE PAGOS Y MOROSIDAD</h3>
         <p>EL ESTUDIANTE deberá mantener sus pagos al día para poder asistir a sus clases. Si el estudiante no cancela su cuota correspondiente en la semana establecida, no podrá ingresar a sus clases teóricas ni prácticas hasta regularizar su situación. En caso de atraso, EL ESTUDIANTE tiene dos opciones: Opción 1: Cancelar las dos cuotas pendientes (la atrasada y la vigente) para reincorporarse a sus clases. Opción 2: Cancelar una sola cuota, quedando pendiente de ser notificado sobre la próxima clase disponible, la cual deberá ser pagada antes de su inicio.</p>
 
-        <h3 className="font-bold">CLÁUSULA SEXTA- INASISTENCIAS Y REPROGRAMACIONES</h3>
+        <h3 className="font-bold">CLÁUSULA SEXTA- INASISTENCIAS E REPROGRAMACIONES</h3>
         <p>EL ESTUDIANTE que no asista a una clase práctica en el horario establecido perderá automáticamente la clase práctica sin derecho a reposición ni reclamo. Excepción: Si la falta es por motivo de salud, deberá presentar constancia médica válida y coordinar con la administración para una reprogramación, la cual dependerá de la disponibilidad de horarios. Si EL ESTUDIANTE falta a más de una clase práctica sin justificar médicamente, no tendrá derecho a certificado y deberá pagar un recargo de $20.00 por cada clase perdida para poder reprogramarla.</p>
 
         <h3 className="font-bold">CLÁUSULA SEPTIMA - PUNTUALIDAD</h3>
@@ -165,7 +164,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
 
         <h3 className="font-bold">CLÁUSULA DÉCIMA QUINTA- ACEPTACIÓN</h3>
         <p className="text-center !mt-4">
-            En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los <Value>{format(toDate(contract.createdAt), 'd')}</Value> días del mes de <Value>{format(toDate(contract.createdAt), 'LLLL', { locale: es })}</Value>, de <Value>{format(toDate(contract.createdAt), 'yyyy')}</Value>, a las <Value>{format(toDate(contract.createdAt), 'p', { locale: es })}</Value>.
+            En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los <Value>{format(toDate(contract.createdAt), 'd', { locale: es })}</Value> días del mes de <Value>{format(toDate(contract.createdAt), 'LLLL', { locale: es })}</Value>, de <Value>{format(toDate(contract.createdAt), 'yyyy', { locale: es })}</Value>, a las <Value>{format(toDate(contract.createdAt), 'p', { locale: es })}</Value>.
         </p>
 
         <div className="flex justify-around pt-6 print:pt-12">
@@ -190,3 +189,5 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
     </Card>
   );
 }
+
+    

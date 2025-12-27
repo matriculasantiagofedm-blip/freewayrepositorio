@@ -37,10 +37,10 @@ export interface DeluxeContractDetails {
   vehicleTransmission: 'Automático' | 'Manual';
   licenseCategory: 'A, C' | 'A, C, D';
   theoreticalClassSchedule?: 'Lunes' | 'Miércoles';
-  theoreticalClasses?: (string | undefined)[];
-  classSchedules: { date?: string; time?: string }[];
+  theoreticalClasses?: (Timestamp | undefined)[];
+  classSchedules: { date?: Timestamp; time?: string }[];
   paymentDetails: string;
-  paymentInstallments?: (string | undefined)[];
+  paymentInstallments?: (Timestamp | undefined)[];
   paymentAmount?: number;
 }
 
@@ -52,14 +52,14 @@ export interface AutoMotoContractDetails {
   courseValue?: number;
   downPayment?: number;
   balance?: number;
-  paymentDeadline?: string;
+  paymentDeadline?: Timestamp;
   vehicle?: 'Spark' | 'P. Blanco' | 'P. Bronce' | 'Moto';
   vehicleTransmission?: 'Automático' | 'Manual' | 'Moto';
   licenseCategory?: 'A, C' | 'A, C, D' | 'A, B';
   theoreticalClassSchedule?: string;
-  theoreticalClassDates?: (string | undefined)[];
-  practicalClassSchedules?: { date?: string; time?: string }[];
-  motoPracticalClassSchedules?: { date?: string; time?: string }[];
+  theoreticalClassDates?: (Timestamp | undefined)[];
+  practicalClassSchedules?: { date?: Timestamp; time?: string }[];
+  motoPracticalClassSchedules?: { date?: Timestamp; time?: string }[];
 }
 
 export interface AmpliacionesContractDetails {
@@ -70,9 +70,9 @@ export interface AmpliacionesContractDetails {
     courseValue?: number;
     downPayment?: number;
     balance?: number;
-    paymentDeadline?: string;
+    paymentDeadline?: Timestamp;
     selectedPlans?: { name: string; price: number }[];
-    theoreticalClassDate?: string;
+    theoreticalClassDate?: Timestamp;
     theoreticalClassTime?: string;
 }
 
@@ -96,3 +96,5 @@ export interface Contract {
   autoMotoDetails?: Partial<AutoMotoContractDetails>;
   ampliacionesDetails?: Partial<AmpliacionesContractDetails>;
 }
+
+    

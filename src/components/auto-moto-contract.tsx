@@ -1,7 +1,7 @@
 
 'use client';
 import type { Contract } from '@/lib/types';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Card, CardContent } from './ui/card';
 import { cn } from '@/lib/utils';
@@ -31,21 +31,20 @@ function toDate(date: any): Date {
       return new Date(parsed.getTime() + timezoneOffset);
     }
   }
-  return new Date();
+  return new Date(0); // Return invalid date
 }
 
 export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
   const autoMotoDetails = contract.autoMotoDetails;
   const creationDate = toDate(contract.createdAt);
-  const paymentDeadline = autoMotoDetails?.paymentDeadline ? toDate(autoMotoDetails.paymentDeadline) : null;
+  const paymentDeadline = toDate(autoMotoDetails?.paymentDeadline);
   const balance = autoMotoDetails?.balance ?? 0;
   const downPayment = autoMotoDetails?.downPayment ?? 0;
   const courseValue = autoMotoDetails?.courseValue ?? 0;
   
-  const formatDate = (dateString?: string | Date) => {
-    if (!dateString) return <Line />;
+  const formatDate = (date: Date) => {
+    if (!date || isNaN(date.getTime()) || date.getFullYear() <= 1970) return <Line />;
     try {
-        const date = toDate(dateString);
         return <Value>{format(date, 'P', { locale: es })}</Value>;
     } catch {
         return <Line />;
@@ -69,7 +68,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
 
         <h3 className="font-bold">CLÁUSULA PRIMERA - VALOR Y FORMA DE PAGO</h3>
         <div className='space-y-1 text-[10px]'>
-            <p>"El estudiante ha efectuado un abono por la suma de B/. <Line>{downPayment.toFixed(2)}</Line>, quedando un saldo pendiente de B/. <Line>{balance > 0 ? balance.toFixed(2) : '0.00'}</Line>, el cual se compromete a cancelar en su totalidad el día <Line>{paymentDeadline ? format(paymentDeadline, 'P', { locale: es }) : ''}</Line>."</p>
+            <p>"El estudiante ha efectuado un abono por la suma de B/. <Line>{downPayment.toFixed(2)}</Line>, quedando un saldo pendiente de B/. <Line>{balance > 0 ? balance.toFixed(2) : '0.00'}</Line>, el cual se compromete a cancelar en su totalidad el día {formatDate(paymentDeadline)}."</p>
             <ul className="list-disc list-inside pl-2">
                 <li>El valor total del curso es de B/. <Line>{courseValue.toFixed(2)}</Line>.</li>
                 <li>Para la inscripción, EL ESTUDIANTE deberá abonar el 50% del valor total como reserva de su cupo y horario.</li>
@@ -111,7 +110,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
             <div className="flex items-center gap-2">3. Horario para clases teóricas: <Line>{autoMotoDetails?.theoreticalClassSchedule}</Line></div>
              <div className="pl-4">
                 {(autoMotoDetails?.theoreticalClassDates || []).map((date, index) => (
-                    <span key={index} className="mr-4">Clase {index + 1}: {formatDate(date)}</span>
+                    <span key={index} className="mr-4">Clase {index + 1}: {formatDate(toDate(date))}</span>
                 ))}
             </div>
             <p>5. Horario para clases practicas:</p>
@@ -121,7 +120,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                     <div className="pl-4 space-y-0.5">
                         {Array.from({ length: autoMotoDetails?.practicalClassSchedules?.length || 0 }).map((_, index) => (
                             <div key={index} className="flex items-center gap-2">
-                                ○ Clase {index + 1}: Fecha <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.date ? formatDate(autoMotoDetails?.practicalClassSchedules?.[index]?.date) : <>&nbsp;</>}</Line> Hora <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.time}</Line>
+                                ○ Clase {index + 1}: Fecha <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.date ? formatDate(toDate(autoMotoDetails?.practicalClassSchedules?.[index]?.date)) : <>&nbsp;</>}</Line> Hora <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.time}</Line>
                             </div>
                         ))}
                     </div>
@@ -129,7 +128,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                      <div className="pl-4 space-y-0.5">
                         {Array.from({ length: autoMotoDetails?.motoPracticalClassSchedules?.length || 0 }).map((_, index) => (
                             <div key={index} className="flex items-center gap-2">
-                                ○ Clase {index + 1}: Fecha <Line>{autoMotoDetails?.motoPracticalClassSchedules?.[index]?.date ? formatDate(autoMotoDetails?.motoPracticalClassSchedules?.[index]?.date) : <>&nbsp;</>}</Line> Hora <Line>{autoMotoDetails?.motoPracticalClassSchedules?.[index]?.time}</Line>
+                                ○ Clase {index + 1}: Fecha <Line>{autoMotoDetails?.motoPracticalClassSchedules?.[index]?.date ? formatDate(toDate(autoMotoDetails?.motoPracticalClassSchedules?.[index]?.date)) : <>&nbsp;</>}</Line> Hora <Line>{autoMotoDetails?.motoPracticalClassSchedules?.[index]?.time}</Line>
                             </div>
                         ))}
                     </div>
@@ -138,7 +137,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                 <div className="pl-4 space-y-0.5">
                     {Array.from({ length: autoMotoDetails?.practicalClassSchedules?.length || 0 }).map((_, index) => (
                         <div key={index} className="flex items-center gap-2">
-                            ○ Clase {index + 1}: Fecha <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.date ? formatDate(autoMotoDetails?.practicalClassSchedules?.[index]?.date) : <>&nbsp;</>}</Line> Hora <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.time}</Line>
+                            ○ Clase {index + 1}: Fecha <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.date ? formatDate(toDate(autoMotoDetails?.practicalClassSchedules?.[index]?.date)) : <>&nbsp;</>}</Line> Hora <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.time}</Line>
                         </div>
                     ))}
                 </div>
@@ -202,3 +201,5 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
     </Card>
   );
 }
+
+    

@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format, toDate } from 'date-fns';
+import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 import { Button } from '@/components/ui/button';
@@ -576,9 +576,9 @@ export function ContractForm() {
 
             const contractRef = doc(collection(firestore, 'contracts'));
             
-            const processDate = (date: Date | undefined | null): string | null => {
+            const toTimestamp = (date: Date | undefined | null): Timestamp | null => {
                 if (!date || !(date instanceof Date) || isNaN(date.getTime())) return null;
-                return format(date, 'yyyy-MM-dd');
+                return Timestamp.fromDate(date);
             };
             
             const baseContractData: Omit<Contract, 'createdAt' | 'client'> = {
@@ -603,27 +603,27 @@ export function ContractForm() {
                 finalContractDataForDb.autoMotoDetails = {
                     ...autoMotoDetails,
                     studentIdNumber,
-                    paymentDeadline: processDate(autoMotoDetails.paymentDeadline),
-                    theoreticalClassDates: (autoMotoDetails.theoreticalClassDates || []).map(processDate).filter(Boolean),
-                    practicalClassSchedules: (autoMotoDetails.practicalClassSchedules || []).map(c => ({ date: c.date ? processDate(c.date) : null, time: c.time || null })),
-                    motoPracticalClassSchedules: (autoMotoDetails.motoPracticalClassSchedules || []).map(c => ({ date: c.date ? processDate(c.date) : null, time: c.time || null })),
+                    paymentDeadline: toTimestamp(autoMotoDetails.paymentDeadline),
+                    theoreticalClassDates: (autoMotoDetails.theoreticalClassDates || []).map(toTimestamp).filter(Boolean),
+                    practicalClassSchedules: (autoMotoDetails.practicalClassSchedules || []).map(c => ({ date: c.date ? toTimestamp(c.date) : null, time: c.time || null })),
+                    motoPracticalClassSchedules: (autoMotoDetails.motoPracticalClassSchedules || []).map(c => ({ date: c.date ? toTimestamp(c.date) : null, time: c.time || null })),
                 };
             } else if (contractType === 'Curso Deluxe') {
                 const { deluxeDetails } = values;
                 finalContractDataForDb.deluxeDetails = {
                     ...deluxeDetails,
                     studentIdNumber,
-                    paymentInstallments: (deluxeDetails.paymentInstallments || []).map(processDate).filter(Boolean),
-                    theoreticalClasses: (deluxeDetails.theoreticalClasses || []).map(processDate).filter(Boolean),
-                    classSchedules: (deluxeDetails.classSchedules || []).map(c => ({ date: c.date ? processDate(c.date) : null, time: c.time || null })),
+                    paymentInstallments: (deluxeDetails.paymentInstallments || []).map(toTimestamp).filter(Boolean),
+                    theoreticalClasses: (deluxeDetails.theoreticalClasses || []).map(toTimestamp).filter(Boolean),
+                    classSchedules: (deluxeDetails.classSchedules || []).map(c => ({ date: c.date ? toTimestamp(c.date) : null, time: c.time || null })),
                 };
             } else if (contractType === 'Ampliaciones') {
                 const { ampliacionesDetails } = values;
                 finalContractDataForDb.ampliacionesDetails = {
                     ...ampliacionesDetails,
                      studentIdNumber,
-                     paymentDeadline: processDate(ampliacionesDetails.paymentDeadline),
-                     theoreticalClassDate: processDate(ampliacionesDetails.theoreticalClassDate),
+                     paymentDeadline: toTimestamp(ampliacionesDetails.paymentDeadline),
+                     theoreticalClassDate: toTimestamp(ampliacionesDetails.theoreticalClassDate),
                 };
             }
 
@@ -633,10 +633,9 @@ export function ContractForm() {
             toast({ title: 'Éxito', description: 'Contrato y cliente creados/asociados correctamente.' });
 
             if (submissionAction === 'saveAndPrint') {
-                // Construct the object for printing with the already processed data
                 const finalContractObjectForPrint: Contract = {
                     ...finalContractDataForDb,
-                    createdAt: Timestamp.now(), // Use a client-side timestamp for immediate rendering
+                    createdAt: Timestamp.now(), 
                     client: {
                         id: clientId,
                         name: clientData.name,
@@ -1405,7 +1404,7 @@ export function ContractForm() {
       }
       if (contractType === 'Ampliaciones') {
           const { clientName, clientEmail, ampliacionesDetails } = formValues;
-          const contractForPreview = {
+          const contractForPreview: Contract = {
               id: '',
               folio: folio,
               title: `Ampliaciones - ${clientName}`,
@@ -1414,16 +1413,20 @@ export function ContractForm() {
               clientId: '',
               content: '',
               deadlines: [],
-              status: 'active' as 'active',
-              type: 'Ampliaciones' as 'Ampliaciones',
+              status: 'active' as const,
+              type: 'Ampliaciones' as const,
               userId: user?.uid || '',
-              createdAt: new Date() as any, // Using client date for preview
+              createdAt: Timestamp.now(),
               createdBy: currentUserRole || 'Ventas',
-              ampliacionesDetails: ampliacionesDetails
+              ampliacionesDetails: {
+                  ...ampliacionesDetails,
+                  theoreticalClassDate: ampliacionesDetails.theoreticalClassDate ? Timestamp.fromDate(ampliacionesDetails.theoreticalClassDate) : undefined,
+                  paymentDeadline: ampliacionesDetails.paymentDeadline ? Timestamp.fromDate(ampliacionesDetails.paymentDeadline) : undefined,
+              }
           }
           return <AmpliacionesContractTemplate contract={contractForPreview} />;
       }
-      // Default to Auto/Moto
+      
       return <AutoMotoContractTemplatePreview folio={folio} clientName={formValues.clientName} clientEmail={formValues.clientEmail} autoMotoDetails={formValues.autoMotoDetails} createdBy={currentUserRole || 'Ventas'} type={contractType as any} />
     }
 
@@ -1470,3 +1473,5 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    

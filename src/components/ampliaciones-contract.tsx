@@ -1,3 +1,4 @@
+
 'use client';
 import type { Contract } from '@/lib/types';
 import { format } from 'date-fns';
@@ -24,19 +25,18 @@ function toDate(date: any): Date {
       return new Date(parsed.getTime() + timezoneOffset);
     }
   }
-  return new Date();
+  return new Date(0); // Return invalid date
 }
 
 export function AmpliacionesContractTemplate({ contract }: { contract: Contract }) {
   const ampliacionesDetails = contract.ampliacionesDetails;
   const creationDate = toDate(contract.createdAt);
-  const paymentDeadline = ampliacionesDetails?.paymentDeadline ? toDate(ampliacionesDetails.paymentDeadline) : null;
+  const paymentDeadline = toDate(ampliacionesDetails?.paymentDeadline);
   const balance = ampliacionesDetails?.balance || 0;
   
-  const formatDate = (dateString?: string | Date) => {
-    if (!dateString) return <Line />;
+  const formatDate = (date: Date) => {
+    if (!date || isNaN(date.getTime()) || date.getFullYear() <= 1970) return <Line />;
     try {
-        const date = toDate(dateString);
         return <Value>{format(date, 'P', { locale: es })}</Value>;
     } catch {
         return <Line />;
@@ -79,7 +79,7 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
             <p>El valor total del servicio es de B/. <Line>{ampliacionesDetails?.courseValue?.toFixed(2)}</Line>.</p>
             <p>El estudiante ha efectuado un abono de B/. <Line>{ampliacionesDetails?.downPayment?.toFixed(2)}</Line>, quedando un saldo de B/. <Line>{balance > 0 ? balance.toFixed(2) : '0.00'}</Line>.</p>
             {balance > 0 && paymentDeadline && (
-                <p>El saldo pendiente se cancelará a más tardar el día <Line>{format(paymentDeadline, 'P', { locale: es })}</Line>.</p>
+                <p>El saldo pendiente se cancelará a más tardar el día {formatDate(paymentDeadline)}.</p>
             )}
              <p>Si el monto total es de B/.100.00 o menos, debe ser cancelado en su totalidad al momento de la inscripción. Para montos superiores, se requiere un abono del 50%.</p>
         </div>
@@ -88,7 +88,7 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
         <div className='text-[10px]'>
             <p>La capacitación consiste en una única clase teórica.</p>
             <div className='flex items-center gap-2'>
-                Fecha de la clase: {ampliacionesDetails?.theoreticalClassDate ? formatDate(ampliacionesDetails.theoreticalClassDate) : <Line />}
+                Fecha de la clase: {formatDate(toDate(ampliacionesDetails?.theoreticalClassDate))}
             </div>
              <div className='flex items-center gap-2'>
                 Horario: <Line>{ampliacionesDetails?.theoreticalClassTime}</Line>
@@ -127,3 +127,5 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
     </Card>
   );
 }
+
+    

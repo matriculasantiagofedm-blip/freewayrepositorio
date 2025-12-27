@@ -536,36 +536,14 @@ export function ContractForm() {
                  toast({ variant: 'destructive', title: 'Error de Validación', description: 'El número de cédula es obligatorio para crear o buscar un cliente.' });
                  return;
             }
-            
-            const toTimestampString = (date: any): string | null => {
-                if (!date || !(date instanceof Date) || isNaN(date.getTime())) return null;
-                const ts = Timestamp.fromDate(date);
-                return new Date(ts.seconds * 1000 + ts.nanoseconds / 1000000).toISOString();
-            };
-
-            const convertDatesToStrings = (details: any) => {
-                const newDetails = { ...details };
-                 if (newDetails.paymentDeadline) newDetails.paymentDeadline = toTimestampString(newDetails.paymentDeadline);
-                if (newDetails.theoreticalClassDate) newDetails.theoreticalClassDate = toTimestampString(newDetails.theoreticalClassDate);
-                
-                ['theoreticalClassDates', 'theoreticalClasses', 'paymentInstallments'].forEach(key => {
-                    if (newDetails[key]) newDetails[key] = newDetails[key].map((d: any) => toTimestampString(d)).filter(Boolean);
-                });
-
-                ['practicalClassSchedules', 'motoPracticalClassSchedules', 'classSchedules'].forEach(key => {
-                    if (newDetails[key]) newDetails[key] = newDetails[key].map((c: any) => ({ date: toTimestampString(c.date), time: c.time || null }));
-                });
-
-                return newDetails;
-            };
 
             let detailsPayload: any = {};
              if (contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') {
-                detailsPayload = convertDatesToStrings(values.autoMotoDetails);
+                detailsPayload = values.autoMotoDetails;
             } else if (contractType === 'Curso Deluxe') {
-                detailsPayload = convertDatesToStrings(values.deluxeDetails);
+                detailsPayload = values.deluxeDetails;
             } else if (contractType === 'Ampliaciones') {
-                detailsPayload = convertDatesToStrings(values.ampliacionesDetails);
+                detailsPayload = values.ampliacionesDetails;
             }
 
 

@@ -8,7 +8,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestore, doc, runTransaction, serverTimestamp, collection, query, where, getDocs, limit, writeBatch } from 'firebase-admin/firestore';
+import { getFirestore, doc, runTransaction, serverTimestamp, collection, query, where, getDocs, limit, writeBatch, Timestamp } from 'firebase-admin/firestore';
 import { initializeApp, getApps, App } from 'firebase-admin/app';
 import { firebaseConfig } from '@/firebase/config';
 import type { Contract, ContractType } from '@/lib/types';
@@ -116,19 +116,27 @@ const generateContractWithFolioFlow = ai.defineFlow(
         const contractRef = db.collection(contractCollectionPath).doc();
 
         const convertDateStringsToTimestamps = (detailsObj: any): any => {
+             if (!detailsObj) return {};
              const newDetails = { ...detailsObj };
 
-             if (newDetails.paymentDeadline && typeof newDetails.paymentDeadline === 'string') {
-                 newDetails.paymentDeadline = Timestamp.fromDate(new Date(newDetails.paymentDeadline));
+             const toTimestamp = (date: any): Timestamp | null => {
+                if (!date) return null;
+                const d = new Date(date);
+                if (isNaN(d.getTime())) return null;
+                return Timestamp.fromDate(d);
              }
-             if (newDetails.theoreticalClassDate && typeof newDetails.theoreticalClassDate === 'string') {
-                 newDetails.theoreticalClassDate = Timestamp.fromDate(new Date(newDetails.theoreticalClassDate));
+
+             if (newDetails.paymentDeadline) {
+                 newDetails.paymentDeadline = toTimestamp(newDetails.paymentDeadline);
+             }
+             if (newDetails.theoreticalClassDate) {
+                 newDetails.theoreticalClassDate = toTimestamp(newDetails.theoreticalClassDate);
              }
 
              ['theoreticalClassDates', 'theoreticalClasses', 'paymentInstallments'].forEach(key => {
                  if (Array.isArray(newDetails[key])) {
                      newDetails[key] = newDetails[key]
-                         .map((d: any) => (d && typeof d === 'string') ? Timestamp.fromDate(new Date(d)) : d)
+                         .map(toTimestamp)
                          .filter(Boolean);
                  }
              });
@@ -137,7 +145,7 @@ const generateContractWithFolioFlow = ai.defineFlow(
                  if (Array.isArray(newDetails[key])) {
                      newDetails[key] = newDetails[key].map((c: any) => ({
                          ...c,
-                         date: (c.date && typeof c.date === 'string') ? Timestamp.fromDate(new Date(c.date)) : c.date,
+                         date: toTimestamp(c.date),
                      }));
                  }
              });

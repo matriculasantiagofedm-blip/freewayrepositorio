@@ -10,30 +10,18 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestore, doc, runTransaction, serverTimestamp, collection, query, where, getDocs, limit, writeBatch, Timestamp } from 'firebase-admin/firestore';
 import { initializeApp, getApps, App } from 'firebase-admin/app';
-import { firebaseConfig } from '@/firebase/config';
 import type { Contract, ContractType, GenerateContractInput } from '@/lib/types';
 
 
 // --- Firebase Admin Initialization ---
-// Ensure that the app is initialized only once
+// This function ensures that we initialize the Firebase Admin app only once.
 function getAdminApp(): App {
     if (getApps().length > 0) {
         return getApps()[0];
     }
-
-    // In a server environment like Vercel or Firebase Functions,
-    // you would use applicationDefault() instead of a service account file.
-    // For local development, you might use a service account key.
-    // We will attempt to initialize without explicit credentials first.
-    try {
-        return initializeApp();
-    } catch (e) {
-        console.warn("Default Firebase Admin initialization failed. This is expected in local dev. Falling back to config.", e);
-        // Fallback for local environments if GOOGLE_APPLICATION_CREDENTIALS is not set
-        return initializeApp({
-            projectId: firebaseConfig.projectId,
-        });
-    }
+    // In a server environment like Firebase Functions or App Hosting,
+    // applicationDefault() will be used implicitly if no credentials are provided.
+    return initializeApp();
 }
 const db = getFirestore(getAdminApp());
 
@@ -112,6 +100,7 @@ export const generateContractWithFolioFlow = ai.defineFlow(
         const contractCollectionPath = `users/${contractData.userId}/contracts`;
         const contractRef = db.collection(contractCollectionPath).doc();
 
+        // Helper function to safely convert various date formats to Firestore Timestamps.
         const toTimestamp = (date: any): Timestamp | null => {
             if (!date) return null;
             if (date instanceof Timestamp) return date;
@@ -121,6 +110,7 @@ export const generateContractWithFolioFlow = ai.defineFlow(
             if (date instanceof Date) {
                  return Timestamp.fromDate(date);
             }
+            // Attempt to parse string dates (like those from JSON payload)
             const d = new Date(date);
             if (!isNaN(d.getTime())) {
                 return Timestamp.fromDate(d);
@@ -128,38 +118,42 @@ export const generateContractWithFolioFlow = ai.defineFlow(
             return null;
         }
         
-        const convertDatesToTimestamps = (detailsObj: any): any => {
-            if (!detailsObj) return {};
-            const newDetails = { ...detailsObj };
-
-            if (newDetails.paymentDeadline) {
-                newDetails.paymentDeadline = toTimestamp(newDetails.paymentDeadline);
+        // Recursively converts date-like fields in an object to Timestamps.
+        const convertDatesToTimestamps = (obj: any): any => {
+            if (!obj) return obj;
+            if (Array.isArray(obj)) {
+                return obj.map(item => convertDatesToTimestamps(item));
             }
-            if (newDetails.theoreticalClassDate) {
-                newDetails.theoreticalClassDate = toTimestamp(newDetails.theoreticalClassDate);
+            if (typeof obj === 'object' && obj !== null) {
+                const newObj: { [key: string]: any } = {};
+                for (const key in obj) {
+                    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                        // Check if a key suggests it's a date field
+                        if (key.toLowerCase().includes('date') || key.toLowerCase().includes('deadline') || key.toLowerCase().includes('installments')) {
+                            const value = obj[key];
+                             if(Array.isArray(value)) {
+                                 newObj[key] = value.map(d => toTimestamp(d)).filter(d => d !== null);
+                             } else {
+                                newObj[key] = toTimestamp(value);
+                             }
+                        } else {
+                            newObj[key] = convertDatesToTimestamps(obj[key]);
+                        }
+                    }
+                }
+                 // Special handling for schedule arrays which contain date objects
+                const scheduleKeys = ['practicalClassSchedules', 'motoPracticalClassSchedules', 'classSchedules'];
+                for (const scheduleKey of scheduleKeys) {
+                    if (newObj[scheduleKey] && Array.isArray(newObj[scheduleKey])) {
+                        newObj[scheduleKey] = newObj[scheduleKey]
+                            .map((c: any) => (c ? { ...c, date: toTimestamp(c.date) } : null))
+                            .filter((c: any) => c !== null); // Keep items even if date is null
+                    }
+                }
+
+                return newObj;
             }
-            
-            const processDateArray = (arr: any[]) => {
-                if (!Array.isArray(arr)) return [];
-                return arr.map(toTimestamp).filter((d): d is Timestamp => d !== null);
-            };
-
-            if (newDetails.theoreticalClassDates) newDetails.theoreticalClassDates = processDateArray(newDetails.theoreticalClassDates);
-            if (newDetails.theoreticalClasses) newDetails.theoreticalClasses = processDateArray(newDetails.theoreticalClasses);
-            if (newDetails.paymentInstallments) newDetails.paymentInstallments = processDateArray(newDetails.paymentInstallments);
-
-            const processScheduleArray = (arr: any[]) => {
-                 if (!Array.isArray(arr)) return [];
-                 return arr
-                    .map((c: any) => (c ? { ...c, date: toTimestamp(c.date) } : null))
-                    .filter((c: any): c is any => c !== null && c.date !== null);
-            }
-
-            if (newDetails.practicalClassSchedules) newDetails.practicalClassSchedules = processScheduleArray(newDetails.practicalClassSchedules);
-            if (newDetails.motoPracticalClassSchedules) newDetails.motoPracticalClassSchedules = processScheduleArray(newDetails.motoPracticalClassSchedules);
-            if (newDetails.classSchedules) newDetails.classSchedules = processScheduleArray(newDetails.classSchedules);
-            
-            return newDetails;
+            return obj;
         };
         
         const finalDetails = convertDatesToTimestamps(details);
@@ -195,7 +189,7 @@ export const generateContractWithFolioFlow = ai.defineFlow(
         batch.set(contractRef, contractWithTimestamp);
         await batch.commit();
 
-        // Convert Timestamps back to ISO strings for client compatibility before returning
+        // Recursively convert Timestamps back to ISO strings for client-side rendering.
         const convertTimestampsToISO = (obj: any): any => {
             if (!obj) return obj;
             if (obj instanceof Timestamp) {
@@ -217,7 +211,8 @@ export const generateContractWithFolioFlow = ai.defineFlow(
         };
 
         const finalContractForClient = convertTimestampsToISO(contractWithTimestamp);
-        finalContractForClient.createdAt = new Date().toISOString();
+        // Set a predictable createdAt for the client, as serverTimestamp is resolved later.
+        finalContractForClient.createdAt = new Date().toISOString(); 
         
         return {
             contract: finalContractForClient,

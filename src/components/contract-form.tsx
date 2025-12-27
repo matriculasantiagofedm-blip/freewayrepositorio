@@ -510,21 +510,6 @@ export function ContractForm() {
         return () => subscription.unsubscribe();
     }, [form, replacePracticalClasses, replaceMotoPracticalClasses, replaceTheoreticalClasses]);
 
-
-    const toDate = (date: any): Date | undefined => {
-        if (!date) return undefined;
-        if (date instanceof Date) return date;
-        if (date && date.toDate) return date.toDate();
-        if (typeof date === 'string') {
-          const parsed = new Date(date);
-          if (!isNaN(parsed.getTime())) {
-            const timezoneOffset = parsed.getTimezoneOffset() * 60000;
-            return new Date(parsed.getTime() + timezoneOffset);
-          }
-        }
-        return undefined; 
-    };
-
     const onSubmit = async (values: FormValues) => {
         if (!user || !currentUserRole || isUserLoading) {
             toast({ variant: 'destructive', title: 'Error de Autenticación', description: 'No se pudo conectar a la base de datos. Por favor, inicie sesión o espere a que cargue la sesión.' });
@@ -566,16 +551,44 @@ export function ContractForm() {
             
             toast({ title: 'Éxito', description: `Contrato ${result.folio} creado correctamente.` });
             
-             const finalContractObjectForPrint: Contract = {
-                ...result.contract,
-                createdAt: Timestamp.fromDate(new Date(result.contract.createdAt)),
-                client: {
-                    id: result.contract.clientId,
-                    name: result.contract.clientName,
-                    email: result.contract.clientEmail,
-                    createdAt: Timestamp.now(),
-                    userId: result.contract.userId
-                },
+            // Helper function to recursively convert date strings to Timestamps for display
+            const convertStringsToTimestamps = (obj: any): any => {
+                 if (!obj) return obj;
+                 const newObj = { ...obj };
+                 for (const key in newObj) {
+                     if (typeof newObj[key] === 'string' && /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(newObj[key])) {
+                        newObj[key] = Timestamp.fromDate(new Date(newObj[key]));
+                     } else if (Array.isArray(newObj[key])) {
+                        newObj[key] = newObj[key].map((item: any) => {
+                           if (typeof item === 'string' && /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(item)) {
+                               return Timestamp.fromDate(new Date(item));
+                           }
+                           if(item && typeof item === 'object'){
+                               return convertStringsToTimestamps(item);
+                           }
+                           return item;
+                        });
+                     } else if (newObj[key] && typeof newObj[key] === 'object') {
+                         newObj[key] = convertStringsToTimestamps(newObj[key]);
+                     }
+                 }
+                 return newObj;
+            };
+            
+            const contractFromDb = result.contract;
+             if (contractFromDb.deluxeDetails) {
+                contractFromDb.deluxeDetails = convertStringsToTimestamps(contractFromDb.deluxeDetails);
+            }
+            if (contractFromDb.autoMotoDetails) {
+                contractFromDb.autoMotoDetails = convertStringsToTimestamps(contractFromDb.autoMotoDetails);
+            }
+            if (contractFromDb.ampliacionesDetails) {
+                contractFromDb.ampliacionesDetails = convertStringsToTimestamps(contractFromDb.ampliacionesDetails);
+            }
+
+            const finalContractObjectForPrint: Contract = {
+                ...contractFromDb,
+                createdAt: Timestamp.fromDate(new Date(contractFromDb.createdAt)),
             };
 
             setSavedContract(finalContractObjectForPrint);
@@ -1417,3 +1430,5 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    

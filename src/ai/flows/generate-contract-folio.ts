@@ -121,20 +121,13 @@ const generateContractWithFolioFlow = ai.defineFlow(
 
              const toTimestamp = (date: any): Timestamp | null => {
                 if (!date) return null;
-                // Check if it's already a Timestamp or a similar object (from server-side calls)
+                // Handles ISO strings, Date objects, and existing Timestamps
                 if (date && typeof date.toDate === 'function') {
-                    return date;
+                    return date; // It's already a Firestore Timestamp
                 }
-                // Check for string or number, then create a Date object
-                if (typeof date === 'string' || typeof date === 'number') {
-                    const d = new Date(date);
-                    if (!isNaN(d.getTime())) {
-                        return Timestamp.fromDate(d);
-                    }
-                }
-                // Check if it's a native Date object
-                if (date instanceof Date && !isNaN(date.getTime())) {
-                    return Timestamp.fromDate(date);
+                const d = new Date(date); // Works for ISO strings and Date objects
+                if (!isNaN(d.getTime())) {
+                    return Timestamp.fromDate(d);
                 }
                 return null;
              }
@@ -199,13 +192,47 @@ const generateContractWithFolioFlow = ai.defineFlow(
         batch.set(contractRef, contractWithTimestamp);
         await batch.commit();
 
+        // Convert Timestamps back to ISO strings for client compatibility before returning
+        const convertTimestampsToISO = (obj: any): any => {
+            if (!obj) return obj;
+            const newObj = { ...obj };
+            for (const key in newObj) {
+                if (newObj[key] instanceof Timestamp) {
+                    newObj[key] = newObj[key].toDate().toISOString();
+                } else if (Array.isArray(newObj[key])) {
+                     newObj[key] = newObj[key].map(item => {
+                        if(item instanceof Timestamp){
+                           return item.toDate().toISOString();
+                        }
+                        if(item && typeof item === 'object'){
+                            return convertTimestampsToISO(item);
+                        }
+                        return item;
+                     });
+                } else if (newObj[key] && typeof newObj[key] === 'object') {
+                    newObj[key] = convertTimestampsToISO(newObj[key]);
+                }
+            }
+            return newObj;
+        };
+
+        const finalContractForClient = {
+            ...contractWithTimestamp,
+            createdAt: new Date().toISOString(), // Return as string for client compatibility
+        };
+
+        if (finalContractForClient.deluxeDetails) {
+            finalContractForClient.deluxeDetails = convertTimestampsToISO(finalContractForClient.deluxeDetails);
+        }
+        if (finalContractForClient.autoMotoDetails) {
+            finalContractForClient.autoMotoDetails = convertTimestampsToISO(finalContractForClient.autoMotoDetails);
+        }
+        if (finalContractForClient.ampliacionesDetails) {
+            finalContractForClient.ampliacionesDetails = convertTimestampsToISO(finalContractForClient.ampliacionesDetails);
+        }
+
         return {
-            contract: {
-                ...contractWithTimestamp,
-                // Return dates as ISO strings for client compatibility, except for createdAt
-                ...finalDetails,
-                createdAt: new Date().toISOString(), // Return as string for client compatibility
-            },
+            contract: finalContractForClient,
             folio: folio,
         };
 
@@ -219,3 +246,5 @@ const generateContractWithFolioFlow = ai.defineFlow(
     }
   }
 );
+
+    

@@ -122,10 +122,10 @@ const generateContractWithFolioFlow = ai.defineFlow(
              const toTimestamp = (date: any): Timestamp | null => {
                 if (!date) return null;
                 // Handles ISO strings, Date objects, and existing Timestamps
-                if (date && typeof date.toDate === 'function') {
-                    return date; // It's already a Firestore Timestamp
-                }
-                const d = new Date(date); // Works for ISO strings and Date objects
+                if (date instanceof Timestamp) return date;
+                if (date.toDate) return date; // Handles Firestore client-side Timestamps
+
+                const d = new Date(date);
                 if (!isNaN(d.getTime())) {
                     return Timestamp.fromDate(d);
                 }
@@ -139,22 +139,45 @@ const generateContractWithFolioFlow = ai.defineFlow(
                  newDetails.theoreticalClassDate = toTimestamp(newDetails.theoreticalClassDate);
              }
 
-             ['theoreticalClassDates', 'theoreticalClasses', 'paymentInstallments'].forEach(key => {
-                 if (Array.isArray(newDetails[key])) {
-                     newDetails[key] = newDetails[key]
-                         .map(toTimestamp)
-                         .filter((d): d is Timestamp => d !== null); 
-                 }
-             });
+             if (Array.isArray(newDetails.theoreticalClassDates)) {
+                 newDetails.theoreticalClassDates = newDetails.theoreticalClassDates
+                     .map(toTimestamp)
+                     .filter((d): d is Timestamp => d !== null); 
+             }
 
-             ['practicalClassSchedules', 'motoPracticalClassSchedules', 'classSchedules'].forEach(key => {
-                 if (Array.isArray(newDetails[key])) {
-                     newDetails[key] = newDetails[key].map((c: any) => ({
-                         ...c,
-                         date: toTimestamp(c.date),
-                     })).filter((c: any) => c.date !== null);
-                 }
-             });
+             if (Array.isArray(newDetails.theoreticalClasses)) {
+                 newDetails.theoreticalClasses = newDetails.theoreticalClasses
+                     .map(toTimestamp)
+                     .filter((d): d is Timestamp => d !== null);
+             }
+             
+             if (Array.isArray(newDetails.paymentInstallments)) {
+                 newDetails.paymentInstallments = newDetails.paymentInstallments
+                     .map(toTimestamp)
+                     .filter((d): d is Timestamp => d !== null);
+             }
+             
+
+             if (Array.isArray(newDetails.practicalClassSchedules)) {
+                 newDetails.practicalClassSchedules = newDetails.practicalClassSchedules.map((c: any) => ({
+                     ...c,
+                     date: toTimestamp(c.date),
+                 })).filter((c: any) => c.date !== null);
+             }
+
+             if (Array.isArray(newDetails.motoPracticalClassSchedules)) {
+                 newDetails.motoPracticalClassSchedules = newDetails.motoPracticalClassSchedules.map((c: any) => ({
+                     ...c,
+                     date: toTimestamp(c.date),
+                 })).filter((c: any) => c.date !== null);
+             }
+
+             if (Array.isArray(newDetails.classSchedules)) {
+                 newDetails.classSchedules = newDetails.classSchedules.map((c: any) => ({
+                     ...c,
+                     date: toTimestamp(c.date),
+                 })).filter((c: any) => c.date !== null);
+             }
             
              return newDetails;
         };

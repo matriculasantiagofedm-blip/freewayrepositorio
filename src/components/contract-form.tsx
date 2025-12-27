@@ -352,90 +352,68 @@ export function ContractForm() {
             // Auto/Moto/Mixto Logic
             if (name?.startsWith('autoMotoDetails')) {
                 if (name === 'autoMotoDetails.coursePlan' || name === 'autoMotoDetails.paidInFull' || name === 'autoMotoDetails.downPayment') {
-                    const planName = value.autoMotoDetails?.coursePlan;
-                    const isPaidInFull = value.autoMotoDetails?.paidInFull;
-                    const downPayment = value.autoMotoDetails?.downPayment || 0;
+                    const currentContractType = form.getValues('contractType');
+                    if (!currentContractType) return;
                     
-                    const allPlans = contractType ? (coursePlans as any)[contractType] : [];
+                    const allPlans = (coursePlans as any)[currentContractType];
+                    if (!Array.isArray(allPlans)) return;
+
+                    const planName = value.autoMotoDetails?.coursePlan;
                     const selectedPlan = allPlans.find((p: any) => p.name === planName);
                     
+                    if (!selectedPlan) {
+                         if (name === 'autoMotoDetails.coursePlan') {
+                            form.setValue('autoMotoDetails.courseValue', 0);
+                            form.setValue('autoMotoDetails.downPayment', 0);
+                            form.setValue('autoMotoDetails.balance', 0);
+                            replacePracticalClasses([]);
+                            replaceMotoPracticalClasses([]);
+                        }
+                        return;
+                    }
+
+                    const isPaidInFull = value.autoMotoDetails?.paidInFull;
+                    const downPayment = value.autoMotoDetails?.downPayment || 0;
                     const specialPlanSelected = !!selectedPlan && !selectedPlan.isCombined && planName?.toLowerCase().includes('ya se manejar');
 
-                    let newCourseValue = value.autoMotoDetails?.courseValue || 0;
-                    let newDownPayment = downPayment;
+                    let newCourseValue = selectedPlan.price;
+                    form.setValue('autoMotoDetails.courseValue', newCourseValue, { shouldValidate: true });
 
-                    if ((name === 'autoMotoDetails.coursePlan' || (name === 'autoMotoDetails.paidInFull' && planName)) && selectedPlan) {
-                        newCourseValue = selectedPlan.price;
-                        if(form.getValues('autoMotoDetails.courseValue') !== newCourseValue) {
-                            form.setValue('autoMotoDetails.courseValue', newCourseValue, { shouldValidate: true });
+                    let newDownPayment = downPayment;
+                    if (name === 'autoMotoDetails.coursePlan') {
+                        if (specialPlanSelected) {
+                            form.setValue('autoMotoDetails.paidInFull', true, { shouldValidate: true });
+                            newDownPayment = newCourseValue;
+                        } else if (!selectedPlan.isCombined) {
+                            form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
+                            newDownPayment = newCourseValue * 0.5;
+                        } else {
+                            form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
                         }
-                        
-                        if (name === 'autoMotoDetails.coursePlan') {
-                            if (specialPlanSelected) {
-                                newDownPayment = newCourseValue;
-                                form.setValue('autoMotoDetails.paidInFull', true, { shouldValidate: true });
-                            } else if (!selectedPlan.isCombined) {
-                                newDownPayment = newCourseValue * 0.5;
-                                form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
-                            } else {
-                                form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
-                            }
-                            if(form.getValues('autoMotoDetails.downPayment') !== newDownPayment) {
-                                form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
-                            }
-                        }
-                        
-                        if (contractType === 'Curso Auto') {
-                            replacePracticalClasses(Array(selectedPlan.classes).fill({ date: undefined, time: undefined }));
-                            replaceMotoPracticalClasses([]);
-                        } else if (contractType === 'Curso Moto') {
-                            replacePracticalClasses(Array(selectedPlan.classes).fill({ date: undefined, time: undefined }));
-                            replaceMotoPracticalClasses([]);
-                        } else if (contractType === 'Curso Mixto') {
+                        form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
+
+                         if (currentContractType === 'Curso Mixto') {
                             replacePracticalClasses(Array(selectedPlan.classes || 0).fill({ date: undefined, time: undefined }));
                             replaceMotoPracticalClasses(Array(selectedPlan.motoClasses || 0).fill({ date: undefined, time: undefined }));
+                        } else {
+                            replacePracticalClasses(Array(selectedPlan.classes).fill({ date: undefined, time: undefined }));
+                            replaceMotoPracticalClasses([]);
                         }
-                    } else if (!selectedPlan && name === 'autoMotoDetails.coursePlan') {
-                        newCourseValue = 0;
-                        newDownPayment = 0;
-                        if(form.getValues('autoMotoDetails.courseValue') !== newCourseValue) {
-                           form.setValue('autoMotoDetails.courseValue', newCourseValue, { shouldValidate: true });
-                        }
-                        if(form.getValues('autoMotoDetails.downPayment') !== newDownPayment) {
-                           form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
-                        }
-                        replacePracticalClasses([]);
-                        replaceMotoPracticalClasses([]);
-                    }
-                    
-                    if (isPaidInFull && !specialPlanSelected) {
+                    } else if (isPaidInFull) {
                         newDownPayment = newCourseValue;
-                        if(form.getValues('autoMotoDetails.downPayment') !== newDownPayment){
-                            form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
-                        }
-                    } else if (name === 'autoMotoDetails.coursePlan' && !isPaidInFull && !specialPlanSelected && !selectedPlan?.isCombined) {
-                        newDownPayment = newCourseValue * 0.5;
-                        if(form.getValues('autoMotoDetails.downPayment') !== newDownPayment){
-                            form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
-                        }
+                        form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
                     }
                     
                     if (name === 'autoMotoDetails.paidInFull' || name === 'autoMotoDetails.coursePlan') {
-                        if (value.autoMotoDetails?.paidInFull) {
-                            if (!(form.getValues('autoMotoDetails.paymentDeadline') instanceof Date)) {
-                                form.setValue('autoMotoDetails.paymentDeadline', new Date());
-                            }
+                        if (form.getValues('autoMotoDetails.paidInFull')) {
+                            form.setValue('autoMotoDetails.paymentDeadline', new Date());
                         } else {
-                            if (form.getValues('autoMotoDetails.paymentDeadline') !== null) {
-                                form.setValue('autoMotoDetails.paymentDeadline', null);
-                            }
+                            form.setValue('autoMotoDetails.paymentDeadline', null);
                         }
                     }
 
                     const newBalance = newCourseValue - newDownPayment;
-                    if(form.getValues('autoMotoDetails.balance') !== newBalance){
-                        form.setValue('autoMotoDetails.balance', newBalance < 0 ? 0 : newBalance, { shouldValidate: true });
-                    }
+                    form.setValue('autoMotoDetails.balance', newBalance < 0 ? 0 : newBalance, { shouldValidate: true });
                 }
             }
 
@@ -574,12 +552,10 @@ export function ContractForm() {
             const clientSnapshot = await getDocs(clientQuery);
 
             let clientId: string;
-            let clientData = null;
 
             if (!clientSnapshot.empty) {
                 // Client exists, reuse it.
                 clientId = clientSnapshot.docs[0].id;
-                clientData = clientSnapshot.docs[0].data();
             } else {
                 // Client with this idNumber does not exist, create a new one.
                 const newClientRef = doc(collection(firestore, 'clients'));
@@ -588,7 +564,7 @@ export function ContractForm() {
                     name: values.clientName,
                     email: values.clientEmail,
                     idNumber: studentIdNumber,
-                    userId: user.uid, // Assign the current user as the owner
+                    userId: user.uid,
                     createdAt: serverTimestamp(),
                 };
                 batch.set(newClientRef, clientDataToCreate);

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -5,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format } from 'date-fns';
+import { format, toDate } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 import { Button } from '@/components/ui/button';
@@ -35,10 +36,10 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFirebase } from '@/firebase';
-import { collection, doc, serverTimestamp, writeBatch, getDocs, query, where, limit, orderBy } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, writeBatch, getDocs, query, where, limit, orderBy, Timestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import type { ContractType } from '@/lib/types';
+import type { Contract, ContractType } from '@/lib/types';
 import { DeluxePremiumContractTemplatePreview } from './deluxe-premium-contract-preview';
 import { AutoMotoContractTemplatePreview } from './auto-moto-contract-preview';
 import { Checkbox } from './ui/checkbox';
@@ -47,6 +48,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { AmpliacionesContractTemplate } from './ampliaciones-contract';
+import { ContractView } from './contract-view';
+
 
 // --- Esquemas de Validación con Zod ---
 
@@ -284,8 +287,9 @@ export function ContractForm() {
     const { firestore, user, isUserLoading } = useFirebase();
     const { toast } = useToast();
     const [folio, setFolio] = useState('');
-    const [submissionAction, setSubmissionAction] = useState<'saveAndPrint'>('saveAndPrint');
+    const [submissionAction, setSubmissionAction] = useState<'saveAndPrint' | 'saveOnly'>('saveOnly');
     const { role: currentUserRole } = useCurrentRole();
+    const [savedContract, setSavedContract] = useState<Contract | null>(null);
 
 
     const contractType = useMemo(() => searchParams.get('type') as ContractType | null, [searchParams]);
@@ -353,7 +357,7 @@ export function ContractForm() {
             if (name?.startsWith('autoMotoDetails')) {
                 if (name === 'autoMotoDetails.coursePlan' || name === 'autoMotoDetails.paidInFull' || name === 'autoMotoDetails.downPayment') {
                     const currentContractType = form.getValues('contractType');
-                    if (!currentContractType) return;
+                    if (!currentContractType || !['Curso Auto', 'Curso Moto', 'Curso Mixto'].includes(currentContractType)) return;
                     
                     const allPlans = (coursePlans as any)[currentContractType];
                     if (!Array.isArray(allPlans)) return;
@@ -546,31 +550,30 @@ export function ContractForm() {
             }
             
             const batch = writeBatch(firestore);
-            
             const clientsRef = collection(firestore, 'clients');
             const clientQuery = query(clientsRef, where("idNumber", "==", studentIdNumber));
             const clientSnapshot = await getDocs(clientQuery);
 
             let clientId: string;
+            let clientData;
 
             if (!clientSnapshot.empty) {
-                // Client exists, reuse it.
-                clientId = clientSnapshot.docs[0].id;
+                const existingClientDoc = clientSnapshot.docs[0];
+                clientId = existingClientDoc.id;
+                clientData = existingClientDoc.data();
             } else {
-                // Client with this idNumber does not exist, create a new one.
                 const newClientRef = doc(collection(firestore, 'clients'));
-                const clientDataToCreate = {
-                    id: newClientRef.id,
+                clientId = newClientRef.id;
+                clientData = {
+                    id: clientId,
                     name: values.clientName,
                     email: values.clientEmail,
                     idNumber: studentIdNumber,
                     userId: user.uid,
                     createdAt: serverTimestamp(),
                 };
-                batch.set(newClientRef, clientDataToCreate);
-                clientId = newClientRef.id;
+                batch.set(newClientRef, clientData);
             }
-
 
             const contractRef = doc(collection(firestore, 'contracts'));
             
@@ -590,43 +593,34 @@ export function ContractForm() {
                 createdBy: currentUserRole,
             };
 
+            const processDate = (date: Date | undefined | null) => date ? format(date, 'yyyy-MM-dd') : null;
+
             if (contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') {
-                const autoMotoDetails = values.autoMotoDetails || {};
+                const { autoMotoDetails } = values;
                 contractData.autoMotoDetails = {
                     ...autoMotoDetails,
                     studentIdNumber,
-                    paymentDeadline: autoMotoDetails.paymentDeadline ? format(autoMotoDetails.paymentDeadline, 'yyyy-MM-dd') : null,
-                    theoreticalClassDates: (autoMotoDetails.theoreticalClassDates || [])
-                        .map(d => d ? format(d, 'yyyy-MM-dd') : null)
-                        .filter(Boolean),
-                    practicalClassSchedules: (autoMotoDetails.practicalClassSchedules || [])
-                        .map(c => ({ 
-                            date: c.date ? format(c.date, 'yyyy-MM-dd') : null, 
-                            time: c.time || null 
-                        })),
-                    motoPracticalClassSchedules: (autoMotoDetails.motoPracticalClassSchedules || [])
-                        .map(c => ({ 
-                            date: c.date ? format(c.date, 'yyyy-MM-dd') : null, 
-                            time: c.time || null 
-                        })),
+                    paymentDeadline: processDate(autoMotoDetails.paymentDeadline),
+                    theoreticalClassDates: (autoMotoDetails.theoreticalClassDates || []).map(processDate).filter(Boolean),
+                    practicalClassSchedules: (autoMotoDetails.practicalClassSchedules || []).map(c => ({ date: processDate(c.date), time: c.time || null })),
+                    motoPracticalClassSchedules: (autoMotoDetails.motoPracticalClassSchedules || []).map(c => ({ date: processDate(c.date), time: c.time || null })),
                 };
             } else if (contractType === 'Curso Deluxe') {
-                const deluxeDetails = values.deluxeDetails || {};
+                const { deluxeDetails } = values;
                 contractData.deluxeDetails = {
                     ...deluxeDetails,
                     studentIdNumber,
-                    paymentInstallments: (deluxeDetails.paymentInstallments || []).map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(Boolean),
-                    theoreticalClasses: (deluxeDetails.theoreticalClasses || []).map(d => d ? format(d, 'yyyy-MM-dd') : null).filter(Boolean),
-                    classSchedules: (deluxeDetails.classSchedules || [])
-                        .map(c => ({ date: c.date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })),
+                    paymentInstallments: (deluxeDetails.paymentInstallments || []).map(processDate).filter(Boolean),
+                    theoreticalClasses: (deluxeDetails.theoreticalClasses || []).map(processDate).filter(Boolean),
+                    classSchedules: (deluxeDetails.classSchedules || []).map(c => ({ date: processDate(c.date), time: c.time || null })),
                 };
             } else if (contractType === 'Ampliaciones') {
-                const ampliacionesDetails = values.ampliacionesDetails || {};
+                const { ampliacionesDetails } = values;
                 contractData.ampliacionesDetails = {
                     ...ampliacionesDetails,
                      studentIdNumber,
-                     paymentDeadline: ampliacionesDetails.paymentDeadline ? format(ampliacionesDetails.paymentDeadline, 'yyyy-MM-dd') : null,
-                     theoreticalClassDate: ampliacionesDetails.theoreticalClassDate ? format(ampliacionesDetails.theoreticalClassDate, 'yyyy-MM-dd') : null,
+                     paymentDeadline: processDate(ampliacionesDetails.paymentDeadline),
+                     theoreticalClassDate: processDate(ampliacionesDetails.theoreticalClassDate),
                 };
             }
 
@@ -635,9 +629,25 @@ export function ContractForm() {
             await batch.commit();
 
             toast({ title: 'Éxito', description: 'Contrato y cliente creados/asociados correctamente.' });
-            
-            const redirectUrl = `/contracts/${contractRef.id}${submissionAction === 'saveAndPrint' ? '?print=true' : ''}`;
-            router.push(redirectUrl);
+
+            if (submissionAction === 'saveAndPrint') {
+                // We construct a temporary contract object to pass for immediate printing
+                const finalContractObjectForPrint: Contract = {
+                    ...contractData,
+                    createdAt: Timestamp.now(), // Use a client-side timestamp for immediate rendering
+                    client: {
+                        id: clientId,
+                        name: clientData.name,
+                        email: clientData.email,
+                        idNumber: studentIdNumber,
+                        userId: clientData.userId,
+                        createdAt: clientData.createdAt instanceof Timestamp ? clientData.createdAt : Timestamp.now(),
+                    },
+                };
+                setSavedContract(finalContractObjectForPrint);
+            } else {
+                 router.push(`/contracts/${contractRef.id}`);
+            }
 
         } catch (error) {
             console.error("Error al crear el contrato:", error);
@@ -1416,6 +1426,10 @@ export function ContractForm() {
     }
 
 
+    if (savedContract) {
+        return <ContractView contract={savedContract} />;
+    }
+
     if (!contractType) {
         return (
             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
@@ -1434,7 +1448,7 @@ export function ContractForm() {
                      <div className="flex flex-col sm:flex-row gap-2 justify-end">
                         <Button type="submit" onClick={() => setSubmissionAction('saveAndPrint')} disabled={form.formState.isSubmitting}>
                             <Printer className="mr-2 h-4 w-4" />
-                            {form.formState.isSubmitting && submissionAction === 'saveAndPrint' ? 'Guardando...' : 'Guardar e Imprimir'}
+                            {form.formState.isSubmitting && submissionAction === 'saveAndPrint' ? 'Guardando...' : 'Guardar y Preparar Impresión'}
                         </Button>
                     </div>
 

@@ -566,12 +566,22 @@ export function ContractForm() {
             const batch = writeBatch(firestore);
             
             const clientsRef = collection(firestore, 'clients');
-            const clientQuery = query(clientsRef, where("idNumber", "==", studentIdNumber), limit(1));
+            const clientQuery = query(clientsRef, where("idNumber", "==", studentIdNumber));
             const clientSnapshot = await getDocs(clientQuery);
 
             let clientId: string;
+            let clientForCurrentUser = null;
+
+            if (!clientSnapshot.empty) {
+                // Client with this idNumber exists, check if it belongs to the current user
+                clientForCurrentUser = clientSnapshot.docs.find(doc => doc.data().userId === user.uid);
+            }
             
-            if (clientSnapshot.empty) {
+            if (clientForCurrentUser) {
+                // Use existing client for the current user
+                clientId = clientForCurrentUser.id;
+            } else {
+                // No client found for this user with this idNumber, create a new one
                 const newClientRef = doc(collection(firestore, 'clients'));
                 const clientData = {
                     id: newClientRef.id,
@@ -583,8 +593,6 @@ export function ContractForm() {
                 };
                 batch.set(newClientRef, clientData);
                 clientId = newClientRef.id;
-            } else {
-                clientId = clientSnapshot.docs[0].id;
             }
 
             const contractRef = doc(collection(firestore, 'contracts'));

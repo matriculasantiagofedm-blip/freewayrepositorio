@@ -601,9 +601,6 @@ export function ContractForm() {
                 userId: user.uid,
                 createdAt: serverTimestamp(),
                 createdBy: currentUserRole,
-                deluxeDetails: {},
-                autoMotoDetails: {},
-                ampliacionesDetails: {},
             };
 
             if (contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') {
@@ -1450,7 +1447,7 @@ export function ContractForm() {
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <div className="flex flex-col gap-8">
+                 <div className="flex flex-col gap-8">
                     {renderFormContent()}
                     
                     <Card>
@@ -1469,5 +1466,3 @@ export function ContractForm() {
         </Form>
     );
 }
-
-    

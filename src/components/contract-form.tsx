@@ -36,7 +36,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFirebase } from '@/firebase';
-import { collection, doc, serverTimestamp, writeBatch, getDocs, query, where, limit, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, doc, serverTimestamp, writeBatch, getDocs, query, where, limit, orderBy, Timestamp, collectionGroup } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { Contract, ContractType } from '@/lib/types';
@@ -365,9 +365,9 @@ export function ContractForm() {
 
                     if (!selectedPlan) {
                         if (name === 'autoMotoDetails.coursePlan') {
-                            form.setValue('autoMotoDetails.courseValue', 0);
-                            form.setValue('autoMotoDetails.downPayment', 0);
-                            form.setValue('autoMotoDetails.balance', 0);
+                             if ((form.getValues('autoMotoDetails.courseValue') || 0).toFixed(2) !== (0).toFixed(2)) form.setValue('autoMotoDetails.courseValue', 0);
+                            if ((form.getValues('autoMotoDetails.downPayment') || 0).toFixed(2) !== (0).toFixed(2)) form.setValue('autoMotoDetails.downPayment', 0);
+                            if ((form.getValues('autoMotoDetails.balance') || 0).toFixed(2) !== (0).toFixed(2)) form.setValue('autoMotoDetails.balance', 0);
                             replacePracticalClasses([]);
                             replaceMotoPracticalClasses([]);
                         }
@@ -417,7 +417,7 @@ export function ContractForm() {
 
                     if (name === 'autoMotoDetails.paidInFull' || name === 'autoMotoDetails.coursePlan') {
                         if (isPaidInFull && !(form.getValues('autoMotoDetails.paymentDeadline') instanceof Date)) {
-                            form.setValue('autoMotoDetails.paymentDeadline', new Date());
+                             form.setValue('autoMotoDetails.paymentDeadline', new Date());
                         } else if (!isPaidInFull && form.getValues('autoMotoDetails.paymentDeadline') !== null) {
                             form.setValue('autoMotoDetails.paymentDeadline', null);
                         }
@@ -463,21 +463,21 @@ export function ContractForm() {
                         }
                     }
 
-                    if ((form.getValues('ampliacionesDetails.downPayment') || 0).toFixed(2) !== newDownPayment.toFixed(2)) {
+                     if ((form.getValues('ampliacionesDetails.downPayment') || 0).toFixed(2) !== newDownPayment.toFixed(2)) {
                         form.setValue('ampliacionesDetails.downPayment', newDownPayment, { shouldValidate: true });
                     }
 
                     if (name === 'ampliacionesDetails.paidInFull' || name === 'ampliacionesDetails.selectedPlans') {
-                        if ((isPaidInFull || forceFullPayment) && !(form.getValues('ampliacionesDetails.paymentDeadline') instanceof Date)) {
-                            form.setValue('ampliacionesDetails.paymentDeadline', new Date());
-                        } else if (!isPaidInFull && !forceFullPayment && form.getValues('ampliacionesDetails.paymentDeadline') !== null) {
+                         if ((isPaidInFull || forceFullPayment) && !(form.getValues('ampliacionesDetails.paymentDeadline') instanceof Date)) {
+                             form.setValue('ampliacionesDetails.paymentDeadline', new Date());
+                         } else if (!isPaidInFull && !forceFullPayment && form.getValues('ampliacionesDetails.paymentDeadline') !== null) {
                             form.setValue('ampliacionesDetails.paymentDeadline', null);
                         }
                     }
 
                     const newBalance = newCourseValue - newDownPayment;
                     const finalBalance = newBalance < 0 ? 0 : newBalance;
-                    if ((form.getValues('ampliacionesDetails.balance') || 0).toFixed(2) !== finalBalance.toFixed(2)) {
+                     if ((form.getValues('ampliacionesDetails.balance') || 0).toFixed(2) !== finalBalance.toFixed(2)) {
                         form.setValue('ampliacionesDetails.balance', finalBalance, { shouldValidate: true });
                     }
                 }
@@ -505,7 +505,7 @@ export function ContractForm() {
             const currentYear = new Date().getFullYear();
             const folioPrefix = `${currentYear}-`;
             
-            const contractsRef = collection(firestore, 'contracts');
+            const contractsRef = collectionGroup(firestore, 'contracts');
             const q = query(
                 contractsRef,
                 where('folio', '>=', folioPrefix),
@@ -588,10 +588,8 @@ export function ContractForm() {
                 batch.set(newClientRef, clientData);
             }
 
-            // Path for the contract document depends on the user role
-            const contractRef = role === 'Administrador'
-                ? doc(collection(firestore, 'contracts'))
-                : doc(collection(firestore, 'users', user.uid, 'contracts'));
+            const contractCollectionPath = currentUserRole === 'Administrador' ? 'contracts' : `users/${user.uid}/contracts`;
+            const contractRef = doc(collection(firestore, contractCollectionPath));
             
             const toTimestamp = (date: Date | undefined | null): Timestamp | null => {
                 if (!date || !(date instanceof Date) || isNaN(date.getTime())) return null;

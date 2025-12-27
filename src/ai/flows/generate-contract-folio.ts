@@ -115,11 +115,12 @@ const generateContractWithFolioFlow = ai.defineFlow(
         const contractCollectionPath = `users/${contractData.userId}/contracts`;
         const contractRef = db.collection(contractCollectionPath).doc();
 
-        const convertDateStringsToTimestamps = (detailsObj: any): any => {
+        const convertDatesToTimestamps = (detailsObj: any): any => {
              if (!detailsObj) return {};
              const newDetails = { ...detailsObj };
 
              const toTimestamp = (date: any): Timestamp | null => {
+                if (!date) return null;
                 // Check if it's already a Timestamp or a similar object (from server-side calls)
                 if (date && typeof date.toDate === 'function') {
                     return date;
@@ -149,7 +150,7 @@ const generateContractWithFolioFlow = ai.defineFlow(
                  if (Array.isArray(newDetails[key])) {
                      newDetails[key] = newDetails[key]
                          .map(toTimestamp)
-                         .filter(Boolean); // filter(Boolean) removes nulls
+                         .filter((d): d is Timestamp => d !== null); 
                  }
              });
 
@@ -158,14 +159,14 @@ const generateContractWithFolioFlow = ai.defineFlow(
                      newDetails[key] = newDetails[key].map((c: any) => ({
                          ...c,
                          date: toTimestamp(c.date),
-                     }));
+                     })).filter((c: any) => c.date !== null);
                  }
              });
             
              return newDetails;
         };
         
-        const finalDetails = convertDateStringsToTimestamps(details);
+        const finalDetails = convertDatesToTimestamps(details);
 
         const newContract: Omit<Contract, 'id' | 'createdAt'> = {
             folio,
@@ -201,6 +202,8 @@ const generateContractWithFolioFlow = ai.defineFlow(
         return {
             contract: {
                 ...contractWithTimestamp,
+                // Return dates as ISO strings for client compatibility, except for createdAt
+                ...finalDetails,
                 createdAt: new Date().toISOString(), // Return as string for client compatibility
             },
             folio: folio,

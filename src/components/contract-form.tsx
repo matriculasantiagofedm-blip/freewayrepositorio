@@ -33,7 +33,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, PlusCircle, Loader2 } from 'lucide-react';
+import { CalendarIcon, PlusCircle, Loader2, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFirebase } from '@/firebase';
 import { Timestamp } from 'firebase/firestore';
@@ -511,7 +511,8 @@ export function ContractForm() {
     }, [form, replacePracticalClasses, replaceMotoPracticalClasses, replaceTheoreticalClasses]);
 
 
-    const toDate = (date: any): Date => {
+    const toDate = (date: any): Date | undefined => {
+        if (!date) return undefined;
         if (date instanceof Date) return date;
         if (date && date.toDate) return date.toDate();
         if (typeof date === 'string') {
@@ -521,7 +522,7 @@ export function ContractForm() {
             return new Date(parsed.getTime() + timezoneOffset);
           }
         }
-        return new Date(0); // Return invalid date
+        return undefined; 
     };
 
     const onSubmit = async (values: FormValues) => {
@@ -565,10 +566,9 @@ export function ContractForm() {
             
             toast({ title: 'Éxito', description: `Contrato ${result.folio} creado correctamente.` });
             
-            const finalContractObjectForPrint: Contract = {
+             const finalContractObjectForPrint: Contract = {
                 ...result.contract,
-                // Convert string dates back to Timestamps for the view component
-                createdAt: Timestamp.fromDate(new Date(result.contract.createdAt as any)),
+                createdAt: Timestamp.fromDate(new Date(result.contract.createdAt)),
                 client: {
                     id: result.contract.clientId,
                     name: result.contract.clientName,
@@ -1350,8 +1350,8 @@ export function ContractForm() {
               createdBy: currentUserRole || 'Ventas',
               ampliacionesDetails: {
                   ...ampliacionesDetails,
-                  theoreticalClassDate: ampliacionesDetails.theoreticalClassDate ? Timestamp.fromDate(toDate(ampliacionesDetails.theoreticalClassDate)) : undefined,
-                  paymentDeadline: ampliacionesDetails.paymentDeadline ? Timestamp.fromDate(toDate(ampliacionesDetails.paymentDeadline)) : undefined,
+                  theoreticalClassDate: ampliacionesDetails.theoreticalClassDate ? Timestamp.fromDate(new Date(ampliacionesDetails.theoreticalClassDate)) : undefined,
+                  paymentDeadline: ampliacionesDetails.paymentDeadline ? Timestamp.fromDate(new Date(ampliacionesDetails.paymentDeadline)) : undefined,
               }
           }
           return <AmpliacionesContractTemplate contract={contractForPreview} />;
@@ -1364,10 +1364,14 @@ export function ContractForm() {
     if (savedContract) {
         return (
             <div className='flex flex-col gap-4'>
-                <div className='flex justify-end gap-2'>
-                     <Button variant="outline" onClick={() => setSavedContract(null)}>
+                <div className='flex justify-between items-center print:hidden'>
+                    <Button variant="outline" onClick={() => setSavedContract(null)}>
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Crear Nuevo Contrato
+                    </Button>
+                     <Button onClick={() => window.print()}>
+                        <Printer className="mr-2 h-4 w-4" />
+                        Imprimir Contrato
                     </Button>
                 </div>
                 <ContractView contract={savedContract} />

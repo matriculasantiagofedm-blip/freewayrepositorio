@@ -47,6 +47,7 @@ import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { useCurrentRole } from '@/hooks/use-current-role';
+import { AmpliacionesContractTemplate } from './ampliaciones-contract';
 
 // --- Esquemas de Validación con Zod ---
 
@@ -450,25 +451,23 @@ export function ContractForm() {
                 
                 if (name === 'ampliacionesDetails.selectedPlans') {
                     if (forceFullPayment) {
-                        isPaidInFull = true;
                         if (form.getValues('ampliacionesDetails.paidInFull') !== true) {
                             form.setValue('ampliacionesDetails.paidInFull', true, { shouldValidate: true });
                         }
+                        isPaidInFull = true;
                     } else {
                         if (form.getValues('ampliacionesDetails.paidInFull') !== false) {
-                            form.setValue('ampliacionesDetails.paidInFull', false, { shouldValidate: true });
+                           form.setValue('ampliacionesDetails.paidInFull', false, { shouldValidate: true });
                         }
+                        isPaidInFull = false;
                     }
                 }
 
                 let newDownPayment = downPayment;
-
-                if (name === 'ampliacionesDetails.selectedPlans' || name === 'ampliacionesDetails.paidInFull' || name === 'ampliacionesDetails.downPayment') {
-                    if (isPaidInFull) {
-                        newDownPayment = newCourseValue;
-                    } else if (name === 'ampliacionesDetails.selectedPlans') {
-                        newDownPayment = newCourseValue * 0.5;
-                    }
+                if (isPaidInFull) {
+                    newDownPayment = newCourseValue;
+                } else if (name === 'ampliacionesDetails.selectedPlans') {
+                    newDownPayment = newCourseValue * 0.5;
                 }
                 
                 if (form.getValues('ampliacionesDetails.downPayment') !== newDownPayment) {
@@ -476,19 +475,21 @@ export function ContractForm() {
                 }
                 
                 if (name === 'ampliacionesDetails.paidInFull' || name === 'ampliacionesDetails.selectedPlans') {
+                    const currentDeadline = form.getValues('ampliacionesDetails.paymentDeadline');
                     if (isPaidInFull) {
-                         if (!(form.getValues('ampliacionesDetails.paymentDeadline') instanceof Date)) {
+                         if (!(currentDeadline instanceof Date)) {
                             form.setValue('ampliacionesDetails.paymentDeadline', new Date());
                         }
                     } else {
-                        if (form.getValues('ampliacionesDetails.paymentDeadline') !== null) {
+                        if (currentDeadline !== null) {
                             form.setValue('ampliacionesDetails.paymentDeadline', null);
                         }
                     }
                 }
 
                 const newBalance = newCourseValue - newDownPayment;
-                if (form.getValues('ampliacionesDetails.balance') !== newBalance) {
+                const currentBalance = form.getValues('ampliacionesDetails.balance');
+                if (currentBalance !== newBalance && currentBalance?.toFixed(2) !== newBalance.toFixed(2)) {
                     form.setValue('ampliacionesDetails.balance', newBalance < 0 ? 0 : newBalance, { shouldValidate: true });
                 }
             }
@@ -582,6 +583,9 @@ export function ContractForm() {
                 userId: user.uid,
                 createdAt: serverTimestamp(),
                 createdBy: currentUserRole,
+                deluxeDetails: {},
+                autoMotoDetails: {},
+                ampliacionesDetails: {},
             };
 
             if (contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') {
@@ -605,8 +609,6 @@ export function ContractForm() {
                             time: c.time || null 
                         })),
                 };
-                delete contractData.deluxeDetails;
-                delete contractData.ampliacionesDetails;
             } else if (contractType === 'Curso Deluxe') {
                 const deluxeDetails = values.deluxeDetails || {};
                 contractData.deluxeDetails = {
@@ -617,8 +619,6 @@ export function ContractForm() {
                         .filter(c => c.date || c.time)
                         .map(c => ({ date: c.date instanceof Date ? format(c.date, 'yyyy-MM-dd') : null, time: c.time || null })),
                 };
-                delete contractData.autoMotoDetails;
-                delete contractData.ampliacionesDetails;
             } else if (contractType === 'Ampliaciones') {
                 const ampliacionesDetails = values.ampliacionesDetails || {};
                 contractData.ampliacionesDetails = {
@@ -626,8 +626,6 @@ export function ContractForm() {
                      paymentDeadline: ampliacionesDetails.paymentDeadline instanceof Date ? format(ampliacionesDetails.paymentDeadline, 'yyyy-MM-dd') : null,
                      theoreticalClassDate: ampliacionesDetails.theoreticalClassDate instanceof Date ? format(ampliacionesDetails.theoreticalClassDate, 'yyyy-MM-dd') : null,
                 };
-                 delete contractData.autoMotoDetails;
-                delete contractData.deluxeDetails;
             }
 
             batch.set(contractRef, contractData);
@@ -1389,6 +1387,36 @@ export function ContractForm() {
             </CardContent>
         </Card>
     );
+    
+    const PreviewComponent = () => {
+      const formValues = form.watch();
+
+      if (contractType === 'Curso Deluxe') {
+          return <DeluxePremiumContractTemplatePreview folio={folio} clientName={formValues.clientName} clientEmail={formValues.clientEmail} deluxeDetails={formValues.deluxeDetails} createdBy={currentUserRole || 'Ventas'} />
+      }
+      if (contractType === 'Ampliaciones') {
+          const { clientName, clientEmail, ampliacionesDetails } = formValues;
+          const contractForPreview = {
+              id: '',
+              folio: folio,
+              title: `Ampliaciones - ${clientName}`,
+              clientName,
+              clientEmail,
+              clientId: '',
+              content: '',
+              deadlines: [],
+              status: 'active' as 'active',
+              type: 'Ampliaciones' as 'Ampliaciones',
+              userId: user?.uid || '',
+              createdAt: new Date() as any, // Using client date for preview
+              createdBy: currentUserRole || 'Ventas',
+              ampliacionesDetails: ampliacionesDetails
+          }
+          return <AmpliacionesContractTemplate contract={contractForPreview} />;
+      }
+      // Default to Auto/Moto
+      return <AutoMotoContractTemplatePreview folio={folio} clientName={formValues.clientName} clientEmail={formValues.clientEmail} autoMotoDetails={formValues.autoMotoDetails} createdBy={currentUserRole || 'Ventas'} type={contractType as any} />
+    }
 
 
     if (!contractType) {
@@ -1417,10 +1445,7 @@ export function ContractForm() {
                                 </FormDescription>
                             </CardHeader>
                             <CardContent>
-                                {contractType === 'Curso Deluxe' 
-                                    ? <DeluxePremiumContractTemplatePreview folio={folio} clientName={watchedValues.clientName} clientEmail={watchedValues.clientEmail} deluxeDetails={watchedValues.deluxeDetails} createdBy={currentUserRole || 'Ventas'} />
-                                    : <AutoMotoContractTemplatePreview folio={folio} clientName={watchedValues.clientName} clientEmail={watchedValues.clientEmail} autoMotoDetails={watchedValues.autoMotoDetails} createdBy={currentUserRole || 'Ventas'} type={contractType as any} />
-                                }
+                                <PreviewComponent />
                             </CardContent>
                         </Card>
                     </div>
@@ -1429,6 +1454,8 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    
 
     
 

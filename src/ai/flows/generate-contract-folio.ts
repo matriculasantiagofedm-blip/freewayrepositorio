@@ -67,7 +67,10 @@ const generateContractWithFolioFlow = ai.defineFlow(
 
     try {
         if (!contractData.studentIdNumber) {
-            throw new Error("Student ID number is required to generate a contract.");
+            throw new Error("El número de cédula o pasaporte del estudiante es un campo obligatorio para generar el contrato.");
+        }
+        if (!details || Object.keys(details).length === 0) {
+            throw new Error(`Los detalles para el contrato tipo '${contractData.contractType}' están vacíos o son inválidos.`);
         }
         
         const counterRef = db.doc('counters/contract_folio');
@@ -119,22 +122,22 @@ const generateContractWithFolioFlow = ai.defineFlow(
         const contractCollectionPath = `users/${contractData.userId}/contracts`;
         const contractRef = db.collection(contractCollectionPath).doc();
 
-        const convertDatesToTimestamps = (detailsObj: any): any => {
-            const toTimestamp = (date: any): Timestamp | null => {
-                if (!date) return null;
-                if (date instanceof Timestamp) return date;
-                if (typeof date === 'string' || typeof date === 'number' || date instanceof Date) {
-                    const d = new Date(date);
-                    if (!isNaN(d.getTime())) {
-                        return Timestamp.fromDate(d);
-                    }
-                }
-                 if (date && typeof date.toDate === 'function') { // Handle Firebase Timestamps from client
-                    return Timestamp.fromMillis(date.toMillis());
-                }
-                return null;
+        const toTimestamp = (date: any): Timestamp | null => {
+            if (!date) return null;
+            if (date instanceof Timestamp) return date;
+            if (date && typeof date.toDate === 'function') { // Handle Firebase Timestamps from client
+                return Timestamp.fromMillis(date.toMillis());
             }
-            
+            if (typeof date === 'string' || typeof date === 'number' || date instanceof Date) {
+                const d = new Date(date);
+                if (!isNaN(d.getTime())) {
+                    return Timestamp.fromDate(d);
+                }
+            }
+            return null;
+        }
+        
+        const convertDatesToTimestamps = (detailsObj: any): any => {
             if (!detailsObj) return {};
             const newDetails = { ...detailsObj };
 
@@ -150,9 +153,9 @@ const generateContractWithFolioFlow = ai.defineFlow(
                 return arr.map(toTimestamp).filter((d): d is Timestamp => d !== null);
             };
 
-            newDetails.theoreticalClassDates = processDateArray(newDetails.theoreticalClassDates);
-            newDetails.theoreticalClasses = processDateArray(newDetails.theoreticalClasses);
-            newDetails.paymentInstallments = processDateArray(newDetails.paymentInstallments);
+            if (newDetails.theoreticalClassDates) newDetails.theoreticalClassDates = processDateArray(newDetails.theoreticalClassDates);
+            if (newDetails.theoreticalClasses) newDetails.theoreticalClasses = processDateArray(newDetails.theoreticalClasses);
+            if (newDetails.paymentInstallments) newDetails.paymentInstallments = processDateArray(newDetails.paymentInstallments);
 
             const processScheduleArray = (arr: any[]) => {
                  if (!Array.isArray(arr)) return [];
@@ -161,9 +164,9 @@ const generateContractWithFolioFlow = ai.defineFlow(
                     .filter((c: any): c is any => c !== null && c.date !== null);
             }
 
-            newDetails.practicalClassSchedules = processScheduleArray(newDetails.practicalClassSchedules);
-            newDetails.motoPracticalClassSchedules = processScheduleArray(newDetails.motoPracticalClassSchedules);
-            newDetails.classSchedules = processScheduleArray(newDetails.classSchedules);
+            if (newDetails.practicalClassSchedules) newDetails.practicalClassSchedules = processScheduleArray(newDetails.practicalClassSchedules);
+            if (newDetails.motoPracticalClassSchedules) newDetails.motoPracticalClassSchedules = processScheduleArray(newDetails.motoPracticalClassSchedules);
+            if (newDetails.classSchedules) newDetails.classSchedules = processScheduleArray(newDetails.classSchedules);
             
             return newDetails;
         };
@@ -222,21 +225,9 @@ const generateContractWithFolioFlow = ai.defineFlow(
             return obj;
         };
 
-        const finalContractForClient = {
-            ...contractWithTimestamp,
-            createdAt: new Date().toISOString(),
-        };
+        const finalContractForClient = convertTimestampsToISO(contractWithTimestamp);
+        finalContractForClient.createdAt = new Date().toISOString();
         
-        if (finalContractForClient.deluxeDetails) {
-            finalContractForClient.deluxeDetails = convertTimestampsToISO(finalContractForClient.deluxeDetails);
-        }
-        if (finalContractForClient.autoMotoDetails) {
-            finalContractForClient.autoMotoDetails = convertTimestampsToISO(finalContractForClient.autoMotoDetails);
-        }
-        if (finalContractForClient.ampliacionesDetails) {
-            finalContractForClient.ampliacionesDetails = convertTimestampsToISO(finalContractForClient.ampliacionesDetails);
-        }
-
         return {
             contract: finalContractForClient,
             folio: folio,

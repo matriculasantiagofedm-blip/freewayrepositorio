@@ -522,15 +522,22 @@ export function ContractForm() {
                  return;
             }
 
-            let detailsPayload: any = {};
-             if (contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') {
-                detailsPayload = values.autoMotoDetails;
-            } else if (contractType === 'Curso Deluxe') {
-                detailsPayload = values.deluxeDetails;
-            } else if (contractType === 'Ampliaciones') {
-                detailsPayload = values.ampliacionesDetails;
+            let detailsPayload: any;
+            switch (contractType) {
+                case 'Curso Auto':
+                case 'Curso Moto':
+                case 'Curso Mixto':
+                    detailsPayload = values.autoMotoDetails;
+                    break;
+                case 'Curso Deluxe':
+                    detailsPayload = values.deluxeDetails;
+                    break;
+                case 'Ampliaciones':
+                    detailsPayload = values.ampliacionesDetails;
+                    break;
+                default:
+                    detailsPayload = {};
             }
-
 
             const result = await generateContractWithSequentialFolio({
                 contractData: {

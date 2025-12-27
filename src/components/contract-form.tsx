@@ -435,13 +435,14 @@ export function ContractForm() {
                 }
             }
 
-             // Ampliaciones Logic
+            // Ampliaciones Logic
             if (name?.startsWith('ampliacionesDetails')) {
                 const selectedPlans = value.ampliacionesDetails?.selectedPlans || [];
-                let isPaidInFull = value.ampliacionesDetails?.paidInFull;
+                let isPaidInFull = value.ampliacionesDetails?.paidInFull ?? false;
                 const downPayment = value.ampliacionesDetails?.downPayment || 0;
 
                 const newCourseValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
+
                 if (form.getValues('ampliacionesDetails.courseValue')?.toFixed(2) !== newCourseValue.toFixed(2)) {
                     form.setValue('ampliacionesDetails.courseValue', newCourseValue, { shouldValidate: true });
                 }
@@ -455,49 +456,41 @@ export function ContractForm() {
                         }
                         isPaidInFull = true;
                     } else {
-                        if (form.getValues('ampliacionesDetails.paidInFull') !== false) {
-                            form.setValue('ampliacionesDetails.paidInFull', false, { shouldValidate: true });
+                         // Only set to false if it's currently true and we are not forcing full payment
+                        if (form.getValues('ampliacionesDetails.paidInFull') === true) {
+                           form.setValue('ampliacionesDetails.paidInFull', false, { shouldValidate: true });
                         }
                         isPaidInFull = false;
                     }
                 }
 
                 let newDownPayment = downPayment;
-                 if (name === 'ampliacionesDetails.paidInFull') {
-                    if (isPaidInFull) {
-                        newDownPayment = newCourseValue;
-                    } else {
-                        newDownPayment = newCourseValue * 0.5;
-                    }
-                } else if (name === 'ampliacionesDetails.selectedPlans') {
-                     if (forceFullPayment) {
+                if (name === 'ampliacionesDetails.paidInFull' || name === 'ampliacionesDetails.selectedPlans') {
+                     if (isPaidInFull || forceFullPayment) {
                         newDownPayment = newCourseValue;
                     } else {
                         newDownPayment = newCourseValue * 0.5;
                     }
                 }
                 
-                const currentDownPayment = form.getValues('ampliacionesDetails.downPayment');
-                if (currentDownPayment?.toFixed(2) !== newDownPayment.toFixed(2)) {
+                if (form.getValues('ampliacionesDetails.downPayment')?.toFixed(2) !== newDownPayment.toFixed(2)) {
                     form.setValue('ampliacionesDetails.downPayment', newDownPayment, { shouldValidate: true });
                 }
                 
                 if (name === 'ampliacionesDetails.paidInFull' || name === 'ampliacionesDetails.selectedPlans') {
-                    const currentDeadline = form.getValues('ampliacionesDetails.paymentDeadline');
                     if (isPaidInFull || forceFullPayment) {
-                         if (!(currentDeadline instanceof Date)) {
+                        if (!(form.getValues('ampliacionesDetails.paymentDeadline') instanceof Date)) {
                             form.setValue('ampliacionesDetails.paymentDeadline', new Date());
                         }
                     } else {
-                        if (currentDeadline !== null) {
+                        if (form.getValues('ampliacionesDetails.paymentDeadline') !== null) {
                             form.setValue('ampliacionesDetails.paymentDeadline', null);
                         }
                     }
                 }
 
                 const newBalance = newCourseValue - newDownPayment;
-                const currentBalance = form.getValues('ampliacionesDetails.balance');
-                if (currentBalance?.toFixed(2) !== newBalance.toFixed(2)) {
+                if (form.getValues('ampliacionesDetails.balance')?.toFixed(2) !== newBalance.toFixed(2)) {
                     form.setValue('ampliacionesDetails.balance', newBalance < 0 ? 0 : newBalance, { shouldValidate: true });
                 }
             }
@@ -650,6 +643,7 @@ export function ContractForm() {
                      theoreticalClassDate: ampliacionesDetails.theoreticalClassDate ? format(ampliacionesDetails.theoreticalClassDate, 'yyyy-MM-dd') : null,
                 };
             }
+
 
             batch.set(contractRef, contractData);
             await batch.commit();
@@ -1454,7 +1448,7 @@ export function ContractForm() {
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                 <div className="flex flex-col gap-8">
+                <div className="flex flex-col gap-8">
                     {renderFormContent()}
                     
                     <Card>

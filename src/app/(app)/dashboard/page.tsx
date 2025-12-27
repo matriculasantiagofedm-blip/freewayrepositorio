@@ -36,14 +36,13 @@ export default function DashboardPage() {
   const contractsQuery = useMemoFirebase(() => {
     if (!firestore || !user || !role) return null;
     
-    const contractsCollection = collection(firestore, 'contracts');
-
-    // Admin can see all contracts, others see only their own.
+    // Admin can see all contracts from the root collection
     if (role === 'Administrador') {
-        return query(contractsCollection);
+        return collection(firestore, 'contracts');
     }
 
-    return query(contractsCollection, where('userId', '==', user.uid));
+    // Other users see only contracts within their own user subcollection
+    return collection(firestore, 'users', user.uid, 'contracts');
   }, [firestore, user, role]);
 
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);

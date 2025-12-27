@@ -9,19 +9,28 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { useEffect } from 'react';
+import { useCurrentRole } from '@/hooks/use-current-role';
 
 export default function ContractDetailPage() {
   const { id } = useParams();
   const searchParams = useSearchParams();
   const { firestore, user } = useFirebase();
+  const { role } = useCurrentRole();
 
   const contractId = Array.isArray(id) ? id[0] : id;
   const shouldPrint = searchParams.get('print') === 'true';
 
   const contractRef = useMemoFirebase(() => {
-    if (!firestore || !user || !contractId) return null;
-    return doc(firestore, `contracts`, contractId);
-  }, [firestore, user, contractId]);
+    if (!firestore || !user || !role || !contractId) return null;
+    
+    // Admin can access from the root collection
+    if (role === 'Administrador') {
+      return doc(firestore, `contracts`, contractId);
+    }
+    
+    // Regular users access from their own subcollection
+    return doc(firestore, 'users', user.uid, 'contracts', contractId);
+  }, [firestore, user, role, contractId]);
 
   const { data: contract, isLoading, error } = useDoc<Contract>(contractRef);
 

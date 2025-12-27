@@ -13,15 +13,13 @@ export default function ClientsPage() {
   const clientsQuery = useMemoFirebase(() => {
     if (!firestore || !user || !role) return null;
     
-    const clientsCollection = collection(firestore, 'clients');
-    
-    // For non-admin roles, we only fetch clients associated with the current user.
-    if (role !== 'Administrador') {
-      return query(clientsCollection, where('userId', '==', user.uid));
+    // Admin can see all clients
+    if (role === 'Administrador') {
+      return collection(firestore, 'clients');
     }
     
-    // Admin can see all clients
-    return query(clientsCollection);
+    // For non-admin roles, we only fetch clients associated with the current user.
+    return query(collection(firestore, 'clients'), where('userId', '==', user.uid));
     
   }, [firestore, user, role]);
 

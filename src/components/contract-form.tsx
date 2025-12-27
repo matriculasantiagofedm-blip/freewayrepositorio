@@ -588,7 +588,10 @@ export function ContractForm() {
                 batch.set(newClientRef, clientData);
             }
 
-            const contractRef = doc(collection(firestore, 'contracts'));
+            // Path for the contract document depends on the user role
+            const contractRef = role === 'Administrador'
+                ? doc(collection(firestore, 'contracts'))
+                : doc(collection(firestore, 'users', user.uid, 'contracts'));
             
             const toTimestamp = (date: Date | undefined | null): Timestamp | null => {
                 if (!date || !(date instanceof Date) || isNaN(date.getTime())) return null;
@@ -1487,6 +1490,3 @@ export function ContractForm() {
         </Form>
     );
 }
-
-    
-    

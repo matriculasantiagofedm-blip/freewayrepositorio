@@ -2,9 +2,7 @@
 
 import { google } from 'googleapis';
 import { z } from 'zod';
-import {
-  generateContractWithSequentialFolio,
-} from '@/ai/flows/generate-contract-folio';
+import { ai } from '@/ai/genkit';
 
 
 // Move the type definition here to avoid client components importing from a server-only file.
@@ -75,14 +73,16 @@ export async function pingCalendarsAction(params: { calendarId: string }) {
 
 export async function createContractAction(input: GenerateContractInput) {
   try {
-    const result = await generateContractWithSequentialFolio(input);
+    // IMPORTANT: We call the flow via `ai.run()` instead of importing and calling the function directly.
+    // This breaks the static import chain and prevents server-side code (firebase-admin)
+    // from being bundled with the client.
+    const result = await ai.run('generateContractWithFolioFlow', input);
+    
     if (result.error) {
-      // Re-throw the specific error from the flow to be caught by the client
       throw new Error(result.error);
     }
     return result;
   } catch (error) {
-    // Catch any other unexpected errors during the action execution
     console.error('[createContractAction] Unexpected error:', error);
     if (error instanceof Error) {
       return { contract: null, folio: '', error: error.message };

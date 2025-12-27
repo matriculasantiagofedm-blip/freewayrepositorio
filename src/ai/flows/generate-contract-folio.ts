@@ -30,15 +30,18 @@ const db = getFirestore(adminApp);
 // --- Zod Schemas for Input/Output ---
 
 const GenerateContractOutputSchema = z.object({
-  contract: z.any(),
+  contract: z.any().nullable(),
   folio: z.string(),
   error: z.string().optional(),
 });
 export type GenerateContractOutput = z.infer<typeof GenerateContractOutputSchema>;
 
 
-// --- Main exported function and Genkit Flow ---
-
+/**
+ * Main exported function to be called by the Server Action.
+ * IMPORTANT: This function is NOT imported directly by client components.
+ * It is wrapped in a Genkit flow and invoked via `ai.run('flowName', input)`.
+ */
 export async function generateContractWithSequentialFolio(input: GenerateContractInput): Promise<GenerateContractOutput> {
   return generateContractWithFolioFlow(input);
 }
@@ -50,14 +53,13 @@ const generateContractWithFolioFlow = ai.defineFlow(
     inputSchema: z.custom<GenerateContractInput>(),
     outputSchema: GenerateContractOutputSchema,
   },
-  async ({ contractData, details }) => {
-
+  async (input) => {
     try {
-        if (!contractData.studentIdNumber) {
+        if (!input.contractData.studentIdNumber) {
             throw new Error("El número de cédula o pasaporte del estudiante es un campo obligatorio para generar el contrato.");
         }
-        if (!details || Object.keys(details).length === 0) {
-            throw new Error(`Los detalles para el contrato tipo '${contractData.contractType}' están vacíos o son inválidos.`);
+        if (!input.details || Object.keys(input.details).length === 0) {
+            throw new Error(`Los detalles para el contrato tipo '${input.contractData.contractType}' están vacíos o son inválidos.`);
         }
         
         const counterRef = db.doc('counters/contract_folio');
@@ -81,7 +83,7 @@ const generateContractWithFolioFlow = ai.defineFlow(
 
         // --- Client Handling (Get or Create) ---
         const clientsRef = db.collection('clients');
-        const clientQuery = query(clientsRef, where("idNumber", "==", contractData.studentIdNumber), limit(1));
+        const clientQuery = query(clientsRef, where("idNumber", "==", input.contractData.studentIdNumber), limit(1));
         const clientSnapshot = await getDocs(clientQuery);
 
         let clientId: string;
@@ -96,17 +98,17 @@ const generateContractWithFolioFlow = ai.defineFlow(
             clientId = newClientRef.id;
             const newClientData = {
                 id: clientId,
-                name: contractData.clientName,
-                email: contractData.clientEmail,
-                idNumber: contractData.studentIdNumber,
-                userId: contractData.userId,
+                name: input.contractData.clientName,
+                email: input.contractData.clientEmail,
+                idNumber: input.contractData.studentIdNumber,
+                userId: input.contractData.userId,
                 createdAt: serverTimestamp(),
             };
             batch.set(newClientRef, newClientData);
         }
 
         // --- Contract Creation ---
-        const contractCollectionPath = `users/${contractData.userId}/contracts`;
+        const contractCollectionPath = `users/${input.contractData.userId}/contracts`;
         const contractRef = db.collection(contractCollectionPath).doc();
 
         const toTimestamp = (date: any): Timestamp | null => {
@@ -121,11 +123,9 @@ const generateContractWithFolioFlow = ai.defineFlow(
                  return Timestamp.fromDate(date);
             }
              // Handle ISO strings or other date strings
-            if (typeof date === 'string' || typeof date === 'number') {
-                const d = new Date(date);
-                if (!isNaN(d.getTime())) {
-                    return Timestamp.fromDate(d);
-                }
+            const d = new Date(date);
+            if (!isNaN(d.getTime())) {
+                return Timestamp.fromDate(d);
             }
             return null;
         }
@@ -164,27 +164,27 @@ const generateContractWithFolioFlow = ai.defineFlow(
             return newDetails;
         };
         
-        const finalDetails = convertDatesToTimestamps(details);
+        const finalDetails = convertDatesToTimestamps(input.details);
 
         const newContract: Omit<Contract, 'id' | 'createdAt'> = {
             folio,
-            title: `${contractData.contractType} - ${contractData.clientName}`,
-            clientName: contractData.clientName,
-            clientEmail: contractData.clientEmail,
+            title: `${input.contractData.contractType} - ${input.contractData.clientName}`,
+            clientName: input.contractData.clientName,
+            clientEmail: input.contractData.clientEmail,
             clientId,
-            content: `Contrato de ${contractData.contractType} para ${contractData.clientName}.`,
+            content: `Contrato de ${input.contractData.contractType} para ${input.contractData.clientName}.`,
             deadlines: [],
             status: 'active',
-            type: contractData.contractType as ContractType,
-            userId: contractData.userId,
-            createdBy: contractData.createdBy,
+            type: input.contractData.contractType as ContractType,
+            userId: input.contractData.userId,
+            createdBy: input.contractData.createdBy,
         };
 
-        if (contractData.contractType === 'Curso Deluxe') {
+        if (input.contractData.contractType === 'Curso Deluxe') {
             (newContract as any).deluxeDetails = finalDetails;
-        } else if (['Curso Auto', 'Curso Moto', 'Curso Mixto'].includes(contractData.contractType)) {
+        } else if (['Curso Auto', 'Curso Moto', 'Curso Mixto'].includes(input.contractData.contractType)) {
              (newContract as any).autoMotoDetails = finalDetails;
-        } else if (contractData.contractType === 'Ampliaciones') {
+        } else if (input.contractData.contractType === 'Ampliaciones') {
             (newContract as any).ampliacionesDetails = finalDetails;
         }
         

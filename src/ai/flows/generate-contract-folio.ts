@@ -120,10 +120,22 @@ const generateContractWithFolioFlow = ai.defineFlow(
              const newDetails = { ...detailsObj };
 
              const toTimestamp = (date: any): Timestamp | null => {
-                if (!date) return null;
-                const d = new Date(date);
-                if (isNaN(d.getTime())) return null;
-                return Timestamp.fromDate(d);
+                // Check if it's already a Timestamp or a similar object (from server-side calls)
+                if (date && typeof date.toDate === 'function') {
+                    return date;
+                }
+                // Check for string or number, then create a Date object
+                if (typeof date === 'string' || typeof date === 'number') {
+                    const d = new Date(date);
+                    if (!isNaN(d.getTime())) {
+                        return Timestamp.fromDate(d);
+                    }
+                }
+                // Check if it's a native Date object
+                if (date instanceof Date && !isNaN(date.getTime())) {
+                    return Timestamp.fromDate(date);
+                }
+                return null;
              }
 
              if (newDetails.paymentDeadline) {
@@ -137,7 +149,7 @@ const generateContractWithFolioFlow = ai.defineFlow(
                  if (Array.isArray(newDetails[key])) {
                      newDetails[key] = newDetails[key]
                          .map(toTimestamp)
-                         .filter(Boolean);
+                         .filter(Boolean); // filter(Boolean) removes nulls
                  }
              });
 

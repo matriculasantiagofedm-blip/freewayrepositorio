@@ -1,80 +1,114 @@
-
+/**
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model. All data that is private
+ * to a user, such as their contracts, is nested directly under their user ID.
+ * This ensures that a user can only ever access their own data subtree.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores the user's own profile data.
+ * - /users/{userId}/contracts/{contractId}: Stores contracts created by and
+ *   belonging to the parent user.
+ * - /clients/{clientId}: A top-level collection for client information. This
+ *   data is readable by all signed-in users to facilitate features like
+ *   assigning a client to a contract, but write access is heavily restricted.
+ *
+ * Key Security Decisions:
+ * - User Isolation: The core principle is that a user's data is isolated under
+ *   `/users/{userId}`. All rules for these paths check that the authenticated
+ *   user's UID matches the `userId` in the path.
+ * - No User Listing: Listing documents in the top-level `/users` collection is
+ *   explicitly disallowed to protect user privacy.
+ * - Denormalization for Authorization: Contract documents contain a `userId`
+ *   field. The rules enforce that this field matches the `{userId}` in the path
+ *   on creation and that it is immutable on update. This prevents a contract
+ *   from being moved between users and makes rules simpler and more performant.
+ * - Restricted Shared Data: The `/clients` collection is readable by any
+ *   authenticated user, but cannot be updated or deleted. This is a secure
+ *   default because the Client entity lacks an ownership field, making it
+ *   impossible to safely determine who should be allowed to modify it.
+ */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ------------------------------------------------------------------------
+    // ----------------------------------------------------------------------
     // Helper Functions
-    // ------------------------------------------------------------------------
+    // ----------------------------------------------------------------------
 
     /**
-     * Returns true if the user is authenticated.
+     * Checks if the user is authenticated.
      */
     function isSignedIn() {
       return request.auth != null;
     }
 
     /**
-     * Returns true if the currently authenticated user's ID matches the
-     * provided userId, establishing document ownership.
+     * Checks if the authenticated user's ID matches the provided userId.
+     * This is the foundation of the user-ownership model.
      */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
     /**
-     * Validates that a new contract document contains a 'userId' field that
-     * matches the currently authenticated user.
+     * Checks for ownership on an existing document. Used for update and delete
+     * operations to prevent acting on documents that don't exist.
      */
-    function hasValidContractDataOnCreate() {
-      return request.resource.data.userId == request.auth.uid;
-    }
-    
-    /**
-     * Enforces that a contract's owner ID cannot be changed.
-     */
-    function isContractOwnerImmutable() {
-      return request.resource.data.userId == resource.data.userId;
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
     }
 
-    // ------------------------------------------------------------------------
+    // ----------------------------------------------------------------------
     // Collection Rules
-    // ------------------------------------------------------------------------
+    // ----------------------------------------------------------------------
 
-    match /clients/{clientId} {
-      // Any signed-in user can create a client, but they must set themselves as the owner.
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      
-      // Any signed in user can READ a client's data. This is needed to check for existing
-      // clients by idNumber across all users to avoid duplicates.
-      allow get: if isSignedIn();
-      
-      // Only the user who created the client can update or delete it.
-      allow update, delete: if isOwner(resource.data.userId);
-      
-      // A user can list clients only if they are querying for their own clients.
-      allow list: if isSignedIn() && request.query.where.find(field => field[0] == 'userId' && field[2] == request.auth.uid) != null;
+    /**
+     * @description Manages access to a user's own profile document.
+     * @path /users/{userId}
+     * @allow (create) A signed-in user (uid: 'user123') can create their own document at `/users/user123`.
+     * @deny (get) A signed-in user (uid: 'user456') cannot get the document at `/users/user123`.
+     * @deny (list) No user can list the documents in the `/users` collection.
+     * @principle Restricts access to a user's own data tree and prevents user enumeration.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+
+      /**
+       * @description Secures contract documents, ensuring only the owner can manage them.
+       * @path /users/{userId}/contracts/{contractId}
+       * @allow (create) User 'user123' can create a contract at `/users/user123/contracts/contractABC`.
+       * @deny (list) User 'user456' cannot list contracts under `/users/user123`.
+       * @principle Enforces document ownership for all operations within a user's private subcollection.
+       */
+      match /contracts/{contractId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
     }
-    
-    match /contracts/{contractId} {
-      // Any signed-in user can get and list contracts.
-      allow get, list: if isSignedIn();
-      
-      // A user can create a contract if they are signed in and the new contract's userId is their own.
-      allow create: if isSignedIn() && hasValidContractDataOnCreate();
-      
-      // A user can update or delete a contract only if they are the owner.
-      allow update: if isOwner(resource.data.userId) && isContractOwnerImmutable();
-      allow delete: if isOwner(resource.data.userId);
 
-      // Subcollection rules now also check ownership on the parent contract for write operations.
-      match /meetings/{meetingId} {
-        allow read, write: if isOwner(get(/databases/$(database)/documents/contracts/$(contractId)).data.userId);
-      }
-
-      match /reminders/{reminderId} {
-        allow read, write: if isOwner(get(/databases/$(database)/documents/contracts/$(contractId)).data.userId);
-      }
+    /**
+     * @description Manages client data. Clients can be read by any authenticated user,
+     * but write access is restricted to prevent unauthorized modification of shared data.
+     * @path /clients/{clientId}
+     * @allow (get) Any signed-in user can get or list clients.
+     * @allow (create) Any signed-in user can create a new client document.
+     * @deny (update) A user cannot update a client document because there is no ownership model.
+     * @principle Provides read access for shared data while preventing modification of data that lacks a clear owner.
+     */
+    match /clients/{clientId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn();
+      // CRITICAL: Cannot implement owner-only writes for update/delete. The 'Client' entity is missing an 'ownerId' or 'authorId' field.
+      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
     }
   }
 }

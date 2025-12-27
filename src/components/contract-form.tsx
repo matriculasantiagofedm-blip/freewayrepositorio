@@ -289,6 +289,7 @@ export function ContractForm() {
     const { toast } = useToast();
     const { role: currentUserRole } = useCurrentRole();
     const [savedContract, setSavedContract] = useState<Contract | null>(null);
+    const [folioPreview, setFolioPreview] = useState<string>('');
 
 
     const contractType = useMemo(() => searchParams.get('type') as ContractType | null, [searchParams]);
@@ -336,6 +337,9 @@ export function ContractForm() {
     });
 
     useEffect(() => {
+        const year = new Date().getFullYear();
+        setFolioPreview(`${year}-XXX`);
+
         if (contractType) {
             form.reset(getDefaultValues(contractType));
 
@@ -532,15 +536,16 @@ export function ContractForm() {
                  toast({ variant: 'destructive', title: 'Error de Validación', description: 'El número de cédula es obligatorio para crear o buscar un cliente.' });
                  return;
             }
-
-            const toTimestampString = (date: Date | undefined | null): string | null => {
+            
+            const toTimestampString = (date: any): string | null => {
                 if (!date || !(date instanceof Date) || isNaN(date.getTime())) return null;
-                return date.toISOString();
+                const ts = Timestamp.fromDate(date);
+                return new Date(ts.seconds * 1000 + ts.nanoseconds / 1000000).toISOString();
             };
 
             const convertDatesToStrings = (details: any) => {
                 const newDetails = { ...details };
-                if (newDetails.paymentDeadline) newDetails.paymentDeadline = toTimestampString(newDetails.paymentDeadline);
+                 if (newDetails.paymentDeadline) newDetails.paymentDeadline = toTimestampString(newDetails.paymentDeadline);
                 if (newDetails.theoreticalClassDate) newDetails.theoreticalClassDate = toTimestampString(newDetails.theoreticalClassDate);
                 
                 ['theoreticalClassDates', 'theoreticalClasses', 'paymentInstallments'].forEach(key => {
@@ -1319,7 +1324,7 @@ export function ContractForm() {
                 <CardTitle>Completa los detalles principales de tu acuerdo.</CardTitle>
                 <div className='flex justify-between items-center'>
                     <FormDescription>Tipo de Contrato: {contractType}</FormDescription>
-                    <p className='text-sm font-semibold text-muted-foreground'>Folio: Generado al guardar</p>
+                    <p className='text-sm font-semibold text-muted-foreground'>Folio: {folioPreview}</p>
                 </div>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -1347,13 +1352,13 @@ export function ContractForm() {
       const formValues = form.watch();
 
       if (contractType === 'Curso Deluxe') {
-          return <DeluxePremiumContractTemplatePreview folio={"..."} clientName={formValues.clientName} clientEmail={formValues.clientEmail} deluxeDetails={formValues.deluxeDetails} createdBy={currentUserRole || 'Ventas'} />
+          return <DeluxePremiumContractTemplatePreview folio={folioPreview} clientName={formValues.clientName} clientEmail={formValues.clientEmail} deluxeDetails={formValues.deluxeDetails} createdBy={currentUserRole || 'Ventas'} />
       }
       if (contractType === 'Ampliaciones') {
           const { clientName, clientEmail, ampliacionesDetails } = formValues;
           const contractForPreview: Contract = {
               id: '',
-              folio: "...",
+              folio: folioPreview,
               title: `Ampliaciones - ${clientName}`,
               clientName,
               clientEmail,
@@ -1374,7 +1379,7 @@ export function ContractForm() {
           return <AmpliacionesContractTemplate contract={contractForPreview} />;
       }
       
-      return <AutoMotoContractTemplatePreview folio={"..."} clientName={formValues.clientName} clientEmail={formValues.clientEmail} autoMotoDetails={formValues.autoMotoDetails} createdBy={currentUserRole || 'Ventas'} type={contractType as any} />
+      return <AutoMotoContractTemplatePreview folio={folioPreview} clientName={formValues.clientName} clientEmail={formValues.clientEmail} autoMotoDetails={formValues.autoMotoDetails} createdBy={currentUserRole || 'Ventas'} type={contractType as any} />
     }
 
 

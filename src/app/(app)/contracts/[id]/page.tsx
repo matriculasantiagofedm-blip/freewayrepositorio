@@ -25,12 +25,13 @@ export default function ContractDetailPage() {
   const { data: contract, isLoading, error } = useDoc<Contract>(contractRef);
 
   useEffect(() => {
+    // Only trigger print if shouldPrint is true, loading is finished, and the contract data exists.
     if (shouldPrint && contract && !isLoading) {
-      // Short delay to ensure all content and styles are rendered before printing.
+      // A short delay can help ensure all styles and content are fully rendered before printing.
       const timer = setTimeout(() => {
         window.print();
       }, 500); 
-      return () => clearTimeout(timer);
+      return () => clearTimeout(timer); // Cleanup the timer if the component unmounts
     }
   }, [shouldPrint, contract, isLoading]);
 

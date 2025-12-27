@@ -12,6 +12,7 @@ import { getFirestore, doc, runTransaction, serverTimestamp, collection, query, 
 import { initializeApp, getApps, App } from 'firebase-admin/app';
 import { firebaseConfig } from '@/firebase/config';
 import type { Contract, ContractType } from '@/lib/types';
+import type { GenerateContractInput } from '@/app/actions';
 
 
 // --- Firebase Admin Initialization ---
@@ -27,20 +28,6 @@ const db = getFirestore(adminApp);
 
 
 // --- Zod Schemas for Input/Output ---
-
-const GenerateContractInputSchema = z.object({
-  contractData: z.object({
-    clientName: z.string(),
-    clientEmail: z.string().email(),
-    contractType: z.string(),
-    studentIdNumber: z.string(),
-    userId: z.string(),
-    createdBy: z.string(),
-  }),
-  details: z.any(),
-});
-export type GenerateContractInput = z.infer<typeof GenerateContractInputSchema>;
-
 
 const GenerateContractOutputSchema = z.object({
   contract: z.any(),
@@ -60,7 +47,7 @@ export async function generateContractWithSequentialFolio(input: GenerateContrac
 const generateContractWithFolioFlow = ai.defineFlow(
   {
     name: 'generateContractWithFolioFlow',
-    inputSchema: GenerateContractInputSchema,
+    inputSchema: z.custom<GenerateContractInput>(),
     outputSchema: GenerateContractOutputSchema,
   },
   async ({ contractData, details }) => {
@@ -125,10 +112,16 @@ const generateContractWithFolioFlow = ai.defineFlow(
         const toTimestamp = (date: any): Timestamp | null => {
             if (!date) return null;
             if (date instanceof Timestamp) return date;
-            if (date && typeof date.toDate === 'function') {
-                return Timestamp.fromMillis(date.toMillis());
+            // Handle Firestore Timestamp-like objects from client
+            if (date && typeof date.seconds === 'number' && typeof date.nanoseconds === 'number') {
+                return new Timestamp(date.seconds, date.nanoseconds);
             }
-            if (typeof date === 'string' || typeof date === 'number' || date instanceof Date) {
+             // Handle JS Date objects
+            if (date instanceof Date) {
+                 return Timestamp.fromDate(date);
+            }
+             // Handle ISO strings or other date strings
+            if (typeof date === 'string' || typeof date === 'number') {
                 const d = new Date(date);
                 if (!isNaN(d.getTime())) {
                     return Timestamp.fromDate(d);
@@ -213,7 +206,7 @@ const generateContractWithFolioFlow = ai.defineFlow(
             if (Array.isArray(obj)) {
                 return obj.map(item => convertTimestampsToISO(item));
             }
-            if (typeof obj === 'object') {
+            if (typeof obj === 'object' && obj !== null) {
                 const newObj: { [key: string]: any } = {};
                 for (const key in obj) {
                     if (Object.prototype.hasOwnProperty.call(obj, key)) {

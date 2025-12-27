@@ -49,6 +49,7 @@ import { useCurrentRole } from '@/hooks/use-current-role';
 import { AmpliacionesContractTemplate } from './ampliaciones-contract';
 import { ContractView } from './contract-view';
 import { createContractAction } from '@/app/actions';
+import type { GenerateContractInput } from '@/app/actions';
 
 
 // --- Esquemas de Validación con Zod ---
@@ -541,7 +542,7 @@ export function ContractForm() {
                     createdBy: currentUserRole,
                 },
                 details: detailsPayload
-            });
+            } as GenerateContractInput);
 
             if (result.error) {
                 throw new Error(result.error);

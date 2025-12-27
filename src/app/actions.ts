@@ -4,8 +4,23 @@ import { google } from 'googleapis';
 import { z } from 'zod';
 import {
   generateContractWithSequentialFolio,
-  type GenerateContractInput,
 } from '@/ai/flows/generate-contract-folio';
+
+
+// Move the type definition here to avoid client components importing from a server-only file.
+const GenerateContractInputSchema = z.object({
+  contractData: z.object({
+    clientName: z.string(),
+    clientEmail: z.string().email(),
+    contractType: z.string(),
+    studentIdNumber: z.string(),
+    userId: z.string(),
+    createdBy: z.string(),
+  }),
+  details: z.any(),
+});
+export type GenerateContractInput = z.infer<typeof GenerateContractInputSchema>;
+
 
 const PingParamsSchema = z.object({
   calendarId: z.string().min(1, 'El ID del calendario es requerido.'),

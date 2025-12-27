@@ -375,25 +375,40 @@ export function ContractForm() {
                         return;
                     }
 
-                    const isPaidInFull = value.autoMotoDetails?.paidInFull;
+                    let isPaidInFull = value.autoMotoDetails?.paidInFull ?? false;
                     const downPayment = value.autoMotoDetails?.downPayment || 0;
                     const specialPlanSelected = !!selectedPlan && !selectedPlan.isCombined && planName?.toLowerCase().includes('ya se manejar');
 
                     let newCourseValue = selectedPlan.price;
-                    form.setValue('autoMotoDetails.courseValue', newCourseValue, { shouldValidate: true });
+                    if (form.getValues('autoMotoDetails.courseValue') !== newCourseValue) {
+                        form.setValue('autoMotoDetails.courseValue', newCourseValue, { shouldValidate: true });
+                    }
+
 
                     let newDownPayment = downPayment;
                     if (name === 'autoMotoDetails.coursePlan') {
                         if (specialPlanSelected) {
-                            form.setValue('autoMotoDetails.paidInFull', true, { shouldValidate: true });
+                             if (!form.getValues('autoMotoDetails.paidInFull')) {
+                                form.setValue('autoMotoDetails.paidInFull', true, { shouldValidate: true });
+                            }
+                            isPaidInFull = true;
                             newDownPayment = newCourseValue;
                         } else if (!selectedPlan.isCombined) {
-                            form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
+                            if (form.getValues('autoMotoDetails.paidInFull')) {
+                                form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
+                            }
+                            isPaidInFull = false;
                             newDownPayment = newCourseValue * 0.5;
                         } else {
-                            form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
+                             if (form.getValues('autoMotoDetails.paidInFull')) {
+                                form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
+                            }
+                            isPaidInFull = false;
                         }
-                        form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
+
+                        if (form.getValues('autoMotoDetails.downPayment') !== newDownPayment) {
+                            form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
+                        }
 
                          if (currentContractType === 'Curso Mixto') {
                             replacePracticalClasses(Array(selectedPlan.classes || 0).fill({ date: undefined, time: undefined }));
@@ -402,21 +417,30 @@ export function ContractForm() {
                             replacePracticalClasses(Array(selectedPlan.classes).fill({ date: undefined, time: undefined }));
                             replaceMotoPracticalClasses([]);
                         }
-                    } else if (isPaidInFull) {
+                    } else if (name === 'autoMotoDetails.paidInFull' && isPaidInFull) {
                         newDownPayment = newCourseValue;
-                        form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
+                         if (form.getValues('autoMotoDetails.downPayment') !== newDownPayment) {
+                            form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
+                        }
                     }
                     
                     if (name === 'autoMotoDetails.paidInFull' || name === 'autoMotoDetails.coursePlan') {
-                        if (form.getValues('autoMotoDetails.paidInFull')) {
-                            form.setValue('autoMotoDetails.paymentDeadline', new Date());
+                        if (isPaidInFull) {
+                             if (!(form.getValues('autoMotoDetails.paymentDeadline') instanceof Date)) {
+                                form.setValue('autoMotoDetails.paymentDeadline', new Date());
+                            }
                         } else {
-                            form.setValue('autoMotoDetails.paymentDeadline', null);
+                             if (form.getValues('autoMotoDetails.paymentDeadline') !== null) {
+                                form.setValue('autoMotoDetails.paymentDeadline', null);
+                            }
                         }
                     }
 
                     const newBalance = newCourseValue - newDownPayment;
-                    form.setValue('autoMotoDetails.balance', newBalance < 0 ? 0 : newBalance, { shouldValidate: true });
+                    const finalBalance = newBalance < 0 ? 0 : newBalance;
+                    if (form.getValues('autoMotoDetails.balance') !== finalBalance) {
+                        form.setValue('autoMotoDetails.balance', finalBalance, { shouldValidate: true });
+                    }
                 }
             }
 
@@ -443,7 +467,7 @@ export function ContractForm() {
                             isPaidInFull = true;
                         } else {
                             if (form.getValues('ampliacionesDetails.paidInFull') === true) {
-                            form.setValue('ampliacionesDetails.paidInFull', false, { shouldValidate: true });
+                                form.setValue('ampliacionesDetails.paidInFull', false, { shouldValidate: true });
                             }
                             isPaidInFull = false;
                         }
@@ -475,8 +499,9 @@ export function ContractForm() {
                     }
 
                     const newBalance = newCourseValue - newDownPayment;
-                    if (form.getValues('ampliacionesDetails.balance')?.toFixed(2) !== newBalance.toFixed(2)) {
-                        form.setValue('ampliacionesDetails.balance', newBalance < 0 ? 0 : newBalance, { shouldValidate: true });
+                    const finalBalance = newBalance < 0 ? 0 : newBalance;
+                    if (form.getValues('ampliacionesDetails.balance')?.toFixed(2) !== finalBalance.toFixed(2)) {
+                        form.setValue('ampliacionesDetails.balance', finalBalance, { shouldValidate: true });
                     }
                 }
             }
@@ -534,6 +559,19 @@ export function ContractForm() {
     
         generateFolio();
     }, [firestore]);
+
+    const toDate = (date: any): Date => {
+        if (date instanceof Date) return date;
+        if (date && date.toDate) return date.toDate();
+        if (typeof date === 'string') {
+          const parsed = new Date(date);
+          if (!isNaN(parsed.getTime())) {
+            const timezoneOffset = parsed.getTimezoneOffset() * 60000;
+            return new Date(parsed.getTime() + timezoneOffset);
+          }
+        }
+        return new Date(0); // Return invalid date
+    };
 
     const onSubmit = async (values: FormValues) => {
         if (!firestore || !user || !currentUserRole || isUserLoading) {
@@ -601,26 +639,26 @@ export function ContractForm() {
             if (contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') {
                 const { autoMotoDetails } = values;
                 finalContractDataForDb.autoMotoDetails = {
-                    ...autoMotoDetails,
+                    ...(autoMotoDetails || {}),
                     studentIdNumber,
                     paymentDeadline: toTimestamp(autoMotoDetails.paymentDeadline),
-                    theoreticalClassDates: (autoMotoDetails.theoreticalClassDates || []).map(toTimestamp).filter(Boolean),
-                    practicalClassSchedules: (autoMotoDetails.practicalClassSchedules || []).map(c => ({ date: c.date ? toTimestamp(c.date) : null, time: c.time || null })),
-                    motoPracticalClassSchedules: (autoMotoDetails.motoPracticalClassSchedules || []).map(c => ({ date: c.date ? toTimestamp(c.date) : null, time: c.time || null })),
+                    theoreticalClassDates: (autoMotoDetails.theoreticalClassDates || []).map(d => toTimestamp(d)).filter(Boolean),
+                    practicalClassSchedules: (autoMotoDetails.practicalClassSchedules || []).map(c => ({ date: toTimestamp(c.date), time: c.time || null })),
+                    motoPracticalClassSchedules: (autoMotoDetails.motoPracticalClassSchedules || []).map(c => ({ date: toTimestamp(c.date), time: c.time || null })),
                 };
             } else if (contractType === 'Curso Deluxe') {
                 const { deluxeDetails } = values;
                 finalContractDataForDb.deluxeDetails = {
-                    ...deluxeDetails,
+                    ...(deluxeDetails || {}),
                     studentIdNumber,
-                    paymentInstallments: (deluxeDetails.paymentInstallments || []).map(toTimestamp).filter(Boolean),
-                    theoreticalClasses: (deluxeDetails.theoreticalClasses || []).map(toTimestamp).filter(Boolean),
-                    classSchedules: (deluxeDetails.classSchedules || []).map(c => ({ date: c.date ? toTimestamp(c.date) : null, time: c.time || null })),
+                    paymentInstallments: (deluxeDetails.paymentInstallments || []).map(d => toTimestamp(d)).filter(Boolean),
+                    theoreticalClasses: (deluxeDetails.theoreticalClasses || []).map(d => toTimestamp(d)).filter(Boolean),
+                    classSchedules: (deluxeDetails.classSchedules || []).map(c => ({ date: toTimestamp(c.date), time: c.time || null })),
                 };
             } else if (contractType === 'Ampliaciones') {
                 const { ampliacionesDetails } = values;
                 finalContractDataForDb.ampliacionesDetails = {
-                    ...ampliacionesDetails,
+                    ...(ampliacionesDetails || {}),
                      studentIdNumber,
                      paymentDeadline: toTimestamp(ampliacionesDetails.paymentDeadline),
                      theoreticalClassDate: toTimestamp(ampliacionesDetails.theoreticalClassDate),
@@ -1420,8 +1458,8 @@ export function ContractForm() {
               createdBy: currentUserRole || 'Ventas',
               ampliacionesDetails: {
                   ...ampliacionesDetails,
-                  theoreticalClassDate: ampliacionesDetails.theoreticalClassDate ? Timestamp.fromDate(ampliacionesDetails.theoreticalClassDate) : undefined,
-                  paymentDeadline: ampliacionesDetails.paymentDeadline ? Timestamp.fromDate(ampliacionesDetails.paymentDeadline) : undefined,
+                  theoreticalClassDate: ampliacionesDetails.theoreticalClassDate ? Timestamp.fromDate(toDate(ampliacionesDetails.theoreticalClassDate)) : undefined,
+                  paymentDeadline: ampliacionesDetails.paymentDeadline ? Timestamp.fromDate(toDate(ampliacionesDetails.paymentDeadline)) : undefined,
               }
           }
           return <AmpliacionesContractTemplate contract={contractForPreview} />;
@@ -1473,5 +1511,3 @@ export function ContractForm() {
         </Form>
     );
 }
-
-    

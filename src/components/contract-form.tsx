@@ -48,7 +48,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { AmpliacionesContractTemplate } from './ampliaciones-contract';
 import { ContractView } from './contract-view';
-import { generateContractWithSequentialFolio } from '@/ai/flows/generate-contract-folio';
+import { createContractAction } from '@/app/actions';
 
 
 // --- Esquemas de Validación con Zod ---
@@ -528,7 +528,7 @@ export function ContractForm() {
             values.autoMotoDetails;
 
         try {
-            const result = await generateContractWithSequentialFolio({
+            const result = await createContractAction({
                 contractData: {
                     clientName: values.clientName,
                     clientEmail: values.clientEmail,

@@ -2,6 +2,10 @@
 
 import { google } from 'googleapis';
 import { z } from 'zod';
+import {
+  generateContractWithSequentialFolio,
+  type GenerateContractInput,
+} from '@/ai/flows/generate-contract-folio';
 
 const PingParamsSchema = z.object({
   calendarId: z.string().min(1, 'El ID del calendario es requerido.'),
@@ -51,5 +55,23 @@ export async function pingCalendarsAction(params: { calendarId: string }) {
       error: errorMessage,
       calendarId: params.calendarId
     };
+  }
+}
+
+export async function createContractAction(input: GenerateContractInput) {
+  try {
+    const result = await generateContractWithSequentialFolio(input);
+    if (result.error) {
+      // Re-throw the specific error from the flow to be caught by the client
+      throw new Error(result.error);
+    }
+    return result;
+  } catch (error) {
+    // Catch any other unexpected errors during the action execution
+    console.error('[createContractAction] Unexpected error:', error);
+    if (error instanceof Error) {
+      return { contract: null, folio: '', error: error.message };
+    }
+    return { contract: null, folio: '', error: 'Ocurrió un error inesperado en el servidor.' };
   }
 }

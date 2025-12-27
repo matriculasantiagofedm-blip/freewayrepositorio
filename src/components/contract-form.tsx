@@ -471,7 +471,7 @@ export function ContractForm() {
                 }
                 
                 const currentDownPayment = form.getValues('ampliacionesDetails.downPayment');
-                if (currentDownPayment !== newDownPayment && currentDownPayment?.toFixed(2) !== newDownPayment.toFixed(2)) {
+                if (currentDownPayment?.toFixed(2) !== newDownPayment.toFixed(2)) {
                     form.setValue('ampliacionesDetails.downPayment', newDownPayment, { shouldValidate: true });
                 }
                 
@@ -490,7 +490,7 @@ export function ContractForm() {
 
                 const newBalance = newCourseValue - newDownPayment;
                 const currentBalance = form.getValues('ampliacionesDetails.balance');
-                if (currentBalance !== newBalance && currentBalance?.toFixed(2) !== newBalance.toFixed(2)) {
+                if (currentBalance?.toFixed(2) !== newBalance.toFixed(2)) {
                     form.setValue('ampliacionesDetails.balance', newBalance < 0 ? 0 : newBalance, { shouldValidate: true });
                 }
             }
@@ -556,19 +556,43 @@ export function ContractForm() {
         }
 
         try {
-            const batch = writeBatch(firestore);
-
-            const clientRef = doc(collection(firestore, 'clients'));
-            const clientData = {
-                id: clientRef.id,
-                name: values.clientName,
-                email: values.clientEmail,
-                idNumber: values.autoMotoDetails?.studentIdNumber || values.deluxeDetails?.studentIdNumber || values.ampliacionesDetails?.studentIdNumber,
-                userId: user.uid,
-                createdAt: serverTimestamp(),
-            };
-            batch.set(clientRef, clientData);
+            const studentIdNumber = values.autoMotoDetails?.studentIdNumber || values.deluxeDetails?.studentIdNumber || values.ampliacionesDetails?.studentIdNumber;
+            if (!studentIdNumber) {
+                 toast({ variant: 'destructive', title: 'Error de Validación', description: 'El número de cédula es obligatorio para crear o buscar un cliente.' });
+                 return;
+            }
             
+            const batch = writeBatch(firestore);
+            
+            // --- Lógica para buscar o crear el cliente ---
+            const clientsRef = collection(firestore, 'clients');
+            const clientQuery = query(clientsRef, where("idNumber", "==", studentIdNumber), limit(1));
+            const clientSnapshot = await getDocs(clientQuery);
+
+            let clientId: string;
+            
+            if (clientSnapshot.empty) {
+                // El cliente no existe, lo creamos
+                const newClientRef = doc(collection(firestore, 'clients'));
+                const clientData = {
+                    id: newClientRef.id,
+                    name: values.clientName,
+                    email: values.clientEmail,
+                    idNumber: studentIdNumber,
+                    userId: user.uid,
+                    createdAt: serverTimestamp(),
+                };
+                batch.set(newClientRef, clientData);
+                clientId = newClientRef.id;
+            } else {
+                // El cliente ya existe, usamos su ID
+                clientId = clientSnapshot.docs[0].id;
+                // Opcional: podrías actualizar los datos del cliente si han cambiado
+                // const clientRef = clientSnapshot.docs[0].ref;
+                // batch.update(clientRef, { name: values.clientName, email: values.clientEmail });
+            }
+            // --- Fin de la lógica del cliente ---
+
             const contractRef = doc(collection(firestore, 'contracts'));
             
             const contractData: any = {
@@ -577,7 +601,7 @@ export function ContractForm() {
                 title: `${values.contractType} - ${values.clientName}`,
                 clientName: values.clientName,
                 clientEmail: values.clientEmail,
-                clientId: clientRef.id,
+                clientId: clientId,
                 content: `Contrato de ${values.contractType} para ${values.clientName}.`,
                 deadlines: [],
                 status: 'active',
@@ -594,6 +618,7 @@ export function ContractForm() {
                 const autoMotoDetails = values.autoMotoDetails || {};
                 contractData.autoMotoDetails = {
                     ...autoMotoDetails,
+                    studentIdNumber, // Asegurarnos de que se guarda
                     paymentDeadline: autoMotoDetails.paymentDeadline instanceof Date ? format(autoMotoDetails.paymentDeadline, 'yyyy-MM-dd') : null,
                     theoreticalClassDates: (autoMotoDetails.theoreticalClassDates || [])
                         .map(d => d instanceof Date ? format(d, 'yyyy-MM-dd') : null)
@@ -615,6 +640,7 @@ export function ContractForm() {
                 const deluxeDetails = values.deluxeDetails || {};
                 contractData.deluxeDetails = {
                     ...deluxeDetails,
+                    studentIdNumber, // Asegurarnos de que se guarda
                     paymentInstallments: (deluxeDetails.paymentInstallments || []).map(d => d instanceof Date ? format(d, 'yyyy-MM-dd') : null).filter(Boolean),
                     theoreticalClasses: (deluxeDetails.theoreticalClasses || []).map(d => d instanceof Date ? format(d, 'yyyy-MM-dd') : null).filter(Boolean),
                     classSchedules: (deluxeDetails.classSchedules || [])
@@ -625,6 +651,7 @@ export function ContractForm() {
                 const ampliacionesDetails = values.ampliacionesDetails || {};
                 contractData.ampliacionesDetails = {
                     ...ampliacionesDetails,
+                     studentIdNumber, // Asegurarnos de que se guarda
                      paymentDeadline: ampliacionesDetails.paymentDeadline instanceof Date ? format(ampliacionesDetails.paymentDeadline, 'yyyy-MM-dd') : null,
                      theoreticalClassDate: ampliacionesDetails.theoreticalClassDate instanceof Date ? format(ampliacionesDetails.theoreticalClassDate, 'yyyy-MM-dd') : null,
                 };
@@ -633,7 +660,7 @@ export function ContractForm() {
             batch.set(contractRef, contractData);
             await batch.commit();
 
-            toast({ title: 'Éxito', description: 'Contrato y cliente creados correctamente.' });
+            toast({ title: 'Éxito', description: 'Contrato y cliente creados/asociados correctamente.' });
             
             const redirectUrl = `/contracts/${contractRef.id}${submissionAction === 'saveAndPrint' ? '?print=true' : ''}`;
             router.push(redirectUrl);
@@ -1456,10 +1483,3 @@ export function ContractForm() {
         </Form>
     );
 }
-
-    
-
-    
-
-    
-

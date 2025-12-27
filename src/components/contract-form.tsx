@@ -415,11 +415,16 @@ export function ContractForm() {
                         }
                     }
 
+                    const currentPaymentDeadline = form.getValues('autoMotoDetails.paymentDeadline');
                     if (name === 'autoMotoDetails.paidInFull' || name === 'autoMotoDetails.coursePlan') {
-                        if (isPaidInFull && !(form.getValues('autoMotoDetails.paymentDeadline') instanceof Date)) {
-                             form.setValue('autoMotoDetails.paymentDeadline', new Date());
-                        } else if (!isPaidInFull && form.getValues('autoMotoDetails.paymentDeadline') !== null) {
-                            form.setValue('autoMotoDetails.paymentDeadline', null);
+                        if (isPaidInFull) {
+                            if (!currentPaymentDeadline || !(currentPaymentDeadline instanceof Date)) {
+                                form.setValue('autoMotoDetails.paymentDeadline', new Date());
+                            }
+                        } else {
+                             if (currentPaymentDeadline !== null) {
+                                form.setValue('autoMotoDetails.paymentDeadline', null);
+                            }
                         }
                     }
 
@@ -466,12 +471,17 @@ export function ContractForm() {
                      if ((form.getValues('ampliacionesDetails.downPayment') || 0).toFixed(2) !== newDownPayment.toFixed(2)) {
                         form.setValue('ampliacionesDetails.downPayment', newDownPayment, { shouldValidate: true });
                     }
-
+                    
+                    const currentPaymentDeadline = form.getValues('ampliacionesDetails.paymentDeadline');
                     if (name === 'ampliacionesDetails.paidInFull' || name === 'ampliacionesDetails.selectedPlans') {
-                         if ((isPaidInFull || forceFullPayment) && !(form.getValues('ampliacionesDetails.paymentDeadline') instanceof Date)) {
-                             form.setValue('ampliacionesDetails.paymentDeadline', new Date());
-                         } else if (!isPaidInFull && !forceFullPayment && form.getValues('ampliacionesDetails.paymentDeadline') !== null) {
-                            form.setValue('ampliacionesDetails.paymentDeadline', null);
+                         if (isPaidInFull || forceFullPayment) {
+                             if (!currentPaymentDeadline || !(currentPaymentDeadline instanceof Date)) {
+                                 form.setValue('ampliacionesDetails.paymentDeadline', new Date());
+                             }
+                         } else {
+                            if (currentPaymentDeadline !== null) {
+                                form.setValue('ampliacionesDetails.paymentDeadline', null);
+                            }
                         }
                     }
 
@@ -499,42 +509,15 @@ export function ContractForm() {
 
 
     useEffect(() => {
-        const generateFolio = async () => {
-            if (!firestore) return;
-    
+        const generateFolio = () => {
             const currentYear = new Date().getFullYear();
-            const folioPrefix = `${currentYear}-`;
-            
-            const contractsRef = collectionGroup(firestore, 'contracts');
-            const q = query(
-                contractsRef,
-                where('folio', '>=', folioPrefix),
-                where('folio', '<', `${currentYear + 1}-`),
-                orderBy('folio', 'desc'),
-                limit(1)
-            );
-    
-            try {
-                const querySnapshot = await getDocs(q);
-                let nextFolioNumber = 1;
-    
-                if (!querySnapshot.empty) {
-                    const lastFolio = querySnapshot.docs[0].data().folio;
-                    const lastNumber = parseInt(lastFolio.split('-')[1], 10);
-                    nextFolioNumber = lastNumber + 1;
-                }
-    
-                const newFolio = `${currentYear}-${String(nextFolioNumber).padStart(3, '0')}`;
-                setFolio(newFolio);
-            } catch (error) {
-                console.error("Error generating folio:", error);
-                const uniqueId = Date.now().toString().slice(-6);
-                setFolio(`${currentYear}-${uniqueId}`);
-            }
+            const uniqueId = Date.now().toString().slice(-7);
+            const newFolio = `${currentYear}-${uniqueId}`;
+            setFolio(newFolio);
         };
     
         generateFolio();
-    }, [firestore]);
+    }, []);
 
     const toDate = (date: any): Date => {
         if (date instanceof Date) return date;

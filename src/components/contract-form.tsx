@@ -456,7 +456,7 @@ export function ContractForm() {
                         }
                         isPaidInFull = true;
                     } else {
-                        if (form.getValues('ampliacionesDetails.paidInFull') !== false) {
+                         if (form.getValues('ampliacionesDetails.paidInFull') !== false) {
                            form.setValue('ampliacionesDetails.paidInFull', false, { shouldValidate: true });
                         }
                         isPaidInFull = false;
@@ -466,11 +466,12 @@ export function ContractForm() {
                 let newDownPayment = downPayment;
                 if (isPaidInFull) {
                     newDownPayment = newCourseValue;
-                } else if (name === 'ampliacionesDetails.selectedPlans') {
-                    newDownPayment = newCourseValue * 0.5;
+                } else if (name === 'ampliacionesDetails.selectedPlans' || (name === 'ampliacionesDetails.paidInFull' && !isPaidInFull)) {
+                     newDownPayment = newCourseValue * 0.5;
                 }
                 
-                if (form.getValues('ampliacionesDetails.downPayment') !== newDownPayment) {
+                const currentDownPayment = form.getValues('ampliacionesDetails.downPayment');
+                if (currentDownPayment !== newDownPayment && currentDownPayment?.toFixed(2) !== newDownPayment.toFixed(2)) {
                     form.setValue('ampliacionesDetails.downPayment', newDownPayment, { shouldValidate: true });
                 }
                 
@@ -493,6 +494,7 @@ export function ContractForm() {
                     form.setValue('ampliacionesDetails.balance', newBalance < 0 ? 0 : newBalance, { shouldValidate: true });
                 }
             }
+
 
             if (name === 'autoMotoDetails.theoreticalClassSchedule') {
                 const theoreticalSchedule = value.autoMotoDetails?.theoreticalClassSchedule;
@@ -1432,11 +1434,11 @@ export function ContractForm() {
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                <div className="flex flex-col gap-8">
                     <div className="space-y-6">
                         {renderFormContent()}
                     </div>
-                    <div className="sticky top-4">
+                    <div>
                         <Card>
                              <CardHeader>
                                 <CardTitle>Vista Previa del Contrato</CardTitle>

@@ -205,5 +205,3 @@ export function DeluxePremiumContractTemplatePreview({ folio, clientName, client
     </Card>
   );
 }
-
-    

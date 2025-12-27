@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Contract": {
@@ -100,6 +101,19 @@
         "id",
         "name"
       ]
+    },
+    "Counter": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Counter",
+      "type": "object",
+      "description": "A generic counter document for sequential IDs.",
+      "properties": {
+        "count": {
+          "type": "number",
+          "description": "The current count."
+        }
+      },
+      "required": ["count"]
     }
   },
   "auth": {
@@ -161,8 +175,24 @@
             }
           ]
         }
+      },
+      {
+        "path": "/counters/{counterId}",
+        "definition": {
+          "entityName": "Counter",
+          "schema": {
+            "$ref": "#/backend/entities/Counter"
+          },
+          "description": "Stores distributed counters. Used for generating sequential folio numbers for contracts.",
+          "params": [
+            {
+              "name": "counterId",
+              "description": "The unique identifier for the counter (e.g., 'contract_folio')."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging, following the principles of Authorization Independence, Clarity of Intent, DBAC, and QAPs. User and Client data are stored at the root level for easy access, while contracts are nested under the user to establish clear ownership. This structure ensures that contracts are directly associated with a specific user. Authorization independence is achieved by storing the `userId` and `clientId` directly within each contract document, eliminating the need for `get()` calls to parent documents during security rule evaluations. This denormalization supports atomic operations. All documents within each collection will have the same security requirements, thus enabling structural segregation.  The path-based ownership model simplifies list operations (QAPs) by making it easy to list contracts belonging to a specific user."
+    "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging, following the principles of Authorization Independence, Clarity of Intent, DBAC, and QAPs. User and Client data are stored at the root level for easy access, while contracts are nested under the user to establish clear ownership. This structure ensures that contracts are directly associated with a specific user. Authorization independence is achieved by storing the `userId` and `clientId` directly within each contract document, eliminating the need for `get()` calls to parent documents during security rule evaluations. A `counters` collection is added to manage sequential values like contract folios in a scalable and safe manner."
   }
 }

@@ -195,32 +195,29 @@ const generateContractWithFolioFlow = ai.defineFlow(
         // Convert Timestamps back to ISO strings for client compatibility before returning
         const convertTimestampsToISO = (obj: any): any => {
             if (!obj) return obj;
-            const newObj = { ...obj };
-            for (const key in newObj) {
-                if (newObj[key] instanceof Timestamp) {
-                    newObj[key] = newObj[key].toDate().toISOString();
-                } else if (Array.isArray(newObj[key])) {
-                     newObj[key] = newObj[key].map(item => {
-                        if(item instanceof Timestamp){
-                           return item.toDate().toISOString();
-                        }
-                        if(item && typeof item === 'object'){
-                            return convertTimestampsToISO(item);
-                        }
-                        return item;
-                     });
-                } else if (newObj[key] && typeof newObj[key] === 'object') {
-                    newObj[key] = convertTimestampsToISO(newObj[key]);
-                }
+            if (obj instanceof Timestamp) {
+                return obj.toDate().toISOString();
             }
-            return newObj;
+            if (Array.isArray(obj)) {
+                return obj.map(item => convertTimestampsToISO(item));
+            }
+            if (typeof obj === 'object') {
+                const newObj: { [key: string]: any } = {};
+                for (const key in obj) {
+                    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                        newObj[key] = convertTimestampsToISO(obj[key]);
+                    }
+                }
+                return newObj;
+            }
+            return obj;
         };
 
         const finalContractForClient = {
             ...contractWithTimestamp,
             createdAt: new Date().toISOString(), // Return as string for client compatibility
         };
-
+        
         if (finalContractForClient.deluxeDetails) {
             finalContractForClient.deluxeDetails = convertTimestampsToISO(finalContractForClient.deluxeDetails);
         }
@@ -246,5 +243,3 @@ const generateContractWithFolioFlow = ai.defineFlow(
     }
   }
 );
-
-    

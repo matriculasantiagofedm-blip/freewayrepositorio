@@ -125,7 +125,7 @@ const generateContractWithFolioFlow = ai.defineFlow(
         const toTimestamp = (date: any): Timestamp | null => {
             if (!date) return null;
             if (date instanceof Timestamp) return date;
-            if (date && typeof date.toDate === 'function') { // Handle Firebase Timestamps from client
+            if (date && typeof date.toDate === 'function') {
                 return Timestamp.fromMillis(date.toMillis());
             }
             if (typeof date === 'string' || typeof date === 'number' || date instanceof Date) {
@@ -238,7 +238,7 @@ const generateContractWithFolioFlow = ai.defineFlow(
         return {
             contract: null,
             folio: '',
-            error: `Failed to create contract: ${error.message}`,
+            error: error.message,
         };
     }
   }

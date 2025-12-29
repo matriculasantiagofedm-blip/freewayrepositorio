@@ -26,9 +26,9 @@ export function UserNav() {
 
   const handleLogout = async () => {
     await auth.signOut();
-    // Forzar la redirección a la página de inicio después de cerrar sesión
-    router.push('/');
-    router.refresh(); // Opcional: para asegurar que el estado se limpie
+    // Forzar la redirección a la página de inicio y recargar la ventana.
+    // Esto asegura que todos los estados de sesión se limpien por completo.
+    window.location.href = '/';
   }
 
   if (isUserLoading || (user && !currentUser)) {

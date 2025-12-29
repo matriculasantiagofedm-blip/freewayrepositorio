@@ -11,12 +11,10 @@ const roleMapping: { [key: string]: string } = {
     'admin@contracttime.app': 'Administrador',
     
     // Vendedores Internos
-    'vendedor1@contracttime.app': 'Ventas',
-    'vendedor2@contracttime.app': 'Ventas',
+    'ventas@contracttime.app': 'Ventas',
 
     // Vendedores Externos
-    'externo1@contracttime.app': 'Ventas Externas',
-    'externo2@contracttime.app': 'Ventas Externas',
+    'ventas-externas@contracttime.app': 'Ventas Externas',
 };
 
 export function useCurrentRole() {
@@ -32,7 +30,7 @@ export function useCurrentRole() {
     if (user && user.email && !user.isAnonymous) {
       // Busca el rol correspondiente al email del usuario que inició sesión.
       // Si no se encuentra, se le asigna null (sin rol).
-      const userRole = roleMapping[user.email] || 'Usuario';
+      const userRole = roleMapping[user.email] || null;
       setRole(userRole);
     } else {
       setRole(null);

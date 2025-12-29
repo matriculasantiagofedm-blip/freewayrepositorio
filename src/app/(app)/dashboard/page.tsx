@@ -41,8 +41,8 @@ export default function DashboardPage() {
         return collection(firestore, 'contracts');
     }
 
-    // Other users see only contracts within their own user subcollection
-    return collection(firestore, 'users', user.uid, 'contracts');
+    // Other users see only contracts they created, filtered by their userId
+    return query(collection(firestore, 'contracts'), where('userId', '==', user.uid));
   }, [firestore, user, role]);
 
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);

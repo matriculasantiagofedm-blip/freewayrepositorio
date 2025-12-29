@@ -6,18 +6,20 @@ import { createContractFlow } from '@/ai/flows/generate-contract-folio';
 import { getFirestore, serverTimestamp } from 'firebase-admin/firestore';
 import { initializeApp, getApps, App } from 'firebase-admin/app';
 
-// --- Firebase Admin Initialization ---
-let db: Firestore;
-if (!getApps().length) {
-    try {
-        const app = initializeApp();
-        db = getFirestore(app);
-    } catch (error) {
-        console.error("Critical: Failed to initialize Firebase Admin SDK automatically.", error);
-        // We don't throw here to allow the app to start, but actions will fail.
+// This function attempts to get an existing Firestore instance or initializes a new one.
+// It's designed to be called within each server action to ensure the DB is ready.
+function getDb() {
+    if (!getApps().length) {
+        try {
+            // This will automatically use the service account credentials from the environment
+            // in a production environment like Firebase App Hosting or Cloud Run.
+            initializeApp();
+        } catch (error) {
+            console.error("Critical: Failed to initialize Firebase Admin SDK automatically. Check server logs and environment variables.", error);
+            // This will cause downstream errors, which is what we want if initialization fails.
+        }
     }
-} else {
-    db = getFirestore(getApps()[0]);
+    return getFirestore();
 }
 
 
@@ -40,10 +42,14 @@ export async function createContractAction(input: GenerateContractInput) {
 
 
 export async function pingFirestoreAction() {
-    if (!db) {
+    let db;
+    try {
+        db = getDb();
+    } catch (e: any) {
         return {
             success: false,
-            message: 'La instancia de Firestore Admin no está inicializada en el servidor.',
+            message: 'Fallo al inicializar la instancia de Firestore Admin.',
+            error: e.message || 'Error desconocido durante la inicialización.'
         };
     }
 
@@ -76,6 +82,8 @@ export async function pingFirestoreAction() {
             errorMessage = error.message;
         }
         
+        console.error("Firestore Ping Error:", error);
+
         return {
             success: false,
             message: 'Fallo la conexión a Firestore.',

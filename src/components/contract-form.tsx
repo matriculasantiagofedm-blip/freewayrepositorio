@@ -451,59 +451,51 @@ export function ContractForm() {
             if (name?.startsWith('ampliacionesDetails')) {
                 const selectedPlans = value.ampliacionesDetails?.selectedPlans || [];
                 const individualPlansSelectedCount = selectedPlans.filter(p => individualPlansNames.includes(p.name)).length;
-                const isPackageDeal = individualPlansSelectedCount >= 2;
+                const isManualPriceAllowed = individualPlansSelectedCount >= 2;
 
                 let courseValue;
-                // Si el cambio fue en los planes seleccionados, recalculamos el valor total SIEMPRE.
-                // Si el usuario edita el valor, ese cambio se maneja por separado.
+                // If plans change, calculate sum. If user changes total value, respect it.
                 if (name === 'ampliacionesDetails.selectedPlans') {
                     courseValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
                     form.setValue('ampliacionesDetails.courseValue', courseValue, { shouldValidate: true });
                 } else {
-                    // Si el cambio fue en otro campo, respetamos el valor total existente.
                     courseValue = value.ampliacionesDetails?.courseValue || 0;
                 }
                 
-                let isPaidInFull = value.ampliacionesDetails?.paidInFull ?? false;
-                let downPayment = value.ampliacionesDetails?.downPayment || 0;
                 const forceFullPayment = courseValue > 0 && courseValue <= 100;
-
-                // Forzar pago completo si es <= 100
-                if (forceFullPayment) {
-                    isPaidInFull = true;
-                    if (!form.getValues('ampliacionesDetails.paidInFull')) {
-                        form.setValue('ampliacionesDetails.paidInFull', true, { shouldValidate: true });
-                    }
-                } else if (name === 'ampliacionesDetails.selectedPlans' && !isPackageDeal) {
-                    // Si se deseleccionan planes y ya no es un paquete, y el valor es > 100, desmarcar pago completo
-                    if (form.getValues('ampliacionesDetails.paidInFull')) {
-                        form.setValue('ampliacionesDetails.paidInFull', false, { shouldValidate: true });
-                    }
-                    isPaidInFull = false;
-                }
-
-                // Recalcular abono
-                if (isPaidInFull) {
-                    downPayment = courseValue;
-                } else if (name === 'ampliacionesDetails.selectedPlans' || (name === 'ampliacionesDetails.courseValue' && !isPackageDeal)) {
-                    // Solo recalcular abono si cambian los planes o si cambia el valor total Y NO ES un paquete manual
-                    downPayment = courseValue > 100 ? courseValue * 0.5 : courseValue;
-                }
+                let isPaidInFull = value.ampliacionesDetails?.paidInFull ?? false;
                 
+                if (forceFullPayment && !isPaidInFull) {
+                    isPaidInFull = true;
+                    form.setValue('ampliacionesDetails.paidInFull', true, { shouldValidate: true });
+                } else if (!forceFullPayment && name === 'ampliacionesDetails.paidInFull' && isPaidInFull) {
+                    // User manually checks "paid in full"
+                }
+
+                let downPayment = value.ampliacionesDetails?.downPayment || 0;
+                if (isPaidInFull || forceFullPayment) {
+                    downPayment = courseValue;
+                } else if (name === 'ampliacionesDetails.selectedPlans' || name === 'ampliacionesDetails.courseValue' || name === 'ampliacionesDetails.paidInFull') {
+                     // Recalculate down payment only if relevant fields change, and it's not manually paid in full
+                    if (courseValue > 100) {
+                         downPayment = courseValue * 0.5;
+                    } else {
+                         downPayment = courseValue; // This case is handled by forceFullPayment, but as a fallback
+                    }
+                }
+
                 if (form.getValues('ampliacionesDetails.downPayment')?.toFixed(2) !== downPayment.toFixed(2)) {
                     form.setValue('ampliacionesDetails.downPayment', downPayment, { shouldValidate: true });
                 }
 
-                // Recalcular saldo
                 const newBalance = courseValue - downPayment;
-                const finalBalance = newBalance < 0 ? 0 : newBalance;
+                const finalBalance = newBalance < 0.005 ? 0 : newBalance;
                  if (form.getValues('ampliacionesDetails.balance')?.toFixed(2) !== finalBalance.toFixed(2)) {
                     form.setValue('ampliacionesDetails.balance', finalBalance, { shouldValidate: true });
                 }
 
-                // Actualizar fecha de pago
                 const currentPaymentDeadline = form.getValues('ampliacionesDetails.paymentDeadline');
-                if (finalBalance <= 0) {
+                if (finalBalance === 0) {
                     if (currentPaymentDeadline === null) {
                         form.setValue('ampliacionesDetails.paymentDeadline', new Date());
                     }
@@ -950,7 +942,7 @@ export function ContractForm() {
                             <FormMessage />
                         </FormItem>
                     )} />
-                    <FormField control={form.control} name={downPaymentPath as 'ampliacionesDetails.downPayment'} render={({ field }) => (<FormItem><FormLabel>Abono (B/.)</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={watchedAmpliacionesPaidInFull} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name={downPaymentPath as 'ampliacionesDetails.downPayment'} render={({ field }) => (<FormItem><FormLabel>Abono (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={watchedAmpliacionesPaidInFull} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name={balancePath as 'ampliacionesDetails.balance'} render={({ field }) => (<FormItem><FormLabel>Saldo (B/.)</FormLabel><FormControl><Input type="text" value={formatCurrency(field.value)} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
                 </div>
                  <FormField
@@ -1569,5 +1561,7 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    
 
     

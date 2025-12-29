@@ -7,7 +7,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { GanttChartSquare, FileText, Users } from 'lucide-react';
+import { GanttChartSquare, FileText, Users, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCurrentRole } from '@/hooks/use-current-role';
 
@@ -30,6 +30,12 @@ const allLinks = [
         icon: Users,
         roles: ['Ventas', 'Ventas Externas', 'Administrador'],
     },
+    {
+        href: '/settings',
+        label: 'Ajustes',
+        icon: Settings,
+        roles: ['Administrador'],
+    }
 ];
 
 export function MainNav({ className }: { className?: string }) {

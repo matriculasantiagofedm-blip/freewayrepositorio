@@ -3,7 +3,7 @@
 
 import type { GenerateContractInput } from '@/lib/types';
 import { createContractFlow } from '@/ai/flows/generate-contract-folio';
-import { getFirestore, serverTimestamp } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { initializeApp, getApps, App } from 'firebase-admin/app';
 
 // This function attempts to get an existing Firestore instance or initializes a new one.
@@ -55,7 +55,7 @@ export async function pingFirestoreAction() {
 
     const testDocRef = db.collection('system_status').doc('firestore_ping');
     const testData = {
-        timestamp: serverTimestamp(),
+        timestamp: FieldValue.serverTimestamp(),
         status: 'ok',
     };
 

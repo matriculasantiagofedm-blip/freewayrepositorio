@@ -8,7 +8,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestore, serverTimestamp, collection, query, where, getDocs, limit, writeBatch, Timestamp, Firestore } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp, FieldValue, Firestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps, App } from 'firebase-admin/app';
 import type { Contract, ContractType, GenerateContractInput } from '@/lib/types';
 import { GenerateContractInputSchema } from '@/lib/types';
@@ -83,8 +83,8 @@ async function _createContractInFirestore({ contractData, details }: GenerateCon
     }
 
     const clientsRef = db.collection('clients');
-    const clientQuery = query(clientsRef, where("idNumber", "==", contractData.studentIdNumber), limit(1));
-    const clientSnapshot = await getDocs(clientQuery);
+    const clientQuery = db.collection('clients').where("idNumber", "==", contractData.studentIdNumber).limit(1);
+    const clientSnapshot = await clientQuery.get();
 
     let clientId: string;
 
@@ -102,7 +102,7 @@ async function _createContractInFirestore({ contractData, details }: GenerateCon
             email: contractData.clientEmail,
             idNumber: contractData.studentIdNumber,
             userId: contractData.userId,
-            createdAt: serverTimestamp(),
+            createdAt: FieldValue.serverTimestamp(),
         };
         batch.set(newClientRef, newClientData);
     }
@@ -136,7 +136,7 @@ async function _createContractInFirestore({ contractData, details }: GenerateCon
     const contractWithTimestamp = {
         ...newContract,
         id: contractRef.id,
-        createdAt: serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
     };
 
     batch.set(contractRef, contractWithTimestamp);

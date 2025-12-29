@@ -305,7 +305,6 @@ export function ContractForm() {
     const watchedValues = form.watch();
     const watchedPaidInFull = form.watch('autoMotoDetails.paidInFull');
     const watchedAmpliacionesSelectedPlans = form.watch('ampliacionesDetails.selectedPlans');
-    const watchedAmpliacionesCourseValue = form.watch('ampliacionesDetails.courseValue');
 
 
     const individualPlansNames = useMemo(() => ampliacionesPlans.individual.map(p => p.name), []);
@@ -319,12 +318,6 @@ export function ContractForm() {
         watchedValues.autoMotoDetails.coursePlan?.toLowerCase().includes('ya se manejar') && !watchedValues.autoMotoDetails.coursePlan?.toLowerCase().includes('+'),
         [watchedValues.autoMotoDetails.coursePlan]
     );
-
-    const isAmpliacionesFullPaymentRequired = useMemo(() => {
-        const courseValue = form.getValues('ampliacionesDetails.courseValue') || 0;
-        return courseValue > 0 && courseValue <= 100;
-    }, [watchedAmpliacionesCourseValue, form]);
-
 
     const { fields: theoreticalClassFields, replace: replaceTheoreticalClasses } = useFieldArray({
         control: form.control,
@@ -448,38 +441,34 @@ export function ContractForm() {
 
             if (name?.startsWith('ampliacionesDetails')) {
                 const selectedPlans = value.ampliacionesDetails?.selectedPlans || [];
-                const individualPlansSelectedCount = selectedPlans.filter(p => individualPlansNames.includes(p.name)).length;
-                const isManualPriceAllowed = individualPlansSelectedCount >= 2;
+                const individualPlansSelected = selectedPlans.filter(p => individualPlansNames.includes(p.name));
+                const allowManualPrice = individualPlansSelected.length >= 2;
 
                 let courseValue;
-
+                
                 if (name === 'ampliacionesDetails.selectedPlans') {
                     const calculatedValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
                     form.setValue('ampliacionesDetails.courseValue', calculatedValue, { shouldValidate: true });
                     courseValue = calculatedValue;
-                } else if (name === 'ampliacionesDetails.courseValue') {
-                    courseValue = value.ampliacionesDetails?.courseValue || 0;
                 } else {
-                    courseValue = form.getValues('ampliacionesDetails.courseValue') || 0;
+                    courseValue = value.ampliacionesDetails?.courseValue || 0;
                 }
-
-                const forceFullPayment = courseValue > 0 && courseValue <= 100;
+                
+                const forceFullPayment = courseValue <= 100 && courseValue > 0;
                 let isPaidInFull = value.ampliacionesDetails?.paidInFull ?? false;
                 
-                 if (forceFullPayment && !isPaidInFull && name !== 'ampliacionesDetails.paidInFull') {
+                if (forceFullPayment && !isPaidInFull) {
                     form.setValue('ampliacionesDetails.paidInFull', true, { shouldValidate: true });
                     isPaidInFull = true;
                 }
 
                 let downPayment = value.ampliacionesDetails?.downPayment || 0;
                 
-                 if (name === 'ampliacionesDetails.selectedPlans' || name === 'ampliacionesDetails.courseValue') {
+                if (name === 'ampliacionesDetails.selectedPlans' || name === 'ampliacionesDetails.courseValue' || name === 'ampliacionesDetails.paidInFull') {
                     if (isPaidInFull || forceFullPayment) {
                         downPayment = courseValue;
                     } else if (courseValue > 100) {
                         downPayment = courseValue * 0.5;
-                    } else {
-                        downPayment = courseValue; 
                     }
                     if (formatCurrency(form.getValues('ampliacionesDetails.downPayment')) !== formatCurrency(downPayment)) {
                         form.setValue('ampliacionesDetails.downPayment', downPayment, { shouldValidate: true });
@@ -824,28 +813,12 @@ export function ContractForm() {
                                     Selecciona todos los planes que apliquen. El total se calculará automáticamente, pero puedes ajustarlo si seleccionas más de un plan individual.
                                 </FormDescription>
                             </div>
-                            <Accordion type="multiple" className="w-full">
+                            <Accordion type="single" collapsible className="w-full">
                                 <AccordionItem value="individuales">
                                     <AccordionTrigger className="text-base font-semibold">Planes Individuales</AccordionTrigger>
                                     <AccordionContent>
                                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4">
                                             {renderPlanCheckboxes(ampliacionesPlans.individual)}
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-                                <AccordionItem value="combos">
-                                    <AccordionTrigger className="text-base font-semibold">Combos de Ampliaciones</AccordionTrigger>
-                                    <AccordionContent>
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4">
-                                            {renderPlanCheckboxes(ampliacionesPlans.combos.filter(c => !c.name.includes('I')))}
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-                                <AccordionItem value="otros-combos">
-                                    <AccordionTrigger className="text-base font-semibold">Otros Combos</AccordionTrigger>
-                                    <AccordionContent>
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4">
-                                            {renderPlanCheckboxes(ampliacionesPlans.otrosCombos.filter(c => !c.name.includes('I')))}
                                         </div>
                                     </AccordionContent>
                                 </AccordionItem>
@@ -964,14 +937,13 @@ export function ContractForm() {
                                     checked={field.value || false}
                                     onCheckedChange={field.onChange}
                                     id="ampliacionesPaidInFull"
-                                    disabled={isAmpliacionesFullPaymentRequired}
                                 />
                             </FormControl>
                             <div className="space-y-1 leading-none">
-                                <label htmlFor='ampliacionesPaidInFull' className={cn('text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70', isAmpliacionesFullPaymentRequired && 'text-muted-foreground')}>
+                                <label htmlFor='ampliacionesPaidInFull' className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
                                    ¿Cancelar la totalidad del curso (100%)?
                                 </label>
-                                {isAmpliacionesFullPaymentRequired && <FormDescription>El pago completo es requerido para montos de B/.100.00 o menos.</FormDescription>}
+                                 <FormDescription>Si el valor total es B/.100.00 o menos, el pago completo es requerido.</FormDescription>
                             </div>
                         </FormItem>
                     )}
@@ -1570,6 +1542,8 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    
 
     
 

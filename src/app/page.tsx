@@ -4,12 +4,25 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { GanttChartSquare, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/firebase';
+
+const employeeEmails = [
+  'admin@contracttime.app',
+  'ventas@contracttime.app',
+  'ventas-externas@contracttime.app',
+];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,7 +37,7 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      setError('Por favor, introduce tu correo y contraseña.');
+      setError('Por favor, selecciona tu correo e introduce tu contraseña.');
       return;
     }
 
@@ -75,15 +88,18 @@ export default function LoginPage() {
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Correo Electrónico</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="admin@contracttime.app"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoFocus
-                />
+                <Select onValueChange={setEmail} value={email}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecciona tu correo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employeeEmails.map((email) => (
+                      <SelectItem key={email} value={email}>
+                        {email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Contraseña</Label>

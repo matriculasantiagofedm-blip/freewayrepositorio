@@ -97,11 +97,11 @@ export default function DashboardPage() {
   ];
 
   const contractTypes = [
-      { name: 'Curso Auto', icon: Car, href: '/contracts/new?type=Curso%20Auto', color: 'bg-blue-200/70 dark:bg-blue-900/50'},
-      { name: 'Curso Moto', icon: Bike, href: '/contracts/new?type=Curso%20Moto', color: 'bg-orange-200/70 dark:bg-orange-900/50'},
-      { name: 'Curso Mixto', icon: Combine, href: '/contracts/new?type=Curso%20Mixto', color: 'bg-purple-200/70 dark:bg-purple-900/50'},
-      { name: 'Curso Deluxe', icon: Crown, href: '/contracts/new?type=Curso%20Deluxe', color: 'bg-yellow-200/70 dark:bg-yellow-900/50'},
-      { name: 'Ampliaciones', icon: Plus, href: '/contracts/new?type=Ampliaciones', color: 'bg-green-200/70 dark:bg-green-900/50'},
+      { name: 'Curso Auto', icon: Car, href: '/contracts/new?type=Curso%20Auto', color: 'bg-blue-500 hover:bg-blue-600'},
+      { name: 'Curso Moto', icon: Bike, href: '/contracts/new?type=Curso%20Moto', color: 'bg-orange-500 hover:bg-orange-600'},
+      { name: 'Curso Mixto', icon: Combine, href: '/contracts/new?type=Curso%20Mixto', color: 'bg-purple-500 hover:bg-purple-600'},
+      { name: 'Curso Deluxe', icon: Crown, href: '/contracts/new?type=Curso%20Deluxe', color: 'bg-yellow-500 hover:bg-yellow-600'},
+      { name: 'Ampliaciones', icon: Plus, href: '/contracts/new?type=Ampliaciones', color: 'bg-green-500 hover:bg-green-600'},
   ];
 
   return (
@@ -129,11 +129,9 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {contractTypes.map((type) => (
             <Link key={type.name} href={type.href} className="no-underline">
-              <Card className="hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col items-center justify-center text-center p-4 h-full">
+              <Card className={cn("hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col items-center justify-center text-center p-4 h-full text-white", type.color)}>
                 <CardHeader className="p-2">
-                    <div className={cn("p-3 rounded-full", type.color)}>
-                        <type.icon className="h-8 w-8 text-primary" />
-                    </div>
+                    <type.icon className="h-8 w-8 text-white" />
                 </CardHeader>
                 <CardContent className="p-2">
                   <p className="font-semibold">{type.name}</p>

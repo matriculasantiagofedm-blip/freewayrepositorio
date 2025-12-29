@@ -22,15 +22,21 @@ Tu aplicación se ejecuta en la nube usando una identidad especial llamada "cuen
 
     [Ir a la página de IAM de tu Proyecto](https://console.cloud.google.com/iam-admin/iam?project=contracttime2-17074294-10501)
 
-2.  **Busca la Cuenta de Servicio de App Hosting:**
-    *   En la lista de "Principales", busca una cuenta de servicio que termine en `@apphosting.gserviceaccount.com`. El nombre completo será algo como `firebase-app-host-...@apphosting.gserviceaccount.com`.
+2.  **Busca la Cuenta de Servicio de Compute Engine:**
+    *   En la lista de "Principales", busca una cuenta de servicio que tenga el formato: **`[NUMERO-DEL-PROYECTO]-compute@developer.gserviceaccount.com`**.
+    *   Por ejemplo, podría llamarse `476712003174-compute@developer.gserviceaccount.com`.
+    *   **Esta es la identidad que ejecuta tu aplicación.**
 
 3.  **Verifica su Rol:**
-    *   En la misma fila, mira la columna "Rol". Debe tener el rol de **"Editor"** o, como mínimo, **"Usuario de Cloud Datastore"**. El rol de "Editor" es el que se asigna por defecto y es suficiente.
-    *   Si por alguna razón este rol no está presente, puedes añadirlo haciendo clic en el icono del lápiz para editar los permisos de esa cuenta de servicio.
+    *   En la misma fila, mira la columna "Rol". Debe tener el rol de **"Editor"**. Este rol le da los permisos necesarios.
+    *   Si no tiene el rol de "Editor", haz clic en el icono del lápiz (Editar principal) en esa fila.
+    *   Haz clic en **"Añadir otro rol"** y busca y selecciona el rol de **"Editor"**.
+    *   Haz clic en **"Guardar"**.
+
+**¡Importante!** No modifiques ni elimines ninguna otra cuenta de servicio.
 
 ## Paso 3: Volver a Probar
 
-Una vez que hayas completado y verificado ambos pasos, vuelve a la página de **Ajustes** de tu aplicación y haz clic de nuevo en el botón **"Probar Conexión a Firestore"**.
+Una vez que hayas verificado que la cuenta de servicio de Compute Engine tiene el rol de "Editor", vuelve a la página de **Ajustes** de tu aplicación y haz clic de nuevo en el botón **"Probar Conexión a Firestore"**.
 
-Con la API habilitada y los permisos correctos, la prueba debería mostrar **"Conexión Exitosa"**. Una vez que esto ocurra, la funcionalidad de guardar contratos también debería funcionar sin problemas.
+Con la API habilitada y los permisos correctos, la prueba debería mostrar **"Conexión Exitosa"**.

@@ -305,7 +305,17 @@ export function ContractForm() {
     const watchedPaidInFull = form.watch('autoMotoDetails.paidInFull');
     const watchedAmpliacionesPaidInFull = form.watch('ampliacionesDetails.paidInFull');
     const watchedCoursePlan = form.watch('autoMotoDetails.coursePlan');
+    const watchedAmpliacionesSelectedPlans = form.watch('ampliacionesDetails.selectedPlans');
     const watchedAmpliacionesCourseValue = form.watch('ampliacionesDetails.courseValue');
+
+
+    const individualPlansNames = useMemo(() => ampliacionesPlans.individual.map(p => p.name), []);
+
+    const selectedIndividualPlansCount = useMemo(() => {
+        return watchedAmpliacionesSelectedPlans?.filter(p => individualPlansNames.includes(p.name)).length || 0;
+    }, [watchedAmpliacionesSelectedPlans, individualPlansNames]);
+
+    const allowManualAmpliacionesPrice = selectedIndividualPlansCount > 1;
 
     const isSpecialPlan = useMemo(() => 
         watchedCoursePlan?.toLowerCase().includes('ya se manejar') && !watchedCoursePlan?.toLowerCase().includes('+'),
@@ -439,54 +449,64 @@ export function ContractForm() {
             }
 
             if (name?.startsWith('ampliacionesDetails')) {
-                if (name === 'ampliacionesDetails.selectedPlans' || name === 'ampliacionesDetails.paidInFull' || name === 'ampliacionesDetails.downPayment') {
+                 if (name === 'ampliacionesDetails.selectedPlans' || name === 'ampliacionesDetails.courseValue' || name === 'ampliacionesDetails.paidInFull' || name === 'ampliacionesDetails.downPayment') {
                     const selectedPlans = value.ampliacionesDetails?.selectedPlans || [];
-                    let isPaidInFull = value.ampliacionesDetails?.paidInFull ?? false;
-                    const downPayment = value.ampliacionesDetails?.downPayment || 0;
-                    const newCourseValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
+                    const individualPlans = ampliacionesPlans.individual.map(p => p.name);
+                    const selectedIndividualCount = selectedPlans.filter(p => individualPlans.includes(p.name)).length;
+                    const isManualPrice = selectedIndividualCount > 1;
 
-                    if (form.getValues('ampliacionesDetails.courseValue')?.toFixed(2) !== newCourseValue.toFixed(2)) {
+                    let isPaidInFull = value.ampliacionesDetails?.paidInFull ?? false;
+                    let downPayment = value.ampliacionesDetails?.downPayment || 0;
+                    let newCourseValue;
+
+                    if (name === 'ampliacionesDetails.selectedPlans' && !isManualPrice) {
+                        newCourseValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
                         form.setValue('ampliacionesDetails.courseValue', newCourseValue, { shouldValidate: true });
+                    } else {
+                        newCourseValue = value.ampliacionesDetails?.courseValue || 0;
                     }
 
-                    const forceFullPayment = newCourseValue > 0 && newCourseValue <= 100;
-
                     if (name === 'ampliacionesDetails.selectedPlans') {
+                        const forceFullPayment = newCourseValue > 0 && newCourseValue <= 100;
                         if (forceFullPayment) {
-                            if (form.getValues('ampliacionesDetails.paidInFull') !== true) form.setValue('ampliacionesDetails.paidInFull', true, { shouldValidate: true });
+                            if (!form.getValues('ampliacionesDetails.paidInFull')) form.setValue('ampliacionesDetails.paidInFull', true, { shouldValidate: true });
                             isPaidInFull = true;
-                        } else {
-                            if (form.getValues('ampliacionesDetails.paidInFull') === true) form.setValue('ampliacionesDetails.paidInFull', false, { shouldValidate: true });
+                        } else if (!isManualPrice) {
+                            if (form.getValues('ampliacionesDetails.paidInFull')) form.setValue('ampliacionesDetails.paidInFull', false, { shouldValidate: true });
                             isPaidInFull = false;
                         }
                     }
 
+                    const forceFullPayment = newCourseValue > 0 && newCourseValue <= 100;
+
                     let newDownPayment = downPayment;
-                    if (name === 'ampliacionesDetails.paidInFull' || name === 'ampliacionesDetails.selectedPlans') {
-                        if (isPaidInFull || forceFullPayment) {
+                    if (name !== 'ampliacionesDetails.downPayment') {
+                         if (isPaidInFull || forceFullPayment) {
                             newDownPayment = newCourseValue;
-                        } else {
+                        } else if (!isManualPrice) {
                             newDownPayment = newCourseValue > 100 ? newCourseValue * 0.5 : newCourseValue;
                         }
-                    }
-
-                     if (form.getValues('ampliacionesDetails.downPayment')?.toFixed(2) !== newDownPayment.toFixed(2)) {
-                        form.setValue('ampliacionesDetails.downPayment', newDownPayment, { shouldValidate: true });
+                         if (form.getValues('ampliacionesDetails.downPayment')?.toFixed(2) !== newDownPayment.toFixed(2)) {
+                            form.setValue('ampliacionesDetails.downPayment', newDownPayment, { shouldValidate: true });
+                        }
+                    } else {
+                        newDownPayment = downPayment;
                     }
                     
-                    const currentPaymentDeadline = form.getValues('ampliacionesDetails.paymentDeadline');
-                    if (name === 'ampliacionesDetails.paidInFull' || name === 'ampliacionesDetails.selectedPlans') {
-                         if (isPaidInFull || forceFullPayment) {
-                             if (!currentPaymentDeadline || !(currentPaymentDeadline instanceof Date)) {
-                                 form.setValue('ampliacionesDetails.paymentDeadline', new Date());
-                             }
-                         } else {
+                    if (name !== 'ampliacionesDetails.paymentDeadline') {
+                        const currentPaymentDeadline = form.getValues('ampliacionesDetails.paymentDeadline');
+                        const newBalance = newCourseValue - newDownPayment;
+                        if (newBalance <= 0) {
+                            if (currentPaymentDeadline === null) {
+                                form.setValue('ampliacionesDetails.paymentDeadline', new Date());
+                            }
+                        } else {
                             if (currentPaymentDeadline !== null) {
                                 form.setValue('ampliacionesDetails.paymentDeadline', null);
                             }
                         }
                     }
-
+                    
                     const newBalance = newCourseValue - newDownPayment;
                     const finalBalance = newBalance < 0 ? 0 : newBalance;
                      if (form.getValues('ampliacionesDetails.balance')?.toFixed(2) !== finalBalance.toFixed(2)) {
@@ -812,7 +832,7 @@ export function ContractForm() {
                              <div className="mb-4">
                                 <FormLabel className="text-base">Planes y Combos</FormLabel>
                                 <FormDescription>
-                                    Selecciona todos los planes que apliquen. El total se calculará automáticamente.
+                                    Selecciona todos los planes que apliquen. El total se calculará automáticamente, pero puedes ajustarlo si seleccionas más de un plan individual.
                                 </FormDescription>
                             </div>
                             <Accordion type="multiple" className="w-full" defaultValue={['individuales']}>
@@ -913,7 +933,24 @@ export function ContractForm() {
 
                 <h3 className="font-semibold text-lg pt-4 border-b pb-2">Cláusula Primera: Valor y Forma de Pago</h3>
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField control={form.control} name={courseValuePath as 'ampliacionesDetails.courseValue'} render={({ field }) => (<FormItem><FormLabel>Valor Total (B/.)</FormLabel><FormControl><Input type="text" value={formatCurrency(field.value)} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name={courseValuePath as 'ampliacionesDetails.courseValue'} render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Valor Total (B/.)</FormLabel>
+                             <FormControl>
+                                <Input 
+                                    type="number" 
+                                    step="0.01"
+                                    {...field} 
+                                    value={field.value ?? ''}
+                                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                                    readOnly={!allowManualAmpliacionesPrice} 
+                                    className={cn(!allowManualAmpliacionesPrice && "bg-muted")}
+                                />
+                            </FormControl>
+                            {allowManualAmpliacionesPrice && <FormDescription>Puedes editar este valor para el paquete.</FormDescription>}
+                            <FormMessage />
+                        </FormItem>
+                    )} />
                     <FormField control={form.control} name={downPaymentPath as 'ampliacionesDetails.downPayment'} render={({ field }) => (<FormItem><FormLabel>Abono (B/.)</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={watchedAmpliacionesPaidInFull} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name={balancePath as 'ampliacionesDetails.balance'} render={({ field }) => (<FormItem><FormLabel>Saldo (B/.)</FormLabel><FormControl><Input type="text" value={formatCurrency(field.value)} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
                 </div>

@@ -71,7 +71,6 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
                     {ampliacionesDetails.selectedPlans.map(plan => (
                         <li key={plan.name} className="flex justify-between">
                             <span>{plan.name}</span>
-                            <span className='font-semibold'>B/.{plan.price.toFixed(2)}</span>
                         </li>
                     ))}
                 </ul>

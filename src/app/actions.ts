@@ -43,7 +43,7 @@ export async function createContractAction(input: GenerateContractInput) {
 
 export async function pingFirestoreAction() {
     try {
-        const db = getDb();
+        const db = await getDb();
         const testDocRef = db.collection('system_status').doc('firestore_ping');
         const testData = {
             timestamp: FieldValue.serverTimestamp(),

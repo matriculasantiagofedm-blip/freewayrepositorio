@@ -14,59 +14,59 @@ import { GenerateContractInputSchema } from '@/lib/types';
 import { getDb } from '@/app/actions';
 
 
-// --- Firebase Admin Initialization ---
-const db = getDb();
-
-const toTimestamp = (date: any): Timestamp | null => {
-    if (!date) return null;
-    if (date instanceof Timestamp) return date;
-    if (date && typeof date.seconds === 'number' && typeof date.nanoseconds === 'number') {
-        return new Timestamp(date.seconds, date.nanoseconds);
-    }
-    if (date instanceof Date) {
-        return Timestamp.fromDate(date);
-    }
-    const d = new Date(date);
-    if (!isNaN(d.getTime())) {
-        return Timestamp.fromDate(d);
-    }
-    return null;
-}
-
-const convertDatesToTimestamps = (obj: any): any => {
-    if (!obj) return obj;
-    if (Array.isArray(obj)) {
-        return obj.map(item => convertDatesToTimestamps(item));
-    }
-    if (typeof obj === 'object' && obj !== null) {
-        const newObj: { [key: string]: any } = {};
-        for (const key in obj) {
-            if (Object.prototype.hasOwnProperty.call(obj, key)) {
-                const value = obj[key];
-                if (key.toLowerCase().includes('date') || key.toLowerCase().includes('deadline') || key === 'paymentInstallments' || key === 'theoreticalClasses' || key === 'classSchedules' || key === 'practicalClassSchedules' || key === 'motoPracticalClassSchedules') {
-                    if (Array.isArray(value)) {
-                        newObj[key] = value.map(item => convertDatesToTimestamps(item)).filter(item => item !== null);
-                    } else {
-                        newObj[key] = toTimestamp(value);
-                    }
-                } else {
-                    newObj[key] = convertDatesToTimestamps(value);
-                }
-            }
-        }
-        return newObj;
-    }
-    return obj;
-};
-
 // This internal function contains the core database logic.
 async function _createContractInFirestore({ contractData, details }: GenerateContractInput) {
+    const db = await getDb();
+
     if (!contractData.studentIdNumber) {
         throw new Error("El número de cédula o pasaporte del estudiante es un campo obligatorio para generar el contrato.");
     }
     if (!details || Object.keys(details).length === 0) {
         throw new Error(`Los detalles para el contrato tipo '${contractData.contractType}' están vacíos o son inválidos.`);
     }
+
+    const toTimestamp = (date: any): Timestamp | null => {
+        if (!date) return null;
+        if (date instanceof Timestamp) return date;
+        if (date && typeof date.seconds === 'number' && typeof date.nanoseconds === 'number') {
+            return new Timestamp(date.seconds, date.nanoseconds);
+        }
+        if (date instanceof Date) {
+            return Timestamp.fromDate(date);
+        }
+        const d = new Date(date);
+        if (!isNaN(d.getTime())) {
+            return Timestamp.fromDate(d);
+        }
+        return null;
+    }
+
+    const convertDatesToTimestamps = (obj: any): any => {
+        if (!obj) return obj;
+        if (Array.isArray(obj)) {
+            return obj.map(item => convertDatesToTimestamps(item));
+        }
+        if (typeof obj === 'object' && obj !== null) {
+            const newObj: { [key: string]: any } = {};
+            for (const key in obj) {
+                if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                    const value = obj[key];
+                    if (key.toLowerCase().includes('date') || key.toLowerCase().includes('deadline') || key === 'paymentInstallments' || key === 'theoreticalClasses' || key === 'classSchedules' || key === 'practicalClassSchedules' || key === 'motoPracticalClassSchedules') {
+                        if (Array.isArray(value)) {
+                            newObj[key] = value.map(item => convertDatesToTimestamps(item)).filter(item => item !== null);
+                        } else {
+                            newObj[key] = toTimestamp(value);
+                        }
+                    } else {
+                        newObj[key] = convertDatesToTimestamps(value);
+                    }
+                }
+            }
+            return newObj;
+        }
+        return obj;
+    };
+
 
     const clientsRef = db.collection('clients');
     const clientQuery = db.collection('clients').where("idNumber", "==", contractData.studentIdNumber).limit(1);

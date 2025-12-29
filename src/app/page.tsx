@@ -9,9 +9,8 @@ import { GanttChartSquare, Briefcase, UserCheck, Shield, ArrowLeft, Loader2 } fr
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { initializeFirebase } from '@/firebase'; // Importar para obtener 'auth'
+import { useAuth } from '@/firebase'; // La forma correcta de obtener auth
 
-// Se definen los roles con su nombre, icono, email y contraseña asociada.
 const roles = [
   { name: 'Ventas', icon: Briefcase, email: 'ventas@contracttime.app', password: 'ventas123' },
   { name: 'Ventas Externas', icon: UserCheck, email: 'ventas-externas@contracttime.app', password: 'Ayax/2022' },
@@ -23,9 +22,7 @@ type Role = typeof roles[0] | null;
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  // Se obtiene la instancia de 'auth' directamente al inicializar Firebase.
-  // Esto evita el uso del hook `useAuth` que requiere un Provider.
-  const { auth } = initializeFirebase();
+  const auth = useAuth(); // Se obtiene auth a través del hook, que es seguro.
 
   const [selectedRole, setSelectedRole] = useState<Role>(null);
   const [password, setPassword] = useState('');
@@ -39,7 +36,6 @@ export default function LoginPage() {
       return;
     }
     
-    // Validar contraseña correcta antes de intentar iniciar sesión
     if (password !== selectedRole.password) {
         setError('Contraseña incorrecta. Por favor, inténtalo de nuevo.');
         toast({

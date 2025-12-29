@@ -69,6 +69,7 @@ export default function LoginPage() {
     setError('');
   };
   
+  // Muestra un estado de carga mientras se verifica si hay un usuario o si ya está autenticado para redirigir.
   if (isUserLoading || user) {
     return <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4"><p>Cargando...</p></div>;
   }

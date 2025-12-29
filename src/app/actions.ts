@@ -4,7 +4,7 @@
 import type { GenerateContractInput } from '@/lib/types';
 import { z } from 'zod';
 import { google } from 'googleapis';
-import { createContractFlow } from '@/ai/flows/create-contract';
+import { createContractFlow } from '@/ai/flows/generate-contract-folio';
 
 
 export async function createContractAction(input: GenerateContractInput) {

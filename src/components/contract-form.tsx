@@ -306,7 +306,6 @@ export function ContractForm() {
     const { toast } = useToast();
     const { role: currentUserRole } = useCurrentRole();
     const [savedContract, setSavedContract] = useState<Contract | null>(null);
-    const [isSearchingClient, setIsSearchingClient] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isManualPrice, setIsManualPrice] = useState(false);
 
@@ -402,10 +401,11 @@ export function ContractForm() {
                         } else if (!selectedPlan.isCombined) {
                             if (form.getValues('autoMotoDetails.paidInFull')) form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
                             isPaidInFull = false;
-                            newDownPayment = newCourseValue * 0.5;
+                            newDownPayment = newCourseValue > 100 ? newCourseValue * 0.5 : newCourseValue;
                         } else {
                             if (form.getValues('autoMotoDetails.paidInFull')) form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
                             isPaidInFull = false;
+                            newDownPayment = newCourseValue > 100 ? newCourseValue * 0.5 : newCourseValue;
                         }
                         if (form.getValues('autoMotoDetails.downPayment')?.toFixed(2) !== newDownPayment.toFixed(2)) {
                             form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
@@ -537,57 +537,6 @@ export function ContractForm() {
         });
         return () => subscription.unsubscribe();
     }, [form, replacePracticalClasses, replaceMotoPracticalClasses, replaceTheoreticalClasses, isManualPrice]);
-
-     const handleFindClient = async () => {
-        if (!firestore || !user) {
-            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo conectar a la base de datos o no se encontró usuario.' });
-            return;
-        }
-
-        const idNumber = 
-            contractType === 'Curso Deluxe' ? form.getValues('deluxeDetails.studentIdNumber') :
-            contractType === 'Ampliaciones' ? form.getValues('ampliacionesDetails.studentIdNumber') :
-            form.getValues('autoMotoDetails.studentIdNumber');
-
-        if (!idNumber) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Por favor, ingrese un número de cédula para buscar.' });
-            return;
-        }
-
-        setIsSearchingClient(true);
-        try {
-            const clientsRef = collection(firestore, 'clients');
-            const q = query(clientsRef, where("idNumber", "==", idNumber));
-            const querySnapshot = await getDocs(q);
-
-            if (!querySnapshot.empty) {
-                const clientDoc = querySnapshot.docs[0];
-                const clientData = clientDoc.data() as Client;
-
-                form.setValue('clientName', clientData.name);
-                form.setValue('clientEmail', clientData.email);
-
-                const detailsPath = 
-                    contractType === 'Curso Deluxe' ? 'deluxeDetails' :
-                    contractType === 'Ampliaciones' ? 'ampliacionesDetails' :
-                    'autoMotoDetails';
-                
-                form.setValue(`${detailsPath}.studentAddress` as any, clientData.studentAddress || '');
-                form.setValue(`${detailsPath}.studentPhone1` as any, clientData.studentPhone1 || '');
-                form.setValue(`${detailsPath}.studentPhone2` as any, clientData.studentPhone2 || '');
-
-                toast({ title: 'Éxito', description: 'Cliente encontrado y datos cargados.' });
-            } else {
-                toast({ variant: 'default', title: 'Información', description: 'No se encontró ningún cliente con esa cédula para este usuario. Puede registrarlo como nuevo.' });
-            }
-        } catch (error) {
-            console.error("Error buscando cliente:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Ocurrió un error al buscar el cliente.' });
-        } finally {
-            setIsSearchingClient(false);
-        }
-    };
-
 
     const onSubmit = async (values: FormValues) => {
         if (!user || !firestore || isUserLoading) {
@@ -1089,7 +1038,34 @@ export function ContractForm() {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField control={form.control} name="autoMotoDetails.courseValue" render={({ field }) => (<FormItem><FormLabel>Valor Total (B/.)</FormLabel><FormControl><Input type="text" value={formatCurrency(field.value)} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="autoMotoDetails.downPayment" render={({ field }) => (<FormItem><FormLabel>Abono (B/.)</FormLabel><FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={watchedPaidInFull || isSpecialPlan} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField 
+                    control={form.control} 
+                    name="autoMotoDetails.downPayment" 
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Abono (B/.)</FormLabel>
+                            <FormControl>
+                                <Input 
+                                    type="text"
+                                    inputMode="decimal"
+                                    value={field.value ? formatCurrency(field.value) : '0.00'}
+                                    onChange={e => {
+                                        const value = e.target.value.replace(/[^0-9.]/g, '');
+                                        const parsed = parseFloat(value);
+                                        field.onChange(isNaN(parsed) ? 0 : parsed);
+                                    }}
+                                    onBlur={() => {
+                                        if (field.value) {
+                                            field.onChange(parseFloat(field.value.toFixed(2)));
+                                        }
+                                    }}
+                                    disabled={watchedPaidInFull || isSpecialPlan}
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} 
+                />
                 <FormField control={form.control} name="autoMotoDetails.balance" render={({ field }) => (<FormItem><FormLabel>Saldo (B/.)</FormLabel><FormControl><Input type="text" value={formatCurrency(field.value)} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
             </div>
              <FormField
@@ -1593,6 +1569,8 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    
 
     
 

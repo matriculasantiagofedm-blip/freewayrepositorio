@@ -49,7 +49,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { AmpliacionesContractTemplate } from './ampliaciones-contract';
 import { ContractView } from './contract-view';
-import { generateContractFolioAction } from '@/app/actions';
+import { generateContractFolioAction } from '@/ai/flows/generate-contract-folio';
 
 
 // --- Esquemas de Validación con Zod ---

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -13,7 +14,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { GanttChartSquare, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { signInAnonymously } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/firebase';
 
@@ -28,14 +29,15 @@ export default function LoginPage() {
   const { toast } = useToast();
   const auth = useAuth();
 
-  const [selectedRole, setSelectedRole] = useState<{name: string, email: string} | null>(null);
+  const [selectedEmail, setSelectedEmail] = useState<string>('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedRole) {
-      setError('Por favor, selecciona un rol para continuar.');
+    if (!selectedEmail || !password) {
+      setError('Por favor, selecciona un correo y escribe tu contraseña.');
       return;
     }
 
@@ -43,21 +45,20 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // Usamos el inicio de sesión anónimo.
-      await signInAnonymously(auth);
+      await signInWithEmailAndPassword(auth, selectedEmail, password);
       
-      // Guardamos el rol seleccionado en una variable global para que `useCurrentRole` pueda acceder a él.
-      // Esta es una forma sencilla de mantener el estado del rol en una sesión anónima.
-      (window as any).selectedRoleForAnonymousSession = selectedRole;
-
+      const roleName = employeeRoles.find(r => r.email === selectedEmail)?.name || 'Usuario';
       toast({
         title: 'Inicio de Sesión Exitoso',
-        description: `Bienvenido como ${selectedRole.name}.`,
+        description: `Bienvenido como ${roleName}.`,
       });
       router.push('/dashboard');
     } catch (e: any) {
-      console.error("Error de inicio de sesión anónimo:", e);
-      const description = 'No se pudo iniciar la sesión anónima. Verifica la configuración de Firebase.';
+      console.error("Error de inicio de sesión:", e);
+      let description = 'Ocurrió un error inesperado.';
+      if (e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found') {
+        description = 'Las credenciales son incorrectas. Verifica tu correo y contraseña.';
+      }
       setError(description);
       toast({
         variant: 'destructive',
@@ -67,11 +68,6 @@ export default function LoginPage() {
     } finally {
       setIsLoggingIn(false);
     }
-  };
-
-  const handleRoleChange = (email: string) => {
-    const role = employeeRoles.find(r => r.email === email) || null;
-    setSelectedRole(role);
   };
 
   return (
@@ -87,16 +83,16 @@ export default function LoginPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Seleccionar Rol</CardTitle>
-            <CardDescription>Elige tu rol para acceder al panel de control.</CardDescription>
+            <CardTitle>Iniciar Sesión</CardTitle>
+            <CardDescription>Usa tus credenciales para acceder al panel.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="role">Rol de Empleado</Label>
-                <Select onValueChange={handleRoleChange}>
+                <Label htmlFor="role">Correo Electrónico</Label>
+                <Select onValueChange={setSelectedEmail} value={selectedEmail}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecciona tu rol" />
+                    <SelectValue placeholder="Selecciona tu correo" />
                   </SelectTrigger>
                   <SelectContent>
                     {employeeRoles.map((role) => (
@@ -107,8 +103,18 @@ export default function LoginPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Contraseña</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="********"
+                />
+              </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoggingIn || !selectedRole}>
+              <Button type="submit" className="w-full" disabled={isLoggingIn || !selectedEmail || !password}>
                 {isLoggingIn ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 {isLoggingIn ? 'Iniciando...' : 'Entrar'}
               </Button>

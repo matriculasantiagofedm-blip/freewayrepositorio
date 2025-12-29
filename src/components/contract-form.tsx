@@ -192,6 +192,18 @@ const ampliacionesPlans = {
         { name: 'G', price: 180.00 },
         { name: 'H', price: 180.00 },
         { name: 'I', price: 107.00 },
+    ],
+    combos: [
+        { name: 'B,D', price: 114.00 },
+        { name: 'C,D', price: 114.00 },
+        { name: 'E2, F', price: 154.00 },
+        { name: 'E2, I', price: 154.00 },
+        { name: 'E3, F', price: 154.00 },
+        { name: 'E3, I', price: 154.00 },
+    ],
+    otrosCombos: [
+        { name: 'Ampliación E2, F, I', price: 204.00 },
+        { name: 'Ampliación E3, F, I', price: 204.00 },
     ]
 };
 
@@ -760,6 +772,27 @@ export function ContractForm() {
         const theoreticalClassDatePath = "ampliacionesDetails.theoreticalClassDate";
         const theoreticalClassTimePath = "ampliacionesDetails.theoreticalClassTime";
 
+        const renderPlanCheckboxes = (plans: {name: string, price: number}[]) => (
+            plans.map((plan) => (
+                <FormField
+                    key={plan.name}
+                    control={form.control}
+                    name={selectedPlansPath as 'ampliacionesDetails.selectedPlans'}
+                    render={({ field }) => (
+                        <FormItem key={plan.name} className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                            <FormControl>
+                                <Checkbox
+                                    checked={field.value?.some(p => p.name === plan.name)}
+                                    onCheckedChange={(checked) => checked ? field.onChange([...(field.value || []), plan]) : field.onChange(field.value?.filter((value) => value.name !== plan.name))}
+                                />
+                            </FormControl>
+                            <FormLabel className="font-normal">{plan.name} <span className="font-semibold text-primary"> (B/.{plan.price.toFixed(2)})</span></FormLabel>
+                        </FormItem>
+                    )}
+                />
+            ))
+        );
+
         return (
              <>
                 <h3 className="font-semibold text-lg pt-4 border-b pb-2">Datos Adicionales del Estudiante</h3>
@@ -776,32 +809,38 @@ export function ContractForm() {
                     name={selectedPlansPath as 'ampliacionesDetails.selectedPlans'}
                     render={() => (
                         <FormItem>
-                            <div className="mb-4">
-                                <FormLabel className="text-base">Planes Individuales</FormLabel>
+                             <div className="mb-4">
+                                <FormLabel className="text-base">Planes y Combos</FormLabel>
                                 <FormDescription>
                                     Selecciona todos los planes que apliquen. El total se calculará automáticamente.
                                 </FormDescription>
                             </div>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-4">
-                                {ampliacionesPlans.individual.map((plan) => (
-                                    <FormField
-                                        key={plan.name}
-                                        control={form.control}
-                                        name={selectedPlansPath as 'ampliacionesDetails.selectedPlans'}
-                                        render={({ field }) => (
-                                            <FormItem key={plan.name} className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                                                <FormControl>
-                                                    <Checkbox
-                                                        checked={field.value?.some(p => p.name === plan.name)}
-                                                        onCheckedChange={(checked) => checked ? field.onChange([...(field.value || []), plan]) : field.onChange(field.value?.filter((value) => value.name !== plan.name))}
-                                                    />
-                                                </FormControl>
-                                                <FormLabel className="font-normal">{plan.name} <span className="font-semibold text-primary"> (B/.{plan.price.toFixed(2)})</span></FormLabel>
-                                            </FormItem>
-                                        )}
-                                    />
-                                ))}
-                            </div>
+                            <Accordion type="multiple" collapsible className="w-full" defaultValue={['individuales']}>
+                                <AccordionItem value="individuales">
+                                    <AccordionTrigger className="text-base font-semibold">Planes Individuales</AccordionTrigger>
+                                    <AccordionContent>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4">
+                                            {renderPlanCheckboxes(ampliacionesPlans.individual)}
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                                <AccordionItem value="combos">
+                                    <AccordionTrigger className="text-base font-semibold">Combos de Ampliaciones</AccordionTrigger>
+                                    <AccordionContent>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4">
+                                            {renderPlanCheckboxes(ampliacionesPlans.combos)}
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                                <AccordionItem value="otros-combos">
+                                    <AccordionTrigger className="text-base font-semibold">Otros Combos</AccordionTrigger>
+                                    <AccordionContent>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4">
+                                            {renderPlanCheckboxes(ampliacionesPlans.otrosCombos)}
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </Accordion>
                             <FormMessage />
                         </FormItem>
                     )}
@@ -1494,5 +1533,3 @@ export function ContractForm() {
         </Form>
     );
 }
-
-    

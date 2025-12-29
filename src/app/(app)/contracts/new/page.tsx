@@ -1,3 +1,4 @@
+
 'use client';
 import { Suspense } from 'react';
 import Link from "next/link";
@@ -20,7 +21,7 @@ function NewContractPageContent() {
 
     return (
         <div className="flex flex-col gap-8">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 print:hidden">
                 <Button variant="outline" size="icon" asChild>
                     <Link href="/dashboard">
                         <ChevronLeft className="h-4 w-4" />
@@ -32,8 +33,8 @@ function NewContractPageContent() {
                      <p className="text-muted-foreground">Creando un nuevo contrato de tipo: <span className="font-semibold text-primary">{contractType}</span></p>
                 </div>
             </div>
-             <Card className="max-w-5xl mx-auto w-full shadow-lg">
-                <CardHeader>
+             <Card className="max-w-5xl mx-auto w-full shadow-lg print:shadow-none print:border-none">
+                <CardHeader className="print:hidden">
                     <CardTitle className="text-2xl font-bold font-headline">Freeway Escuela de Manejo, S.A.</CardTitle>
                     <CardDescription>Completa todos los campos para generar el nuevo contrato.</CardDescription>
                 </CardHeader>

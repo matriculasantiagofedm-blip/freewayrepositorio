@@ -815,7 +815,7 @@ export function ContractForm() {
                                     Selecciona todos los planes que apliquen. El total se calculará automáticamente.
                                 </FormDescription>
                             </div>
-                            <Accordion type="multiple" collapsible className="w-full" defaultValue={['individuales']}>
+                            <Accordion type="multiple" className="w-full" defaultValue={['individuales']}>
                                 <AccordionItem value="individuales">
                                     <AccordionTrigger className="text-base font-semibold">Planes Individuales</AccordionTrigger>
                                     <AccordionContent>

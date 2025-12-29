@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { GanttChartSquare, Briefcase, UserCheck, Shield, ArrowLeft } from 'lucide-react';
+import { GanttChartSquare, Briefcase, UserCheck, Shield, ArrowLeft, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -44,19 +44,37 @@ export default function LoginPage() {
       setError('Por favor, introduce tu contraseña.');
       return;
     }
+    
+    // Validar contraseña correcta antes de intentar iniciar sesión
+    if (password !== selectedRole.password) {
+        setError('Contraseña incorrecta. Por favor, inténtalo de nuevo.');
+        toast({
+            variant: 'destructive',
+            title: 'Error de autenticación',
+            description: 'La contraseña no es correcta para el rol seleccionado.',
+        });
+        return;
+    }
+
     setIsLoggingIn(true);
     setError('');
 
     try {
       await signInWithEmailAndPassword(auth, selectedRole.email, password);
-      router.push('/dashboard');
+      // La redirección se maneja con el useEffect de arriba, que se activará cuando 'user' cambie.
     } catch (e: any) {
       console.error(e);
-      setError('Contraseña incorrecta. Por favor, inténtalo de nuevo.');
+      let description = 'Ocurrió un error inesperado al iniciar sesión.';
+      if (e.code === 'auth/wrong-password') {
+        description = 'La contraseña es incorrecta.';
+      } else if (e.code === 'auth/user-not-found') {
+        description = 'El usuario no existe. Contacte al administrador.';
+      }
+      setError(description);
       toast({
         variant: 'destructive',
-        title: 'Error de autenticación',
-        description: 'La contraseña no es correcta para el rol seleccionado.',
+        title: 'Error de Inicio de Sesión',
+        description: description,
       });
     } finally {
       setIsLoggingIn(false);
@@ -69,11 +87,18 @@ export default function LoginPage() {
     setError('');
   };
   
-  // Muestra un estado de carga mientras se verifica si hay un usuario o si ya está autenticado para redirigir.
+  // Muestra un estado de carga a pantalla completa mientras se verifica si hay un usuario
+  // o si el usuario ya está autenticado para redirigir.
   if (isUserLoading || user) {
-    return <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4"><p>Cargando...</p></div>;
+    return (
+        <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            <p className="mt-4 text-muted-foreground">Cargando aplicación...</p>
+        </div>
+    );
   }
 
+  // Si no hay usuario y la carga ha terminado, muestra la página de inicio de sesión.
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-8">
@@ -118,6 +143,7 @@ export default function LoginPage() {
                 </div>
                 {error && <p className="text-sm text-destructive">{error}</p>}
                 <Button type="submit" className="w-full" disabled={isLoggingIn}>
+                  {isLoggingIn ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                   {isLoggingIn ? 'Iniciando...' : 'Entrar'}
                 </Button>
               </form>

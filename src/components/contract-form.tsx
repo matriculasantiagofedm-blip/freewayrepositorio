@@ -658,13 +658,17 @@ export function ContractForm() {
                 return newDetails;
             };
 
-            let finalDetails = {};
+            let finalDetails: any = {};
             if (values.contractType === 'Curso Deluxe') {
                 finalDetails = convertDetailsDatesToTimestamps(values.deluxeDetails);
             } else if (values.contractType === 'Ampliaciones') {
                 finalDetails = convertDetailsDatesToTimestamps(values.ampliacionesDetails);
             } else {
                 finalDetails = convertDetailsDatesToTimestamps(values.autoMotoDetails);
+                // Specifically remove 'vehicle' if it's a Moto course
+                if (values.contractType === 'Curso Moto') {
+                    delete finalDetails.vehicle;
+                }
             }
             
             const newContract: Omit<Contract, 'id' | 'createdAt'> = {

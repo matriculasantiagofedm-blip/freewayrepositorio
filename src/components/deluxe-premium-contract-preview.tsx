@@ -166,7 +166,7 @@ export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, 
         <h3 className="font-bold">CLÁUSULA OCTAVA- LUGAR DE INICIO E TRASLADO</h3>
         <p>Las clases prácticas iniciarán en la oficina de LA ESCUELA. Desde allí, EL ESTUDIANTE será trasladado al circuito de prácticas y posteriormente de regreso. Dicho traslado se encuentra incluido dentro del tiempo de las 2 horas de clase práctica.</p>
 
-        <h3 className="font-bold">CLÁUSULA NOVENA - NORMAS DE COMPORTAMIENTO Y VESTIMENTA</h3>
+        <h3 className="font-bold">CLÁUSULA NOVENA - NORMAS DE COMPORTAMIENTO E VESTIMENTA</h3>
         <p>EL ESTUDIANTE se compromete a: Seguir las instrucciones del instructor, mantener una actitud respetuosa y adecuada durante las clases y asistir en estado óptimo de salud física, mental y emocional. Para las clases prácticas y teóricas, EL ESTUDIANTE deberá asistir con ropa adecuada. Se prohíbe presentarse con: Escotes pronunciados, minifaldas, camisetas sin mangas, pantalones cortos, leggins, chancletas o sandalias. El incumplimiento de esta norma implica la pérdida automática de la clase, sin derecho a reposición.</p>
 
         <h3 className="font-bold">CLÁUSULA DÉCIMA- ACOMPAñANTES Y ACCESO</h3>

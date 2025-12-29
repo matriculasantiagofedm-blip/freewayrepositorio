@@ -1,158 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { GanttChartSquare, Briefcase, UserCheck, Shield } from 'lucide-react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth, useUser } from '@/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@/firebase';
 
-const roles = [
-  { name: 'Ventas', icon: Briefcase, email: 'ventas@contracttime.app' },
-  { name: 'Ventas Externas', icon: UserCheck, email: 'ventas-externas@contracttime.app' },
-  { name: 'Administrador', icon: Shield, email: 'admin@contracttime.app' },
-];
-
-export default function LoginPage() {
-  const router = useRouter();
-  const auth = useAuth();
-  const { toast } = useToast();
+export default function AppEntryPage() {
   const { user, isUserLoading } = useUser();
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [selectedRole, setSelectedRole] = useState<(typeof roles)[0] | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    // Si el usuario ya está autenticado y no está cargando, redirige al dashboard.
-    if (!isUserLoading && user) {
+    // No hagas nada hasta que se haya determinado el estado de autenticación.
+    if (isUserLoading) {
+      return;
+    }
+
+    // Si el usuario está autenticado, redirige al panel de control.
+    if (user) {
       router.push('/dashboard');
+    } else {
+      // Si no está autenticado, devuélvelo a la página de inicio.
+      router.push('/');
     }
   }, [user, isUserLoading, router]);
 
-
-  const handleRoleSelect = (role: (typeof roles)[0]) => {
-    setSelectedRole(role);
-    setPassword('');
-    setError('');
-    setIsDialogOpen(true);
-  };
-
-  const handleLogin = async () => {
-    if (!selectedRole || !password) {
-      setError('Por favor, introduce la contraseña.');
-      return;
-    }
-    setIsLoggingIn(true);
-    setError('');
-    try {
-      await signInWithEmailAndPassword(auth, selectedRole.email, password);
-      // La redirección ahora es manejada por el useEffect de arriba
-    } catch (e: any) {
-      console.error(e);
-      setError('Contraseña o usuario incorrecto. Por favor, inténtalo de nuevo.');
-      toast({
-        variant: 'destructive',
-        title: 'Error de autenticación',
-        description: 'La contraseña o el rol seleccionado no son correctos.',
-      });
-    } finally {
-      setIsLoggingIn(false);
-    }
-  };
-  
-  const handleDialogChange = (open: boolean) => {
-    if (!open) {
-        setSelectedRole(null);
-        setPassword('');
-        setError('');
-    }
-    setIsDialogOpen(open);
-  }
-  
-  // No renderiza nada si está cargando o si ya hay un usuario (esperando redirección)
-  if (isUserLoading || user) {
-    return <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4"><p>Cargando...</p></div>;
-  }
-
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-8 text-center">
-        <div className="flex justify-center">
-          <GanttChartSquare className="h-16 w-16 text-primary" />
-        </div>
-        <div className="flex flex-col gap-2">
-            <h1 className="font-headline text-5xl font-bold tracking-tight text-foreground sm:text-6xl">
-            ContractTime
-            </h1>
-            <p className="text-xl font-medium text-foreground">Freeway Escuela de Manejo, S.A.</p>
-        </div>
-        <p className="text-lg text-muted-foreground">
-          Selecciona tu rol para ingresar al sistema.
-        </p>
-        <div className="flex flex-col gap-4">
-          {roles.map((role) => (
-            <Button
-                key={role.name}
-                size="lg"
-                variant="outline"
-                className="justify-start text-base"
-                onClick={() => handleRoleSelect(role)}
-            >
-                <role.icon className="mr-4 h-5 w-5 text-primary" />
-                Entrar como {role.name}
-            </Button>
-          ))}
-        </div>
-      </div>
-       {selectedRole && (
-        <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
-            <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                <DialogTitle>Iniciar Sesión como {selectedRole.name}</DialogTitle>
-                <DialogDescription>
-                    Introduce la contraseña para acceder al panel de control.
-                </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="password" className="text-right">
-                    Contraseña
-                    </Label>
-                    <Input
-                    id="password"
-                    type="password"
-                    className="col-span-3"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-                    />
-                </div>
-                {error && <p className="col-span-4 text-center text-sm text-destructive">{error}</p>}
-                </div>
-                <DialogFooter>
-                <Button onClick={handleLogin} disabled={isLoggingIn}>
-                    {isLoggingIn ? 'Iniciando...' : 'Confirmar'}
-                </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-      )}
-      <footer className="absolute bottom-4 text-center text-sm text-muted-foreground">
-        <p>Creado para profesionales que valoran su tiempo.</p>
-      </footer>
-    </div>
-  );
+  // Muestra un estado de carga mientras se verifica la sesión.
+  return <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4"><p>Cargando...</p></div>;
 }

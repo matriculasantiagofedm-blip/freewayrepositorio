@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -14,9 +14,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { GanttChartSquare, Briefcase, UserCheck, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useAuth, useUser } from '@/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
+import { initializeFirebase } from '@/firebase';
 
 const roles = [
   { name: 'Ventas', icon: Briefcase, email: 'ventas@contracttime.app' },
@@ -26,22 +26,12 @@ const roles = [
 
 export default function LoginPage() {
   const router = useRouter();
-  const auth = useAuth();
   const { toast } = useToast();
-  const { user, isUserLoading } = useUser();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [selectedRole, setSelectedRole] = useState<(typeof roles)[0] | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-
-  useEffect(() => {
-    // Si el usuario ya está autenticado y no está cargando, redirige al dashboard.
-    if (!isUserLoading && user) {
-      router.push('/dashboard');
-    }
-  }, [user, isUserLoading, router]);
-
 
   const handleRoleSelect = (role: (typeof roles)[0]) => {
     setSelectedRole(role);
@@ -57,9 +47,14 @@ export default function LoginPage() {
     }
     setIsLoggingIn(true);
     setError('');
+
     try {
+      // Obtenemos la instancia de Auth directamente aquí
+      const { auth } = initializeFirebase();
       await signInWithEmailAndPassword(auth, selectedRole.email, password);
-      // La redirección ahora es manejada por el useEffect de arriba
+      // Tras un inicio de sesión exitoso, redirigimos al grupo (app)
+      // El guardia de entrada en (app)/page.tsx se encargará de la redirección final a /dashboard
+      router.push('/dashboard'); 
     } catch (e: any) {
       console.error(e);
       setError('Contraseña o usuario incorrecto. Por favor, inténtalo de nuevo.');
@@ -80,11 +75,6 @@ export default function LoginPage() {
         setError('');
     }
     setIsDialogOpen(open);
-  }
-  
-  // No renderiza nada si está cargando o si ya hay un usuario (esperando redirección)
-  if (isUserLoading || user) {
-    return <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4"><p>Cargando...</p></div>;
   }
 
   return (

@@ -197,10 +197,13 @@ const ampliacionesPlans = {
     combos: [
         { name: 'B,D', price: 114.00 },
         { name: 'C,D', price: 114.00 },
+        { name: 'E1,E2', price: 75.00 },
         { name: 'E2, F', price: 154.00 },
         { name: 'E2, I', price: 154.00 },
+        { name: 'E1,E2,E3', price: 85.00 },
         { name: 'E3, F', price: 154.00 },
         { name: 'E3, I', price: 154.00 },
+        { name: 'E1,E2,E3,F', price: 100.00 },
     ],
     otrosCombos: [
         { name: 'Ampliación E2, F, I', price: 204.00 },
@@ -462,11 +465,10 @@ export function ContractForm() {
                 } else {
                     courseValue = form.getValues('ampliacionesDetails.courseValue') || 0;
                 }
-                
+
                 const forceFullPayment = courseValue > 0 && courseValue <= 100;
                 let isPaidInFull = value.ampliacionesDetails?.paidInFull ?? false;
                 
-                // If value forces full payment, check the box.
                 if (forceFullPayment && !isPaidInFull) {
                     form.setValue('ampliacionesDetails.paidInFull', true, { shouldValidate: true });
                     isPaidInFull = true;
@@ -474,7 +476,7 @@ export function ContractForm() {
                 
                 let downPayment = value.ampliacionesDetails?.downPayment || 0;
                 
-                if (name === 'ampliacionesDetails.selectedPlans' || name === 'ampliacionesDetails.courseValue' || name === 'ampliacionesDetails.paidInFull') {
+                 if (name === 'ampliacionesDetails.selectedPlans' || name === 'ampliacionesDetails.courseValue') {
                     if (isPaidInFull || forceFullPayment) {
                         downPayment = courseValue;
                     } else if (courseValue > 100) {
@@ -482,7 +484,6 @@ export function ContractForm() {
                     } else {
                         downPayment = courseValue; 
                     }
-                    
                     if (formatCurrency(form.getValues('ampliacionesDetails.downPayment')) !== formatCurrency(downPayment)) {
                         form.setValue('ampliacionesDetails.downPayment', downPayment, { shouldValidate: true });
                     }
@@ -826,7 +827,7 @@ export function ContractForm() {
                                     Selecciona todos los planes que apliquen. El total se calculará automáticamente, pero puedes ajustarlo si seleccionas más de un plan individual.
                                 </FormDescription>
                             </div>
-                            <Accordion type="multiple" className="w-full" defaultValue={['individuales']}>
+                            <Accordion type="single" collapsible className="w-full">
                                 <AccordionItem value="individuales">
                                     <AccordionTrigger className="text-base font-semibold">Planes Individuales</AccordionTrigger>
                                     <AccordionContent>
@@ -934,7 +935,7 @@ export function ContractForm() {
                                     <Input 
                                         type="text"
                                         inputMode="decimal"
-                                        value={field.value ? formatCurrency(field.value) : ''}
+                                        value={field.value ? formatCurrency(field.value) : '0.00'}
                                         onChange={e => {
                                             const value = e.target.value;
                                             const parsed = parseFloat(value);

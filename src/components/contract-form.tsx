@@ -36,7 +36,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, PlusCircle, Loader2, Printer, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFirebase } from '@/firebase';
-import { Timestamp, collection, query, where, getDocs, writeBatch, doc, serverTimestamp } from 'firebase/firestore';
+import { Timestamp, collection, query, where, getDocs, writeBatch, doc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { Contract, ContractType, Client } from '@/lib/types';
@@ -49,7 +49,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { AmpliacionesContractTemplate } from './ampliaciones-contract';
 import { ContractView } from './contract-view';
-import { generateContractFolioAction } from '@/ai/flows/generate-contract-folio';
 
 
 // --- Esquemas de Validación con Zod ---
@@ -576,13 +575,28 @@ export function ContractForm() {
         setIsSubmitting(true);
 
         try {
-            // 1. Get a unique folio number from the server
-            const folioResult = await generateContractFolioAction();
-            if (folioResult.error || !folioResult.folioNumber) {
-                throw new Error(folioResult.error || 'No se pudo generar el número de folio.');
+            // 1. Generate folio number and create contract in a transaction
+            const folioNumber = await runTransaction(firestore, async (transaction) => {
+                const counterRef = doc(firestore, 'counters', 'contract_folio');
+                const counterDoc = await transaction.get(counterRef);
+
+                let newFolioNumber;
+                if (!counterDoc.exists()) {
+                    newFolioNumber = 1;
+                    transaction.set(counterRef, { count: 1 });
+                } else {
+                    const currentCount = counterDoc.data()?.count || 0;
+                    newFolioNumber = currentCount + 1;
+                    transaction.update(counterRef, { count: newFolioNumber });
+                }
+                return newFolioNumber;
+            });
+            
+            if (!folioNumber) {
+                throw new Error('No se pudo generar el número de folio.');
             }
-            const folioNumber = folioResult.folioNumber;
-            form.setValue('folioNumber', folioNumber); // Set folio for preview
+
+            form.setValue('folioNumber', folioNumber);
 
             const batch = writeBatch(firestore);
 

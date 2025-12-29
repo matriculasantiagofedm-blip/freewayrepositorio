@@ -65,8 +65,13 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Only allow server-side processes (like our genkit flow) to read/write counters.
-    // Client-side access is completely disabled.
+    // Allow authenticated users to read/write the specific contract_folio counter
+    // for transactional increments on the client.
+    match /counters/contract_folio {
+        allow read, write: if isSignedIn();
+    }
+    
+    // Prevent access to any other documents in the counters collection.
     match /counters/{counterId} {
         allow read, write: if false;
     }

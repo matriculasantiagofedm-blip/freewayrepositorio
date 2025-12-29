@@ -196,7 +196,10 @@ const ampliacionesPlans = {
         { name: 'I', price: 107.00 },
     ],
     combos: [
-        { name: 'B,D', price: 114.00 },
+        { name: 'B,D', price: 85.00 },
+        { name: 'B,E1', price: 85.00 },
+        { name: 'B,F', price: 85.00 },
+        { name: 'D,E1', price: 85.00 },
         { name: 'C,D', price: 114.00 },
         { name: 'E1,E2', price: 75.00 },
         { name: 'E2,F', price: 154.00 },
@@ -443,46 +446,43 @@ export function ContractForm() {
 
             if (name?.startsWith('ampliacionesDetails')) {
                 const selectedPlans = value.ampliacionesDetails?.selectedPlans || [];
-                const individualPlansSelected = selectedPlans.filter(p => ampliacionesPlans.individual.some(ind => ind.name === p.name));
-                const selectionKey = individualPlansSelected.map(p => p.name).sort().join(',');
+                const selectionKey = selectedPlans.map(p => p.name).sort().join(',');
                 const comboPrice = comboPriceMap.get(selectionKey);
 
                 let courseValue: number;
                 let manualPrice = false;
-
-                if (name === 'ampliacionesDetails.selectedPlans' || name === 'ampliacionesDetails.courseValue') {
+                
+                if (name === 'ampliacionesDetails.selectedPlans') {
                     if (comboPrice !== undefined) {
                         courseValue = comboPrice;
                         manualPrice = false;
-                    } else if (individualPlansSelected.length >= 2) {
-                        // Si estamos cambiando la selección y ahora es un paquete manual
-                        if (name === 'ampliacionesDetails.selectedPlans') {
-                            courseValue = individualPlansSelected.reduce((acc, plan) => acc + plan.price, 0);
-                        } else { // Si estamos cambiando el valor del curso directamente
-                            courseValue = value.ampliacionesDetails?.courseValue || 0;
-                        }
+                    } else if (selectedPlans.length >= 2) {
+                        courseValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
                         manualPrice = true;
                     }
                     else {
                         courseValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
                         manualPrice = false;
                     }
-                    if (name === 'ampliacionesDetails.selectedPlans') {
-                      form.setValue('ampliacionesDetails.courseValue', courseValue, { shouldValidate: true });
+                    form.setValue('ampliacionesDetails.courseValue', courseValue, { shouldValidate: true });
+                } else if (name === 'ampliacionesDetails.courseValue') {
+                    courseValue = value.ampliacionesDetails?.courseValue || 0;
+                     if (comboPrice === undefined && selectedPlans.length >= 2) {
+                        manualPrice = true;
                     }
                 } else {
                     courseValue = form.getValues('ampliacionesDetails.courseValue') || 0;
-                    if (comboPrice === undefined && individualPlansSelected.length >= 2) {
+                    if (comboPrice === undefined && selectedPlans.length >= 2) {
                         manualPrice = true;
                     }
                 }
                 
                 setIsManualPrice(manualPrice);
 
-                const forceFullPayment = courseValue > 0 && courseValue <= 100;
                 let isPaidInFull = value.ampliacionesDetails?.paidInFull ?? false;
+                const forceFullPayment = courseValue > 0 && courseValue <= 100;
                 
-                if ((forceFullPayment && !isPaidInFull) || (name === 'ampliacionesDetails.courseValue' && forceFullPayment)) {
+                if (forceFullPayment && !isPaidInFull) {
                     form.setValue('ampliacionesDetails.paidInFull', true, { shouldValidate: true });
                     isPaidInFull = true;
                 }
@@ -490,7 +490,7 @@ export function ContractForm() {
                 let downPayment = value.ampliacionesDetails?.downPayment || 0;
                 
                 if (name === 'ampliacionesDetails.selectedPlans' || name === 'ampliacionesDetails.courseValue' || name === 'ampliacionesDetails.paidInFull') {
-                    if (isPaidInFull || forceFullPayment) {
+                     if (isPaidInFull || forceFullPayment) {
                         downPayment = courseValue;
                     } else if (courseValue > 100) {
                         downPayment = courseValue * 0.5;
@@ -844,7 +844,7 @@ export function ContractForm() {
                                     <AccordionTrigger className="text-base font-semibold">Planes Individuales</AccordionTrigger>
                                     <AccordionContent>
                                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4">
-                                            {renderPlanCheckboxes(ampliacionesPlans.individual.filter(p => !['G', 'H', 'I'].includes(p.name)))}
+                                            {renderPlanCheckboxes(ampliacionesPlans.individual.filter(p => !['G', 'H'].includes(p.name)))}
                                         </div>
                                     </AccordionContent>
                                 </AccordionItem>

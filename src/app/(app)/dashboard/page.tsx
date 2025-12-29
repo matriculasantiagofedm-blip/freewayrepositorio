@@ -109,7 +109,7 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* <HorarioHeader /> */}
+      <HorarioHeader />
 
       <div>
         <h2 className="mb-4 font-headline text-2xl font-semibold">

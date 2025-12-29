@@ -767,15 +767,9 @@ export function ContractForm() {
             render={({ field }) => (
                 <FormItem>
                     <FormLabel>Cédula/Pasaporte</FormLabel>
-                    <div className="flex gap-2">
-                        <FormControl>
-                            <Input placeholder="Ej. 8-123-456" {...field} value={field.value ?? ''} />
-                        </FormControl>
-                        <Button type="button" onClick={handleFindClient} disabled={isSearchingClient}>
-                            {isSearchingClient ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                            <span className="sr-only">Buscar Cliente</span>
-                        </Button>
-                    </div>
+                    <FormControl>
+                        <Input placeholder="Ej. 8-123-456" {...field} value={field.value ?? ''} />
+                    </FormControl>
                     <FormMessage />
                 </FormItem>
             )}
@@ -1570,5 +1564,7 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    
 
     

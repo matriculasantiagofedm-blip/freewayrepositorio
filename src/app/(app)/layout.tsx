@@ -1,3 +1,4 @@
+'use client';
 import {
   SidebarProvider,
   Sidebar,
@@ -12,8 +13,24 @@ import { GanttChartSquare } from 'lucide-react';
 import Link from 'next/link';
 import { UserNav } from '@/components/user-nav';
 import { MainNav } from '@/components/main-nav';
+import { useAuth } from '@/firebase';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const auth = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    const forceLogout = async () => {
+      if (auth.currentUser) {
+        await auth.signOut();
+        router.push('/');
+      }
+    };
+    forceLogout();
+  }, [auth, router]);
+  
   return (
       <SidebarProvider>
         <Sidebar>

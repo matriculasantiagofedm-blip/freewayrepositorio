@@ -199,10 +199,11 @@ const ampliacionesPlans = {
         { name: 'B,D', price: 114.00 },
         { name: 'C,D', price: 114.00 },
         { name: 'E1,E2', price: 75.00 },
-        { name: 'E2, F', price: 154.00 },
+        { name: 'E2,F', price: 154.00 },
+        { name: 'E3,F', price: 154.00 },
         { name: 'E1,E2,E3', price: 85.00 },
-        { name: 'E3, F', price: 154.00 },
         { name: 'E1,E2,E3,F', price: 100.00 },
+        { name: 'G,H,I', price: 400.00 },
     ],
     otrosCombos: [
     ]
@@ -211,7 +212,6 @@ const ampliacionesPlans = {
 // Mapa para buscar precios de combos de manera eficiente
 const comboPriceMap = new Map<string, number>();
 ampliacionesPlans.combos.forEach(combo => {
-    // Ordenar las claves para asegurar consistencia (ej. "B,D" es lo mismo que "D,B")
     const sortedKey = combo.name.split(',').sort().join(',');
     comboPriceMap.set(sortedKey, combo.price);
 });
@@ -303,6 +303,7 @@ export function ContractForm() {
     const [savedContract, setSavedContract] = useState<Contract | null>(null);
     const [isSearchingClient, setIsSearchingClient] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isManualPrice, setIsManualPrice] = useState(false);
 
     const contractType = useMemo(() => searchParams.get('type') as ContractType | null, [searchParams]);
 
@@ -314,22 +315,6 @@ export function ContractForm() {
     const watchedValues = form.watch();
     const watchedPaidInFull = form.watch('autoMotoDetails.paidInFull');
     const watchedAmpliacionesSelectedPlans = form.watch('ampliacionesDetails.selectedPlans');
-
-
-    const { isManualPrice, isComboPrice } = useMemo(() => {
-        const selectedIndividualPlans = watchedAmpliacionesSelectedPlans?.filter(p => ampliacionesPlans.individual.some(ind => ind.name === p.name)) || [];
-        if (selectedIndividualPlans.length === 0) return { isManualPrice: false, isComboPrice: false };
-
-        const selectionKey = selectedIndividualPlans.map(p => p.name).sort().join(',');
-        const comboPrice = comboPriceMap.get(selectionKey);
-
-        if (comboPrice !== undefined) {
-            return { isManualPrice: false, isComboPrice: true };
-        }
-
-        return { isManualPrice: selectedIndividualPlans.length >= 2, isComboPrice: false };
-    }, [watchedAmpliacionesSelectedPlans]);
-
 
     const isSpecialPlan = useMemo(() => 
         watchedValues.autoMotoDetails.coursePlan?.toLowerCase().includes('ya se manejar') && !watchedValues.autoMotoDetails.coursePlan?.toLowerCase().includes('+'),
@@ -463,21 +448,36 @@ export function ContractForm() {
                 const comboPrice = comboPriceMap.get(selectionKey);
 
                 let courseValue: number;
+                let manualPrice = false;
 
-                if (name === 'ampliacionesDetails.selectedPlans') {
+                if (name === 'ampliacionesDetails.selectedPlans' || name === 'ampliacionesDetails.courseValue') {
                     if (comboPrice !== undefined) {
-                        // Combo price found, use it
                         courseValue = comboPrice;
-                    } else {
-                        // No combo, sum of individual plans
-                        courseValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
+                        manualPrice = false;
+                    } else if (individualPlansSelected.length >= 2) {
+                        // Si estamos cambiando la selección y ahora es un paquete manual
+                        if (name === 'ampliacionesDetails.selectedPlans') {
+                            courseValue = individualPlansSelected.reduce((acc, plan) => acc + plan.price, 0);
+                        } else { // Si estamos cambiando el valor del curso directamente
+                            courseValue = value.ampliacionesDetails?.courseValue || 0;
+                        }
+                        manualPrice = true;
                     }
-                    form.setValue('ampliacionesDetails.courseValue', courseValue, { shouldValidate: true });
-                } else if (name === 'ampliacionesDetails.courseValue') {
-                    courseValue = value.ampliacionesDetails?.courseValue || 0;
+                    else {
+                        courseValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
+                        manualPrice = false;
+                    }
+                    if (name === 'ampliacionesDetails.selectedPlans') {
+                      form.setValue('ampliacionesDetails.courseValue', courseValue, { shouldValidate: true });
+                    }
                 } else {
                     courseValue = form.getValues('ampliacionesDetails.courseValue') || 0;
+                    if (comboPrice === undefined && individualPlansSelected.length >= 2) {
+                        manualPrice = true;
+                    }
                 }
+                
+                setIsManualPrice(manualPrice);
 
                 const forceFullPayment = courseValue > 0 && courseValue <= 100;
                 let isPaidInFull = value.ampliacionesDetails?.paidInFull ?? false;
@@ -517,6 +517,7 @@ export function ContractForm() {
                     }
                 }
             }
+
 
             if (name === 'autoMotoDetails.theoreticalClassSchedule') {
                 const theoreticalSchedule = value.autoMotoDetails?.theoreticalClassSchedule;
@@ -843,7 +844,7 @@ export function ContractForm() {
                                     <AccordionTrigger className="text-base font-semibold">Planes Individuales</AccordionTrigger>
                                     <AccordionContent>
                                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4">
-                                            {renderPlanCheckboxes(ampliacionesPlans.individual.filter(p => !p.name.includes('I')))}
+                                            {renderPlanCheckboxes(ampliacionesPlans.individual.filter(p => !['G', 'H', 'I'].includes(p.name)))}
                                         </div>
                                     </AccordionContent>
                                 </AccordionItem>
@@ -946,7 +947,7 @@ export function ContractForm() {
                                     />
                                 </FormControl>
                                 {isManualPrice && <FormDescription>Paquete manual: puedes editar este valor.</FormDescription>}
-                                {isComboPrice && <FormDescription>Precio de combo aplicado.</FormDescription>}
+                                {!isManualPrice && (watchedAmpliacionesSelectedPlans?.length || 0) > 1 && <FormDescription>Precio de combo aplicado.</FormDescription>}
                                 <FormMessage />
                             </FormItem>
                     )} />
@@ -1568,13 +1569,5 @@ export function ContractForm() {
         </Form>
     );
 }
-
-    
-
-    
-
-    
-
-    
 
     

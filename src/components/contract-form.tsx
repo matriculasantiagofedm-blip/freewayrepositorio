@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -199,15 +200,11 @@ const ampliacionesPlans = {
         { name: 'C,D', price: 114.00 },
         { name: 'E1,E2', price: 75.00 },
         { name: 'E2, F', price: 154.00 },
-        { name: 'E2, I', price: 154.00 },
         { name: 'E1,E2,E3', price: 85.00 },
         { name: 'E3, F', price: 154.00 },
-        { name: 'E3, I', price: 154.00 },
         { name: 'E1,E2,E3,F', price: 100.00 },
     ],
     otrosCombos: [
-        { name: 'Ampliación E2, F, I', price: 204.00 },
-        { name: 'Ampliación E3, F, I', price: 204.00 },
     ]
 };
 
@@ -307,8 +304,6 @@ export function ContractForm() {
 
     const watchedValues = form.watch();
     const watchedPaidInFull = form.watch('autoMotoDetails.paidInFull');
-    const watchedAmpliacionesPaidInFull = form.watch('ampliacionesDetails.paidInFull');
-    const watchedCoursePlan = form.watch('autoMotoDetails.coursePlan');
     const watchedAmpliacionesSelectedPlans = form.watch('ampliacionesDetails.selectedPlans');
     const watchedAmpliacionesCourseValue = form.watch('ampliacionesDetails.courseValue');
 
@@ -321,14 +316,14 @@ export function ContractForm() {
     }, [watchedAmpliacionesSelectedPlans, individualPlansNames]);
 
     const isSpecialPlan = useMemo(() => 
-        watchedCoursePlan?.toLowerCase().includes('ya se manejar') && !watchedCoursePlan?.toLowerCase().includes('+'),
-        [watchedCoursePlan]
+        watchedValues.autoMotoDetails.coursePlan?.toLowerCase().includes('ya se manejar') && !watchedValues.autoMotoDetails.coursePlan?.toLowerCase().includes('+'),
+        [watchedValues.autoMotoDetails.coursePlan]
     );
 
-    const isAmpliacionesFullPaymentRequired = useMemo(() => 
-        (watchedAmpliacionesCourseValue || 0) <= 100 && (watchedAmpliacionesCourseValue || 0) > 0,
-        [watchedAmpliacionesCourseValue]
-    );
+    const isAmpliacionesFullPaymentRequired = useMemo(() => {
+        const courseValue = form.getValues('ampliacionesDetails.courseValue') || 0;
+        return courseValue > 0 && courseValue <= 100;
+    }, [watchedAmpliacionesCourseValue, form]);
 
 
     const { fields: theoreticalClassFields, replace: replaceTheoreticalClasses } = useFieldArray({
@@ -457,9 +452,11 @@ export function ContractForm() {
                 const isManualPriceAllowed = individualPlansSelectedCount >= 2;
 
                 let courseValue;
+
                 if (name === 'ampliacionesDetails.selectedPlans') {
-                    courseValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
-                    form.setValue('ampliacionesDetails.courseValue', courseValue, { shouldValidate: true });
+                    const calculatedValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
+                    form.setValue('ampliacionesDetails.courseValue', calculatedValue, { shouldValidate: true });
+                    courseValue = calculatedValue;
                 } else if (name === 'ampliacionesDetails.courseValue') {
                     courseValue = value.ampliacionesDetails?.courseValue || 0;
                 } else {
@@ -469,11 +466,11 @@ export function ContractForm() {
                 const forceFullPayment = courseValue > 0 && courseValue <= 100;
                 let isPaidInFull = value.ampliacionesDetails?.paidInFull ?? false;
                 
-                if (forceFullPayment && !isPaidInFull) {
+                 if (forceFullPayment && !isPaidInFull && name !== 'ampliacionesDetails.paidInFull') {
                     form.setValue('ampliacionesDetails.paidInFull', true, { shouldValidate: true });
                     isPaidInFull = true;
                 }
-                
+
                 let downPayment = value.ampliacionesDetails?.downPayment || 0;
                 
                  if (name === 'ampliacionesDetails.selectedPlans' || name === 'ampliacionesDetails.courseValue') {
@@ -827,7 +824,7 @@ export function ContractForm() {
                                     Selecciona todos los planes que apliquen. El total se calculará automáticamente, pero puedes ajustarlo si seleccionas más de un plan individual.
                                 </FormDescription>
                             </div>
-                            <Accordion type="single" collapsible className="w-full">
+                            <Accordion type="multiple" className="w-full">
                                 <AccordionItem value="individuales">
                                     <AccordionTrigger className="text-base font-semibold">Planes Individuales</AccordionTrigger>
                                     <AccordionContent>
@@ -840,7 +837,7 @@ export function ContractForm() {
                                     <AccordionTrigger className="text-base font-semibold">Combos de Ampliaciones</AccordionTrigger>
                                     <AccordionContent>
                                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4">
-                                            {renderPlanCheckboxes(ampliacionesPlans.combos)}
+                                            {renderPlanCheckboxes(ampliacionesPlans.combos.filter(c => !c.name.includes('I')))}
                                         </div>
                                     </AccordionContent>
                                 </AccordionItem>
@@ -848,7 +845,7 @@ export function ContractForm() {
                                     <AccordionTrigger className="text-base font-semibold">Otros Combos</AccordionTrigger>
                                     <AccordionContent>
                                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4">
-                                            {renderPlanCheckboxes(ampliacionesPlans.otrosCombos)}
+                                            {renderPlanCheckboxes(ampliacionesPlans.otrosCombos.filter(c => !c.name.includes('I')))}
                                         </div>
                                     </AccordionContent>
                                 </AccordionItem>
@@ -954,7 +951,7 @@ export function ContractForm() {
                                 <FormMessage />
                             </FormItem>
                     )} />
-                    <FormField control={form.control} name={downPaymentPath as 'ampliacionesDetails.downPayment'} render={({ field }) => (<FormItem><FormLabel>Abono (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={watchedAmpliacionesPaidInFull} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name={downPaymentPath as 'ampliacionesDetails.downPayment'} render={({ field }) => (<FormItem><FormLabel>Abono (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={watchedValues.ampliacionesDetails.paidInFull} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name={balancePath as 'ampliacionesDetails.balance'} render={({ field }) => (<FormItem><FormLabel>Saldo (B/.)</FormLabel><FormControl><Input type="text" value={formatCurrency(field.value)} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
                 </div>
                  <FormField
@@ -1573,6 +1570,8 @@ export function ContractForm() {
         </Form>
     );
 }
+
+    
 
     
 

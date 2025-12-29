@@ -34,7 +34,7 @@ const allLinks = [
         href: '/settings',
         label: 'Ajustes',
         icon: Settings,
-        roles: ['Administrador'],
+        roles: ['Ventas', 'Ventas Externas', 'Administrador'],
     }
 ];
 

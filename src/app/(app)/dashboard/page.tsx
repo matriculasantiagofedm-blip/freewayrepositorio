@@ -8,7 +8,6 @@ import { isPast } from 'date-fns';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, where }from 'firebase/firestore';
 import type { Contract, Deadline } from '@/lib/types';
-import { HorarioHeader } from '@/components/horario-header';
 import { useCurrentRole } from '@/hooks/use-current-role';
 
 function toDate(date: any): Date {
@@ -108,8 +107,6 @@ export default function DashboardPage() {
           </Card>
         ))}
       </div>
-
-      <HorarioHeader />
 
       <div>
         <h2 className="mb-4 font-headline text-2xl font-semibold">

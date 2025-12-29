@@ -2,8 +2,6 @@
 'use server';
 
 import type { GenerateContractInput } from '@/lib/types';
-import { z } from 'zod';
-import { google } from 'googleapis';
 import { createContractFlow } from '@/ai/flows/generate-contract-folio';
 import { getFirestore, serverTimestamp } from 'firebase-admin/firestore';
 import { initializeApp, getApps, App } from 'firebase-admin/app';
@@ -38,46 +36,6 @@ export async function createContractAction(input: GenerateContractInput) {
     }
     return { contract: null, error: 'Ocurrió un error inesperado en el servidor.' };
   }
-}
-
-const PingCalendarInputSchema = z.object({
-  calendarId: z.string(),
-});
-
-export async function pingCalendarsAction(input: z.infer<typeof PingCalendarInputSchema>) {
-    try {
-        const auth = new google.auth.GoogleAuth({
-            scopes: ['https://www.googleapis.com/auth/calendar.readonly'],
-            clientOptions: {
-              subject: 'freeways@project-c95d505f-7783-4848-afe.iam.gserviceaccount.com'
-            }
-        });
-
-        const authClient = await auth.getClient();
-        const calendar = google.calendar({ version: 'v3', auth: authClient });
-
-        await calendar.calendarList.get({ calendarId: input.calendarId });
-        
-        return {
-            success: true,
-            message: 'Conexión exitosa.',
-            calendarId: input.calendarId
-        };
-    } catch (error: any) {
-        let errorMessage = 'Error desconocido al contactar la API de Google Calendar.';
-        if (error.response?.data?.error?.message) {
-            errorMessage = `(${error.response.status}) ${error.response.data.error.message}`;
-        } else if (error.message) {
-            errorMessage = error.message;
-        }
-        
-        return {
-            success: false,
-            message: 'Fallo la conexión.',
-            error: errorMessage,
-            calendarId: input.calendarId
-        };
-    }
 }
 
 

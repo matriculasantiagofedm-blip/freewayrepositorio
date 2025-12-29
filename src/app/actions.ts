@@ -78,11 +78,13 @@ export async function pingFirestoreAction() {
         };
     } catch (error: any) {
         let errorMessage = 'Ocurrió un error desconocido.';
-        if (error.message) {
-            errorMessage = error.message;
+        if (error && typeof error === 'object' && 'message' in error) {
+            errorMessage = String(error.message);
+        } else if (error) {
+            errorMessage = String(error);
         }
         
-        console.error("Firestore Ping Error:", error);
+        console.error("Firestore Ping Error:", errorMessage);
 
         return {
             success: false,

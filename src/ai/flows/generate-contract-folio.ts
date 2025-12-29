@@ -67,3 +67,7 @@ export const generateContractFolioFlow = ai.defineFlow(
     }
   }
 );
+
+export async function generateContractFolioAction() {
+    return generateContractFolioFlow();
+}

@@ -1,17 +1,8 @@
 
 'use server';
 
-import { generateContractFolioFlow } from '@/ai/flows/generate-contract-folio';
+// This file is now redundant as the action is exported directly from the flow.
+// It can be removed in the future if no other server actions are added here.
+// For now, we re-export to avoid breaking existing imports.
 
-export async function generateContractFolioAction() {
-  try {
-    const result = await generateContractFolioFlow();
-    return result;
-  } catch (error) {
-    console.error('[generateContractFolioAction] Unexpected error:', error);
-    if (error instanceof Error) {
-      return { folioNumber: null, error: error.message };
-    }
-    return { folioNumber: null, error: 'Ocurrió un error inesperado en el servidor.' };
-  }
-}
+export { generateContractFolioAction } from '@/ai/flows/generate-contract-folio';

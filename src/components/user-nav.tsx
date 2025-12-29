@@ -11,11 +11,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { LogOut, User, ChevronsUpDown } from 'lucide-react';
-import { useAuth, useUser, initiateAnonymousSignIn } from '@/firebase';
-import { useEffect } from 'react';
+import { useAuth, useUser } from '@/firebase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCurrentRole } from '@/hooks/use-current-role';
+import { Skeleton } from './ui/skeleton';
 
 export function UserNav() {
   const auth = useAuth();
@@ -24,25 +24,18 @@ export function UserNav() {
   const router = useRouter();
 
 
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      initiateAnonymousSignIn(auth);
-    }
-  }, [auth, user, isUserLoading]);
-
   const handleLogout = () => {
     auth.signOut();
-    localStorage.removeItem('currentUser');
     router.push('/');
   }
 
-  if (isUserLoading || !currentUser) {
-    return <div>Cargando...</div>;
+  if (isUserLoading || (user && !currentUser)) {
+    return <Skeleton className="h-10 w-full" />;
   }
 
   if (!user) {
     return (
-      <Button onClick={() => initiateAnonymousSignIn(auth)}>Iniciar Sesión</Button>
+      <Button onClick={() => router.push('/')}>Iniciar Sesión</Button>
     );
   }
 
@@ -52,7 +45,7 @@ export function UserNav() {
         <Button variant="outline" className="w-full justify-between">
             <div className='flex items-center gap-2'>
                  <User className="h-4 w-4" />
-                 <span className="truncate">{currentUser}</span>
+                 <span className="truncate">{currentUser || 'Usuario'}</span>
             </div>
             <ChevronsUpDown className="h-4 w-4 opacity-50" />
         </Button>
@@ -64,7 +57,7 @@ export function UserNav() {
               {currentUser}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
-              {user.isAnonymous ? user.uid.slice(0,10) + '...' : user.email || 'legaleagle@example.com'}
+              {user.email}
             </p>
           </div>
         </DropdownMenuLabel>

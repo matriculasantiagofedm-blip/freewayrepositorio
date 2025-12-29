@@ -9,48 +9,64 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { GanttChartSquare, Briefcase, UserCheck, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
 
 const roles = [
-  { name: 'Ventas', icon: Briefcase, password: 'ventas123' },
-  { name: 'Ventas Externas', icon: UserCheck, password: 'Ayax/2022' },
-  { name: 'Administrador', icon: Shield, password: 'Ayax/2022' },
+  { name: 'Ventas', icon: Briefcase, email: 'ventas@contracttime.app' },
+  { name: 'Ventas Externas', icon: UserCheck, email: 'ventas-externas@contracttime.app' },
+  { name: 'Administrador', icon: Shield, email: 'admin@contracttime.app' },
 ];
 
 export default function LoginPage() {
   const router = useRouter();
+  const auth = useAuth();
+  const { toast } = useToast();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [selectedRole, setSelectedRole] = useState<typeof roles[0] | null>(null);
+  const [selectedRole, setSelectedRole] = useState<(typeof roles)[0] | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  const handleRoleSelect = (role: typeof roles[0]) => {
+  const handleRoleSelect = (role: (typeof roles)[0]) => {
     setSelectedRole(role);
     setPassword('');
     setError('');
     setIsDialogOpen(true);
   };
 
-  const handleLogin = () => {
-    if (selectedRole && password === selectedRole.password) {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('currentUser', selectedRole.name);
-        window.dispatchEvent(new Event('storage')); // Notificar a otros componentes del cambio
-      }
+  const handleLogin = async () => {
+    if (!selectedRole || !password) {
+      setError('Por favor, introduce la contraseña.');
+      return;
+    }
+    setIsLoggingIn(true);
+    setError('');
+    try {
+      await signInWithEmailAndPassword(auth, selectedRole.email, password);
+      // Redirección directa y explícita al dashboard después de un login exitoso.
       router.push('/dashboard');
-    } else {
-      setError('Contraseña incorrecta. Por favor, inténtalo de nuevo.');
+    } catch (e: any) {
+      console.error(e);
+      setError('Contraseña o usuario incorrecto. Por favor, inténtalo de nuevo.');
+      toast({
+        variant: 'destructive',
+        title: 'Error de autenticación',
+        description: 'La contraseña o el rol seleccionado no son correctos.',
+      });
+    } finally {
+      setIsLoggingIn(false);
     }
   };
   
   const handleDialogChange = (open: boolean) => {
     if (!open) {
-        // Reset state when dialog closes
         setSelectedRole(null);
         setPassword('');
         setError('');
@@ -75,18 +91,16 @@ export default function LoginPage() {
         </p>
         <div className="flex flex-col gap-4">
           {roles.map((role) => (
-            <Dialog key={role.name} onOpenChange={(open) => open && handleRoleSelect(role)}>
-                 <DialogTrigger asChild>
-                    <Button
-                        size="lg"
-                        variant="outline"
-                        className="justify-start text-base"
-                    >
-                        <role.icon className="mr-4 h-5 w-5 text-primary" />
-                        Entrar como {role.name}
-                    </Button>
-                </DialogTrigger>
-            </Dialog>
+            <Button
+                key={role.name}
+                size="lg"
+                variant="outline"
+                className="justify-start text-base"
+                onClick={() => handleRoleSelect(role)}
+            >
+                <role.icon className="mr-4 h-5 w-5 text-primary" />
+                Entrar como {role.name}
+            </Button>
           ))}
         </div>
       </div>
@@ -116,7 +130,9 @@ export default function LoginPage() {
                 {error && <p className="col-span-4 text-center text-sm text-destructive">{error}</p>}
                 </div>
                 <DialogFooter>
-                <Button onClick={handleLogin}>Confirmar</Button>
+                <Button onClick={handleLogin} disabled={isLoggingIn}>
+                    {isLoggingIn ? 'Iniciando...' : 'Confirmar'}
+                </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

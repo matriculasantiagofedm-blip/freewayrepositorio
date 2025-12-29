@@ -1,0 +1,202 @@
+
+{
+  "entities": {
+    "Contract": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Contract",
+      "type": "object",
+      "description": "Represents a contract between a user and a client.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Contract entity."
+        },
+        "folioNumber": {
+            "type": "number",
+            "description": "Sequential contract number for tracking and auditing."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who created the contract. (Relationship: User 1:N Contract)"
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Reference to the Client who is party to the contract. (Relationship: Client 1:N Contract)"
+        },
+        "clauses": {
+          "type": "string",
+          "description": "The clauses and terms of the contract."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "The date and time the contract was created.",
+          "format": "date-time"
+        },
+        "deadline": {
+          "type": "string",
+          "description": "The deadline for the contract.",
+          "format": "date-time"
+        },
+        "meetingDateTime": {
+          "type": "string",
+          "description": "The date and time for a meeting related to the contract.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "folioNumber",
+        "userId",
+        "clientId",
+        "clauses",
+        "createdAt"
+      ]
+    },
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "The user's name."
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name"
+      ]
+    },
+    "Client": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Client",
+      "type": "object",
+      "description": "Represents a client associated with a contract.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Client entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The client's name."
+        },
+        "email": {
+          "type": "string",
+          "description": "The client's email address.",
+          "format": "email"
+        },
+        "phone": {
+          "type": "string",
+          "description": "The client's phone number."
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    },
+    "Counter": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Counter",
+      "type": "object",
+      "description": "A generic counter document for sequential IDs.",
+      "properties": {
+        "count": {
+          "type": "number",
+          "description": "The current count."
+        }
+      },
+      "required": ["count"]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user data.  Path-based ownership for user-owned data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/clients/{clientId}",
+        "definition": {
+          "entityName": "Client",
+          "schema": {
+            "$ref": "#/backend/entities/Client"
+          },
+          "description": "Stores client data.",
+          "params": [
+            {
+              "name": "clientId",
+              "description": "The unique identifier for the client."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/contracts/{contractId}",
+        "definition": {
+          "entityName": "Contract",
+          "schema": {
+            "$ref": "#/backend/entities/Contract"
+          },
+          "description": "Stores contracts associated with a user. Includes denormalized 'userId' and 'clientId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user who owns the contract."
+            },
+            {
+              "name": "contractId",
+              "description": "The unique identifier for the contract."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/counters/{counterId}",
+        "definition": {
+          "entityName": "Counter",
+          "schema": {
+            "$ref": "#/backend/entities/Counter"
+          },
+          "description": "Stores distributed counters. Used for generating sequential folio numbers for contracts.",
+          "params": [
+            {
+              "name": "counterId",
+              "description": "The unique identifier for the counter (e.g., 'contract_folio')."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging, following the principles of Authorization Independence, Clarity of Intent, DBAC, and QAPs. User and Client data are stored at the root level for easy access, while contracts are nested under the user to establish clear ownership. This structure ensures that contracts are directly associated with a specific user. Authorization independence is achieved by storing the `userId` and `clientId` directly within each contract document, eliminating the need for `get()` calls to parent documents during security rule evaluations. A `counters` collection is added to manage sequential values like contract folios in a scalable and safe manner."
+  }
+}

@@ -12,11 +12,9 @@ import { GanttChartSquare } from 'lucide-react';
 import Link from 'next/link';
 import { UserNav } from '@/components/user-nav';
 import { MainNav } from '@/components/main-nav';
-import { FirebaseClientProvider } from '@/firebase';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <FirebaseClientProvider>
       <SidebarProvider>
         <Sidebar>
           <SidebarRail />
@@ -45,6 +43,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <main className="flex-1 p-4 sm:px-6">{children}</main>
         </SidebarInset>
       </SidebarProvider>
-    </FirebaseClientProvider>
   );
 }

@@ -533,7 +533,7 @@ export function ContractForm() {
         setIsSearchingClient(true);
         try {
             const clientsRef = collection(firestore, 'clients');
-            const q = query(clientsRef, where("idNumber", "==", idNumber), where("userId", "==", user.uid));
+            const q = query(clientsRef, where("idNumber", "==", idNumber));
             const querySnapshot = await getDocs(q);
 
             if (!querySnapshot.empty) {
@@ -593,7 +593,7 @@ export function ContractForm() {
 
             const studentIdNumber = values.contractType === 'Curso Deluxe' ? values.deluxeDetails.studentIdNumber : (values.contractType === 'Ampliaciones' ? values.ampliacionesDetails.studentIdNumber : values.autoMotoDetails.studentIdNumber);
             const clientsRef = collection(firestore, 'clients');
-            const q = query(clientsRef, where("idNumber", "==", studentIdNumber), where("userId", "==", user.uid));
+            const q = query(clientsRef, where("idNumber", "==", studentIdNumber));
             const clientSnapshot = await getDocs(q);
 
             let clientId: string;

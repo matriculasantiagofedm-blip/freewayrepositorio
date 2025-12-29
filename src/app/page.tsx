@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { GanttChartSquare, Briefcase, UserCheck, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -28,11 +28,20 @@ export default function LoginPage() {
   const router = useRouter();
   const auth = useAuth();
   const { toast } = useToast();
+  const { user, isUserLoading } = useUser();
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [selectedRole, setSelectedRole] = useState<(typeof roles)[0] | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  useEffect(() => {
+    // Si el usuario ya está autenticado y no está cargando, redirige al dashboard.
+    if (!isUserLoading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, isUserLoading, router]);
+
 
   const handleRoleSelect = (role: (typeof roles)[0]) => {
     setSelectedRole(role);
@@ -50,8 +59,7 @@ export default function LoginPage() {
     setError('');
     try {
       await signInWithEmailAndPassword(auth, selectedRole.email, password);
-      // Redirección directa y explícita al dashboard después de un login exitoso.
-      router.push('/dashboard');
+      // La redirección ahora es manejada por el useEffect de arriba
     } catch (e: any) {
       console.error(e);
       setError('Contraseña o usuario incorrecto. Por favor, inténtalo de nuevo.');
@@ -72,6 +80,11 @@ export default function LoginPage() {
         setError('');
     }
     setIsDialogOpen(open);
+  }
+  
+  // No renderiza nada si está cargando o si ya hay un usuario (esperando redirección)
+  if (isUserLoading || user) {
+    return <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4"><p>Cargando...</p></div>;
   }
 
   return (

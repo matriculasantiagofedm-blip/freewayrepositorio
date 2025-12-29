@@ -516,8 +516,8 @@ export function ContractForm() {
     }, [form, replacePracticalClasses, replaceMotoPracticalClasses, replaceTheoreticalClasses]);
 
      const handleFindClient = async () => {
-        if (!firestore) {
-            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo conectar a la base de datos.' });
+        if (!firestore || !user) {
+            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo conectar a la base de datos o no se encontró usuario.' });
             return;
         }
 
@@ -534,14 +534,13 @@ export function ContractForm() {
         setIsSearchingClient(true);
         try {
             const clientsRef = collection(firestore, 'clients');
-            const q = query(clientsRef, where("idNumber", "==", idNumber), where("userId", "==", user?.uid));
+            const q = query(clientsRef, where("idNumber", "==", idNumber), where("userId", "==", user.uid));
             const querySnapshot = await getDocs(q);
 
             if (!querySnapshot.empty) {
                 const clientDoc = querySnapshot.docs[0];
-                const clientData = clientDoc.data() as Client & { studentAddress?: string; studentPhone1?: string; studentPhone2?: string };
+                const clientData = clientDoc.data() as Client;
 
-                // Autocompletar los campos del formulario
                 form.setValue('clientName', clientData.name);
                 form.setValue('clientEmail', clientData.email);
 
@@ -549,14 +548,14 @@ export function ContractForm() {
                     contractType === 'Curso Deluxe' ? 'deluxeDetails' :
                     contractType === 'Ampliaciones' ? 'ampliacionesDetails' :
                     'autoMotoDetails';
-
+                
                 form.setValue(`${detailsPath}.studentAddress` as any, clientData.studentAddress || '');
                 form.setValue(`${detailsPath}.studentPhone1` as any, clientData.studentPhone1 || '');
                 form.setValue(`${detailsPath}.studentPhone2` as any, clientData.studentPhone2 || '');
 
                 toast({ title: 'Éxito', description: 'Cliente encontrado y datos cargados.' });
             } else {
-                toast({ variant: 'default', title: 'Información', description: 'No se encontró ningún cliente con esa cédula. Puede registrarlo como nuevo.' });
+                toast({ variant: 'default', title: 'Información', description: 'No se encontró ningún cliente con esa cédula para este usuario. Puede registrarlo como nuevo.' });
             }
         } catch (error) {
             console.error("Error buscando cliente:", error);
@@ -575,35 +574,27 @@ export function ContractForm() {
         setIsSubmitting(true);
 
         try {
-            // 1. Generate folio number and create contract in a transaction
             const folioNumber = await runTransaction(firestore, async (transaction) => {
                 const counterRef = doc(firestore, 'counters', 'contract_folio');
                 const counterDoc = await transaction.get(counterRef);
-
-                let newFolioNumber;
-                if (!counterDoc.exists()) {
-                    newFolioNumber = 1;
-                    transaction.set(counterRef, { count: 1 });
-                } else {
-                    const currentCount = counterDoc.data()?.count || 0;
-                    newFolioNumber = currentCount + 1;
+                let newFolioNumber = 1;
+                if (counterDoc.exists()) {
+                    newFolioNumber = (counterDoc.data()?.count || 0) + 1;
                     transaction.update(counterRef, { count: newFolioNumber });
+                } else {
+                    transaction.set(counterRef, { count: 1 });
                 }
                 return newFolioNumber;
             });
-            
-            if (!folioNumber) {
-                throw new Error('No se pudo generar el número de folio.');
-            }
 
+            if (!folioNumber) throw new Error("No se pudo generar el número de folio.");
             form.setValue('folioNumber', folioNumber);
 
             const batch = writeBatch(firestore);
 
-            // 2. Find or create the client
-            const clientsRef = collection(firestore, 'clients');
             const studentIdNumber = values.contractType === 'Curso Deluxe' ? values.deluxeDetails.studentIdNumber : (values.contractType === 'Ampliaciones' ? values.ampliacionesDetails.studentIdNumber : values.autoMotoDetails.studentIdNumber);
-            const q = query(clientsRef, where("idNumber", "==", studentIdNumber));
+            const clientsRef = collection(firestore, 'clients');
+            const q = query(clientsRef, where("idNumber", "==", studentIdNumber), where("userId", "==", user.uid));
             const clientSnapshot = await getDocs(q);
 
             let clientId: string;
@@ -615,24 +606,32 @@ export function ContractForm() {
             } else {
                 clientRef = doc(collection(firestore, 'clients'));
                 clientId = clientRef.id;
-                const newClientData = {
+                
+                const studentDetails = 
+                    values.contractType === 'Curso Deluxe' ? values.deluxeDetails :
+                    values.contractType === 'Ampliaciones' ? values.ampliacionesDetails :
+                    values.autoMotoDetails;
+
+                const newClientData: Partial<Client> = {
                     id: clientId,
                     name: values.clientName,
                     email: values.clientEmail,
                     idNumber: studentIdNumber,
                     userId: user.uid,
-                    createdAt: serverTimestamp(),
+                    studentAddress: studentDetails.studentAddress,
+                    studentPhone1: studentDetails.studentPhone1,
+                    studentPhone2: studentDetails.studentPhone2,
+                    createdAt: serverTimestamp() as Timestamp,
                 };
                 batch.set(clientRef, newClientData);
             }
 
-            // 3. Prepare and create the contract with the folio number
             const contractRef = doc(collection(firestore, 'contracts'));
             
             const toTimestamp = (date: any): Timestamp | null => {
                 if (!date) return null;
                 if (date instanceof Date) return Timestamp.fromDate(date);
-                return null; // Only convert valid dates
+                return null;
             }
 
             const convertDetailsDatesToTimestamps = (details: any) => {
@@ -687,19 +686,14 @@ export function ContractForm() {
             };
             
             batch.set(contractRef, { ...newContract, createdAt: serverTimestamp() });
-
-            // 4. Execute batch
             await batch.commit();
-
             toast({ title: 'Éxito', description: `Contrato #${folioNumber} creado correctamente.` });
             
-            // 5. Prepare contract for preview
             const contractForPreview: Contract = {
                 ...newContract,
                 id: contractRef.id,
-                createdAt: Timestamp.now(), // Use local Timestamp for immediate view
+                createdAt: Timestamp.now(),
             };
-
             setSavedContract(contractForPreview);
 
         } catch (error) {

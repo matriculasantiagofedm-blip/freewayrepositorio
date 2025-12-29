@@ -40,9 +40,10 @@ interface AutoMotoContractTemplatePreviewProps {
     autoMotoDetails?: Partial<AutoMotoContractDetails>;
     createdBy?: string | null;
     type?: ContractType;
+    folioNumber?: number;
 }
 
-export function AutoMotoContractTemplatePreview({ clientName, clientEmail, autoMotoDetails, createdBy, type }: AutoMotoContractTemplatePreviewProps) {
+export function AutoMotoContractTemplatePreview({ clientName, clientEmail, autoMotoDetails, createdBy, type, folioNumber }: AutoMotoContractTemplatePreviewProps) {
   const balance = autoMotoDetails?.balance || 0;
   const creationDate = new Date(); // Use current date for preview
   const paymentDeadline = autoMotoDetails?.paymentDeadline ? toDate(autoMotoDetails.paymentDeadline) : null;
@@ -62,8 +63,13 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, autoM
   return (
     <Card className="p-6 print:shadow-none print:border-none print:p-0 font-serif text-xs">
       <CardContent className="p-0 space-y-2 relative">
-        <div className="flex items-center gap-2 justify-center pb-2">
+        <div className="flex justify-between items-start pb-2">
             <h2 className="text-center font-bold text-sm">CONTRATO POR SERVICIO DE CURSO DE MANEJO</h2>
+             {folioNumber && (
+                <div className="text-right">
+                    <p className="font-bold text-sm text-destructive">CONTRATO N° {String(folioNumber).padStart(6, '0')}</p>
+                </div>
+            )}
         </div>
         
         <p className='text-[10px] leading-tight'>

@@ -35,9 +35,10 @@ interface DeluxePremiumContractPreviewProps {
     clientEmail?: string;
     deluxeDetails?: Partial<DeluxeContractDetails>;
     createdBy?: string | null;
+    folioNumber?: number;
 }
 
-export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, deluxeDetails }: DeluxePremiumContractPreviewProps) {
+export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, deluxeDetails, folioNumber }: DeluxePremiumContractPreviewProps) {
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
   const { role: createdBy } = useCurrentRole();
 
@@ -80,7 +81,14 @@ export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, 
   return (
     <Card className="p-6 print:shadow-none print:border-none print:p-0 font-serif text-xs">
       <CardContent className="p-0 space-y-1 relative">
-        <h2 className="text-center font-bold text-sm mb-2 pt-4">CONTRATO DE SERVICIOS EDUCATIVOS</h2>
+        <div className="flex justify-between items-start pb-2">
+            <h2 className="text-center font-bold text-sm">CONTRATO DE SERVICIOS EDUCATIVOS</h2>
+            {folioNumber && (
+                <div className="text-right">
+                    <p className="font-bold text-sm text-destructive">CONTRATO N° {String(folioNumber).padStart(6, '0')}</p>
+                </div>
+            )}
+        </div>
 
         <p>
           La empresa FREEWAY ESCUELA DE MANEJO S.A., con ubicación en La Chorrera, Vía Interamericana, Costa Verde, PH Green Plaza, Local #20, debidamente inscrita RUC 155628022-2-2016 DV 2, en adelante denominada LA EMPRESA, y LA ESCUELA se compromete a brindar a EL ESTUDIANTE la capacitación teórico-práctica del curso “PAQUETE DELUXE: PLAN PREMIUM”, con una duración total de 12 semanas, que incluye: 20 horas teóricas (clases presenciales nocturnas), 12 horas prácticas (entrenamiento en circuito cerrado), y Certificación según categoría: A, C o A, C, D.

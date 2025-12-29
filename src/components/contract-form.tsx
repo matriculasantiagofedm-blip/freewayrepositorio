@@ -63,6 +63,7 @@ const baseSchema = z.object({
   clientName: z.string().min(3, 'El nombre del estudiante debe tener al menos 3 caracteres.'),
   clientEmail: z.string().email('Por favor, introduce una dirección de correo electrónico válida.'),
   contractType: z.custom<ContractType>(),
+  folioNumber: z.number().optional(),
 });
 
 const autoMotoDetailsSchema = z.object({
@@ -239,6 +240,7 @@ const getDefaultValues = (contractType: ContractType | null): FormValues => ({
     contractType: contractType || 'Curso Auto',
     clientName: '',
     clientEmail: '',
+    folioNumber: undefined,
     autoMotoDetails: {
       studentIdNumber: '',
       studentAddress: '',
@@ -580,6 +582,7 @@ export function ContractForm() {
                 throw new Error(folioResult.error || 'No se pudo generar el número de folio.');
             }
             const folioNumber = folioResult.folioNumber;
+            form.setValue('folioNumber', folioNumber); // Set folio for preview
 
             const batch = writeBatch(firestore);
 
@@ -1467,13 +1470,14 @@ export function ContractForm() {
       const formValues = form.watch();
 
       if (contractType === 'Curso Deluxe') {
-          return <DeluxePremiumContractTemplatePreview clientName={formValues.clientName} clientEmail={formValues.clientEmail} deluxeDetails={formValues.deluxeDetails} createdBy={currentUserRole || 'Ventas'} />
+          return <DeluxePremiumContractTemplatePreview clientName={formValues.clientName} clientEmail={formValues.clientEmail} deluxeDetails={formValues.deluxeDetails} createdBy={currentUserRole || 'Ventas'} folioNumber={formValues.folioNumber} />
       }
       if (contractType === 'Ampliaciones') {
-          const { clientName, clientEmail, ampliacionesDetails } = formValues;
+          const { clientName, clientEmail, ampliacionesDetails, folioNumber } = formValues;
           const contractForPreview: Contract = {
               id: '',
               title: `Ampliaciones - ${clientName}`,
+              folioNumber: folioNumber,
               clientName,
               clientEmail,
               clientId: '',
@@ -1493,7 +1497,7 @@ export function ContractForm() {
           return <AmpliacionesContractTemplate contract={contractForPreview} />;
       }
       
-      return <AutoMotoContractTemplatePreview clientName={formValues.clientName} clientEmail={formValues.clientEmail} autoMotoDetails={formValues.autoMotoDetails} createdBy={currentUserRole || 'Ventas'} type={contractType as any} />
+      return <AutoMotoContractTemplatePreview clientName={formValues.clientName} clientEmail={formValues.clientEmail} autoMotoDetails={formValues.autoMotoDetails} createdBy={currentUserRole || 'Ventas'} type={contractType as any} folioNumber={formValues.folioNumber} />
     }
 
 

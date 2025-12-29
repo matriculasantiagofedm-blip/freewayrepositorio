@@ -20,6 +20,10 @@ export interface Client {
   idNumber?: string;
   userId: string;
   createdAt: Timestamp;
+  // Agregamos campos que estaban implícitos en los detalles del contrato
+  studentAddress?: string;
+  studentPhone1?: string;
+  studentPhone2?: string;
 }
 
 export type ContractStatus = 'draft' | 'active' | 'completed' | 'expired';

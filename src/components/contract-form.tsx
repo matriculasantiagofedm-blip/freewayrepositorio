@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -33,13 +32,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, PlusCircle, Loader2, Printer } from 'lucide-react';
+import { CalendarIcon, PlusCircle, Loader2, Printer, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFirebase } from '@/firebase';
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import type { Contract, ContractType } from '@/lib/types';
+import type { Contract, ContractType, Client } from '@/lib/types';
 import { DeluxePremiumContractTemplatePreview } from './deluxe-premium-contract-preview';
 import { AutoMotoContractTemplatePreview } from './auto-moto-contract-preview';
 import { Checkbox } from './ui/checkbox';
@@ -293,10 +292,11 @@ const getDefaultValues = (contractType: ContractType | null): FormValues => ({
 export function ContractForm() {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const { user, isUserLoading } = useFirebase();
+    const { user, firestore, isUserLoading } = useFirebase();
     const { toast } = useToast();
     const { role: currentUserRole } = useCurrentRole();
     const [savedContract, setSavedContract] = useState<Contract | null>(null);
+    const [isSearchingClient, setIsSearchingClient] = useState(false);
 
     const contractType = useMemo(() => searchParams.get('type') as ContractType | null, [searchParams]);
 
@@ -513,6 +513,58 @@ export function ContractForm() {
         return () => subscription.unsubscribe();
     }, [form, replacePracticalClasses, replaceMotoPracticalClasses, replaceTheoreticalClasses]);
 
+     const handleFindClient = async () => {
+        if (!firestore) {
+            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo conectar a la base de datos.' });
+            return;
+        }
+
+        const idNumber = 
+            contractType === 'Curso Deluxe' ? form.getValues('deluxeDetails.studentIdNumber') :
+            contractType === 'Ampliaciones' ? form.getValues('ampliacionesDetails.studentIdNumber') :
+            form.getValues('autoMotoDetails.studentIdNumber');
+
+        if (!idNumber) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Por favor, ingrese un número de cédula para buscar.' });
+            return;
+        }
+
+        setIsSearchingClient(true);
+        try {
+            const clientsRef = collection(firestore, 'clients');
+            const q = query(clientsRef, where("idNumber", "==", idNumber), where("userId", "==", user?.uid));
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+                const clientDoc = querySnapshot.docs[0];
+                const clientData = clientDoc.data() as Client & { studentAddress?: string; studentPhone1?: string; studentPhone2?: string };
+
+                // Autocompletar los campos del formulario
+                form.setValue('clientName', clientData.name);
+                form.setValue('clientEmail', clientData.email);
+
+                const detailsPath = 
+                    contractType === 'Curso Deluxe' ? 'deluxeDetails' :
+                    contractType === 'Ampliaciones' ? 'ampliacionesDetails' :
+                    'autoMotoDetails';
+
+                form.setValue(`${detailsPath}.studentAddress` as any, clientData.studentAddress || '');
+                form.setValue(`${detailsPath}.studentPhone1` as any, clientData.studentPhone1 || '');
+                form.setValue(`${detailsPath}.studentPhone2` as any, clientData.studentPhone2 || '');
+
+                toast({ title: 'Éxito', description: 'Cliente encontrado y datos cargados.' });
+            } else {
+                toast({ variant: 'default', title: 'Información', description: 'No se encontró ningún cliente con esa cédula. Puede registrarlo como nuevo.' });
+            }
+        } catch (error) {
+            console.error("Error buscando cliente:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Ocurrió un error al buscar el cliente.' });
+        } finally {
+            setIsSearchingClient(false);
+        }
+    };
+
+
     const onSubmit = async (values: FormValues) => {
         if (!user || !currentUserRole || isUserLoading) {
             toast({ variant: 'destructive', title: 'Error de Autenticación', description: 'No se pudo conectar a la base de datos. Por favor, inicie sesión o espere a que cargue la sesión.' });
@@ -607,6 +659,29 @@ export function ContractForm() {
         </>
     );
 
+     const renderStudentIdSearch = (idNumberPath: 'autoMotoDetails.studentIdNumber' | 'deluxeDetails.studentIdNumber' | 'ampliacionesDetails.studentIdNumber') => (
+        <FormField
+            control={form.control}
+            name={idNumberPath}
+            render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Cédula/Pasaporte</FormLabel>
+                    <div className="flex gap-2">
+                        <FormControl>
+                            <Input placeholder="Ej. 8-123-456" {...field} value={field.value ?? ''} />
+                        </FormControl>
+                        <Button type="button" onClick={handleFindClient} disabled={isSearchingClient}>
+                            {isSearchingClient ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                            <span className="sr-only">Buscar Cliente</span>
+                        </Button>
+                    </div>
+                    <FormMessage />
+                </FormItem>
+            )}
+        />
+    );
+
+
     const renderAmpliacionesFields = () => {
         const studentIdPath = "ampliacionesDetails.studentIdNumber";
         const studentPhone1Path = "ampliacionesDetails.studentPhone1";
@@ -625,7 +700,7 @@ export function ContractForm() {
              <>
                 <h3 className="font-semibold text-lg pt-4 border-b pb-2">Datos Adicionales del Estudiante</h3>
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                     <FormField control={form.control} name={studentIdPath} render={({ field }) => (<FormItem><FormLabel>Cédula/Pasaporte</FormLabel><FormControl><Input placeholder="Ej. 8-123-456" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                     {renderStudentIdSearch('ampliacionesDetails.studentIdNumber')}
                      <FormField control={form.control} name={studentPhone1Path} render={({ field }) => (<FormItem><FormLabel>Teléfono 1</FormLabel><FormControl><Input type="tel" placeholder="Ej. 6123-4567" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>)} />
                      <FormField control={form.control} name={studentPhone2Path} render={({ field }) => (<FormItem><FormLabel>Teléfono 2 (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="Ej. 399-9999" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
                 </div>
@@ -868,7 +943,7 @@ export function ContractForm() {
         <>
             <h3 className="font-semibold text-lg pt-4 border-b pb-2">Datos Adicionales del Estudiante</h3>
              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                 <FormField control={form.control} name="autoMotoDetails.studentIdNumber" render={({ field }) => (<FormItem><FormLabel>Cédula/Pasaporte</FormLabel><FormControl><Input placeholder="Ej. 8-123-456" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                 {renderStudentIdSearch('autoMotoDetails.studentIdNumber')}
                  <FormField control={form.control} name="autoMotoDetails.studentPhone1" render={({ field }) => (<FormItem><FormLabel>Teléfono 1</FormLabel><FormControl><Input type="tel" placeholder="Ej. 6123-4567" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>)} />
                  <FormField control={form.control} name="autoMotoDetails.studentPhone2" render={({ field }) => (<FormItem><FormLabel>Teléfono 2 (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="Ej. 399-9999" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
             </div>
@@ -1256,7 +1331,7 @@ export function ContractForm() {
             <>
                 <h3 className="font-semibold text-lg pt-4 border-b pb-2">Datos Adicionales del Estudiante</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField control={form.control} name={studentIdPath} render={({ field }) => (<FormItem><FormLabel>Cédula/Pasaporte</FormLabel><FormControl><Input placeholder="Ej. 8-123-456" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                    {renderStudentIdSearch('deluxeDetails.studentIdNumber')}
                     <FormField control={form.control} name="deluxeDetails.studentPhone1" render={({ field }) => (<FormItem><FormLabel>Teléfono 1</FormLabel><FormControl><Input type="tel" placeholder="Ej. 6123-4567" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="deluxeDetails.studentPhone2" render={({ field }) => (<FormItem><FormLabel>Teléfono 2 (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="Ej. 399-9999" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
                 </div>

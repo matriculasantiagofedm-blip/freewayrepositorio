@@ -1,14 +1,14 @@
 'use server';
 
-import { ai } from '@/ai/genkit';
 import type { GenerateContractInput } from '@/lib/types';
 import { z } from 'zod';
 import { google } from 'googleapis';
+import { generateContractWithFolioFlow } from '@/ai/flows/generate-contract-folio';
+
 
 export async function createContractAction(input: GenerateContractInput) {
   try {
-    // LLamada dinámica al flujo de Genkit por su nombre para romper la cadena de importación.
-    const result = await ai.run('generateContractWithFolioFlow', input);
+    const result = await generateContractWithFolioFlow(input);
     
     if (result.error) {
       throw new Error(result.error);

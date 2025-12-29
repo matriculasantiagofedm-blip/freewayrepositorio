@@ -97,11 +97,11 @@ export default function DashboardPage() {
   ];
 
   const contractTypes = [
-      { name: 'Curso Auto', icon: Car, href: '/contracts/new?type=Curso%20Auto', color: 'bg-blue-100 dark:bg-blue-900/50'},
-      { name: 'Curso Moto', icon: Bike, href: '/contracts/new?type=Curso%20Moto', color: 'bg-orange-100 dark:bg-orange-900/50'},
-      { name: 'Curso Mixto', icon: Combine, href: '/contracts/new?type=Curso%20Mixto', color: 'bg-purple-100 dark:bg-purple-900/50'},
-      { name: 'Curso Deluxe', icon: Crown, href: '/contracts/new?type=Curso%20Deluxe', color: 'bg-yellow-100 dark:bg-yellow-900/50'},
-      { name: 'Ampliaciones', icon: Plus, href: '/contracts/new?type=Ampliaciones', color: 'bg-green-100 dark:bg-green-900/50'},
+      { name: 'Curso Auto', icon: Car, href: '/contracts/new?type=Curso%20Auto', color: 'bg-blue-200/70 dark:bg-blue-900/50'},
+      { name: 'Curso Moto', icon: Bike, href: '/contracts/new?type=Curso%20Moto', color: 'bg-orange-200/70 dark:bg-orange-900/50'},
+      { name: 'Curso Mixto', icon: Combine, href: '/contracts/new?type=Curso%20Mixto', color: 'bg-purple-200/70 dark:bg-purple-900/50'},
+      { name: 'Curso Deluxe', icon: Crown, href: '/contracts/new?type=Curso%20Deluxe', color: 'bg-yellow-200/70 dark:bg-yellow-900/50'},
+      { name: 'Ampliaciones', icon: Plus, href: '/contracts/new?type=Ampliaciones', color: 'bg-green-200/70 dark:bg-green-900/50'},
   ];
 
   return (

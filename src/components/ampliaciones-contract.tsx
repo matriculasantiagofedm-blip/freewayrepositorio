@@ -11,7 +11,7 @@ const Line = ({ children, className }: { children?: React.ReactNode, className?:
     {children || <>&nbsp;</>}
   </span>
 );
-const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary print:text-black">{children}</span>;
+const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary print:text-blue-600">{children}</span>;
 
 const LongLine = () => <span className="border-b border-dotted border-black flex-1 h-4 min-w-40" />;
 
@@ -56,7 +56,7 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
         </div>
         
         <p className='text-[10px] leading-tight'>
-            La empresa FREEWAY ESCUELA DE MANEJO S.A., con RUC 155628022-2-2016 DV 2, en adelante LA EMPRESA, y <Line>{contract.clientName}</Line>, con cédula/pasaporte <Line>{ampliacionesDetails?.studentIdNumber}</Line>, domicilio en <Line>{ampliacionesDetails?.studentAddress}</Line>, teléfonos <Line>{ampliacionesDetails?.studentPhone1}</Line>/<Line>{ampliacionesDetails?.studentPhone2}</Line>, correo electrónico <Line>{contract.clientEmail}</Line>, en adelante EL ESTUDIANTE, convienen en celebrar el siguiente contrato de servicio.
+            La empresa FREEWAY ESCUELA DE MANEJO S.A., con RUC 155628022-2-2016 DV 2, en adelante LA EMPRESA, y <Line><Value>{contract.clientName}</Value></Line>, con cédula/pasaporte <Line><Value>{ampliacionesDetails?.studentIdNumber}</Value></Line>, domicilio en <Line><Value>{ampliacionesDetails?.studentAddress}</Value></Line>, teléfonos <Line><Value>{ampliacionesDetails?.studentPhone1}</Value></Line>/<Line><Value>{ampliacionesDetails?.studentPhone2}</Value></Line>, correo electrónico <Line><Value>{contract.clientEmail}</Value></Line>, en adelante EL ESTUDIANTE, convienen en celebrar el siguiente contrato de servicio.
         </p>
 
         <h3 className="font-bold text-center pt-1">CLÁUSULAS</h3>
@@ -80,8 +80,8 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
 
         <h3 className="font-bold">SEGUNDA: VALOR Y FORMA DE PAGO</h3>
         <div className='space-y-1 text-[10px]'>
-            <p>El valor total del servicio es de B/. <Line>{ampliacionesDetails?.courseValue?.toFixed(2)}</Line>.</p>
-            <p>El estudiante ha efectuado un abono de B/. <Line>{ampliacionesDetails?.downPayment?.toFixed(2)}</Line>, quedando un saldo de B/. <Line>{balance > 0 ? balance.toFixed(2) : '0.00'}</Line>.</p>
+            <p>El valor total del servicio es de B/. <Line><Value>{ampliacionesDetails?.courseValue?.toFixed(2)}</Value></Line>.</p>
+            <p>El estudiante ha efectuado un abono de B/. <Line><Value>{ampliacionesDetails?.downPayment?.toFixed(2)}</Value></Line>, quedando un saldo de B/. <Line><Value>{balance > 0 ? balance.toFixed(2) : '0.00'}</Value></Line>.</p>
             {balance > 0 && paymentDeadline && (
                 <p>El saldo pendiente se cancelará a más tardar el día {formatDate(paymentDeadline)}.</p>
             )}
@@ -95,7 +95,7 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
                 Fecha de la clase: {formatDate(toDate(ampliacionesDetails?.theoreticalClassDate))}
             </div>
              <div className='flex items-center gap-2'>
-                Horario: <Line>{ampliacionesDetails?.theoreticalClassTime}</Line>
+                Horario: <Line><Value>{ampliacionesDetails?.theoreticalClassTime}</Value></Line>
             </div>
         </div>
 
@@ -131,3 +131,5 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
     </Card>
   );
 }
+
+    

@@ -11,7 +11,7 @@ const Line = ({ children, className }: { children?: React.ReactNode, className?:
     {children || <>&nbsp;</>}
   </span>
 );
-const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary print:text-black">{children}</span>;
+const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary print:text-blue-600">{children}</span>;
 
 const Checkbox = ({ checked }: { checked: boolean }) => (
     <span className={`border border-black inline-block w-3 h-3 text-center leading-none align-middle ${checked ? 'bg-black text-white print:text-black print:bg-white print:font-bold' : ''}`}>
@@ -64,7 +64,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
         </div>
         
         <p className='text-[10px] leading-tight'>
-            La empresa FREEWAY ESCUELA DE MANEJO S.A., con ubicación en La Chorrera, Vía Interamericana, Costa Verde, PH Green Plaza, Local #20, debidamente inscrita RUC 155628022-2-2016 DV 2, en adelante denominada LA EMPRESA, y <Line>{contract.clientName}</Line>, identificado con cédula/pasaporte N.° <Line>{autoMotoDetails?.studentIdNumber}</Line>, con domicilio en <Line>{autoMotoDetails?.studentAddress}</Line>, teléfonos: <Line>{autoMotoDetails?.studentPhone1}</Line>/<Line>{autoMotoDetails?.studentPhone2}</Line>, correo electrónico: <Line>{contract.clientEmail}</Line>, en adelante denominado EL ESTUDIANTE.
+            La empresa FREEWAY ESCUELA DE MANEJO S.A., con ubicación en La Chorrera, Vía Interamericana, Costa Verde, PH Green Plaza, Local #20, debidamente inscrita RUC 155628022-2-2016 DV 2, en adelante denominada LA EMPRESA, y <Line><Value>{contract.clientName}</Value></Line>, identificado con cédula/pasaporte N.° <Line><Value>{autoMotoDetails?.studentIdNumber}</Value></Line>, con domicilio en <Line><Value>{autoMotoDetails?.studentAddress}</Value></Line>, teléfonos: <Line><Value>{autoMotoDetails?.studentPhone1}</Value></Line>/<Line><Value>{autoMotoDetails?.studentPhone2}</Value></Line>, correo electrónico: <Line><Value>{contract.clientEmail}</Value></Line>, en adelante denominado EL ESTUDIANTE.
         </p>
 
         <h3 className="font-bold text-center pt-1">DECLARAN:</h3>
@@ -72,9 +72,9 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
 
         <h3 className="font-bold">CLÁUSULA PRIMERA - VALOR Y FORMA DE PAGO</h3>
         <div className='space-y-1 text-[10px]'>
-            <p>"El estudiante ha efectuado un abono por la suma de B/. <Line>{downPayment.toFixed(2)}</Line>, quedando un saldo pendiente de B/. <Line>{balance > 0 ? balance.toFixed(2) : '0.00'}</Line>, el cual se compromete a cancelar en su totalidad el día {formatDate(paymentDeadline)}."</p>
+            <p>"El estudiante ha efectuado un abono por la suma de B/. <Line><Value>{downPayment.toFixed(2)}</Value></Line>, quedando un saldo pendiente de B/. <Line><Value>{balance > 0 ? balance.toFixed(2) : '0.00'}</Value></Line>, el cual se compromete a cancelar en su totalidad el día {formatDate(paymentDeadline)}."</p>
             <ul className="list-disc list-inside pl-2">
-                <li>El valor total del curso es de B/. <Line>{courseValue.toFixed(2)}</Line>.</li>
+                <li>El valor total del curso es de B/. <Line><Value>{courseValue.toFixed(2)}</Value></Line>.</li>
                 <li>Para la inscripción, EL ESTUDIANTE deberá abonar el 50% del valor total como reserva de su cupo y horario.</li>
                 <li>El 50% restante deberá cancelarse antes de iniciar la primera clase práctica.</li>
                 <li>En caso de incumplimiento en los pagos, EL ESTUDIANTE no podrá continuar el curso.</li>
@@ -111,7 +111,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                     </>
                  )}
              </p>
-            <div className="flex items-center gap-2">3. Horario para clases teóricas: <Line>{autoMotoDetails?.theoreticalClassSchedule}</Line></div>
+            <div className="flex items-center gap-2">3. Horario para clases teóricas: <Line><Value>{autoMotoDetails?.theoreticalClassSchedule}</Value></Line></div>
              <div className="pl-4">
                 {(autoMotoDetails?.theoreticalClassDates || []).map((date, index) => (
                     <span key={index} className="mr-4">Clase {index + 1}: {formatDate(toDate(date))}</span>
@@ -124,7 +124,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                     <div className="pl-4 space-y-0.5">
                         {Array.from({ length: autoMotoDetails?.practicalClassSchedules?.length || 0 }).map((_, index) => (
                             <div key={index} className="flex items-center gap-2">
-                                ○ Clase {index + 1}: Fecha <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.date ? formatDate(toDate(autoMotoDetails?.practicalClassSchedules?.[index]?.date)) : <>&nbsp;</>}</Line> Hora <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.time}</Line>
+                                ○ Clase {index + 1}: Fecha <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.date ? formatDate(toDate(autoMotoDetails?.practicalClassSchedules?.[index]?.date)) : <>&nbsp;</>}</Line> Hora <Line><Value>{autoMotoDetails?.practicalClassSchedules?.[index]?.time}</Value></Line>
                             </div>
                         ))}
                     </div>
@@ -132,7 +132,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                      <div className="pl-4 space-y-0.5">
                         {Array.from({ length: autoMotoDetails?.motoPracticalClassSchedules?.length || 0 }).map((_, index) => (
                             <div key={index} className="flex items-center gap-2">
-                                ○ Clase {index + 1}: Fecha <Line>{autoMotoDetails?.motoPracticalClassSchedules?.[index]?.date ? formatDate(toDate(autoMotoDetails?.motoPracticalClassSchedules?.[index]?.date)) : <>&nbsp;</>}</Line> Hora <Line>{autoMotoDetails?.motoPracticalClassSchedules?.[index]?.time}</Line>
+                                ○ Clase {index + 1}: Fecha <Line>{autoMotoDetails?.motoPracticalClassSchedules?.[index]?.date ? formatDate(toDate(autoMotoDetails?.motoPracticalClassSchedules?.[index]?.date)) : <>&nbsp;</>}</Line> Hora <Line><Value>{autoMotoDetails?.motoPracticalClassSchedules?.[index]?.time}</Value></Line>
                             </div>
                         ))}
                     </div>
@@ -141,7 +141,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                 <div className="pl-4 space-y-0.5">
                     {Array.from({ length: autoMotoDetails?.practicalClassSchedules?.length || 0 }).map((_, index) => (
                         <div key={index} className="flex items-center gap-2">
-                            ○ Clase {index + 1}: Fecha <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.date ? formatDate(toDate(autoMotoDetails?.practicalClassSchedules?.[index]?.date)) : <>&nbsp;</>}</Line> Hora <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.time}</Line>
+                            ○ Clase {index + 1}: Fecha <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.date ? formatDate(toDate(autoMotoDetails?.practicalClassSchedules?.[index]?.date)) : <>&nbsp;</>}</Line> Hora <Line><Value>{autoMotoDetails?.practicalClassSchedules?.[index]?.time}</Value></Line>
                         </div>
                     ))}
                 </div>
@@ -205,3 +205,5 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
     </Card>
   );
 }
+
+    

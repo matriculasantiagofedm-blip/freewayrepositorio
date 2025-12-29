@@ -14,7 +14,7 @@ const Line = ({ children, className }: { children?: React.ReactNode, className?:
   </span>
 );
 const LongLine = () => <span className="border-b border-dotted border-black flex-1 h-4 min-w-40" />;
-const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary print:text-black">{children}</span>;
+const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary print:text-blue-600">{children}</span>;
 
 function toDate(date: any): Date {
   if (date instanceof Date) return date;
@@ -82,9 +82,9 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
             <p>Entre <Value>{contract.clientName}</Value>, con cédula <Value>{deluxeDetails?.studentIdNumber}</Value>,</p>
             <div className="flex items-center flex-wrap">
                 , con domicilio en 
-                <Line>{deluxeDetails?.studentAddress}</Line>
+                <Line><Value>{deluxeDetails?.studentAddress}</Value></Line>
                 , teléfonos:
-                <Line>{deluxeDetails?.studentPhone1}</Line>/<Line>{deluxeDetails?.studentPhone2}</Line>
+                <Line><Value>{deluxeDetails?.studentPhone1}</Value></Line>/<Line><Value>{deluxeDetails?.studentPhone2}</Value></Line>
             </div>
              <div className="flex items-center flex-wrap">
                 , correo electrónico:
@@ -195,3 +195,5 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
     </Card>
   );
 }
+
+    

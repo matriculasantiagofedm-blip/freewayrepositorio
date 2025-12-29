@@ -16,6 +16,7 @@ import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, where }from 'firebase/firestore';
 import type { Contract, Deadline } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
+import { cn } from '@/lib/utils';
 
 function toDate(date: any): Date {
   if (date instanceof Date) {
@@ -96,11 +97,11 @@ export default function DashboardPage() {
   ];
 
   const contractTypes = [
-      { name: 'Curso Auto', icon: Car, href: '/contracts/new?type=Curso%20Auto'},
-      { name: 'Curso Moto', icon: Bike, href: '/contracts/new?type=Curso%20Moto'},
-      { name: 'Curso Mixto', icon: Combine, href: '/contracts/new?type=Curso%20Mixto'},
-      { name: 'Curso Deluxe', icon: Star, href: '/contracts/new?type=Curso%20Deluxe'},
-      { name: 'Ampliaciones', icon: Plus, href: '/contracts/new?type=Ampliaciones'},
+      { name: 'Curso Auto', icon: Car, href: '/contracts/new?type=Curso%20Auto', color: 'bg-blue-100 dark:bg-blue-900/50'},
+      { name: 'Curso Moto', icon: Bike, href: '/contracts/new?type=Curso%20Moto', color: 'bg-orange-100 dark:bg-orange-900/50'},
+      { name: 'Curso Mixto', icon: Combine, href: '/contracts/new?type=Curso%20Mixto', color: 'bg-purple-100 dark:bg-purple-900/50'},
+      { name: 'Curso Deluxe', icon: Star, href: '/contracts/new?type=Curso%20Deluxe', color: 'bg-yellow-100 dark:bg-yellow-900/50'},
+      { name: 'Ampliaciones', icon: Plus, href: '/contracts/new?type=Ampliaciones', color: 'bg-green-100 dark:bg-green-900/50'},
   ];
 
   return (
@@ -130,7 +131,9 @@ export default function DashboardPage() {
             <Link key={type.name} href={type.href} className="no-underline">
               <Card className="hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col items-center justify-center text-center p-4 h-full">
                 <CardHeader className="p-2">
-                  <type.icon className="h-10 w-10 text-primary mx-auto" />
+                    <div className={cn("p-3 rounded-full", type.color)}>
+                        <type.icon className="h-8 w-8 text-primary" />
+                    </div>
                 </CardHeader>
                 <CardContent className="p-2">
                   <p className="font-semibold">{type.name}</p>

@@ -458,14 +458,12 @@ export function ContractForm() {
                     if (comboPrice !== undefined) {
                         courseValue = comboPrice;
                         manualPriceActive = false;
-                    } else if (selectedPlans.length >= 2) {
-                        courseValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
-                        manualPriceActive = true;
                     } else {
                         courseValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
-                        manualPriceActive = false;
+                        // Permitir edición solo si no es un combo y hay 2 o más planes seleccionados.
+                        manualPriceActive = selectedPlans.length >= 2;
                     }
-                    if (isManualPrice !== manualPriceActive) {
+                     if (isManualPrice !== manualPriceActive) {
                         setIsManualPrice(manualPriceActive);
                     }
                     if (formatCurrency(form.getValues('ampliacionesDetails.courseValue')) !== formatCurrency(courseValue)) {
@@ -486,8 +484,6 @@ export function ContractForm() {
                 if (forceFullPayment && !isPaidInFull && name !== 'ampliacionesDetails.paidInFull') {
                     form.setValue('ampliacionesDetails.paidInFull', true, { shouldValidate: true });
                     isPaidInFull = true;
-                } else if (!forceFullPayment && isPaidInFull && name === 'ampliacionesDetails.paidInFull') {
-                    // Si el usuario marca pago completo, no hay nada que hacer aqui
                 } else if (name === 'ampliacionesDetails.courseValue' && !forceFullPayment) {
                     if(isPaidInFull) form.setValue('ampliacionesDetails.paidInFull', false, { shouldValidate: true });
                 }
@@ -886,7 +882,7 @@ export function ContractForm() {
                                         className={cn(!isManualPrice && "bg-muted")}
                                     />
                                 </FormControl>
-                                {isManualPrice && <FormDescription>Paquete manual: puedes editar este valor.</FormDescription>}
+                                {isManualPrice && (watchedAmpliacionesSelectedPlans?.length || 0) > 1 && <FormDescription>Paquete manual: puedes editar este valor.</FormDescription>}
                                 {!isManualPrice && (watchedAmpliacionesSelectedPlans?.length || 0) > 1 && <FormDescription>Precio de combo aplicado.</FormDescription>}
                                 <FormMessage />
                             </FormItem>

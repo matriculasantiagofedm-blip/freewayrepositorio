@@ -207,10 +207,10 @@ const ampliacionesPlans = {
         { name: 'E1,E2,E3', price: 85.00 },
         { name: 'E1,E2,E3,F', price: 100.00 },
         { name: 'G,H,I', price: 400.00 },
-        { name: 'D,E1,E2,E3,F', price: 150.00 },
-        { name: 'E1,E2,E3,F,B', price: 150.00 },
     ],
     otrosCombos: [
+        { name: 'D,E1,E2,E3,F', price: 150.00 },
+        { name: 'E1,E2,E3,F,B', price: 150.00 },
     ]
 };
 
@@ -452,23 +452,29 @@ export function ContractForm() {
                 const comboPrice = comboPriceMap.get(selectionKey);
 
                 let courseValue: number;
-                
+                let manualPriceActive = false;
+
                 if (name === 'ampliacionesDetails.selectedPlans') {
                     if (comboPrice !== undefined) {
                         courseValue = comboPrice;
-                        setIsManualPrice(false);
+                        manualPriceActive = false;
                     } else if (selectedPlans.length >= 2) {
                         courseValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
-                        setIsManualPrice(true);
+                        manualPriceActive = true;
                     } else {
                         courseValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
-                        setIsManualPrice(false);
+                        manualPriceActive = false;
                     }
-                    form.setValue('ampliacionesDetails.courseValue', courseValue, { shouldValidate: true });
+                    if (isManualPrice !== manualPriceActive) {
+                        setIsManualPrice(manualPriceActive);
+                    }
+                    if (formatCurrency(form.getValues('ampliacionesDetails.courseValue')) !== formatCurrency(courseValue)) {
+                        form.setValue('ampliacionesDetails.courseValue', courseValue, { shouldValidate: true });
+                    }
                 } else if (name === 'ampliacionesDetails.courseValue') {
                     courseValue = value.ampliacionesDetails?.courseValue || 0;
                      if (comboPrice === undefined && selectedPlans.length >= 2) {
-                        setIsManualPrice(true);
+                        if (!isManualPrice) setIsManualPrice(true);
                     }
                 } else {
                     courseValue = form.getValues('ampliacionesDetails.courseValue') || 0;
@@ -480,6 +486,10 @@ export function ContractForm() {
                 if (forceFullPayment && !isPaidInFull && name !== 'ampliacionesDetails.paidInFull') {
                     form.setValue('ampliacionesDetails.paidInFull', true, { shouldValidate: true });
                     isPaidInFull = true;
+                } else if (!forceFullPayment && isPaidInFull && name === 'ampliacionesDetails.paidInFull') {
+                    // Si el usuario marca pago completo, no hay nada que hacer aqui
+                } else if (name === 'ampliacionesDetails.courseValue' && !forceFullPayment) {
+                    if(isPaidInFull) form.setValue('ampliacionesDetails.paidInFull', false, { shouldValidate: true });
                 }
 
                 let downPayment = value.ampliacionesDetails?.downPayment || 0;
@@ -526,7 +536,7 @@ export function ContractForm() {
             }
         });
         return () => subscription.unsubscribe();
-    }, [form, replacePracticalClasses, replaceMotoPracticalClasses, replaceTheoreticalClasses]);
+    }, [form, replacePracticalClasses, replaceMotoPracticalClasses, replaceTheoreticalClasses, isManualPrice]);
 
      const handleFindClient = async () => {
         if (!firestore || !user) {
@@ -849,71 +859,6 @@ export function ContractForm() {
                     )}
                 />
                  
-                <h3 className="font-semibold text-lg pt-4 border-b pb-2">Clase Teórica</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                        control={form.control}
-                        name={theoreticalClassDatePath as 'ampliacionesDetails.theoreticalClassDate'}
-                        render={({ field }) => (
-                            <FormItem className="flex flex-col">
-                                <FormLabel>Fecha de la Clase Teórica</FormLabel>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <FormControl>
-                                            <Button
-                                                variant={"outline"}
-                                                className={cn(
-                                                    "w-full pl-3 text-left font-normal",
-                                                    !field.value && "text-muted-foreground"
-                                                )}
-                                            >
-                                                {field.value instanceof Date && !isNaN(field.value.getTime()) ? (
-                                                    format(field.value, "PPP", { locale: es })
-                                                ) : (
-                                                    <span>Seleccionar fecha</span>
-                                                )}
-                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                            </Button>
-                                        </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <Calendar
-                                            mode="single"
-                                            selected={field.value ? new Date(field.value) : undefined}
-                                            onSelect={field.onChange}
-                                            initialFocus
-                                            locale={es}
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name={theoreticalClassTimePath as 'ampliacionesDetails.theoreticalClassTime'}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Horario de Clase Teórica</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                    <SelectValue placeholder="Seleccione un horario" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {ampliacionesTheoreticalTimeSlots.map(slot => (
-                                        <SelectItem key={slot} value={slot}>{slot}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
-
                 <h3 className="font-semibold text-lg pt-4 border-b pb-2">Cláusula Primera: Valor y Forma de Pago</h3>
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField 
@@ -1012,6 +957,71 @@ export function ContractForm() {
                         </FormItem>
                     )}
                 />
+
+                <h3 className="font-semibold text-lg pt-4 border-b pb-2">Clase Teórica</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                        control={form.control}
+                        name={theoreticalClassDatePath as 'ampliacionesDetails.theoreticalClassDate'}
+                        render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                                <FormLabel>Fecha de la Clase Teórica</FormLabel>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                            <Button
+                                                variant={"outline"}
+                                                className={cn(
+                                                    "w-full pl-3 text-left font-normal",
+                                                    !field.value && "text-muted-foreground"
+                                                )}
+                                            >
+                                                {field.value instanceof Date && !isNaN(field.value.getTime()) ? (
+                                                    format(field.value, "PPP", { locale: es })
+                                                ) : (
+                                                    <span>Seleccionar fecha</span>
+                                                )}
+                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                            </Button>
+                                        </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={field.value ? new Date(field.value) : undefined}
+                                            onSelect={field.onChange}
+                                            initialFocus
+                                            locale={es}
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name={theoreticalClassTimePath as 'ampliacionesDetails.theoreticalClassTime'}
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Horario de Clase Teórica</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                    <SelectValue placeholder="Seleccione un horario" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {ampliacionesTheoreticalTimeSlots.map(slot => (
+                                        <SelectItem key={slot} value={slot}>{slot}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
             </>
         )
     };

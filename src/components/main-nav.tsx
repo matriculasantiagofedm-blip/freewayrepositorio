@@ -20,7 +20,7 @@ const allLinks = [
     },
     {
         href: '/contracts',
-        label: 'Contratos',
+        label: 'Todos los Contratos',
         icon: FileText,
         roles: ['Administrador'],
     },

@@ -107,25 +107,6 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="font-headline text-3xl font-bold">Panel de Control</h1>
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Crear Nuevo Contrato
-                    <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                 {contractTypes.map((type) => (
-                    <DropdownMenuItem key={type.name} asChild>
-                        <Link href={type.href}>
-                            <type.icon className="mr-2 h-4 w-4" />
-                            {type.name}
-                        </Link>
-                    </DropdownMenuItem>
-                ))}
-            </DropdownMenuContent>
-        </DropdownMenu>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -142,6 +123,23 @@ export default function DashboardPage() {
         ))}
       </div>
 
+      <div>
+        <h2 className="text-2xl font-bold font-headline mb-4">Crear Nuevo Contrato</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          {contractTypes.map((type) => (
+            <Link key={type.name} href={type.href} className="no-underline">
+              <Card className="hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col items-center justify-center text-center p-4 h-full">
+                <CardHeader className="p-2">
+                  <type.icon className="h-10 w-10 text-primary mx-auto" />
+                </CardHeader>
+                <CardContent className="p-2">
+                  <p className="font-semibold">{type.name}</p>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

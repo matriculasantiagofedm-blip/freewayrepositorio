@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -84,7 +85,7 @@ export default function LoginPage() {
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
                  <Input 
-                    type="text"
+                    type="password"
                     placeholder="Escribe tu perfil aquí"
                     value={roleInput}
                     onChange={(e) => setRoleInput(e.target.value)}

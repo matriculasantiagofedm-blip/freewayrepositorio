@@ -18,7 +18,9 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Eye } from 'lucide-react';
+import { Eye, Search } from 'lucide-react';
+import { useState } from 'react';
+import { Input } from '@/components/ui/input';
 
 
 function toDate(date: any): Date {
@@ -34,6 +36,7 @@ function toDate(date: any): Date {
 export default function AllContractsPage() {
   const { firestore, user } = useFirebase();
   const { role } = useCurrentRole();
+  const [searchTerm, setSearchTerm] = useState('');
 
   const contractsQuery = useMemoFirebase(() => {
     if (!firestore || !user || !role) return null;
@@ -60,66 +63,88 @@ export default function AllContractsPage() {
     completed: 'Completado',
     expired: 'Expirado',
   }
+  
+  const filteredContracts =
+    contracts?.filter((contract) => {
+      const folio = String(contract.folioNumber || '').padStart(6, '0');
+      const client = contract.clientName.toLowerCase();
+      const type = contract.type.toLowerCase();
+      const search = searchTerm.toLowerCase();
+
+      return folio.includes(search) || client.includes(search) || type.includes(search);
+    }) || [];
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <h1 className="font-headline text-3xl font-bold">Todos los Contratos</h1>
+         <div className="relative">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Buscar por folio, cliente, tipo..."
+            className="pl-8 sm:w-[300px]"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
       </div>
       {isLoading && <p>Cargando contratos...</p>}
-      {!isLoading && contracts && contracts.length > 0 ? (
-        <div className="rounded-lg border">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead className="w-[100px]">Folio</TableHead>
-                        <TableHead>Cliente</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead>Fecha de Creación</TableHead>
-                        <TableHead className="text-right">Acciones</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {contracts.map((contract) => (
-                        <TableRow key={contract.id}>
-                            <TableCell className="font-medium text-primary">
-                                {String(contract.folioNumber || 'N/A').padStart(6, '0')}
-                            </TableCell>
-                            <TableCell>{contract.clientName}</TableCell>
-                            <TableCell>{contract.type}</TableCell>
-                            <TableCell>
-                                <Badge variant="outline" className={cn("capitalize", statusColors[contract.status])}>
-                                    {statusTranslations[contract.status]}
-                                </Badge>
-                            </TableCell>
-                            <TableCell>
-                                {format(toDate(contract.createdAt), 'dd/MM/yyyy', { locale: es })}
-                            </TableCell>
-                            <TableCell className="text-right">
-                                <Button asChild variant="ghost" size="icon">
-                                    <Link href={`/contracts/${contract.id}`}>
-                                        <Eye className="h-4 w-4" />
-                                        <span className="sr-only">Ver Contrato</span>
-                                    </Link>
-                                </Button>
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </div>
-      ) : (
-        !isLoading && (
-          <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
-              <h3 className="mt-4 text-lg font-semibold text-foreground">
-                No tienes contratos todavía
-              </h3>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Comienza creando un nuevo contrato para verlo aquí.
-              </p>
-          </div>
-        )
+      {!isLoading && contracts && (
+        <>
+            {filteredContracts.length > 0 ? (
+                 <div className="rounded-lg border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[100px]">Folio</TableHead>
+                                <TableHead>Cliente</TableHead>
+                                <TableHead>Tipo</TableHead>
+                                <TableHead>Estado</TableHead>
+                                <TableHead>Fecha de Creación</TableHead>
+                                <TableHead className="text-right">Acciones</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {filteredContracts.map((contract) => (
+                                <TableRow key={contract.id}>
+                                    <TableCell className="font-medium text-primary">
+                                        {String(contract.folioNumber || '').padStart(6, '0')}
+                                    </TableCell>
+                                    <TableCell>{contract.clientName}</TableCell>
+                                    <TableCell>{contract.type}</TableCell>
+                                    <TableCell>
+                                        <Badge variant="outline" className={cn("capitalize", statusColors[contract.status])}>
+                                            {statusTranslations[contract.status]}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        {format(toDate(contract.createdAt), 'dd/MM/yyyy', { locale: es })}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button asChild variant="ghost" size="icon">
+                                            <Link href={`/contracts/${contract.id}`}>
+                                                <Eye className="h-4 w-4" />
+                                                <span className="sr-only">Ver Contrato</span>
+                                            </Link>
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            ) : (
+                <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
+                    <h3 className="mt-4 text-lg font-semibold text-foreground">
+                        {searchTerm ? 'No se encontraron contratos' : 'No tienes contratos todavía'}
+                    </h3>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                        {searchTerm ? 'Intenta con otro término de búsqueda.' : 'Comienza creando un nuevo contrato para verlo aquí.'}
+                    </p>
+                </div>
+            )}
+        </>
       )}
     </div>
   );

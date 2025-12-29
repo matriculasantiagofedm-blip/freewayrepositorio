@@ -4,14 +4,14 @@
 import type { GenerateContractInput } from '@/lib/types';
 import { createContractFlow } from '@/ai/flows/generate-contract-folio';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { initializeApp, getApps, App } from 'firebase-admin/app';
+import { initializeApp, getApps, App, type ServiceAccount, cert } from 'firebase-admin/app';
 
 // This function attempts to get an existing Firestore instance or initializes a new one.
 // It's designed to be called within each server action to ensure the DB is ready.
 function getDb() {
     if (!getApps().length) {
         try {
-            // This will automatically use the service account credentials from the environment
+            // This will automatically use the service account credentials from the environment variables
             // in a production environment like Firebase App Hosting or Cloud Run.
             initializeApp();
         } catch (error) {
@@ -67,13 +67,16 @@ export async function pingFirestoreAction() {
             message: 'Conexión exitosa. Las operaciones de escritura, lectura y eliminación funcionan.',
         };
     } catch (error: any) {
-        let errorMessage = 'Ocurrió un error desconocido.';
-        if (error && typeof error === 'object' && 'message' in error) {
-            errorMessage = String(error.message);
-        } else if (error) {
-            errorMessage = String(error);
-        }
+        let errorMessage = 'Ocurrió un error desconocido durante la prueba de Firestore.';
         
+        if (error instanceof Error) {
+            errorMessage = error.message;
+        } else if (typeof error === 'object' && error !== null && 'toString' in error) {
+            errorMessage = error.toString();
+        } else {
+             errorMessage = JSON.stringify(error);
+        }
+
         console.error("Firestore Ping Error:", errorMessage);
 
         return {

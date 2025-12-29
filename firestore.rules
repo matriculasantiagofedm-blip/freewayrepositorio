@@ -48,7 +48,7 @@ service cloud.firestore {
      * @principle Centralized collection with user-based ownership enforced by rules.
      */
     match /contracts/{contractId} {
-      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow get: if isSignedIn();
       allow list: if isSignedIn(); // List queries must be filtered by userId on the client-side
       allow create: if isOwner(request.resource.data.userId);
       allow update: if isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.userId == resource.data.userId && request.resource.data.folioNumber == resource.data.folioNumber;

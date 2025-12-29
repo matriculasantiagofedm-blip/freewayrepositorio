@@ -58,6 +58,11 @@ export default function DashboardPage() {
   
   const overdueDeadlines =
     contracts?.reduce((acc, contract) => {
+      // Only count overdue deadlines for 'active' contracts.
+      if (contract.status !== 'active') {
+        return acc;
+      }
+      
       // 1. Add overdue standard deadlines
       const generalDeadlines = (contract.deadlines as Deadline[] || [])
         .filter(d => d && d.date && isPast(toDate(d.date)));

@@ -2,8 +2,14 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { PlusCircle, FileText, CalendarClock, Users, Car, Bike, Combine, Star, Plus } from 'lucide-react';
+import { PlusCircle, FileText, CalendarClock, Users, Car, Bike, Combine, Star, Plus, ChevronDown } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { isPast } from 'date-fns';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, where }from 'firebase/firestore';
@@ -88,10 +94,37 @@ export default function DashboardPage() {
     },
   ];
 
+  const contractTypes = [
+      { name: 'Curso Auto', icon: Car, href: '/contracts/new?type=Curso%20Auto'},
+      { name: 'Curso Moto', icon: Bike, href: '/contracts/new?type=Curso%20Moto'},
+      { name: 'Curso Mixto', icon: Combine, href: '/contracts/new?type=Curso%20Mixto'},
+      { name: 'Curso Deluxe', icon: Star, href: '/contracts/new?type=Curso%20Deluxe'},
+      { name: 'Ampliaciones', icon: Plus, href: '/contracts/new?type=Ampliaciones'},
+  ];
+
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="font-headline text-3xl font-bold">Panel de Control</h1>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Crear Nuevo Contrato
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                 {contractTypes.map((type) => (
+                    <DropdownMenuItem key={type.name} asChild>
+                        <Link href={type.href}>
+                            <type.icon className="mr-2 h-4 w-4" />
+                            {type.name}
+                        </Link>
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -108,43 +141,6 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div>
-        <h2 className="mb-4 font-headline text-2xl font-semibold">
-          Crear Nuevo Contrato
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-3 lg:grid-cols-5">
-          <Button asChild className="h-24 text-lg bg-blue-600 hover:bg-blue-700 text-white">
-              <Link href="/contracts/new?type=Curso%20Auto" className="flex flex-col items-center justify-center gap-2">
-                  <Car className="h-8 w-8" />
-                  <span>Curso Auto</span>
-              </Link>
-          </Button>
-           <Button asChild className="h-24 text-lg bg-red-600 hover:bg-red-700 text-white">
-              <Link href="/contracts/new?type=Curso%20Moto" className="flex flex-col items-center justify-center gap-2">
-                  <Bike className="h-8 w-8" />
-                  <span>Curso Moto</span>
-              </Link>
-          </Button>
-           <Button asChild className="h-24 text-lg bg-purple-600 hover:bg-purple-700 text-white">
-              <Link href="/contracts/new?type=Curso%20Mixto" className="flex flex-col items-center justify-center gap-2">
-                  <Combine className="h-8 w-8" />
-                  <span>Curso Mixto</span>
-              </Link>
-          </Button>
-           <Button asChild className="h-24 text-lg bg-yellow-500 hover:bg-yellow-600 text-white">
-              <Link href="/contracts/new?type=Curso%20Deluxe" className="flex flex-col items-center justify-center gap-2">
-                  <Star className="h-8 w-8" />
-                  <span>Curso Deluxe</span>
-              </Link>
-          </Button>
-           <Button asChild className="h-24 text-lg bg-gray-500 hover:bg-gray-600 text-white">
-              <Link href="/contracts/new?type=Ampliaciones" className="flex flex-col items-center justify-center gap-2">
-                  <Plus className="h-8 w-8" />
-                  <span>Ampliaciones</span>
-              </Link>
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }

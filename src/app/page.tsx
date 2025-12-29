@@ -2,69 +2,56 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { GanttChartSquare, Briefcase, UserCheck, Shield, Loader2 } from 'lucide-react';
+import { GanttChartSquare, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { signInAnonymously } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/firebase';
-
-// Se elimina la dependencia de contraseñas. El acceso se basará en roles anónimos.
-const roles = [
-  { name: 'Ventas', icon: Briefcase, email: 'ventas@contracttime.app' },
-  { name: 'Ventas Externas', icon: UserCheck, email: 'ventas-externas@contracttime.app' },
-  { name: 'Administrador', icon: Shield, email: 'admin@contracttime.app' },
-];
-
-type Role = typeof roles[0];
-
-// Variable global para simular el rol seleccionado en la sesión anónima.
-// Esto es una solución temporal de lado del cliente para la demostración.
-if (typeof window !== 'undefined') {
-  (window as any).selectedRoleForAnonymousSession = null;
-}
-
 
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const auth = useAuth();
 
-  const [isLoggingIn, setIsLoggingIn] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  const handleRoleLogin = async (role: Role) => {
-    setIsLoggingIn(role.name);
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      setError('Por favor, introduce tu correo y contraseña.');
+      return;
+    }
+
+    setIsLoggingIn(true);
+    setError('');
 
     try {
-      // Almacena el rol seleccionado en una variable global antes de iniciar sesión.
-      // El hook useCurrentRole leerá esta variable para determinar el rol.
-       if (typeof window !== 'undefined') {
-        (window as any).selectedRoleForAnonymousSession = role;
-      }
-      
-      // Inicia sesión de forma anónima. Firebase creará un usuario temporal.
-      await signInAnonymously(auth);
-      
+      await signInWithEmailAndPassword(auth, email, password);
       toast({
-        title: `Iniciando como ${role.name}`,
-        description: 'Has iniciado sesión correctamente.',
+        title: 'Inicio de Sesión Exitoso',
+        description: 'Bienvenido de nuevo.',
       });
-
-      // Redirige al panel de control.
       router.push('/dashboard');
-
     } catch (e: any) {
-      console.error("Error en inicio de sesión anónimo:", e);
+      console.error("Error de inicio de sesión:", e);
+      let description = 'Ocurrió un error inesperado.';
+      if (e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found') {
+        description = 'Las credenciales son incorrectas. Verifica tu correo y contraseña.';
+      }
+      setError(description);
       toast({
         variant: 'destructive',
         title: 'Error de Inicio de Sesión',
-        description: 'No se pudo iniciar la sesión anónima. Por favor, intenta de nuevo.',
+        description: description,
       });
-      if (typeof window !== 'undefined') {
-        (window as any).selectedRoleForAnonymousSession = null;
-      }
     } finally {
-      setIsLoggingIn(null);
+      setIsLoggingIn(false);
     }
   };
 
@@ -81,28 +68,39 @@ export default function LoginPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Selecciona tu Rol</CardTitle>
-            <CardDescription>Elige cómo quieres iniciar sesión.</CardDescription>
+            <CardTitle>Iniciar Sesión</CardTitle>
+            <CardDescription>Ingresa tus credenciales para acceder al panel.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {roles.map((role) => (
-                <Button
-                  key={role.name}
-                  variant="outline"
-                  className="w-full justify-start h-14 text-lg"
-                  onClick={() => handleRoleLogin(role)}
-                  disabled={!!isLoggingIn}
-                >
-                  {isLoggingIn === role.name ? (
-                    <Loader2 className="mr-4 h-6 w-6 animate-spin" />
-                  ) : (
-                    <role.icon className="mr-4 h-6 w-6" />
-                  )}
-                  {role.name}
-                </Button>
-              ))}
-            </div>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Correo Electrónico</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="admin@contracttime.app"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Contraseña</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <Button type="submit" className="w-full" disabled={isLoggingIn}>
+                {isLoggingIn ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {isLoggingIn ? 'Iniciando...' : 'Entrar'}
+              </Button>
+            </form>
           </CardContent>
         </Card>
       </div>

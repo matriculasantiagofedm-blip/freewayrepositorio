@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,9 +9,9 @@ import { GanttChartSquare, Briefcase, UserCheck, Shield, ArrowLeft, Loader2 } fr
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useAuth } from '@/firebase';
+import { initializeFirebase } from '@/firebase'; // Importar para obtener 'auth'
 
-// Definimos los roles con su nombre, icono, email y contraseña asociada.
+// Se definen los roles con su nombre, icono, email y contraseña asociada.
 const roles = [
   { name: 'Ventas', icon: Briefcase, email: 'ventas@contracttime.app', password: 'ventas123' },
   { name: 'Ventas Externas', icon: UserCheck, email: 'ventas-externas@contracttime.app', password: 'Ayax/2022' },
@@ -22,26 +22,20 @@ type Role = typeof roles[0] | null;
 
 export default function LoginPage() {
   const router = useRouter();
-  const auth = useAuth();
   const { toast } = useToast();
-  const { user, isUserLoading } = useUser();
+  // Se obtiene la instancia de 'auth' directamente al inicializar Firebase.
+  // Esto evita el uso del hook `useAuth` que requiere un Provider.
+  const { auth } = initializeFirebase();
 
   const [selectedRole, setSelectedRole] = useState<Role>(null);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  // Redirige al dashboard si el usuario ya ha iniciado sesión
-  useEffect(() => {
-    if (!isUserLoading && user) {
-      router.push('/dashboard');
-    }
-  }, [user, isUserLoading, router]);
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedRole || !password) {
-      setError('Por favor, introduce tu contraseña.');
+    if (!selectedRole) {
+      setError('Por favor, selecciona un rol.');
       return;
     }
     
@@ -61,12 +55,14 @@ export default function LoginPage() {
 
     try {
       await signInWithEmailAndPassword(auth, selectedRole.email, password);
-      // La redirección se maneja con el useEffect de arriba, que se activará cuando 'user' cambie.
+      // Después de un inicio de sesión exitoso, Firebase se encarga del estado.
+      // Navegamos al dashboard. El layout principal se encargará del resto.
+      router.push('/dashboard');
     } catch (e: any) {
       console.error(e);
       let description = 'Ocurrió un error inesperado al iniciar sesión.';
-      if (e.code === 'auth/wrong-password') {
-        description = 'La contraseña es incorrecta.';
+      if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+        description = 'La contraseña o el correo son incorrectos.';
       } else if (e.code === 'auth/user-not-found') {
         description = 'El usuario no existe. Contacte al administrador.';
       }
@@ -86,19 +82,7 @@ export default function LoginPage() {
     setPassword('');
     setError('');
   };
-  
-  // Muestra un estado de carga a pantalla completa mientras se verifica si hay un usuario
-  // o si el usuario ya está autenticado para redirigir.
-  if (isUserLoading || user) {
-    return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-            <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <p className="mt-4 text-muted-foreground">Cargando aplicación...</p>
-        </div>
-    );
-  }
 
-  // Si no hay usuario y la carga ha terminado, muestra la página de inicio de sesión.
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-8">

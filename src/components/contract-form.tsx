@@ -226,7 +226,7 @@ const ampliacionesTheoreticalTimeSlots = [
 ];
 
 const formatCurrency = (value?: number) => {
-    if (value === undefined || value === null) return '0.00';
+    if (value === undefined || value === null || isNaN(value)) return '0.00';
     return value.toFixed(2);
 };
 
@@ -454,48 +454,48 @@ export function ContractForm() {
                 const isManualPriceAllowed = individualPlansSelectedCount >= 2;
 
                 let courseValue;
-                // If plans change, calculate sum. If user changes total value, respect it.
                 if (name === 'ampliacionesDetails.selectedPlans') {
                     courseValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
                     form.setValue('ampliacionesDetails.courseValue', courseValue, { shouldValidate: true });
-                } else {
+                } else if (name === 'ampliacionesDetails.courseValue') {
                     courseValue = value.ampliacionesDetails?.courseValue || 0;
+                } else {
+                    courseValue = form.getValues('ampliacionesDetails.courseValue') || 0;
                 }
                 
                 const forceFullPayment = courseValue > 0 && courseValue <= 100;
                 let isPaidInFull = value.ampliacionesDetails?.paidInFull ?? false;
                 
+                // If value forces full payment, check the box.
                 if (forceFullPayment && !isPaidInFull) {
-                    isPaidInFull = true;
                     form.setValue('ampliacionesDetails.paidInFull', true, { shouldValidate: true });
-                } else if (!forceFullPayment && name === 'ampliacionesDetails.paidInFull' && isPaidInFull) {
-                    // User manually checks "paid in full"
+                    isPaidInFull = true;
                 }
-
+                
                 let downPayment = value.ampliacionesDetails?.downPayment || 0;
-                if (isPaidInFull || forceFullPayment) {
-                    downPayment = courseValue;
-                } else if (name === 'ampliacionesDetails.selectedPlans' || name === 'ampliacionesDetails.courseValue' || name === 'ampliacionesDetails.paidInFull') {
-                     // Recalculate down payment only if relevant fields change, and it's not manually paid in full
-                    if (courseValue > 100) {
-                         downPayment = courseValue * 0.5;
+                
+                if (name === 'ampliacionesDetails.selectedPlans' || name === 'ampliacionesDetails.courseValue' || name === 'ampliacionesDetails.paidInFull') {
+                    if (isPaidInFull || forceFullPayment) {
+                        downPayment = courseValue;
+                    } else if (courseValue > 100) {
+                        downPayment = courseValue * 0.5;
                     } else {
-                         downPayment = courseValue; // This case is handled by forceFullPayment, but as a fallback
+                        downPayment = courseValue; 
                     }
-                }
-
-                if (form.getValues('ampliacionesDetails.downPayment')?.toFixed(2) !== downPayment.toFixed(2)) {
-                    form.setValue('ampliacionesDetails.downPayment', downPayment, { shouldValidate: true });
+                    
+                    if (formatCurrency(form.getValues('ampliacionesDetails.downPayment')) !== formatCurrency(downPayment)) {
+                        form.setValue('ampliacionesDetails.downPayment', downPayment, { shouldValidate: true });
+                    }
                 }
 
                 const newBalance = courseValue - downPayment;
                 const finalBalance = newBalance < 0.005 ? 0 : newBalance;
-                 if (form.getValues('ampliacionesDetails.balance')?.toFixed(2) !== finalBalance.toFixed(2)) {
+                 if (formatCurrency(form.getValues('ampliacionesDetails.balance')) !== formatCurrency(finalBalance)) {
                     form.setValue('ampliacionesDetails.balance', finalBalance, { shouldValidate: true });
                 }
 
                 const currentPaymentDeadline = form.getValues('ampliacionesDetails.paymentDeadline');
-                if (finalBalance === 0) {
+                if (finalBalance <= 0) {
                     if (currentPaymentDeadline === null) {
                         form.setValue('ampliacionesDetails.paymentDeadline', new Date());
                     }
@@ -924,23 +924,34 @@ export function ContractForm() {
 
                 <h3 className="font-semibold text-lg pt-4 border-b pb-2">Cláusula Primera: Valor y Forma de Pago</h3>
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField control={form.control} name={courseValuePath as 'ampliacionesDetails.courseValue'} render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Valor Total (B/.)</FormLabel>
-                             <FormControl>
-                                <Input 
-                                    type="number" 
-                                    step="0.01"
-                                    {...field} 
-                                    value={field.value ?? ''}
-                                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                                    readOnly={!allowManualAmpliacionesPrice} 
-                                    className={cn(!allowManualAmpliacionesPrice && "bg-muted")}
-                                />
-                            </FormControl>
-                            {allowManualAmpliacionesPrice && <FormDescription>Puedes editar este valor para el paquete.</FormDescription>}
-                            <FormMessage />
-                        </FormItem>
+                    <FormField 
+                        control={form.control} 
+                        name={courseValuePath as 'ampliacionesDetails.courseValue'} 
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Valor Total (B/.)</FormLabel>
+                                <FormControl>
+                                    <Input 
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={field.value ? formatCurrency(field.value) : ''}
+                                        onChange={e => {
+                                            const value = e.target.value;
+                                            const parsed = parseFloat(value);
+                                            field.onChange(isNaN(parsed) ? 0 : parsed);
+                                        }}
+                                        onBlur={() => {
+                                            if (field.value) {
+                                                field.onChange(parseFloat(field.value.toFixed(2)));
+                                            }
+                                        }}
+                                        readOnly={!allowManualAmpliacionesPrice} 
+                                        className={cn(!allowManualAmpliacionesPrice && "bg-muted")}
+                                    />
+                                </FormControl>
+                                {allowManualAmpliacionesPrice && <FormDescription>Puedes editar este valor para el paquete.</FormDescription>}
+                                <FormMessage />
+                            </FormItem>
                     )} />
                     <FormField control={form.control} name={downPaymentPath as 'ampliacionesDetails.downPayment'} render={({ field }) => (<FormItem><FormLabel>Abono (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={watchedAmpliacionesPaidInFull} /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name={balancePath as 'ampliacionesDetails.balance'} render={({ field }) => (<FormItem><FormLabel>Saldo (B/.)</FormLabel><FormControl><Input type="text" value={formatCurrency(field.value)} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />

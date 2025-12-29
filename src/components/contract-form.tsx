@@ -34,7 +34,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, PlusCircle, Loader2, Printer, Search } from 'lucide-react';
+import { CalendarIcon, PlusCircle, Loader2, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFirebase } from '@/firebase';
 import { Timestamp, collection, query, where, getDocs, writeBatch, doc, serverTimestamp, runTransaction } from 'firebase/firestore';
@@ -460,7 +460,6 @@ export function ContractForm() {
                         manualPriceActive = false;
                     } else {
                         courseValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
-                        // Permitir edición solo si no es un combo y hay 2 o más planes seleccionados.
                         manualPriceActive = selectedPlans.length >= 2;
                     }
                      if (isManualPrice !== manualPriceActive) {
@@ -490,13 +489,18 @@ export function ContractForm() {
 
                 let downPayment = value.ampliacionesDetails?.downPayment || 0;
                 
-                if (name === 'ampliacionesDetails.selectedPlans' || name === 'ampliacionesDetails.courseValue' || (name === 'ampliacionesDetails.paidInFull' && value.ampliacionesDetails?.paidInFull)) {
+                if (name === 'ampliacionesDetails.selectedPlans' || name === 'ampliacionesDetails.courseValue') {
                      if (isPaidInFull || forceFullPayment) {
                         downPayment = courseValue;
                     } else if (courseValue > 100) {
                         downPayment = courseValue * 0.5;
                     }
                     if (formatCurrency(form.getValues('ampliacionesDetails.downPayment')) !== formatCurrency(downPayment)) {
+                        form.setValue('ampliacionesDetails.downPayment', downPayment, { shouldValidate: true });
+                    }
+                } else if (name === 'ampliacionesDetails.paidInFull' && isPaidInFull) {
+                     downPayment = courseValue;
+                     if (formatCurrency(form.getValues('ampliacionesDetails.downPayment')) !== formatCurrency(downPayment)) {
                         form.setValue('ampliacionesDetails.downPayment', downPayment, { shouldValidate: true });
                     }
                 }
@@ -881,7 +885,34 @@ export function ContractForm() {
                                 <FormMessage />
                             </FormItem>
                     )} />
-                    <FormField control={form.control} name={downPaymentPath as 'ampliacionesDetails.downPayment'} render={({ field }) => (<FormItem><FormLabel>Abono (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} value={field.value ?? ''} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={watchedValues.ampliacionesDetails.paidInFull} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField 
+                        control={form.control} 
+                        name={downPaymentPath as 'ampliacionesDetails.downPayment'} 
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Abono (B/.)</FormLabel>
+                                <FormControl>
+                                    <Input 
+                                        type="text"
+                                        inputMode="decimal"
+                                        value={field.value ? formatCurrency(field.value) : '0.00'}
+                                        onChange={e => {
+                                            const value = e.target.value.replace(/[^0-9.]/g, '');
+                                            const parsed = parseFloat(value);
+                                            field.onChange(isNaN(parsed) ? 0 : parsed);
+                                        }}
+                                        onBlur={() => {
+                                            if (field.value) {
+                                                field.onChange(parseFloat(field.value.toFixed(2)));
+                                            }
+                                        }}
+                                        disabled={watchedValues.ampliacionesDetails.paidInFull}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} 
+                    />
                     <FormField control={form.control} name={balancePath as 'ampliacionesDetails.balance'} render={({ field }) => (<FormItem><FormLabel>Saldo (B/.)</FormLabel><FormControl><Input type="text" value={formatCurrency(field.value)} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
                 </div>
                  <FormField
@@ -947,9 +978,7 @@ export function ContractForm() {
                         </FormItem>
                     )}
                 />
-
-                <h3 className="font-semibold text-lg pt-4 border-b pb-2">Clase Teórica</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                         control={form.control}
                         name={theoreticalClassDatePath as 'ampliacionesDetails.theoreticalClassDate'}

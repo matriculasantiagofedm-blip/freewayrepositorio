@@ -2,15 +2,26 @@
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import type { Client, Contract } from '@/lib/types';
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useState, useEffect } from 'react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Eye, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 export default function ClientsPage() {
   const { firestore, user } = useFirebase();
   const { role } = useCurrentRole();
   const [clientIds, setClientIds] = useState<string[] | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     async function fetchClientIds() {
@@ -62,28 +73,74 @@ export default function ClientsPage() {
   const { data: clients, isLoading } = useCollection<Client>(clientsQuery);
   const isInitialLoading = clientIds === null && role !== 'Administrador';
 
+  const filteredClients =
+    clients?.filter((client) => {
+      const name = client.name.toLowerCase();
+      const idNumber = client.idNumber?.toLowerCase() || '';
+      const search = searchTerm.toLowerCase();
+
+      return name.includes(search) || idNumber.includes(search);
+    }) || [];
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
         <h1 className="font-headline text-3xl font-bold">Clientes</h1>
+        <div className="relative">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Buscar por nombre o cédula..."
+            className="pl-8 sm:w-[300px]"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
       </div>
       {(isLoading || isInitialLoading) && <p>Cargando clientes...</p>}
       {!isLoading && !isInitialLoading && clients && clients.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {clients.map((client) => (
-            <Link key={client.id} href={`/clients/${client.id}`} className="no-underline">
-                <Card className="hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                        <div>
-                            <CardTitle>{client.name}</CardTitle>
-                            <CardDescription>{client.email}</CardDescription>
-                            {client.idNumber && <CardDescription className="font-medium text-foreground pt-1">Cédula: {client.idNumber}</CardDescription>}
-                        </div>
-                    </CardHeader>
-                </Card>
-            </Link>
-          ))}
-        </div>
+        <>
+            {filteredClients.length > 0 ? (
+                <div className="rounded-lg border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Nombre</TableHead>
+                                <TableHead>Email</TableHead>
+                                <TableHead>Cédula / Pasaporte</TableHead>
+                                <TableHead className="text-right">Acciones</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {filteredClients.map((client) => (
+                                <TableRow key={client.id}>
+                                    <TableCell className="font-medium">{client.name}</TableCell>
+                                    <TableCell>{client.email}</TableCell>
+                                    <TableCell>{client.idNumber || 'No disponible'}</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button asChild variant="ghost" size="icon">
+                                            <Link href={`/clients/${client.id}`}>
+                                                <Eye className="h-4 w-4" />
+                                                <span className="sr-only">Ver Cliente</span>
+                                            </Link>
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            ) : (
+                 <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
+                    <h3 className="mt-4 text-lg font-semibold text-foreground">
+                        No se encontraron clientes
+                    </h3>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                        Intenta con otro término de búsqueda.
+                    </p>
+                </div>
+            )}
+        </>
       ) : (
         !isLoading && !isInitialLoading && (
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">

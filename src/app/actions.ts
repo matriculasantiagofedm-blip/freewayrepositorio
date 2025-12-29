@@ -8,7 +8,7 @@ import { initializeApp, getApps, App, type ServiceAccount, cert } from 'firebase
 
 // This function attempts to get an existing Firestore instance or initializes a new one.
 // It's designed to be called within each server action to ensure the DB is ready.
-function getDb() {
+export async function getDb() {
     if (!getApps().length) {
         try {
             // This will automatically use the service account credentials from the environment variables
@@ -69,12 +69,10 @@ export async function pingFirestoreAction() {
     } catch (error: any) {
         let errorMessage = 'Ocurrió un error desconocido durante la prueba de Firestore.';
         
-        if (error instanceof Error) {
-            errorMessage = error.message;
-        } else if (typeof error === 'object' && error !== null && 'toString' in error) {
-            errorMessage = error.toString();
-        } else {
-             errorMessage = JSON.stringify(error);
+        if (error && typeof error === 'object' && 'message' in error) {
+            errorMessage = String(error.message);
+        } else if (error) {
+            errorMessage = String(error);
         }
 
         console.error("Firestore Ping Error:", errorMessage);

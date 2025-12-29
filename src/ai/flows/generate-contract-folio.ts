@@ -8,28 +8,14 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestore, Timestamp, FieldValue, Firestore } from 'firebase-admin/firestore';
-import { initializeApp, getApps, App } from 'firebase-admin/app';
+import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 import type { Contract, ContractType, GenerateContractInput } from '@/lib/types';
 import { GenerateContractInputSchema } from '@/lib/types';
+import { getDb } from '@/app/actions';
 
 
 // --- Firebase Admin Initialization ---
-let db: Firestore;
-if (!getApps().length) {
-    try {
-        // This will automatically use the service account credentials from the environment variables
-        // in a production environment like Firebase App Hosting or Cloud Run.
-        const app = initializeApp();
-        db = getFirestore(app);
-    } catch (error) {
-        console.error("Critical: Failed to initialize Firebase Admin SDK automatically. Check server logs and environment variables.", error);
-        throw new Error("Failed to initialize Firebase Admin SDK. The server cannot function without it.");
-    }
-} else {
-    // If the app is already initialized, just get the firestore instance.
-    db = getFirestore(getApps()[0]);
-}
+const db = getDb();
 
 const toTimestamp = (date: any): Timestamp | null => {
     if (!date) return null;

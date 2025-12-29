@@ -31,14 +31,13 @@ function toDate(date: any): Date {
 }
 
 interface DeluxePremiumContractPreviewProps {
-    folio: string;
     clientName?: string;
     clientEmail?: string;
     deluxeDetails?: Partial<DeluxeContractDetails>;
     createdBy?: string | null;
 }
 
-export function DeluxePremiumContractTemplatePreview({ folio, clientName, clientEmail, deluxeDetails }: DeluxePremiumContractPreviewProps) {
+export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, deluxeDetails }: DeluxePremiumContractPreviewProps) {
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
   const { role: createdBy } = useCurrentRole();
 
@@ -81,8 +80,6 @@ export function DeluxePremiumContractTemplatePreview({ folio, clientName, client
   return (
     <Card className="p-6 print:shadow-none print:border-none print:p-0 font-serif text-xs">
       <CardContent className="p-0 space-y-1 relative">
-        <p className="absolute top-0 right-0 text-xs font-semibold text-destructive">Folio: {folio}</p>
-
         <h2 className="text-center font-bold text-sm mb-2 pt-4">CONTRATO DE SERVICIOS EDUCATIVOS</h2>
 
         <p>

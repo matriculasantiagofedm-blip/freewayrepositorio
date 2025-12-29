@@ -54,7 +54,6 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
   return (
     <Card className="p-6 print:shadow-none print:border-none print:p-0 font-serif text-xs">
       <CardContent className="p-0 space-y-2 relative">
-        {contract.folio && <p className="absolute top-0 right-0 text-xs font-semibold text-destructive print:text-black">Folio: {contract.folio}</p>}
         <div className="flex items-center gap-2 justify-center pb-2">
             <h2 className="text-center font-bold text-sm">CONTRATO POR SERVICIO DE CURSO DE MANEJO</h2>
         </div>
@@ -151,7 +150,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
             <p>SI EL ESTUDIANTE falta a más de una clase práctica sin justificar médicamente, no tendrá derecho a certificado y deberá pagar un recargo de $20.00 por cada clase perdida para poder reprogramarla.</p>
         </div>
 
-        <h3 className="font-bold">CLÁUSULA CUARTA - LUGAR DE INICIO Y TRASLADO</h3>
+        <h3 className="font-bold">CLÁUSULA QUARTA - LUGAR DE INICIO Y TRASLADO</h3>
         <p className='text-[10px]'>Las clases prácticas iniciarán en la oficina de LA ESCUELA. Desde allí, EL ESTUDIANTE será trasladado al circuito de prácticas y posteriormente de regreso. Dicho traslado se encuentra incluido dentro del tiempo de las 2 horas de clase práctica.</p>
         
         <h3 className="font-bold">CLÁUSULA QUINTA - PUNTUALIDAD</h3>
@@ -201,5 +200,3 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
     </Card>
   );
 }
-
-    

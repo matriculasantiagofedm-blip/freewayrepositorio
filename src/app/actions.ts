@@ -1,14 +1,15 @@
+
 'use server';
 
 import type { GenerateContractInput } from '@/lib/types';
 import { z } from 'zod';
 import { google } from 'googleapis';
-import { generateContractWithFolioFlow } from '@/ai/flows/generate-contract-folio';
+import { createContractFlow } from '@/ai/flows/create-contract';
 
 
 export async function createContractAction(input: GenerateContractInput) {
   try {
-    const result = await generateContractWithFolioFlow(input);
+    const result = await createContractFlow(input);
     
     if (result.error) {
       throw new Error(result.error);
@@ -17,9 +18,9 @@ export async function createContractAction(input: GenerateContractInput) {
   } catch (error) {
     console.error('[createContractAction] Unexpected error:', error);
     if (error instanceof Error) {
-      return { contract: null, folio: '', error: error.message };
+      return { contract: null, error: error.message };
     }
-    return { contract: null, folio: '', error: 'Ocurrió un error inesperado en el servidor.' };
+    return { contract: null, error: 'Ocurrió un error inesperado en el servidor.' };
   }
 }
 

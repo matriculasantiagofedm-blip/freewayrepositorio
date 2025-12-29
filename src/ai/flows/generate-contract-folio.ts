@@ -2,14 +2,14 @@
 'use server';
 
 /**
- * @fileoverview This flow handles the creation of a new contract with a guaranteed sequential folio number.
- * It uses a distributed counter in Firestore, updated within a transaction, to ensure uniqueness and sequence.
+ * @fileoverview This flow handles the creation of a new contract.
+ * It ensures a client document exists and then creates the contract document.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestore, doc, runTransaction, serverTimestamp, collection, query, where, getDocs, limit, writeBatch, Timestamp, Firestore } from 'firebase-admin/firestore';
-import { initializeApp, getApps, App, type ServiceAccount } from 'firebase-admin/app';
+import { getFirestore, serverTimestamp, collection, query, where, getDocs, limit, writeBatch, Timestamp, Firestore } from 'firebase-admin/firestore';
+import { initializeApp, getApps, App } from 'firebase-admin/app';
 import type { Contract, ContractType, GenerateContractInput } from '@/lib/types';
 import { GenerateContractInputSchema } from '@/lib/types';
 
@@ -24,8 +24,6 @@ if (!getApps().length) {
         db = getFirestore(app);
     } catch (error) {
         console.error("Critical: Failed to initialize Firebase Admin SDK automatically. Check server logs and environment variables.", error);
-        // In a real scenario, you might want to throw an error to stop the server process
-        // if the database connection is critical.
         throw new Error("Failed to initialize Firebase Admin SDK. The server cannot function without it.");
     }
 } else {
@@ -59,7 +57,6 @@ const convertDatesToTimestamps = (obj: any): any => {
         for (const key in obj) {
             if (Object.prototype.hasOwnProperty.call(obj, key)) {
                 const value = obj[key];
-                // Broaden the check to include more date-like field names
                 if (key.toLowerCase().includes('date') || key.toLowerCase().includes('deadline') || key === 'paymentInstallments' || key === 'theoreticalClasses' || key === 'classSchedules' || key === 'practicalClassSchedules' || key === 'motoPracticalClassSchedules') {
                     if (Array.isArray(value)) {
                         newObj[key] = value.map(item => convertDatesToTimestamps(item)).filter(item => item !== null);
@@ -84,24 +81,6 @@ async function _createContractInFirestore({ contractData, details }: GenerateCon
     if (!details || Object.keys(details).length === 0) {
         throw new Error(`Los detalles para el contrato tipo '${contractData.contractType}' están vacíos o son inválidos.`);
     }
-    
-    const counterRef = db.doc('counters/contract_folio');
-    const year = new Date().getFullYear();
-
-    const newFolioNumber = await runTransaction(db, async (transaction) => {
-        const counterDoc = await transaction.get(counterRef);
-
-        if (!counterDoc.exists) {
-            transaction.set(counterRef, { current_number: 1 });
-            return 1;
-        }
-
-        const newNumber = counterDoc.data()!.current_number + 1;
-        transaction.update(counterRef, { current_number: newNumber });
-        return newNumber;
-    });
-
-    const folio = `${year}-${String(newFolioNumber).padStart(3, '0')}`;
 
     const clientsRef = db.collection('clients');
     const clientQuery = query(clientsRef, where("idNumber", "==", contractData.studentIdNumber), limit(1));
@@ -134,7 +113,6 @@ async function _createContractInFirestore({ contractData, details }: GenerateCon
     const finalDetails = convertDatesToTimestamps(details);
 
     const newContract: Omit<Contract, 'id' | 'createdAt'> = {
-        folio,
         title: `${contractData.contractType} - ${contractData.clientName}`,
         clientName: contractData.clientName,
         clientEmail: contractData.clientEmail,
@@ -189,14 +167,13 @@ async function _createContractInFirestore({ contractData, details }: GenerateCon
     
     return {
         contract: finalContractForClient,
-        folio: folio,
     };
 }
 
 
-export const generateContractWithFolioFlow = ai.defineFlow(
+export const createContractFlow = ai.defineFlow(
   {
-    name: 'generateContractWithFolioFlow',
+    name: 'createContractFlow',
     inputSchema: GenerateContractInputSchema,
     outputSchema: z.any(),
   },
@@ -204,10 +181,9 @@ export const generateContractWithFolioFlow = ai.defineFlow(
     try {
       return await _createContractInFirestore(input);
     } catch (error: any) {
-        console.error("Error in generateContractWithFolioFlow:", error);
+        console.error("Error in createContractFlow:", error);
         return {
             contract: null,
-            folio: '',
             error: error.message,
         };
     }

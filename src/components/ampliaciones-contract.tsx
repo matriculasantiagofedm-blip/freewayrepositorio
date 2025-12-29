@@ -46,7 +46,6 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
   return (
     <Card className="p-6 print:shadow-none print:border-none print:p-0 font-serif text-xs">
       <CardContent className="p-0 space-y-2 relative">
-        {contract.folio && <p className="absolute top-0 right-0 text-xs font-semibold text-destructive print:text-black">Folio: {contract.folio}</p>}
         <div className="flex items-center gap-2 justify-center pb-2">
             <h2 className="text-center font-bold text-sm">CONTRATO POR SERVICIO DE AMPLIACIÓN DE LICENCIA</h2>
         </div>
@@ -127,5 +126,3 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
     </Card>
   );
 }
-
-    

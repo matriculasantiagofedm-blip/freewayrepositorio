@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -49,7 +50,7 @@ import { useCurrentRole } from '@/hooks/use-current-role';
 import { AmpliacionesContractTemplate } from './ampliaciones-contract';
 import { ContractView } from './contract-view';
 import { createContractAction } from '@/app/actions';
-import type { GenerateContractInput } from '@/app/actions';
+import type { GenerateContractInput } from '@/lib/types';
 
 
 // --- Esquemas de Validación con Zod ---
@@ -296,8 +297,6 @@ export function ContractForm() {
     const { toast } = useToast();
     const { role: currentUserRole } = useCurrentRole();
     const [savedContract, setSavedContract] = useState<Contract | null>(null);
-    const [folioPreview, setFolioPreview] = useState<string>('');
-
 
     const contractType = useMemo(() => searchParams.get('type') as ContractType | null, [searchParams]);
 
@@ -344,9 +343,6 @@ export function ContractForm() {
     });
 
     useEffect(() => {
-        const year = new Date().getFullYear();
-        setFolioPreview(`${year}-XXX`);
-
         if (contractType) {
             form.reset(getDefaultValues(contractType));
 
@@ -542,7 +538,7 @@ export function ContractForm() {
                     createdBy: currentUserRole,
                 },
                 details: detailsPayload
-            } as GenerateContractInput);
+            });
 
             if (result.error) {
                 throw new Error(result.error);
@@ -552,7 +548,7 @@ export function ContractForm() {
                 throw new Error("La función de guardado no devolvió un contrato.");
             }
             
-            toast({ title: 'Éxito', description: `Contrato ${result.folio} creado correctamente.` });
+            toast({ title: 'Éxito', description: `Contrato creado correctamente.` });
             
             const contractFromDb = result.contract;
              if (contractFromDb.deluxeDetails) {
@@ -1302,7 +1298,6 @@ export function ContractForm() {
                 <CardTitle>Completa los detalles principales de tu acuerdo.</CardTitle>
                 <div className='flex justify-between items-center'>
                     <FormDescription>Tipo de Contrato: {contractType}</FormDescription>
-                    <p className='text-sm font-semibold text-muted-foreground'>Folio: {folioPreview}</p>
                 </div>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -1330,13 +1325,12 @@ export function ContractForm() {
       const formValues = form.watch();
 
       if (contractType === 'Curso Deluxe') {
-          return <DeluxePremiumContractTemplatePreview folio={folioPreview} clientName={formValues.clientName} clientEmail={formValues.clientEmail} deluxeDetails={formValues.deluxeDetails} createdBy={currentUserRole || 'Ventas'} />
+          return <DeluxePremiumContractTemplatePreview clientName={formValues.clientName} clientEmail={formValues.clientEmail} deluxeDetails={formValues.deluxeDetails} createdBy={currentUserRole || 'Ventas'} />
       }
       if (contractType === 'Ampliaciones') {
           const { clientName, clientEmail, ampliacionesDetails } = formValues;
           const contractForPreview: Contract = {
               id: '',
-              folio: folioPreview,
               title: `Ampliaciones - ${clientName}`,
               clientName,
               clientEmail,
@@ -1357,7 +1351,7 @@ export function ContractForm() {
           return <AmpliacionesContractTemplate contract={contractForPreview} />;
       }
       
-      return <AutoMotoContractTemplatePreview folio={folioPreview} clientName={formValues.clientName} clientEmail={formValues.clientEmail} autoMotoDetails={formValues.autoMotoDetails} createdBy={currentUserRole || 'Ventas'} type={contractType as any} />
+      return <AutoMotoContractTemplatePreview clientName={formValues.clientName} clientEmail={formValues.clientEmail} autoMotoDetails={formValues.autoMotoDetails} createdBy={currentUserRole || 'Ventas'} type={contractType as any} />
     }
 
 

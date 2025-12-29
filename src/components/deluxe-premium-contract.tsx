@@ -64,8 +64,6 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
   return (
     <Card className="p-6 print:shadow-none print:border-none print:p-0 font-serif text-xs">
       <CardContent className="p-0 space-y-1 relative">
-        {contract.folio && <p className="absolute top-0 right-0 text-xs font-semibold text-destructive print:text-black">Folio: {contract.folio}</p>}
-
         <h2 className="text-center font-bold text-sm mb-2 pt-4">CONTRATO DE SERVICIOS EDUCATIVOS</h2>
 
         <p>
@@ -141,7 +139,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
         <h3 className="font-bold">CLÁUSULA SEPTIMA - PUNTUALIDAD</h3>
         <p>En caso de que EL ESTUDIANTE llegue tarde a su clase, solo recibirá el tiempo restante de las 2 horas programadas, sin derecho a reposición.</p>
 
-        <h3 className="font-bold">CLÁUSULA OCTAVA- LUGAR DE INICIO Y TRASLADO</h3>
+        <h3 className="font-bold">CLÁUSULA OCTAVA- LUGAR DE INICIO E TRASLADO</h3>
         <p>Las clases prácticas iniciarán en la oficina de LA ESCUELA. Desde allí, EL ESTUDIANTE será trasladado al circuito de prácticas y posteriormente de regreso. Dicho traslado se encuentra incluido dentro del tiempo de las 2 horas de clase práctica.</p>
 
         <h3 className="font-bold">CLÁUSULA NOVENA - NORMAS DE COMPORTAMIENTO Y VESTIMENTA</h3>
@@ -189,5 +187,3 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
     </Card>
   );
 }
-
-    

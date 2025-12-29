@@ -2,16 +2,13 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { PlusCircle, FileText, CalendarClock, Users, Car, Bike, Combine, Star, Plus, Image as ImageIcon } from 'lucide-react';
+import { PlusCircle, FileText, CalendarClock, Users, Car, Bike, Combine, Star, Plus } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { isPast } from 'date-fns';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, where }from 'firebase/firestore';
 import type { Contract, Deadline } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
-import { useState, ChangeEvent } from 'react';
-import Image from 'next/image';
 
 function toDate(date: any): Date {
   if (date instanceof Date) {
@@ -34,7 +31,6 @@ function toDate(date: any): Date {
 export default function DashboardPage() {
   const { firestore, user } = useFirebase();
   const { role } = useCurrentRole();
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const contractsQuery = useMemoFirebase(() => {
     if (!firestore || !user || !role) return null;
@@ -74,20 +70,6 @@ export default function DashboardPage() {
   
   const totalClients = contracts ? new Set(contracts.map((c) => c.clientId)).size : 0;
 
-  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setImagePreview(null);
-    }
-  };
-
-
   const stats = [
     {
       title: 'Mis Contratos Activos',
@@ -125,49 +107,6 @@ export default function DashboardPage() {
           </Card>
         ))}
       </div>
-
-       <div>
-        <h2 className="mb-4 font-headline text-2xl font-semibold">
-          Procesar Imagen
-        </h2>
-        <Card>
-          <CardHeader>
-            <CardTitle>Cargar una imagen</CardTitle>
-            <CardDescription>
-              Selecciona una imagen de tu dispositivo para procesarla.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Input type="file" accept="image/*" onChange={handleImageChange} className="max-w-sm" />
-            {imagePreview && (
-              <div className="mt-4 p-2 border rounded-md">
-                <p className="text-sm font-medium mb-2">Vista Previa:</p>
-                <div className="relative w-full max-w-md aspect-video">
-                  <Image
-                    src={imagePreview}
-                    alt="Vista previa de la imagen"
-                    layout="fill"
-                    objectFit="contain"
-                    className="rounded-md"
-                  />
-                </div>
-              </div>
-            )}
-             {!imagePreview && (
-                 <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
-                    <ImageIcon className="h-12 w-12 text-muted-foreground" />
-                    <h3 className="mt-4 text-lg font-semibold text-foreground">
-                        No has seleccionado ninguna imagen
-                    </h3>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                        La vista previa aparecerá aquí.
-                    </p>
-                </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
 
       <div>
         <h2 className="mb-4 font-headline text-2xl font-semibold">

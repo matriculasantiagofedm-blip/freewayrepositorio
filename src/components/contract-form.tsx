@@ -35,7 +35,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, PlusCircle, Loader2, Printer, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFirebase } from '@/firebase';
-import { Timestamp, collection, query, where, getDocs } from 'firebase/firestore';
+import { Timestamp, collection, query, where, getDocs, writeBatch, doc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { Contract, ContractType, Client } from '@/lib/types';
@@ -297,6 +297,7 @@ export function ContractForm() {
     const { role: currentUserRole } = useCurrentRole();
     const [savedContract, setSavedContract] = useState<Contract | null>(null);
     const [isSearchingClient, setIsSearchingClient] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const contractType = useMemo(() => searchParams.get('type') as ContractType | null, [searchParams]);
 
@@ -566,59 +567,115 @@ export function ContractForm() {
 
 
     const onSubmit = async (values: FormValues) => {
-        if (!user || !currentUserRole || isUserLoading) {
+        if (!user || !firestore || isUserLoading) {
             toast({ variant: 'destructive', title: 'Error de Autenticación', description: 'No se pudo conectar a la base de datos. Por favor, inicie sesión o espere a que cargue la sesión.' });
             return;
         }
-
-        const detailsPayload = 
-            values.contractType === 'Curso Deluxe' ? values.deluxeDetails :
-            values.contractType === 'Ampliaciones' ? values.ampliacionesDetails :
-            values.autoMotoDetails;
+        setIsSubmitting(true);
 
         try {
-            const result = await createContractAction({
-                contractData: {
-                    clientName: values.clientName,
-                    clientEmail: values.clientEmail,
-                    contractType: values.contractType,
-                    studentIdNumber: 
-                        values.contractType === 'Curso Deluxe' ? values.deluxeDetails.studentIdNumber || '' :
-                        values.contractType === 'Ampliaciones' ? values.ampliacionesDetails.studentIdNumber || '' :
-                        values.autoMotoDetails.studentIdNumber || '',
+            const batch = writeBatch(firestore);
+
+            // 1. Buscar o crear cliente
+            const clientsRef = collection(firestore, 'clients');
+            const studentIdNumber = values.contractType === 'Curso Deluxe' ? values.deluxeDetails.studentIdNumber : (values.contractType === 'Ampliaciones' ? values.ampliacionesDetails.studentIdNumber : values.autoMotoDetails.studentIdNumber);
+            const q = query(clientsRef, where("idNumber", "==", studentIdNumber));
+            const clientSnapshot = await getDocs(q);
+
+            let clientId: string;
+            let clientRef;
+
+            if (!clientSnapshot.empty) {
+                clientRef = clientSnapshot.docs[0].ref;
+                clientId = clientRef.id;
+            } else {
+                clientRef = doc(collection(firestore, 'clients'));
+                clientId = clientRef.id;
+                const newClientData = {
+                    id: clientId,
+                    name: values.clientName,
+                    email: values.clientEmail,
+                    idNumber: studentIdNumber,
                     userId: user.uid,
-                    createdBy: currentUserRole,
-                },
-                details: detailsPayload
-            });
-
-            if (result.error) {
-                throw new Error(result.error);
-            }
-            
-            if (!result.contract) {
-                throw new Error("La función de guardado no devolvió un contrato.");
-            }
-            
-            toast({ title: 'Éxito', description: `Contrato creado correctamente.` });
-            
-            const contractFromDb = result.contract;
-             if (contractFromDb.deluxeDetails) {
-                contractFromDb.deluxeDetails = contractFromDb.deluxeDetails;
-            }
-            if (contractFromDb.autoMotoDetails) {
-                contractFromDb.autoMotoDetails = contractFromDb.autoMotoDetails;
-            }
-            if (contractFromDb.ampliacionesDetails) {
-                contractFromDb.ampliacionesDetails = contractFromDb.ampliacionesDetails;
+                    createdAt: serverTimestamp(),
+                };
+                batch.set(clientRef, newClientData);
             }
 
-            const finalContractObjectForPrint: Contract = {
-                ...contractFromDb,
-                createdAt: Timestamp.fromDate(new Date(contractFromDb.createdAt)),
+            // 2. Preparar y crear contrato
+            const contractRef = doc(collection(firestore, 'contracts'));
+            
+            const toTimestamp = (date: any): Timestamp | null => {
+                if (!date) return null;
+                if (date instanceof Date) return Timestamp.fromDate(date);
+                return null; // Solo convertir fechas válidas
+            }
+
+            const convertDetailsDatesToTimestamps = (details: any) => {
+                const newDetails = { ...details };
+                for (const key in newDetails) {
+                    const value = newDetails[key];
+                    if (key.toLowerCase().includes('date') || key.toLowerCase().includes('deadline')) {
+                         if (Array.isArray(value)) {
+                            newDetails[key] = value.map(d => toTimestamp(d));
+                        } else {
+                            newDetails[key] = toTimestamp(value);
+                        }
+                    }
+                    if (key === 'paymentInstallments' || key === 'theoreticalClasses' || key === 'classSchedules' || key === 'practicalClassSchedules' || key === 'motoPracticalClassSchedules') {
+                         if (Array.isArray(value)) {
+                            newDetails[key] = value.map((item: any) => {
+                                if (item && item.date) {
+                                    return { ...item, date: toTimestamp(item.date) };
+                                }
+                                return toTimestamp(item);
+                            });
+                        }
+                    }
+                }
+                return newDetails;
             };
 
-            setSavedContract(finalContractObjectForPrint);
+            let finalDetails = {};
+            if (values.contractType === 'Curso Deluxe') {
+                finalDetails = convertDetailsDatesToTimestamps(values.deluxeDetails);
+            } else if (values.contractType === 'Ampliaciones') {
+                finalDetails = convertDetailsDatesToTimestamps(values.ampliacionesDetails);
+            } else {
+                finalDetails = convertDetailsDatesToTimestamps(values.autoMotoDetails);
+            }
+            
+            const newContract: Omit<Contract, 'id' | 'createdAt'> = {
+                title: `${values.contractType} - ${values.clientName}`,
+                clientName: values.clientName,
+                clientEmail: values.clientEmail,
+                clientId: clientId,
+                content: `Contrato de ${values.contractType} para ${values.clientName}.`,
+                deadlines: [],
+                status: 'active',
+                type: values.contractType,
+                userId: user.uid,
+                createdBy: currentUserRole || 'Vendedor',
+                deluxeDetails: values.contractType === 'Curso Deluxe' ? finalDetails : {},
+                autoMotoDetails: ['Curso Auto', 'Curso Moto', 'Curso Mixto'].includes(values.contractType) ? finalDetails : {},
+                ampliacionesDetails: values.contractType === 'Ampliaciones' ? finalDetails : {},
+            };
+            
+            batch.set(contractRef, { ...newContract, createdAt: serverTimestamp() });
+
+            // 3. Ejecutar batch
+            await batch.commit();
+
+            toast({ title: 'Éxito', description: `Contrato ${contractRef.id} creado correctamente.` });
+            
+            // 4. Preparar contrato para la vista previa
+            const contractForPreview: Contract = {
+                ...newContract,
+                id: contractRef.id,
+                createdAt: Timestamp.now(), // Usar Timestamp local para la vista inmediata
+            };
+
+            setSavedContract(contractForPreview);
 
         } catch (error) {
             console.error("Error al crear el contrato:", error);
@@ -627,6 +684,8 @@ export function ContractForm() {
                 title: 'Error de Guardado', 
                 description: `${error instanceof Error ? error.message : 'No se pudo crear el contrato. Revisa los datos e intenta de nuevo.'}` 
             });
+        } finally {
+            setIsSubmitting(false);
         }
     };
     
@@ -1464,9 +1523,9 @@ export function ContractForm() {
                     {renderFormContent()}
                     
                      <div className="flex flex-col sm:flex-row gap-2 justify-end">
-                        <Button type="submit" disabled={form.formState.isSubmitting}>
-                            {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            {form.formState.isSubmitting ? 'Guardando...' : 'Guardar Contrato'}
+                        <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            {isSubmitting ? 'Guardando...' : 'Guardar Contrato'}
                         </Button>
                     </div>
 

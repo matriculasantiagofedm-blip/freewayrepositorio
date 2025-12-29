@@ -207,6 +207,8 @@ const ampliacionesPlans = {
         { name: 'E1,E2,E3', price: 85.00 },
         { name: 'E1,E2,E3,F', price: 100.00 },
         { name: 'G,H,I', price: 400.00 },
+        { name: 'D,E1,E2,E3,F', price: 150.00 },
+        { name: 'E1,E2,E3,F,B', price: 150.00 },
     ],
     otrosCombos: [
     ]
@@ -214,7 +216,7 @@ const ampliacionesPlans = {
 
 // Mapa para buscar precios de combos de manera eficiente
 const comboPriceMap = new Map<string, number>();
-ampliacionesPlans.combos.forEach(combo => {
+[...ampliacionesPlans.combos, ...ampliacionesPlans.otrosCombos].forEach(combo => {
     const sortedKey = combo.name.split(',').sort().join(',');
     comboPriceMap.set(sortedKey, combo.price);
 });
@@ -450,46 +452,39 @@ export function ContractForm() {
                 const comboPrice = comboPriceMap.get(selectionKey);
 
                 let courseValue: number;
-                let manualPrice = false;
                 
                 if (name === 'ampliacionesDetails.selectedPlans') {
                     if (comboPrice !== undefined) {
                         courseValue = comboPrice;
-                        manualPrice = false;
+                        setIsManualPrice(false);
                     } else if (selectedPlans.length >= 2) {
                         courseValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
-                        manualPrice = true;
-                    }
-                    else {
+                        setIsManualPrice(true);
+                    } else {
                         courseValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
-                        manualPrice = false;
+                        setIsManualPrice(false);
                     }
                     form.setValue('ampliacionesDetails.courseValue', courseValue, { shouldValidate: true });
                 } else if (name === 'ampliacionesDetails.courseValue') {
                     courseValue = value.ampliacionesDetails?.courseValue || 0;
                      if (comboPrice === undefined && selectedPlans.length >= 2) {
-                        manualPrice = true;
+                        setIsManualPrice(true);
                     }
                 } else {
                     courseValue = form.getValues('ampliacionesDetails.courseValue') || 0;
-                    if (comboPrice === undefined && selectedPlans.length >= 2) {
-                        manualPrice = true;
-                    }
                 }
-                
-                setIsManualPrice(manualPrice);
 
                 let isPaidInFull = value.ampliacionesDetails?.paidInFull ?? false;
                 const forceFullPayment = courseValue > 0 && courseValue <= 100;
                 
-                if (forceFullPayment && !isPaidInFull) {
+                if (forceFullPayment && !isPaidInFull && name !== 'ampliacionesDetails.paidInFull') {
                     form.setValue('ampliacionesDetails.paidInFull', true, { shouldValidate: true });
                     isPaidInFull = true;
                 }
 
                 let downPayment = value.ampliacionesDetails?.downPayment || 0;
                 
-                if (name === 'ampliacionesDetails.selectedPlans' || name === 'ampliacionesDetails.courseValue' || name === 'ampliacionesDetails.paidInFull') {
+                if (name === 'ampliacionesDetails.selectedPlans' || name === 'ampliacionesDetails.courseValue' || (name === 'ampliacionesDetails.paidInFull' && value.ampliacionesDetails?.paidInFull)) {
                      if (isPaidInFull || forceFullPayment) {
                         downPayment = courseValue;
                     } else if (courseValue > 100) {
@@ -844,7 +839,7 @@ export function ContractForm() {
                                     <AccordionTrigger className="text-base font-semibold">Planes Individuales</AccordionTrigger>
                                     <AccordionContent>
                                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4">
-                                            {renderPlanCheckboxes(ampliacionesPlans.individual.filter(p => !['G', 'H'].includes(p.name)))}
+                                            {renderPlanCheckboxes(ampliacionesPlans.individual.filter(p => !['G', 'H', 'I'].includes(p.name)))}
                                         </div>
                                     </AccordionContent>
                                 </AccordionItem>

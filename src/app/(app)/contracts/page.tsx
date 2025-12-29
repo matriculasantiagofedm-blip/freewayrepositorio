@@ -69,9 +69,10 @@ export default function AllContractsPage() {
       const folio = String(contract.folioNumber || '').padStart(6, '0');
       const client = contract.clientName.toLowerCase();
       const type = contract.type.toLowerCase();
+      const cedula = contract.studentIdNumber || '';
       const search = searchTerm.toLowerCase();
 
-      return folio.includes(search) || client.includes(search) || type.includes(search);
+      return folio.includes(search) || client.includes(search) || type.includes(search) || cedula.includes(search);
     }) || [];
 
   return (
@@ -82,7 +83,7 @@ export default function AllContractsPage() {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Buscar por folio, cliente, tipo..."
+            placeholder="Buscar por folio, cliente, tipo, cédula..."
             className="pl-8 sm:w-[300px]"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}

@@ -650,6 +650,7 @@ export function ContractForm() {
                 clientName: values.clientName,
                 clientEmail: values.clientEmail,
                 clientId: clientId,
+                studentIdNumber: studentIdNumber, // Denormalize cedula
                 content: `Contrato de ${values.contractType} para ${values.clientName}.`,
                 deadlines: [],
                 status: 'active',

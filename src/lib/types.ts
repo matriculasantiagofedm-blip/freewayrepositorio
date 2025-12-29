@@ -90,6 +90,7 @@ export interface Contract {
   clientName: string;
   clientEmail: string;
   clientId: string; // The ID of the client document in the /clients collection
+  studentIdNumber?: string; // Denormalized for searching
   content: string;
   deadlines: Deadline[];
   status: ContractStatus;

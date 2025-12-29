@@ -67,13 +67,13 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
         <div className="my-2 p-2 border border-dashed border-gray-300">
             <h4 className="font-semibold text-center mb-2">Planes de Ampliación Seleccionados</h4>
             {ampliacionesDetails?.selectedPlans && ampliacionesDetails.selectedPlans.length > 0 ? (
-                <ul className="list-disc list-inside text-[10px]">
-                    {ampliacionesDetails.selectedPlans.map(plan => (
-                        <li key={plan.name} className="flex justify-between">
-                            <span>{plan.name}</span>
-                        </li>
+                 <div className="flex flex-wrap justify-center items-center gap-x-2 text-[10px]">
+                    {ampliacionesDetails.selectedPlans.map((plan, index) => (
+                        <span key={plan.name}>
+                            {plan.name}{index < ampliacionesDetails!.selectedPlans!.length - 1 ? ',' : ''}
+                        </span>
                     ))}
-                </ul>
+                </div>
             ) : <p className='text-[10px] text-center'>(No hay planes seleccionados)</p>}
         </div>
 
@@ -130,5 +130,3 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
     </Card>
   );
 }
-
-    

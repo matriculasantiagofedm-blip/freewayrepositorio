@@ -50,7 +50,7 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
             <h2 className="text-center font-bold text-sm">CONTRATO POR SERVICIO DE AMPLIACIÓN DE LICENCIA</h2>
             {contract.folioNumber && (
                 <div className="text-right">
-                    <p className="font-bold text-sm text-destructive">CONTRATO N° {String(contract.folioNumber).padStart(6, '0')}</p>
+                    <p className="font-bold text-sm text-destructive print:text-red-500">CONTRATO N° {String(contract.folioNumber).padStart(6, '0')}</p>
                 </div>
             )}
         </div>

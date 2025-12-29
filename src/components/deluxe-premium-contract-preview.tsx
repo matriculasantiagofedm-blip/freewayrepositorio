@@ -9,12 +9,12 @@ import type { DeluxeContractDetails } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
 
 const Line = ({ children, className }: { children?: React.ReactNode, className?: string }) => (
-  <span className={cn("border-b border-dotted border-black flex-1 min-w-8 text-center font-semibold text-primary", className)}>
+  <span className={cn("border-b border-dotted border-black flex-1 min-w-8 text-center font-semibold text-primary print:text-black", className)}>
     {children || <>&nbsp;</>}
   </span>
 );
 const LongLine = () => <span className="border-b border-dotted border-black flex-1 h-4 min-w-40" />;
-const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary">{children}</span>;
+const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary print:text-black">{children}</span>;
 
 function toDate(date: any): Date {
   if (date instanceof Date) return date;
@@ -85,7 +85,7 @@ export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, 
             <h2 className="text-center font-bold text-sm">CONTRATO DE SERVICIOS EDUCATIVOS</h2>
             {folioNumber && (
                 <div className="text-right">
-                    <p className="font-bold text-sm text-destructive">CONTRATO N° {String(folioNumber).padStart(6, '0')}</p>
+                    <p className="font-bold text-sm text-destructive print:text-red-500">CONTRATO N° {String(folioNumber).padStart(6, '0')}</p>
                 </div>
             )}
         </div>
@@ -202,7 +202,7 @@ export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, 
         </div>
 
         {createdBy && (
-          <div className="text-xs text-muted-foreground mt-8">
+          <div className="print:block hidden text-xs text-muted-foreground pt-8">
             Confeccionado por: {createdBy}
           </div>
         )}

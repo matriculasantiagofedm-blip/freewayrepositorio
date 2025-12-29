@@ -7,11 +7,11 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const Line = ({ children, className }: { children?: React.ReactNode, className?: string }) => (
-  <span className={cn("border-b border-dotted border-black flex-1 min-w-8 text-center font-semibold text-primary", className)}>
+  <span className={cn("border-b border-dotted border-black flex-1 min-w-8 text-center font-semibold text-primary print:text-black", className)}>
     {children || <>&nbsp;</>}
   </span>
 );
-const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary">{children}</span>;
+const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary print:text-black">{children}</span>;
 
 const Checkbox = ({ checked }: { checked: boolean }) => (
     <span className={`border border-black inline-block w-3 h-3 text-center leading-none align-middle ${checked ? 'bg-black text-white' : ''}`}>
@@ -67,7 +67,7 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, autoM
             <h2 className="text-center font-bold text-sm">CONTRATO POR SERVICIO DE CURSO DE MANEJO</h2>
              {folioNumber && (
                 <div className="text-right">
-                    <p className="font-bold text-sm text-destructive">CONTRATO N° {String(folioNumber).padStart(6, '0')}</p>
+                    <p className="font-bold text-sm text-destructive print:text-red-500">CONTRATO N° {String(folioNumber).padStart(6, '0')}</p>
                 </div>
             )}
         </div>
@@ -180,7 +180,7 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, autoM
         </div>
 
         {createdBy && (
-          <div className="text-xs text-muted-foreground pt-8">
+          <div className="print:block hidden text-xs text-muted-foreground pt-8">
             Confeccionado por: {createdBy}
           </div>
         )}

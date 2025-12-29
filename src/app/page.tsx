@@ -17,9 +17,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/firebase';
 
 const employeeRoles = [
-  { name: 'Administrador', email: 'admin@contracttime.app' },
-  { name: 'Ventas', email: 'ventas@contracttime.app' },
-  { name: 'Ventas Externas', email: 'ventas-externas@contracttime.app' },
+  { name: 'Ayax/2022' },
+  { name: 'ventas123' },
 ];
 
 export default function LoginPage() {
@@ -34,7 +33,7 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedRole) {
-      setError('Por favor, selecciona un rol para continuar.');
+      setError('Por favor, selecciona un perfil para continuar.');
       return;
     }
 
@@ -53,18 +52,18 @@ export default function LoginPage() {
       
       toast({
         title: 'Inicio de Sesión Exitoso',
-        description: `Bienvenido como ${selectedRole}.`,
+        description: `Bienvenido.`,
       });
       router.push('/dashboard');
-    } catch (e: any) {
-      console.error("Error de inicio de sesión anónimo:", e);
-      const description = 'No se pudo iniciar la sesión. Por favor, intenta de nuevo.';
-      setError(description);
-      toast({
-        variant: 'destructive',
-        title: 'Error de Inicio de Sesión',
-        description: description,
-      });
+    } catch (e: any)      {
+        console.error("Error de inicio de sesión anónimo:", e);
+        const description = 'No se pudo iniciar la sesión. Por favor, intenta de nuevo.';
+        setError(description);
+        toast({
+            variant: 'destructive',
+            title: 'Error de Inicio de Sesión',
+            description: description,
+        });
     } finally {
       setIsLoggingIn(false);
     }
@@ -83,15 +82,15 @@ export default function LoginPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Selecciona tu Rol</CardTitle>
-            <CardDescription>Elige tu rol para acceder al panel de control.</CardDescription>
+            <CardTitle>Selecciona tu Perfil</CardTitle>
+            <CardDescription>Elige tu perfil para acceder al panel de control.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
                 <Select onValueChange={setSelectedRole} value={selectedRole}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecciona un rol" />
+                    <SelectValue placeholder="Selecciona un perfil" />
                   </SelectTrigger>
                   <SelectContent>
                     {employeeRoles.map((role) => (

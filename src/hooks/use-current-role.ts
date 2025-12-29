@@ -6,9 +6,8 @@ import { useUser } from '@/firebase';
 // Este es el mapa central de roles. 
 // Asocia un correo electrónico de usuario a un rol específico en la aplicación.
 const roleMapping: { [key: string]: string } = {
-    'ventas@contracttime.app': 'Ventas',
-    'ventas-externas@contracttime.app': 'Ventas Externas',
-    'admin@contracttime.app': 'Administrador',
+    'ventas123': 'Ventas',
+    'Ayax/2022': 'Administrador',
 };
 
 export function useCurrentRole() {
@@ -25,7 +24,9 @@ export function useCurrentRole() {
     if (user && user.isAnonymous) {
       const selectedRole = (window as any).selectedRoleForAnonymousSession;
       if (selectedRole) {
-        setRole(selectedRole.name);
+        // Usamos el mapeo para obtener el rol funcional
+        const functionalRole = roleMapping[selectedRole.name] || 'Ventas';
+        setRole(functionalRole);
       }
       return;
     }

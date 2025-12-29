@@ -24,9 +24,11 @@ export function UserNav() {
   const router = useRouter();
 
 
-  const handleLogout = () => {
-    auth.signOut();
+  const handleLogout = async () => {
+    await auth.signOut();
+    // Forzar la redirección a la página de inicio después de cerrar sesión
     router.push('/');
+    router.refresh(); // Opcional: para asegurar que el estado se limpie
   }
 
   if (isUserLoading || (user && !currentUser)) {

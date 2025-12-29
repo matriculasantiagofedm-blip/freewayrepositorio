@@ -42,16 +42,16 @@ service cloud.firestore {
     /**
      * @description Manages access to the central contracts collection.
      * @path /contracts/{contractId}
-     * @allow (create) Any signed-in user can create a contract, but the `userId` must match their own UID.
+     * @allow (create) Any signed-in user can create a contract, but the `userId` must match their own UID. Folio cannot be set by client.
      * @allow (get, list) A user can only read contracts they own. Admins can read all contracts.
-     * @allow (update) A user can only update a contract they own, and the `userId` cannot be changed.
+     * @allow (update) A user can only update a contract they own, and the `userId` and `folioNumber` cannot be changed.
      * @principle Centralized collection with user-based ownership enforced by rules.
      */
     match /contracts/{contractId} {
       allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
       allow list: if isSignedIn(); // List queries must be filtered by userId on the client-side
       allow create: if isOwner(request.resource.data.userId);
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.userId == resource.data.userId;
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.userId == resource.data.userId && request.resource.data.folioNumber == resource.data.folioNumber;
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
@@ -65,6 +65,8 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Only allow server-side processes (like our genkit flow) to read/write counters.
+    // Client-side access is completely disabled.
     match /counters/{counterId} {
         allow read, write: if false;
     }

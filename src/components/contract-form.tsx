@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -48,8 +49,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { AmpliacionesContractTemplate } from './ampliaciones-contract';
 import { ContractView } from './contract-view';
-import { createContractAction } from '@/app/actions';
-import type { GenerateContractInput } from '@/lib/types';
+import { generateContractFolioAction } from '@/app/actions';
 
 
 // --- Esquemas de Validación con Zod ---
@@ -574,9 +574,16 @@ export function ContractForm() {
         setIsSubmitting(true);
 
         try {
+            // 1. Get a unique folio number from the server
+            const folioResult = await generateContractFolioAction();
+            if (folioResult.error || !folioResult.folioNumber) {
+                throw new Error(folioResult.error || 'No se pudo generar el número de folio.');
+            }
+            const folioNumber = folioResult.folioNumber;
+
             const batch = writeBatch(firestore);
 
-            // 1. Buscar o crear cliente
+            // 2. Find or create the client
             const clientsRef = collection(firestore, 'clients');
             const studentIdNumber = values.contractType === 'Curso Deluxe' ? values.deluxeDetails.studentIdNumber : (values.contractType === 'Ampliaciones' ? values.ampliacionesDetails.studentIdNumber : values.autoMotoDetails.studentIdNumber);
             const q = query(clientsRef, where("idNumber", "==", studentIdNumber));
@@ -602,13 +609,13 @@ export function ContractForm() {
                 batch.set(clientRef, newClientData);
             }
 
-            // 2. Preparar y crear contrato
+            // 3. Prepare and create the contract with the folio number
             const contractRef = doc(collection(firestore, 'contracts'));
             
             const toTimestamp = (date: any): Timestamp | null => {
                 if (!date) return null;
                 if (date instanceof Date) return Timestamp.fromDate(date);
-                return null; // Solo convertir fechas válidas
+                return null; // Only convert valid dates
             }
 
             const convertDetailsDatesToTimestamps = (details: any) => {
@@ -647,6 +654,7 @@ export function ContractForm() {
             
             const newContract: Omit<Contract, 'id' | 'createdAt'> = {
                 title: `${values.contractType} - ${values.clientName}`,
+                folioNumber: folioNumber,
                 clientName: values.clientName,
                 clientEmail: values.clientEmail,
                 clientId: clientId,
@@ -663,16 +671,16 @@ export function ContractForm() {
             
             batch.set(contractRef, { ...newContract, createdAt: serverTimestamp() });
 
-            // 3. Ejecutar batch
+            // 4. Execute batch
             await batch.commit();
 
-            toast({ title: 'Éxito', description: `Contrato ${contractRef.id} creado correctamente.` });
+            toast({ title: 'Éxito', description: `Contrato #${folioNumber} creado correctamente.` });
             
-            // 4. Preparar contrato para la vista previa
+            // 5. Prepare contract for preview
             const contractForPreview: Contract = {
                 ...newContract,
                 id: contractRef.id,
-                createdAt: Timestamp.now(), // Usar Timestamp local para la vista inmediata
+                createdAt: Timestamp.now(), // Use local Timestamp for immediate view
             };
 
             setSavedContract(contractForPreview);

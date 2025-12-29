@@ -85,6 +85,7 @@ export interface AmpliacionesContractDetails {
 export interface Contract {
   id: string;
   title: string;
+  folioNumber?: number; // Added folio number
   client?: Client; // This might be populated after fetching
   clientName: string;
   clientEmail: string;

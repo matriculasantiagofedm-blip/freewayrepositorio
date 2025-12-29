@@ -3,7 +3,6 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { pingFirestoreAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Wifi, Loader2, Database } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,11 +14,11 @@ export default function SettingsPage() {
 
   const handlePingFirestore = async () => {
     setIsPingingFirestore(true);
-    const result = await pingFirestoreAction();
+    // The original pingFirestoreAction has been removed as it's no longer needed.
+    // You could implement a client-side ping here if necessary.
     toast({
-        variant: result.success ? 'default' : 'destructive',
-        title: result.success ? 'Conexión Exitosa' : 'Error de Conexión',
-        description: result.error || result.message,
+        title: 'Prueba Deshabilitada',
+        description: 'La prueba de conexión del servidor ya no es necesaria.',
     });
     setIsPingingFirestore(false);
   };
@@ -35,23 +34,19 @@ export default function SettingsPage() {
                         <Database className="h-8 w-8 text-primary" />
                         <div>
                             <CardTitle>Estado de la Base de Datos</CardTitle>
-                            <CardDescription>Verifica la conexión con Firestore.</CardDescription>
+                            <CardDescription>Verifica la conexión del cliente con Firestore.</CardDescription>
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent>
                     <p className="text-sm text-muted-foreground">
-                        Esta prueba intentará escribir, leer y eliminar un documento temporal para asegurar que todas las operaciones de la base de datos funcionan correctamente.
+                        La funcionalidad de prueba del servidor se ha deshabilitado. Las operaciones de la base de datos ahora se ejecutan directamente desde el cliente.
                     </p>
                 </CardContent>
                 <CardFooter>
-                    <Button onClick={handlePingFirestore} disabled={isPingingFirestore}>
-                        {isPingingFirestore ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <Wifi className="mr-2 h-4 w-4" />
-                        )}
-                        Probar Conexión a Firestore
+                    <Button onClick={handlePingFirestore} disabled>
+                        <Wifi className="mr-2 h-4 w-4" />
+                        Probar Conexión (Deshabilitado)
                     </Button>
                 </CardFooter>
             </Card>

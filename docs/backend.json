@@ -11,6 +11,10 @@
           "type": "string",
           "description": "Unique identifier for the Contract entity."
         },
+        "folioNumber": {
+            "type": "number",
+            "description": "Sequential contract number for tracking and auditing."
+        },
         "userId": {
           "type": "string",
           "description": "Reference to the User who created the contract. (Relationship: User 1:N Contract)"
@@ -41,6 +45,7 @@
       },
       "required": [
         "id",
+        "folioNumber",
         "userId",
         "clientId",
         "clauses",

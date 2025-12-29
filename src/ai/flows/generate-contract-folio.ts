@@ -2,53 +2,68 @@
 'use server';
 
 /**
- * @fileoverview This flow is now a placeholder. 
- * The contract creation logic has been moved to the client-side 
- * in `src/components/contract-form.tsx` to resolve server-side connection issues.
+ * @fileoverview This flow provides a transactionally-safe way to generate
+ * a new, unique, and sequential folio number for a contract. It uses a
+ * distributed counter pattern in Firestore to prevent race conditions.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { GenerateContractInputSchema } from '@/lib/types';
-import type { GenerateContractInput } from '@/lib/types';
+import { getFirestore } from 'firebase-admin/firestore';
+import { getApps, initializeApp, cert } from 'firebase-admin/app';
 
-async function _placeholderContractCreation(input: GenerateContractInput) {
-    // This is a placeholder. The actual DB logic is on the client.
-    // We return a structure that mimics the expected output.
-    const { contractData, details } = input;
-    const now = new Date().toISOString();
-
-    const mockContract = {
-        id: `mock_${Date.now()}`,
-        ...contractData,
-        clientId: `mock_client_${Date.now()}`,
-        title: `${contractData.contractType} - ${contractData.clientName}`,
-        content: `Contrato de ${contractData.contractType} para ${contractData.clientName}.`,
-        deadlines: [],
-        status: 'active',
-        type: contractData.contractType,
-        createdAt: now,
-        // Add details based on type
-        ...(contractData.contractType === 'Curso Deluxe' && { deluxeDetails: details }),
-        ...( ['Curso Auto', 'Curso Moto', 'Curso Mixto'].includes(contractData.contractType) && { autoMotoDetails: details }),
-        ...(contractData.contractType === 'Ampliaciones' && { ampliacionesDetails: details }),
-    };
-    
-    return {
-        contract: mockContract
-    };
+// Initialize Firebase Admin SDK if not already initialized
+function getDb() {
+    if (!getApps().length) {
+        // This will automatically use the service account credentials from the environment
+        initializeApp();
+    }
+    return getFirestore();
 }
 
-
-export const createContractFlow = ai.defineFlow(
+export const generateContractFolioFlow = ai.defineFlow(
   {
-    name: 'createContractFlow',
-    inputSchema: GenerateContractInputSchema,
-    outputSchema: z.any(),
+    name: 'generateContractFolioFlow',
+    inputSchema: z.void(),
+    outputSchema: z.object({
+        folioNumber: z.number().optional(),
+        error: z.string().optional(),
+    }),
   },
-  async (input) => {
-    // This flow no longer interacts with the database directly.
-    // It returns a mock contract structure. The real save happens on the client.
-    return await _placeholderContractCreation(input);
+  async () => {
+    try {
+        const db = getDb();
+        const counterRef = db.collection('counters').doc('contract_folio');
+
+        let newFolioNumber: number | null = null;
+
+        await db.runTransaction(async (transaction) => {
+            const counterDoc = await transaction.get(counterRef);
+
+            if (!counterDoc.exists) {
+                // If the counter doesn't exist, initialize it.
+                // The first folio will be 1.
+                newFolioNumber = 1;
+                transaction.set(counterRef, { count: 1 });
+            } else {
+                // The counter exists, so increment it.
+                const currentCount = counterDoc.data()?.count || 0;
+                newFolioNumber = currentCount + 1;
+                transaction.update(counterRef, { count: newFolioNumber });
+            }
+        });
+
+        if (newFolioNumber === null) {
+            throw new Error('Transaction failed to produce a new folio number.');
+        }
+
+        return { folioNumber: newFolioNumber };
+
+    } catch (error) {
+        console.error("Error in generateContractFolioFlow: ", error);
+        return { 
+            error: error instanceof Error ? error.message : 'An unknown error occurred while generating the folio.' 
+        };
+    }
   }
 );

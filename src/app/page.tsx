@@ -2,81 +2,70 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { GanttChartSquare, Briefcase, UserCheck, Shield, ArrowLeft, Loader2 } from 'lucide-react';
+import { GanttChartSquare, Briefcase, UserCheck, Shield, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInAnonymously } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/firebase'; // La forma correcta de obtener auth
+import { useAuth } from '@/firebase';
 
+// Se elimina la dependencia de contraseñas. El acceso se basará en roles anónimos.
 const roles = [
-  { name: 'Ventas', icon: Briefcase, email: 'ventas@contracttime.app', password: 'ventas123' },
-  { name: 'Ventas Externas', icon: UserCheck, email: 'ventas-externas@contracttime.app', password: 'Ayax/2022' },
-  { name: 'Administrador', icon: Shield, email: 'admin@contracttime.app', password: 'Ayax/2022' },
+  { name: 'Ventas', icon: Briefcase, email: 'ventas@contracttime.app' },
+  { name: 'Ventas Externas', icon: UserCheck, email: 'ventas-externas@contracttime.app' },
+  { name: 'Administrador', icon: Shield, email: 'admin@contracttime.app' },
 ];
 
-type Role = typeof roles[0] | null;
+type Role = typeof roles[0];
+
+// Variable global para simular el rol seleccionado en la sesión anónima.
+// Esto es una solución temporal de lado del cliente para la demostración.
+if (typeof window !== 'undefined') {
+  (window as any).selectedRoleForAnonymousSession = null;
+}
+
 
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const auth = useAuth(); // Se obtiene auth a través del hook, que es seguro.
+  const auth = useAuth();
 
-  const [selectedRole, setSelectedRole] = useState<Role>(null);
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState<string | null>(null);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedRole) {
-      setError('Por favor, selecciona un rol.');
-      return;
-    }
-    
-    if (password !== selectedRole.password) {
-        setError('Contraseña incorrecta. Por favor, inténtalo de nuevo.');
-        toast({
-            variant: 'destructive',
-            title: 'Error de autenticación',
-            description: 'La contraseña no es correcta para el rol seleccionado.',
-        });
-        return;
-    }
-
-    setIsLoggingIn(true);
-    setError('');
+  const handleRoleLogin = async (role: Role) => {
+    setIsLoggingIn(role.name);
 
     try {
-      await signInWithEmailAndPassword(auth, selectedRole.email, password);
-      // Después de un inicio de sesión exitoso, Firebase se encarga del estado.
-      // Navegamos al dashboard. El layout principal se encargará del resto.
-      router.push('/dashboard');
-    } catch (e: any) {
-      console.error(e);
-      let description = 'Ocurrió un error inesperado al iniciar sesión.';
-      if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
-        description = 'La contraseña o el correo son incorrectos.';
-      } else if (e.code === 'auth/user-not-found') {
-        description = 'El usuario no existe. Contacte al administrador.';
+      // Almacena el rol seleccionado en una variable global antes de iniciar sesión.
+      // El hook useCurrentRole leerá esta variable para determinar el rol.
+       if (typeof window !== 'undefined') {
+        (window as any).selectedRoleForAnonymousSession = role;
       }
-      setError(description);
+      
+      // Inicia sesión de forma anónima. Firebase creará un usuario temporal.
+      await signInAnonymously(auth);
+      
+      toast({
+        title: `Iniciando como ${role.name}`,
+        description: 'Has iniciado sesión correctamente.',
+      });
+
+      // Redirige al panel de control.
+      router.push('/dashboard');
+
+    } catch (e: any) {
+      console.error("Error en inicio de sesión anónimo:", e);
       toast({
         variant: 'destructive',
         title: 'Error de Inicio de Sesión',
-        description: description,
+        description: 'No se pudo iniciar la sesión anónima. Por favor, intenta de nuevo.',
       });
+      if (typeof window !== 'undefined') {
+        (window as any).selectedRoleForAnonymousSession = null;
+      }
     } finally {
-      setIsLoggingIn(false);
+      setIsLoggingIn(null);
     }
-  };
-
-  const handleBack = () => {
-    setSelectedRole(null);
-    setPassword('');
-    setError('');
   };
 
   return (
@@ -92,56 +81,28 @@ export default function LoginPage() {
 
         <Card>
           <CardHeader>
-            {selectedRole ? (
-              <div className="relative">
-                <Button variant="ghost" size="icon" className="absolute -left-4 -top-2" onClick={handleBack}>
-                    <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <CardTitle>Ingresar como {selectedRole.name}</CardTitle>
-                <CardDescription>Introduce la contraseña para este rol.</CardDescription>
-              </div>
-            ) : (
-              <>
-                <CardTitle>Selecciona tu Rol</CardTitle>
-                <CardDescription>Elige cómo quieres iniciar sesión.</CardDescription>
-              </>
-            )}
+            <CardTitle>Selecciona tu Rol</CardTitle>
+            <CardDescription>Elige cómo quieres iniciar sesión.</CardDescription>
           </CardHeader>
           <CardContent>
-            {selectedRole ? (
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="password">Contraseña</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    autoFocus
-                  />
-                </div>
-                {error && <p className="text-sm text-destructive">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoggingIn}>
-                  {isLoggingIn ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  {isLoggingIn ? 'Iniciando...' : 'Entrar'}
-                </Button>
-              </form>
-            ) : (
-              <div className="space-y-4">
-                {roles.map((role) => (
-                  <Button
-                    key={role.name}
-                    variant="outline"
-                    className="w-full justify-start h-14 text-lg"
-                    onClick={() => setSelectedRole(role)}
-                  >
+            <div className="space-y-4">
+              {roles.map((role) => (
+                <Button
+                  key={role.name}
+                  variant="outline"
+                  className="w-full justify-start h-14 text-lg"
+                  onClick={() => handleRoleLogin(role)}
+                  disabled={!!isLoggingIn}
+                >
+                  {isLoggingIn === role.name ? (
+                    <Loader2 className="mr-4 h-6 w-6 animate-spin" />
+                  ) : (
                     <role.icon className="mr-4 h-6 w-6" />
-                    {role.name}
-                  </Button>
-                ))}
-              </div>
-            )}
+                  )}
+                  {role.name}
+                </Button>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -5,16 +5,10 @@ import { useUser } from '@/firebase';
 
 // Este es el mapa central de roles. 
 // Asocia un correo electrónico de usuario a un rol específico en la aplicación.
-// Puedes agregar o modificar los correos y roles de tu equipo aquí.
 const roleMapping: { [key: string]: string } = {
-    // Administrador
-    'admin@contracttime.app': 'Administrador',
-    
-    // Vendedores Internos
     'ventas@contracttime.app': 'Ventas',
-
-    // Vendedores Externos
     'ventas-externas@contracttime.app': 'Ventas Externas',
+    'admin@contracttime.app': 'Administrador',
 };
 
 export function useCurrentRole() {
@@ -27,9 +21,17 @@ export function useCurrentRole() {
       return;
     }
     
-    if (user && user.email && !user.isAnonymous) {
-      // Busca el rol correspondiente al email del usuario que inició sesión.
-      // Si no se encuentra, se le asigna null (sin rol).
+    // Si el usuario es anónimo, intentamos obtener el rol de la variable global.
+    if (user && user.isAnonymous) {
+      const selectedRole = (window as any).selectedRoleForAnonymousSession;
+      if (selectedRole) {
+        setRole(selectedRole.name);
+      }
+      return;
+    }
+
+    // Si es un usuario con email, usamos el mapeo.
+    if (user && user.email) {
       const userRole = roleMapping[user.email] || null;
       setRole(userRole);
     } else {

@@ -30,12 +30,6 @@ const allLinks = [
         icon: Users,
         roles: ['Ventas', 'Ventas Externas', 'Administrador'],
     },
-    {
-        href: '/settings',
-        label: 'Ajustes',
-        icon: Settings,
-        roles: ['Ventas', 'Ventas Externas', 'Administrador'],
-    }
 ];
 
 export function MainNav({ className }: { className?: string }) {

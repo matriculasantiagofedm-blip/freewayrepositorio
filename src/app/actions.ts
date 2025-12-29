@@ -42,24 +42,14 @@ export async function createContractAction(input: GenerateContractInput) {
 
 
 export async function pingFirestoreAction() {
-    let db;
     try {
-        db = getDb();
-    } catch (e: any) {
-        return {
-            success: false,
-            message: 'Fallo al inicializar la instancia de Firestore Admin.',
-            error: e.message || 'Error desconocido durante la inicialización.'
+        const db = getDb();
+        const testDocRef = db.collection('system_status').doc('firestore_ping');
+        const testData = {
+            timestamp: FieldValue.serverTimestamp(),
+            status: 'ok',
         };
-    }
 
-    const testDocRef = db.collection('system_status').doc('firestore_ping');
-    const testData = {
-        timestamp: FieldValue.serverTimestamp(),
-        status: 'ok',
-    };
-
-    try {
         // 1. Write
         await testDocRef.set(testData);
 

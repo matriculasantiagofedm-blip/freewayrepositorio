@@ -2,13 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { GanttChartSquare, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -16,25 +10,29 @@ import { signInAnonymously } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/firebase';
 
-const employeeRoles = [
-  { name: 'Ayax/2022' },
-  { name: 'ventas123' },
-];
+// Los roles válidos ahora se usan para validación interna
+const validRoles = ['Ayax/2022', 'ventas123'];
 
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const auth = useAuth();
 
-  const [selectedRole, setSelectedRole] = useState('');
+  const [roleInput, setRoleInput] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [error, setError] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedRole) {
-      setError('Por favor, selecciona un perfil para continuar.');
+    if (!roleInput) {
+      setError('Por favor, escribe un perfil para continuar.');
       return;
+    }
+    
+    // Validar si el rol escrito es uno de los permitidos
+    if (!validRoles.includes(roleInput)) {
+        setError('El perfil ingresado no es válido.');
+        return;
     }
 
     setIsLoggingIn(true);
@@ -45,10 +43,7 @@ export default function LoginPage() {
       await signInAnonymously(auth);
 
       // Guardar el rol seleccionado en una variable global para esta sesión
-      const roleObject = employeeRoles.find(r => r.name === selectedRole);
-      if (roleObject) {
-        (window as any).selectedRoleForAnonymousSession = roleObject;
-      }
+      (window as any).selectedRoleForAnonymousSession = { name: roleInput };
       
       toast({
         title: 'Inicio de Sesión Exitoso',
@@ -82,29 +77,23 @@ export default function LoginPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Selecciona tu Perfil</CardTitle>
-            <CardDescription>Elige tu perfil para acceder al panel de control.</CardDescription>
+            <CardTitle>Ingresa tu Perfil</CardTitle>
+            <CardDescription>Escribe tu perfil de empleado para acceder al panel.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
-                <Select onValueChange={setSelectedRole} value={selectedRole}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecciona un perfil" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employeeRoles.map((role) => (
-                      <SelectItem key={role.name} value={role.name}>
-                        {role.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                 <Input 
+                    type="text"
+                    placeholder="Escribe tu perfil aquí"
+                    value={roleInput}
+                    onChange={(e) => setRoleInput(e.target.value)}
+                  />
               </div>
               
               {error && <p className="text-sm text-destructive">{error}</p>}
               
-              <Button type="submit" className="w-full" disabled={isLoggingIn || !selectedRole}>
+              <Button type="submit" className="w-full" disabled={isLoggingIn || !roleInput}>
                 {isLoggingIn ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 {isLoggingIn ? 'Entrando...' : 'Entrar'}
               </Button>

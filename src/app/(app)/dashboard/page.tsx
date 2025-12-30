@@ -82,21 +82,21 @@ export default function DashboardPage() {
       value: isLoading ? '...' : activeContracts,
       icon: FileText,
       href: '/contracts',
-      roles: ['Administrador'] // Solo visible para Administrador
+      roles: ['Administrador']
     },
     {
       title: 'Vencimientos',
       value: isLoading ? '...' : overdueDeadlines,
       icon: CalendarClock,
       href: '/contracts?filter=overdue',
-      roles: ['Administrador'] // Solo visible para Administrador
+      roles: ['Administrador']
     },
     {
       title: 'Clientes',
       value: isLoading ? '...' : totalClients,
       icon: Users,
       href: '/clients',
-       roles: ['Administrador'] // Solo visible para Administrador
+       roles: ['Administrador']
     },
   ];
 
@@ -107,7 +107,7 @@ export default function DashboardPage() {
       { name: 'Curso Moto', icon: Bike, href: '/contracts/new?type=Curso%20Moto', color: 'bg-orange-500 hover:bg-orange-600'},
       { name: 'Curso Mixto', icon: Combine, href: '/contracts/new?type=Curso%20Mixto', color: 'bg-purple-500 hover:bg-purple-600'},
       { name: 'Curso Deluxe', icon: Crown, href: '/contracts/new?type=Curso%20Deluxe', color: 'bg-yellow-500 hover:bg-yellow-600'},
-      { name: 'Ampliaciones', icon: Plus, href: '/contracts/new?type=Ampliaciones', color: 'bg-green-500 hover:bg-green-600'},
+      { name: 'Ampliaciones', icon: Plus, href: '/contracts/new?type=Ampliaciones', color: 'bg-indigo-500 hover:bg-indigo-600'},
   ];
 
   return (

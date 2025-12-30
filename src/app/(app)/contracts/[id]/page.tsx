@@ -130,7 +130,7 @@ export default function ContractDetailPage() {
                         value={certificateFolio}
                         onChange={(e) => setCertificateFolio(e.target.value)}
                         className="col-span-3"
-                        placeholder="Ej: 0001 / 2025"
+                        placeholder="Ej: 2026 / 0001"
                     />
                 </div>
             </div>

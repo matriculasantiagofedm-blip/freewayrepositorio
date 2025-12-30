@@ -24,17 +24,9 @@ export default function ClientDetailPage() {
   const contractsQuery = useMemoFirebase(() => {
     if (!firestore || !user || !role) return null;
 
-    // Admin sees all contracts for this client, regardless of which user created them
-    if (role === 'Administrador') {
-      return query(collection(firestore, 'contracts'), where('clientId', '==', clientId));
-    }
+    // Both Admin and Ventas roles see all contracts for this client
+    return query(collection(firestore, 'contracts'), where('clientId', '==', clientId));
 
-    // Other users (like Ventas) see only contracts they created for this client.
-    return query(
-      collection(firestore, 'contracts'),
-      where('clientId', '==', clientId),
-      where('userId', '==', user.uid)
-    );
   }, [firestore, user, clientId, role]);
 
   const { data: client, isLoading: isClientLoading } = useDoc<Client>(clientRef);
@@ -89,7 +81,7 @@ export default function ClientDetailPage() {
                         No hay contratos para este cliente
                     </h3>
                     <p className="mt-2 text-sm text-muted-foreground">
-                        {role === 'Administrador' ? 'No se han creado contratos para este cliente.' : 'No has creado contratos para este cliente.'}
+                        No se han creado contratos para este cliente todavía.
                     </p>
                 </div>
              )

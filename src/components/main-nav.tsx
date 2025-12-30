@@ -12,44 +12,39 @@ import { GanttChartSquare, FileText, Users, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCurrentRole } from '@/hooks/use-current-role';
 
-const allLinks = [
-    {
-        href: '/dashboard',
-        label: 'Panel de Control',
-        icon: GanttChartSquare,
-        roles: ['Ventas', 'Ventas Externas', 'Administrador'],
-    },
-    {
-        href: '/contracts',
-        label: 'Todos los Contratos',
-        icon: FileText,
-        roles: ['Administrador', 'Ventas Externas'],
-    },
-    {
-        href: '/clients',
-        label: 'Clientes',
-        icon: Users,
-        roles: ['Administrador', 'Ventas', 'Ventas Externas'],
-    },
+const links = [
+  {
+    href: '/dashboard',
+    label: 'Panel de Control',
+    icon: GanttChartSquare,
+  },
+  {
+    href: '/contracts',
+    label: 'Todos los Contratos',
+    icon: FileText,
+  },
+  {
+    href: '/clients',
+    label: 'Clientes',
+    icon: Users,
+  },
+  // {
+  //   href: '/settings',
+  //   label: 'Ajustes',
+  //   icon: Settings,
+  // },
 ];
 
 export function MainNav({ className }: { className?: string }) {
   const pathname = usePathname();
   const { role } = useCurrentRole();
 
-  // Filter links based on the current user's role.
-  const filteredLinks = allLinks.filter(link => role && link.roles.includes(role));
-
-  // If the user has no role or no links are available for their role, render nothing.
-  // This prevents rendering an empty nav which might cause issues.
-  if (!role || filteredLinks.length === 0) {
-      return null;
-  }
+  if (!role) return null; // No mostrar nada si el rol no está definido
 
   return (
     <nav className={cn('flex flex-col h-full', className)}>
       <SidebarMenu className="flex-1">
-        {filteredLinks.map((link) => (
+        {links.map((link) => (
           <SidebarMenuItem key={link.href}>
             <SidebarMenuButton
               asChild

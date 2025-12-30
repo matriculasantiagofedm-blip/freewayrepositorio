@@ -301,7 +301,7 @@ export function ContractForm() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const db = useDb();
-    const { user, isLoading: isUserLoading } = useUser();
+    const { user, isUserLoading } = useUser();
     const { toast } = useToast();
     const { role: currentUserRole } = useCurrentRole();
     const [savedContract, setSavedContract] = useState<Contract | null>(null);

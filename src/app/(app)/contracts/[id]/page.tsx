@@ -23,6 +23,33 @@ import { Label } from '@/components/ui/label';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
 
+const LAST_FOLIO_KEY = 'lastCertificateFolio';
+
+// Helper to get the next folio number
+const getNextFolio = (lastFolio: string | null): string => {
+    if (!lastFolio) {
+        return '2026 / 0001';
+    }
+
+    const parts = lastFolio.split('/');
+    if (parts.length !== 2) {
+        return '2026 / 0001';
+    }
+
+    const year = parts[0].trim();
+    const numPart = parseInt(parts[1].trim(), 10);
+
+    if (isNaN(numPart)) {
+        return '2026 / 0001';
+    }
+
+    const nextNum = numPart + 1;
+    const paddedNextNum = String(nextNum).padStart(4, '0');
+
+    return `${year} / ${paddedNextNum}`;
+};
+
+
 export default function ContractDetailPage() {
   const { id } = useParams();
   const searchParams = useSearchParams();
@@ -48,8 +75,14 @@ export default function ContractDetailPage() {
   const canGenerateCertificate = contract && ['Curso Auto', 'Curso Moto', 'Curso Deluxe', 'Curso Mixto'].includes(contract.type);
 
   const handleOpenFolioModal = () => {
-    const suggestedFolio = '2026 / 0001';
-    setCertificateFolio(suggestedFolio);
+    try {
+        const lastFolio = localStorage.getItem(LAST_FOLIO_KEY);
+        const suggestedFolio = getNextFolio(lastFolio);
+        setCertificateFolio(suggestedFolio);
+    } catch (e) {
+        console.error("Could not access localStorage. Using default folio.", e);
+        setCertificateFolio('2026 / 0001');
+    }
     setIsFolioModalOpen(true);
   };
   
@@ -62,6 +95,14 @@ export default function ContractDetailPage() {
         });
         return;
     }
+    
+    // Guardar el folio actual para la próxima vez
+    try {
+        localStorage.setItem(LAST_FOLIO_KEY, certificateFolio);
+    } catch (e) {
+        console.error("Could not save folio to localStorage.", e);
+    }
+
     const printUrl = `/certificate-print/${contractId}?folio=${encodeURIComponent(certificateFolio)}`;
     window.open(printUrl, '_blank');
     setIsFolioModalOpen(false);

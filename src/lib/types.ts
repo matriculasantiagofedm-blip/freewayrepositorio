@@ -1,6 +1,10 @@
 
-import type { Timestamp } from 'firebase/firestore';
 import { z } from 'zod';
+
+// Reemplazamos Timestamp con Date para desacoplar el tipo de la librería de Firebase
+// y evitar errores de compilación en Next.js.
+// La conversión a Timestamp se manejará en la capa de acceso a datos.
+type FirestoreTimestamp = Date;
 
 export interface Deadline {
   id: string;
@@ -19,7 +23,7 @@ export interface Client {
   email: string;
   idNumber?: string;
   userId: string;
-  createdAt: Timestamp;
+  createdAt: FirestoreTimestamp;
   // Agregamos campos que estaban implícitos en los detalles del contrato
   studentAddress?: string;
   studentPhone1?: string;
@@ -42,10 +46,10 @@ export interface DeluxeContractDetails {
   vehicleTransmission: 'Automático' | 'Manual';
   licenseCategory: 'A, C' | 'A, C, D';
   theoreticalClassSchedule?: 'Lunes' | 'Miércoles';
-  theoreticalClasses?: (Timestamp | undefined)[];
-  classSchedules: { date?: Timestamp; time?: string }[];
+  theoreticalClasses?: (FirestoreTimestamp | undefined)[];
+  classSchedules: { date?: FirestoreTimestamp; time?: string }[];
   paymentDetails: string;
-  paymentInstallments?: (Timestamp | undefined)[];
+  paymentInstallments?: (FirestoreTimestamp | undefined)[];
   paymentAmount?: number;
 }
 
@@ -57,14 +61,14 @@ export interface AutoMotoContractDetails {
   courseValue?: number;
   downPayment?: number;
   balance?: number;
-  paymentDeadline?: Timestamp;
+  paymentDeadline?: FirestoreTimestamp;
   vehicle?: 'Spark' | 'P. Blanco' | 'P. Bronce' | 'Moto';
   vehicleTransmission?: 'Automático' | 'Manual' | 'Moto';
   licenseCategory?: 'A, C' | 'A, C, D' | 'A, B';
   theoreticalClassSchedule?: string;
-  theoreticalClassDates?: (Timestamp | undefined)[];
-  practicalClassSchedules?: { date?: Timestamp; time?: string }[];
-  motoPracticalClassSchedules?: { date?: Timestamp; time?: string }[];
+  theoreticalClassDates?: (FirestoreTimestamp | undefined)[];
+  practicalClassSchedules?: { date?: FirestoreTimestamp; time?: string }[];
+  motoPracticalClassSchedules?: { date?: FirestoreTimestamp; time?: string }[];
 }
 
 export interface AmpliacionesContractDetails {
@@ -75,9 +79,9 @@ export interface AmpliacionesContractDetails {
     courseValue?: number;
     downPayment?: number;
     balance?: number;
-    paymentDeadline?: Timestamp;
+    paymentDeadline?: FirestoreTimestamp;
     selectedPlans?: { name: string; price: number }[];
-    theoreticalClassDate?: Timestamp;
+    theoreticalClassDate?: FirestoreTimestamp;
     theoreticalClassTime?: string;
 }
 
@@ -96,7 +100,7 @@ export interface Contract {
   status: ContractStatus;
   type: ContractType;
   userId: string;
-  createdAt: Timestamp;
+  createdAt: FirestoreTimestamp;
   createdBy?: string; // User role who created the contract
   deluxeDetails?: Partial<DeluxeContractDetails>;
   autoMotoDetails?: Partial<AutoMotoContractDetails>;

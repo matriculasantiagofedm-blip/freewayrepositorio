@@ -70,28 +70,28 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                 </div>
             </div>
 
-            <div className="text-center mt-8">
+            <div className="flex-grow flex flex-col justify-center text-center">
                 <p className="font-bold">Casa Matriz Chorrera</p>
                 <p className="mt-4">Otorga el presente Certificado a:</p>
+
+                <div className="my-4">
+                    <p className="font-bold text-2xl">{certificate.clientName}</p>
+                    <p className="font-bold text-lg">C.I.P. {certificate.cip}</p>
+                </div>
+
+                <div className="text-sm leading-tight max-w-2xl mx-auto">
+                    <p>
+                        Por haber aprobado el curso de capacitación <span className="font-bold underline">TEÓRICO Y PRÁCTICO</span>, para optar por la licencia de
+                        conducir tipo <span className="font-bold">{getLicenseTypeText(certificate.licenseType)}</span> con una duración de <span className="font-bold underline">{getCourseHours(certificate.courseName)}</span> horas, en cumplimiento del Decreto Ejecutivo No.640 del
+                        27 de Diciembre de 2006, en su artículo 113, acápite a.
+                    </p>
+                    <p className="mt-4 text-[10px]">
+                        Reconocida por la Autoridad del Tránsito y Transporte Terrestre, Resuelto N°380 (04 de diciembre de 2000) Resolución AL-325
+                    </p>
+                </div>
             </div>
 
-            <div className="text-center my-4">
-                <p className="font-bold text-2xl">{certificate.clientName}</p>
-                <p className="font-bold text-lg">C.I.P. {certificate.cip}</p>
-            </div>
-
-            <div className="text-sm text-center leading-tight max-w-2xl mx-auto mb-8">
-                <p>
-                    Por haber aprobado el curso de capacitación <span className="font-bold underline">TEÓRICO Y PRÁCTICO</span>, para optar por la licencia de
-                    conducir tipo <span className="font-bold">{getLicenseTypeText(certificate.licenseType)}</span> con una duración de <span className="font-bold underline">{getCourseHours(certificate.courseName)}</span> horas, en cumplimiento del Decreto Ejecutivo No.640 del
-                    27 de Diciembre de 2006, en su artículo 113, acápite a.
-                </p>
-                <p className="mt-4 text-[10px]">
-                    Reconocida por la Autoridad del Tránsito y Transporte Terrestre, Resuelto N°380 (04 de diciembre de 2000) Resolución AL-325
-                </p>
-            </div>
-
-            <div className="text-center mt-auto mb-4 font-bold">
+            <div className="text-center mb-4 font-bold">
                 <p>***Dado en la república de Panamá, a los {formattedDay} días del mes de {formattedMonth} de {formattedYear}***</p>
             </div>
             

@@ -20,11 +20,18 @@ service cloud.firestore {
     }
 
     // Function to check if the user has the 'Administrador' role based on custom claims.
-    // This is a placeholder for future implementation if custom claims are used.
-    // For now, we will rely on client-side logic and ownership fields.
     function isAdmin() {
-        // return request.auth.token.role == 'Administrador';
-        return false; // Placeholder
+      // This will be true if the user has a custom claim 'role' set to 'Administrador'
+      return request.auth.token.role == 'Administrador';
+    }
+    
+    function isVentas() {
+        return request.auth.token.role == 'Ventas';
+    }
+    
+    // Check if a user has any contracts with a given client
+    function hasContractsWithClient(clientId) {
+        return exists(/databases/$(database)/documents/contracts/$(contractId) where get(/databases/$(database)/documents/contracts/$(contractId)).data.userId == request.auth.uid && get(/databases/$(database)/documents/contracts/$(contractId)).data.clientId == clientId);
     }
 
     // ----------------------------------------------------------------------
@@ -42,25 +49,24 @@ service cloud.firestore {
     /**
      * @description Manages access to the central contracts collection.
      * @path /contracts/{contractId}
-     * @allow (create) Any signed-in user can create a contract, but the `userId` must match their own UID. Folio cannot be set by client.
+     * @allow (create) Any signed-in user can create a contract, but the `userId` must match their own UID.
      * @allow (get, list) A user can only read contracts they own. Admins can read all contracts.
      * @allow (update) A user can only update a contract they own, and the `userId` and `folioNumber` cannot be changed.
      * @principle Centralized collection with user-based ownership enforced by rules.
      */
     match /contracts/{contractId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn(); // List queries must be filtered by userId on the client-side
+      allow get, list: if isAdmin() || (isVentas() && resource.data.userId == request.auth.uid);
       allow create: if isOwner(request.resource.data.userId);
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.userId == resource.data.userId && request.resource.data.folioNumber == resource.data.folioNumber;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow update: if (isAdmin() || (isVentas() && resource.data.userId == request.auth.uid)) && request.resource.data.userId == resource.data.userId && request.resource.data.folioNumber == resource.data.folioNumber;
+      allow delete: if isAdmin() || (isVentas() && resource.data.userId == request.auth.uid);
     }
 
     match /clients/{clientId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
+      allow get: if isAdmin() || (isVentas() && hasContractsWithClient(clientId));
+      allow list: if isAdmin(); // Only Admin can list all clients
       // A user can create a client, but they must set themselves as the owner.
       allow create: if isOwner(request.resource.data.userId);
-      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update: if isAdmin() || (isVentas() && resource.data.userId == request.auth.uid);
       allow delete: if false;
     }
 

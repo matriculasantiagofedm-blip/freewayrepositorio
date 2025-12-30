@@ -1,7 +1,5 @@
-
 'use client';
 import { useParams, useSearchParams } from 'next/navigation';
-import { useDoc, useFirebase, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { ContractView } from '@/components/contract-view';
@@ -10,23 +8,26 @@ import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { useEffect } from 'react';
 import { useCurrentRole } from '@/hooks/use-current-role';
+import { useDb, useUser } from '@/components/firebase-provider';
+import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
 
 export default function ContractDetailPage() {
   const { id } = useParams();
   const searchParams = useSearchParams();
-  const { firestore, user } = useFirebase();
+  const db = useDb();
+  const { user } = useUser();
   const { role } = useCurrentRole();
 
   const contractId = Array.isArray(id) ? id[0] : id;
   const shouldPrint = searchParams.get('print') === 'true';
 
-  const contractRef = useMemoFirebase(() => {
-    if (!firestore || !user || !role || !contractId) return null;
+  const contractRef = useMemoDoc(() => {
+    if (!db || !user || !role || !contractId) return null;
     
     // All contracts are in the root 'contracts' collection now.
     // The security rules will handle access control.
-    return doc(firestore, 'contracts', contractId);
-  }, [firestore, user, role, contractId]);
+    return doc(db, 'contracts', contractId);
+  }, [db, user, role, contractId]);
 
   const { data: contract, isLoading, error } = useDoc<Contract>(contractRef);
 

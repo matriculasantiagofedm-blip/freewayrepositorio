@@ -1,6 +1,5 @@
 'use client';
 import { useParams } from 'next/navigation';
-import { useDoc, useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where } from 'firebase/firestore';
 import type { Client, Contract } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -8,26 +7,27 @@ import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { ContractCard } from '@/components/contract-card';
 import { useCurrentRole } from '@/hooks/use-current-role';
+import { useDb, useUser } from '@/components/firebase-provider';
+import { useCollection, useDoc, useMemoDoc, useMemoQuery } from '@/hooks/use-firestore';
 
 export default function ClientDetailPage() {
   const { id } = useParams();
-  const { firestore, user } = useFirebase();
+  const db = useDb();
+  const { user } = useUser();
   const { role } = useCurrentRole();
 
   const clientId = Array.isArray(id) ? id[0] : id;
 
-  const clientRef = useMemoFirebase(() => {
-    if (!firestore || !clientId) return null;
-    return doc(firestore, `clients`, clientId);
-  }, [firestore, clientId]);
+  const clientRef = useMemoDoc(() => {
+    if (!db || !clientId) return null;
+    return doc(db, `clients`, clientId);
+  }, [db, clientId]);
 
-  const contractsQuery = useMemoFirebase(() => {
-    if (!firestore || !user || !role) return null;
-
-    // Both Admin and Ventas roles see all contracts for this client
-    return query(collection(firestore, 'contracts'), where('clientId', '==', clientId));
-
-  }, [firestore, user, clientId, role]);
+  const contractsQuery = useMemoQuery(() => {
+    if (!db || !user || !role) return null;
+    // Admin and Ventas can see all contracts for this client
+    return query(collection(db, 'contracts'), where('clientId', '==', clientId));
+  }, [db, user, clientId, role]);
 
   const { data: client, isLoading: isClientLoading } = useDoc<Client>(clientRef);
   const { data: contracts, isLoading: areContractsLoading } = useCollection<Contract>(contractsQuery);

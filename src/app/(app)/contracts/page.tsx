@@ -1,6 +1,4 @@
-
 'use client';
-import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Contract, Deadline } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -22,6 +20,8 @@ import { Eye, Search } from 'lucide-react';
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { useSearchParams } from 'next/navigation';
+import { useDb, useUser } from '@/components/firebase-provider';
+import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 
 
 function toDate(date: any): Date {
@@ -63,23 +63,24 @@ const isOverdue = (contract: Contract): boolean => {
 }
 
 export default function AllContractsPage() {
-  const { firestore, user } = useFirebase();
+  const db = useDb();
+  const { user } = useUser();
   const { role } = useCurrentRole();
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
 
   const filter = searchParams.get('filter');
 
-  const contractsQuery = useMemoFirebase(() => {
-    if (!firestore || !user || !role) return null;
+  const contractsQuery = useMemoQuery(() => {
+    if (!db || !user || !role) return null;
     
     if (role === 'Administrador' || role === 'Ventas') {
-      return collection(firestore, `contracts`);
+      return collection(db, `contracts`);
     }
     
-    // Fallback for other roles
-    return query(collection(firestore, 'contracts'), where('userId', '==', user.uid));
-  }, [firestore, user, role]);
+    // Fallback for other roles to see only their contracts
+    return query(collection(db, 'contracts'), where('userId', '==', user.uid));
+  }, [db, user, role]);
 
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
 

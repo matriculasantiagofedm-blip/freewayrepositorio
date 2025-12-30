@@ -1,7 +1,5 @@
-
 'use client';
-import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import type { Client } from '@/lib/types';
 import Link from 'next/link';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -17,24 +15,27 @@ import {
 import { Button } from '@/components/ui/button';
 import { Eye, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { useDb, useUser } from '@/components/firebase-provider';
+import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 
 export default function ClientsPage() {
-  const { firestore, user } = useFirebase();
+  const db = useDb();
+  const { user } = useUser();
   const { role } = useCurrentRole();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const clientsQuery = useMemoFirebase(() => {
-    if (!firestore || !role) return null;
+  const clientsQuery = useMemoQuery(() => {
+    if (!db || !role) return null;
     
     // Admin and Ventas can see all clients
     if (role === 'Administrador' || role === 'Ventas') {
-      return collection(firestore, 'clients');
+      return collection(db, 'clients');
     }
     
     // For any other unhandled role, return null to show loading/empty state safely.
     return null;
     
-  }, [firestore, role, user]);
+  }, [db, role, user]);
 
   const { data: clients, isLoading } = useCollection<Client>(clientsQuery);
 

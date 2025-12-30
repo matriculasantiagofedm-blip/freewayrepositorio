@@ -1,12 +1,12 @@
-
 'use client';
-import type { Contract, Client, DeluxeContractDetails } from '@/lib/types';
-import { useDoc, useFirebase, useMemoFirebase } from '@/firebase';
+import type { Contract, Client } from '@/lib/types';
 import { doc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Card, CardContent } from './ui/card';
 import { cn } from '@/lib/utils';
+import { useDb } from './firebase-provider';
+import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
 
 const Line = ({ children, className }: { children?: React.ReactNode, className?: string }) => (
   <span className={cn("border-b border-dotted border-black flex-1 min-w-8 text-center font-semibold text-primary print:text-black", className)}>
@@ -37,11 +37,11 @@ const Checkbox = ({ checked }: { checked: boolean }) => (
 );
 
 export function DeluxePremiumContractTemplate({ contract }: { contract: Contract }) {
-  const { firestore } = useFirebase();
-  const clientRef = useMemoFirebase(() => {
-    if (!firestore || !contract.clientId) return null;
-    return doc(firestore, 'clients', contract.clientId);
-  }, [firestore, contract.clientId]);
+  const db = useDb();
+  const clientRef = useMemoDoc(() => {
+    if (!db || !contract.clientId) return null;
+    return doc(db, 'clients', contract.clientId);
+  }, [db, contract.clientId]);
 
   const { data: client } = useDoc<Client>(clientRef);
   const deluxeDetails = contract.deluxeDetails;
@@ -195,5 +195,3 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
     </Card>
   );
 }
-
-    

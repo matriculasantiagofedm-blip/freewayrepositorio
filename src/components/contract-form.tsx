@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -36,7 +34,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, PlusCircle, Loader2, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useFirebase } from '@/firebase';
 import { Timestamp, collection, query, where, getDocs, writeBatch, doc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -50,6 +47,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { AmpliacionesContractTemplate } from './ampliaciones-contract';
 import { ContractView } from './contract-view';
+import { useDb, useUser } from './firebase-provider';
 
 
 // --- Esquemas de Validación con Zod ---
@@ -302,7 +300,8 @@ const getDefaultValues = (contractType: ContractType | null): FormValues => ({
 export function ContractForm() {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const { user, firestore, isUserLoading } = useFirebase();
+    const db = useDb();
+    const { user, isLoading: isUserLoading } = useUser();
     const { toast } = useToast();
     const { role: currentUserRole } = useCurrentRole();
     const [savedContract, setSavedContract] = useState<Contract | null>(null);
@@ -539,15 +538,15 @@ export function ContractForm() {
     }, [form, replacePracticalClasses, replaceMotoPracticalClasses, replaceTheoreticalClasses, isManualPrice]);
 
     const onSubmit = async (values: FormValues) => {
-        if (!user || !firestore || isUserLoading) {
+        if (!user || !db || isUserLoading) {
             toast({ variant: 'destructive', title: 'Error de Autenticación', description: 'No se pudo conectar a la base de datos. Por favor, inicie sesión o espere a que cargue la sesión.' });
             return;
         }
         setIsSubmitting(true);
 
         try {
-            const folioNumber = await runTransaction(firestore, async (transaction) => {
-                const counterRef = doc(firestore, 'counters', 'contract_folio');
+            const folioNumber = await runTransaction(db, async (transaction) => {
+                const counterRef = doc(db, 'counters', 'contract_folio');
                 const counterDoc = await transaction.get(counterRef);
                 let newFolioNumber = 1;
                 if (counterDoc.exists()) {
@@ -562,10 +561,10 @@ export function ContractForm() {
             if (!folioNumber) throw new Error("No se pudo generar el número de folio.");
             form.setValue('folioNumber', folioNumber);
 
-            const batch = writeBatch(firestore);
+            const batch = writeBatch(db);
 
             const studentIdNumber = values.contractType === 'Curso Deluxe' ? values.deluxeDetails.studentIdNumber : (values.contractType === 'Ampliaciones' ? values.ampliacionesDetails.studentIdNumber : values.autoMotoDetails.studentIdNumber);
-            const clientsRef = collection(firestore, 'clients');
+            const clientsRef = collection(db, 'clients');
             const q = query(clientsRef, where("idNumber", "==", studentIdNumber));
             const clientSnapshot = await getDocs(q);
 
@@ -576,7 +575,7 @@ export function ContractForm() {
                 clientRef = clientSnapshot.docs[0].ref;
                 clientId = clientRef.id;
             } else {
-                clientRef = doc(collection(firestore, 'clients'));
+                clientRef = doc(collection(db, 'clients'));
                 clientId = clientRef.id;
                 
                 const studentDetails = 
@@ -598,7 +597,7 @@ export function ContractForm() {
                 batch.set(clientRef, newClientData);
             }
 
-            const contractRef = doc(collection(firestore, 'contracts'));
+            const contractRef = doc(collection(db, 'contracts'));
             
             const toTimestamp = (date: any): Timestamp | null => {
                 if (!date) return null;
@@ -669,7 +668,7 @@ export function ContractForm() {
             const contractForPreview: Contract = {
                 ...newContract,
                 id: contractRef.id,
-                createdAt: Timestamp.now(),
+                createdAt: new Date(),
             };
             setSavedContract(contractForPreview);
 
@@ -1499,12 +1498,12 @@ export function ContractForm() {
               status: 'active' as const,
               type: 'Ampliaciones' as const,
               userId: user?.uid || '',
-              createdAt: Timestamp.now(),
+              createdAt: new Date(),
               createdBy: currentUserRole || 'Ventas',
               ampliacionesDetails: {
                   ...ampliacionesDetails,
-                  theoreticalClassDate: ampliacionesDetails.theoreticalClassDate ? Timestamp.fromDate(new Date(ampliacionesDetails.theoreticalClassDate)) : undefined,
-                  paymentDeadline: ampliacionesDetails.paymentDeadline ? Timestamp.fromDate(new Date(ampliacionesDetails.paymentDeadline)) : undefined,
+                  theoreticalClassDate: ampliacionesDetails.theoreticalClassDate ? ampliacionesDetails.theoreticalClassDate : undefined,
+                  paymentDeadline: ampliacionesDetails.paymentDeadline ? ampliacionesDetails.paymentDeadline : undefined,
               }
           }
           return <AmpliacionesContractTemplate contract={contractForPreview} />;
@@ -1570,9 +1569,3 @@ export function ContractForm() {
         </Form>
     );
 }
-
-    
-
-    
-
-    

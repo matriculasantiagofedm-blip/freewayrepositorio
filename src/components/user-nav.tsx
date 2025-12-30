@@ -11,11 +11,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { LogOut, User, ChevronsUpDown } from 'lucide-react';
-import { useAuth, useUser } from '@/firebase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Skeleton } from './ui/skeleton';
+import { useAuth, useUser } from './firebase-provider';
 
 export function UserNav() {
   const auth = useAuth();
@@ -25,7 +25,9 @@ export function UserNav() {
 
 
   const handleLogout = async () => {
-    await auth.signOut();
+    if (auth) {
+        await auth.signOut();
+    }
     // Forzar la redirección a la página de inicio y recargar la ventana.
     // Esto asegura que todos los estados de sesión se limpien por completo.
     window.location.href = '/';

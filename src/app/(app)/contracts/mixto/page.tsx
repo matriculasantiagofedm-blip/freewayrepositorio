@@ -3,29 +3,31 @@ import { ContractCard } from '@/components/contract-card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
-import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
+import { useDb, useUser } from '@/components/firebase-provider';
+import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 
 export default function ContractsMixtoPage() {
-  const { firestore, user } = useFirebase();
+  const db = useDb();
+  const { user } = useUser();
   const { role } = useCurrentRole();
 
-  const contractsQuery = useMemoFirebase(() => {
-    if (!firestore || !user || !role) return null;
+  const contractsQuery = useMemoQuery(() => {
+    if (!db || !user || !role) return null;
 
     const baseQuery = query(
-      collection(firestore, 'contracts'),
+      collection(db, 'contracts'),
       where('type', '==', 'Curso Mixto')
     );
     
-    if (role === 'Administrador') {
+    if (role === 'Administrador' || role === 'Ventas') {
       return baseQuery;
     }
 
     return query(baseQuery, where('userId', '==', user.uid));
-  }, [firestore, user, role]);
+  }, [db, user, role]);
 
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
 

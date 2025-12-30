@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser } from '@/firebase';
+import { useUser } from '@/components/firebase-provider';
 
 // Este es el mapa central de roles. 
 // Asocia un correo electrónico de usuario a un rol específico en la aplicación.

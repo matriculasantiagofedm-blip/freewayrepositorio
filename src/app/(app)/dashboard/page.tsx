@@ -1,22 +1,16 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { PlusCircle, FileText, CalendarClock, Users, Car, Bike, Combine, Crown, Plus, ChevronDown } from 'lucide-react';
+import { FileText, CalendarClock, Users, Car, Bike, Combine, Crown, Plus } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { isPast } from 'date-fns';
-import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, where }from 'firebase/firestore';
 import type { Contract, Deadline } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { cn } from '@/lib/utils';
+import { useDb, useUser } from '@/components/firebase-provider';
+import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 
 function toDate(date: any): Date {
   if (!date) return new Date(0); // Return an invalid date if input is null/undefined
@@ -58,20 +52,21 @@ const isOverdue = (contract: Contract): boolean => {
 
 
 export default function DashboardPage() {
-  const { firestore, user } = useFirebase();
+  const db = useDb();
+  const { user } = useUser();
   const { role } = useCurrentRole();
 
-  const contractsQuery = useMemoFirebase(() => {
-    if (!firestore || !user || !role) return null;
+  const contractsQuery = useMemoQuery(() => {
+    if (!db || !user || !role) return null;
     
     // Admin and Ventas can see all contracts from the root collection
     if (role === 'Administrador' || role === 'Ventas') {
-        return collection(firestore, 'contracts');
+        return collection(db, 'contracts');
     }
 
     // Fallback for any other user to see only their contracts
-    return query(collection(firestore, 'contracts'), where('userId', '==', user.uid));
-  }, [firestore, user, role]);
+    return query(collection(db, 'contracts'), where('userId', '==', user.uid));
+  }, [db, user, role]);
 
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
 
@@ -101,7 +96,7 @@ export default function DashboardPage() {
       value: isLoading ? '...' : totalClients,
       icon: Users,
       href: '/clients',
-       roles: ['Administrador', 'Ventas'] // <-- ROL AÑADIDO
+       roles: ['Administrador', 'Ventas']
     },
   ];
 

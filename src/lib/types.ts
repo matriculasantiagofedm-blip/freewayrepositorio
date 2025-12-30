@@ -1,8 +1,3 @@
-
-import { z } from 'zod';
-
-// Reemplazamos Timestamp con Date para desacoplar el tipo de la librería de Firebase
-// y evitar errores de compilación en Next.js.
 // La conversión a Timestamp se manejará en la capa de acceso a datos.
 type FirestoreTimestamp = Date;
 
@@ -106,20 +101,3 @@ export interface Contract {
   autoMotoDetails?: Partial<AutoMotoContractDetails>;
   ampliacionesDetails?: Partial<AmpliacionesContractDetails>;
 }
-
-const GenerateContractDataSchema = z.object({
-  clientName: z.string(),
-  clientEmail: z.string().email(),
-  contractType: z.string(),
-  studentIdNumber: z.string(),
-  userId: z.string(),
-  createdBy: z.string(),
-});
-
-const GenerateContractDetailsSchema = z.any();
-
-export const GenerateContractInputSchema = z.object({
-  contractData: GenerateContractDataSchema,
-  details: GenerateContractDetailsSchema,
-});
-export type GenerateContractInput = z.infer<typeof GenerateContractInputSchema>;

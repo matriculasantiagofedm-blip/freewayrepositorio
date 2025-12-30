@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -9,7 +8,7 @@ import { GanttChartSquare, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { signInAnonymously } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/firebase';
+import { useAuth } from '@/components/firebase-provider';
 
 // Los roles válidos ahora se usan para validación interna
 const validRoles = ['Ayax/2022', 'ventas123'];
@@ -25,6 +24,11 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!auth) {
+        setError('Servicio de autenticación no disponible.');
+        return;
+    }
+
     if (!roleInput) {
       setError('Por favor, escribe un perfil para continuar.');
       return;

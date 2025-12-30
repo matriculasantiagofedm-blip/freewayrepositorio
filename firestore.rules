@@ -44,23 +44,30 @@ service cloud.firestore {
     /**
      * @description Manages access to the central contracts collection.
      * @path /contracts/{contractId}
-     * @allow (get, list) An Admin or Ventas user can get/list any contract. Other users can only get their own.
+     * @allow (get, list) An Admin or Ventas user can get/list any contract.
      * @allow (create) Any signed-in user can create a contract, but the `userId` must match their own UID.
-     * @allow (update) A user can only update a contract they own, and the `userId` and `folioNumber` cannot be changed.
-     * @principle Centralized collection with user-based ownership enforced by rules.
+     * @allow (update) Admin/Ventas can update. Key fields `userId` and `folioNumber` are immutable.
+     * @allow (delete) Admin/Ventas can delete.
      */
     match /contracts/{contractId} {
       allow get, list: if isAdmin() || isVentas();
       allow create: if isOwner(request.resource.data.userId);
-      allow update: if (isAdmin() || (isVentas() && resource.data.userId == request.auth.uid)) && request.resource.data.userId == resource.data.userId && request.resource.data.folioNumber == resource.data.folioNumber;
-      allow delete: if isAdmin() || (isVentas() && resource.data.userId == request.auth.uid);
+      allow update: if (isAdmin() || isVentas())
+                      && request.resource.data.userId == resource.data.userId
+                      && request.resource.data.folioNumber == resource.data.folioNumber;
+      allow delete: if isAdmin() || isVentas();
     }
 
+    /**
+     * @description Manages client data.
+     * @path /clients/{clientId}
+     * @allow (get, list) Admin and Ventas roles can view client lists and details.
+     * @allow (create, update) Any signed-in user can create or update a client.
+     */
     match /clients/{clientId} {
       allow list, get: if isAdmin() || isVentas();
-      allow create: if isOwner(request.resource.data.userId);
-      allow update: if isAdmin() || (isVentas() && resource.data.userId == request.auth.uid);
-      allow delete: if false;
+      allow create, update: if isSignedIn();
+      allow delete: if false; // Prevent client deletion
     }
 
     // Allow authenticated users to read/write the specific contract_folio counter

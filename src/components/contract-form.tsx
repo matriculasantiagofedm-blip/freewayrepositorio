@@ -159,6 +159,8 @@ const coursePlans = {
     { name: 'PLUS', price: 150.00, classes: 5 },
     { name: 'PREMIUM', price: 175.00, classes: 6 },
     { name: 'Ya se manejar Auto', price: 57.00, classes: 0 },
+    { name: 'Reforzamiento 2hs', price: 75.00, classes: 1 },
+    { name: 'Reforzamiento 4hs', price: 95.00, classes: 2 },
   ],
   'Curso Moto': [
     { name: 'BÁSICO', price: 115.00, classes: 4 },

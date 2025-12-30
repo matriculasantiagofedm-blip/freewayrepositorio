@@ -50,14 +50,21 @@ service cloud.firestore {
      * @principle Centralized collection with user-based ownership enforced by rules.
      */
     match /contracts/{contractId} {
-      allow get, list: if isAdmin() || isVentas(); // <-- ROL AÑADIDO
+      // An Admin can get/list any contract. A 'Ventas' user can only get/list their own.
+      allow get, list: if isAdmin() || (isVentas() && resource.data.userId == request.auth.uid);
       allow create: if isOwner(request.resource.data.userId);
       allow update: if (isAdmin() || (isVentas() && resource.data.userId == request.auth.uid)) && request.resource.data.userId == resource.data.userId && request.resource.data.folioNumber == resource.data.folioNumber;
       allow delete: if isAdmin() || (isVentas() && resource.data.userId == request.auth.uid);
     }
 
     match /clients/{clientId} {
-      allow get, list: if isAdmin() || isVentas(); // <-- ROL AÑADIDO Y SIMPLIFICADO
+      // Admins can list all clients.
+      allow list: if isAdmin();
+      
+      // A user can GET a client doc if they are an admin, OR
+      // if they are a 'Ventas' user AND they have at least one contract with that client.
+      allow get: if isAdmin() || (isVentas() && exists(/databases/$(database)/documents/contracts?userId=$(request.auth.uid)&clientId=$(clientId)));
+      
       // A user can create a client, but they must set themselves as the owner.
       allow create: if isOwner(request.resource.data.userId);
       allow update: if isAdmin() || (isVentas() && resource.data.userId == request.auth.uid);

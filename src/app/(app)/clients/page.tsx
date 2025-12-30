@@ -1,9 +1,9 @@
 'use client';
-import { collection } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import type { Client } from '@/lib/types';
 import Link from 'next/link';
 import { useCurrentRole } from '@/hooks/use-current-role';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -24,20 +24,64 @@ export default function ClientsPage() {
   const { role } = useCurrentRole();
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Admin can see all clients directly.
   const clientsQuery = useMemoQuery(() => {
     if (!db || !role) return null;
     
-    // Admin and Ventas can see all clients
-    if (role === 'Administrador' || role === 'Ventas') {
+    if (role === 'Administrador') {
       return collection(db, 'clients');
     }
     
+    // For 'Ventas', we will handle it differently below.
     // For any other unhandled role, return null to show loading/empty state safely.
     return null;
     
-  }, [db, role, user]);
+  }, [db, role]);
 
-  const { data: clients, isLoading } = useCollection<Client>(clientsQuery);
+  const { data: adminClients, isLoading: isAdminClientsLoading } = useCollection<Client>(clientsQuery);
+  const [ventasClients, setVentasClients] = useState<Client[]>([]);
+  const [isVentasClientsLoading, setIsVentasClientsLoading] = useState(false);
+
+  useEffect(() => {
+    if (role === 'Ventas' && user && db) {
+        const fetchVentasClients = async () => {
+            setIsVentasClientsLoading(true);
+            try {
+                // 1. Find all contracts created by the current 'Ventas' user
+                const contractsRef = collection(db, 'contracts');
+                const userContractsQuery = query(contractsRef, where('userId', '==', user.uid));
+                const contractsSnapshot = await getDocs(userContractsQuery);
+                
+                if (contractsSnapshot.empty) {
+                    setVentasClients([]);
+                    setIsVentasClientsLoading(false);
+                    return;
+                }
+
+                // 2. Get the unique client IDs from those contracts
+                const clientIds = [...new Set(contractsSnapshot.docs.map(doc => doc.data().clientId))];
+                
+                // 3. Fetch only those specific clients
+                const clientsRef = collection(db, 'clients');
+                const clientDocsQuery = query(clientsRef, where('id', 'in', clientIds));
+                const clientsSnapshot = await getDocs(clientDocsQuery);
+
+                const clientsData = clientsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Client[];
+                setVentasClients(clientsData);
+
+            } catch (error) {
+                console.error("Error fetching clients for 'Ventas':", error);
+                setVentasClients([]); // Clear clients on error
+            } finally {
+                setIsVentasClientsLoading(false);
+            }
+        };
+        fetchVentasClients();
+    }
+  }, [role, user, db]);
+
+  const clients = role === 'Administrador' ? adminClients : ventasClients;
+  const isLoading = role === 'Administrador' ? isAdminClientsLoading : isVentasClientsLoading;
 
   const filteredClients =
     clients?.filter((client) => {
@@ -53,7 +97,7 @@ export default function ClientsPage() {
         return <p>Cargando clientes...</p>;
     }
 
-    if (!clients && !isLoading) {
+    if (!clients && !isLoading && role !== 'Ventas') {
         return (
              <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
                 <h3 className="mt-4 text-lg font-semibold text-foreground">
@@ -122,7 +166,7 @@ export default function ClientsPage() {
             No hay clientes para mostrar
         </h3>
         <p className="mt-2 text-sm text-muted-foreground">
-            Cuando se cree el primer contrato, el cliente aparecerá aquí.
+            {role === 'Ventas' ? 'Los clientes con los que tienes contratos aparecerán aquí.' : 'Cuando se cree el primer contrato, el cliente aparecerá aquí.'}
         </p>
         </div>
     )

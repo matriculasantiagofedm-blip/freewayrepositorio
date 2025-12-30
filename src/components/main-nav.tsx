@@ -23,13 +23,13 @@ const allLinks = [
     href: '/contracts',
     label: 'Todos los Contratos',
     icon: FileText,
-    roles: ['Administrador', 'Ventas'], // <-- ROL AÑADIDO
+    roles: ['Administrador'], 
   },
   {
     href: '/clients',
     label: 'Clientes',
     icon: Users,
-    roles: ['Administrador', 'Ventas'], // <-- ROL AÑADIDO
+    roles: ['Administrador'], 
   },
 ];
 

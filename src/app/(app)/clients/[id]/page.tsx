@@ -29,7 +29,7 @@ export default function ClientDetailPage() {
       return query(collection(firestore, 'contracts'), where('clientId', '==', clientId));
     }
 
-    // Other users see only contracts they created for this client.
+    // Other users (like Ventas) see only contracts they created for this client.
     return query(
       collection(firestore, 'contracts'),
       where('clientId', '==', clientId),

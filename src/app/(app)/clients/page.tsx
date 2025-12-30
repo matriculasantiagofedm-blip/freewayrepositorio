@@ -23,10 +23,9 @@ export default function ClientsPage() {
   const { role } = useCurrentRole();
   const [searchTerm, setSearchTerm] = useState('');
 
-  // 'Administrador' puede ver todos los clientes directamente.
-  // 'Ventas' no tiene permiso para listar todos los clientes, por lo que la query será null para ellos.
+  // 'Administrador' y 'Ventas' pueden ver todos los clientes directamente.
   const clientsQuery = useMemoQuery(() => {
-    if (!db || role !== 'Administrador') return null;
+    if (!db || !role || (role !== 'Administrador' && role !== 'Ventas')) return null;
     return collection(db, 'clients');
   }, [db, role]);
 
@@ -43,7 +42,7 @@ export default function ClientsPage() {
 
   const renderContent = () => {
     // Si no es un administrador, mostrar acceso restringido de inmediato.
-    if (role && role !== 'Administrador') {
+    if (role && role !== 'Administrador' && role !== 'Ventas') {
       return (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
           <h3 className="mt-4 text-lg font-semibold text-foreground">

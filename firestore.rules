@@ -58,12 +58,12 @@ service cloud.firestore {
     }
 
     match /clients/{clientId} {
-      // Admins can list all clients.
-      allow list: if isAdmin();
+      // Admins and Ventas can list all clients.
+      allow list: if isAdmin() || isVentas();
       
       // A user can GET a client doc if they are an admin, OR
-      // if they are a 'Ventas' user AND they have at least one contract with that client.
-      allow get: if isAdmin() || (isVentas() && exists(/databases/$(database)/documents/contracts?userId=$(request.auth.uid)&clientId=$(clientId)));
+      // if they are a 'Ventas' user.
+      allow get: if isAdmin() || isVentas();
       
       // A user can create a client, but they must set themselves as the owner.
       allow create: if isOwner(request.resource.data.userId);

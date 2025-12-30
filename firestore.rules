@@ -50,8 +50,8 @@ service cloud.firestore {
      * @principle Centralized collection with user-based ownership enforced by rules.
      */
     match /contracts/{contractId} {
-      // An Admin can get/list any contract. A 'Ventas' user can only get/list their own.
-      allow get, list: if isAdmin() || (isVentas() && resource.data.userId == request.auth.uid);
+      // An Admin or Ventas user can get/list any contract.
+      allow get, list: if isAdmin() || isVentas();
       allow create: if isOwner(request.resource.data.userId);
       allow update: if (isAdmin() || (isVentas() && resource.data.userId == request.auth.uid)) && request.resource.data.userId == resource.data.userId && request.resource.data.folioNumber == resource.data.folioNumber;
       allow delete: if isAdmin() || (isVentas() && resource.data.userId == request.auth.uid);

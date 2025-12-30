@@ -1,5 +1,5 @@
 'use client';
-import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { doc, Timestamp } from 'firebase/firestore';
 import type { Contract, Certificate } from '@/lib/types';
 import { CertificateTemplate } from '@/components/certificate-template';
@@ -34,7 +34,7 @@ export default function CertificatePrintIdPage() {
         clientId: contract.clientId,
         userId: contract.userId,
         folio: customFolio, // Usar el folio de la URL
-        clientName: contract.clientName,
+        clientName: `${contract.firstName || ''} ${contract.middleName || ''} ${contract.lastName || ''} ${contract.secondLastName || ''}`.trim() || contract.clientName,
         courseName: contract.title,
         issueDate: Timestamp.now().toDate(), // Siempre usar la fecha actual para la impresión
         cip: details?.studentIdNumber || '',

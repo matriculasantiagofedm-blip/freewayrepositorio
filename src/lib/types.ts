@@ -1,5 +1,11 @@
-// La conversión a Timestamp se manejará en la capa de acceso a datos.
-type FirestoreTimestamp = Date;
+
+import type { Timestamp } from 'firebase/firestore';
+
+export interface User {
+  uid: string;
+  email: string;
+  role: 'Ventas' | 'Ventas Externas' | 'Administrador';
+}
 
 export interface Deadline {
   id: string;
@@ -18,11 +24,7 @@ export interface Client {
   email: string;
   idNumber?: string;
   userId: string;
-  createdAt: FirestoreTimestamp;
-  // Agregamos campos que estaban implícitos en los detalles del contrato
-  studentAddress?: string;
-  studentPhone1?: string;
-  studentPhone2?: string;
+  createdAt: Timestamp;
 }
 
 export type ContractStatus = 'draft' | 'active' | 'completed' | 'expired';
@@ -41,11 +43,15 @@ export interface DeluxeContractDetails {
   vehicleTransmission: 'Automático' | 'Manual';
   licenseCategory: 'A, C' | 'A, C, D';
   theoreticalClassSchedule?: 'Lunes' | 'Miércoles';
-  theoreticalClasses?: (FirestoreTimestamp | undefined)[];
-  classSchedules: { date?: FirestoreTimestamp; time?: string }[];
+  theoreticalClasses?: (Date | undefined)[];
+  classSchedules: { date?: Date; time?: string }[];
   paymentDetails: string;
-  paymentInstallments?: (FirestoreTimestamp | undefined)[];
+  paymentInstallments?: (Date | undefined)[];
   paymentAmount?: number;
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  secondLastName?: string;
 }
 
 export interface AutoMotoContractDetails {
@@ -56,15 +62,20 @@ export interface AutoMotoContractDetails {
   courseValue?: number;
   downPayment?: number;
   balance?: number;
-  paymentDeadline?: FirestoreTimestamp;
+  paymentDeadline?: Date;
   vehicle?: 'Spark' | 'P. Blanco' | 'P. Bronce' | 'Moto';
   vehicleTransmission?: 'Automático' | 'Manual' | 'Moto';
   licenseCategory?: 'A, C' | 'A, C, D' | 'A, B';
   theoreticalClassSchedule?: string;
-  theoreticalClassDates?: (FirestoreTimestamp | undefined)[];
-  practicalClassSchedules?: { date?: FirestoreTimestamp; time?: string }[];
-  motoPracticalClassSchedules?: { date?: FirestoreTimestamp; time?: string }[];
+  theoreticalClassDates?: (Date | undefined)[];
+  practicalClassSchedules?: { date?: Date; time?: string }[];
+  motoPracticalClassSchedules?: { date?: Date; time?: string }[];
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  secondLastName?: string;
 }
+
 
 export interface AmpliacionesContractDetails {
     studentIdNumber?: string;
@@ -74,19 +85,18 @@ export interface AmpliacionesContractDetails {
     courseValue?: number;
     downPayment?: number;
     balance?: number;
-    paymentDeadline?: FirestoreTimestamp;
+    paymentDeadline?: Date;
     selectedPlans?: { name: string; price: number }[];
-    theoreticalClassDate?: FirestoreTimestamp;
+    theoreticalClassDate?: Date;
     theoreticalClassTime?: string;
 }
 
-
 export interface Contract {
   id: string;
+  folio: string; // folioNumber (number) is now folio (string)
   title: string;
-  folioNumber?: number; // Added folio number
   client?: Client; // This might be populated after fetching
-  clientName: string;
+  clientName: string; // This is now a composite of the name fields
   clientEmail: string;
   clientId: string; // The ID of the client document in the /clients collection
   studentIdNumber?: string; // Denormalized for searching
@@ -95,9 +105,38 @@ export interface Contract {
   status: ContractStatus;
   type: ContractType;
   userId: string;
-  createdAt: FirestoreTimestamp;
+  createdAt: Timestamp;
   createdBy?: string; // User role who created the contract
   deluxeDetails?: Partial<DeluxeContractDetails>;
   autoMotoDetails?: Partial<AutoMotoContractDetails>;
   ampliacionesDetails?: Partial<AmpliacionesContractDetails>;
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  secondLastName?: string;
+  folioNumber?: number;
+}
+
+export interface CertificateData {
+  folio: string;
+  clientName: string;
+  courseName: string;
+  issueDate: Timestamp;
+  cip: string;
+  licenseType: string;
+}
+
+// Kept for backwards compatibility with the print page, can be removed later
+export interface Certificate {
+  id: string;
+  contractId: string;
+  clientId: string;
+  userId: string;
+  folio: string;
+  clientName: string;
+  courseName: string;
+  issueDate: Timestamp;
+  cip: string;
+  licenseType: string;
+  contract?: Contract;
 }

@@ -2,7 +2,7 @@
 'use client';
 import { useCollection, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
-import type { Contract } from '@/lib/types';
+import type { Contract, Deadline } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import {
   Table,
@@ -15,12 +15,13 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { format, isPast } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Eye, Search } from 'lucide-react';
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
+import { useSearchParams } from 'next/navigation';
 
 
 function toDate(date: any): Date {
@@ -33,10 +34,31 @@ function toDate(date: any): Date {
   return new Date();
 }
 
+const isOverdue = (contract: Contract): boolean => {
+    if (contract.status !== 'active') return false;
+
+    const hasOverdueGeneralDeadline = (contract.deadlines as Deadline[] || [])
+        .some(d => d && d.date && isPast(toDate(d.date)));
+    
+    if (hasOverdueGeneralDeadline) return true;
+
+    if ((contract.type === 'Curso Auto' || contract.type === 'Curso Moto') && contract.autoMotoDetails?.paymentDeadline) {
+        const paymentDate = toDate(contract.autoMotoDetails.paymentDeadline);
+        if (paymentDate.getTime() > 0 && isPast(paymentDate)) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
 export default function AllContractsPage() {
   const { firestore, user } = useFirebase();
   const { role } = useCurrentRole();
+  const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
+
+  const filter = searchParams.get('filter');
 
   const contractsQuery = useMemoFirebase(() => {
     if (!firestore || !user || !role) return null;
@@ -55,6 +77,7 @@ export default function AllContractsPage() {
     draft: 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700',
     completed: 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700',
     expired: 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700',
+    overdue: 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700',
   };
 
   const statusTranslations: { [key: string]: string } = {
@@ -62,6 +85,7 @@ export default function AllContractsPage() {
     draft: 'Borrador',
     completed: 'Completado',
     expired: 'Expirado',
+    overdue: 'Vencido',
   }
   
   const filteredContracts =
@@ -72,13 +96,23 @@ export default function AllContractsPage() {
       const cedula = contract.studentIdNumber || '';
       const search = searchTerm.toLowerCase();
 
-      return folio.includes(search) || client.includes(search) || type.includes(search) || cedula.includes(search);
+      // Apply filter from URL param
+      if (filter === 'overdue' && !isOverdue(contract)) {
+        return false;
+      }
+      
+      // Apply search term
+      if (searchTerm) {
+          return folio.includes(search) || client.includes(search) || type.includes(search) || cedula.includes(search);
+      }
+
+      return true; // if no filter or search, show all (or all overdue if filter is set)
     }) || [];
 
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="font-headline text-3xl font-bold">Todos los Contratos</h1>
+        <h1 className="font-headline text-3xl font-bold">{filter === 'overdue' ? 'Contratos Vencidos' : 'Todos los Contratos'}</h1>
          <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -107,7 +141,11 @@ export default function AllContractsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredContracts.map((contract) => (
+                            {filteredContracts.map((contract) => {
+                                const contractIsOverdue = isOverdue(contract);
+                                const status = contractIsOverdue ? 'overdue' : contract.status;
+                                
+                                return (
                                 <TableRow key={contract.id}>
                                     <TableCell className="font-medium text-primary">
                                         {String(contract.folioNumber || '').padStart(6, '0')}
@@ -115,8 +153,8 @@ export default function AllContractsPage() {
                                     <TableCell>{contract.clientName}</TableCell>
                                     <TableCell>{contract.type}</TableCell>
                                     <TableCell>
-                                        <Badge variant="outline" className={cn("capitalize", statusColors[contract.status])}>
-                                            {statusTranslations[contract.status]}
+                                        <Badge variant="outline" className={cn("capitalize", statusColors[status])}>
+                                            {statusTranslations[status]}
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
@@ -131,17 +169,18 @@ export default function AllContractsPage() {
                                         </Button>
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                                )
+                            })}
                         </TableBody>
                     </Table>
                 </div>
             ) : (
                 <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
                     <h3 className="mt-4 text-lg font-semibold text-foreground">
-                        {searchTerm ? 'No se encontraron contratos' : 'No tienes contratos todavía'}
+                        {searchTerm ? 'No se encontraron contratos' : 'No hay contratos para mostrar'}
                     </h3>
                     <p className="mt-2 text-sm text-muted-foreground">
-                        {searchTerm ? 'Intenta con otro término de búsqueda.' : 'Comienza creando un nuevo contrato para verlo aquí.'}
+                        {searchTerm ? 'Intenta con otro término de búsqueda.' : (filter === 'overdue' ? 'No hay contratos vencidos.' : 'Comienza creando un nuevo contrato para verlo aquí.')}
                     </p>
                 </div>
             )}

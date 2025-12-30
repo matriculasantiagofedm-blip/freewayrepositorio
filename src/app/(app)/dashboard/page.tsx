@@ -36,6 +36,25 @@ function toDate(date: any): Date {
   return new Date(0); // Return an invalid date if parsing fails
 }
 
+const isOverdue = (contract: Contract): boolean => {
+    if (contract.status !== 'active') return false;
+
+    const hasOverdueGeneralDeadline = (contract.deadlines as Deadline[] || [])
+        .some(d => d && d.date && isPast(toDate(d.date)));
+    
+    if (hasOverdueGeneralDeadline) return true;
+
+    if ((contract.type === 'Curso Auto' || contract.type === 'Curso Moto') && contract.autoMotoDetails?.paymentDeadline) {
+        const paymentDate = toDate(contract.autoMotoDetails.paymentDeadline);
+        if (paymentDate.getTime() > 0 && isPast(paymentDate)) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+
 export default function DashboardPage() {
   const { firestore, user } = useFirebase();
   const { role } = useCurrentRole();
@@ -56,30 +75,7 @@ export default function DashboardPage() {
 
   const activeContracts = contracts?.filter((c) => c.status === 'active').length || 0;
   
-  const overdueDeadlines =
-    contracts?.reduce((acc, contract) => {
-      // Only count overdue deadlines for 'active' contracts.
-      if (contract.status !== 'active') {
-        return acc;
-      }
-      
-      // 1. Add overdue standard deadlines
-      const generalDeadlines = (contract.deadlines as Deadline[] || [])
-        .filter(d => d && d.date && isPast(toDate(d.date)));
-      
-      acc += generalDeadlines.length;
-
-      // 2. Add overdue payment deadline from auto/moto contracts
-      if ((contract.type === 'Curso Auto' || contract.type === 'Curso Moto') && contract.autoMotoDetails?.paymentDeadline) {
-        const paymentDate = toDate(contract.autoMotoDetails.paymentDeadline);
-        if (paymentDate.getTime() > 0 && isPast(paymentDate)) {
-          acc += 1;
-        }
-      }
-      
-      return acc;
-    }, 0) || 0;
-
+  const overdueDeadlines = contracts?.filter(isOverdue).length || 0;
   
   const totalClients = contracts ? new Set(contracts.map((c) => c.clientId)).size : 0;
 
@@ -88,16 +84,19 @@ export default function DashboardPage() {
       title: 'Mis Contratos Activos',
       value: isLoading ? '...' : activeContracts,
       icon: FileText,
+      href: '/contracts'
     },
     {
       title: 'Mis Vencimientos',
       value: isLoading ? '...' : overdueDeadlines,
       icon: CalendarClock,
+      href: '/contracts?filter=overdue'
     },
     {
       title: 'Mis Clientes',
       value: isLoading ? '...' : totalClients,
       icon: Users,
+      href: '/clients'
     },
   ];
 
@@ -117,15 +116,17 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-3">
         {stats.map((stat) => (
-          <Card key={stat.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-            </CardContent>
-          </Card>
+            <Link key={stat.title} href={stat.href} className="no-underline">
+                <Card className="hover:shadow-lg transition-shadow">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                    <stat.icon className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                    <div className="text-2xl font-bold">{stat.value}</div>
+                    </CardContent>
+                </Card>
+            </Link>
         ))}
       </div>
 

@@ -1,4 +1,3 @@
-
 'use client';
 import type { Certificate, Contract } from '@/lib/types';
 import { format, addDays } from 'date-fns';
@@ -48,8 +47,8 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
     };
 
     return (
-        <Card className="w-full max-w-4xl mx-auto print:shadow-none print:border-none print:p-0 font-serif bg-white text-black">
-        <CardContent className="p-4 border-2 border-black w-full h-full relative aspect-[1.294] flex flex-col">
+        <Card className="w-full h-full mx-auto print:shadow-none print:border-none print:p-0 font-serif bg-white text-black flex flex-col">
+        <CardContent className="p-8 border-2 border-black w-full h-full relative flex flex-col flex-grow">
             <div className="absolute top-0 left-0 w-40 h-4" style={{
                 backgroundImage: `repeating-linear-gradient(-45deg, #000, #000 10px, #FFD700 10px, #FFD700 20px)`,
                 backgroundSize: '28.28px 28.28px'
@@ -96,7 +95,7 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                 <p>***Dado en la república de Panamá, a los {formattedDay} días del mes de {formattedMonth} de {formattedYear}***</p>
             </div>
             
-            <div className="text-center mt-auto">
+            <div className="text-center">
                 <p className="inline-block border-t border-black px-12 pt-1">CEO—Representante Legal</p>
                 <p>Lic. Ayax Ortega</p>
             </div>
@@ -113,8 +112,8 @@ function CertificateBack({ certificate }: { certificate: Certificate }) {
     const validityDate = format(addDays(toDate(certificate.issueDate), 364), 'dd-MM-yyyy');
     
     return (
-        <Card className="w-full max-w-4xl mx-auto print:shadow-none print:border-none print:p-0 font-serif bg-white text-black break-before-page">
-            <CardContent className="p-8 w-full h-full relative aspect-[1.294] flex flex-col justify-start text-sm">
+        <Card className="w-full h-full mx-auto print:shadow-none print:border-none print:p-0 font-serif bg-white text-black break-before-page flex flex-col">
+            <CardContent className="p-8 w-full h-full relative flex flex-col justify-start text-sm">
                 <div className="space-y-6">
                     <p>Yo, <span className="font-semibold">{contract.clientName}</span></p>
                     <p>Número de Documento: <span className="font-semibold">{details?.studentIdNumber}</span></p>
@@ -132,7 +131,7 @@ function CertificateBack({ certificate }: { certificate: Certificate }) {
 export function CertificateTemplate({ certificate }: { certificate: Certificate | null }) {
   if (!certificate) {
     return (
-      <Card className="w-full max-w-4xl mx-auto p-8 aspect-[1.294] flex items-center justify-center">
+      <Card className="w-full h-full mx-auto p-8 flex items-center justify-center">
         <p>Cargando certificado...</p>
       </Card>
     );

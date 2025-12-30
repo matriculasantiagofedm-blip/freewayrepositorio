@@ -44,13 +44,13 @@ service cloud.firestore {
     /**
      * @description Manages access to the central contracts collection.
      * @path /contracts/{contractId}
-     * @allow (get, list) An Admin or Ventas user can get/list any contract.
+     * @allow (get, list) Any signed-in user can view contract details and lists.
      * @allow (create) Any signed-in user can create a contract, but the `userId` must match their own UID.
      * @allow (update) Admin/Ventas can update. Key fields `userId` and `folioNumber` are immutable.
      * @allow (delete) Admin/Ventas can delete.
      */
     match /contracts/{contractId} {
-      allow get, list: if isAdmin() || isVentas();
+      allow get, list: if isSignedIn();
       allow create: if isOwner(request.resource.data.userId);
       allow update: if (isAdmin() || isVentas())
                       && request.resource.data.userId == resource.data.userId
@@ -61,11 +61,11 @@ service cloud.firestore {
     /**
      * @description Manages client data.
      * @path /clients/{clientId}
-     * @allow (get, list) Admin and Ventas roles can view client lists and details.
+     * @allow (get, list) Any signed-in user can view client lists and details.
      * @allow (create, update) Any signed-in user can create or update a client.
      */
     match /clients/{clientId} {
-      allow list, get: if isAdmin() || isVentas();
+      allow list, get: if isSignedIn();
       allow create, update: if isSignedIn();
       allow delete: if false; // Prevent client deletion
     }

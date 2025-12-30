@@ -80,4 +80,19 @@
   input[type="number"] {
     -moz-appearance: textfield;
   }
+
+  @media print {
+    @page {
+        size: 11in 8.5in; /* US Letter landscape */
+        margin: 0;
+    }
+    html, body {
+        width: 11in;
+        height: 8.5in;
+        background: white;
+    }
+    .break-before-page {
+      break-before: page;
+    }
+  }
 }

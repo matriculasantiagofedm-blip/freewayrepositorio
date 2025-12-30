@@ -82,21 +82,21 @@ export default function DashboardPage() {
       value: isLoading ? '...' : activeContracts,
       icon: FileText,
       href: '/contracts',
-      roles: ['Administrador', 'Ventas']
+      roles: ['Administrador'] // Solo visible para Administrador
     },
     {
       title: 'Vencimientos',
       value: isLoading ? '...' : overdueDeadlines,
       icon: CalendarClock,
       href: '/contracts?filter=overdue',
-      roles: ['Administrador', 'Ventas']
+      roles: ['Administrador'] // Solo visible para Administrador
     },
     {
       title: 'Clientes',
       value: isLoading ? '...' : totalClients,
       icon: Users,
       href: '/clients',
-       roles: ['Administrador', 'Ventas']
+       roles: ['Administrador'] // Solo visible para Administrador
     },
   ];
 

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -107,7 +108,7 @@ export default function DashboardPage() {
       { name: 'Curso Moto', icon: Bike, href: '/contracts/new?type=Curso%20Moto', color: 'bg-orange-500 hover:bg-orange-600'},
       { name: 'Curso Mixto', icon: Combine, href: '/contracts/new?type=Curso%20Mixto', color: 'bg-purple-500 hover:bg-purple-600'},
       { name: 'Curso Deluxe', icon: Crown, href: '/contracts/new?type=Curso%20Deluxe', color: 'bg-yellow-500 hover:bg-yellow-600'},
-      { name: 'Ampliaciones', icon: Plus, href: '/contracts/new?type=Ampliaciones', color: 'bg-indigo-500 hover:bg-indigo-600'},
+      { name: 'Ampliaciones', icon: Plus, href: '/contracts/new?type=Ampliaciones', color: 'bg-green-600 hover:bg-green-700'},
   ];
 
   return (

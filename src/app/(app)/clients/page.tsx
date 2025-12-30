@@ -26,19 +26,11 @@ export default function ClientsPage() {
   const clientsQuery = useMemoFirebase(() => {
     if (!firestore || !role) return null;
     
-    // Admin can see all clients
-    if (role === 'Administrador') {
+    // Admin and Ventas can see all clients
+    if (role === 'Administrador' || role === 'Ventas') {
       return collection(firestore, 'clients');
     }
     
-    // For 'Ventas' role, we will show no clients on this page as per navigation restrictions.
-    // They access clients through contracts. This prevents rule violations and aligns with UI flow.
-    if (role === 'Ventas') {
-        // We return a query that will yield no results, preventing unauthorized data access attempts.
-        // This is a safe fallback in case they navigate here directly via URL.
-        return query(collection(firestore, 'clients'), where('id', '==', '__NO_ACCESS__'));
-    }
-
     // For any other unhandled role, return null to show loading/empty state safely.
     return null;
     
@@ -60,14 +52,14 @@ export default function ClientsPage() {
         return <p>Cargando clientes...</p>;
     }
 
-    if (role === 'Ventas' && !isLoading) {
+    if (!clients && !isLoading) {
         return (
              <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
                 <h3 className="mt-4 text-lg font-semibold text-foreground">
                 Acceso Restringido
                 </h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                Los clientes se gestionan a través de sus contratos.
+                No tienes permiso para ver esta sección.
                 </p>
                 <Button asChild className="mt-4">
                     <Link href="/dashboard">Volver al Panel</Link>

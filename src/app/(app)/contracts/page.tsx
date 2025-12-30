@@ -73,10 +73,11 @@ export default function AllContractsPage() {
   const contractsQuery = useMemoFirebase(() => {
     if (!firestore || !user || !role) return null;
     
-    if (role === 'Administrador') {
+    if (role === 'Administrador' || role === 'Ventas') {
       return collection(firestore, `contracts`);
     }
     
+    // Fallback for other roles
     return query(collection(firestore, 'contracts'), where('userId', '==', user.uid));
   }, [firestore, user, role]);
 

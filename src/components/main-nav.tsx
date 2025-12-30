@@ -17,19 +17,19 @@ const allLinks = [
     href: '/dashboard',
     label: 'Panel de Control',
     icon: GanttChartSquare,
-    roles: ['Administrador', 'Ventas'], // Visible para todos
+    roles: ['Administrador', 'Ventas'],
   },
   {
     href: '/contracts',
     label: 'Todos los Contratos',
     icon: FileText,
-    roles: ['Administrador'], // Solo para Admin
+    roles: ['Administrador', 'Ventas'], // <-- ROL AÑADIDO
   },
   {
     href: '/clients',
     label: 'Clientes',
     icon: Users,
-    roles: ['Administrador'], // Solo para Admin
+    roles: ['Administrador', 'Ventas'], // <-- ROL AÑADIDO
   },
 ];
 

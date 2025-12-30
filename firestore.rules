@@ -28,11 +28,6 @@ service cloud.firestore {
     function isVentas() {
         return request.auth.token.role == 'Ventas';
     }
-    
-    // Check if a user has any contracts with a given client
-    function hasContractsWithClient(clientId) {
-        return exists(/databases/$(database)/documents/contracts/$(contractId) where get(/databases/$(database)/documents/contracts/$(contractId)).data.userId == request.auth.uid && get(/databases/$(database)/documents/contracts/$(contractId)).data.clientId == clientId);
-    }
 
     // ----------------------------------------------------------------------
     // Collection Rules
@@ -55,15 +50,14 @@ service cloud.firestore {
      * @principle Centralized collection with user-based ownership enforced by rules.
      */
     match /contracts/{contractId} {
-      allow get, list: if isAdmin() || (isVentas() && resource.data.userId == request.auth.uid);
+      allow get, list: if isAdmin() || isVentas(); // <-- ROL AÑADIDO
       allow create: if isOwner(request.resource.data.userId);
       allow update: if (isAdmin() || (isVentas() && resource.data.userId == request.auth.uid)) && request.resource.data.userId == resource.data.userId && request.resource.data.folioNumber == resource.data.folioNumber;
       allow delete: if isAdmin() || (isVentas() && resource.data.userId == request.auth.uid);
     }
 
     match /clients/{clientId} {
-      allow get: if isAdmin() || (isVentas() && hasContractsWithClient(clientId));
-      allow list: if isAdmin(); // Only Admin can list all clients
+      allow get, list: if isAdmin() || isVentas(); // <-- ROL AÑADIDO Y SIMPLIFICADO
       // A user can create a client, but they must set themselves as the owner.
       allow create: if isOwner(request.resource.data.userId);
       allow update: if isAdmin() || (isVentas() && resource.data.userId == request.auth.uid);

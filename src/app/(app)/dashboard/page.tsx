@@ -64,12 +64,12 @@ export default function DashboardPage() {
   const contractsQuery = useMemoFirebase(() => {
     if (!firestore || !user || !role) return null;
     
-    // Admin can see all contracts from the root collection
-    if (role === 'Administrador') {
+    // Admin and Ventas can see all contracts from the root collection
+    if (role === 'Administrador' || role === 'Ventas') {
         return collection(firestore, 'contracts');
     }
 
-    // Other users see only contracts they created, filtered by their userId
+    // Fallback for any other user to see only their contracts
     return query(collection(firestore, 'contracts'), where('userId', '==', user.uid));
   }, [firestore, user, role]);
 
@@ -101,7 +101,7 @@ export default function DashboardPage() {
       value: isLoading ? '...' : totalClients,
       icon: Users,
       href: '/clients',
-       roles: ['Administrador']
+       roles: ['Administrador', 'Ventas'] // <-- ROL AÑADIDO
     },
   ];
 

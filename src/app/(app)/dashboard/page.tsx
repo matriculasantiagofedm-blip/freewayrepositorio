@@ -79,26 +79,31 @@ export default function DashboardPage() {
   
   const totalClients = contracts ? new Set(contracts.map((c) => c.clientId)).size : 0;
 
-  const stats = [
+  const allStats = [
     {
       title: 'Mis Contratos Activos',
       value: isLoading ? '...' : activeContracts,
       icon: FileText,
       href: '/contracts',
+      roles: ['Administrador'] // Solo para Admin
     },
     {
       title: 'Mis Vencimientos',
       value: isLoading ? '...' : overdueDeadlines,
       icon: CalendarClock,
       href: '/contracts?filter=overdue',
+      roles: ['Administrador', 'Ventas'] // Para Admin y Ventas
     },
     {
       title: 'Mis Clientes',
       value: isLoading ? '...' : totalClients,
       icon: Users,
       href: '/clients',
+       roles: ['Administrador', 'Ventas'] // Para Admin y Ventas
     },
   ];
+
+  const stats = allStats.filter(stat => stat.roles.includes(role || ''));
 
   const contractTypes = [
       { name: 'Curso Auto', icon: Car, href: '/contracts/new?type=Curso%20Auto', color: 'bg-blue-500 hover:bg-blue-600'},

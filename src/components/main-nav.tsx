@@ -12,27 +12,25 @@ import { GanttChartSquare, FileText, Users, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCurrentRole } from '@/hooks/use-current-role';
 
-const links = [
+const allLinks = [
   {
     href: '/dashboard',
     label: 'Panel de Control',
     icon: GanttChartSquare,
+    roles: ['Administrador', 'Ventas'], // Visible para todos
   },
   {
     href: '/contracts',
     label: 'Todos los Contratos',
     icon: FileText,
+    roles: ['Administrador'], // Solo para Admin
   },
   {
     href: '/clients',
     label: 'Clientes',
     icon: Users,
+    roles: ['Administrador', 'Ventas'], // Visible para Admin y Ventas
   },
-  // {
-  //   href: '/settings',
-  //   label: 'Ajustes',
-  //   icon: Settings,
-  // },
 ];
 
 export function MainNav({ className }: { className?: string }) {
@@ -40,6 +38,8 @@ export function MainNav({ className }: { className?: string }) {
   const { role } = useCurrentRole();
 
   if (!role) return null; // No mostrar nada si el rol no está definido
+
+  const links = allLinks.filter(link => link.roles.includes(role));
 
   return (
     <nav className={cn('flex flex-col h-full', className)}>

@@ -37,9 +37,12 @@ export function MainNav({ className }: { className?: string }) {
   const pathname = usePathname();
   const { role } = useCurrentRole();
 
+  // Filter links based on the current user's role.
   const filteredLinks = allLinks.filter(link => role && link.roles.includes(role));
 
-  if (!role) {
+  // If the user has no role or no links are available for their role, render nothing.
+  // This prevents rendering an empty nav which might cause issues.
+  if (!role || filteredLinks.length === 0) {
       return null;
   }
 

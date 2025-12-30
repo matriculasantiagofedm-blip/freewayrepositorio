@@ -19,21 +19,23 @@ import { useCurrentRole } from '@/hooks/use-current-role';
 import { cn } from '@/lib/utils';
 
 function toDate(date: any): Date {
+  if (!date) return new Date(0); // Return an invalid date if input is null/undefined
   if (date instanceof Date) {
     return date;
   }
-  if (date && date.toDate) {
+  // Handle Firestore Timestamp
+  if (date && typeof date.toDate === 'function') {
     return date.toDate();
   }
+  // Handle ISO strings
   if (typeof date === 'string') {
-    const parsedDate = new Date(date);
-    if (!isNaN(parsedDate.getTime())) {
-      // Adjust for timezone issues with date-only strings
-      const timezoneOffset = parsedDate.getTimezoneOffset() * 60000;
-      return new Date(parsedDate.getTime() + timezoneOffset);
+    const parsed = new Date(date);
+    if (!isNaN(parsed.getTime())) {
+      return parsed;
     }
   }
-  return new Date(0); // Return an invalid date if parsing fails
+  // Fallback for unexpected types
+  return new Date(0);
 }
 
 const isOverdue = (contract: Contract): boolean => {
@@ -99,7 +101,7 @@ export default function DashboardPage() {
       value: isLoading ? '...' : totalClients,
       icon: Users,
       href: '/clients',
-       roles: ['Administrador', 'Ventas']
+       roles: ['Administrador']
     },
   ];
 

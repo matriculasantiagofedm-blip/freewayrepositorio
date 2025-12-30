@@ -9,7 +9,7 @@ type FirestoreTimestamp = Date;
 export interface Deadline {
   id: string;
   description: string;
-  date: string;
+  date: Date;
 }
 
 export interface ClassSchedule {

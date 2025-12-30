@@ -25,13 +25,23 @@ import { useSearchParams } from 'next/navigation';
 
 
 function toDate(date: any): Date {
+  if (!date) return new Date(0); // Return an invalid date if input is null/undefined
   if (date instanceof Date) {
     return date;
   }
-  if (date && date.toDate) {
+  // Handle Firestore Timestamp
+  if (date && typeof date.toDate === 'function') {
     return date.toDate();
   }
-  return new Date();
+  // Handle ISO strings
+  if (typeof date === 'string') {
+    const parsed = new Date(date);
+    if (!isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+  // Fallback for unexpected types
+  return new Date(0);
 }
 
 const isOverdue = (contract: Contract): boolean => {

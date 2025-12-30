@@ -29,7 +29,7 @@ const allLinks = [
     href: '/clients',
     label: 'Clientes',
     icon: Users,
-    roles: ['Administrador', 'Ventas'], // Visible para Admin y Ventas
+    roles: ['Administrador'], // Solo para Admin
   },
 ];
 

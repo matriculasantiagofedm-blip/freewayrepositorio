@@ -1,9 +1,9 @@
 'use client';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
 import type { Client } from '@/lib/types';
 import Link from 'next/link';
 import { useCurrentRole } from '@/hooks/use-current-role';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -15,73 +15,22 @@ import {
 import { Button } from '@/components/ui/button';
 import { Eye, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { useDb, useUser } from '@/components/firebase-provider';
+import { useDb } from '@/components/firebase-provider';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 
 export default function ClientsPage() {
   const db = useDb();
-  const { user } = useUser();
   const { role } = useCurrentRole();
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Admin can see all clients directly.
+  // 'Administrador' puede ver todos los clientes directamente.
+  // 'Ventas' no tiene permiso para listar todos los clientes, por lo que la query será null para ellos.
   const clientsQuery = useMemoQuery(() => {
-    if (!db || !role) return null;
-    
-    if (role === 'Administrador') {
-      return collection(db, 'clients');
-    }
-    
-    // For 'Ventas', we will handle it differently below.
-    // For any other unhandled role, return null to show loading/empty state safely.
-    return null;
-    
+    if (!db || role !== 'Administrador') return null;
+    return collection(db, 'clients');
   }, [db, role]);
 
-  const { data: adminClients, isLoading: isAdminClientsLoading } = useCollection<Client>(clientsQuery);
-  const [ventasClients, setVentasClients] = useState<Client[]>([]);
-  const [isVentasClientsLoading, setIsVentasClientsLoading] = useState(false);
-
-  useEffect(() => {
-    if (role === 'Ventas' && user && db) {
-        const fetchVentasClients = async () => {
-            setIsVentasClientsLoading(true);
-            try {
-                // 1. Find all contracts created by the current 'Ventas' user
-                const contractsRef = collection(db, 'contracts');
-                const userContractsQuery = query(contractsRef, where('userId', '==', user.uid));
-                const contractsSnapshot = await getDocs(userContractsQuery);
-                
-                if (contractsSnapshot.empty) {
-                    setVentasClients([]);
-                    setIsVentasClientsLoading(false);
-                    return;
-                }
-
-                // 2. Get the unique client IDs from those contracts
-                const clientIds = [...new Set(contractsSnapshot.docs.map(doc => doc.data().clientId))];
-                
-                // 3. Fetch only those specific clients
-                const clientsRef = collection(db, 'clients');
-                const clientDocsQuery = query(clientsRef, where('id', 'in', clientIds));
-                const clientsSnapshot = await getDocs(clientDocsQuery);
-
-                const clientsData = clientsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Client[];
-                setVentasClients(clientsData);
-
-            } catch (error) {
-                console.error("Error fetching clients for 'Ventas':", error);
-                setVentasClients([]); // Clear clients on error
-            } finally {
-                setIsVentasClientsLoading(false);
-            }
-        };
-        fetchVentasClients();
-    }
-  }, [role, user, db]);
-
-  const clients = role === 'Administrador' ? adminClients : ventasClients;
-  const isLoading = role === 'Administrador' ? isAdminClientsLoading : isVentasClientsLoading;
+  const { data: clients, isLoading } = useCollection<Client>(clientsQuery);
 
   const filteredClients =
     clients?.filter((client) => {
@@ -93,61 +42,62 @@ export default function ClientsPage() {
     }) || [];
 
   const renderContent = () => {
-    if (isLoading) {
-        return <p>Cargando clientes...</p>;
+    // Si no es un administrador, mostrar acceso restringido de inmediato.
+    if (role && role !== 'Administrador') {
+      return (
+        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
+          <h3 className="mt-4 text-lg font-semibold text-foreground">
+            Acceso Restringido
+          </h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            No tienes permiso para ver esta sección.
+          </p>
+          <Button asChild className="mt-4">
+            <Link href="/dashboard">Volver al Panel</Link>
+          </Button>
+        </div>
+      );
     }
-
-    if (!clients && !isLoading && role !== 'Ventas') {
-        return (
-             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
-                <h3 className="mt-4 text-lg font-semibold text-foreground">
-                Acceso Restringido
-                </h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                No tienes permiso para ver esta sección.
-                </p>
-                <Button asChild className="mt-4">
-                    <Link href="/dashboard">Volver al Panel</Link>
-                </Button>
-            </div>
-        )
+    
+    if (isLoading) {
+      return <p>Cargando clientes...</p>;
     }
 
     if (filteredClients.length > 0) {
-        return (
-             <div className="rounded-lg border">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Nombre</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Cédula / Pasaporte</TableHead>
-                            <TableHead className="text-right">Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {filteredClients.map((client) => (
-                            <TableRow key={client.id}>
-                                <TableCell className="font-medium">{client.name}</TableCell>
-                                <TableCell>{client.email}</TableCell>
-                                <TableCell>{client.idNumber || 'No disponible'}</TableCell>
-                                <TableCell className="text-right">
-                                    <Button asChild variant="ghost" size="icon">
-                                        <Link href={`/clients/${client.id}`}>
-                                            <Eye className="h-4 w-4" />
-                                            <span className="sr-only">Ver Cliente</span>
-                                        </Link>
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
-        )
+      return (
+        <div className="rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nombre</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Cédula / Pasaporte</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredClients.map((client) => (
+                <TableRow key={client.id}>
+                  <TableCell className="font-medium">{client.name}</TableCell>
+                  <TableCell>{client.email}</TableCell>
+                  <TableCell>{client.idNumber || 'No disponible'}</TableCell>
+                  <TableCell className="text-right">
+                    <Button asChild variant="ghost" size="icon">
+                      <Link href={`/clients/${client.id}`}>
+                        <Eye className="h-4 w-4" />
+                        <span className="sr-only">Ver Cliente</span>
+                      </Link>
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      );
     }
 
-     if (searchTerm) {
+    if (searchTerm) {
       return (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
           <h3 className="mt-4 text-lg font-semibold text-foreground">
@@ -159,18 +109,18 @@ export default function ClientsPage() {
         </div>
       );
     }
-    
+
     return (
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
+      <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
         <h3 className="mt-4 text-lg font-semibold text-foreground">
-            No hay clientes para mostrar
+          No hay clientes para mostrar
         </h3>
         <p className="mt-2 text-sm text-muted-foreground">
-            {role === 'Ventas' ? 'Los clientes con los que tienes contratos aparecerán aquí.' : 'Cuando se cree el primer contrato, el cliente aparecerá aquí.'}
+          Cuando se cree el primer contrato, el cliente aparecerá aquí.
         </p>
-        </div>
-    )
-  }
+      </div>
+    );
+  };
 
   return (
     <div className="flex flex-col gap-8">

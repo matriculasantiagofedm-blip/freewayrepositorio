@@ -41,7 +41,7 @@ export default function ClientsPage() {
     }) || [];
 
   const renderContent = () => {
-    // Si no es un administrador, mostrar acceso restringido de inmediato.
+    // Si no es un administrador o ventas, mostrar acceso restringido de inmediato.
     if (role && role !== 'Administrador' && role !== 'Ventas') {
       return (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">

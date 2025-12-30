@@ -75,7 +75,7 @@ export default function AllContractsPage() {
     if (!db || !user || !role) return null;
     
     if (role === 'Administrador' || role === 'Ventas') {
-      return collection(db, `contracts`);
+      return collection(db, 'contracts');
     }
     
     // Fallback for other roles to see only their contracts

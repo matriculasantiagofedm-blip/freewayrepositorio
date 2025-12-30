@@ -44,13 +44,12 @@ service cloud.firestore {
     /**
      * @description Manages access to the central contracts collection.
      * @path /contracts/{contractId}
+     * @allow (get, list) An Admin or Ventas user can get/list any contract. Other users can only get their own.
      * @allow (create) Any signed-in user can create a contract, but the `userId` must match their own UID.
-     * @allow (get, list) A user can only read contracts they own. Admins can read all contracts.
      * @allow (update) A user can only update a contract they own, and the `userId` and `folioNumber` cannot be changed.
      * @principle Centralized collection with user-based ownership enforced by rules.
      */
     match /contracts/{contractId} {
-      // An Admin or Ventas user can get/list any contract.
       allow get, list: if isAdmin() || isVentas();
       allow create: if isOwner(request.resource.data.userId);
       allow update: if (isAdmin() || (isVentas() && resource.data.userId == request.auth.uid)) && request.resource.data.userId == resource.data.userId && request.resource.data.folioNumber == resource.data.folioNumber;
@@ -58,14 +57,7 @@ service cloud.firestore {
     }
 
     match /clients/{clientId} {
-      // Admins and Ventas can list all clients.
-      allow list: if isAdmin() || isVentas();
-      
-      // A user can GET a client doc if they are an admin, OR
-      // if they are a 'Ventas' user.
-      allow get: if isAdmin() || isVentas();
-      
-      // A user can create a client, but they must set themselves as the owner.
+      allow list, get: if isAdmin() || isVentas();
       allow create: if isOwner(request.resource.data.userId);
       allow update: if isAdmin() || (isVentas() && resource.data.userId == request.auth.uid);
       allow delete: if false;

@@ -81,21 +81,21 @@ export default function DashboardPage() {
 
   const allStats = [
     {
-      title: 'Mis Contratos Activos',
+      title: 'Contratos Activos',
       value: isLoading ? '...' : activeContracts,
       icon: FileText,
       href: '/contracts',
       roles: ['Administrador'] // Solo para Admin
     },
     {
-      title: 'Mis Vencimientos',
+      title: 'Vencimientos',
       value: isLoading ? '...' : overdueDeadlines,
       icon: CalendarClock,
       href: '/contracts?filter=overdue',
       roles: ['Administrador', 'Ventas'] // Para Admin y Ventas
     },
     {
-      title: 'Mis Clientes',
+      title: 'Clientes',
       value: isLoading ? '...' : totalClients,
       icon: Users,
       href: '/clients',

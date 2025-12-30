@@ -23,7 +23,7 @@ const allLinks = [
     href: '/contracts',
     label: 'Todos los Contratos',
     icon: FileText,
-    roles: ['Administrador', 'Ventas'], // Restaurado para Ventas
+    roles: ['Administrador'], // Solo para Admin
   },
   {
     href: '/clients',

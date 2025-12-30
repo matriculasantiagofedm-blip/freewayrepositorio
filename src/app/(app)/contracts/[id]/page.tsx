@@ -48,7 +48,7 @@ export default function ContractDetailPage() {
   const canGenerateCertificate = contract && ['Curso Auto', 'Curso Moto', 'Curso Deluxe', 'Curso Mixto'].includes(contract.type);
 
   const handleOpenFolioModal = () => {
-    const suggestedFolio = String(contract?.folioNumber || '');
+    const suggestedFolio = '2026 / 0001';
     setCertificateFolio(suggestedFolio);
     setIsFolioModalOpen(true);
   };

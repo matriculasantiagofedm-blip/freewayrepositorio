@@ -90,13 +90,13 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                         Reconocida por la Autoridad del Tránsito y Transporte Terrestre, Resuelto N°380 (04 de diciembre de 2000) Resolución AL-325
                     </p>
                 </div>
+
+                <div className="text-center mt-8 mb-8 font-bold">
+                    <p>***Dado en la república de Panamá, a los {formattedDay} días del mes de {formattedMonth} de {formattedYear}***</p>
+                </div>
             </main>
             
             <footer className="flex-shrink-0 pb-8">
-                <div className="text-center mb-8 font-bold">
-                    <p>***Dado en la república de Panamá, a los {formattedDay} días del mes de {formattedMonth} de {formattedYear}***</p>
-                </div>
-                
                 <div className="text-center">
                     <p className="inline-block border-t border-black px-12 pt-1">CEO—Representante Legal</p>
                     <p>Lic. Ayax Ortega</p>

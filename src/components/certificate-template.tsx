@@ -1,10 +1,7 @@
 'use client';
-import type { Certificate, Contract } from '@/lib/types';
+import type { Certificate } from '@/lib/types';
 import { format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Card, CardContent } from './ui/card';
-import { cn } from '@/lib/utils';
-import Image from 'next/image';
 
 function toDate(date: any): Date {
   if (date instanceof Date) return date;
@@ -36,41 +33,68 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
     };
     
     const getLicenseTypeText = (licenseType?: string) => {
-        if (!licenseType) return '';
+        if (!licenseType) return 'A, C';
         return licenseType.split(',').map(l => l.trim()).join(', ');
     }
 
     const getHighestLicenseType = (licenseType?: string): string => {
-        if (!licenseType) return '';
+        if (!licenseType) return 'C';
         const letters = licenseType.split(',').map(l => l.trim()).filter(l => l).sort();
-        return letters[letters.length - 1] || '';
+        return letters[letters.length - 1] || 'C';
     };
 
+    const getFolioParts = (folio?: string) => {
+        if (!folio || !folio.includes('/')) {
+            const currentYear = new Date().getFullYear();
+            return { num: '0001', year: String(currentYear) };
+        }
+        const parts = folio.split('/');
+        return {
+            num: parts[1]?.trim().padStart(4, '0') || '0001',
+            year: parts[0]?.trim() || String(new Date().getFullYear()),
+        }
+    }
+
+    const { num: folioNum, year: folioYear } = getFolioParts(certificate.folio);
+
     return (
-        <div className="w-[11in] h-[8.5in] p-12 bg-white flex flex-col text-black font-serif">
-            <header className="flex justify-between items-start w-full">
-                 <div className="flex-1"></div>
-                 <div className="flex-1 text-center">
-                    <p className="font-bold text-lg">FREEWAY ESCUELA DE MANEJO S.A.</p>
-                 </div>
-                 <div className="flex-1 text-right">
-                    {certificate.folio && (
-                        <p className="font-bold text-sm text-red-500">CONTRATO N° {certificate.folio}</p>
-                    )}
+        <div className="w-[11in] h-[8.5in] p-12 bg-white flex flex-col text-black font-serif relative">
+            {/* Decorative Top Bar */}
+            <div className="absolute top-0 left-0 h-4 w-48">
+                <div className="h-full w-full bg-yellow-400 -skew-x-[45deg] origin-top-left flex">
+                    <div className="w-1/4 h-full bg-black"></div>
+                    <div className="w-1/4 h-full bg-yellow-400"></div>
+                    <div className="w-1/4 h-full bg-black"></div>
+                    <div className="w-1/4 h-full bg-yellow-400"></div>
                 </div>
+            </div>
+
+            <header className="w-full text-center mb-4">
+                 <p className="font-bold text-lg">FREEWAY ESCUELA DE MANEJO S.A.</p>
             </header>
 
-            <main className="flex-grow flex flex-col justify-start text-center pt-10">
-                <p>Casa Matriz Chorrera</p>
-                
-                <p className="font-bold text-xl mt-8">Otorga el presente Certificado a:</p>
+            <div className="flex w-full items-start justify-between mb-4">
+                <div className="flex-1"></div>
+                <div className="flex-1 text-center">
+                    <h1 className="text-5xl font-bold tracking-[0.2em]">FREEWAY</h1>
+                    <p className="text-sm tracking-[0.4em]">ESCUELA DE MANEJO</p>
+                </div>
+                <div className="flex-1 text-right">
+                    <p className="text-5xl font-bold">{getHighestLicenseType(certificate.licenseType)}</p>
+                    <p className="text-xs">{folioNum} / {folioYear}</p>
+                </div>
+            </div>
 
-                <div className="my-6">
-                    <p className="font-bold text-3xl">{certificate.clientName}</p>
-                    <p className="font-bold text-xl mt-1">C.I.P. {certificate.cip}</p>
+            <main className="flex-grow flex flex-col justify-start text-center pt-2">
+                <p className="text-lg">Casa Matriz Chorrera</p>
+                <p className="mt-4">Otorga el presente Certificado a:</p>
+
+                <div className="my-4">
+                    <p className="font-bold text-3xl tracking-wider">{certificate.clientName}</p>
+                    <p className="font-bold text-xl mt-1 tracking-wider">C.I.P. {certificate.cip}</p>
                 </div>
 
-                <div className="text-sm leading-snug max-w-2xl mx-auto">
+                <div className="text-sm leading-snug max-w-3xl mx-auto">
                     <p>
                         Por haber aprobado el curso de capacitación <span className="font-bold underline">TEÓRICO Y PRÁCTICO</span>, para optar por la licencia de
                         conducir tipo <span className="font-bold">{getLicenseTypeText(certificate.licenseType)}</span> con una duración de <span className="font-bold underline">{getCourseHours(certificate.courseName)}</span> horas, en cumplimiento del Decreto Ejecutivo No.640 del
@@ -78,20 +102,20 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                     </p>
                 </div>
 
-                <div className="text-xs mx-auto mt-4">
-                     <p className='whitespace-nowrap'>
+                <div className="text-xs mx-auto mt-6">
+                     <p>
                         Reconocida por la Autoridad del Tránsito y Transporte Terrestre, Resuelto N°380 (04 de diciembre de 2000) Resolución AL-325
                     </p>
                 </div>
-                <div className="text-center mt-8 mb-8 font-bold text-sm">
+                <div className="text-center mt-6 mb-8 font-bold text-sm">
                     <p>***Dado en la república de Panamá, a los {formattedDay} días del mes de {formattedMonth} de {formattedYear}***</p>
                 </div>
             </main>
             
-            <footer className="w-full flex-shrink-0 pt-12 pb-4">
+            <footer className="w-full flex-shrink-0 pt-8 pb-4">
                 <div className="text-center">
-                    <p className="inline-block border-t border-black px-24 pt-2">CEO—Representante Legal</p>
-                    <p>Lic. Ayax Ortega</p>
+                    <p className="inline-block border-t border-black px-24 pt-1">CEO—Representante Legal</p>
+                    <p className="text-red-500">Lic. Ayax Ortega</p>
                 </div>
             </footer>
         </div>
@@ -111,11 +135,16 @@ function CertificateBack({ certificate }: { certificate: Certificate }) {
                 <p>Número de Documento: <span className="font-semibold">{details?.studentIdNumber}</span></p>
                 <p>Hago constar que resido en: <span className="font-semibold">{details?.studentAddress}</span></p>
                 <p>con teléfono residencial: <span className="font-semibold">{details?.studentPhone1}</span> teléfono celular: <span className="font-semibold">{details?.studentPhone2}</span></p>
-                <p className="font-bold">TIPO DE LICENCIAS: <span className="font-semibold">{details?.licenseCategory}</span></p>
+                <p className="font-bold">TIPO DE LICENCIAS: <span className="font-semibold">{getLicenseTypeText(details?.licenseCategory)}</span></p>
                 <p>Este certificado tiene validez de 364 días a partir de <span className="font-semibold">{format(addDays(toDate(certificate.issueDate), 1), 'dd-MM-yyyy')}</span></p>
             </div>
         </div>
     );
+}
+
+const getLicenseTypeText = (licenseType?: string) => {
+    if (!licenseType) return '';
+    return licenseType.split(',').map(l => l.trim()).join(', ');
 }
 
 

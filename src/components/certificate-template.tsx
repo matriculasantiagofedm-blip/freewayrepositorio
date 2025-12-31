@@ -72,7 +72,7 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                 </div>
 
                 <header className="flex w-full flex-col items-center justify-center mb-4 relative">
-                    <div className="text-center absolute w-full">
+                    <div className="text-center absolute w-full pt-2">
                         <h1 className="text-6xl font-extrabold tracking-widest">FREEWAY</h1>
                         <p className="text-2xl tracking-[0.4em]">ESCUELA DE MANEJO</p>
                     </div>

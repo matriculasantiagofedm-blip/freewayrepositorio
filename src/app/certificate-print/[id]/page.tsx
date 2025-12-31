@@ -82,7 +82,7 @@ export default function CertificatePrintIdPage() {
 
   // La página solo contiene la plantilla del certificado para una impresión limpia.
   return (
-    <div className="w-full print:p-0 print:m-0 print:bg-white bg-gray-100 print:h-screen">
+    <div className="print:p-0 print:m-0 print:bg-white bg-gray-100">
         <CertificateTemplate certificate={certificate} />
     </div>
   );

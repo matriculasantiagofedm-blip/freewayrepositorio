@@ -60,7 +60,7 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
 
     return (
         <div className="w-[11in] h-[8.5in] p-8 bg-white text-black font-serif">
-            <div className="w-full h-full border-2 border-black flex flex-col relative p-8">
+            <div className="w-full h-full border-2 border-black flex flex-col p-8 relative">
                 {/* Decorative Top Bar */}
                 <div className="absolute top-0 left-0 h-4 w-48 print:[-webkit-print-color-adjust:exact] print:[color-adjust:exact]">
                     <div className="h-full w-full bg-yellow-400 -skew-x-[45deg] origin-top-left flex print:[-webkit-print-color-adjust:exact] print:[color-adjust:exact]">
@@ -71,7 +71,7 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                     </div>
                 </div>
 
-                <header className="flex w-full flex-col items-center justify-center mb-4 relative">
+                <header className="flex w-full flex-col items-center justify-center mb-4 relative pt-12">
                     <div className="text-center absolute w-full pt-2">
                         <h1 className="text-6xl font-extrabold tracking-widest">FREEWAY</h1>
                         <p className="text-2xl tracking-[0.4em]">ESCUELA DE MANEJO</p>
@@ -112,7 +112,7 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                 <footer className="w-full flex-shrink-0 pt-8 pb-4">
                     <div className="text-center">
                         <p className="inline-block border-t border-black px-24 pt-1">CEO—Representante Legal</p>
-                        <p className='font-semibold'>Lic. Ayax Ortega</p>
+                        <p className='font-semibold text-black'>Lic. Ayax Ortega</p>
                     </div>
                 </footer>
             </div>

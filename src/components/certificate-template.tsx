@@ -98,7 +98,7 @@ function CertificateBack({ certificate }: { certificate: Certificate }) {
     const details = contract.autoMotoDetails || contract.deluxeDetails;
     
     return (
-        <div className="w-[11in] h-[8.5in] p-8 bg-white flex flex-col text-black font-serif break-before-page print:transform print:scale-[1.05]">
+        <div className="w-[11in] h-[8.5in] p-8 bg-white flex flex-col text-black font-serif break-before-page print:transform print:scale-[1.05] justify-start">
             <div className="space-y-6 flex-grow flex flex-col justify-start text-sm">
                 <p>Yo, <span className="font-semibold">{contract.clientName}</span></p>
                 <p>Número de Documento: <span className="font-semibold">{details?.studentIdNumber}</span></p>

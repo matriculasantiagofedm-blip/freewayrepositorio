@@ -89,14 +89,16 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                     </p>
                 </div>
             </div>
-
-            <div className="text-center mb-2 font-bold">
-                <p>***Dado en la república de Panamá, a los {formattedDay} días del mes de {formattedMonth} de {formattedYear}***</p>
-            </div>
             
-            <div className="text-center">
-                <p className="inline-block border-t border-black px-12 pt-1">CEO—Representante Legal</p>
-                <p>Lic. Ayax Ortega</p>
+            <div className="flex-shrink-0 pb-8">
+                <div className="text-center mb-10 font-bold">
+                    <p>***Dado en la república de Panamá, a los {formattedDay} días del mes de {formattedMonth} de {formattedYear}***</p>
+                </div>
+                
+                <div className="text-center">
+                    <p className="inline-block border-t border-black px-12 pt-1">CEO—Representante Legal</p>
+                    <p>Lic. Ayax Ortega</p>
+                </div>
             </div>
         </div>
     );

@@ -71,8 +71,8 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
             </div>
 
             <header className="w-full text-center mb-4">
-                 <h1 className="text-3xl font-extrabold tracking-widest">FREEWAY</h1>
-                 <p className="text-base tracking-[0.4em]">ESCUELA DE MANEJO</p>
+                 <h1 className="text-4xl font-extrabold tracking-widest">FREEWAY</h1>
+                 <p className="text-lg tracking-[0.4em]">ESCUELA DE MANEJO</p>
             </header>
 
             <div className="flex w-full items-start justify-between mb-4">
@@ -129,7 +129,7 @@ function CertificateBack({ certificate }: { certificate: Certificate }) {
     const details = contract.autoMotoDetails || contract.deluxeDetails;
     
     return (
-        <div className="w-[11in] h-[8.5in] p-8 bg-white flex flex-col text-black font-serif break-before-page justify-start">
+        <div className="w-[11in] h-[8.5in] p-8 bg-white flex flex-col text-black font-serif justify-start break-before-page">
             <div className="space-y-6 flex-grow flex flex-col justify-start text-sm pt-8">
                 <p>Yo, <span className="font-semibold">{contract.clientName}</span></p>
                 <p>Número de Documento: <span className="font-semibold">{details?.studentIdNumber}</span></p>

@@ -69,7 +69,7 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                 </div>
             </section>
 
-            <main className="flex-grow flex flex-col justify-center text-center py-4">
+            <main className="flex-grow flex flex-col justify-start text-center py-4">
                 <p className="font-bold">Casa Matriz Chorrera</p>
                 <p className="mt-6">Otorga el presente Certificado a:</p>
 

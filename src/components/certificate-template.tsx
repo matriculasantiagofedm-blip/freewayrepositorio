@@ -114,7 +114,7 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
             <footer className="w-full flex-shrink-0 pt-8 pb-4">
                 <div className="text-center">
                     <p className="inline-block border-t border-black px-24 pt-1">CEO—Representante Legal</p>
-                    <p className="text-red-500">Lic. Ayax Ortega</p>
+                    <p>Lic. Ayax Ortega</p>
                 </div>
             </footer>
         </div>

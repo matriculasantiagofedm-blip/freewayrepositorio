@@ -93,7 +93,7 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
             </main>
             
             <footer className="flex-shrink-0 pb-8">
-                <div className="text-center mb-16 font-bold">
+                <div className="text-center mb-8 font-bold">
                     <p>***Dado en la república de Panamá, a los {formattedDay} días del mes de {formattedMonth} de {formattedYear}***</p>
                 </div>
                 

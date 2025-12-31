@@ -84,13 +84,15 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                         conducir tipo <span className="font-bold">{getLicenseTypeText(certificate.licenseType)}</span> con una duración de <span className="font-bold underline">{getCourseHours(certificate.courseName)}</span> horas, en cumplimiento del Decreto Ejecutivo No.640 del
                         27 de Diciembre de 2006, en su artículo 113, acápite a.
                     </p>
-                    <p className="mt-4 text-xs">
+                </div>
+                <div className="mt-4 text-xs whitespace-nowrap">
+                    <p>
                         Reconocida por la Autoridad del Tránsito y Transporte Terrestre, Resuelto N°380 (04 de diciembre de 2000) Resolución AL-325
                     </p>
                 </div>
             </main>
             
-            <footer className="flex-shrink-0 pb-4">
+            <footer className="flex-shrink-0 pb-8">
                 <div className="text-center mb-16 font-bold">
                     <p>***Dado en la república de Panamá, a los {formattedDay} días del mes de {formattedMonth} de {formattedYear}***</p>
                 </div>

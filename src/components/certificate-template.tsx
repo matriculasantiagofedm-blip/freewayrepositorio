@@ -48,33 +48,35 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
 
     return (
         <div className="w-[11in] h-[8.5in] p-8 bg-white flex flex-col text-black font-serif print:transform print:scale-[1.05]">
-             <header className="text-center w-full">
+            <header className="text-center w-full">
                 <Image src="/logo.png" alt="Freeway Logo" width={100} height={100} className="mx-auto" />
                 <p className="font-bold text-lg">FREEWAY ESCUELA DE MANEJO S.A.</p>
-                <p className="text-sm">Casa Matriz Chorrera</p>
             </header>
 
             <main className="flex-grow flex flex-col justify-start text-center pt-8">
-                 <p className="font-bold text-xl mb-4">Otorga el presente Certificado a:</p>
+                <p>Casa Matriz Chorrera</p>
+                
+                <p className="font-bold text-xl mb-4 mt-8">Otorga el presente Certificado a:</p>
 
                 <div className="my-6">
                     <p className="font-bold text-3xl">{certificate.clientName}</p>
                     <p className="font-bold text-xl mt-1">C.I.P. {certificate.cip}</p>
                 </div>
 
-                <div className="text-sm leading-snug mx-auto">
+                <div className="text-sm leading-snug max-w-2xl mx-auto">
                     <p>
                         Por haber aprobado el curso de capacitación <span className="font-bold underline">TEÓRICO Y PRÁCTICO</span>, para optar por la licencia de
                         conducir tipo <span className="font-bold">{getLicenseTypeText(certificate.licenseType)}</span> con una duración de <span className="font-bold underline">{getCourseHours(certificate.courseName)}</span> horas, en cumplimiento del Decreto Ejecutivo No.640 del
                         27 de Diciembre de 2006, en su artículo 113, acápite a.
                     </p>
                 </div>
-                 <div className="mt-4 text-xs mx-auto">
+
+                <div className="text-xs mx-auto mt-4">
                      <p>
                         Reconocida por la Autoridad del Tránsito y Transporte Terrestre, Resuelto N°380 (04 de diciembre de 2000) Resolución AL-325
                     </p>
                 </div>
-                 <div className="text-center mt-4 font-bold text-sm">
+                 <div className="text-center mt-8 font-bold text-sm">
                     <p>***Dado en la república de Panamá, a los {formattedDay} días del mes de {formattedMonth} de {formattedYear}***</p>
                 </div>
             </main>

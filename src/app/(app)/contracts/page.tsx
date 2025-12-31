@@ -1,5 +1,5 @@
 'use client';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import type { Contract, Deadline } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import {
@@ -74,12 +74,14 @@ export default function AllContractsPage() {
   const contractsQuery = useMemoQuery(() => {
     if (!db || !user || !role) return null;
     
+    const baseCollection = collection(db, 'contracts');
+
     if (role === 'Administrador' || role === 'Ventas') {
-      return collection(db, 'contracts');
+      return query(baseCollection, orderBy('folioNumber', 'desc'));
     }
     
     // Fallback for other roles to see only their contracts
-    return query(collection(db, 'contracts'), where('userId', '==', user.uid));
+    return query(baseCollection, where('userId', '==', user.uid), orderBy('folioNumber', 'desc'));
   }, [db, user, role]);
 
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);

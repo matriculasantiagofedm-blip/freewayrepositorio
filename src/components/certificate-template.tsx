@@ -1,5 +1,6 @@
+
 'use client';
-import type { Certificate } from '@/lib/types';
+import type { Certificate, Contract } from '@/lib/types';
 import { format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -60,23 +61,23 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
     return (
         <div className="w-[11in] h-[8.5in] p-12 bg-white flex flex-col text-black font-serif relative">
             {/* Decorative Top Bar */}
-            <div className="absolute top-0 left-0 h-4 w-48">
-                <div className="h-full w-full bg-yellow-400 -skew-x-[45deg] origin-top-left flex">
-                    <div className="w-1/4 h-full bg-black"></div>
-                    <div className="w-1/4 h-full bg-yellow-400"></div>
-                    <div className="w-1/4 h-full bg-black"></div>
-                    <div className="w-1/4 h-full bg-yellow-400"></div>
+            <div className="absolute top-0 left-0 h-4 w-48 print:[-webkit-print-color-adjust:exact] print:[color-adjust:exact]">
+                <div className="h-full w-full bg-yellow-400 -skew-x-[45deg] origin-top-left flex print:[-webkit-print-color-adjust:exact] print:[color-adjust:exact]">
+                    <div className="w-1/4 h-full bg-black print:[-webkit-print-color-adjust:exact] print:[color-adjust:exact]"></div>
+                    <div className="w-1/4 h-full bg-yellow-400 print:[-webkit-print-color-adjust:exact] print:[color-adjust:exact]"></div>
+                    <div className="w-1/4 h-full bg-black print:[-webkit-print-color-adjust:exact] print:[color-adjust:exact]"></div>
+                    <div className="w-1/4 h-full bg-yellow-400 print:[-webkit-print-color-adjust:exact] print:[color-adjust:exact]"></div>
                 </div>
             </div>
 
             <header className="w-full text-center mb-4">
+                 <h1 className="text-3xl font-extrabold tracking-widest">FREEWAY</h1>
+                 <p className="text-base tracking-[0.4em]">ESCUELA DE MANEJO</p>
             </header>
 
             <div className="flex w-full items-start justify-between mb-4">
                 <div className="flex-1"></div>
                 <div className="flex-1 text-center">
-                    <h1 className="text-5xl font-bold tracking-[0.2em]">FREEWAY</h1>
-                    <p className="text-sm tracking-[0.4em]">ESCUELA DE MANEJO</p>
                 </div>
                 <div className="flex-1 text-right">
                     <p className="text-5xl font-bold">{getHighestLicenseType(certificate.licenseType)}</p>
@@ -114,7 +115,7 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
             <footer className="w-full flex-shrink-0 pt-8 pb-4">
                 <div className="text-center">
                     <p className="inline-block border-t border-black px-24 pt-1">CEO—Representante Legal</p>
-                    <p>Lic. Ayax Ortega</p>
+                    <p className='font-semibold'>Lic. Ayax Ortega</p>
                 </div>
             </footer>
         </div>

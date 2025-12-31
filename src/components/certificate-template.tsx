@@ -48,52 +48,37 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
 
     return (
         <div className="w-[11in] h-[8.5in] p-8 bg-white flex flex-col text-black font-serif print:transform print:scale-[1.05]">
-            <div className="absolute top-0 left-0 w-40 h-4" style={{
-                backgroundImage: `repeating-linear-gradient(-45deg, #000, #000 10px, #FFD700 10px, #FFD700 20px)`,
-                backgroundSize: '28.28px 28.28px'
-            }}/>
-
-            <header className="text-center w-full">
+             <header className="text-center w-full">
                 <p className="font-bold text-lg">FREEWAY ESCUELA DE MANEJO S.A.</p>
+                <p className="text-sm">Casa Matriz Chorrera</p>
             </header>
 
-            <section className="flex justify-between items-start mt-4">
-                <div className="w-1/3"></div>
-                <div className="w-1/3 text-center">
-                    <p className="text-4xl font-black tracking-widest">FREEWAY</p>
-                    <p className="text-sm tracking-widest">ESCUELA DE MANEJO</p>
-                </div>
-                <div className="w-1/3 text-right">
-                    <p className="text-4xl font-bold">{getHighestLicenseType(certificate.licenseType)}</p>
-                    <p className="text-sm">{certificate.folio}</p>
-                </div>
-            </section>
-
             <main className="flex-grow flex flex-col justify-start text-center pt-16">
+                 <p className="font-bold text-xl mb-4">Otorga el presente Certificado a:</p>
 
                 <div className="my-6">
                     <p className="font-bold text-3xl">{certificate.clientName}</p>
                     <p className="font-bold text-xl mt-1">C.I.P. {certificate.cip}</p>
                 </div>
 
-                <div className="text-sm leading-snug mx-auto max-w-3xl">
+                <div className="text-sm leading-snug mx-auto">
                     <p>
                         Por haber aprobado el curso de capacitación <span className="font-bold underline">TEÓRICO Y PRÁCTICO</span>, para optar por la licencia de
                         conducir tipo <span className="font-bold">{getLicenseTypeText(certificate.licenseType)}</span> con una duración de <span className="font-bold underline">{getCourseHours(certificate.courseName)}</span> horas, en cumplimiento del Decreto Ejecutivo No.640 del
                         27 de Diciembre de 2006, en su artículo 113, acápite a.
                     </p>
                 </div>
-                <div className="mt-4 text-xs">
-                     <p className="mx-auto">
+                 <div className="mt-4 text-xs mx-auto">
+                     <p>
                         Reconocida por la Autoridad del Tránsito y Transporte Terrestre, Resuelto N°380 (04 de diciembre de 2000) Resolución AL-325
                     </p>
                 </div>
-                 <div className="text-center mt-8 font-bold text-sm">
+                 <div className="text-center mt-4 font-bold text-sm">
                     <p>***Dado en la república de Panamá, a los {formattedDay} días del mes de {formattedMonth} de {formattedYear}***</p>
                 </div>
             </main>
             
-            <footer className="flex-shrink-0 pb-8 pt-12">
+            <footer className="flex-shrink-0 pt-12 pb-8">
                 <div className="text-center">
                     <p className="inline-block border-t border-black px-12 pt-1">CEO—Representante Legal</p>
                     <p>Lic. Ayax Ortega</p>

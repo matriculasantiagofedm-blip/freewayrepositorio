@@ -49,6 +49,7 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
     return (
         <div className="w-[11in] h-[8.5in] p-8 bg-white flex flex-col text-black font-serif print:transform print:scale-[1.05]">
              <header className="text-center w-full">
+                <Image src="/logo.png" alt="Freeway Logo" width={100} height={100} className="mx-auto" />
                 <p className="font-bold text-lg">FREEWAY ESCUELA DE MANEJO S.A.</p>
                 <p className="text-sm">Casa Matriz Chorrera</p>
             </header>
@@ -61,7 +62,7 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                     <p className="font-bold text-xl mt-1">C.I.P. {certificate.cip}</p>
                 </div>
 
-                <div className="text-sm leading-snug max-w-4xl mx-auto">
+                <div className="text-sm leading-snug mx-auto">
                     <p>
                         Por haber aprobado el curso de capacitación <span className="font-bold underline">TEÓRICO Y PRÁCTICO</span>, para optar por la licencia de
                         conducir tipo <span className="font-bold">{getLicenseTypeText(certificate.licenseType)}</span> con una duración de <span className="font-bold underline">{getCourseHours(certificate.courseName)}</span> horas, en cumplimiento del Decreto Ejecutivo No.640 del

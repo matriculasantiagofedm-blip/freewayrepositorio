@@ -70,7 +70,6 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
             </div>
 
             <header className="w-full text-center mb-4">
-                 <p className="font-bold text-lg">FREEWAY ESCUELA DE MANEJO S.A.</p>
             </header>
 
             <div className="flex w-full items-start justify-between mb-4">
@@ -85,7 +84,7 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                 </div>
             </div>
 
-            <main className="flex-grow flex flex-col justify-start text-center pt-2">
+            <main className="flex-grow flex flex-col justify-start text-center pt-8">
                 <p className="text-lg">Casa Matriz Chorrera</p>
                 <p className="mt-4">Otorga el presente Certificado a:</p>
 
@@ -107,7 +106,7 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                         Reconocida por la Autoridad del Tránsito y Transporte Terrestre, Resuelto N°380 (04 de diciembre de 2000) Resolución AL-325
                     </p>
                 </div>
-                <div className="text-center mt-6 mb-8 font-bold text-sm">
+                <div className="text-center mt-2 font-bold text-sm">
                     <p>***Dado en la república de Panamá, a los {formattedDay} días del mes de {formattedMonth} de {formattedYear}***</p>
                 </div>
             </main>

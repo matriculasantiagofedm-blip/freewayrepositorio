@@ -70,18 +70,14 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                 </div>
             </div>
 
-            <header className="flex w-full flex-col items-center justify-center mb-4">
-                <div className="w-full text-center mb-4">
-                    <div className="flex items-center justify-center">
-                        <div className="text-center">
-                            <h1 className="text-5xl font-extrabold tracking-widest">FREEWAY</h1>
-                            <p className="text-xl tracking-[0.4em]">ESCUELA DE MANEJO</p>
-                        </div>
-                        <div className="pl-16">
-                            <p className="text-5xl font-bold">{getHighestLicenseType(certificate.licenseType)}</p>
-                            <p className="text-xs">{folioNum} / {folioYear}</p>
-                        </div>
-                    </div>
+            <header className="flex w-full flex-col items-center justify-center mb-4 relative">
+                <div className="text-center">
+                    <h1 className="text-6xl font-extrabold tracking-widest">FREEWAY</h1>
+                    <p className="text-2xl tracking-[0.4em]">ESCUELA DE MANEJO</p>
+                </div>
+                <div className="absolute top-0 right-[20%]">
+                    <p className="text-5xl font-bold">{getHighestLicenseType(certificate.licenseType)}</p>
+                    <p className="text-xs text-center">{folioNum} / {folioYear}</p>
                 </div>
             </header>
 
@@ -164,3 +160,4 @@ export function CertificateTemplate({ certificate }: { certificate: Certificate 
     </>
   );
 }
+

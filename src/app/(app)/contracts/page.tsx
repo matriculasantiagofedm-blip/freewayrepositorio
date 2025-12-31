@@ -16,7 +16,7 @@ import Link from 'next/link';
 import { format, isPast } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Eye, Search } from 'lucide-react';
+import { Eye, Search, CheckCircle, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { useSearchParams } from 'next/navigation';
@@ -148,6 +148,7 @@ export default function AllContractsPage() {
                                 <TableHead>Cliente</TableHead>
                                 <TableHead>Tipo</TableHead>
                                 <TableHead>Estado</TableHead>
+                                <TableHead>Certificado</TableHead>
                                 <TableHead>Fecha de Creación</TableHead>
                                 <TableHead className="text-right">Acciones</TableHead>
                             </TableRow>
@@ -168,6 +169,19 @@ export default function AllContractsPage() {
                                         <Badge variant="outline" className={cn("capitalize", statusColors[status])}>
                                             {statusTranslations[status]}
                                         </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        {contract.certificateGeneratedAt ? (
+                                            <div className="flex items-center gap-2 text-green-600">
+                                                <CheckCircle className="h-4 w-4" />
+                                                <span>Sí</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-2 text-muted-foreground">
+                                                <XCircle className="h-4 w-4" />
+                                                <span>No</span>
+                                            </div>
+                                        )}
                                     </TableCell>
                                     <TableCell>
                                         {format(toDate(contract.createdAt), 'dd/MM/yyyy', { locale: es })}

@@ -1,4 +1,5 @@
 
+
 import type { Timestamp } from 'firebase/firestore';
 
 export interface User {
@@ -72,7 +73,7 @@ export interface AutoMotoContractDetails {
   motoPracticalClassSchedules?: { date?: Date; time?: string }[];
   firstName?: string;
   middleName?: string;
-  lastName?: string;
+lastName?: string;
   secondLastName?: string;
 }
 
@@ -115,6 +116,7 @@ export interface Contract {
   lastName?: string;
   secondLastName?: string;
   folioNumber?: number;
+  certificateGeneratedAt?: Timestamp; // Campo para registrar la generación del certificado
 }
 
 export interface CertificateData {

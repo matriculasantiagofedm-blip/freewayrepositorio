@@ -1,6 +1,6 @@
 'use client';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
-import { doc } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { ContractView } from '@/components/contract-view';
 import { Button } from '@/components/ui/button';
@@ -86,8 +86,8 @@ export default function ContractDetailPage() {
     setIsFolioModalOpen(true);
   };
   
-  const handleProceedToPrint = () => {
-    if (!certificateFolio) {
+  const handleProceedToPrint = async () => {
+    if (!certificateFolio || !contractRef) {
         toast({
             variant: 'destructive',
             title: 'Campo Requerido',
@@ -99,8 +99,19 @@ export default function ContractDetailPage() {
     // Guardar el folio actual para la próxima vez
     try {
         localStorage.setItem(LAST_FOLIO_KEY, certificateFolio);
+        // Marcar el contrato como con certificado generado en Firestore
+        await updateDoc(contractRef, {
+            certificateGeneratedAt: serverTimestamp(),
+        });
+
     } catch (e) {
-        console.error("Could not save folio to localStorage.", e);
+        console.error("Could not save folio or update contract.", e);
+        toast({
+            variant: 'destructive',
+            title: 'Error al Guardar',
+            description: 'No se pudo actualizar el contrato. Por favor, inténtalo de nuevo.',
+        });
+        return; // Detener si hay un error al actualizar
     }
 
     const printUrl = `/certificate-print/${contractId}?folio=${encodeURIComponent(certificateFolio)}`;

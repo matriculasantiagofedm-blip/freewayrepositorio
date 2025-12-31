@@ -147,7 +147,7 @@ export default function AllContractsPage() {
                                 <TableHead className="w-[100px]">Folio</TableHead>
                                 <TableHead>Cliente</TableHead>
                                 <TableHead>Tipo</TableHead>
-                                <TableHead>Estado</TableHead>
+                                <TableHead className="hidden">Estado</TableHead>
                                 <TableHead>Certificado</TableHead>
                                 <TableHead>Fecha de Creación</TableHead>
                                 <TableHead className="text-right">Acciones</TableHead>
@@ -165,7 +165,7 @@ export default function AllContractsPage() {
                                     </TableCell>
                                     <TableCell>{contract.clientName}</TableCell>
                                     <TableCell>{contract.type}</TableCell>
-                                    <TableCell>
+                                    <TableCell className="hidden">
                                         <Badge variant="outline" className={cn("capitalize", statusColors[status])}>
                                             {statusTranslations[status]}
                                         </Badge>

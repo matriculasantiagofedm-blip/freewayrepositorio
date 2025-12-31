@@ -1,6 +1,6 @@
 'use client';
 import type { Certificate, Contract } from '@/lib/types';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Card, CardContent } from './ui/card';
 import { cn } from '@/lib/utils';
@@ -69,16 +69,14 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                 </div>
             </section>
 
-            <main className="flex-grow flex flex-col justify-start text-center pt-8">
-                <p className="font-bold">Casa Matriz Chorrera</p>
-                <p className="mt-6">Otorga el presente Certificado a:</p>
+            <main className="flex-grow flex flex-col justify-start text-center pt-16">
 
                 <div className="my-6">
                     <p className="font-bold text-3xl">{certificate.clientName}</p>
                     <p className="font-bold text-xl mt-1">C.I.P. {certificate.cip}</p>
                 </div>
 
-                <div className="text-sm leading-snug mx-auto">
+                <div className="text-sm leading-snug mx-auto max-w-3xl">
                     <p>
                         Por haber aprobado el curso de capacitación <span className="font-bold underline">TEÓRICO Y PRÁCTICO</span>, para optar por la licencia de
                         conducir tipo <span className="font-bold">{getLicenseTypeText(certificate.licenseType)}</span> con una duración de <span className="font-bold underline">{getCourseHours(certificate.courseName)}</span> horas, en cumplimiento del Decreto Ejecutivo No.640 del
@@ -86,11 +84,11 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                     </p>
                 </div>
                 <div className="mt-4 text-xs">
-                    <p>
+                     <p className="mx-auto">
                         Reconocida por la Autoridad del Tránsito y Transporte Terrestre, Resuelto N°380 (04 de diciembre de 2000) Resolución AL-325
                     </p>
                 </div>
-                <div className="text-center mt-8 font-bold">
+                 <div className="text-center mt-8 font-bold text-sm">
                     <p>***Dado en la república de Panamá, a los {formattedDay} días del mes de {formattedMonth} de {formattedYear}***</p>
                 </div>
             </main>
@@ -113,13 +111,13 @@ function CertificateBack({ certificate }: { certificate: Certificate }) {
     
     return (
         <div className="w-[11in] h-[8.5in] p-8 bg-white flex flex-col text-black font-serif break-before-page print:transform print:scale-[1.05]">
-            <div className="space-y-6 flex-grow flex flex-col justify-center text-sm">
+            <div className="space-y-6 flex-grow flex flex-col justify-start text-sm">
                 <p>Yo, <span className="font-semibold">{contract.clientName}</span></p>
                 <p>Número de Documento: <span className="font-semibold">{details?.studentIdNumber}</span></p>
                 <p>Hago constar que resido en: <span className="font-semibold">{details?.studentAddress}</span></p>
                 <p>con teléfono residencial: <span className="font-semibold">{details?.studentPhone1}</span> teléfono celular: <span className="font-semibold">{details?.studentPhone2}</span></p>
                 <p className="font-bold">TIPO DE LICENCIAS: <span className="font-semibold">{details?.licenseCategory}</span></p>
-                <p>Este certificado tiene validez de 364 días a partir de <span className="font-semibold">{format(toDate(certificate.issueDate), 'dd-MM-yyyy')}</span></p>
+                <p>Este certificado tiene validez de 364 días a partir de <span className="font-semibold">{format(addDays(toDate(certificate.issueDate), 1), 'dd-MM-yyyy')}</span></p>
             </div>
         </div>
     );

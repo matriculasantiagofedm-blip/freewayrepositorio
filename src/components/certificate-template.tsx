@@ -53,7 +53,7 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                 <p className="text-sm">Casa Matriz Chorrera</p>
             </header>
 
-            <main className="flex-grow flex flex-col justify-start text-center pt-16">
+            <main className="flex-grow flex flex-col justify-start text-center pt-8">
                  <p className="font-bold text-xl mb-4">Otorga el presente Certificado a:</p>
 
                 <div className="my-6">
@@ -61,7 +61,7 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                     <p className="font-bold text-xl mt-1">C.I.P. {certificate.cip}</p>
                 </div>
 
-                <div className="text-sm leading-snug mx-auto">
+                <div className="text-sm leading-snug max-w-4xl mx-auto">
                     <p>
                         Por haber aprobado el curso de capacitación <span className="font-bold underline">TEÓRICO Y PRÁCTICO</span>, para optar por la licencia de
                         conducir tipo <span className="font-bold">{getLicenseTypeText(certificate.licenseType)}</span> con una duración de <span className="font-bold underline">{getCourseHours(certificate.courseName)}</span> horas, en cumplimiento del Decreto Ejecutivo No.640 del

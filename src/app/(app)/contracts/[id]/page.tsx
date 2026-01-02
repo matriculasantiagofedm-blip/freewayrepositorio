@@ -135,28 +135,33 @@ export default function ContractDetailPage() {
     if (shouldPrint && contract && !isLoading) {
       const style = document.createElement('style');
       style.id = 'print-styles';
-      style.innerHTML = `@page { size: letter portrait; margin: 1in; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }`;
+      style.innerHTML = `@page { size: letter portrait; margin: 1in; }`;
       document.head.appendChild(style);
       
+      document.body.classList.add('printing-contract');
+
       const timer = setTimeout(() => {
         window.print();
+        // Use router.replace to clean the URL without adding to history
         router.replace(pathname, { scroll: false });
-      }, 500); 
+      }, 500); // Delay to ensure styles are applied
 
-      // Cleanup function to remove style tag
+      // Cleanup function to remove style tag and body class
       return () => {
         clearTimeout(timer);
         const styleTag = document.getElementById('print-styles');
         if (styleTag) {
           document.head.removeChild(styleTag);
         }
+        document.body.classList.remove('printing-contract');
       };
     }
   }, [shouldPrint, contract, isLoading, pathname, router]);
 
+
   return (
-    <div className="flex flex-col gap-8">
-        <div className="flex items-center justify-between print:hidden">
+    <div className="flex flex-col gap-8 print-container">
+        <div className="flex items-center justify-between print-hide">
             <div className="flex items-center gap-4">
                 <Button variant="outline" size="icon" asChild>
                 <Link href="/dashboard">
@@ -179,11 +184,11 @@ export default function ContractDetailPage() {
             </div>
       </div>
       
-      {isLoading && <p>Cargando contrato...</p>}
-      {error && <p className="text-destructive">Error: {error.message}</p>}
+      {isLoading && <p className="print-hide">Cargando contrato...</p>}
+      {error && <p className="text-destructive print-hide">Error: {error.message}</p>}
       {contract && <ContractView contract={contract} />}
       {!isLoading && !contract && (
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
+        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center print-hide">
             <h3 className="mt-4 text-lg font-semibold text-foreground">
                 Contrato no encontrado
             </h3>
@@ -195,7 +200,7 @@ export default function ContractDetailPage() {
 
       {/* Modal para introducir el folio del certificado */}
       <Dialog open={isFolioModalOpen} onOpenChange={setIsFolioModalOpen}>
-        <DialogContent>
+        <DialogContent className="print-hide">
             <DialogHeader>
                 <DialogTitle>Generar Certificado</DialogTitle>
                 <DialogDescription>

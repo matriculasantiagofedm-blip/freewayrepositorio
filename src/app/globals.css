@@ -86,4 +86,32 @@
       break-before: page;
     }
   }
+
+  .printing-contract .print-hide {
+    display: none;
+  }
+
+  .printing-contract .print-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .printing-contract .print-show {
+    display: block !important;
+  }
+
+  body.printing-contract > * {
+    display: none;
+  }
+
+  body.printing-contract .print-container,
+  body.printing-contract .print-container * {
+    display: block;
+    visibility: visible;
+  }
+
+  body.printing-contract #__next {
+    display: block !important;
+  }
 }

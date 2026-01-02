@@ -13,10 +13,12 @@ const roleMapping: { [key: string]: string } = {
 export function useCurrentRole() {
   const { user, isUserLoading } = useUser();
   const [role, setRole] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (isUserLoading) {
       setRole(null);
+      setIsLoading(true);
       return;
     }
     
@@ -28,17 +30,15 @@ export function useCurrentRole() {
         const functionalRole = roleMapping[selectedRole.name] || 'Ventas';
         setRole(functionalRole);
       }
-      return;
-    }
-
-    // Si es un usuario con email, usamos el mapeo.
-    if (user && user.email) {
+    } else if (user && user.email) {
+      // Si es un usuario con email, usamos el mapeo.
       const userRole = roleMapping[user.email] || null;
       setRole(userRole);
     } else {
       setRole(null);
     }
+    setIsLoading(false);
   }, [user, isUserLoading]);
 
-  return { role };
+  return { role, isLoading };
 }

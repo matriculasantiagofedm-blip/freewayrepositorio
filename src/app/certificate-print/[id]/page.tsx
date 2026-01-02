@@ -6,11 +6,13 @@ import { CertificateTemplate } from '@/components/certificate-template';
 import { useEffect, useState } from 'react';
 import { useDb } from '@/components/firebase-provider';
 import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
+import { useCurrentRole } from '@/hooks/use-current-role';
 
 export default function CertificatePrintIdPage() {
   const { id } = useParams();
   const searchParams = useSearchParams();
   const db = useDb();
+  const { role: currentUserRole, isLoading: isRoleLoading } = useCurrentRole();
 
   const contractId = Array.isArray(id) ? id[0] : id;
   const customFolio = searchParams.get('folio');
@@ -20,11 +22,11 @@ export default function CertificatePrintIdPage() {
     return doc(db, `contracts`, contractId);
   }, [db, contractId]);
 
-  const { data: contract, isLoading, error } = useDoc<Contract>(contractRef);
+  const { data: contract, isLoading: isContractLoading, error } = useDoc<Contract>(contractRef);
   const [certificate, setCertificate] = useState<Certificate | null>(null);
 
   useEffect(() => {
-    if (contract && customFolio) {
+    if (contract && customFolio && currentUserRole && currentUserRole !== 'Ventas') {
       
       const details = contract.autoMotoDetails || contract.deluxeDetails;
 
@@ -48,13 +50,24 @@ export default function CertificatePrintIdPage() {
         window.print();
       }, 500); // Retraso para permitir que el contenido se renderice
     }
-  }, [contract, customFolio]);
+  }, [contract, customFolio, currentUserRole]);
 
-  if (isLoading) {
+  if (isContractLoading || isRoleLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <p>Cargando certificado para imprimir...</p>
       </div>
+    );
+  }
+
+  if (currentUserRole === 'Ventas') {
+    return (
+        <div className="flex items-center justify-center h-screen bg-muted">
+            <div className="p-8 bg-background rounded-lg shadow-md text-center">
+                <h1 className="text-2xl font-bold text-destructive mb-4">Acceso Denegado</h1>
+                <p className="text-muted-foreground">No tienes permiso para imprimir certificados.</p>
+            </div>
+        </div>
     );
   }
 
@@ -69,7 +82,7 @@ export default function CertificatePrintIdPage() {
     );
   }
   
-  if (!contract && !isLoading) {
+  if (!contract && !isContractLoading) {
       return (
         <div className="flex items-center justify-center h-screen bg-muted">
             <div className="p-8 bg-background rounded-lg shadow-md text-center">

@@ -133,26 +133,15 @@ export default function ContractDetailPage() {
 
   useEffect(() => {
     if (shouldPrint && contract && !isLoading) {
-      const style = document.createElement('style');
-      style.id = 'print-styles';
-      style.innerHTML = `@page { size: letter portrait; margin: 1in; }`;
-      document.head.appendChild(style);
-      
       document.body.classList.add('printing-contract');
 
       const timer = setTimeout(() => {
         window.print();
-        // Use router.replace to clean the URL without adding to history
         router.replace(pathname, { scroll: false });
-      }, 500); // Delay to ensure styles are applied
+      }, 500); 
 
-      // Cleanup function to remove style tag and body class
       return () => {
         clearTimeout(timer);
-        const styleTag = document.getElementById('print-styles');
-        if (styleTag) {
-          document.head.removeChild(styleTag);
-        }
         document.body.classList.remove('printing-contract');
       };
     }

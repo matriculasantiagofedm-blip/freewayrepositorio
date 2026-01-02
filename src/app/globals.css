@@ -82,36 +82,43 @@
   }
 
   @media print {
-    .break-before-page {
-      break-before: page;
+    body {
+        background-color: white;
+    }
+    .print-hide {
+        display: none;
+    }
+    .print-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+    body.printing-contract #__next {
+        visibility: hidden;
+    }
+    body.printing-contract .print-container,
+    body.printing-contract .print-container * {
+        visibility: visible;
+    }
+    body.printing-contract .print-container {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    @page {
+        size: letter portrait;
+        margin: 1in;
     }
   }
 
-  .printing-contract .print-hide {
-    display: none;
+  .print-show {
+    display: none !important;
   }
 
-  .printing-contract .print-container {
-    padding: 0 !important;
-    margin: 0 !important;
-    max-width: 100% !important;
-  }
-
-  .printing-contract .print-show {
+  body.printing-contract .print-show {
     display: block !important;
   }
 
-  body.printing-contract > * {
-    display: none;
-  }
-
-  body.printing-contract .print-container,
-  body.printing-contract .print-container * {
-    display: block;
-    visibility: visible;
-  }
-
-  body.printing-contract #__next {
-    display: block !important;
-  }
 }

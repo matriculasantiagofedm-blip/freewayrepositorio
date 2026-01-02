@@ -132,8 +132,8 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
          <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 pl-4 text-[10px]">
           {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="flex items-center gap-1">
-              Clase {index + 1}: <Line><Value>{deluxeDetails?.classSchedules?.[index]?.date ? formatDate(toDate(deluxeDetails.classSchedules[index].date)) : ''}</Value></Line> 
-              Hora <Line><Value>{deluxeDetails?.classSchedules?.[index]?.time}</Value></Line>
+                Clase {index + 1}: <Line className="min-w-20"></Line> 
+                Hora <Line className="min-w-12"></Line>
             </div>
           ))}
         </div>

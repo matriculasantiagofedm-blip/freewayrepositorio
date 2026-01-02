@@ -352,15 +352,14 @@ export function ContractForm() {
         if (contractType) {
             form.reset(getDefaultValues(contractType));
 
-            if (contractType === 'Curso Deluxe') {
-                replaceDeluxeClasses(Array(6).fill({ date: undefined, time: undefined }));
-            } else {
+            // No need to replace deluxe classes as they are now static text
+            if (contractType !== 'Curso Deluxe') {
                  replacePracticalClasses([]);
                  replaceMotoPracticalClasses([]);
                  replaceTheoreticalClasses([]);
             }
         }
-    }, [contractType, form, replaceDeluxeClasses, replacePracticalClasses, replaceMotoPracticalClasses, replaceTheoreticalClasses]);
+    }, [contractType, form, replacePracticalClasses, replaceMotoPracticalClasses, replaceTheoreticalClasses]);
 
     
      useEffect(() => {
@@ -646,6 +645,8 @@ export function ContractForm() {
             let finalDetails: any = {};
             if (values.contractType === 'Curso Deluxe') {
                 finalDetails = convertDetailsDatesToTimestamps(values.deluxeDetails);
+                 // As per user request, classSchedules is not collected from form, so remove it before saving
+                delete finalDetails.classSchedules;
             } else if (values.contractType === 'Ampliaciones') {
                 finalDetails = convertDetailsDatesToTimestamps(values.ampliacionesDetails);
             } else {
@@ -1510,7 +1511,19 @@ export function ContractForm() {
                     ))}
                 </div>
                 
-                {renderPracticalClassFields(deluxeClassFields, 'deluxeDetails.classSchedules', 'Clases Prácticas (6 clases)')}
+                 <div>
+                    <h3 className="font-semibold text-lg pt-4 border-b pb-2 mb-4">Clases Prácticas (6 clases)</h3>
+                    <p className="text-sm text-muted-foreground">
+                        Los horarios de las clases prácticas se coordinarán y anotarán manualmente en el contrato impreso.
+                    </p>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-2 pl-4 text-sm mt-4">
+                        {Array.from({ length: 6 }).map((_, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                                Clase {index + 1}: <span className="border-b border-dotted border-black flex-1 min-w-20"></span> Hora: <span className="border-b border-dotted border-black flex-1 min-w-16"></span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </>
         )
     };

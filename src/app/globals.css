@@ -82,15 +82,9 @@
   }
 
   @media print {
-    .print-contract {
-      @page {
-          size: letter portrait;
-          margin: 1.5rem;
-      }
-    }
-    
+    /* Estilo por defecto para certificados (landscape) */
     @page {
-        size: letter landscape; /* Estilo por defecto para certificados */
+        size: letter landscape;
         margin: 0;
     }
     

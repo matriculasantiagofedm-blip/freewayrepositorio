@@ -60,13 +60,15 @@ export default function DashboardPage() {
   const contractsQuery = useMemoQuery(() => {
     if (!db || !user || !role) return null;
     
+    const contractsCollection = collection(db, 'contracts');
+
     // Admin and Ventas can see all contracts from the root collection
     if (role === 'Administrador' || role === 'Ventas') {
-        return collection(db, 'contracts');
+        return query(contractsCollection);
     }
 
     // Fallback for any other user to see only their contracts
-    return query(collection(db, 'contracts'), where('userId', '==', user.uid));
+    return query(contractsCollection, where('userId', '==', user.uid));
   }, [db, user, role]);
 
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);

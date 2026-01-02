@@ -125,15 +125,19 @@ export default function ContractDetailPage() {
   };
 
   useEffect(() => {
-    // Only trigger print if shouldPrint is true, loading is finished, and the contract data exists.
     if (shouldPrint && contract && !isLoading) {
-      // A short delay can help ensure all styles and content are fully rendered before printing.
+      document.body.classList.add('print-contract');
+      
       const timer = setTimeout(() => {
         window.print();
-        // Remove the print parameter from URL after printing
         router.replace(pathname, { scroll: false });
+        document.body.classList.remove('print-contract');
       }, 500); 
-      return () => clearTimeout(timer); // Cleanup the timer if the component unmounts
+      
+      return () => {
+        clearTimeout(timer);
+        document.body.classList.remove('print-contract');
+      };
     }
   }, [shouldPrint, contract, isLoading, pathname, router]);
 

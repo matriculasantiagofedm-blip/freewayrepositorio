@@ -82,15 +82,24 @@
   }
 
   @media print {
+    .print-contract {
+      @page {
+          size: letter portrait;
+          margin: 1.5rem;
+      }
+    }
+    
     @page {
-        size: letter landscape; /* US Letter landscape */
+        size: letter landscape; /* Estilo por defecto para certificados */
         margin: 0;
     }
-    html, body {
+    
+    html.print, body.print {
         width: 11in;
         height: 8.5in;
         background: white;
     }
+
     .break-before-page {
       break-before: page;
     }

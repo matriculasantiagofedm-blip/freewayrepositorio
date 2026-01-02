@@ -46,13 +46,13 @@ service cloud.firestore {
      * @path /contracts/{contractId}
      * @allow (get, list) Any signed-in user can view contract details and lists.
      * @allow (create) Any signed-in user can create a contract, but the `userId` must match their own UID.
-     * @allow (update) Admin/Ventas can update. Key fields `userId` and `folioNumber` are immutable.
+     * @allow (update) Any signed-in user can update, but key fields `userId` and `folioNumber` are immutable.
      * @allow (delete) Admin/Ventas can delete.
      */
     match /contracts/{contractId} {
       allow get, list: if isSignedIn();
       allow create: if isOwner(request.resource.data.userId);
-      allow update: if (isAdmin() || isVentas())
+      allow update: if isSignedIn()
                       && request.resource.data.userId == resource.data.userId
                       && request.resource.data.folioNumber == resource.data.folioNumber;
       allow delete: if isAdmin() || isVentas();

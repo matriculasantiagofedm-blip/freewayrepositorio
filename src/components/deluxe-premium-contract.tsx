@@ -60,6 +60,12 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
   const theoreticalScheduleText = deluxeDetails?.theoreticalClassSchedule === 'Lunes'
     ? 'Clases teóricas: Lunes, de 8:00 a.m. a 10:00 a.m.'
     : 'Clases teóricas: Miércoles, de 7:00 p.m. a 9:00 p.m.';
+    
+  const paymentDetailsText = deluxeDetails?.paymentDetails === 'Premium B/ 201.00'
+    ? 'El estudiante pagará B/. 201.00 en 6 cuotas quincenales de B/.33.50.'
+    : deluxeDetails?.paymentDetails === 'Deluxe B/ 270.00'
+    ? 'El estudiante pagará B/. 270.00 en 6 cuotas quincenales de B/.45.00.'
+    : deluxeDetails?.paymentDetails || '';
 
   return (
     <Card className="p-6 print:shadow-none print:border-none print:p-0 font-serif text-xs">
@@ -97,7 +103,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
         <p>Ambas partes convienen celebrar este contrato en el cual la empresa se compromete a brindar al cliente, un servicio de capacitación y adiestramiento teórico y práctico relacionado con el aprendizaje de conducción de vehículos a motor. El mismo se regirá bajo los términos y condiciones que se detallan en las siguientes cláusulas.</p>
 
         <h3 className="font-bold">CLÁUSULA SEGUNDA - VALOR, MATRÍCULA Y FORMA DE PAGO</h3>
-        <p><Value>{deluxeDetails?.paymentDetails}</Value></p>
+        <p><Value>{paymentDetailsText}</Value></p>
         <p>El pago se realizará de la siguiente manera: 6 cuotas de B/.<Value>{paymentAmount.toFixed(2)}</Value> cada una, con fechas de pago establecidas cada dos semanas a partir del inicio del curso.</p>
         <div className="grid grid-cols-2 gap-x-6 gap-y-0 text-[10px]">
           <span>CUOTA 1: {formatDate(toDate(deluxeDetails?.paymentInstallments?.[0]))}</span>

@@ -46,7 +46,7 @@ export interface DeluxeContractDetails {
   theoreticalClassSchedule?: 'Lunes' | 'Miércoles';
   theoreticalClasses?: (Date | undefined)[];
   classSchedules: { date?: Date; time?: string }[];
-  paymentDetails: string;
+  paymentDetails?: 'Premium B/ 201.00' | 'Deluxe B/ 270.00';
   paymentInstallments?: (Date | undefined)[];
   paymentAmount?: number;
   firstName?: string;

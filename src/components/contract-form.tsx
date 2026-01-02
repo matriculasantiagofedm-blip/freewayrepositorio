@@ -91,7 +91,7 @@ const deluxeDetailsSchema = z.object({
   studentAddress: z.string().optional(),
   studentPhone1: z.string().optional(),
   studentPhone2: z.string().optional(),
-  paymentDetails: z.string().optional(),
+  paymentDetails: z.enum(['Premium B/ 201.00', 'Deluxe B/ 270.00']).optional(),
   paymentAmount: z.number().optional(),
   paymentInstallments: z.array(z.date().optional()).optional(),
   vehicleTransmission: z.enum(['Automático', 'Manual']).optional(),
@@ -275,7 +275,7 @@ const getDefaultValues = (contractType: ContractType | null): FormValues => ({
         studentAddress: '',
         studentPhone1: '',
         studentPhone2: '',
-        paymentDetails: '',
+        paymentDetails: undefined,
         paymentAmount: 0,
         paymentInstallments: [],
         vehicleTransmission: undefined,
@@ -366,6 +366,17 @@ export function ContractForm() {
      useEffect(() => {
         const subscription = form.watch((value, { name, type }) => {
             const currentContractType = form.getValues('contractType');
+
+            if (currentContractType === 'Curso Deluxe' && name === 'deluxeDetails.paymentDetails') {
+                const paymentPlan = value.deluxeDetails?.paymentDetails;
+                let paymentAmount = 0;
+                if (paymentPlan === 'Premium B/ 201.00') {
+                    paymentAmount = 33.50;
+                } else if (paymentPlan === 'Deluxe B/ 270.00') {
+                    paymentAmount = 45.00;
+                }
+                form.setValue('deluxeDetails.paymentAmount', paymentAmount, { shouldValidate: true });
+            }
 
             if (currentContractType && ['Curso Auto', 'Curso Moto', 'Curso Mixto'].includes(currentContractType)) {
                 if (name === 'autoMotoDetails.coursePlan' || name === 'autoMotoDetails.paidInFull' || name === 'autoMotoDetails.downPayment') {
@@ -1437,8 +1448,46 @@ export function ContractForm() {
                 <FormField control={form.control} name="deluxeDetails.studentAddress" render={({ field }) => (<FormItem><FormLabel>Domicilio</FormLabel><FormControl><Textarea placeholder="Dirección completa del cliente..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
                 
                 <h3 className="font-semibold text-lg pt-4 border-b pb-2">Detalles del Pago</h3>
-                <FormField control={form.control} name="deluxeDetails.paymentDetails" render={({ field }) => (<FormItem><FormLabel>Descripción del Acuerdo de Pago</FormLabel><FormControl><Textarea placeholder="Ej. El estudiante pagará B/. 201.00 en 6 cuotas quincenales de B/.33.50..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="deluxeDetails.paymentAmount" render={({ field }) => (<FormItem><FormLabel>Monto por Cuota (B/.)</FormLabel><FormControl><Input type="number" placeholder="33.50" {...field} value={field.value ?? 0} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField
+                    control={form.control}
+                    name="deluxeDetails.paymentDetails"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Plan de Pago</FormLabel>
+                            <FormControl>
+                                <RadioGroup
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                                className="flex flex-col space-y-1"
+                                >
+                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                    <FormControl><RadioGroupItem value="Premium B/ 201.00" /></FormControl>
+                                    <FormLabel className="font-normal">Premium - B/. 201.00 (6 cuotas de B/. 33.50)</FormLabel>
+                                </FormItem>
+                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                    <FormControl><RadioGroupItem value="Deluxe B/ 270.00" /></FormControl>
+                                    <FormLabel className="font-normal">Deluxe - B/. 270.00 (6 cuotas de B/. 45.00)</FormLabel>
+                                </FormItem>
+                                </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="deluxeDetails.paymentAmount"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Monto por Cuota (B/.)</FormLabel>
+                            <FormControl>
+                                <Input type="text" readOnly className="bg-muted" value={field.value ? formatCurrency(field.value) : '0.00'} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
 
                 <h3 className="font-semibold text-lg pt-4 border-b pb-2">Fechas de Pago (6 Cuotas)</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">

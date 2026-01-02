@@ -199,7 +199,6 @@ export default function AllContractsPage() {
                                 <TableHead className="w-[100px]">Folio</TableHead>
                                 <TableHead>Cliente</TableHead>
                                 <TableHead>Tipo</TableHead>
-                                <TableHead>Estado</TableHead>
                                 <TableHead>Certificado</TableHead>
                                 <TableHead>Fecha de Creación</TableHead>
                                 <TableHead className="text-right">Acciones</TableHead>
@@ -208,8 +207,6 @@ export default function AllContractsPage() {
                         <TableBody>
                             {filteredContracts.map((contract) => {
                                 const isAnnulledPlaceholder = contract.id.startsWith('annulled-');
-                                const contractIsOverdue = !isAnnulledPlaceholder && isOverdue(contract);
-                                const status = contractIsOverdue ? 'overdue' : contract.status;
                                 
                                 return (
                                 <TableRow key={contract.id} className={cn(isAnnulledPlaceholder && 'bg-muted/50 hover:bg-muted/60')}>
@@ -218,11 +215,6 @@ export default function AllContractsPage() {
                                     </TableCell>
                                     <TableCell>{contract.clientName}</TableCell>
                                     <TableCell>{contract.type}</TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline" className={cn("capitalize", statusColors[status])}>
-                                            {statusTranslations[status]}
-                                        </Badge>
-                                    </TableCell>
                                     <TableCell>
                                         {isAnnulledPlaceholder ? (
                                             <div className="flex items-center gap-2 text-muted-foreground">

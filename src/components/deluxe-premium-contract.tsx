@@ -1,3 +1,4 @@
+
 'use client';
 import type { Contract, Client } from '@/lib/types';
 import { doc } from 'firebase/firestore';
@@ -129,19 +130,12 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
         </div>
         <p>Clases prácticas: Se programarán a partir de la semana 8 de la capacitación teórica, en horario diurno o vespertino, de acuerdo con la disponibilidad de LA ESCUELA.</p>
          <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 pl-4 text-[10px]">
-          {(deluxeDetails?.classSchedules || []).map((clase, index) => (
+          {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="flex items-center gap-1">
-              Clase {index + 1}: <Line><Value>{clase.date ? formatDate(toDate(clase.date)) : ''}</Value></Line> 
-              Hora <Line><Value>{clase.time}</Value></Line>
+              Clase {index + 1}: <Line><Value>{deluxeDetails?.classSchedules?.[index]?.date ? formatDate(toDate(deluxeDetails.classSchedules[index].date)) : ''}</Value></Line> 
+              Hora <Line><Value>{deluxeDetails?.classSchedules?.[index]?.time}</Value></Line>
             </div>
           ))}
-          {(!deluxeDetails?.classSchedules || deluxeDetails.classSchedules.length < 6) && 
-            Array.from({ length: 6 - (deluxeDetails?.classSchedules?.length || 0) }).map((_, index) => (
-              <div key={index} className="flex items-center gap-1">
-                Clase {index + (deluxeDetails?.classSchedules?.length || 0) + 1}: <Line /> Hora <Line />
-              </div>
-            ))
-          }
         </div>
         
         <h3 className="font-bold">CLÁUSULA QUINTA - POLÍTICA DE PAGOS Y MOROSIDAD</h3>

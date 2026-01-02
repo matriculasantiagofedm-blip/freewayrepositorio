@@ -1,5 +1,5 @@
 'use client';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import type { Contract, Deadline } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import {
@@ -16,8 +16,8 @@ import Link from 'next/link';
 import { format, isPast } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Eye, Search, CheckCircle, XCircle } from 'lucide-react';
-import { useState } from 'react';
+import { Eye, Search, CheckCircle, XCircle, Ban } from 'lucide-react';
+import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { useSearchParams } from 'next/navigation';
 import { useDb, useUser } from '@/components/firebase-provider';
@@ -62,6 +62,38 @@ const isOverdue = (contract: Contract): boolean => {
     return false;
 }
 
+// --- Placeholder for Annulled Contracts ---
+const annulledContracts: Contract[] = [
+    {
+        id: 'annulled-17',
+        folioNumber: 17,
+        clientName: 'CONTRATO ANULADO',
+        type: 'N/A',
+        status: 'expired', // Visually represents 'Annulled'
+        createdAt: Timestamp.fromDate(new Date('2024-01-01')),
+        title: 'Contrato Anulado',
+        clientEmail: '',
+        clientId: '',
+        content: '',
+        deadlines: [],
+        userId: '',
+    },
+    {
+        id: 'annulled-18',
+        folioNumber: 18,
+        clientName: 'CONTRATO ANULADO',
+        type: 'N/A',
+        status: 'expired',
+        createdAt: Timestamp.fromDate(new Date('2024-01-01')),
+        title: 'Contrato Anulado',
+        clientEmail: '',
+        clientId: '',
+        content: '',
+        deadlines: [],
+        userId: '',
+    },
+];
+
 export default function AllContractsPage() {
   const db = useDb();
   const { user } = useUser();
@@ -85,6 +117,25 @@ export default function AllContractsPage() {
 
   const { data: allContracts, isLoading } = useCollection<Contract>(contractsQuery);
 
+  const combinedContracts = useMemo(() => {
+    if (!allContracts) return null;
+
+    // Create a Set of existing folio numbers for efficient lookup
+    const existingFolios = new Set(allContracts.map(c => c.folioNumber));
+
+    // Filter out annulled contracts that might already exist (e.g., if manually added)
+    const annulledPlaceholders = annulledContracts.filter(ac => !existingFolios.has(ac.folioNumber));
+    
+    const combined = [...allContracts, ...annulledPlaceholders];
+    
+    // Sort the combined list by folioNumber in descending order
+    combined.sort((a, b) => (b.folioNumber || 0) - (a.folioNumber || 0));
+
+    return combined;
+
+  }, [allContracts]);
+
+
   const statusColors: { [key: string]: string } = {
     active: 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
     draft: 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700',
@@ -97,12 +148,12 @@ export default function AllContractsPage() {
     active: 'Activo',
     draft: 'Borrador',
     completed: 'Completado',
-    expired: 'Expirado',
+    expired: 'Anulado', // Changed for display
     overdue: 'Vencido',
   }
   
   const filteredContracts =
-    allContracts?.filter((contract) => {
+    combinedContracts?.filter((contract) => {
       const folio = String(contract.folioNumber || '').padStart(6, '0');
       const client = contract.clientName.toLowerCase();
       const type = contract.type.toLowerCase();
@@ -138,7 +189,7 @@ export default function AllContractsPage() {
         </div>
       </div>
       {isLoading && <p>Cargando contratos...</p>}
-      {!isLoading && allContracts && (
+      {!isLoading && combinedContracts && (
         <>
             {filteredContracts.length > 0 ? (
                  <div className="rounded-lg border">
@@ -148,7 +199,7 @@ export default function AllContractsPage() {
                                 <TableHead className="w-[100px]">Folio</TableHead>
                                 <TableHead>Cliente</TableHead>
                                 <TableHead>Tipo</TableHead>
-                                <TableHead className="hidden">Estado</TableHead>
+                                <TableHead>Estado</TableHead>
                                 <TableHead>Certificado</TableHead>
                                 <TableHead>Fecha de Creación</TableHead>
                                 <TableHead className="text-right">Acciones</TableHead>
@@ -156,23 +207,29 @@ export default function AllContractsPage() {
                         </TableHeader>
                         <TableBody>
                             {filteredContracts.map((contract) => {
-                                const contractIsOverdue = isOverdue(contract);
+                                const isAnnulledPlaceholder = contract.id.startsWith('annulled-');
+                                const contractIsOverdue = !isAnnulledPlaceholder && isOverdue(contract);
                                 const status = contractIsOverdue ? 'overdue' : contract.status;
                                 
                                 return (
-                                <TableRow key={contract.id}>
+                                <TableRow key={contract.id} className={cn(isAnnulledPlaceholder && 'bg-muted/50 hover:bg-muted/60')}>
                                     <TableCell className="font-medium text-primary">
                                         {String(contract.folioNumber || '').padStart(6, '0')}
                                     </TableCell>
                                     <TableCell>{contract.clientName}</TableCell>
                                     <TableCell>{contract.type}</TableCell>
-                                    <TableCell className="hidden">
+                                    <TableCell>
                                         <Badge variant="outline" className={cn("capitalize", statusColors[status])}>
                                             {statusTranslations[status]}
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        {contract.certificateGeneratedAt ? (
+                                        {isAnnulledPlaceholder ? (
+                                            <div className="flex items-center gap-2 text-muted-foreground">
+                                                <Ban className="h-4 w-4" />
+                                                <span>N/A</span>
+                                            </div>
+                                        ) : contract.certificateGeneratedAt ? (
                                             <div className="flex items-center gap-2 text-green-600">
                                                 <CheckCircle className="h-4 w-4" />
                                                 <span>Sí</span>
@@ -185,15 +242,21 @@ export default function AllContractsPage() {
                                         )}
                                     </TableCell>
                                     <TableCell>
-                                        {format(toDate(contract.createdAt), 'dd/MM/yyyy', { locale: es })}
+                                        {isAnnulledPlaceholder ? 'N/A' : format(toDate(contract.createdAt), 'dd/MM/yyyy', { locale: es })}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button asChild variant="ghost" size="icon">
-                                            <Link href={`/contracts/${contract.id}`}>
+                                        {isAnnulledPlaceholder ? (
+                                             <Button variant="ghost" size="icon" disabled>
                                                 <Eye className="h-4 w-4" />
-                                                <span className="sr-only">Ver Contrato</span>
-                                            </Link>
-                                        </Button>
+                                             </Button>
+                                        ) : (
+                                            <Button asChild variant="ghost" size="icon">
+                                                <Link href={`/contracts/${contract.id}`}>
+                                                    <Eye className="h-4 w-4" />
+                                                    <span className="sr-only">Ver Contrato</span>
+                                                </Link>
+                                            </Button>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                                 )

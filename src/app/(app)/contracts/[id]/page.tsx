@@ -5,7 +5,7 @@ import type { Contract } from '@/lib/types';
 import { ContractView } from '@/components/contract-view';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ChevronLeft, Award } from 'lucide-react';
+import { ChevronLeft, Award, Printer } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -56,6 +56,7 @@ export default function ContractDetailPage() {
   const db = useDb();
   const { user } = useUser();
   const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
   const { role } = useCurrentRole();
 
@@ -118,6 +119,10 @@ export default function ContractDetailPage() {
     window.open(printUrl, '_blank');
     setIsFolioModalOpen(false);
   };
+  
+  const handlePrintContract = () => {
+    router.push(`${pathname}?print=true`, { scroll: false });
+  };
 
   useEffect(() => {
     // Only trigger print if shouldPrint is true, loading is finished, and the contract data exists.
@@ -125,10 +130,12 @@ export default function ContractDetailPage() {
       // A short delay can help ensure all styles and content are fully rendered before printing.
       const timer = setTimeout(() => {
         window.print();
+        // Remove the print parameter from URL after printing
+        router.replace(pathname, { scroll: false });
       }, 500); 
       return () => clearTimeout(timer); // Cleanup the timer if the component unmounts
     }
-  }, [shouldPrint, contract, isLoading]);
+  }, [shouldPrint, contract, isLoading, pathname, router]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -141,12 +148,18 @@ export default function ContractDetailPage() {
                 </Link>
                 </Button>
             </div>
-            {canGenerateCertificate && (
-              <Button onClick={handleOpenFolioModal}>
-                <Award className="mr-2 h-4 w-4" />
-                Generar Certificado
+            <div className="flex items-center gap-2">
+              {canGenerateCertificate && (
+                <Button onClick={handleOpenFolioModal}>
+                  <Award className="mr-2 h-4 w-4" />
+                  Generar Certificado
+                </Button>
+              )}
+               <Button variant="outline" onClick={handlePrintContract}>
+                <Printer className="mr-2 h-4 w-4" />
+                Imprimir Contrato
               </Button>
-            )}
+            </div>
       </div>
       
       {isLoading && <p>Cargando contrato...</p>}

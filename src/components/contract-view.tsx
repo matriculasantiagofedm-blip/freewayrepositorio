@@ -2,12 +2,9 @@
 'use client';
 import type { Contract } from '@/lib/types';
 import { DeluxePremiumContractTemplate } from './deluxe-premium-contract';
-import { PrintButton } from './print-button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { AutoMotoContractTemplate } from './auto-moto-contract';
 import { AmpliacionesContractTemplate } from './ampliaciones-contract';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 
 function toDate(date: any): Date {
   if (date instanceof Date) return date;
@@ -60,9 +57,6 @@ export function ContractView({ contract }: { contract: Contract }) {
 
   return (
     <div className="max-w-4xl mx-auto bg-background">
-      <div className="flex justify-end mb-4 print:hidden">
-        <PrintButton text="Imprimir Contrato" />
-      </div>
       {renderContractTemplate()}
     </div>
   );

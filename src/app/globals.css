@@ -82,8 +82,8 @@
   }
 
   @media print {
-    body.printing-contract * {
-      visibility: hidden;
+    body.printing-contract .print-hide {
+      display: none !important;
     }
     
     body.printing-contract .print-container,

@@ -137,9 +137,11 @@ export default function ContractDetailPage() {
 
       const timer = setTimeout(() => {
         window.print();
-        router.replace(pathname, { scroll: false });
+        // Use router.replace to remove the print param from URL without adding to history
+        router.replace(pathname, { scroll: false }); 
       }, 500); 
 
+      // Cleanup function to remove the class when the component unmounts or re-renders
       return () => {
         clearTimeout(timer);
         document.body.classList.remove('printing-contract');

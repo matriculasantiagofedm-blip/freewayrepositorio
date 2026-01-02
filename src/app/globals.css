@@ -82,43 +82,29 @@
   }
 
   @media print {
-    body {
-        background-color: white;
+    body.printing-contract * {
+      visibility: hidden;
     }
-    .print-hide {
-        display: none;
-    }
-    .print-container {
-        padding: 0 !important;
-        margin: 0 !important;
-        box-shadow: none !important;
-        border: none !important;
-    }
-    body.printing-contract #__next {
-        visibility: hidden;
-    }
+    
     body.printing-contract .print-container,
     body.printing-contract .print-container * {
-        visibility: visible;
+      visibility: visible;
     }
+
     body.printing-contract .print-container {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      margin: 0;
     }
+
     @page {
-        size: letter portrait;
-        margin: 1in;
+      size: letter portrait;
+      margin: 1in;
     }
-  }
-
-  .print-show {
-    display: none !important;
-  }
-
-  body.printing-contract .print-show {
-    display: block !important;
   }
 
 }

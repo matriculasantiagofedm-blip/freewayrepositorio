@@ -167,7 +167,7 @@ export default function ContractDetailPage() {
                 </Button>
             </div>
             <div className="flex items-center gap-2">
-              {canGenerateCertificate && (
+              {canGenerateCertificate && role !== 'Ventas' && (
                 <Button onClick={handleOpenFolioModal}>
                   <Award className="mr-2 h-4 w-4" />
                   Generar Certificado

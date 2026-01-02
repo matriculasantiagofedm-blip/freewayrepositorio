@@ -139,8 +139,11 @@ export default function ContractDetailPage() {
       
       const timer = setTimeout(() => {
         window.print();
+        // Clean up after printing
         router.replace(pathname, { scroll: false });
-        document.head.removeChild(style);
+        if (document.head.contains(style)) {
+            document.head.removeChild(style);
+        }
       }, 500); 
       
       return () => {

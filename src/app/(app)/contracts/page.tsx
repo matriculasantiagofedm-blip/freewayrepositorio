@@ -76,11 +76,12 @@ export default function AllContractsPage() {
     
     const baseCollection = collection(db, 'contracts');
 
+    // Admin y Ventas siempre ven todos los contratos, sin filtro de userId.
     if (role === 'Administrador' || role === 'Ventas') {
       return query(baseCollection, orderBy('folioNumber', 'desc'));
     }
     
-    // Fallback for other roles to see only their contracts
+    // Cualquier otro rol solo ve sus propios contratos.
     return query(baseCollection, where('userId', '==', user.uid), orderBy('folioNumber', 'desc'));
   }, [db, user, role]);
 
@@ -125,7 +126,7 @@ export default function AllContractsPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="font-headline text-3xl font-bold">{filter === 'overdue' ? 'Contratos Vencidos' : 'Todos los Contratos'}</h1>
          <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react';
 import { useUser } from '@/components/firebase-provider';
 
 // Este es el mapa central de roles. 
-// Asocia un correo electrónico de usuario a un rol específico en la aplicación.
+// Asocia un correo electrónico de usuario o un perfil de inicio de sesión a un rol específico en la aplicación.
 const roleMapping: { [key: string]: string } = {
     'ventas123': 'Ventas',
-    'Ayax/2022': 'Administrador',
+    'Ayax/2022': 'Administrador', // Este perfil ahora tiene el rol de Administrador
 };
 
 export function useCurrentRole() {
@@ -25,10 +25,13 @@ export function useCurrentRole() {
     // Si el usuario es anónimo, intentamos obtener el rol de la variable global.
     if (user && user.isAnonymous) {
       const selectedRole = (window as any).selectedRoleForAnonymousSession;
-      if (selectedRole) {
+      if (selectedRole && selectedRole.name) {
         // Usamos el mapeo para obtener el rol funcional
         const functionalRole = roleMapping[selectedRole.name] || 'Ventas';
         setRole(functionalRole);
+      } else {
+        // Si no hay rol seleccionado, podría ser un error o un estado inesperado.
+        setRole(null);
       }
     } else if (user && user.email) {
       // Si es un usuario con email, usamos el mapeo.

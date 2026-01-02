@@ -1,5 +1,5 @@
 'use client';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where, orderBy, getDocs, collectionGroup } from 'firebase/firestore';
 import type { Contract, Deadline } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import {
@@ -17,7 +17,7 @@ import { format, isPast } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Eye, Search, CheckCircle, XCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { useSearchParams } from 'next/navigation';
 import { useDb, useUser } from '@/components/firebase-provider';
@@ -68,24 +68,61 @@ export default function AllContractsPage() {
   const { role } = useCurrentRole();
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
+  const [allContracts, setAllContracts] = useState<Contract[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const filter = searchParams.get('filter');
 
-  const contractsQuery = useMemoQuery(() => {
-    if (!db || !user || !role) return null;
-    
-    const baseCollection = collection(db, 'contracts');
-
-    // Admin y Ventas siempre ven todos los contratos, sin filtro de userId.
-    if (role === 'Administrador' || role === 'Ventas') {
-      return query(baseCollection, orderBy('folioNumber', 'desc'));
+  useEffect(() => {
+    if (!db || !user || !role) {
+      setIsLoading(false);
+      return;
     }
-    
-    // Cualquier otro rol solo ve sus propios contratos.
-    return query(baseCollection, where('userId', '==', user.uid), orderBy('folioNumber', 'desc'));
+
+    const fetchContracts = async () => {
+      setIsLoading(true);
+      let combinedContracts: Contract[] = [];
+
+      try {
+        // Query 1: Root /contracts collection (the new, correct way)
+        const rootContractsQuery = query(collection(db, 'contracts'));
+        const rootSnapshot = await getDocs(rootContractsQuery);
+        const rootContracts = rootSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Contract[];
+        
+        combinedContracts.push(...rootContracts);
+
+        // Query 2: Nested /users/{userId}/contracts collection (the old, legacy way)
+        if (role === 'Administrador' || role === 'Ventas') {
+            const nestedContractsQuery = query(collectionGroup(db, 'contracts'));
+            const nestedSnapshot = await getDocs(nestedContractsQuery);
+            const nestedContracts = nestedSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Contract[];
+            combinedContracts.push(...nestedContracts);
+        }
+
+        // Remove duplicates, preferring the one from the root collection if IDs match
+        const uniqueContracts = Array.from(new Map(combinedContracts.map(c => [c.id, c])).values());
+
+        // Sort all contracts by folio number descending
+        const sortedContracts = uniqueContracts.sort((a, b) => (b.folioNumber || 0) - (a.folioNumber || 0));
+
+        // Filter by user if not admin/ventas
+        if (role !== 'Administrador' && role !== 'Ventas') {
+            setAllContracts(sortedContracts.filter(c => c.userId === user.uid));
+        } else {
+            setAllContracts(sortedContracts);
+        }
+
+      } catch (error) {
+        console.error("Error fetching contracts:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchContracts();
+
   }, [db, user, role]);
 
-  const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
 
   const statusColors: { [key: string]: string } = {
     active: 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
@@ -104,7 +141,7 @@ export default function AllContractsPage() {
   }
   
   const filteredContracts =
-    contracts?.filter((contract) => {
+    allContracts.filter((contract) => {
       const folio = String(contract.folioNumber || '').padStart(6, '0');
       const client = contract.clientName.toLowerCase();
       const type = contract.type.toLowerCase();
@@ -140,7 +177,7 @@ export default function AllContractsPage() {
         </div>
       </div>
       {isLoading && <p>Cargando contratos...</p>}
-      {!isLoading && contracts && (
+      {!isLoading && allContracts && (
         <>
             {filteredContracts.length > 0 ? (
                  <div className="rounded-lg border">

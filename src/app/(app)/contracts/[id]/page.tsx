@@ -22,6 +22,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { errorEmitter } from '@/firebase/error-emitter';
 
 const LAST_FOLIO_KEY = 'lastCertificateFolio';
 
@@ -100,24 +102,29 @@ export default function ContractDetailPage() {
     // Guardar el folio actual para la próxima vez
     try {
         localStorage.setItem(LAST_FOLIO_KEY, certificateFolio);
-        // Marcar el contrato como con certificado generado en Firestore
-        await updateDoc(contractRef, {
-            certificateGeneratedAt: serverTimestamp(),
-        });
-
     } catch (e) {
-        console.error("Could not save folio or update contract.", e);
-        toast({
-            variant: 'destructive',
-            title: 'Error al Guardar',
-            description: 'No se pudo actualizar el contrato. Por favor, inténtalo de nuevo.',
-        });
-        return; // Detener si hay un error al actualizar
+        console.warn("Could not save folio to localStorage.", e);
     }
 
-    const printUrl = `/certificate-print/${contractId}?folio=${encodeURIComponent(certificateFolio)}`;
-    window.open(printUrl, '_blank');
-    setIsFolioModalOpen(false);
+    const updateData = {
+        certificateGeneratedAt: serverTimestamp(),
+    };
+    
+    // Marcar el contrato como con certificado generado en Firestore
+    updateDoc(contractRef, updateData)
+      .then(() => {
+        const printUrl = `/certificate-print/${contractId}?folio=${encodeURIComponent(certificateFolio)}`;
+        window.open(printUrl, '_blank');
+        setIsFolioModalOpen(false);
+      })
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: contractRef.path,
+          operation: 'update',
+          requestResourceData: updateData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   };
   
   const handlePrintContract = () => {

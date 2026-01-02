@@ -48,6 +48,8 @@ import { useCurrentRole } from '@/hooks/use-current-role';
 import { AmpliacionesContractTemplate } from './ampliaciones-contract';
 import { ContractView } from './contract-view';
 import { useDb, useUser } from './firebase-provider';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { errorEmitter } from '@/firebase/error-emitter';
 
 
 // --- Esquemas de Validación con Zod ---
@@ -545,7 +547,7 @@ export function ContractForm() {
             return;
         }
         setIsSubmitting(true);
-
+    
         try {
             const folioNumber = await runTransaction(db, async (transaction) => {
                 const counterRef = doc(db, 'counters', 'contract_folio');
@@ -559,20 +561,19 @@ export function ContractForm() {
                 }
                 return newFolioNumber;
             });
-
+    
             if (!folioNumber) throw new Error("No se pudo generar el número de folio.");
             form.setValue('folioNumber', folioNumber);
-
-            const batch = writeBatch(db);
-
+    
             const studentIdNumber = values.contractType === 'Curso Deluxe' ? values.deluxeDetails.studentIdNumber : (values.contractType === 'Ampliaciones' ? values.ampliacionesDetails.studentIdNumber : values.autoMotoDetails.studentIdNumber);
             const clientsRef = collection(db, 'clients');
             const q = query(clientsRef, where("idNumber", "==", studentIdNumber));
             const clientSnapshot = await getDocs(q);
-
+    
             let clientId: string;
             let clientRef;
-
+            let newClientData: Partial<Client> | null = null;
+    
             if (!clientSnapshot.empty) {
                 clientRef = clientSnapshot.docs[0].ref;
                 clientId = clientRef.id;
@@ -584,8 +585,8 @@ export function ContractForm() {
                     values.contractType === 'Curso Deluxe' ? values.deluxeDetails :
                     values.contractType === 'Ampliaciones' ? values.ampliacionesDetails :
                     values.autoMotoDetails;
-
-                const newClientData: Partial<Client> = {
+    
+                newClientData = {
                     id: clientId,
                     name: values.clientName,
                     email: values.clientEmail,
@@ -596,9 +597,8 @@ export function ContractForm() {
                     studentPhone2: studentDetails.studentPhone2,
                     createdAt: serverTimestamp() as Timestamp,
                 };
-                batch.set(clientRef, newClientData);
             }
-
+    
             const contractRef = doc(collection(db, 'contracts'));
             
             const toTimestamp = (date: any): Timestamp | null => {
@@ -606,7 +606,7 @@ export function ContractForm() {
                 if (date instanceof Date) return Timestamp.fromDate(date);
                 return null;
             }
-
+    
             const convertDetailsDatesToTimestamps = (details: any) => {
                 const newDetails = { ...details };
                 for (const key in newDetails) {
@@ -631,7 +631,7 @@ export function ContractForm() {
                 }
                 return newDetails;
             };
-
+    
             let finalDetails: any = {};
             if (values.contractType === 'Curso Deluxe') {
                 finalDetails = convertDetailsDatesToTimestamps(values.deluxeDetails);
@@ -639,7 +639,6 @@ export function ContractForm() {
                 finalDetails = convertDetailsDatesToTimestamps(values.ampliacionesDetails);
             } else {
                 finalDetails = convertDetailsDatesToTimestamps(values.autoMotoDetails);
-                // Specifically remove 'vehicle' if it's a Moto course
                 if (values.contractType === 'Curso Moto') {
                     delete finalDetails.vehicle;
                 }
@@ -651,7 +650,7 @@ export function ContractForm() {
                 clientName: values.clientName,
                 clientEmail: values.clientEmail,
                 clientId: clientId,
-                studentIdNumber: studentIdNumber, // Denormalize cedula
+                studentIdNumber: studentIdNumber, 
                 content: `Contrato de ${values.contractType} para ${values.clientName}.`,
                 deadlines: [],
                 status: 'active',
@@ -662,9 +661,17 @@ export function ContractForm() {
                 autoMotoDetails: ['Curso Auto', 'Curso Moto', 'Curso Mixto'].includes(values.contractType) ? finalDetails : {},
                 ampliacionesDetails: values.contractType === 'Ampliaciones' ? finalDetails : {},
             };
-            
-            batch.set(contractRef, { ...newContract, createdAt: serverTimestamp() });
+    
+            const contractDataWithTimestamp = { ...newContract, createdAt: serverTimestamp() };
+    
+            const batch = writeBatch(db);
+            if (newClientData) {
+                batch.set(clientRef, newClientData);
+            }
+            batch.set(contractRef, contractDataWithTimestamp);
+    
             await batch.commit();
+    
             toast({ title: 'Éxito', description: `Contrato #${folioNumber} creado correctamente.` });
             
             const contractForPreview: Contract = {
@@ -673,14 +680,22 @@ export function ContractForm() {
                 createdAt: new Date(),
             };
             setSavedContract(contractForPreview);
-
-        } catch (error) {
-            console.error("Error al crear el contrato:", error);
-            toast({ 
-                variant: 'destructive', 
-                title: 'Error de Guardado', 
-                description: `${error instanceof Error ? error.message : 'No se pudo crear el contrato. Revisa los datos e intenta de nuevo.'}` 
+    
+        } catch (error: any) {
+            let operation = 'create';
+            let path = 'contracts/{new_contract}';
+            let resourceData: any = values;
+    
+            if (error?.message?.includes("client")) {
+                path = 'clients/{new_client}';
+            }
+            
+            const permissionError = new FirestorePermissionError({
+                path: path,
+                operation: operation,
+                requestResourceData: resourceData,
             });
+            errorEmitter.emit('permission-error', permissionError);
         } finally {
             setIsSubmitting(false);
         }

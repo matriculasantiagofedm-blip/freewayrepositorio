@@ -60,17 +60,6 @@ export default function CertificatePrintIdPage() {
     );
   }
 
-  if (currentUserRole === 'Ventas') {
-    return (
-        <div className="flex items-center justify-center h-screen bg-muted">
-            <div className="p-8 bg-background rounded-lg shadow-md text-center">
-                <h1 className="text-2xl font-bold text-destructive mb-4">Acceso Denegado</h1>
-                <p className="text-muted-foreground">No tienes permiso para imprimir certificados.</p>
-            </div>
-        </div>
-    );
-  }
-
   if (error) {
     return (
         <div className="flex items-center justify-center h-screen bg-muted">

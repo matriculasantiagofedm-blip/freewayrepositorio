@@ -134,22 +134,21 @@ export default function ContractDetailPage() {
   useEffect(() => {
     if (shouldPrint && contract && !isLoading) {
       const style = document.createElement('style');
-      style.innerHTML = `@page { size: letter portrait; margin: 1.5rem; }`;
+      style.id = 'print-styles';
+      style.innerHTML = `@page { size: letter portrait; margin: 1in; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }`;
       document.head.appendChild(style);
       
       const timer = setTimeout(() => {
         window.print();
-        // Clean up after printing
         router.replace(pathname, { scroll: false });
-        if (document.head.contains(style)) {
-            document.head.removeChild(style);
-        }
       }, 500); 
-      
+
+      // Cleanup function to remove style tag
       return () => {
         clearTimeout(timer);
-        if (document.head.contains(style)) {
-            document.head.removeChild(style);
+        const styleTag = document.getElementById('print-styles');
+        if (styleTag) {
+          document.head.removeChild(styleTag);
         }
       };
     }

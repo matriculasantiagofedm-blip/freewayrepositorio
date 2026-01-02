@@ -26,7 +26,7 @@ export default function CertificatePrintIdPage() {
   const [certificate, setCertificate] = useState<Certificate | null>(null);
 
   useEffect(() => {
-    if (contract && customFolio && currentUserRole && currentUserRole !== 'Ventas') {
+    if (contract && customFolio) {
       
       const details = contract.autoMotoDetails || contract.deluxeDetails;
 
@@ -38,19 +38,32 @@ export default function CertificatePrintIdPage() {
         folio: customFolio, // Usar el folio de la URL
         clientName: `${contract.firstName || ''} ${contract.middleName || ''} ${contract.lastName || ''} ${contract.secondLastName || ''}`.trim() || contract.clientName,
         courseName: contract.title,
-        issueDate: Timestamp.now().toDate(), // Siempre usar la fecha actual para la impresión
+        issueDate: Timestamp.now(), // Siempre usar la fecha actual para la impresión
         cip: details?.studentIdNumber || '',
         licenseType: details?.licenseCategory || '',
         contract: contract, // Adjuntar el contrato completo
       };
       setCertificate(certificateData);
 
+      const style = document.createElement('style');
+      style.id = 'print-styles';
+      style.innerHTML = `@page { size: letter landscape; margin: 0; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }`;
+      document.head.appendChild(style);
+
       // Activar automáticamente el diálogo de impresión
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         window.print();
       }, 500); // Retraso para permitir que el contenido se renderice
+      
+      return () => {
+        clearTimeout(timer);
+        const styleTag = document.getElementById('print-styles');
+        if (styleTag) {
+          document.head.removeChild(styleTag);
+        }
+      };
     }
-  }, [contract, customFolio, currentUserRole]);
+  }, [contract, customFolio]);
 
   if (isContractLoading || isRoleLoading) {
     return (
@@ -66,6 +79,17 @@ export default function CertificatePrintIdPage() {
             <div className="p-8 bg-background rounded-lg shadow-md text-center">
                 <h1 className="text-2xl font-bold text-destructive mb-4">Error</h1>
                 <p className="text-muted-foreground">{error.message}</p>
+            </div>
+        </div>
+    );
+  }
+
+  if (currentUserRole === 'Ventas') {
+    return (
+        <div className="flex items-center justify-center h-screen bg-muted">
+            <div className="p-8 bg-background rounded-lg shadow-md text-center">
+                <h1 className="text-2xl font-bold text-destructive mb-4">Acceso Denegado</h1>
+                <p className="text-muted-foreground">No tienes permiso para imprimir certificados.</p>
             </div>
         </div>
     );

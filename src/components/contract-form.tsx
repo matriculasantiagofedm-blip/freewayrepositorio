@@ -228,6 +228,7 @@ export function ContractForm() {
       studentPhone2: '',
       contractType: contractType,
       deluxeDetails: {
+        paymentAmount: 0,
         paymentInstallments: Array(6).fill(undefined),
         theoreticalClasses: Array(10).fill(undefined),
         classSchedules: Array(6).fill({ date: undefined, time: '' }),
@@ -277,6 +278,7 @@ export function ContractForm() {
       studentPhone2: form.getValues('studentPhone2'),
       contractType: contractType,
       deluxeDetails: {
+        paymentAmount: 0,
         paymentInstallments: Array(6).fill(undefined),
         theoreticalClasses: Array(10).fill(undefined),
         classSchedules: Array(6).fill({ date: undefined, time: '' }),
@@ -559,7 +561,7 @@ export function ContractForm() {
                     Define los detalles financieros del contrato.
                 </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
                 {contractType === 'Curso Deluxe' && (
                     <div className="space-y-4">
                         <FormField
@@ -615,9 +617,8 @@ export function ContractForm() {
                     </div>
                 )}
                  {(contractType === 'Curso Auto' || contractType === 'Curso Moto') && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
-                       {(contractType === 'Curso Auto' || contractType === 'Curso Moto') && (
-                           <FormField
+                    <div className="space-y-4">
+                        <FormField
                             control={form.control}
                             name="autoMotoDetails.coursePlan"
                             render={({ field }) => (
@@ -635,103 +636,119 @@ export function ContractForm() {
                                     </Select>
                                 </FormItem>
                             )}
+                        />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="autoMotoDetails.courseValue"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Valor del Curso (B/.)</FormLabel>
+                                    <FormControl><Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
+                                    </FormItem>
+                                )}
                             />
-                       )}
-                       <FormField
-                            control={form.control}
-                            name="autoMotoDetails.courseValue"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Valor del Curso (B/.)</FormLabel>
-                                <FormControl><Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="autoMotoDetails.paidInFull"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-start space-x-2 pb-2">
-                                    <FormControl>
-                                        <Checkbox
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                    <FormLabel className='mb-0'>Pagado por completo</FormLabel>
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="autoMotoDetails.downPayment"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Abono (B/.)</FormLabel>
-                                <FormControl><Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={form.watch('autoMotoDetails.paidInFull')} /></FormControl>
-                                </FormItem>
-                            )}
-                        />
-                         <FormField
-                            control={form.control}
-                            name="autoMotoDetails.balance"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Saldo Pendiente (B/.)</FormLabel>
-                                <FormControl><Input type="number" {...field} readOnly className="bg-muted" /></FormControl>
-                                </FormItem>
-                            )}
-                        />
-                         <FormField
-                            control={form.control}
-                            name="autoMotoDetails.paymentDeadline"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                <FormLabel>Fecha Límite de Pago</FormLabel>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <FormControl>
-                                            <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")} disabled={form.watch('autoMotoDetails.paidInFull')}>
-                                                {field.value ? format(field.value, "P", { locale: es }) : <span>Seleccionar fecha</span>}
-                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                            </Button>
-                                            </FormControl>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus />
-                                        </PopoverContent>
-                                    </Popover>
-                                </FormItem>
-                            )}
-                        />
+                            <FormField
+                                control={form.control}
+                                name="autoMotoDetails.downPayment"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Abono (B/.)</FormLabel>
+                                    <FormControl><Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={form.watch('autoMotoDetails.paidInFull')} /></FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="autoMotoDetails.balance"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Saldo Pendiente (B/.)</FormLabel>
+                                    <FormControl><Input type="number" {...field} readOnly className="bg-muted" /></FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4 items-end'>
+                            <FormField
+                                control={form.control}
+                                name="autoMotoDetails.paidInFull"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center space-x-2 rounded-md border p-3 shadow-sm h-10">
+                                        <FormControl>
+                                            <Checkbox
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                        <FormLabel className='mb-0 leading-none'>Pagado por completo</FormLabel>
+                                    </FormItem>
+                                )}
+                            />
+                             <FormField
+                                control={form.control}
+                                name="autoMotoDetails.paymentDeadline"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-col">
+                                    <FormLabel>Fecha Límite de Pago</FormLabel>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <FormControl>
+                                                <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")} disabled={form.watch('autoMotoDetails.paidInFull')}>
+                                                    {field.value ? format(field.value, "P", { locale: es }) : <span>Seleccionar fecha</span>}
+                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                </Button>
+                                                </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus />
+                                            </PopoverContent>
+                                        </Popover>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
                     </div>
                  )}
                  {contractType === 'Ampliaciones' && (
-                     <div className="space-y-4">
+                     <div className="space-y-6">
                         <div>
                             <FormLabel>Planes de Ampliación</FormLabel>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-2">
                                 {ampliacionesPlans.map(plan => (
-                                    <div key={plan.name} className="flex items-center space-x-2">
-                                        <Checkbox
-                                            id={`plan-${plan.name}`}
-                                            onCheckedChange={(checked) => {
-                                                const currentPlans = form.getValues('ampliacionesDetails.selectedPlans') || [];
-                                                if (checked) {
-                                                    form.setValue('ampliacionesDetails.selectedPlans', [...currentPlans, plan]);
-                                                } else {
-                                                    form.setValue('ampliacionesDetails.selectedPlans', currentPlans.filter(p => p.name !== plan.name));
-                                                }
-                                            }}
-                                        />
-                                        <label htmlFor={`plan-${plan.name}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                            {plan.name} (B/.{plan.price})
-                                        </label>
-                                    </div>
+                                    <FormField
+                                        key={plan.name}
+                                        control={form.control}
+                                        name="ampliacionesDetails.selectedPlans"
+                                        render={({ field }) => {
+                                            return (
+                                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
+                                                    <FormControl>
+                                                        <Checkbox
+                                                            checked={field.value?.some(p => p.name === plan.name)}
+                                                            onCheckedChange={(checked) => {
+                                                                return checked
+                                                                ? field.onChange([...(field.value || []), plan])
+                                                                : field.onChange(
+                                                                    field.value?.filter(
+                                                                        (value) => value.name !== plan.name
+                                                                    )
+                                                                )
+                                                            }}
+                                                        />
+                                                    </FormControl>
+                                                    <div className="space-y-1 leading-none">
+                                                        <FormLabel>{plan.name}</FormLabel>
+                                                        <FormDescription>B/. {plan.price.toFixed(2)}</FormDescription>
+                                                    </div>
+                                                </FormItem>
+                                            )
+                                        }}
+                                    />
                                 ))}
                             </div>
                         </div>
-                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
+                         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end">
                              <FormField
                                 control={form.control}
                                 name="ampliacionesDetails.courseValue"

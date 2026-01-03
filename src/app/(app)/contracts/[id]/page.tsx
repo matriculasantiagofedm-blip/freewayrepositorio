@@ -66,7 +66,6 @@ export default function ContractDetailPage() {
   const [certificateFolio, setCertificateFolio] = useState('');
 
   const contractId = Array.isArray(id) ? id[0] : id;
-  const shouldPrint = searchParams.get('print') === 'true';
 
   const contractRef = useMemoDoc(() => {
     if (!db || !user || !contractId) return null;
@@ -128,26 +127,9 @@ export default function ContractDetailPage() {
   };
   
   const handlePrintContract = () => {
-    router.push(`${pathname}?print=true`, { scroll: false });
+    const printUrl = `/print-contract/${contractId}`;
+    window.open(printUrl, '_blank');
   };
-
-  useEffect(() => {
-    if (shouldPrint && contract && !isLoading) {
-      document.body.classList.add('printing-contract');
-
-      const timer = setTimeout(() => {
-        window.print();
-        // Use router.replace to remove the print param from URL without adding to history
-        router.replace(pathname, { scroll: false }); 
-      }, 500); 
-
-      // Cleanup function to remove the class when the component unmounts or re-renders
-      return () => {
-        clearTimeout(timer);
-        document.body.classList.remove('printing-contract');
-      };
-    }
-  }, [shouldPrint, contract, isLoading, pathname, router]);
 
 
   return (

@@ -90,24 +90,5 @@
     .print-hide {
       display: none !important;
     }
-    
-    body.printing-contract > *:not(.print-container) {
-      display: none;
-    }
-
-    body.printing-contract .print-container {
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: auto;
-      padding: 0;
-      margin: 0;
-    }
-  }
-
-  @page {
-    size: letter portrait;
-    margin: 0.75in;
   }
 }

@@ -73,8 +73,9 @@ export interface AutoMotoContractDetails {
   motoPracticalClassSchedules?: { date?: Date; time?: string }[];
   firstName?: string;
   middleName?: string;
-lastName?: string;
+  lastName?: string;
   secondLastName?: string;
+  paidInFull?: boolean;
 }
 
 
@@ -101,6 +102,9 @@ export interface Contract {
   clientEmail: string;
   clientId: string; // The ID of the client document in the /clients collection
   studentIdNumber?: string; // Denormalized for searching
+  studentAddress?: string;
+  studentPhone1?: string;
+  studentPhone2?: string;
   content: string;
   deadlines: Deadline[];
   status: ContractStatus;

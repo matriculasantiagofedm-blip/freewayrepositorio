@@ -294,6 +294,11 @@ export function ContractForm() {
 
   useEffect(() => {
     form.setValue('contractType', contractType);
+    if (contractType === 'Curso Moto') {
+        form.setValue('autoMotoDetails.vehicle', 'Moto');
+    } else {
+        form.setValue('autoMotoDetails.vehicle', undefined);
+    }
     // Reset fields when type changes
     form.reset({
       clientName: form.getValues('clientName'),
@@ -317,6 +322,7 @@ export function ContractForm() {
         practicalClassSchedules: Array(6).fill({ date: undefined, time: '' }),
         motoPracticalClassSchedules: Array(6).fill({ date: undefined, time: '' }),
         paidInFull: false,
+        vehicle: contractType === 'Curso Moto' ? 'Moto' : undefined,
       },
        ampliacionesDetails: {
         selectedPlans: [],
@@ -365,12 +371,14 @@ export function ContractForm() {
             
             if (paidInFull) {
                 downPayment = courseValue;
+                // Only set value if it's different to prevent loop
                 if (form.getValues('autoMotoDetails.downPayment') !== courseValue) {
                    form.setValue('autoMotoDetails.downPayment', courseValue);
                 }
             }
 
             const newBalance = courseValue - downPayment;
+             // Only set value if it's different to prevent loop
              if (form.getValues('autoMotoDetails.balance') !== newBalance) {
                 form.setValue('autoMotoDetails.balance', newBalance);
              }
@@ -662,18 +670,18 @@ export function ContractForm() {
                         </div>
                     </div>
                 )}
-                 {(contractType === 'Curso Auto' || contractType === 'Curso Moto') && (
-                    <div className="space-y-4">
+                 {(contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') && (
+                     <div className="space-y-4">
                          <FormField
                             control={form.control}
                             name="autoMotoDetails.coursePlan"
                             render={({ field }) => (
-                                <FormItem>
+                                <FormItem className="w-full">
                                     <FormLabel>Plan del Curso</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar plan..." /></SelectTrigger></FormControl>
                                         <SelectContent>
-                                            {coursePlans[contractType].map(plan => (
+                                            {coursePlans[contractType as 'Curso Auto' | 'Curso Moto'].map(plan => (
                                                 <SelectItem key={plan.name} value={plan.name}>
                                                     {plan.name} - B/. {plan.price.toFixed(2)}
                                                 </SelectItem>
@@ -960,7 +968,7 @@ export function ContractForm() {
                  )}
                  {(contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') && (
                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 {contractType !== 'Curso Moto' && (
                                     <FormField
                                         control={form.control}
@@ -998,6 +1006,29 @@ export function ContractForm() {
                                                 )}
                                             </SelectContent>
                                         </Select>
+                                        </FormItem>
+                                    )}
+                                />
+                                 <FormField
+                                    control={form.control}
+                                    name="autoMotoDetails.vehicle"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Vehículo</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={contractType === 'Curso Moto'}>
+                                                <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl>
+                                                <SelectContent>
+                                                    {contractType === 'Curso Moto' ? (
+                                                        <SelectItem value="Moto">Moto</SelectItem>
+                                                    ) : (
+                                                        <>
+                                                            <SelectItem value="Spark">Spark</SelectItem>
+                                                            <SelectItem value="P. Blanco">P. Blanco</SelectItem>
+                                                            <SelectItem value="P. Bronce">P. Bronce</SelectItem>
+                                                        </>
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
                                         </FormItem>
                                     )}
                                 />
@@ -1180,5 +1211,3 @@ export function ContractForm() {
     </Form>
   );
 }
-
-    

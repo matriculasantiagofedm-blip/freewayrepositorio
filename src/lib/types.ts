@@ -95,16 +95,13 @@ export interface AmpliacionesContractDetails {
 
 export interface Contract {
   id: string;
-  folio: string; // folioNumber (number) is now folio (string)
+  folioNumber: number; // folioNumber (number) is now folio (string)
   title: string;
   client?: Client; // This might be populated after fetching
   clientName: string; // This is now a composite of the name fields
   clientEmail: string;
   clientId: string; // The ID of the client document in the /clients collection
   studentIdNumber?: string; // Denormalized for searching
-  studentAddress?: string;
-  studentPhone1?: string;
-  studentPhone2?: string;
   content: string;
   deadlines: Deadline[];
   status: ContractStatus;
@@ -115,11 +112,6 @@ export interface Contract {
   deluxeDetails?: Partial<DeluxeContractDetails>;
   autoMotoDetails?: Partial<AutoMotoContractDetails>;
   ampliacionesDetails?: Partial<AmpliacionesContractDetails>;
-  firstName?: string;
-  middleName?: string;
-  lastName?: string;
-  secondLastName?: string;
-  folioNumber?: number;
   certificateGeneratedAt?: Timestamp; // Campo para registrar la generación del certificado
 }
 

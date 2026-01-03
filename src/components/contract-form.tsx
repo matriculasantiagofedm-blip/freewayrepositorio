@@ -73,9 +73,9 @@ const baseSchema = z.object({
 const autoMotoDetailsSchema = z.object({
   coursePlan: z.string().optional(),
   paidInFull: z.boolean().default(false),
-  courseValue: z.number().optional(),
-  downPayment: z.number().optional(),
-  balance: z.number().optional(),
+  courseValue: z.number().default(0),
+  downPayment: z.number().default(0),
+  balance: z.number().default(0),
   paymentDeadline: z.date().optional().nullable(),
   vehicle: z.enum(['Spark', 'P. Blanco', 'P. Bronce', 'Moto']).optional(),
   vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).optional(),
@@ -103,9 +103,9 @@ const deluxeDetailsSchema = z.object({
 
 const ampliacionesDetailsSchema = z.object({
   selectedPlans: z.array(z.object({ name: z.string(), price: z.number() })).optional(),
-  courseValue: z.number().optional(),
-  downPayment: z.number().optional(),
-  balance: z.number().optional(),
+  courseValue: z.number().default(0),
+  downPayment: z.number().default(0),
+  balance: z.number().default(0),
   paymentDeadline: z.date().optional().nullable(),
   theoreticalClassDate: z.date().optional(),
   theoreticalClassTime: z.string().optional(),
@@ -328,11 +328,19 @@ export function ContractForm() {
             const courseValue = value.autoMotoDetails?.courseValue || 0;
             const downPayment = value.autoMotoDetails?.downPayment || 0;
             const paidInFull = value.autoMotoDetails?.paidInFull || false;
+            
             if (paidInFull) {
-                form.setValue('autoMotoDetails.downPayment', courseValue);
-                form.setValue('autoMotoDetails.balance', 0);
+                if (downPayment !== courseValue) {
+                    form.setValue('autoMotoDetails.downPayment', courseValue);
+                }
+                if (value.autoMotoDetails?.balance !== 0) {
+                    form.setValue('autoMotoDetails.balance', 0);
+                }
             } else {
-                form.setValue('autoMotoDetails.balance', courseValue - downPayment);
+                const newBalance = courseValue - downPayment;
+                if (value.autoMotoDetails?.balance !== newBalance) {
+                    form.setValue('autoMotoDetails.balance', newBalance);
+                }
             }
         }
     });
@@ -635,7 +643,7 @@ export function ContractForm() {
                                 </FormItem>
                             )}
                         />
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <FormField
                                 control={form.control}
                                 name="autoMotoDetails.courseValue"

@@ -60,11 +60,15 @@ const classScheduleSchema = z.object({
 });
 
 const baseSchema = z.object({
-  clientName: z.string().min(1, 'El nombre del cliente es requerido.'),
+  clientName: z.string()
+    .min(1, 'El nombre del cliente es requerido.')
+    .refine((name) => !/\d/.test(name), {
+        message: "El nombre no debe contener números.",
+    }),
   clientEmail: z.string().email('Por favor, introduce una dirección de correo electrónico válida.'),
   studentIdNumber: z.string().min(1, 'La cédula es requerida.'),
-  studentAddress: z.string().optional(),
-  studentPhone1: z.string().optional(),
+  studentAddress: z.string().min(1, 'La dirección es requerida.'),
+  studentPhone1: z.string().min(1, 'El teléfono es requerido.'),
   studentPhone2: z.string().optional(),
   contractType: z.custom<ContractType>(),
   folioNumber: z.number().optional(),
@@ -356,22 +360,20 @@ export function ContractForm() {
 
         if (name === 'autoMotoDetails.courseValue' || name === 'autoMotoDetails.downPayment' || name === 'autoMotoDetails.paidInFull') {
             const courseValue = value.autoMotoDetails?.courseValue || 0;
-            const downPayment = value.autoMotoDetails?.downPayment || 0;
+            let downPayment = value.autoMotoDetails?.downPayment || 0;
             const paidInFull = value.autoMotoDetails?.paidInFull || false;
             
             if (paidInFull) {
+                downPayment = courseValue;
                 if (form.getValues('autoMotoDetails.downPayment') !== courseValue) {
-                    form.setValue('autoMotoDetails.downPayment', courseValue);
-                }
-                if (form.getValues('autoMotoDetails.balance') !== 0) {
-                    form.setValue('autoMotoDetails.balance', 0);
-                }
-            } else {
-                const newBalance = courseValue - downPayment;
-                if (form.getValues('autoMotoDetails.balance') !== newBalance) {
-                     form.setValue('autoMotoDetails.balance', newBalance);
+                   form.setValue('autoMotoDetails.downPayment', courseValue);
                 }
             }
+
+            const newBalance = courseValue - downPayment;
+             if (form.getValues('autoMotoDetails.balance') !== newBalance) {
+                form.setValue('autoMotoDetails.balance', newBalance);
+             }
         }
     });
     return () => subscription.unsubscribe();
@@ -568,6 +570,7 @@ export function ContractForm() {
                             <FormItem>
                             <FormLabel>Dirección</FormLabel>
                             <FormControl><Input placeholder="Dirección completa" {...field} /></FormControl>
+                            <FormMessage />
                             </FormItem>
                         )}
                     />
@@ -578,6 +581,7 @@ export function ContractForm() {
                             <FormItem>
                             <FormLabel>Teléfono 1</FormLabel>
                             <FormControl><Input placeholder="Ej: 6123-4567" {...field} /></FormControl>
+                            <FormMessage />
                             </FormItem>
                         )}
                     />
@@ -660,7 +664,7 @@ export function ContractForm() {
                 )}
                  {(contractType === 'Curso Auto' || contractType === 'Curso Moto') && (
                     <div className="space-y-4">
-                        <FormField
+                         <FormField
                             control={form.control}
                             name="autoMotoDetails.coursePlan"
                             render={({ field }) => (

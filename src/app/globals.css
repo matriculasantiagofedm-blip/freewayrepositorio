@@ -91,6 +91,10 @@
       display: none !important;
     }
     
+    body.printing-contract > *:not(.print-container) {
+      display: none;
+    }
+
     body.printing-contract .print-container {
       position: absolute;
       left: 0;
@@ -99,15 +103,6 @@
       height: auto;
       padding: 0;
       margin: 0;
-      visibility: visible;
-    }
-
-    body.printing-contract .print-container > * {
-       visibility: visible;
-    }
-    
-    body.printing-contract > *:not(.print-container) {
-      display: none;
     }
   }
 

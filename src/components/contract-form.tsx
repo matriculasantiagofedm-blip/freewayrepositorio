@@ -360,49 +360,10 @@ export function ContractForm() {
         if (name === 'ampliacionesDetails.selectedPlans') {
             const total = value.ampliacionesDetails?.selectedPlans?.reduce((sum, plan) => sum + (plan?.price || 0), 0) || 0;
             form.setValue('ampliacionesDetails.courseValue', total);
-        }
-        if (name === 'ampliacionesDetails.courseValue' || name === 'ampliacionesDetails.downPayment') {
+        } else if (name === 'ampliacionesDetails.courseValue' || name === 'ampliacionesDetails.downPayment') {
             const total = value.ampliacionesDetails?.courseValue || 0;
             const downPayment = value.ampliacionesDetails?.downPayment || 0;
             form.setValue('ampliacionesDetails.balance', total - downPayment);
-        }
-        
-        if (name === 'autoMotoDetails.coursePlan') {
-            const planName = value.autoMotoDetails?.coursePlan;
-            const currentContractType = value.contractType as 'Curso Auto' | 'Curso Moto' | 'Curso Mixto';
-
-            const classCount = planName ? planToClassCount[planName] : 0;
-            const newClasses = Array.from({ length: classCount }, () => ({ date: undefined, time: '' }));
-            
-            if (currentContractType === 'Curso Mixto') {
-                const halfCount = Math.floor(classCount / 2);
-                const autoClasses = Array.from({ length: halfCount }, () => ({ date: undefined, time: '' }));
-                const motoClasses = Array.from({ length: classCount - halfCount }, () => ({ date: undefined, time: '' }));
-                replacePracticalClasses(autoClasses);
-                replaceMotoPracticalClasses(motoClasses);
-            } else {
-                 replacePracticalClasses(newClasses);
-            }
-
-            if (planName && (currentContractType === 'Curso Auto' || currentContractType === 'Curso Moto' || currentContractType === 'Curso Mixto')) {
-                const plan = coursePlans[currentContractType].find(p => p.name === planName);
-                if (plan) {
-                    const isSpecial = specialPlans.includes(plan.name);
-                    form.setValue('autoMotoDetails.courseValue', plan.price);
-                    form.setValue('autoMotoDetails.paidInFull', isSpecial);
-                     if (isSpecial) {
-                        form.setValue('autoMotoDetails.downPayment', plan.price);
-                    } else {
-                        form.setValue('autoMotoDetails.downPayment', plan.price * 0.5);
-                    }
-                }
-            }
-        } else if (name === 'autoMotoDetails.paidInFull') {
-            const courseValue = value.autoMotoDetails?.courseValue || 0;
-            const paidInFull = value.autoMotoDetails?.paidInFull || false;
-            if (paidInFull) {
-                form.setValue('autoMotoDetails.downPayment', courseValue);
-            }
         } else if (name === 'autoMotoDetails.downPayment') {
              const courseValue = value.autoMotoDetails?.courseValue || 0;
              const downPayment = value.autoMotoDetails?.downPayment || 0;
@@ -410,7 +371,50 @@ export function ContractForm() {
         }
     });
     return () => subscription.unsubscribe();
-  }, [form, replacePracticalClasses, replaceMotoPracticalClasses]);
+  }, [form]);
+
+  // Handle course plan changes
+  useEffect(() => {
+    const planName = form.watch('autoMotoDetails.coursePlan');
+    const currentContractType = form.getValues('contractType') as 'Curso Auto' | 'Curso Moto' | 'Curso Mixto';
+
+    if (planName && (currentContractType === 'Curso Auto' || currentContractType === 'Curso Moto' || currentContractType === 'Curso Mixto')) {
+        const plan = coursePlans[currentContractType].find(p => p.name === planName);
+        if (plan) {
+            const isSpecial = specialPlans.includes(plan.name);
+            let downPayment = isSpecial ? plan.price : plan.price * 0.5;
+
+            form.setValue('autoMotoDetails.courseValue', plan.price);
+            form.setValue('autoMotoDetails.paidInFull', isSpecial);
+            form.setValue('autoMotoDetails.downPayment', downPayment);
+            form.setValue('autoMotoDetails.balance', plan.price - downPayment);
+
+            const classCount = planToClassCount[planName] || 0;
+            if (currentContractType === 'Curso Mixto') {
+                const halfCount = Math.floor(classCount / 2);
+                const autoClasses = Array.from({ length: halfCount }, () => ({ date: undefined, time: '' }));
+                const motoClasses = Array.from({ length: classCount - halfCount }, () => ({ date: undefined, time: '' }));
+                replacePracticalClasses(autoClasses);
+                replaceMotoPracticalClasses(motoClasses);
+            } else {
+                 const newClasses = Array.from({ length: classCount }, () => ({ date: undefined, time: '' }));
+                 replacePracticalClasses(newClasses);
+            }
+        }
+    }
+  }, [form.watch('autoMotoDetails.coursePlan'), form, replacePracticalClasses, replaceMotoPracticalClasses]);
+
+  // Handle "Paid in full" checkbox changes
+  useEffect(() => {
+    const isPaidInFull = form.watch('autoMotoDetails.paidInFull');
+    const courseValue = form.getValues('autoMotoDetails.courseValue') || 0;
+    
+    // This should only trigger if the checkbox is checked by the user
+    if (isPaidInFull) {
+        form.setValue('autoMotoDetails.downPayment', courseValue);
+        form.setValue('autoMotoDetails.balance', 0);
+    }
+  }, [form.watch('autoMotoDetails.paidInFull'), form]);
 
 
   async function onSubmit(values: FormValues) {
@@ -539,7 +543,6 @@ export function ContractForm() {
   };
 
   const selectedPlanName = form.watch('autoMotoDetails.coursePlan');
-  const courseValue = form.watch('autoMotoDetails.courseValue');
   const isSpecialPlan = selectedPlanName ? specialPlans.includes(selectedPlanName) : false;
   const isPaidInFull = form.watch('autoMotoDetails.paidInFull');
   const theoreticalSchedule = form.watch('autoMotoDetails.theoreticalClassSchedule');
@@ -734,7 +737,7 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Abono (B/.)</FormLabel>
-                                    <FormControl><Input type="number" step="0.01" {...field} value={Number(field.value || 0).toFixed(2)} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={isSpecialPlan || isPaidInFull} /></FormControl>
+                                    <FormControl><Input type="number" step="0.01" {...field} value={Number(field.value || 0).toFixed(2)} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
                                     <FormMessage />
                                     </FormItem>
                                 )}

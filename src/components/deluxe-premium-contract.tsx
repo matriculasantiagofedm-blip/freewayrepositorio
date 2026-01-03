@@ -69,7 +69,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
     : deluxeDetails?.paymentDetails || '';
 
   return (
-    <Card className="p-6 print:shadow-none print:border-none print:p-0 font-serif text-xs">
+    <Card className="p-6 print:shadow-none print:border-none print:p-0 font-serif text-xs print:bg-transparent">
       <CardContent className="p-0 space-y-1 relative">
         <div className="flex justify-between items-start pb-2">
             <h2 className="text-center font-bold text-sm">CONTRATO DE SERVICIOS EDUCATIVOS</h2>

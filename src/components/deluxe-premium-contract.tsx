@@ -86,12 +86,12 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
         </p>
 
         <div className="space-y-0.5">
-            <p>Entre <Value>{contract.clientName}</Value>, con cédula <Value>{contract.studentIdNumber}</Value>,</p>
+            <p>Entre <Value>{contract.clientName}</Value>, con cédula <Value>{deluxeDetails?.studentIdNumber}</Value>,</p>
             <div className="flex items-center flex-wrap">
                 , con domicilio en 
-                <Line><Value>{contract.studentAddress}</Value></Line>
+                <Line><Value>{deluxeDetails?.studentAddress}</Value></Line>
                 , teléfonos:
-                <Line><Value>{contract.studentPhone1}</Value></Line>/<Line><Value>{contract.studentPhone2}</Value></Line>
+                <Line><Value>{deluxeDetails?.studentPhone1}</Value></Line>/<Line><Value>{deluxeDetails?.studentPhone2}</Value></Line>
             </div>
              <div className="flex items-center flex-wrap">
                 , correo electrónico:
@@ -181,7 +181,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
             <div className="text-center flex flex-col items-center">
                 <LongLine />
                 <p className="text-[10px]">El Cliente</p>
-                <p className="text-[10px]">N° de identificación: <Value>{contract.studentIdNumber}</Value></p>
+                <p className="text-[10px]">N° de identificación: <Value>{deluxeDetails?.studentIdNumber}</Value></p>
             </div>
         </div>
 

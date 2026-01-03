@@ -37,6 +37,14 @@ export type ContractType =
   | 'Ampliaciones';
 
 export interface DeluxeContractDetails {
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  secondLastName?: string;
+  studentIdNumber?: string;
+  studentAddress?: string;
+  studentPhone1?: string;
+  studentPhone2?: string;
   paymentDetails?: 'Premium B/ 201.00' | 'Deluxe B/ 270.00';
   paymentAmount?: number;
   paymentInstallments?: (Date | undefined)[];
@@ -48,6 +56,10 @@ export interface DeluxeContractDetails {
 }
 
 export interface AutoMotoContractDetails {
+  studentIdNumber?: string;
+  studentAddress?: string;
+  studentPhone1?: string;
+  studentPhone2?: string;
   courseValue?: number;
   downPayment?: number;
   balance?: number;
@@ -64,6 +76,7 @@ export interface AutoMotoContractDetails {
 
 
 export interface AmpliacionesContractDetails {
+    studentIdNumber?: string;
     studentAddress?: string;
     studentPhone1?: string;
     studentPhone2?: string;
@@ -84,10 +97,6 @@ export interface Contract {
   clientName: string; // This is now a composite of the name fields
   clientEmail: string;
   clientId: string; // The ID of the client document in the /clients collection
-  studentIdNumber?: string; // Denormalized for searching
-  studentAddress?: string;
-  studentPhone1?: string;
-  studentPhone2?: string;
   content: string;
   deadlines: Deadline[];
   status: ContractStatus;

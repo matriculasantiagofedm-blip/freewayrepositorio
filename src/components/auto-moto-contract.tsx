@@ -65,7 +65,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
         
         <p className='text-[10px] leading-tight'>
             La empresa FREEWAY ESCUELA DE MANEJO S.A., con ubicación en La Chorrera, Vía Interamericana, Costa Verde, PH Green Plaza, Local #20, debidamente inscrita RUC 155628022-2-2016 DV 2, en adelante denominada LA EMPRESA.
-            Entre <Line><Value>{contract.clientName}</Value></Line>, identificado con cédula/pasaporte N.° <Line><Value>{contract.studentIdNumber}</Value></Line>, con domicilio en <Line><Value>{contract.studentAddress}</Value></Line>, teléfonos: <Line><Value>{contract.studentPhone1}</Value></Line>/<Line><Value>{contract.studentPhone2}</Value></Line>, correo electrónico: <Line><Value>{contract.clientEmail}</Value></Line>, en adelante denominado EL ESTUDIANTE.
+            Entre <Line><Value>{contract.clientName}</Value></Line>, identificado con cédula/pasaporte N.° <Line><Value>{autoMotoDetails?.studentIdNumber}</Value></Line>, con domicilio en <Line><Value>{autoMotoDetails?.studentAddress}</Value></Line>, teléfonos: <Line><Value>{autoMotoDetails?.studentPhone1}</Value></Line>/<Line><Value>{autoMotoDetails?.studentPhone2}</Value></Line>, correo electrónico: <Line><Value>{contract.clientEmail}</Value></Line>, en adelante denominado EL ESTUDIANTE.
         </p>
 
         <h3 className="font-bold text-center pt-1">DECLARAN:</h3>
@@ -193,7 +193,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
             <div className="text-center flex flex-col items-center">
                 <LongLine />
                 <p className="text-[10px]">El Cliente</p>
-                <p className="text-[10px]">N° de identificación: <Value>{contract.studentIdNumber}</Value></p>
+                <p className="text-[10px]">N° de identificación: <Value>{autoMotoDetails?.studentIdNumber}</Value></p>
             </div>
         </div>
 

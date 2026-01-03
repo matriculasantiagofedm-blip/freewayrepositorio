@@ -56,7 +56,7 @@ export function ContractView({ contract }: { contract: Contract }) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto bg-background">
+    <div className="max-w-4xl mx-auto bg-background print:max-w-none print:mx-0">
       {renderContractTemplate()}
     </div>
   );

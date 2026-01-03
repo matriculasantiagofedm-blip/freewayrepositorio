@@ -69,7 +69,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
     : deluxeDetails?.paymentDetails || '';
 
   return (
-    <Card className="p-6 print:shadow-none print:border-none print:p-0 print:bg-transparent">
+    <Card className="p-6 print:shadow-none print:border-none print:p-0 font-serif text-xs">
       <CardContent className="p-0 space-y-1 relative">
         <div className="flex justify-between items-start pb-2">
             <h2 className="text-center font-bold text-sm">CONTRATO DE SERVICIOS EDUCATIVOS</h2>
@@ -86,7 +86,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
         </p>
 
         <div className="space-y-0.5">
-            <p>Entre <Value>{contract.clientName}</Value>, con cédula <Value>{deluxeDetails?.studentIdNumber}</Value>,</p>
+            <p>Entre <Value>{contract.clientName}</Value>, con cédula <Value>{contract.studentIdNumber}</Value>,</p>
             <div className="flex items-center flex-wrap">
                 , con domicilio en 
                 <Line><Value>{contract.studentAddress}</Value></Line>
@@ -181,7 +181,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
             <div className="text-center flex flex-col items-center">
                 <LongLine />
                 <p className="text-[10px]">El Cliente</p>
-                <p className="text-[10px]">N° de identificación: <Value>{deluxeDetails?.studentIdNumber}</Value></p>
+                <p className="text-[10px]">N° de identificación: <Value>{contract.studentIdNumber}</Value></p>
             </div>
         </div>
 
@@ -195,3 +195,5 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
     </Card>
   );
 }
+
+    

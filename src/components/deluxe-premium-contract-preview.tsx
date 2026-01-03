@@ -33,12 +33,16 @@ function toDate(date: any): Date {
 interface DeluxePremiumContractPreviewProps {
     clientName?: string;
     clientEmail?: string;
+    studentIdNumber?: string;
+    studentAddress?: string;
+    studentPhone1?: string;
+    studentPhone2?: string;
     deluxeDetails?: Partial<DeluxeContractDetails>;
     createdBy?: string | null;
     folioNumber?: number;
 }
 
-export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, deluxeDetails, folioNumber }: DeluxePremiumContractPreviewProps) {
+export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, studentIdNumber, studentAddress, studentPhone1, studentPhone2, deluxeDetails, folioNumber }: DeluxePremiumContractPreviewProps) {
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
   const { role: createdBy } = useCurrentRole();
 
@@ -101,12 +105,12 @@ export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, 
         </p>
 
         <div className="space-y-0.5">
-            <p>Entre <Value>{clientName || '________________'}</Value>, con cédula <Value>{deluxeDetails?.studentIdNumber || '________________'}</Value>,</p>
+            <p>Entre <Value>{clientName || '________________'}</Value>, con cédula <Value>{studentIdNumber || '________________'}</Value>,</p>
             <div className="flex items-center flex-wrap">
                 con domicilio en 
-                <Line><Value>{deluxeDetails?.studentAddress}</Value></Line>
+                <Line><Value>{studentAddress}</Value></Line>
                 , teléfonos:
-                <Line><Value>{deluxeDetails?.studentPhone1}</Value></Line>/<Line><Value>{deluxeDetails?.studentPhone2}</Value></Line>
+                <Line><Value>{studentPhone1}</Value></Line>/<Line><Value>{studentPhone2}</Value></Line>
             </div>
              <div className="flex items-center flex-wrap">
                 , correo electrónico:
@@ -196,7 +200,7 @@ export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, 
             <div className="text-center flex flex-col items-center">
                 <LongLine />
                 <p className="text-[10px]">El Cliente</p>
-                <p className="text-[10px]">N° de identificación: <Value>{deluxeDetails?.studentIdNumber}</Value></p>
+                <p className="text-[10px]">N° de identificación: <Value>{studentIdNumber}</Value></p>
             </div>
         </div>
 
@@ -209,3 +213,5 @@ export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, 
     </Card>
   );
 }
+
+    

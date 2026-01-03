@@ -37,13 +37,17 @@ function toDate(date: any): Date {
 interface AutoMotoContractTemplatePreviewProps {
     clientName?: string;
     clientEmail?: string;
+    studentIdNumber?: string;
+    studentAddress?: string;
+    studentPhone1?: string;
+    studentPhone2?: string;
     autoMotoDetails?: Partial<AutoMotoContractDetails>;
     createdBy?: string | null;
     type?: ContractType;
     folioNumber?: number;
 }
 
-export function AutoMotoContractTemplatePreview({ clientName, clientEmail, autoMotoDetails, createdBy, type, folioNumber }: AutoMotoContractTemplatePreviewProps) {
+export function AutoMotoContractTemplatePreview({ clientName, clientEmail, studentIdNumber, studentAddress, studentPhone1, studentPhone2, autoMotoDetails, createdBy, type, folioNumber }: AutoMotoContractTemplatePreviewProps) {
   const balance = autoMotoDetails?.balance || 0;
   const creationDate = new Date(); // Use current date for preview
   const paymentDeadline = autoMotoDetails?.paymentDeadline ? toDate(autoMotoDetails.paymentDeadline) : null;
@@ -73,7 +77,8 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, autoM
         </div>
         
         <p className='text-[10px] leading-tight'>
-            La empresa FREEWAY ESCUELA DE MANEJO S.A., con ubicación en La Chorrera, Vía Interamericana, Costa Verde, PH Green Plaza, Local #20, debidamente inscrita RUC 155628022-2-2016 DV 2, en adelante denominada LA EMPRESA, y <Line>{clientName}</Line>, identificado con cédula/pasaporte N.° <Line>{autoMotoDetails?.studentIdNumber}</Line>, con domicilio en <Line>{autoMotoDetails?.studentAddress}</Line>, teléfonos: <Line>{autoMotoDetails?.studentPhone1}</Line>/<Line>{autoMotoDetails?.studentPhone2}</Line>, correo electrónico: <Line>{clientEmail}</Line>, en adelante denominado EL ESTUDIANTE.
+            La empresa FREEWAY ESCUELA DE MANEJO S.A., con ubicación en La Chorrera, Vía Interamericana, Costa Verde, PH Green Plaza, Local #20, debidamente inscrita RUC 155628022-2-2016 DV 2, en adelante denominada LA EMPRESA, se compromete a brindar a EL ESTUDIANTE la capacitación teórico-práctica del curso “CURSO DE MANEJO”, que incluye la Certificación según la categoría seleccionada.
+            Entre <Line>{clientName}</Line>, identificado con cédula/pasaporte N.° <Line>{studentIdNumber}</Line>, con domicilio en <Line>{studentAddress}</Line>, teléfonos: <Line>{studentPhone1}</Line>/<Line>{studentPhone2}</Line>, correo electrónico: <Line>{clientEmail}</Line>, en adelante denominado EL ESTUDIANTE.
         </p>
 
         <h3 className="font-bold text-center pt-1">DECLARAN:</h3>
@@ -175,7 +180,7 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, autoM
             <div className="text-center flex flex-col items-center">
                 <LongLine />
                 <p className="text-[10px]">El Cliente</p>
-                <p className="text-[10px]">N° de identificación: <Value>{autoMotoDetails?.studentIdNumber}</Value></p>
+                <p className="text-[10px]">N° de identificación: <Value>{studentIdNumber}</Value></p>
             </div>
         </div>
 
@@ -188,3 +193,5 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, autoM
     </Card>
   );
 }
+
+    

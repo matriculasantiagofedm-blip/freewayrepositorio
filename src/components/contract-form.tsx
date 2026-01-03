@@ -218,6 +218,16 @@ const coursePlans = {
   ],
 };
 
+const planToClassCount: { [key: string]: number } = {
+  'Paquete Básico 8hrs': 4,
+  'Paquete Plus 10hrs': 5,
+  'Paquete Premium 12hrs': 6,
+  'Reforzamiento de 4 horas': 2,
+  'Ya se manejar Plus 2 horas': 1,
+  'Ya se manejar (Evaluación de estacionamiento)': 1,
+};
+
+
 const ampliacionesPlans = [
     { name: 'Teórico B', price: 20 },
     { name: 'Teórico C', price: 20 },
@@ -263,9 +273,9 @@ export function ContractForm() {
         courseValue: 0,
         downPayment: 0,
         balance: 0,
-        theoreticalClassDates: Array(4).fill(undefined),
-        practicalClassSchedules: Array(6).fill({ date: undefined, time: '' }),
-        motoPracticalClassSchedules: Array(6).fill({ date: undefined, time: '' }),
+        theoreticalClassDates: [],
+        practicalClassSchedules: [],
+        motoPracticalClassSchedules: [],
         paidInFull: false,
       },
        ampliacionesDetails: {
@@ -277,12 +287,12 @@ export function ContractForm() {
     },
   });
 
-  const { fields: practicalClassFields, append: appendPracticalClass, remove: removePracticalClass } = useFieldArray({
+  const { fields: practicalClassFields, replace: replacePracticalClasses } = useFieldArray({
     control: form.control,
     name: "autoMotoDetails.practicalClassSchedules",
   });
   
-  const { fields: motoPracticalClassFields, append: appendMotoPracticalClass, remove: removeMotoPracticalClass } = useFieldArray({
+  const { fields: motoPracticalClassFields, replace: replaceMotoPracticalClasses } = useFieldArray({
     control: form.control,
     name: "autoMotoDetails.motoPracticalClassSchedules",
   });
@@ -318,9 +328,9 @@ export function ContractForm() {
         courseValue: 0,
         downPayment: 0,
         balance: 0,
-        theoreticalClassDates: Array(4).fill(undefined),
-        practicalClassSchedules: Array(6).fill({ date: undefined, time: '' }),
-        motoPracticalClassSchedules: Array(6).fill({ date: undefined, time: '' }),
+        theoreticalClassDates: [],
+        practicalClassSchedules: [],
+        motoPracticalClassSchedules: [],
         paidInFull: false,
         vehicle: contractType === 'Curso Moto' ? 'Moto' : undefined,
       },
@@ -348,6 +358,23 @@ export function ContractForm() {
         if (name === 'autoMotoDetails.coursePlan') {
             const planName = value.autoMotoDetails?.coursePlan;
             const currentContractType = value.contractType;
+
+            // Adjust practical classes
+            const classCount = planName ? planToClassCount[planName] : 0;
+            const newClasses = Array.from({ length: classCount }, () => ({ date: undefined, time: '' }));
+            
+            if (currentContractType === 'Curso Mixto') {
+                // For mixto, let's assume half for each for now, or adjust as needed
+                const halfCount = Math.floor(classCount / 2);
+                const autoClasses = Array.from({ length: halfCount }, () => ({ date: undefined, time: '' }));
+                const motoClasses = Array.from({ length: classCount - halfCount }, () => ({ date: undefined, time: '' }));
+                replacePracticalClasses(autoClasses);
+                replaceMotoPracticalClasses(motoClasses);
+            } else {
+                 replacePracticalClasses(newClasses);
+            }
+
+
             if (planName && (currentContractType === 'Curso Auto' || currentContractType === 'Curso Moto')) {
                 const plan = coursePlans[currentContractType].find(p => p.name === planName);
                 if (plan) {
@@ -385,7 +412,7 @@ export function ContractForm() {
         }
     });
     return () => subscription.unsubscribe();
-  }, [form]);
+  }, [form, replacePracticalClasses, replaceMotoPracticalClasses]);
 
 
   async function onSubmit(values: FormValues) {
@@ -673,7 +700,7 @@ export function ContractForm() {
                 )}
                  {(contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') && (
                      <div className="space-y-4">
-                         <FormField
+                        <FormField
                             control={form.control}
                             name="autoMotoDetails.coursePlan"
                             render={({ field }) => (
@@ -1097,13 +1124,10 @@ export function ContractForm() {
                                                     name={`autoMotoDetails.practicalClassSchedules.${index}.time`}
                                                     render={({ field: timeField }) => <FormItem><FormControl><Input placeholder={`Hora ${index+1}`} {...timeField} /></FormControl></FormItem>}
                                                 />
-                                                <Button type="button" variant="ghost" size="sm" onClick={() => removePracticalClass(index)}>Eliminar</Button>
+                                                <Button type="button" variant="ghost" size="sm" onClick={() => replacePracticalClasses(practicalClassFields.filter((_, i) => i !== index))}>Eliminar</Button>
                                             </div>
                                         ))}
                                     </div>
-                                    <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => appendPracticalClass({ date: undefined, time: '' })}>
-                                        <PlusCircle className="mr-2 h-4 w-4" /> Añadir Clase de Auto
-                                    </Button>
                                 </div>
                                 <div>
                                     <FormLabel>Clases Prácticas de Moto ({motoPracticalClassFields.length})</FormLabel>
@@ -1120,13 +1144,10 @@ export function ContractForm() {
                                                     name={`autoMotoDetails.motoPracticalClassSchedules.${index}.time`}
                                                     render={({ field: timeField }) => <FormItem><FormControl><Input placeholder={`Hora ${index+1}`} {...timeField} /></FormControl></FormItem>}
                                                 />
-                                                <Button type="button" variant="ghost" size="sm" onClick={() => removeMotoPracticalClass(index)}>Eliminar</Button>
+                                                <Button type="button" variant="ghost" size="sm" onClick={() => replaceMotoPracticalClasses(motoPracticalClassFields.filter((_, i) => i !== index))}>Eliminar</Button>
                                             </div>
                                         ))}
                                     </div>
-                                    <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => appendMotoPracticalClass({ date: undefined, time: '' })}>
-                                        <PlusCircle className="mr-2 h-4 w-4" /> Añadir Clase de Moto
-                                    </Button>
                                 </div>
                                 </>
                             ) : (
@@ -1145,13 +1166,10 @@ export function ContractForm() {
                                                     name={`autoMotoDetails.practicalClassSchedules.${index}.time`}
                                                     render={({ field: timeField }) => <FormItem><FormControl><Input placeholder={`Hora ${index+1}`} {...timeField} /></FormControl></FormItem>}
                                                 />
-                                                <Button type="button" variant="ghost" size="sm" onClick={() => removePracticalClass(index)}>Eliminar</Button>
+                                                <Button type="button" variant="ghost" size="sm" onClick={() => replacePracticalClasses(practicalClassFields.filter((_, i) => i !== index))}>Eliminar</Button>
                                             </div>
                                         ))}
                                     </div>
-                                     <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => appendPracticalClass({ date: undefined, time: '' })}>
-                                        <PlusCircle className="mr-2 h-4 w-4" /> Añadir Clase
-                                    </Button>
                                 </div>
                             )}
                      </div>

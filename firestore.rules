@@ -51,7 +51,7 @@ service cloud.firestore {
      */
     match /contracts/{contractId} {
       allow get, list: if isSignedIn();
-      allow create: if isOwner(request.resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId) || isAdmin() || isVentas();
       allow update: if isSignedIn()
                       && request.resource.data.userId == resource.data.userId
                       && request.resource.data.folioNumber == resource.data.folioNumber;
@@ -70,10 +70,10 @@ service cloud.firestore {
       allow delete: if false; // Prevent client deletion
     }
 
-    // Allow authenticated users to read/write the specific contract_folio counter
-    // for transactional increments on the client.
+    // Allow authenticated users (including Admin/Ventas) to read/write 
+    // the specific contract_folio counter for transactional increments on the client.
     match /counters/contract_folio {
-        allow read, write: if isSignedIn();
+        allow read, write: if isAdmin() || isVentas() || isSignedIn();
     }
     
     // Prevent access to any other documents in the counters collection.

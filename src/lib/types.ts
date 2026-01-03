@@ -38,28 +38,18 @@ export type ContractType =
 
 export interface DeluxeContractDetails {
   studentIdNumber: string;
-  studentAddress: string;
-  studentPhone1: string;
-  studentPhone2?: string;
+  paymentDetails?: 'Premium B/ 201.00' | 'Deluxe B/ 270.00';
+  paymentAmount?: number;
+  paymentInstallments?: (Date | undefined)[];
   vehicleTransmission: 'Automático' | 'Manual';
   licenseCategory: 'A, C' | 'A, C, D';
   theoreticalClassSchedule?: 'Lunes' | 'Miércoles';
   theoreticalClasses?: (Date | undefined)[];
   classSchedules?: { date?: Date; time?: string }[];
-  paymentDetails?: 'Premium B/ 201.00' | 'Deluxe B/ 270.00';
-  paymentInstallments?: (Date | undefined)[];
-  paymentAmount?: number;
-  firstName?: string;
-  middleName?: string;
-  lastName?: string;
-  secondLastName?: string;
 }
 
 export interface AutoMotoContractDetails {
   studentIdNumber?: string;
-  studentAddress?: string;
-  studentPhone1?: string;
-  studentPhone2?: string;
   courseValue?: number;
   downPayment?: number;
   balance?: number;
@@ -71,10 +61,6 @@ export interface AutoMotoContractDetails {
   theoreticalClassDates?: (Date | undefined)[];
   practicalClassSchedules?: { date?: Date; time?: string }[];
   motoPracticalClassSchedules?: { date?: Date; time?: string }[];
-  firstName?: string;
-  middleName?: string;
-  lastName?: string;
-  secondLastName?: string;
   paidInFull?: boolean;
 }
 
@@ -102,6 +88,9 @@ export interface Contract {
   clientEmail: string;
   clientId: string; // The ID of the client document in the /clients collection
   studentIdNumber?: string; // Denormalized for searching
+  studentAddress?: string;
+  studentPhone1?: string;
+  studentPhone2?: string;
   content: string;
   deadlines: Deadline[];
   status: ContractStatus;

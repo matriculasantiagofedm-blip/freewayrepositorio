@@ -24,6 +24,7 @@ export interface Client {
   name: string;
   email: string;
   idNumber?: string;
+  phone?: string;
   userId: string;
   createdAt: Timestamp;
 }
@@ -91,23 +92,27 @@ export interface AmpliacionesContractDetails {
 
 export interface Contract {
   id: string;
-  folioNumber: number; // folioNumber (number) is now folio (string)
+  folioNumber: number;
   title: string;
-  client?: Client; // This might be populated after fetching
-  clientName: string; // This is now a composite of the name fields
+  client?: Client;
+  clientName: string;
   clientEmail: string;
-  clientId: string; // The ID of the client document in the /clients collection
+  clientId: string;
+  studentIdNumber?: string;
+  studentAddress?: string;
+  studentPhone1?: string;
+  studentPhone2?: string;
   content: string;
   deadlines: Deadline[];
   status: ContractStatus;
   type: ContractType;
   userId: string;
   createdAt: Timestamp;
-  createdBy?: string; // User role who created the contract
+  createdBy?: string;
   deluxeDetails?: Partial<DeluxeContractDetails>;
   autoMotoDetails?: Partial<AutoMotoContractDetails>;
   ampliacionesDetails?: Partial<AmpliacionesContractDetails>;
-  certificateGeneratedAt?: Timestamp; // Campo para registrar la generación del certificado
+  certificateGeneratedAt?: Timestamp;
 }
 
 export interface CertificateData {
@@ -119,7 +124,6 @@ export interface CertificateData {
   licenseType: string;
 }
 
-// Kept for backwards compatibility with the print page, can be removed later
 export interface Certificate {
   id: string;
   contractId: string;
@@ -133,3 +137,5 @@ export interface Certificate {
   licenseType: string;
   contract?: Contract;
 }
+
+    

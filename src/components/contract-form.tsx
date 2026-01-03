@@ -1040,7 +1040,13 @@ export function ContractForm() {
                                     render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Horario Teórico</FormLabel>
-                                        <FormControl><Input {...field} placeholder="Ej: Lunes, Miércoles y Viernes de 8am a 10am" /></FormControl>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar horario..." /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="Días de Semana- Martes a Viernes de 8:00am a 10:00am">Días de Semana- Martes a Viernes de 8:00am a 10:00am</SelectItem>
+                                                <SelectItem value="Días Sábado- de 3:00pm a 5:00pm">Días Sábado- de 3:00pm a 5:00pm</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </FormItem>
                                     )}
                                 />

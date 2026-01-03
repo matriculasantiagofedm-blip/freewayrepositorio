@@ -51,7 +51,10 @@ export default function PrintContractPage() {
         <style jsx global>{`
           @page {
             size: letter portrait;
-            margin: 0;
+            margin-top: 10mm;
+            margin-bottom: 13mm;
+            margin-left: 6.5mm;
+            margin-right: 6.5mm;
           }
           body {
             background-color: white !important;

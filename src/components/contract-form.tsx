@@ -96,12 +96,12 @@ const autoMotoDetailsSchema = z.object({
     // Solo aplicar la validación del 50% si no es un plan especial
     if (!isSpecialPlan && data.courseValue && data.downPayment) {
         // Usar una pequeña tolerancia para evitar errores de punto flotante
-        const fiftyPercent = data.courseValue * 0.5 - 0.001; 
-        if (data.downPayment < fiftyPercent) {
+        const fiftyPercent = data.courseValue * 0.5; 
+        if (data.downPayment < fiftyPercent - 0.01) { // -0.01 de tolerancia
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ['downPayment'],
-                message: `El abono no puede ser inferior al 50% (B/. ${(data.courseValue * 0.5).toFixed(2)}).`,
+                message: `El abono no puede ser inferior al 50% (B/. ${fiftyPercent.toFixed(2)}).`,
             });
         }
     }
@@ -369,7 +369,7 @@ export function ContractForm() {
             } else {
                 const newBalance = courseValue - downPayment;
                 if (form.getValues('autoMotoDetails.balance') !== newBalance) {
-                    form.setValue('autoMotoDetails.balance', newBalance);
+                     form.setValue('autoMotoDetails.balance', newBalance);
                 }
             }
         }

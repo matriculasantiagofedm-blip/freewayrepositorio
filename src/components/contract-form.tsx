@@ -473,8 +473,7 @@ export function ContractForm() {
         case 'Curso Mixto':
              return <AutoMotoContractTemplatePreview {...baseProps} type={contractType} autoMotoDetails={values.autoMotoDetails} />;
         case 'Ampliaciones':
-            // The template for 'Ampliaciones' needs to be created
-            return <p>Vista previa para Ampliaciones no disponible.</p>;
+            return <AmpliacionesContractTemplate contract={values as unknown as Contract} />;
         default:
              return <p>Seleccione un tipo de contrato para ver la vista previa.</p>;
     }

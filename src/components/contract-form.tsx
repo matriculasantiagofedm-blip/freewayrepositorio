@@ -180,7 +180,7 @@ const coursePlans = {
   'Curso Auto': [
     { name: 'Paquete Básico 8hrs', price: 133.00 },
     { name: 'Paquete Plus 10hrs', price: 150.00 },
-    { name: 'Paquete Premium 12hrs', price: 75.00 },
+    { name: 'Paquete Premium 12hrs', price: 175.00 },
     { name: 'Reforzamiento de 4 horas', price: 95.00 },
     { name: 'Ya se manejar Plus 2 horas', price: 75.00 },
     { name: 'Ya se manejar (Evaluación de estacionamiento)', price: 57.00 },
@@ -242,7 +242,7 @@ export function ContractForm() {
         motoPracticalClassSchedules: Array(6).fill({ date: undefined, time: '' }),
         paidInFull: false,
       },
-      ampliacionesDetails: {
+       ampliacionesDetails: {
         selectedPlans: [],
         courseValue: 0,
         downPayment: 0,
@@ -469,7 +469,6 @@ export function ContractForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 print:p-0">
         
-        {/* --- Sección de Búsqueda y Datos del Cliente --- */}
         <Card className="print:hidden">
             <CardHeader>
                 <CardTitle>Datos del Estudiante</CardTitle>
@@ -553,7 +552,6 @@ export function ContractForm() {
         </Card>
 
 
-        {/* --- Card para Cláusula Primera --- */}
         <Card className="print:hidden">
             <CardHeader>
                 <CardTitle>Cláusula Primera - Valor y Forma de Pago</CardTitle>
@@ -644,7 +642,7 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Valor del Curso (B/.)</FormLabel>
-                                    <FormControl><Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
+                                    <FormControl><Input type="number" {...field} value={field.value || 0} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -654,7 +652,7 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Abono (B/.)</FormLabel>
-                                    <FormControl><Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={form.watch('autoMotoDetails.paidInFull')} /></FormControl>
+                                    <FormControl><Input type="number" {...field} value={field.value || 0} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={form.watch('autoMotoDetails.paidInFull')} /></FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -664,7 +662,7 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Saldo Pendiente (B/.)</FormLabel>
-                                    <FormControl><Input type="number" {...field} readOnly className="bg-muted" /></FormControl>
+                                    <FormControl><Input type="number" {...field} value={field.value || 0} readOnly className="bg-muted" /></FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -755,7 +753,7 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Valor Total (B/.)</FormLabel>
-                                    <FormControl><Input type="number" {...field} readOnly className="bg-muted" /></FormControl>
+                                    <FormControl><Input type="number" {...field} value={field.value || 0} readOnly className="bg-muted" /></FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -765,7 +763,7 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Abono (B/.)</FormLabel>
-                                    <FormControl><Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
+                                    <FormControl><Input type="number" {...field} value={field.value || 0} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -775,7 +773,7 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Saldo (B/.)</FormLabel>
-                                    <FormControl><Input type="number" {...field} readOnly className="bg-muted" /></FormControl>
+                                    <FormControl><Input type="number" {...field} value={field.value || 0} readOnly className="bg-muted" /></FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -807,7 +805,6 @@ export function ContractForm() {
             </CardContent>
         </Card>
 
-        {/* --- Card para Cláusula Segunda --- */}
         <Card className="print:hidden">
             <CardHeader>
                 <CardTitle>Cláusula Segunda - Detalles del Curso</CardTitle>
@@ -1106,7 +1103,6 @@ export function ContractForm() {
         </Card>
         
 
-        {/* --- Botones de Acción --- */}
         <div className="flex justify-between items-center print:hidden">
             <Button type="button" variant="outline" onClick={() => setShowPreview(!showPreview)}>
                 {showPreview ? 'Ocultar Vista Previa' : 'Mostrar Vista Previa'}
@@ -1117,7 +1113,6 @@ export function ContractForm() {
             </Button>
         </div>
 
-        {/* --- Vista Previa del Contrato --- */}
         {showPreview && (
             <div className="print:block">
                 <h3 className="text-lg font-semibold my-4 print:hidden">Vista Previa del Contrato</h3>

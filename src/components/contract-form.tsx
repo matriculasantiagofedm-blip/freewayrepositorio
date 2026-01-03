@@ -189,6 +189,14 @@ const coursePlans = {
   ],
 };
 
+const ampliacionesPlans = [
+    { name: 'Teórico B', price: 20 },
+    { name: 'Teórico C', price: 20 },
+    { name: 'Teórico D', price: 25 },
+    { name: 'Teórico E, F', price: 30 },
+    { name: 'Teórico G, H, I', price: 35 },
+];
+
 
 // --- Componente del Formulario ---
 
@@ -222,6 +230,9 @@ export function ContractForm() {
         classSchedules: Array(6).fill({ date: undefined, time: '' }),
       },
       autoMotoDetails: {
+        courseValue: 0,
+        downPayment: 0,
+        balance: 0,
         theoreticalClassDates: Array(3).fill(undefined),
         practicalClassSchedules: Array(6).fill({ date: undefined, time: '' }),
         motoPracticalClassSchedules: Array(6).fill({ date: undefined, time: '' }),
@@ -229,6 +240,9 @@ export function ContractForm() {
       },
       ampliacionesDetails: {
         selectedPlans: [],
+        courseValue: 0,
+        downPayment: 0,
+        balance: 0,
       }
     },
   });
@@ -265,6 +279,9 @@ export function ContractForm() {
         classSchedules: Array(6).fill({ date: undefined, time: '' }),
       },
       autoMotoDetails: {
+        courseValue: 0,
+        downPayment: 0,
+        balance: 0,
         theoreticalClassDates: Array(3).fill(undefined),
         practicalClassSchedules: Array(6).fill({ date: undefined, time: '' }),
         motoPracticalClassSchedules: Array(6).fill({ date: undefined, time: '' }),
@@ -272,6 +289,9 @@ export function ContractForm() {
       },
        ampliacionesDetails: {
         selectedPlans: [],
+        courseValue: 0,
+        downPayment: 0,
+        balance: 0,
       }
     });
   }, [contractType, form]);
@@ -439,14 +459,6 @@ export function ContractForm() {
     const values = form.getValues();
     return <ContractView contract={values as unknown as Contract} type={contractType} />;
   };
-
-  const ampliacionesPlans = [
-    { name: 'Teórico B', price: 20 },
-    { name: 'Teórico C', price: 20 },
-    { name: 'Teórico D', price: 25 },
-    { name: 'Teórico E, F', price: 30 },
-    { name: 'Teórico G, H, I', price: 35 },
-  ];
 
   return (
     <Form {...form}>
@@ -1090,7 +1102,7 @@ export function ContractForm() {
             <div className="print:block">
                 <h3 className="text-lg font-semibold my-4 print:hidden">Vista Previa del Contrato</h3>
                 <div className="border rounded-lg p-4 bg-gray-50 print:border-none print:p-0 print:bg-white">
-                    <ContractView contract={form.getValues() as unknown as Contract} type={contractType} />
+                    {renderPreview()}
                 </div>
             </div>
         )}

@@ -176,6 +176,20 @@ const convertDetailsDatesToTimestamps = (details: any, baseValues: any) => {
     return newDetails;
 };
 
+const coursePlans = {
+  'Curso Auto': [
+    { name: 'Básico', price: 155.15 },
+    { name: 'Plus', price: 187.25 },
+    { name: 'Premium', price: 230.05 },
+  ],
+  'Curso Moto': [
+    { name: 'Básico', price: 101.65 },
+    { name: 'Plus', price: 133.75 },
+    { name: 'Premium', price: 165.85 },
+  ],
+};
+
+
 // --- Componente del Formulario ---
 
 export function ContractForm() {
@@ -273,8 +287,19 @@ export function ContractForm() {
             const downPayment = value.ampliacionesDetails?.downPayment || 0;
             form.setValue('ampliacionesDetails.balance', total - downPayment);
         }
+        
+        if (name === 'autoMotoDetails.coursePlan') {
+            const planName = value.autoMotoDetails?.coursePlan;
+            const currentContractType = value.contractType;
+            if (planName && (currentContractType === 'Curso Auto' || currentContractType === 'Curso Moto')) {
+                const plan = coursePlans[currentContractType].find(p => p.name === planName);
+                if (plan) {
+                    form.setValue('autoMotoDetails.courseValue', plan.price);
+                }
+            }
+        }
 
-        if (name === 'autoMotoDetails.courseValue' || name === 'autoMotoDetails.downPayment') {
+        if (name === 'autoMotoDetails.courseValue' || name === 'autoMotoDetails.downPayment' || name === 'autoMotoDetails.paidInFull') {
             const courseValue = value.autoMotoDetails?.courseValue || 0;
             const downPayment = value.autoMotoDetails?.downPayment || 0;
             const paidInFull = value.autoMotoDetails?.paidInFull || false;
@@ -283,16 +308,6 @@ export function ContractForm() {
                 form.setValue('autoMotoDetails.balance', 0);
             } else {
                 form.setValue('autoMotoDetails.balance', courseValue - downPayment);
-            }
-        }
-        if (name === 'autoMotoDetails.paidInFull') {
-            const courseValue = value.autoMotoDetails?.courseValue || 0;
-             if (value.autoMotoDetails?.paidInFull) {
-                form.setValue('autoMotoDetails.downPayment', courseValue);
-                form.setValue('autoMotoDetails.balance', 0);
-            } else {
-                 form.setValue('autoMotoDetails.downPayment', 0);
-                 form.setValue('autoMotoDetails.balance', courseValue);
             }
         }
     });
@@ -586,6 +601,27 @@ export function ContractForm() {
                 )}
                  {(contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
+                       {(contractType === 'Curso Auto' || contractType === 'Curso Moto') && (
+                           <FormField
+                            control={form.control}
+                            name="autoMotoDetails.coursePlan"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Plan del Curso</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar plan..." /></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            {coursePlans[contractType].map(plan => (
+                                                <SelectItem key={plan.name} value={plan.name}>
+                                                    {plan.name} - B/. {plan.price.toFixed(2)}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </FormItem>
+                            )}
+                            />
+                       )}
                        <FormField
                             control={form.control}
                             name="autoMotoDetails.courseValue"
@@ -1062,5 +1098,3 @@ export function ContractForm() {
     </Form>
   );
 }
-
-    

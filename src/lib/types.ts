@@ -61,6 +61,7 @@ export interface AutoMotoContractDetails {
   studentAddress?: string;
   studentPhone1?: string;
   studentPhone2?: string;
+  coursePlan?: 'Básico' | 'Plus' | 'Premium';
   courseValue?: number;
   downPayment?: number;
   balance?: number;
@@ -137,5 +138,3 @@ export interface Certificate {
   licenseType: string;
   contract?: Contract;
 }
-
-    

@@ -183,9 +183,9 @@ const coursePlans = {
     { name: 'Paquete Premium 12hrs', price: 75.00 },
   ],
   'Curso Moto': [
-    { name: 'Básico', price: 101.65 },
-    { name: 'Plus', price: 133.75 },
-    { name: 'Premium', price: 165.85 },
+    { name: 'Paquete Básico 8hrs', price: 115.00 },
+    { name: 'Paquete Plus 10hrs', price: 135.00 },
+    { name: 'Paquete Premium 12hrs', price: 155.00 },
   ],
 };
 

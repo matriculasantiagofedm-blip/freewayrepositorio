@@ -50,7 +50,6 @@ import { ContractView } from './contract-view';
 import { useDb, useUser } from './firebase-provider';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
-import { Label } from '@/components/ui/label';
 
 
 // --- Esquemas de Validación con Zod ---

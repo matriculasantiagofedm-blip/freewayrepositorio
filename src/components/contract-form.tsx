@@ -263,7 +263,7 @@ export function ContractForm() {
         courseValue: 0,
         downPayment: 0,
         balance: 0,
-        theoreticalClassDates: Array(3).fill(undefined),
+        theoreticalClassDates: Array(4).fill(undefined),
         practicalClassSchedules: Array(6).fill({ date: undefined, time: '' }),
         motoPracticalClassSchedules: Array(6).fill({ date: undefined, time: '' }),
         paidInFull: false,
@@ -318,7 +318,7 @@ export function ContractForm() {
         courseValue: 0,
         downPayment: 0,
         balance: 0,
-        theoreticalClassDates: Array(3).fill(undefined),
+        theoreticalClassDates: Array(4).fill(undefined),
         practicalClassSchedules: Array(6).fill({ date: undefined, time: '' }),
         motoPracticalClassSchedules: Array(6).fill({ date: undefined, time: '' }),
         paidInFull: false,
@@ -517,7 +517,8 @@ export function ContractForm() {
   const courseValue = form.watch('autoMotoDetails.courseValue');
   const isSpecialPlan = selectedPlanName ? specialPlans.includes(selectedPlanName) : false;
   const isPaidInFull = form.watch('autoMotoDetails.paidInFull');
-
+  const theoreticalSchedule = form.watch('autoMotoDetails.theoreticalClassSchedule');
+  const numTheoreticalClasses = theoreticalSchedule?.includes('Semana') ? 4 : 3;
 
   return (
     <Form {...form}>
@@ -1050,8 +1051,8 @@ export function ContractForm() {
                                     </FormItem>
                                     )}
                                 />
-                                <div className="grid grid-cols-3 gap-2 mt-2">
-                                     {Array.from({ length: 3 }).map((_, index) => (
+                                <div className={cn("grid gap-2 mt-2", numTheoreticalClasses === 4 ? 'grid-cols-4' : 'grid-cols-3')}>
+                                     {Array.from({ length: numTheoreticalClasses }).map((_, index) => (
                                         <FormField
                                             key={index}
                                             control={form.control}

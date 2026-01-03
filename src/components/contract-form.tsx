@@ -111,1540 +111,1102 @@ const ampliacionesDetailsSchema = z.object({
   downPayment: z.number().optional(),
   balance: z.number().optional(),
   paymentDeadline: z.date().optional().nullable(),
-  paidInFull: z.boolean().default(false),
-  theoreticalClassDate: z.date().optional().nullable(),
+  theoreticalClassDate: z.date().optional(),
   theoreticalClassTime: z.string().optional(),
 });
 
 const formSchema = baseSchema.extend({
-  autoMotoDetails: autoMotoDetailsSchema,
-  deluxeDetails: deluxeDetailsSchema,
-  ampliacionesDetails: ampliacionesDetailsSchema,
-}).superRefine((data, ctx) => {
-    const isAutoMoto = ['Curso Auto', 'Curso Moto', 'Curso Mixto'].includes(data.contractType);
-    const isDeluxe = data.contractType === 'Curso Deluxe';
-    const isAmpliaciones = data.contractType === 'Ampliaciones';
-    
-    if (isAutoMoto && !data.autoMotoDetails.studentIdNumber) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['autoMotoDetails.studentIdNumber'],
-            message: 'El número de cédula es obligatorio.',
-        });
-    }
-    
-    if (isDeluxe && !data.deluxeDetails.studentIdNumber) {
-         ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['deluxeDetails.studentIdNumber'],
-            message: 'El número de cédula es obligatorio.',
-        });
-    }
-
-    if (isAmpliaciones && !data.ampliacionesDetails.studentIdNumber) {
-         ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['ampliacionesDetails.studentIdNumber'],
-            message: 'El número de cédula es obligatorio.',
-        });
-    }
+  deluxeDetails: deluxeDetailsSchema.optional(),
+  autoMotoDetails: autoMotoDetailsSchema.optional(),
+  ampliacionesDetails: ampliacionesDetailsSchema.optional(),
 });
-
 
 type FormValues = z.infer<typeof formSchema>;
 
+// Función auxiliar para convertir las fechas de los detalles a Timestamps de Firestore
+const convertDetailsDatesToTimestamps = (details: any) => {
+    if (!details) return details;
+    const newDetails = { ...details };
 
-// --- Datos Estáticos ---
-const coursePlans = {
-  'Curso Auto': [
-    { name: 'BÁSICO', price: 133.00, classes: 4 },
-    { name: 'PLUS', price: 150.00, classes: 5 },
-    { name: 'PREMIUM', price: 175.00, classes: 6 },
-    { name: 'Ya se manejar Auto', price: 57.00, classes: 0 },
-    { name: 'Reforzamiento 2hs', price: 75.00, classes: 1 },
-    { name: 'Reforzamiento 4hs', price: 95.00, classes: 2 },
-  ],
-  'Curso Moto': [
-    { name: 'BÁSICO', price: 115.00, classes: 4 },
-    { name: 'PLUS', price: 135.00, classes: 5 },
-    { name: 'PREMIUM', price: 155.00, classes: 6 },
-    { name: 'Ya se manejar Moto', price: 57.00, classes: 0 },
-  ],
-  'Curso Mixto': [
-    { name: 'Curso Mixto', price: 290.00, classes: 4, motoClasses: 4 },
-    { name: 'Basico Moto + Ya se manejar Auto', price: 135.00, classes: 0, motoClasses: 4, isCombined: true },
-    { name: 'Plus Moto + Ya se manejar Auto', price: 155.00, classes: 0, motoClasses: 5, isCombined: true },
-    { name: 'Premium Moto + Ya se manejar Auto', price: 175.00, classes: 0, motoClasses: 6, isCombined: true },
-    { name: 'Basico Auto + Ya se manejar moto', price: 153.00, classes: 4, motoClasses: 0, isCombined: true },
-    { name: 'Plus Auto + Ya se manejar Moto', price: 170.00, classes: 5, motoClasses: 0, isCombined: true },
-    { name: 'Premium Auto + Ya se manejar Moto', price: 195.00, classes: 6, motoClasses: 0, isCombined: true },
-  ],
+    // Deluxe
+    if (newDetails.paymentInstallments) {
+        newDetails.paymentInstallments = newDetails.paymentInstallments.map((d: Date | undefined) => d ? Timestamp.fromDate(d) : null);
+    }
+    if (newDetails.theoreticalClasses) {
+        newDetails.theoreticalClasses = newDetails.theoreticalClasses.map((d: Date | undefined) => d ? Timestamp.fromDate(d) : null);
+    }
+    if (newDetails.classSchedules) {
+        newDetails.classSchedules = newDetails.classSchedules.map((s: { date?: Date, time?: string }) => ({
+            ...s,
+            date: s.date ? Timestamp.fromDate(s.date) : null,
+        }));
+    }
+
+    // Auto/Moto
+    if (newDetails.paymentDeadline) {
+        newDetails.paymentDeadline = Timestamp.fromDate(newDetails.paymentDeadline);
+    }
+    if (newDetails.theoreticalClassDates) {
+        newDetails.theoreticalClassDates = newDetails.theoreticalClassDates.map((d: Date | undefined) => d ? Timestamp.fromDate(d) : null);
+    }
+    if (newDetails.practicalClassSchedules) {
+        newDetails.practicalClassSchedules = newDetails.practicalClassSchedules.map((s: { date?: Date, time?: string }) => ({
+            ...s,
+            date: s.date ? Timestamp.fromDate(s.date) : null,
+        }));
+    }
+     if (newDetails.motoPracticalClassSchedules) {
+        newDetails.motoPracticalClassSchedules = newDetails.motoPracticalClassSchedules.map((s: { date?: Date, time?: string }) => ({
+            ...s,
+            date: s.date ? Timestamp.fromDate(s.date) : null,
+        }));
+    }
+
+    // Ampliaciones
+    if (newDetails.paymentDeadline) {
+        newDetails.paymentDeadline = Timestamp.fromDate(newDetails.paymentDeadline);
+    }
+    if (newDetails.theoreticalClassDate) {
+        newDetails.theoreticalClassDate = Timestamp.fromDate(newDetails.theoreticalClassDate);
+    }
+
+
+    return newDetails;
 };
 
-const mixedCoursePlansRegular = coursePlans['Curso Mixto'].filter(p => !p.isCombined);
-const mixedCoursePlansCombined = coursePlans['Curso Mixto'].filter(p => p.isCombined);
-
-const ampliacionesPlans = {
-    individual: [
-        { name: 'B', price: 67.00 },
-        { name: 'C', price: 67.00 },
-        { name: 'D', price: 67.00 },
-        { name: 'E1', price: 57.00 },
-        { name: 'E2', price: 87.00 },
-        { name: 'E3', price: 87.00 },
-        { name: 'F', price: 107.00 },
-        { name: 'G', price: 180.00 },
-        { name: 'H', price: 180.00 },
-        { name: 'I', price: 107.00 },
-    ],
-    combos: [
-        { name: 'B,D', price: 85.00 },
-        { name: 'B,E1', price: 85.00 },
-        { name: 'B,F', price: 85.00 },
-        { name: 'D,E1', price: 85.00 },
-        { name: 'C,D', price: 114.00 },
-        { name: 'E1,E2', price: 75.00 },
-        { name: 'E2,F', price: 154.00 },
-        { name: 'E3,F', price: 154.00 },
-        { name: 'E1,E2,E3', price: 85.00 },
-        { name: 'E1,E2,E3,F', price: 100.00 },
-        { name: 'G,H,I', price: 400.00 },
-    ],
-    otrosCombos: [
-        { name: 'D,E1,E2,E3,F', price: 150.00 },
-        { name: 'E1,E2,E3,F,B', price: 150.00 },
-    ]
-};
-
-// Mapa para buscar precios de combos de manera eficiente
-const comboPriceMap = new Map<string, number>();
-[...ampliacionesPlans.combos, ...ampliacionesPlans.otrosCombos].forEach(combo => {
-    const sortedKey = combo.name.split(',').sort().join(',');
-    comboPriceMap.set(sortedKey, combo.price);
-});
-
-
-const practicalClassTimeSlots = [
-  '8:00 am a 10:00 am',
-  '10:00 am a 12:00 pm',
-  '1:00 pm a 3:00 pm',
-  '3:00 pm a 5:00 pm',
-];
-
-const theoreticalClassTimeSlots = [
-    'Dias de semana de 8:00 am a 10:00 am',
-    'Sabados de 3:00 pm a 5:00 pm',
-];
-
-const ampliacionesTheoreticalTimeSlots = [
-    '8:00 am a 10:00 am',
-    '3:00 pm a 5:00 pm'
-];
-
-const formatCurrency = (value?: number) => {
-    if (value === undefined || value === null || isNaN(value)) return '0.00';
-    return value.toFixed(2);
-};
-
-const getDefaultValues = (contractType: ContractType | null): FormValues => ({
-    contractType: contractType || 'Curso Auto',
-    clientName: '',
-    clientEmail: '',
-    folioNumber: undefined,
-    autoMotoDetails: {
-      studentIdNumber: '',
-      studentAddress: '',
-      studentPhone1: '',
-      studentPhone2: '',
-      coursePlan: undefined,
-      paidInFull: false,
-      courseValue: 0,
-      downPayment: 0,
-      balance: 0,
-      paymentDeadline: null,
-      vehicle: undefined,
-      vehicleTransmission: undefined,
-      licenseCategory: undefined,
-      theoreticalClassSchedule: undefined,
-      theoreticalClassDates: [],
-      practicalClassSchedules: [],
-      motoPracticalClassSchedules: []
-    },
-    deluxeDetails: {
-        studentIdNumber: '',
-        studentAddress: '',
-        studentPhone1: '',
-        studentPhone2: '',
-        paymentDetails: undefined,
-        paymentAmount: 0,
-        paymentInstallments: [],
-        vehicleTransmission: undefined,
-        licenseCategory: undefined,
-        theoreticalClassSchedule: undefined,
-        theoreticalClasses: [],
-        classSchedules: [],
-    },
-    ampliacionesDetails: {
-        studentIdNumber: '',
-        studentAddress: '',
-        studentPhone1: '',
-        studentPhone2: '',
-        selectedPlans: [],
-        courseValue: 0,
-        downPayment: 0,
-        balance: 0,
-        paymentDeadline: null,
-        paidInFull: false,
-        theoreticalClassDate: null,
-        theoreticalClassTime: undefined,
-    },
-});
-
+// --- Componente del Formulario ---
 
 export function ContractForm() {
-    const searchParams = useSearchParams();
-    const router = useRouter();
-    const db = useDb();
-    const { user, isUserLoading } = useUser();
-    const { toast } = useToast();
-    const { role: currentUserRole } = useCurrentRole();
-    const [savedContract, setSavedContract] = useState<Contract | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isManualPrice, setIsManualPrice] = useState(false);
+  const db = useDb();
+  const { user } = useUser();
+  const { role: currentUserRole } = useCurrentRole();
+  const router = useRouter();
+  const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const contractTypeParam = searchParams.get('type') as ContractType | null;
 
-    const contractType = useMemo(() => searchParams.get('type') as ContractType | null, [searchParams]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [clientSearchTerm, setClientSearchTerm] = useState('');
+  const [foundClients, setFoundClients] = useState<Client[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
-    const form = useForm<FormValues>({
-        resolver: zodResolver(formSchema),
-        defaultValues: getDefaultValues(contractType),
+  const contractType: ContractType = useMemo(() => contractTypeParam || 'Curso Auto', [contractTypeParam]);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      clientName: '',
+      clientEmail: '',
+      contractType: contractType,
+      deluxeDetails: {
+        paymentInstallments: Array(6).fill(undefined),
+        theoreticalClasses: Array(10).fill(undefined),
+        classSchedules: Array(6).fill({ date: undefined, time: '' }),
+      },
+      autoMotoDetails: {
+        theoreticalClassDates: Array(3).fill(undefined),
+        practicalClassSchedules: Array(6).fill({ date: undefined, time: '' }),
+        motoPracticalClassSchedules: Array(6).fill({ date: undefined, time: '' }),
+        paidInFull: false,
+      },
+      ampliacionesDetails: {
+        selectedPlans: [],
+      }
+    },
+  });
+
+  const { fields: practicalClassFields, append: appendPracticalClass, remove: removePracticalClass } = useFieldArray({
+    control: form.control,
+    name: "autoMotoDetails.practicalClassSchedules",
+  });
+  
+  const { fields: motoPracticalClassFields, append: appendMotoPracticalClass, remove: removeMotoPracticalClass } = useFieldArray({
+    control: form.control,
+    name: "autoMotoDetails.motoPracticalClassSchedules",
+  });
+
+  const { fields: ampliacionesPlansFields, append: appendAmpliacionesPlan, remove: removeAmpliacionesPlan } = useFieldArray({
+      control: form.control,
+      name: "ampliacionesDetails.selectedPlans",
+  });
+
+  useEffect(() => {
+    form.setValue('contractType', contractType);
+    // Reset fields when type changes
+    form.reset({
+      clientName: form.getValues('clientName'),
+      clientEmail: form.getValues('clientEmail'),
+      contractType: contractType,
+      deluxeDetails: {
+        paymentInstallments: Array(6).fill(undefined),
+        theoreticalClasses: Array(10).fill(undefined),
+        classSchedules: Array(6).fill({ date: undefined, time: '' }),
+      },
+      autoMotoDetails: {
+        theoreticalClassDates: Array(3).fill(undefined),
+        practicalClassSchedules: Array(6).fill({ date: undefined, time: '' }),
+        motoPracticalClassSchedules: Array(6).fill({ date: undefined, time: '' }),
+        paidInFull: false,
+      },
+       ampliacionesDetails: {
+        selectedPlans: [],
+      }
     });
+  }, [contractType, form]);
 
-    const watchedValues = form.watch();
-    const watchedPaidInFull = form.watch('autoMotoDetails.paidInFull');
-    const watchedAmpliacionesSelectedPlans = form.watch('ampliacionesDetails.selectedPlans');
-
-    const isSpecialPlan = useMemo(() => 
-        watchedValues.autoMotoDetails.coursePlan?.toLowerCase().includes('ya se manejar') && !watchedValues.autoMotoDetails.coursePlan?.toLowerCase().includes('+'),
-        [watchedValues.autoMotoDetails.coursePlan]
-    );
-
-    const { fields: theoreticalClassFields, replace: replaceTheoreticalClasses } = useFieldArray({
-        control: form.control,
-        name: "autoMotoDetails.theoreticalClassDates",
-    });
-
-    const { fields: practicalClassFields, replace: replacePracticalClasses } = useFieldArray({
-        control: form.control,
-        name: "autoMotoDetails.practicalClassSchedules",
-    });
-    
-    const { fields: motoPracticalClassFields, replace: replaceMotoPracticalClasses } = useFieldArray({
-        control: form.control,
-        name: "autoMotoDetails.motoPracticalClassSchedules",
-    });
-
-    const { fields: deluxeClassFields, replace: replaceDeluxeClasses } = useFieldArray({
-        control: form.control,
-        name: "deluxeDetails.classSchedules",
-    });
-
-    useEffect(() => {
-        if (contractType) {
-            form.reset(getDefaultValues(contractType));
-
-            // No need to replace deluxe classes as they are now static text
-            if (contractType !== 'Curso Deluxe') {
-                 replacePracticalClasses([]);
-                 replaceMotoPracticalClasses([]);
-                 replaceTheoreticalClasses([]);
-            }
+  useEffect(() => {
+    const subscription = form.watch((value, { name, type }) => {
+        if (name === 'ampliacionesDetails.selectedPlans') {
+            const total = value.ampliacionesDetails?.selectedPlans?.reduce((sum, plan) => sum + (plan?.price || 0), 0) || 0;
+            form.setValue('ampliacionesDetails.courseValue', total);
         }
-    }, [contractType, form, replacePracticalClasses, replaceMotoPracticalClasses, replaceTheoreticalClasses]);
-
-    
-     useEffect(() => {
-        const subscription = form.watch((value, { name, type }) => {
-            const currentContractType = form.getValues('contractType');
-
-            if (currentContractType === 'Curso Deluxe' && name === 'deluxeDetails.paymentDetails') {
-                const paymentPlan = value.deluxeDetails?.paymentDetails;
-                let paymentAmount = 0;
-                if (paymentPlan === 'Premium B/ 201.00') {
-                    paymentAmount = 33.50;
-                } else if (paymentPlan === 'Deluxe B/ 270.00') {
-                    paymentAmount = 45.00;
-                }
-                form.setValue('deluxeDetails.paymentAmount', paymentAmount, { shouldValidate: true });
-            }
-
-            if (currentContractType && ['Curso Auto', 'Curso Moto', 'Curso Mixto'].includes(currentContractType)) {
-                if (name === 'autoMotoDetails.coursePlan' || name === 'autoMotoDetails.paidInFull' || name === 'autoMotoDetails.downPayment') {
-                    const allPlans = (coursePlans as any)[currentContractType];
-                    if (!allPlans || !Array.isArray(allPlans)) return;
-
-                    const planName = value.autoMotoDetails?.coursePlan;
-                    const selectedPlan = allPlans.find((p: any) => p.name === planName);
-
-                    if (!selectedPlan) {
-                        if (name === 'autoMotoDetails.coursePlan') {
-                             if (form.getValues('autoMotoDetails.courseValue')?.toFixed(2) !== (0).toFixed(2)) form.setValue('autoMotoDetails.courseValue', 0);
-                            if (form.getValues('autoMotoDetails.downPayment')?.toFixed(2) !== (0).toFixed(2)) form.setValue('autoMotoDetails.downPayment', 0);
-                            if (form.getValues('autoMotoDetails.balance')?.toFixed(2) !== (0).toFixed(2)) form.setValue('autoMotoDetails.balance', 0);
-                            replacePracticalClasses([]);
-                            replaceMotoPracticalClasses([]);
-                        }
-                        return;
-                    }
-
-                    let isPaidInFull = value.autoMotoDetails?.paidInFull ?? false;
-                    const downPayment = value.autoMotoDetails?.downPayment || 0;
-                    const specialPlanSelected = !!selectedPlan && !selectedPlan.isCombined && planName?.toLowerCase().includes('ya se manejar');
-                    let newCourseValue = selectedPlan.price;
-
-                    if (form.getValues('autoMotoDetails.courseValue')?.toFixed(2) !== newCourseValue.toFixed(2)) {
-                        form.setValue('autoMotoDetails.courseValue', newCourseValue, { shouldValidate: true });
-                    }
-
-                    let newDownPayment = downPayment;
-                    if (name === 'autoMotoDetails.coursePlan') {
-                        if (specialPlanSelected) {
-                            if (!form.getValues('autoMotoDetails.paidInFull')) form.setValue('autoMotoDetails.paidInFull', true, { shouldValidate: true });
-                            isPaidInFull = true;
-                            newDownPayment = newCourseValue;
-                        } else if (!selectedPlan.isCombined) {
-                            if (form.getValues('autoMotoDetails.paidInFull')) form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
-                            isPaidInFull = false;
-                            newDownPayment = newCourseValue > 100 ? newCourseValue * 0.5 : newCourseValue;
-                        } else {
-                            if (form.getValues('autoMotoDetails.paidInFull')) form.setValue('autoMotoDetails.paidInFull', false, { shouldValidate: true });
-                            isPaidInFull = false;
-                            newDownPayment = newCourseValue > 100 ? newCourseValue * 0.5 : newCourseValue;
-                        }
-                        if (form.getValues('autoMotoDetails.downPayment')?.toFixed(2) !== newDownPayment.toFixed(2)) {
-                            form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
-                        }
-
-                        if (currentContractType === 'Curso Mixto') {
-                            replacePracticalClasses(Array(selectedPlan.classes || 0).fill({ date: undefined, time: undefined }));
-                            replaceMotoPracticalClasses(Array(selectedPlan.motoClasses || 0).fill({ date: undefined, time: undefined }));
-                        } else {
-                            replacePracticalClasses(Array(selectedPlan.classes).fill({ date: undefined, time: undefined }));
-                            replaceMotoPracticalClasses([]);
-                        }
-                    } else if (name === 'autoMotoDetails.paidInFull' && isPaidInFull) {
-                        newDownPayment = newCourseValue;
-                        if (form.getValues('autoMotoDetails.downPayment')?.toFixed(2) !== newDownPayment.toFixed(2)) {
-                            form.setValue('autoMotoDetails.downPayment', newDownPayment, { shouldValidate: true });
-                        }
-                    }
-
-                    const currentPaymentDeadline = form.getValues('autoMotoDetails.paymentDeadline');
-                    if (name === 'autoMotoDetails.paidInFull' || name === 'autoMotoDetails.coursePlan') {
-                        if (isPaidInFull) {
-                             if (!currentPaymentDeadline || !(currentPaymentDeadline instanceof Date)) {
-                                 form.setValue('autoMotoDetails.paymentDeadline', new Date());
-                            }
-                        } else {
-                             if (currentPaymentDeadline !== null) {
-                                form.setValue('autoMotoDetails.paymentDeadline', null);
-                            }
-                        }
-                    }
-
-                    const newBalance = newCourseValue - newDownPayment;
-                    const finalBalance = newBalance < 0 ? 0 : newBalance;
-                    if (form.getValues('autoMotoDetails.balance')?.toFixed(2) !== finalBalance.toFixed(2)) {
-                        form.setValue('autoMotoDetails.balance', finalBalance, { shouldValidate: true });
-                    }
-                }
-            }
-
-            if (name?.startsWith('ampliacionesDetails')) {
-                const selectedPlans = value.ampliacionesDetails?.selectedPlans || [];
-                const selectionKey = selectedPlans.map(p => p.name).sort().join(',');
-                const comboPrice = comboPriceMap.get(selectionKey);
-
-                let courseValue: number;
-                let manualPriceActive = false;
-
-                if (name === 'ampliacionesDetails.selectedPlans') {
-                    if (comboPrice !== undefined) {
-                        courseValue = comboPrice;
-                        manualPriceActive = false;
-                    } else {
-                        courseValue = selectedPlans.reduce((acc, plan) => acc + plan.price, 0);
-                        manualPriceActive = selectedPlans.length >= 2;
-                    }
-                     if (isManualPrice !== manualPriceActive) {
-                        setIsManualPrice(manualPriceActive);
-                    }
-                    if (formatCurrency(form.getValues('ampliacionesDetails.courseValue')) !== formatCurrency(courseValue)) {
-                        form.setValue('ampliacionesDetails.courseValue', courseValue, { shouldValidate: true });
-                    }
-                } else if (name === 'ampliacionesDetails.courseValue') {
-                    courseValue = value.ampliacionesDetails?.courseValue || 0;
-                     if (comboPrice === undefined && selectedPlans.length >= 2) {
-                        if (!isManualPrice) setIsManualPrice(true);
-                    }
-                } else {
-                    courseValue = form.getValues('ampliacionesDetails.courseValue') || 0;
-                }
-
-                let isPaidInFull = value.ampliacionesDetails?.paidInFull ?? false;
-                const forceFullPayment = courseValue > 0 && courseValue <= 100;
-                
-                if (forceFullPayment && !isPaidInFull && name !== 'ampliacionesDetails.paidInFull') {
-                    form.setValue('ampliacionesDetails.paidInFull', true, { shouldValidate: true });
-                    isPaidInFull = true;
-                } else if (name === 'ampliacionesDetails.courseValue' && !forceFullPayment) {
-                    if(isPaidInFull) form.setValue('ampliacionesDetails.paidInFull', false, { shouldValidate: true });
-                }
-
-                let downPayment = value.ampliacionesDetails?.downPayment || 0;
-                
-                if (name === 'ampliacionesDetails.selectedPlans' || name === 'ampliacionesDetails.courseValue') {
-                     if (isPaidInFull || forceFullPayment) {
-                        downPayment = courseValue;
-                    } else if (courseValue > 100) {
-                        downPayment = courseValue * 0.5;
-                    }
-                    if (formatCurrency(form.getValues('ampliacionesDetails.downPayment')) !== formatCurrency(downPayment)) {
-                        form.setValue('ampliacionesDetails.downPayment', downPayment, { shouldValidate: true });
-                    }
-                } else if (name === 'ampliacionesDetails.paidInFull' && isPaidInFull) {
-                     downPayment = courseValue;
-                     if (formatCurrency(form.getValues('ampliacionesDetails.downPayment')) !== formatCurrency(downPayment)) {
-                        form.setValue('ampliacionesDetails.downPayment', downPayment, { shouldValidate: true });
-                    }
-                }
-
-                const newBalance = courseValue - downPayment;
-                const finalBalance = newBalance < 0.005 ? 0 : newBalance;
-                 if (formatCurrency(form.getValues('ampliacionesDetails.balance')) !== formatCurrency(finalBalance)) {
-                    form.setValue('ampliacionesDetails.balance', finalBalance, { shouldValidate: true });
-                }
-
-                const currentPaymentDeadline = form.getValues('ampliacionesDetails.paymentDeadline');
-                if (finalBalance <= 0) {
-                    if (currentPaymentDeadline === null) {
-                        form.setValue('ampliacionesDetails.paymentDeadline', new Date());
-                    }
-                } else {
-                    if (currentPaymentDeadline !== null) {
-                        form.setValue('ampliacionesDetails.paymentDeadline', null);
-                    }
-                }
-            }
-
-
-            if (name === 'autoMotoDetails.theoreticalClassSchedule') {
-                const theoreticalSchedule = value.autoMotoDetails?.theoreticalClassSchedule;
-                if (theoreticalSchedule?.includes('Dias de semana')) {
-                    replaceTheoreticalClasses(Array(5).fill({ date: undefined }));
-                } else if (theoreticalSchedule?.includes('Sabados')) {
-                    replaceTheoreticalClasses(Array(3).fill({ date: undefined }));
-                } else {
-                    replaceTheoreticalClasses([]);
-                }
-            }
-        });
-        return () => subscription.unsubscribe();
-    }, [form, replacePracticalClasses, replaceMotoPracticalClasses, replaceTheoreticalClasses, isManualPrice]);
-
-    const onSubmit = async (values: FormValues) => {
-        if (!user || !db || isUserLoading) {
-            toast({ variant: 'destructive', title: 'Error de Autenticación', description: 'No se pudo conectar a la base de datos. Por favor, inicie sesión o espere a que cargue la sesión.' });
-            return;
+        if (name === 'ampliacionesDetails.courseValue' || name === 'ampliacionesDetails.downPayment') {
+            const total = value.ampliacionesDetails?.courseValue || 0;
+            const downPayment = value.ampliacionesDetails?.downPayment || 0;
+            form.setValue('ampliacionesDetails.balance', total - downPayment);
         }
-        setIsSubmitting(true);
-    
-        try {
-            const folioNumber = await runTransaction(db, async (transaction) => {
-                const counterRef = doc(db, 'counters', 'contract_folio');
-                const counterDoc = await transaction.get(counterRef);
-                let newFolioNumber = 1;
-                if (counterDoc.exists()) {
-                    newFolioNumber = (counterDoc.data()?.count || 0) + 1;
-                    transaction.update(counterRef, { count: newFolioNumber });
-                } else {
-                    transaction.set(counterRef, { count: 1 });
-                }
-                return newFolioNumber;
-            });
-    
-            if (!folioNumber) throw new Error("No se pudo generar el número de folio.");
-            form.setValue('folioNumber', folioNumber);
-    
-            const studentIdNumber = values.contractType === 'Curso Deluxe' ? values.deluxeDetails.studentIdNumber : (values.contractType === 'Ampliaciones' ? values.ampliacionesDetails.studentIdNumber : values.autoMotoDetails.studentIdNumber);
-            const clientsRef = collection(db, 'clients');
-            const q = query(clientsRef, where("idNumber", "==", studentIdNumber));
-            const clientSnapshot = await getDocs(q);
-    
-            let clientId: string;
-            let clientRef;
-            let newClientData: Partial<Client> | null = null;
-    
-            if (!clientSnapshot.empty) {
-                clientRef = clientSnapshot.docs[0].ref;
-                clientId = clientRef.id;
+
+        if (name === 'autoMotoDetails.courseValue' || name === 'autoMotoDetails.downPayment') {
+            const courseValue = value.autoMotoDetails?.courseValue || 0;
+            const downPayment = value.autoMotoDetails?.downPayment || 0;
+            const paidInFull = value.autoMotoDetails?.paidInFull || false;
+            if (paidInFull) {
+                form.setValue('autoMotoDetails.downPayment', courseValue);
+                form.setValue('autoMotoDetails.balance', 0);
             } else {
-                clientRef = doc(collection(db, 'clients'));
-                clientId = clientRef.id;
-                
-                const studentDetails = 
-                    values.contractType === 'Curso Deluxe' ? values.deluxeDetails :
-                    values.contractType === 'Ampliaciones' ? values.ampliacionesDetails :
-                    values.autoMotoDetails;
+                form.setValue('autoMotoDetails.balance', courseValue - downPayment);
+            }
+        }
+        if (name === 'autoMotoDetails.paidInFull') {
+            const courseValue = value.autoMotoDetails?.courseValue || 0;
+             if (value.autoMotoDetails?.paidInFull) {
+                form.setValue('autoMotoDetails.downPayment', courseValue);
+                form.setValue('autoMotoDetails.balance', 0);
+            } else {
+                 form.setValue('autoMotoDetails.downPayment', 0);
+                 form.setValue('autoMotoDetails.balance', courseValue);
+            }
+        }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
+
+   const handleClientSearch = async () => {
+    if (!db || clientSearchTerm.length < 3) return;
+    setIsSearching(true);
+    const clientsRef = collection(db, 'clients');
     
-                newClientData = {
+    // Search by name (case-insensitive) or exact ID number
+    const nameQuery = query(clientsRef, 
+        where('name', '>=', clientSearchTerm), 
+        where('name', '<=', clientSearchTerm + '\uf8ff')
+    );
+    const idQuery = query(clientsRef, where('idNumber', '==', clientSearchTerm));
+
+    try {
+        const [nameSnapshot, idSnapshot] = await Promise.all([getDocs(nameQuery), getDocs(idQuery)]);
+        const clientsMap = new Map<string, Client>();
+        nameSnapshot.forEach(doc => clientsMap.set(doc.id, { id: doc.id, ...doc.data() } as Client));
+        idSnapshot.forEach(doc => clientsMap.set(doc.id, { id: doc.id, ...doc.data() } as Client));
+        setFoundClients(Array.from(clientsMap.values()));
+    } catch (e) {
+        console.error("Error searching clients: ", e);
+        toast({
+            variant: 'destructive',
+            title: 'Error de Búsqueda',
+            description: 'No se pudieron buscar los clientes.',
+        });
+    } finally {
+        setIsSearching(false);
+    }
+  };
+
+  const selectClient = (client: Client) => {
+    form.setValue('clientName', client.name);
+    form.setValue('clientEmail', client.email);
+    const idNumber = client.idNumber || '';
+    if (contractType === 'Curso Deluxe') {
+        form.setValue('deluxeDetails.studentIdNumber', idNumber);
+    } else if (contractType === 'Ampliaciones') {
+        form.setValue('ampliacionesDetails.studentIdNumber', idNumber);
+    } else {
+        form.setValue('autoMotoDetails.studentIdNumber', idNumber);
+    }
+    setFoundClients([]);
+    setClientSearchTerm('');
+  };
+
+
+  async function onSubmit(values: FormValues) {
+    if (!db || !user) {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'No se ha podido conectar con la base de datos o el usuario no está autenticado.',
+        });
+        return;
+    }
+    setIsSubmitting(true);
+    
+    try {
+        await runTransaction(db, async (transaction) => {
+            const counterRef = doc(db, 'counters', 'contract_folio');
+            const counterDoc = await transaction.get(counterRef);
+
+            if (!counterDoc.exists()) {
+                throw new Error("El contador de folios no existe. Por favor, inicialízalo en la base de datos.");
+            }
+
+            const newFolioNumber = counterDoc.data().count + 1;
+            transaction.update(counterRef, { count: newFolioNumber });
+            
+            const batch = writeBatch(db);
+
+            // 1. Check for existing client or create a new one
+            const clientsRef = collection(db, 'clients');
+            const q = query(clientsRef, where("email", "==", values.clientEmail));
+            const clientSnapshot = await getDocs(q);
+
+            let clientId: string;
+            let clientData: Partial<Client>;
+
+            if (clientSnapshot.empty) {
+                // Create new client
+                const newClientRef = doc(clientsRef);
+                clientId = newClientRef.id;
+                clientData = {
                     id: clientId,
                     name: values.clientName,
                     email: values.clientEmail,
-                    idNumber: studentIdNumber,
+                    idNumber: values.autoMotoDetails?.studentIdNumber || values.deluxeDetails?.studentIdNumber || values.ampliacionesDetails?.studentIdNumber,
                     userId: user.uid,
-                    studentAddress: studentDetails.studentAddress,
-                    studentPhone1: studentDetails.studentPhone1,
-                    studentPhone2: studentDetails.studentPhone2,
                     createdAt: serverTimestamp() as Timestamp,
                 };
-            }
-    
-            const contractRef = doc(collection(db, 'contracts'));
-            
-            const toTimestamp = (date: any): Timestamp | null => {
-                if (!date) return null;
-                if (date instanceof Date) return Timestamp.fromDate(date);
-                return null;
-            }
-    
-            const convertDetailsDatesToTimestamps = (details: any) => {
-                const newDetails = { ...details };
-                for (const key in newDetails) {
-                    const value = newDetails[key];
-                    if (key.toLowerCase().includes('date') || key.toLowerCase().includes('deadline')) {
-                         if (Array.isArray(value)) {
-                            newDetails[key] = value.map(d => toTimestamp(d));
-                        } else {
-                            newDetails[key] = toTimestamp(value);
-                        }
-                    }
-                    if (key === 'paymentInstallments' || key === 'theoreticalClasses' || key === 'classSchedules' || key === 'practicalClassSchedules' || key === 'motoPracticalClassSchedules') {
-                         if (Array.isArray(value)) {
-                            newDetails[key] = value.map((item: any) => {
-                                if (item && item.date) {
-                                    return { ...item, date: toTimestamp(item.date) };
-                                }
-                                return toTimestamp(item);
-                            });
-                        }
-                    }
-                }
-                return newDetails;
-            };
-    
-            let finalDetails: any = {};
-            if (values.contractType === 'Curso Deluxe') {
-                finalDetails = convertDetailsDatesToTimestamps(values.deluxeDetails);
-                 // As per user request, classSchedules is not collected from form, so remove it before saving
-                delete finalDetails.classSchedules;
-            } else if (values.contractType === 'Ampliaciones') {
-                finalDetails = convertDetailsDatesToTimestamps(values.ampliacionesDetails);
+                batch.set(newClientRef, clientData);
             } else {
-                finalDetails = convertDetailsDatesToTimestamps(values.autoMotoDetails);
-                if (values.contractType === 'Curso Moto') {
-                    delete finalDetails.vehicle;
-                }
+                // Use existing client
+                clientId = clientSnapshot.docs[0].id;
             }
+
+            // 2. Create the contract
+            const newContractRef = doc(collection(db, 'contracts'));
             
-            const newContract: Omit<Contract, 'id' | 'createdAt'> = {
-                title: `${values.contractType} - ${values.clientName}`,
-                folioNumber: folioNumber,
+            const contractData: Partial<Contract> = {
+                id: newContractRef.id,
+                folioNumber: newFolioNumber,
+                title: values.contractType,
                 clientName: values.clientName,
                 clientEmail: values.clientEmail,
                 clientId: clientId,
-                studentIdNumber: studentIdNumber, 
-                content: `Contrato de ${values.contractType} para ${values.clientName}.`,
-                deadlines: [],
-                status: 'active',
+                studentIdNumber: values.autoMotoDetails?.studentIdNumber || values.deluxeDetails?.studentIdNumber || values.ampliacionesDetails?.studentIdNumber,
                 type: values.contractType,
+                status: 'active',
                 userId: user.uid,
-                createdBy: currentUserRole || 'Vendedor',
-                deluxeDetails: values.contractType === 'Curso Deluxe' ? finalDetails : {},
-                autoMotoDetails: ['Curso Auto', 'Curso Moto', 'Curso Mixto'].includes(values.contractType) ? finalDetails : {},
-                ampliacionesDetails: values.contractType === 'Ampliaciones' ? finalDetails : {},
+                createdAt: serverTimestamp() as Timestamp,
+                createdBy: currentUserRole,
+                content: '',
+                deadlines: [], // Add logic for deadlines if needed
             };
-    
-            const contractDataWithTimestamp = { ...newContract, createdAt: serverTimestamp() };
-    
-            const batch = writeBatch(db);
-            if (newClientData) {
-                batch.set(clientRef, newClientData);
+
+            if (values.contractType === 'Curso Deluxe') {
+                 contractData.deluxeDetails = convertDetailsDatesToTimestamps(values.deluxeDetails);
+            } else if (values.contractType === 'Ampliaciones') {
+                contractData.ampliacionesDetails = convertDetailsDatesToTimestamps(values.ampliacionesDetails);
             }
-            batch.set(contractRef, contractDataWithTimestamp);
-    
+            else {
+                contractData.autoMotoDetails = convertDetailsDatesToTimestamps(values.autoMotoDetails);
+            }
+            
+            batch.set(newContractRef, contractData);
+
+            // Commit the batch
             await batch.commit();
-    
-            toast({ title: 'Éxito', description: `Contrato #${folioNumber} creado correctamente.` });
-            
-            const contractForPreview: Contract = {
-                ...newContract,
-                id: contractRef.id,
-                createdAt: new Date(),
-            };
-            setSavedContract(contractForPreview);
-    
-        } catch (error: any) {
-            let operation = 'create';
-            let path = 'contracts/{new_contract}';
-            let resourceData: any = values;
-    
-            if (error?.message?.includes("client")) {
-                path = 'clients/{new_client}';
-            }
-            
-            const permissionError = new FirestorePermissionError({
-                path: path,
-                operation: operation,
-                requestResourceData: resourceData,
+
+            toast({
+                title: 'Contrato Generado Exitosamente',
+                description: `El contrato N° ${String(newFolioNumber).padStart(6, '0')} para ${values.clientName} ha sido creado.`,
             });
-            errorEmitter.emit('permission-error', permissionError);
-        } finally {
-            setIsSubmitting(false);
+            router.push(`/contracts/${newContractRef.id}`);
+        });
+    } catch (e: any) {
+        console.error("Error al crear contrato: ", e);
+        // This is a generic error handler.
+        // For permission errors, the FirebaseErrorListener will throw a more specific error.
+        if (e.name !== 'FirestorePermissionError') {
+             toast({
+                variant: 'destructive',
+                title: 'Error al Guardar',
+                description: e.message || 'No se pudo crear el contrato. Revisa los permisos de Firestore.',
+            });
         }
+    } finally {
+        setIsSubmitting(false);
+    }
+  }
+  
+  const handlePrintPreview = () => {
+    const printUrl = `/print-contract/preview`; // A dummy URL for preview
+    // Store form data in sessionStorage to be picked up by the preview page
+    sessionStorage.setItem('contractPreviewData', JSON.stringify(form.getValues()));
+    window.open(printUrl, '_blank');
+  };
+
+  const renderPreview = () => {
+    const values = form.getValues();
+    const createdBy = currentUserRole;
+
+    const baseProps = {
+        clientName: values.clientName,
+        clientEmail: values.clientEmail,
+        createdBy: createdBy,
+        folioNumber: form.getValues('folioNumber'),
     };
     
-    const renderCommonFields = () => (
-        <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
+    switch (contractType) {
+        case 'Curso Deluxe':
+            return <DeluxePremiumContractTemplatePreview {...baseProps} deluxeDetails={values.deluxeDetails} />;
+        case 'Curso Auto':
+        case 'Curso Moto':
+        case 'Curso Mixto':
+             return <AutoMotoContractTemplatePreview {...baseProps} type={contractType} autoMotoDetails={values.autoMotoDetails} />;
+        case 'Ampliaciones':
+            // The template for 'Ampliaciones' needs to be created
+            return <p>Vista previa para Ampliaciones no disponible.</p>;
+        default:
+             return <p>Seleccione un tipo de contrato para ver la vista previa.</p>;
+    }
+  };
+
+  const ampliacionesPlans = [
+    { name: 'Teórico B', price: 20 },
+    { name: 'Teórico C', price: 20 },
+    { name: 'Teórico D', price: 25 },
+    { name: 'Teórico E, F', price: 30 },
+    { name: 'Teórico G, H, I', price: 35 },
+  ];
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 print:p-0">
+        
+        {/* --- Sección de Búsqueda y Datos del Cliente --- */}
+        <Card className="print:hidden">
+            <CardHeader>
+                <CardTitle>Datos del Estudiante</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                    <div>
+                        <Label htmlFor="client-search">Buscar Cliente Existente</Label>
+                        <div className="flex gap-2">
+                             <Input 
+                                id="client-search"
+                                placeholder="Buscar por nombre o cédula..."
+                                value={clientSearchTerm}
+                                onChange={(e) => setClientSearchTerm(e.target.value)}
+                            />
+                            <Button type="button" onClick={handleClientSearch} disabled={isSearching}>
+                                {isSearching ? <Loader2 className="animate-spin" /> : 'Buscar'}
+                            </Button>
+                        </div>
+                         {foundClients.length > 0 && (
+                            <ul className="mt-2 border rounded-md max-h-40 overflow-y-auto">
+                                {foundClients.map(client => (
+                                    <li key={client.id} onClick={() => selectClient(client)} className="p-2 hover:bg-muted cursor-pointer">
+                                        <p className="font-semibold">{client.name}</p>
+                                        <p className="text-sm text-muted-foreground">{client.email} - {client.idNumber}</p>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
                     control={form.control}
                     name="clientName"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Nombre del Estudiante</FormLabel>
-                            <FormControl><Input placeholder="ej., Juan Pérez" {...field} /></FormControl>
-                            <FormMessage />
+                        <FormLabel>Nombre Completo del Estudiante</FormLabel>
+                        <FormControl>
+                            <Input placeholder="Ej: John Doe" {...field} />
+                        </FormControl>
+                        <FormMessage />
                         </FormItem>
                     )}
-                />
-                <FormField
+                    />
+                    <FormField
                     control={form.control}
                     name="clientEmail"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Correo electrónico del Estudiante</FormLabel>
-                            <FormControl><Input type="email" placeholder="estudiante@ejemplo.com" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            </div>
-        </>
-    );
-
-     const renderStudentIdSearch = (idNumberPath: 'autoMotoDetails.studentIdNumber' | 'deluxeDetails.studentIdNumber' | 'ampliacionesDetails.studentIdNumber') => (
-        <FormField
-            control={form.control}
-            name={idNumberPath}
-            render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Cédula/Pasaporte</FormLabel>
-                    <FormControl>
-                        <Input placeholder="Ej. 8-123-456" {...field} value={field.value ?? ''} />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-            )}
-        />
-    );
-
-
-    const renderAmpliacionesFields = () => {
-        const studentIdPath = "ampliacionesDetails.studentIdNumber";
-        const studentPhone1Path = "ampliacionesDetails.studentPhone1";
-        const studentPhone2Path = "ampliacionesDetails.studentPhone2";
-        const studentAddressPath = "ampliacionesDetails.studentAddress";
-        const selectedPlansPath = "ampliacionesDetails.selectedPlans";
-        const courseValuePath = "ampliacionesDetails.courseValue";
-        const downPaymentPath = "ampliacionesDetails.downPayment";
-        const balancePath = "ampliacionesDetails.balance";
-        const paidInFullPath = "ampliacionesDetails.paidInFull";
-        const paymentDeadlinePath = "ampliacionesDetails.paymentDeadline";
-        const theoreticalClassDatePath = "ampliacionesDetails.theoreticalClassDate";
-        const theoreticalClassTimePath = "ampliacionesDetails.theoreticalClassTime";
-
-        const renderPlanCheckboxes = (plans: {name: string, price: number}[]) => (
-            plans.map((plan) => (
-                <FormField
-                    key={plan.name}
-                    control={form.control}
-                    name={selectedPlansPath as 'ampliacionesDetails.selectedPlans'}
-                    render={({ field }) => (
-                        <FormItem key={plan.name} className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                            <FormControl>
-                                <Checkbox
-                                    checked={field.value?.some(p => p.name === plan.name)}
-                                    onCheckedChange={(checked) => checked ? field.onChange([...(field.value || []), plan]) : field.onChange(field.value?.filter((value) => value.name !== plan.name))}
-                                />
-                            </FormControl>
-                            <FormLabel className="font-normal">{plan.name} <span className="font-semibold text-primary"> (B/.{plan.price.toFixed(2)})</span></FormLabel>
-                        </FormItem>
-                    )}
-                />
-            ))
-        );
-
-        return (
-             <>
-                <h3 className="font-semibold text-lg pt-4 border-b pb-2">Datos Adicionales del Estudiante</h3>
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                     {renderStudentIdSearch('ampliacionesDetails.studentIdNumber')}
-                     <FormField control={form.control} name={studentPhone1Path} render={({ field }) => (<FormItem><FormLabel>Teléfono 1</FormLabel><FormControl><Input type="tel" placeholder="Ej. 6123-4567" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>)} />
-                     <FormField control={form.control} name={studentPhone2Path} render={({ field }) => (<FormItem><FormLabel>Teléfono 2 (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="Ej. 399-9999" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
-                </div>
-                 <FormField control={form.control} name={studentAddressPath} render={({ field }) => (<FormItem><FormLabel>Domicilio</FormLabel><FormControl><Textarea placeholder="Dirección completa del cliente..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
-
-                <h3 className="font-semibold text-lg pt-4 border-b pb-2">Selección de Planes de Ampliación</h3>
-                 <FormField
-                    control={form.control}
-                    name={selectedPlansPath as 'ampliacionesDetails.selectedPlans'}
-                    render={() => (
-                        <FormItem>
-                             <div className="mb-4">
-                                <FormLabel className="text-base">Planes y Combos</FormLabel>
-                                <FormDescription>
-                                    Selecciona todos los planes que apliquen. El total se calculará automáticamente, pero puedes ajustarlo si seleccionas más de un plan individual.
-                                </FormDescription>
-                            </div>
-                            <Accordion type="single" collapsible className="w-full" defaultValue="individuales">
-                                <AccordionItem value="individuales">
-                                    <AccordionTrigger className="text-base font-semibold">Planes Individuales</AccordionTrigger>
-                                    <AccordionContent>
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4">
-                                            {renderPlanCheckboxes(ampliacionesPlans.individual.filter(p => !['G', 'H', 'I'].includes(p.name)))}
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            </Accordion>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                 
-                <h3 className="font-semibold text-lg pt-4 border-b pb-2">Cláusula Primera: Valor y Forma de Pago</h3>
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField 
-                        control={form.control} 
-                        name={courseValuePath as 'ampliacionesDetails.courseValue'} 
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Valor Total (B/.)</FormLabel>
-                                <FormControl>
-                                    <Input 
-                                        type="text"
-                                        inputMode="decimal"
-                                        value={field.value ? formatCurrency(field.value) : '0.00'}
-                                        onChange={e => {
-                                            const value = e.target.value;
-                                            const parsed = parseFloat(value);
-                                            field.onChange(isNaN(parsed) ? 0 : parsed);
-                                        }}
-                                        onBlur={() => {
-                                            if (field.value) {
-                                                field.onChange(parseFloat(field.value.toFixed(2)));
-                                            }
-                                        }}
-                                        readOnly={!isManualPrice} 
-                                        className={cn(!isManualPrice && "bg-muted")}
-                                    />
-                                </FormControl>
-                                {isManualPrice && (watchedAmpliacionesSelectedPlans?.length || 0) > 1 && <FormDescription>Paquete manual: puedes editar este valor.</FormDescription>}
-                                {!isManualPrice && (watchedAmpliacionesSelectedPlans?.length || 0) > 1 && <FormDescription>Precio de combo aplicado.</FormDescription>}
-                                <FormMessage />
-                            </FormItem>
-                    )} />
-                    <FormField 
-                        control={form.control} 
-                        name={downPaymentPath as 'ampliacionesDetails.downPayment'} 
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Abono (B/.)</FormLabel>
-                                <FormControl>
-                                    <Input 
-                                        type="text"
-                                        inputMode="decimal"
-                                        value={field.value ? formatCurrency(field.value) : '0.00'}
-                                        onChange={e => {
-                                            const value = e.target.value.replace(/[^0-9.]/g, '');
-                                            const parsed = parseFloat(value);
-                                            field.onChange(isNaN(parsed) ? 0 : parsed);
-                                        }}
-                                        onBlur={() => {
-                                            if (field.value) {
-                                                field.onChange(parseFloat(field.value.toFixed(2)));
-                                            }
-                                        }}
-                                        disabled={watchedValues.ampliacionesDetails.paidInFull}
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} 
-                    />
-                    <FormField control={form.control} name={balancePath as 'ampliacionesDetails.balance'} render={({ field }) => (<FormItem><FormLabel>Saldo (B/.)</FormLabel><FormControl><Input type="text" value={formatCurrency(field.value)} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
-                </div>
-                 <FormField
-                    control={form.control}
-                    name={paidInFullPath as 'ampliacionesDetails.paidInFull'}
-                    render={({ field }) => (
-                        <FormItem className="flex flex-row items-center space-x-3 space-y-0 pt-2">
-                            <FormControl>
-                                <Checkbox
-                                    checked={field.value || false}
-                                    onCheckedChange={field.onChange}
-                                    id="ampliacionesPaidInFull"
-                                />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                                <label htmlFor='ampliacionesPaidInFull' className='text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
-                                   ¿Cancelar la totalidad del curso (100%)?
-                                </label>
-                                 <FormDescription>Si el valor total es B/.100.00 o menos, el pago completo es requerido.</FormDescription>
-                            </div>
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name={paymentDeadlinePath as 'ampliacionesDetails.paymentDeadline'}
-                    render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                            <FormLabel>Fecha Límite de Pago del Saldo</FormLabel>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <FormControl>
-                                        <Button
-                                            variant={"outline"}
-                                            className={cn(
-                                                "w-full pl-3 text-left font-normal",
-                                                !field.value && "text-muted-foreground"
-                                            )}
-                                            disabled={!watchedValues.ampliacionesDetails?.balance || watchedValues.ampliacionesDetails?.balance <= 0}
-                                        >
-                                            {field.value instanceof Date && !isNaN(field.value.getTime()) ? (
-                                                format(field.value, "PPP", { locale: es })
-                                            ) : (
-                                                <span>mm/dd/aaaa</span>
-                                            )}
-                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                        </Button>
-                                    </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={field.value ? new Date(field.value) : undefined}
-                                        onSelect={field.onChange}
-                                        disabled={(date) => date < new Date() || !watchedValues.ampliacionesDetails?.balance || watchedValues.ampliacionesDetails.balance <= 0}
-                                        initialFocus
-                                        locale={es}
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                            {(!watchedValues.ampliacionesDetails?.balance || watchedValues.ampliacionesDetails.balance <= 0) && <FormDescription>No aplica, ya que el curso está cancelado en su totalidad.</FormDescription>}
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                        control={form.control}
-                        name={theoreticalClassDatePath as 'ampliacionesDetails.theoreticalClassDate'}
-                        render={({ field }) => (
-                            <FormItem className="flex flex-col">
-                                <FormLabel>Fecha de la Clase Teórica</FormLabel>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <FormControl>
-                                            <Button
-                                                variant={"outline"}
-                                                className={cn(
-                                                    "w-full pl-3 text-left font-normal",
-                                                    !field.value && "text-muted-foreground"
-                                                )}
-                                            >
-                                                {field.value instanceof Date && !isNaN(field.value.getTime()) ? (
-                                                    format(field.value, "PPP", { locale: es })
-                                                ) : (
-                                                    <span>Seleccionar fecha</span>
-                                                )}
-                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                            </Button>
-                                        </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <Calendar
-                                            mode="single"
-                                            selected={field.value ? new Date(field.value) : undefined}
-                                            onSelect={field.onChange}
-                                            initialFocus
-                                            locale={es}
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name={theoreticalClassTimePath as 'ampliacionesDetails.theoreticalClassTime'}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Horario de Clase Teórica</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                    <SelectValue placeholder="Seleccione un horario" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {ampliacionesTheoreticalTimeSlots.map(slot => (
-                                        <SelectItem key={slot} value={slot}>{slot}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
-            </>
-        )
-    };
-
-    const renderAutoMotoFields = () => (
-        <>
-            <h3 className="font-semibold text-lg pt-4 border-b pb-2">Datos Adicionales del Estudiante</h3>
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                 {renderStudentIdSearch('autoMotoDetails.studentIdNumber')}
-                 <FormField control={form.control} name="autoMotoDetails.studentPhone1" render={({ field }) => (<FormItem><FormLabel>Teléfono 1</FormLabel><FormControl><Input type="tel" placeholder="Ej. 6123-4567" {...field} value={field.value ?? ''}/></FormControl><FormMessage /></FormItem>)} />
-                 <FormField control={form.control} name="autoMotoDetails.studentPhone2" render={({ field }) => (<FormItem><FormLabel>Teléfono 2 (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="Ej. 399-9999" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
-            </div>
-             <FormField control={form.control} name="autoMotoDetails.studentAddress" render={({ field }) => (<FormItem><FormLabel>Domicilio</FormLabel><FormControl><Textarea placeholder="Dirección completa del cliente..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
-
-
-            <h3 className="font-semibold text-lg pt-4 border-b pb-2">Cláusula Primera: Valor y Forma de Pago</h3>
-            <FormField
-                control={form.control}
-                name="autoMotoDetails.coursePlan"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Plan del Curso</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Seleccione un plan" /></SelectTrigger></FormControl>
-                            <SelectContent>
-                                {contractType === 'Curso Mixto' ? (
-                                    <>
-                                        <SelectGroup>
-                                            <SelectLabel>Curso Mixto Regular</SelectLabel>
-                                            {mixedCoursePlansRegular.map((c: any) => <SelectItem key={c.name} value={c.name}>{c.name} - B/.{c.price.toFixed(2)}</SelectItem>)}
-                                        </SelectGroup>
-                                        <SelectGroup>
-                                            <SelectLabel>Cursos + Ya se manejar</SelectLabel>
-                                            {mixedCoursePlansCombined.map((c: any) => <SelectItem key={c.name} value={c.name}>{c.name} - B/.{c.price.toFixed(2)}</SelectItem>)}
-                                        </SelectGroup>
-                                    </>
-                                ) : (
-                                    contractType && (coursePlans as any)[contractType]?.map((c: any) => <SelectItem key={c.name} value={c.name}>{c.name} - B/.{c.price.toFixed(2)}</SelectItem>)
-                                )}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField control={form.control} name="autoMotoDetails.courseValue" render={({ field }) => (<FormItem><FormLabel>Valor Total (B/.)</FormLabel><FormControl><Input type="text" value={formatCurrency(field.value)} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
-                <FormField 
-                    control={form.control} 
-                    name="autoMotoDetails.downPayment" 
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Abono (B/.)</FormLabel>
-                            <FormControl>
-                                <Input 
-                                    type="text"
-                                    inputMode="decimal"
-                                    value={field.value ? formatCurrency(field.value) : '0.00'}
-                                    onChange={e => {
-                                        const value = e.target.value.replace(/[^0-9.]/g, '');
-                                        const parsed = parseFloat(value);
-                                        field.onChange(isNaN(parsed) ? 0 : parsed);
-                                    }}
-                                    onBlur={() => {
-                                        if (field.value) {
-                                            field.onChange(parseFloat(field.value.toFixed(2)));
-                                        }
-                                    }}
-                                    disabled={watchedPaidInFull || isSpecialPlan}
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} 
-                />
-                <FormField control={form.control} name="autoMotoDetails.balance" render={({ field }) => (<FormItem><FormLabel>Saldo (B/.)</FormLabel><FormControl><Input type="text" value={formatCurrency(field.value)} readOnly className="bg-muted" /></FormControl><FormMessage /></FormItem>)} />
-            </div>
-             <FormField
-                control={form.control}
-                name="autoMotoDetails.paidInFull"
-                render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 pt-2">
+                        <FormLabel>Correo Electrónico del Estudiante</FormLabel>
                         <FormControl>
-                            <Checkbox
-                                checked={field.value || false}
-                                onCheckedChange={field.onChange}
-                                id="paidInFull"
-                                disabled={isSpecialPlan}
-                            />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                            <label htmlFor='paidInFull' className={cn('text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70', isSpecialPlan && 'text-muted-foreground')}>
-                               ¿Cancelar la totalidad del curso (100%)?
-                            </label>
-                            {isSpecialPlan && <FormDescription>Este plan requiere pago completo.</FormDescription>}
-                        </div>
-                    </FormItem>
-                )}
-            />
-
-            <FormField
-                control={form.control}
-                name="autoMotoDetails.paymentDeadline"
-                render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                        <FormLabel>Fecha Límite de Pago del Saldo</FormLabel>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <FormControl>
-                                    <Button
-                                        variant={"outline"}
-                                        className={cn(
-                                            "w-full pl-3 text-left font-normal",
-                                            !field.value && "text-muted-foreground"
-                                        )}
-                                        disabled={!watchedValues.autoMotoDetails?.balance || watchedValues.autoMotoDetails?.balance <= 0}
-                                    >
-                                        {field.value instanceof Date && !isNaN(field.value.getTime()) ? (
-                                            format(field.value, "PPP", { locale: es })
-                                        ) : (
-                                            <span>mm/dd/aaaa</span>
-                                        )}
-                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                    </Button>
-                                </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    mode="single"
-                                    selected={field.value ? new Date(field.value) : undefined}
-                                    onSelect={field.onChange}
-                                    disabled={(date) => date < new Date() || !watchedValues.autoMotoDetails?.balance || watchedValues.autoMotoDetails?.balance <= 0}
-                                    initialFocus
-                                    locale={es}
-                                />
-                            </PopoverContent>
-                        </Popover>
-                         {(!watchedValues.autoMotoDetails?.balance || watchedValues.autoMotoDetails?.balance <= 0) && <FormDescription>No aplica, ya que el curso está cancelado en su totalidad.</FormDescription>}
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-
-            <h3 className="font-semibold text-lg pt-4 border-b pb-2">Cláusula Segunda: Detalles del Curso</h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 {(contractType === 'Curso Auto' || contractType === 'Curso Mixto') && (
-                    <FormField control={form.control} name="autoMotoDetails.vehicle" render={({ field }) => (<FormItem><FormLabel>Vehículo</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un vehículo" /></SelectTrigger></FormControl><SelectContent>
-                        <SelectItem value="Spark">Spark</SelectItem>
-                        <SelectItem value="P. Blanco">Picanto Blanco</SelectItem>
-                        <SelectItem value="P. Bronce">Picanto Bronce</SelectItem>
-                        </SelectContent></Select><FormMessage /></FormItem>)} />
-                 )}
-                 {contractType === 'Curso Auto' && (
-                    <FormField
-                        control={form.control}
-                        name="autoMotoDetails.vehicleTransmission"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Transmisión (Auto)</FormLabel>
-                                <FormControl>
-                                    <RadioGroup
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                    className="flex items-center space-x-4 pt-2"
-                                    >
-                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                        <FormControl>
-                                        <RadioGroupItem value="Automático" />
-                                        </FormControl>
-                                        <FormLabel className="font-normal">Automático</FormLabel>
-                                    </FormItem>
-                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                        <FormControl>
-                                        <RadioGroupItem value="Manual" />
-                                        </FormControl>
-                                        <FormLabel className="font-normal">Manual</FormLabel>
-                                    </FormItem>
-                                    </RadioGroup>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                 )}
-                 {contractType === 'Curso Moto' && (
-                     <FormField
-                        control={form.control}
-                        name="autoMotoDetails.vehicleTransmission"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Transmisión (Moto)</FormLabel>
-                                <FormControl>
-                                    <RadioGroup
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                    className="flex items-center space-x-4 pt-2"
-                                    >
-                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                        <FormControl>
-                                        <RadioGroupItem value="Moto" />
-                                        </FormControl>
-                                        <FormLabel className="font-normal">Moto</FormLabel>
-                                    </FormItem>
-                                    </RadioGroup>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                 )}
-                 {contractType === 'Curso Mixto' && (
-                    <FormField
-                        control={form.control}
-                        name="autoMotoDetails.vehicleTransmission"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Transmisión (Principal)</FormLabel>
-                                <FormControl>
-                                    <RadioGroup
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                    className="flex items-center space-x-4 pt-2"
-                                    >
-                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                        <FormControl>
-                                        <RadioGroupItem value="Automático" />
-                                        </FormControl>
-                                        <FormLabel className="font-normal">Automático</FormLabel>
-                                    </FormItem>
-                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                        <FormControl>
-                                        <RadioGroupItem value="Manual" />
-                                        </FormControl>
-                                        <FormLabel className="font-normal">Manual</FormLabel>
-                                    </FormItem>
-                                     <FormItem className="flex items-center space-x-2 space-y-0">
-                                        <FormControl>
-                                        <RadioGroupItem value="Moto" />
-                                        </FormControl>
-                                        <FormLabel className="font-normal">Moto</FormLabel>
-                                    </FormItem>
-                                    </RadioGroup>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                 )}
-            </div>
-             <FormField
-                control={form.control}
-                name="autoMotoDetails.licenseCategory"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Categoría de Licencia a Aplicar</FormLabel>
-                        <FormControl>
-                            <RadioGroup
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                            className="flex flex-col space-y-1"
-                            >
-                            {contractType === 'Curso Moto' && (
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                    <FormControl><RadioGroupItem value="A, B" /></FormControl>
-                                    <FormLabel className="font-normal">A, B</FormLabel>
-                                </FormItem>
-                            )}
-                            {(contractType === 'Curso Auto' || contractType === 'Curso Mixto') && (
-                                <>
-                                    <FormItem className="flex items-center space-x-3 space-y-0">
-                                        <FormControl><RadioGroupItem value="A, C" /></FormControl>
-                                        <FormLabel className="font-normal">A, C</FormLabel>
-                                    </FormItem>
-                                    <FormItem className="flex items-center space-x-3 space-y-0">
-                                        <FormControl><RadioGroupItem value="A, C, D" /></FormControl>
-                                        <FormLabel className="font-normal">A, C, D</FormLabel>
-                                    </FormItem>
-                                </>
-                            )}
-                            </RadioGroup>
+                            <Input placeholder="Ej: john.doe@example.com" {...field} />
                         </FormControl>
                         <FormMessage />
-                    </FormItem>
-                )}
-            />
-            <FormField
-                control={form.control}
-                name="autoMotoDetails.theoreticalClassSchedule"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Horario para clases teóricas.</FormLabel>
-                         <FormControl>
-                            <RadioGroup
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                            className="flex flex-col space-y-1"
-                            >
-                                {theoreticalClassTimeSlots.map(slot => (
-                                    <FormItem key={slot} className="flex items-center space-x-3 space-y-0">
-                                        <FormControl><RadioGroupItem value={slot} /></FormControl>
-                                        <FormLabel className="font-normal">{slot}</FormLabel>
-                                    </FormItem>
-                                ))}
-                            </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-            <div>
-                <h4 className="font-medium mb-2">Fechas de Clases Teóricas</h4>
-                 <div className="space-y-2">
-                    {theoreticalClassFields.map((item, index) => (
-                        <div key={item.id} className="flex items-center gap-2">
+                        </FormItem>
+                    )}
+                    />
+                </div>
+            </CardContent>
+        </Card>
+
+
+        {/* --- Acordeón para Detalles del Contrato --- */}
+        <Accordion type="single" collapsible defaultValue="item-1" className="w-full print:hidden">
+            <AccordionItem value="item-1">
+                <AccordionTrigger>
+                    <h3 className="font-semibold text-lg">Detalles Específicos del Contrato</h3>
+                </AccordionTrigger>
+                <AccordionContent>
+                    {/* Renderizado condicional de los campos del formulario */}
+                    {contractType === 'Curso Deluxe' && (
+                        <div className="space-y-4 p-4 border rounded-md">
                             <FormField
                                 control={form.control}
-                                name={`autoMotoDetails.theoreticalClassDates.${index}`}
+                                name="deluxeDetails.studentIdNumber"
                                 render={({ field }) => (
-                                <FormItem className="flex-1">
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <FormControl>
-                                                <Button variant={"outline"} className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                                    {field.value instanceof Date && !isNaN(field.value.getTime()) ? format(new Date(field.value), "PPP", { locale: es }) : <span>Seleccionar fecha {index + 1}</span>}
-                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                </Button>
-                                            </FormControl>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar locale={es} mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} initialFocus />
-                                        </PopoverContent>
-                                    </Popover>
-                                    <FormMessage />
-                                </FormItem>
+                                    <FormItem>
+                                    <FormLabel>Cédula o Pasaporte</FormLabel>
+                                    <FormControl><Input {...field} /></FormControl>
+                                    </FormItem>
                                 )}
                             />
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </>
-    );
-
-    const renderPracticalClassFields = (fields: any, namePrefix: string, title: string) => (
-        <div>
-            <h3 className="font-semibold text-lg pt-4 border-b pb-2 mb-4">{title}</h3>
-            {fields.length > 0 ? (
-                 <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-1/4">Clase</TableHead>
-                            <TableHead>Fecha</TableHead>
-                            <TableHead>Hora</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {fields.map((field: any, index: number) => (
-                            <TableRow key={field.id}>
-                                <TableCell className="font-medium py-1">Clase {index + 1}</TableCell>
-                                <TableCell className="py-1">
-                                    <FormField
-                                        control={form.control}
-                                        name={`${namePrefix}.${index}.date` as any}
-                                        render={({ field }) => (
-                                            <FormItem>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="deluxeDetails.studentAddress"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Dirección</FormLabel>
+                                        <FormControl><Input {...field} /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="deluxeDetails.studentPhone1"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Teléfono 1</FormLabel>
+                                        <FormControl><Input {...field} /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                                 <FormField
+                                    control={form.control}
+                                    name="deluxeDetails.studentPhone2"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Teléfono 2 (Opcional)</FormLabel>
+                                        <FormControl><Input {...field} /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                            <FormField
+                                control={form.control}
+                                name="deluxeDetails.paymentDetails"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Plan de Pago</FormLabel>
+                                    <Select onValueChange={(value) => {
+                                        field.onChange(value);
+                                        const amount = value === 'Premium B/ 201.00' ? 33.50 : 45.00;
+                                        form.setValue('deluxeDetails.paymentAmount', amount);
+                                    }} defaultValue={field.value}>
+                                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="Premium B/ 201.00">Premium - 6 cuotas de B/. 33.50</SelectItem>
+                                            <SelectItem value="Deluxe B/ 270.00">Deluxe - 6 cuotas de B/. 45.00</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    </FormItem>
+                                )}
+                            />
+                            <div>
+                                <FormLabel>Fechas de Pago (6 Cuotas Quincenales)</FormLabel>
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                                     {Array.from({ length: 6 }).map((_, index) => (
+                                        <FormField
+                                            key={index}
+                                            control={form.control}
+                                            name={`deluxeDetails.paymentInstallments.${index}`}
+                                            render={({ field }) => (
+                                            <FormItem className='flex flex-col'>
+                                                <FormLabel className='text-xs'>Cuota {index + 1}</FormLabel>
                                                 <Popover>
                                                     <PopoverTrigger asChild>
                                                         <FormControl>
-                                                            <Button variant={"outline"} size="sm" className={cn("w-full pl-3 text-left font-normal h-9", !field.value && "text-muted-foreground")}>
-                                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                                {field.value instanceof Date && !isNaN(field.value.getTime()) ? format(new Date(field.value), "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
-                                                            </Button>
+                                                        <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                            {field.value ? format(field.value, "P", { locale: es }) : <span>Seleccionar</span>}
+                                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                        </Button>
                                                         </FormControl>
                                                     </PopoverTrigger>
                                                     <PopoverContent className="w-auto p-0" align="start">
-                                                        <Calendar locale={es} mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} />
+                                                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
                                                     </PopoverContent>
                                                 </Popover>
-                                                <FormMessage />
                                             </FormItem>
-                                        )}
-                                    />
-                                </TableCell>
-                                <TableCell className="py-1">
+                                            )}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                             <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="deluxeDetails.vehicleTransmission"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Transmisión de Vehículo</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="Automático">Automático</SelectItem>
+                                                <SelectItem value="Manual">Manual</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="deluxeDetails.licenseCategory"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Categoría de Licencia</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="A, C">A, C</SelectItem>
+                                                <SelectItem value="A, C, D">A, C, D</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                             <div>
+                                <FormField
+                                    control={form.control}
+                                    name="deluxeDetails.theoreticalClassSchedule"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Horario Teórico</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue placeholder="Seleccione el horario..."/></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="Lunes">Lunes (8:00am - 10:00am)</SelectItem>
+                                                <SelectItem value="Miércoles">Miércoles (7:00pm - 9:00pm)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        </FormItem>
+                                    )}
+                                />
+                                <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mt-2">
+                                    {Array.from({ length: 10 }).map((_, index) => (
+                                        <FormField
+                                            key={index}
+                                            control={form.control}
+                                            name={`deluxeDetails.theoreticalClasses.${index}`}
+                                            render={({ field }) => (
+                                            <FormItem className='flex flex-col'>
+                                                <FormLabel className='text-xs'>Semana {index + 1}</FormLabel>
+                                                 <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <FormControl>
+                                                        <Button variant={"outline"} className={cn("pl-3 text-left font-normal text-xs h-8", !field.value && "text-muted-foreground")}>
+                                                            {field.value ? format(field.value, "P", { locale: es }) : <span>Fecha</span>}
+                                                            <CalendarIcon className="ml-auto h-3 w-3 opacity-50" />
+                                                        </Button>
+                                                        </FormControl>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-auto p-0" align="start">
+                                                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                                                    </PopoverContent>
+                                                </Popover>
+                                            </FormItem>
+                                            )}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+
+                             <div>
+                                <FormLabel>Clases Prácticas (6 clases)</FormLabel>
+                                <div className="space-y-2 mt-2 text-sm text-muted-foreground">
+                                    Las fechas y horas de las clases prácticas se completarán a mano en el contrato impreso.
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {(contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') && (
+                        <div className="space-y-4 p-4 border rounded-md">
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                 <FormField
+                                    control={form.control}
+                                    name="autoMotoDetails.studentIdNumber"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Cédula o Pasaporte</FormLabel>
+                                        <FormControl><Input {...field} /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="autoMotoDetails.studentAddress"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Dirección</FormLabel>
+                                        <FormControl><Input {...field} /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="autoMotoDetails.studentPhone1"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Teléfono 1</FormLabel>
+                                        <FormControl><Input {...field} /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                                 <FormField
+                                    control={form.control}
+                                    name="autoMotoDetails.studentPhone2"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Teléfono 2 (Opcional)</FormLabel>
+                                        <FormControl><Input {...field} /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                                <FormField
+                                    control={form.control}
+                                    name="autoMotoDetails.courseValue"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Valor del Curso (B/.)</FormLabel>
+                                        <FormControl><Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="autoMotoDetails.paidInFull"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-center justify-start space-x-2 pb-2">
+                                            <FormControl>
+                                                <Checkbox
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                                />
+                                            </FormControl>
+                                            <FormLabel className='mb-0'>Pagado por completo</FormLabel>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="autoMotoDetails.downPayment"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Abono (B/.)</FormLabel>
+                                        <FormControl><Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={form.watch('autoMotoDetails.paidInFull')} /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                                 <FormField
+                                    control={form.control}
+                                    name="autoMotoDetails.balance"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Saldo Pendiente (B/.)</FormLabel>
+                                        <FormControl><Input type="number" {...field} readOnly className="bg-muted" /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                                 <FormField
+                                    control={form.control}
+                                    name="autoMotoDetails.paymentDeadline"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-col">
+                                        <FormLabel>Fecha Límite de Pago</FormLabel>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                    <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")} disabled={form.watch('autoMotoDetails.paidInFull')}>
+                                                        {field.value ? format(field.value, "P", { locale: es }) : <span>Seleccionar fecha</span>}
+                                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                    </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus />
+                                                </PopoverContent>
+                                            </Popover>
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                             <div className="grid grid-cols-2 gap-4">
+                                {contractType !== 'Curso Moto' && (
                                     <FormField
                                         control={form.control}
-                                        name={`${namePrefix}.${index}.time` as any}
+                                        name="autoMotoDetails.vehicleTransmission"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger className="h-9">
-                                                            <SelectValue placeholder="Seleccionar hora" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        {practicalClassTimeSlots.map(slot => <SelectItem key={slot} value={slot}>{slot}</SelectItem>)}
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
+                                            <FormLabel>Transmisión</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="Automático">Automático</SelectItem>
+                                                    <SelectItem value="Manual">Manual</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                             </FormItem>
                                         )}
                                     />
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">Seleccione un plan para ver las clases prácticas.</p>
-            )}
-        </div>
-    );
-    
-    const renderDeluxeFields = () => {
-        const studentIdPath = 'deluxeDetails.studentIdNumber';
-        
-        return (
-            <>
-                <h3 className="font-semibold text-lg pt-4 border-b pb-2">Datos Adicionales del Estudiante</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {renderStudentIdSearch('deluxeDetails.studentIdNumber')}
-                    <FormField control={form.control} name="deluxeDetails.studentPhone1" render={({ field }) => (<FormItem><FormLabel>Teléfono 1</FormLabel><FormControl><Input type="tel" placeholder="Ej. 6123-4567" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="deluxeDetails.studentPhone2" render={({ field }) => (<FormItem><FormLabel>Teléfono 2 (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="Ej. 399-9999" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
-                </div>
-                <FormField control={form.control} name="deluxeDetails.studentAddress" render={({ field }) => (<FormItem><FormLabel>Domicilio</FormLabel><FormControl><Textarea placeholder="Dirección completa del cliente..." {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
-                
-                <h3 className="font-semibold text-lg pt-4 border-b pb-2">Detalles del Pago</h3>
-                <FormField
-                    control={form.control}
-                    name="deluxeDetails.paymentDetails"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Plan de Pago</FormLabel>
-                            <FormControl>
-                                <RadioGroup
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                                className="flex flex-col space-y-1"
-                                >
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                    <FormControl><RadioGroupItem value="Premium B/ 201.00" /></FormControl>
-                                    <FormLabel className="font-normal">Premium - B/. 201.00 (6 cuotas de B/. 33.50)</FormLabel>
-                                </FormItem>
-                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                    <FormControl><RadioGroupItem value="Deluxe B/ 270.00" /></FormControl>
-                                    <FormLabel className="font-normal">Deluxe - B/. 270.00 (6 cuotas de B/. 45.00)</FormLabel>
-                                </FormItem>
-                                </RadioGroup>
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="deluxeDetails.paymentAmount"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Monto por Cuota (B/.)</FormLabel>
-                            <FormControl>
-                                <Input type="text" readOnly className="bg-muted" value={field.value ? formatCurrency(field.value) : '0.00'} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-
-
-                <h3 className="font-semibold text-lg pt-4 border-b pb-2">Fechas de Pago (6 Cuotas)</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {Array.from({ length: 6 }).map((_, index) => (
-                        <FormField key={index} control={form.control} name={`deluxeDetails.paymentInstallments.${index}`} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Cuota {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value instanceof Date && !isNaN(field.value.getTime()) ? format(new Date(field.value), "PPP", { locale: es }) : <span>Seleccionar</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar locale={es} mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
-                    ))}
-                </div>
-                
-                <h3 className="font-semibold text-lg pt-4 border-b pb-2">Detalles del Curso y Horario</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField control={form.control} name="deluxeDetails.vehicleTransmission" render={({ field }) => (<FormItem><FormLabel>Transmisión</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar Transmisión" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Automático">Automático</SelectItem><SelectItem value="Manual">Manual</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="deluxeDetails.licenseCategory" render={({ field }) => (<FormItem><FormLabel>Categoría de Licencia</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar Categoría" /></SelectTrigger></FormControl><SelectContent><SelectItem value="A, C">A, C</SelectItem><SelectItem value="A, C, D">A, C, D</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="deluxeDetails.theoreticalClassSchedule" render={({ field }) => (<FormItem><FormLabel>Horario Teórico</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar Horario" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Lunes">Lunes (8am-10am)</SelectItem><SelectItem value="Miércoles">Miércoles (7pm-9pm)</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                </div>
-
-                <h3 className="font-semibold text-lg pt-4 border-b pb-2">Clases Teóricas (10 Semanas)</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {Array.from({ length: 10 }).map((_, index) => (
-                        <FormField key={index} control={form.control} name={`deluxeDetails.theoreticalClasses.${index}`} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Semana {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value instanceof Date && !isNaN(field.value.getTime()) ? format(new Date(field.value), "PPP", { locale: es }) : <span>Seleccionar</span>}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar locale={es} mode="single" selected={field.value ? new Date(field.value) : undefined} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>)} />
-                    ))}
-                </div>
-                
-                 <div>
-                    <h3 className="font-semibold text-lg pt-4 border-b pb-2 mb-4">Clases Prácticas (6 clases)</h3>
-                    <p className="text-sm text-muted-foreground">
-                        Los horarios de las clases prácticas se coordinarán y anotarán manualmente en el contrato impreso.
-                    </p>
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-2 pl-4 text-sm mt-4">
-                        {Array.from({ length: 6 }).map((_, index) => (
-                            <div key={index} className="flex items-center gap-2">
-                                Clase {index + 1}: <span className="border-b border-dotted border-black flex-1 min-w-20"></span> Hora: <span className="border-b border-dotted border-black flex-1 min-w-16"></span>
+                                )}
+                                <FormField
+                                    control={form.control}
+                                    name="autoMotoDetails.licenseCategory"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Categoría de Licencia</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                                {contractType === 'Curso Moto' ? (
+                                                     <SelectItem value="A, B">A, B</SelectItem>
+                                                ) : (
+                                                    <>
+                                                        <SelectItem value="A, C">A, C</SelectItem>
+                                                        <SelectItem value="A, C, D">A, C, D</SelectItem>
+                                                    </>
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                        </FormItem>
+                                    )}
+                                />
                             </div>
-                        ))}
-                    </div>
-                </div>
-            </>
-        )
-    };
+                             <div>
+                                <FormField
+                                    control={form.control}
+                                    name="autoMotoDetails.theoreticalClassSchedule"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Horario Teórico</FormLabel>
+                                        <FormControl><Input {...field} placeholder="Ej: Lunes, Miércoles y Viernes de 8am a 10am" /></FormControl>
+                                    </FormItem>
+                                    )}
+                                />
+                                <div className="grid grid-cols-3 gap-2 mt-2">
+                                     {Array.from({ length: 3 }).map((_, index) => (
+                                        <FormField
+                                            key={index}
+                                            control={form.control}
+                                            name={`autoMotoDetails.theoreticalClassDates.${index}`}
+                                            render={({ field }) => (
+                                            <FormItem className="flex flex-col">
+                                                <FormLabel className="text-xs">Clase Teórica {index + 1}</FormLabel>
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <FormControl>
+                                                        <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                            {field.value ? format(field.value, "P", { locale: es }) : <span>Seleccionar</span>}
+                                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                        </Button>
+                                                        </FormControl>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-auto p-0" align="start">
+                                                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                                                    </PopoverContent>
+                                                </Popover>
+                                            </FormItem>
+                                            )}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            {contractType === 'Curso Mixto' ? (
+                                <>
+                                <div>
+                                    <FormLabel>Clases Prácticas de Auto ({practicalClassFields.length})</FormLabel>
+                                    <div className="space-y-2 mt-2">
+                                        {practicalClassFields.map((field, index) => (
+                                            <div key={field.id} className="grid grid-cols-3 gap-2 items-center">
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`autoMotoDetails.practicalClassSchedules.${index}.date`}
+                                                    render={({ field: dateField }) => <FormItem><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal w-full", !dateField.value && "text-muted-foreground")}>{dateField.value ? format(dateField.value, "P", { locale: es }) : <span>Fecha {index + 1}</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={dateField.value} onSelect={dateField.onChange} /></PopoverContent></Popover></FormItem>}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`autoMotoDetails.practicalClassSchedules.${index}.time`}
+                                                    render={({ field: timeField }) => <FormItem><FormControl><Input placeholder={`Hora ${index+1}`} {...timeField} /></FormControl></FormItem>}
+                                                />
+                                                <Button type="button" variant="ghost" size="sm" onClick={() => removePracticalClass(index)}>Eliminar</Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => appendPracticalClass({ date: undefined, time: '' })}>
+                                        <PlusCircle className="mr-2 h-4 w-4" /> Añadir Clase de Auto
+                                    </Button>
+                                </div>
+                                <div>
+                                    <FormLabel>Clases Prácticas de Moto ({motoPracticalClassFields.length})</FormLabel>
+                                    <div className="space-y-2 mt-2">
+                                        {motoPracticalClassFields.map((field, index) => (
+                                            <div key={field.id} className="grid grid-cols-3 gap-2 items-center">
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`autoMotoDetails.motoPracticalClassSchedules.${index}.date`}
+                                                    render={({ field: dateField }) => <FormItem><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal w-full", !dateField.value && "text-muted-foreground")}>{dateField.value ? format(dateField.value, "P", { locale: es }) : <span>Fecha {index + 1}</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={dateField.value} onSelect={dateField.onChange} /></PopoverContent></Popover></FormItem>}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`autoMotoDetails.motoPracticalClassSchedules.${index}.time`}
+                                                    render={({ field: timeField }) => <FormItem><FormControl><Input placeholder={`Hora ${index+1}`} {...timeField} /></FormControl></FormItem>}
+                                                />
+                                                <Button type="button" variant="ghost" size="sm" onClick={() => removeMotoPracticalClass(index)}>Eliminar</Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => appendMotoPracticalClass({ date: undefined, time: '' })}>
+                                        <PlusCircle className="mr-2 h-4 w-4" /> Añadir Clase de Moto
+                                    </Button>
+                                </div>
+                                </>
+                            ) : (
+                                <div>
+                                    <FormLabel>Clases Prácticas ({practicalClassFields.length})</FormLabel>
+                                    <div className="space-y-2 mt-2">
+                                        {practicalClassFields.map((field, index) => (
+                                            <div key={field.id} className="grid grid-cols-3 gap-2 items-center">
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`autoMotoDetails.practicalClassSchedules.${index}.date`}
+                                                    render={({ field: dateField }) => <FormItem><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal w-full", !dateField.value && "text-muted-foreground")}>{dateField.value ? format(dateField.value, "P", { locale: es }) : <span>Fecha {index + 1}</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={dateField.value} onSelect={dateField.onChange} /></PopoverContent></Popover></FormItem>}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name={`autoMotoDetails.practicalClassSchedules.${index}.time`}
+                                                    render={({ field: timeField }) => <FormItem><FormControl><Input placeholder={`Hora ${index+1}`} {...timeField} /></FormControl></FormItem>}
+                                                />
+                                                <Button type="button" variant="ghost" size="sm" onClick={() => removePracticalClass(index)}>Eliminar</Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                     <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => appendPracticalClass({ date: undefined, time: '' })}>
+                                        <PlusCircle className="mr-2 h-4 w-4" /> Añadir Clase
+                                    </Button>
+                                </div>
+                            )}
 
-    const renderFormContent = () => (
-        <Card>
-            <CardHeader>
-                <CardTitle>Completa los detalles principales de tu acuerdo.</CardTitle>
-                <div className='flex justify-between items-center'>
-                    <FormDescription>Tipo de Contrato: {contractType}</FormDescription>
-                </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <h3 className="font-semibold text-lg pt-4 border-b pb-2">Datos del Estudiante</h3>
-                {renderCommonFields()}
-                {contractType === 'Curso Deluxe' ? renderDeluxeFields() 
-                    : contractType === 'Ampliaciones' ? renderAmpliacionesFields()
-                    : renderAutoMotoFields()}
-                
-                {contractType === 'Curso Auto' && renderPracticalClassFields(practicalClassFields, 'autoMotoDetails.practicalClassSchedules', 'Clases Prácticas de Auto')}
-                
-                {contractType === 'Curso Moto' && renderPracticalClassFields(practicalClassFields, 'autoMotoDetails.practicalClassSchedules', 'Clases Prácticas de Moto')}
-
-                {contractType === 'Curso Mixto' && (
-                    <>
-                        {renderPracticalClassFields(practicalClassFields, 'autoMotoDetails.practicalClassSchedules', 'Clases Prácticas de Auto')}
-                        {renderPracticalClassFields(motoPracticalClassFields, 'autoMotoDetails.motoPracticalClassSchedules', 'Clases Prácticas de Moto')}
-                    </>
-                )}
-            </CardContent>
-        </Card>
-    );
-    
-    const PreviewComponent = () => {
-      const formValues = form.watch();
-
-      if (contractType === 'Curso Deluxe') {
-          return <DeluxePremiumContractTemplatePreview clientName={formValues.clientName} clientEmail={formValues.clientEmail} deluxeDetails={formValues.deluxeDetails} createdBy={currentUserRole || 'Ventas'} folioNumber={formValues.folioNumber} />
-      }
-      if (contractType === 'Ampliaciones') {
-          const { clientName, clientEmail, ampliacionesDetails, folioNumber } = formValues;
-          const contractForPreview: Contract = {
-              id: '',
-              title: `Ampliaciones - ${clientName}`,
-              folioNumber: folioNumber,
-              clientName,
-              clientEmail,
-              clientId: '',
-              content: '',
-              deadlines: [],
-              status: 'active' as const,
-              type: 'Ampliaciones' as const,
-              userId: user?.uid || '',
-              createdAt: new Date(),
-              createdBy: currentUserRole || 'Ventas',
-              ampliacionesDetails: {
-                  ...ampliacionesDetails,
-                  theoreticalClassDate: ampliacionesDetails.theoreticalClassDate ? ampliacionesDetails.theoreticalClassDate : undefined,
-                  paymentDeadline: ampliacionesDetails.paymentDeadline ? ampliacionesDetails.paymentDeadline : undefined,
-              }
-          }
-          return <AmpliacionesContractTemplate contract={contractForPreview} />;
-      }
-      
-      return <AutoMotoContractTemplatePreview clientName={formValues.clientName} clientEmail={formValues.clientEmail} autoMotoDetails={formValues.autoMotoDetails} createdBy={currentUserRole || 'Ventas'} type={contractType as any} folioNumber={formValues.folioNumber} />
-    }
-
-
-    if (savedContract) {
-        return (
-            <div className='flex flex-col gap-4'>
-                <div className='flex justify-between items-center print:hidden'>
-                    <Button variant="outline" onClick={() => setSavedContract(null)}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Crear Nuevo Contrato
-                    </Button>
-                     <Button onClick={() => window.print()}>
-                        <Printer className="mr-2 h-4 w-4" />
-                        Imprimir Contrato
-                    </Button>
-                </div>
-                <ContractView contract={savedContract} />
-            </div>
-        );
-    }
-
-    if (!contractType) {
-        return (
-            <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
-                <h3 className="mt-4 text-lg font-semibold text-foreground">Tipo de contrato no especificado</h3>
-                <p className="mt-2 text-sm text-muted-foreground">Por favor, vuelve al panel y selecciona un tipo de contrato para crear.</p>                 <Button asChild className="mt-4"><a href="/dashboard">Volver al Panel</a></Button>
-            </div>
-        );
-    }
-  
-    return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <div className="flex flex-col gap-8">
-                    {renderFormContent()}
+                        </div>
+                    )}
                     
-                     <div className="flex flex-col sm:flex-row gap-2 justify-end">
-                        <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            {isSubmitting ? 'Guardando...' : 'Guardar Contrato'}
-                        </Button>
-                    </div>
+                    {contractType === 'Ampliaciones' && (
+                        <div className="space-y-4 p-4 border rounded-md">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="ampliacionesDetails.studentIdNumber"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Cédula o Pasaporte</FormLabel>
+                                        <FormControl><Input {...field} /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="ampliacionesDetails.studentAddress"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Dirección</FormLabel>
+                                        <FormControl><Input {...field} /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="ampliacionesDetails.studentPhone1"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Teléfono 1</FormLabel>
+                                        <FormControl><Input {...field} /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="ampliacionesDetails.studentPhone2"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Teléfono 2 (Opcional)</FormLabel>
+                                        <FormControl><Input {...field} /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
 
-                    <Card>
-                            <CardHeader>
-                            <CardTitle>Vista Previa del Contrato</CardTitle>
-                            <FormDescription>
-                                Asegúrate de que toda la información en la vista previa sea correcta antes de guardar.
-                            </FormDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <PreviewComponent />
-                        </CardContent>
-                    </Card>
+                             <div>
+                                <FormLabel>Planes de Ampliación</FormLabel>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
+                                    {ampliacionesPlans.map(plan => (
+                                        <div key={plan.name} className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id={`plan-${plan.name}`}
+                                                onCheckedChange={(checked) => {
+                                                    const currentPlans = form.getValues('ampliacionesDetails.selectedPlans') || [];
+                                                    if (checked) {
+                                                        form.setValue('ampliacionesDetails.selectedPlans', [...currentPlans, plan]);
+                                                    } else {
+                                                        form.setValue('ampliacionesDetails.selectedPlans', currentPlans.filter(p => p.name !== plan.name));
+                                                    }
+                                                }}
+                                            />
+                                            <label htmlFor={`plan-${plan.name}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                                {plan.name} (B/.{plan.price})
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                                 <FormField
+                                    control={form.control}
+                                    name="ampliacionesDetails.courseValue"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Valor Total (B/.)</FormLabel>
+                                        <FormControl><Input type="number" {...field} readOnly className="bg-muted" /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="ampliacionesDetails.downPayment"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Abono (B/.)</FormLabel>
+                                        <FormControl><Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="ampliacionesDetails.balance"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Saldo (B/.)</FormLabel>
+                                        <FormControl><Input type="number" {...field} readOnly className="bg-muted" /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="ampliacionesDetails.paymentDeadline"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-col">
+                                        <FormLabel>Fecha Límite de Saldo</FormLabel>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                    <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                        {field.value ? format(field.value, "P", { locale: es }) : <span>Seleccionar</span>}
+                                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                    </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                                                </PopoverContent>
+                                            </Popover>
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="ampliacionesDetails.theoreticalClassDate"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-col">
+                                        <FormLabel>Fecha de Clase Teórica</FormLabel>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                    <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                        {field.value ? format(field.value, "P", { locale: es }) : <span>Seleccionar</span>}
+                                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                    </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                                                </PopoverContent>
+                                            </Popover>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="ampliacionesDetails.theoreticalClassTime"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Hora de Clase Teórica</FormLabel>
+                                            <FormControl><Input placeholder="Ej: 9:00 AM" {...field} /></FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        </div>
+                    )}
+                </AccordionContent>
+            </AccordionItem>
+        </Accordion>
+        
+
+        {/* --- Botones de Acción --- */}
+        <div className="flex justify-between items-center print:hidden">
+            <Button type="button" variant="outline" onClick={() => setShowPreview(!showPreview)}>
+                {showPreview ? 'Ocultar Vista Previa' : 'Mostrar Vista Previa'}
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {isSubmitting ? 'Guardando...' : 'Guardar Contrato'}
+            </Button>
+        </div>
+
+        {/* --- Vista Previa del Contrato --- */}
+        {showPreview && (
+            <div className="print:block">
+                <h3 className="text-lg font-semibold my-4 print:hidden">Vista Previa del Contrato</h3>
+                <div className="border rounded-lg p-4 bg-gray-50 print:border-none print:p-0 print:bg-white">
+                    <ContractView contract={form.getValues() as unknown as Contract} />
                 </div>
-            </form>
-        </Form>
-    );
+            </div>
+        )}
+      </form>
+    </Form>
+  );
 }

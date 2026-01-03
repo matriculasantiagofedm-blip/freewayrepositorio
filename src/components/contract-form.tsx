@@ -371,7 +371,6 @@ export function ContractForm() {
             const planName = value.autoMotoDetails?.coursePlan;
             const currentContractType = value.contractType as 'Curso Auto' | 'Curso Moto' | 'Curso Mixto';
 
-            // Adjust practical classes
             const classCount = planName ? planToClassCount[planName] : 0;
             const newClasses = Array.from({ length: classCount }, () => ({ date: undefined, time: '' }));
             
@@ -384,7 +383,6 @@ export function ContractForm() {
             } else {
                  replacePracticalClasses(newClasses);
             }
-
 
             if (planName && (currentContractType === 'Curso Auto' || currentContractType === 'Curso Moto' || currentContractType === 'Curso Mixto')) {
                 const plan = coursePlans[currentContractType].find(p => p.name === planName);
@@ -399,24 +397,16 @@ export function ContractForm() {
                     }
                 }
             }
-        }
-
-        if (name === 'autoMotoDetails.courseValue' || name === 'autoMotoDetails.downPayment' || name === 'autoMotoDetails.paidInFull') {
+        } else if (name === 'autoMotoDetails.paidInFull') {
             const courseValue = value.autoMotoDetails?.courseValue || 0;
-            let downPayment = value.autoMotoDetails?.downPayment || 0;
             const paidInFull = value.autoMotoDetails?.paidInFull || false;
-            
             if (paidInFull) {
-                downPayment = courseValue;
-                 if (form.getValues('autoMotoDetails.downPayment') !== courseValue) {
-                   form.setValue('autoMotoDetails.downPayment', courseValue);
-                }
+                form.setValue('autoMotoDetails.downPayment', courseValue);
             }
-
-            const newBalance = courseValue - downPayment;
-             if (form.getValues('autoMotoDetails.balance') !== newBalance) {
-                form.setValue('autoMotoDetails.balance', newBalance);
-             }
+        } else if (name === 'autoMotoDetails.downPayment') {
+             const courseValue = value.autoMotoDetails?.courseValue || 0;
+             const downPayment = value.autoMotoDetails?.downPayment || 0;
+             form.setValue('autoMotoDetails.balance', courseValue - downPayment, { shouldValidate: true });
         }
     });
     return () => subscription.unsubscribe();
@@ -744,7 +734,7 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Abono (B/.)</FormLabel>
-                                    <FormControl><Input type="number" step="0.01" {...field} value={Number(field.value || 0).toFixed(2)} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={isSpecialPlan} /></FormControl>
+                                    <FormControl><Input type="number" step="0.01" {...field} value={Number(field.value || 0).toFixed(2)} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={isSpecialPlan || isPaidInFull} /></FormControl>
                                     <FormMessage />
                                     </FormItem>
                                 )}

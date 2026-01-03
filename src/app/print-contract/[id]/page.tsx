@@ -47,7 +47,7 @@ export default function PrintContractPage() {
   }
 
   return (
-    <div className="bg-white p-4 font-serif text-xs">
+    <div className="bg-white font-serif text-xs">
         <style jsx global>{`
           @page {
             size: letter portrait;

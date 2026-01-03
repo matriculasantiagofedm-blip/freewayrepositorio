@@ -90,7 +90,7 @@ const autoMotoDetailsSchema = z.object({
   vehicle: z.enum(['Spark', 'P. Blanco', 'P. Bronce', 'Moto']).optional(),
   vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).optional(),
   licenseCategory: z.enum(['A, C', 'A, C, D', 'A, B']).optional(),
-  theoreticalClassSchedule: z.string().optional(),
+  theoreticalClassSchedule: z.enum(['Días de Semana- Martes a Viernes de 8:00am a 10:00am', 'Días Sábado- de 3:00pm a 5:00pm']).optional(),
   theoreticalClassDates: z.array(z.date().optional()).optional(),
   practicalClassSchedules: z.array(classScheduleSchema).optional(),
   motoPracticalClassSchedules: z.array(classScheduleSchema).optional(),
@@ -216,6 +216,11 @@ const coursePlans = {
     { name: 'Paquete Plus 10hrs', price: 135.00 },
     { name: 'Paquete Premium 12hrs', price: 155.00 },
   ],
+  'Curso Mixto': [
+    { name: 'Paquete Básico 8hrs', price: 133.00 },
+    { name: 'Paquete Plus 10hrs', price: 150.00 },
+    { name: 'Paquete Premium 12hrs', price: 175.00 },
+  ],
 };
 
 const planToClassCount: { [key: string]: number } = {
@@ -226,6 +231,13 @@ const planToClassCount: { [key: string]: number } = {
   'Ya se manejar Plus 2 horas': 1,
   'Ya se manejar (Evaluación de estacionamiento)': 1,
 };
+
+const practicalClassTimes = [
+    '8:00am a 10:00am',
+    '10:00am a 12:pm',
+    '1:00pm a 3:00pm',
+    '3:00pm a 5:00pm',
+];
 
 
 const ampliacionesPlans = [
@@ -357,14 +369,13 @@ export function ContractForm() {
         
         if (name === 'autoMotoDetails.coursePlan') {
             const planName = value.autoMotoDetails?.coursePlan;
-            const currentContractType = value.contractType;
+            const currentContractType = value.contractType as 'Curso Auto' | 'Curso Moto' | 'Curso Mixto';
 
             // Adjust practical classes
             const classCount = planName ? planToClassCount[planName] : 0;
             const newClasses = Array.from({ length: classCount }, () => ({ date: undefined, time: '' }));
             
             if (currentContractType === 'Curso Mixto') {
-                // For mixto, let's assume half for each for now, or adjust as needed
                 const halfCount = Math.floor(classCount / 2);
                 const autoClasses = Array.from({ length: halfCount }, () => ({ date: undefined, time: '' }));
                 const motoClasses = Array.from({ length: classCount - halfCount }, () => ({ date: undefined, time: '' }));
@@ -375,7 +386,7 @@ export function ContractForm() {
             }
 
 
-            if (planName && (currentContractType === 'Curso Auto' || currentContractType === 'Curso Moto')) {
+            if (planName && (currentContractType === 'Curso Auto' || currentContractType === 'Curso Moto' || currentContractType === 'Curso Mixto')) {
                 const plan = coursePlans[currentContractType].find(p => p.name === planName);
                 if (plan) {
                     const isSpecial = specialPlans.includes(plan.name);
@@ -384,7 +395,6 @@ export function ContractForm() {
                      if (isSpecial) {
                         form.setValue('autoMotoDetails.downPayment', plan.price);
                     } else {
-                        // Suggest 50% but allow editing
                         form.setValue('autoMotoDetails.downPayment', plan.price * 0.5);
                     }
                 }
@@ -398,14 +408,12 @@ export function ContractForm() {
             
             if (paidInFull) {
                 downPayment = courseValue;
-                // Only set value if it's different to prevent loop
                 if (form.getValues('autoMotoDetails.downPayment') !== courseValue) {
                    form.setValue('autoMotoDetails.downPayment', courseValue);
                 }
             }
 
             const newBalance = courseValue - downPayment;
-             // Only set value if it's different to prevent loop
              if (form.getValues('autoMotoDetails.balance') !== newBalance) {
                 form.setValue('autoMotoDetails.balance', newBalance);
              }
@@ -709,7 +717,7 @@ export function ContractForm() {
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar plan..." /></SelectTrigger></FormControl>
                                         <SelectContent>
-                                            {coursePlans[contractType as 'Curso Auto' | 'Curso Moto'].map(plan => (
+                                            {coursePlans[contractType as 'Curso Auto' | 'Curso Moto' | 'Curso Mixto'].map(plan => (
                                                 <SelectItem key={plan.name} value={plan.name}>
                                                     {plan.name} - B/. {plan.price.toFixed(2)}
                                                 </SelectItem>
@@ -1113,7 +1121,7 @@ export function ContractForm() {
                                     <FormLabel>Clases Prácticas de Auto ({practicalClassFields.length})</FormLabel>
                                     <div className="space-y-2 mt-2">
                                         {practicalClassFields.map((field, index) => (
-                                            <div key={field.id} className="grid grid-cols-3 gap-2 items-center">
+                                            <div key={field.id} className="grid grid-cols-2 gap-2 items-center">
                                                 <FormField
                                                     control={form.control}
                                                     name={`autoMotoDetails.practicalClassSchedules.${index}.date`}
@@ -1122,9 +1130,23 @@ export function ContractForm() {
                                                 <FormField
                                                     control={form.control}
                                                     name={`autoMotoDetails.practicalClassSchedules.${index}.time`}
-                                                    render={({ field: timeField }) => <FormItem><FormControl><Input placeholder={`Hora ${index+1}`} {...timeField} /></FormControl></FormItem>}
+                                                    render={({ field: timeField }) => (
+                                                        <FormItem>
+                                                            <Select onValueChange={timeField.onChange} defaultValue={timeField.value}>
+                                                                <FormControl>
+                                                                    <SelectTrigger>
+                                                                        <SelectValue placeholder={`Hora ${index + 1}`} />
+                                                                    </SelectTrigger>
+                                                                </FormControl>
+                                                                <SelectContent>
+                                                                    {practicalClassTimes.map(time => (
+                                                                        <SelectItem key={time} value={time}>{time}</SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </FormItem>
+                                                    )}
                                                 />
-                                                <Button type="button" variant="ghost" size="sm" onClick={() => replacePracticalClasses(practicalClassFields.filter((_, i) => i !== index))}>Eliminar</Button>
                                             </div>
                                         ))}
                                     </div>
@@ -1133,7 +1155,7 @@ export function ContractForm() {
                                     <FormLabel>Clases Prácticas de Moto ({motoPracticalClassFields.length})</FormLabel>
                                     <div className="space-y-2 mt-2">
                                         {motoPracticalClassFields.map((field, index) => (
-                                            <div key={field.id} className="grid grid-cols-3 gap-2 items-center">
+                                            <div key={field.id} className="grid grid-cols-2 gap-2 items-center">
                                                 <FormField
                                                     control={form.control}
                                                     name={`autoMotoDetails.motoPracticalClassSchedules.${index}.date`}
@@ -1142,9 +1164,23 @@ export function ContractForm() {
                                                 <FormField
                                                     control={form.control}
                                                     name={`autoMotoDetails.motoPracticalClassSchedules.${index}.time`}
-                                                    render={({ field: timeField }) => <FormItem><FormControl><Input placeholder={`Hora ${index+1}`} {...timeField} /></FormControl></FormItem>}
+                                                    render={({ field: timeField }) => (
+                                                        <FormItem>
+                                                            <Select onValueChange={timeField.onChange} defaultValue={timeField.value}>
+                                                                <FormControl>
+                                                                    <SelectTrigger>
+                                                                        <SelectValue placeholder={`Hora ${index + 1}`} />
+                                                                    </SelectTrigger>
+                                                                </FormControl>
+                                                                <SelectContent>
+                                                                    {practicalClassTimes.map(time => (
+                                                                        <SelectItem key={time} value={time}>{time}</SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </FormItem>
+                                                    )}
                                                 />
-                                                <Button type="button" variant="ghost" size="sm" onClick={() => replaceMotoPracticalClasses(motoPracticalClassFields.filter((_, i) => i !== index))}>Eliminar</Button>
                                             </div>
                                         ))}
                                     </div>
@@ -1155,7 +1191,7 @@ export function ContractForm() {
                                     <FormLabel>Clases Prácticas ({practicalClassFields.length})</FormLabel>
                                     <div className="space-y-2 mt-2">
                                         {practicalClassFields.map((field, index) => (
-                                            <div key={field.id} className="grid grid-cols-3 gap-2 items-center">
+                                            <div key={field.id} className="grid grid-cols-2 gap-2 items-center">
                                                 <FormField
                                                     control={form.control}
                                                     name={`autoMotoDetails.practicalClassSchedules.${index}.date`}
@@ -1164,9 +1200,23 @@ export function ContractForm() {
                                                 <FormField
                                                     control={form.control}
                                                     name={`autoMotoDetails.practicalClassSchedules.${index}.time`}
-                                                    render={({ field: timeField }) => <FormItem><FormControl><Input placeholder={`Hora ${index+1}`} {...timeField} /></FormControl></FormItem>}
+                                                    render={({ field: timeField }) => (
+                                                        <FormItem>
+                                                            <Select onValueChange={timeField.onChange} defaultValue={timeField.value}>
+                                                                <FormControl>
+                                                                    <SelectTrigger>
+                                                                        <SelectValue placeholder={`Hora ${index + 1}`} />
+                                                                    </SelectTrigger>
+                                                                </FormControl>
+                                                                <SelectContent>
+                                                                    {practicalClassTimes.map(time => (
+                                                                        <SelectItem key={time} value={time}>{time}</SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </FormItem>
+                                                    )}
                                                 />
-                                                <Button type="button" variant="ghost" size="sm" onClick={() => replacePracticalClasses(practicalClassFields.filter((_, i) => i !== index))}>Eliminar</Button>
                                             </div>
                                         ))}
                                     </div>

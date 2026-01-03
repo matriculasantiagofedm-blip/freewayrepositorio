@@ -82,29 +82,37 @@
   }
 
   @media print {
-    body.printing-contract .print-hide {
+    body {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .print-hide {
       display: none !important;
     }
     
-    body.printing-contract .print-container,
-    body.printing-contract .print-container * {
-      visibility: visible;
-    }
-
     body.printing-contract .print-container {
       position: absolute;
       left: 0;
       top: 0;
       width: 100%;
-      height: 100%;
+      height: auto;
       padding: 0;
       margin: 0;
+      visibility: visible;
     }
 
-    @page {
-      size: letter portrait;
-      margin: 1in;
+    body.printing-contract .print-container > * {
+       visibility: visible;
+    }
+    
+    body.printing-contract > *:not(.print-container) {
+      display: none;
     }
   }
 
+  @page {
+    size: letter portrait;
+    margin: 0.75in;
+  }
 }

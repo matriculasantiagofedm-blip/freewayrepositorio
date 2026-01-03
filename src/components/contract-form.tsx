@@ -320,6 +320,18 @@ export function ContractForm() {
                 const plan = coursePlans[currentContractType].find(p => p.name === planName);
                 if (plan) {
                     form.setValue('autoMotoDetails.courseValue', plan.price);
+
+                    const specialPlans = [
+                        'Reforzamiento de 4 horas',
+                        'Ya se manejar Plus 2 horas',
+                        'Ya se manejar (Evaluación de estacionamiento)'
+                    ];
+
+                    if (specialPlans.includes(plan.name)) {
+                        form.setValue('autoMotoDetails.paidInFull', true);
+                    } else {
+                        form.setValue('autoMotoDetails.paidInFull', false);
+                    }
                 }
             }
         }
@@ -472,6 +484,17 @@ export function ContractForm() {
     const values = form.getValues();
     return <ContractView contract={values as unknown as Contract} type={contractType} />;
   };
+
+  const isPaidInFull = form.watch('autoMotoDetails.paidInFull');
+  
+  const selectedPlan = form.watch('autoMotoDetails.coursePlan');
+  const specialPlans = [
+    'Reforzamiento de 4 horas',
+    'Ya se manejar Plus 2 horas',
+    'Ya se manejar (Evaluación de estacionamiento)'
+  ];
+  const isSpecialPlan = selectedPlan ? specialPlans.includes(selectedPlan) : false;
+
 
   return (
     <Form {...form}>
@@ -660,7 +683,7 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Abono (B/.)</FormLabel>
-                                    <FormControl><Input type="number" step="0.01" {...field} value={Number(field.value || 0).toFixed(2)} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={form.watch('autoMotoDetails.paidInFull')} /></FormControl>
+                                    <FormControl><Input type="number" step="0.01" {...field} value={Number(field.value || 0).toFixed(2)} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={isPaidInFull || isSpecialPlan} /></FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -683,8 +706,9 @@ export function ContractForm() {
                                     <FormItem className="flex flex-row items-center space-x-2 rounded-md border p-3 shadow-sm h-10">
                                         <FormControl>
                                             <Checkbox
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                                disabled={isSpecialPlan}
                                             />
                                         </FormControl>
                                         <FormLabel className='mb-0 leading-none'>Pagado por completo</FormLabel>
@@ -700,7 +724,7 @@ export function ContractForm() {
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <FormControl>
-                                                <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")} disabled={form.watch('autoMotoDetails.paidInFull')}>
+                                                <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")} disabled={isPaidInFull || isSpecialPlan}>
                                                     {field.value ? format(field.value, "P", { locale: es }) : <span>Seleccionar fecha</span>}
                                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                 </Button>

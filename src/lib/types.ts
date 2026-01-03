@@ -37,7 +37,6 @@ export type ContractType =
   | 'Ampliaciones';
 
 export interface DeluxeContractDetails {
-  studentIdNumber: string;
   paymentDetails?: 'Premium B/ 201.00' | 'Deluxe B/ 270.00';
   paymentAmount?: number;
   paymentInstallments?: (Date | undefined)[];
@@ -49,7 +48,6 @@ export interface DeluxeContractDetails {
 }
 
 export interface AutoMotoContractDetails {
-  studentIdNumber?: string;
   courseValue?: number;
   downPayment?: number;
   balance?: number;
@@ -66,7 +64,6 @@ export interface AutoMotoContractDetails {
 
 
 export interface AmpliacionesContractDetails {
-    studentIdNumber?: string;
     studentAddress?: string;
     studentPhone1?: string;
     studentPhone2?: string;

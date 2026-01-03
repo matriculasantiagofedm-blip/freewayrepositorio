@@ -401,7 +401,7 @@ export function ContractForm() {
             }
         }
 
-        if (name === 'autoMotoDetails.courseValue' || name === 'autoMotoDetails.downPayment') {
+        if (name === 'autoMotoDetails.courseValue' || name === 'autoMotoDetails.downPayment' || name === 'autoMotoDetails.paidInFull') {
             const courseValue = value.autoMotoDetails?.courseValue || 0;
             let downPayment = value.autoMotoDetails?.downPayment || 0;
             const paidInFull = value.autoMotoDetails?.paidInFull || false;
@@ -745,11 +745,6 @@ export function ContractForm() {
                                     <FormItem>
                                     <FormLabel>Abono (B/.)</FormLabel>
                                     <FormControl><Input type="number" step="0.01" {...field} value={Number(field.value || 0).toFixed(2)} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={isSpecialPlan} /></FormControl>
-                                     {!isSpecialPlan && courseValue > 0 && (
-                                        <FormDescription>
-                                            Abono mínimo sugerido (50%): B/. {(courseValue * 0.5).toFixed(2)}
-                                        </FormDescription>
-                                     )}
                                     <FormMessage />
                                     </FormItem>
                                 )}

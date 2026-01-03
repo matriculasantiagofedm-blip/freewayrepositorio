@@ -70,6 +70,12 @@ const baseSchema = z.object({
   folioNumber: z.number().optional(),
 });
 
+const specialPlans = [
+    'Reforzamiento de 4 horas',
+    'Ya se manejar Plus 2 horas',
+    'Ya se manejar (Evaluación de estacionamiento)'
+];
+
 const autoMotoDetailsSchema = z.object({
   coursePlan: z.string().optional(),
   paidInFull: z.boolean().default(false),
@@ -84,6 +90,18 @@ const autoMotoDetailsSchema = z.object({
   theoreticalClassDates: z.array(z.date().optional()).optional(),
   practicalClassSchedules: z.array(classScheduleSchema).optional(),
   motoPracticalClassSchedules: z.array(classScheduleSchema).optional(),
+}).superRefine((data, ctx) => {
+    const isSpecialPlan = data.coursePlan ? specialPlans.includes(data.coursePlan) : false;
+    if (!isSpecialPlan && data.courseValue && data.downPayment) {
+        const fiftyPercent = data.courseValue * 0.5;
+        if (data.downPayment < fiftyPercent) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['downPayment'],
+                message: `El abono no puede ser inferior al 50% (B/. ${(fiftyPercent).toFixed(2)}) del valor del curso.`,
+            });
+        }
+    }
 });
 
 const deluxeDetailsSchema = z.object({
@@ -319,18 +337,14 @@ export function ContractForm() {
             if (planName && (currentContractType === 'Curso Auto' || currentContractType === 'Curso Moto')) {
                 const plan = coursePlans[currentContractType].find(p => p.name === planName);
                 if (plan) {
+                    const isSpecial = specialPlans.includes(plan.name);
                     form.setValue('autoMotoDetails.courseValue', plan.price);
-
-                    const specialPlans = [
-                        'Reforzamiento de 4 horas',
-                        'Ya se manejar Plus 2 horas',
-                        'Ya se manejar (Evaluación de estacionamiento)'
-                    ];
-
-                    if (specialPlans.includes(plan.name)) {
-                        form.setValue('autoMotoDetails.paidInFull', true);
+                    form.setValue('autoMotoDetails.paidInFull', isSpecial);
+                     if (isSpecial) {
+                        form.setValue('autoMotoDetails.downPayment', plan.price);
                     } else {
-                        form.setValue('autoMotoDetails.paidInFull', false);
+                        // Suggest 50% but allow editing
+                        form.setValue('autoMotoDetails.downPayment', plan.price * 0.5);
                     }
                 }
             }
@@ -485,15 +499,10 @@ export function ContractForm() {
     return <ContractView contract={values as unknown as Contract} type={contractType} />;
   };
 
+  const selectedPlanName = form.watch('autoMotoDetails.coursePlan');
+  const courseValue = form.watch('autoMotoDetails.courseValue');
+  const isSpecialPlan = selectedPlanName ? specialPlans.includes(selectedPlanName) : false;
   const isPaidInFull = form.watch('autoMotoDetails.paidInFull');
-  
-  const selectedPlan = form.watch('autoMotoDetails.coursePlan');
-  const specialPlans = [
-    'Reforzamiento de 4 horas',
-    'Ya se manejar Plus 2 horas',
-    'Ya se manejar (Evaluación de estacionamiento)'
-  ];
-  const isSpecialPlan = selectedPlan ? specialPlans.includes(selectedPlan) : false;
 
 
   return (
@@ -673,7 +682,7 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Valor del Curso (B/.)</FormLabel>
-                                    <FormControl><Input type="number" step="0.01" {...field} value={Number(field.value || 0).toFixed(2)} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
+                                    <FormControl><Input type="number" step="0.01" {...field} value={Number(field.value || 0).toFixed(2)} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} readOnly /></FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -684,6 +693,12 @@ export function ContractForm() {
                                     <FormItem>
                                     <FormLabel>Abono (B/.)</FormLabel>
                                     <FormControl><Input type="number" step="0.01" {...field} value={Number(field.value || 0).toFixed(2)} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={isPaidInFull || isSpecialPlan} /></FormControl>
+                                     {!isSpecialPlan && courseValue > 0 && (
+                                        <FormDescription>
+                                            Abono mínimo sugerido (50%): B/. {(courseValue * 0.5).toFixed(2)}
+                                        </FormDescription>
+                                     )}
+                                    <FormMessage />
                                     </FormItem>
                                 )}
                             />

@@ -1,6 +1,6 @@
 
 'use client';
-import type { Contract } from '@/lib/types';
+import type { Contract, ContractType } from '@/lib/types';
 import { DeluxePremiumContractTemplate } from './deluxe-premium-contract';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { AutoMotoContractTemplate } from './auto-moto-contract';
@@ -21,10 +21,11 @@ function toDate(date: any): Date {
 }
 
 
-export function ContractView({ contract }: { contract: Contract }) {
+export function ContractView({ contract, type }: { contract: Contract, type?: ContractType }) {
 
   const renderContractTemplate = () => {
-    switch(contract.type) {
+    const contractType = type || contract.type;
+    switch(contractType) {
       case 'Curso Deluxe':
         return <DeluxePremiumContractTemplate contract={contract} />;
       case 'Curso Auto':
@@ -34,14 +35,14 @@ export function ContractView({ contract }: { contract: Contract }) {
       case 'Ampliaciones':
         return <AmpliacionesContractTemplate contract={contract} />;
       default:
-        // Fallback for other contract types
+        // Fallback for other contract types or when type is not available
         return (
           <Card className="print:shadow-none print:border-none">
             <CardHeader>
-                <CardTitle className="font-headline text-4xl pt-8">{contract.title}</CardTitle>
+                <CardTitle className="font-headline text-4xl pt-8">{contract.title || 'Contrato'}</CardTitle>
             </CardHeader>
             <CardContent className="prose prose-lg max-w-none text-foreground leading-relaxed p-6">
-                <p>{contract.content}</p>
+                <p>{contract.content || 'Contenido no disponible.'}</p>
             </CardContent>
              {contract.createdBy && (
               <CardFooter className="print:block hidden">

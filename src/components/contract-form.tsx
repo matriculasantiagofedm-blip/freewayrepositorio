@@ -642,7 +642,7 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Valor del Curso (B/.)</FormLabel>
-                                    <FormControl><Input type="number" {...field} value={field.value || 0} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
+                                    <FormControl><Input type="number" step="0.01" {...field} value={Number(field.value || 0).toFixed(2)} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -652,7 +652,7 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Abono (B/.)</FormLabel>
-                                    <FormControl><Input type="number" {...field} value={field.value || 0} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={form.watch('autoMotoDetails.paidInFull')} /></FormControl>
+                                    <FormControl><Input type="number" step="0.01" {...field} value={Number(field.value || 0).toFixed(2)} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} disabled={form.watch('autoMotoDetails.paidInFull')} /></FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -662,7 +662,7 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Saldo Pendiente (B/.)</FormLabel>
-                                    <FormControl><Input type="number" {...field} value={field.value || 0} readOnly className="bg-muted" /></FormControl>
+                                    <FormControl><Input type="number" step="0.01" {...field} value={Number(field.value || 0).toFixed(2)} readOnly className="bg-muted" /></FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -753,7 +753,7 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Valor Total (B/.)</FormLabel>
-                                    <FormControl><Input type="number" {...field} value={field.value || 0} readOnly className="bg-muted" /></FormControl>
+                                    <FormControl><Input type="number" step="0.01" {...field} value={Number(field.value || 0).toFixed(2)} readOnly className="bg-muted" /></FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -763,7 +763,7 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Abono (B/.)</FormLabel>
-                                    <FormControl><Input type="number" {...field} value={field.value || 0} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
+                                    <FormControl><Input type="number" step="0.01" {...field} value={Number(field.value || 0).toFixed(2)} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -773,7 +773,7 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Saldo (B/.)</FormLabel>
-                                    <FormControl><Input type="number" {...field} value={field.value || 0} readOnly className="bg-muted" /></FormControl>
+                                    <FormControl><Input type="number" step="0.01" {...field} value={Number(field.value || 0).toFixed(2)} readOnly className="bg-muted" /></FormControl>
                                     </FormItem>
                                 )}
                             />

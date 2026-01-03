@@ -92,17 +92,21 @@ const autoMotoDetailsSchema = z.object({
   motoPracticalClassSchedules: z.array(classScheduleSchema).optional(),
 }).superRefine((data, ctx) => {
     const isSpecialPlan = data.coursePlan ? specialPlans.includes(data.coursePlan) : false;
+
+    // Solo aplicar la validación del 50% si no es un plan especial
     if (!isSpecialPlan && data.courseValue && data.downPayment) {
-        const fiftyPercent = data.courseValue * 0.5;
+        // Usar una pequeña tolerancia para evitar errores de punto flotante
+        const fiftyPercent = data.courseValue * 0.5 - 0.001; 
         if (data.downPayment < fiftyPercent) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ['downPayment'],
-                message: `El abono no puede ser inferior al 50% (B/. ${(fiftyPercent).toFixed(2)}) del valor del curso.`,
+                message: `El abono no puede ser inferior al 50% (B/. ${(data.courseValue * 0.5).toFixed(2)}).`,
             });
         }
     }
 });
+
 
 const deluxeDetailsSchema = z.object({
   firstName: z.string().optional(),
@@ -356,15 +360,15 @@ export function ContractForm() {
             const paidInFull = value.autoMotoDetails?.paidInFull || false;
             
             if (paidInFull) {
-                if (downPayment !== courseValue) {
+                if (form.getValues('autoMotoDetails.downPayment') !== courseValue) {
                     form.setValue('autoMotoDetails.downPayment', courseValue);
                 }
-                if (value.autoMotoDetails?.balance !== 0) {
+                if (form.getValues('autoMotoDetails.balance') !== 0) {
                     form.setValue('autoMotoDetails.balance', 0);
                 }
             } else {
                 const newBalance = courseValue - downPayment;
-                if (value.autoMotoDetails?.balance !== newBalance) {
+                if (form.getValues('autoMotoDetails.balance') !== newBalance) {
                     form.setValue('autoMotoDetails.balance', newBalance);
                 }
             }

@@ -178,9 +178,9 @@ const convertDetailsDatesToTimestamps = (details: any, baseValues: any) => {
 
 const coursePlans = {
   'Curso Auto': [
-    { name: 'Básico', price: 155.15 },
-    { name: 'Plus', price: 187.25 },
-    { name: 'Premium', price: 230.05 },
+    { name: 'Paquete Básico 8hrs', price: 133.00 },
+    { name: 'Paquete Plus 10hrs', price: 150.00 },
+    { name: 'Paquete Premium 12hrs', price: 75.00 },
   ],
   'Curso Moto': [
     { name: 'Básico', price: 101.65 },
@@ -611,7 +611,7 @@ export function ContractForm() {
                         </div>
                     </div>
                 )}
-                 {(contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') && (
+                 {(contractType === 'Curso Auto' || contractType === 'Curso Moto') && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
                        {(contractType === 'Curso Auto' || contractType === 'Curso Moto') && (
                            <FormField

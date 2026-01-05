@@ -282,13 +282,13 @@ const planToClassCount: { [key: string]: number } = {
   'Ya se manejar Plus 2 horas': 1,
   'Ya se manejar (Evaluación de estacionamiento)': 1,
   // Mixto
-  'Auto + Moto 10Hrs': 10,
-  'Básico Auto + Moto': 6,
-  'Plus Auto + Moto': 6,
-  'Premium Auto + Moto': 6,
-  'Básico Moto + Auto': 6,
-  'Plus Moto + Auto': 6,
-  'Premium Moto + Auto': 6,
+  'Auto + Moto 10Hrs': 5, // 5 auto + 5 moto
+  'Básico Auto + Moto': 3, // 3 auto + 3 moto
+  'Plus Auto + Moto': 3, // 3 auto + 3 moto
+  'Premium Auto + Moto': 3, // 3 auto + 3 moto
+  'Básico Moto + Auto': 3,
+  'Plus Moto + Auto': 3,
+  'Premium Moto + Auto': 3,
   'Reforzamiento Mixto 2Hrs': 1,
 };
 
@@ -308,6 +308,17 @@ const ampliacionesPlans = [
     { name: 'E2', price: 75.00 },
     { name: 'E3', price: 75.00 },
     { name: 'F', price: 80.00 },
+];
+
+const specialCombinations = [
+  { combo: ['E1', 'E2', 'E3', 'F'], price: 95.00 },
+  { combo: ['E1', 'E2', 'E3'], price: 85.00 },
+  { combo: ['D', 'E1'], price: 85.00 },
+  { combo: ['E1', 'E2'], price: 75.00 },
+  { combo: ['B', 'D'], price: 85.00 },
+  { combo: ['B', 'E1'], price: 85.00 },
+  { combo: ['E2', 'E3'], price: 85.00 },
+  { combo: ['B', 'F'], price: 85.00 },
 ];
 
 
@@ -441,16 +452,33 @@ export function ContractForm() {
     }
   };
   
-  const handleAmpliacionesPlanChange = (plans: { name: string; price: number }[]) => {
-      const total = plans.reduce((sum, plan) => sum + (plan?.price || 0), 0);
-      form.setValue('ampliacionesDetails.courseValue', total);
+    const handleAmpliacionesPlanChange = (plans: { name: string; price: number }[]) => {
+        const selectedNames = plans.map(p => p.name).sort();
+        let total = 0;
+        let comboFound = false;
 
-      const minAbono = total > 100 ? total * 0.5 : total;
-      form.setValue('ampliacionesDetails.downPayment', minAbono);
+        // Check for special combinations first
+        for (const { combo, price } of specialCombinations) {
+            const sortedCombo = [...combo].sort();
+            if (JSON.stringify(selectedNames) === JSON.stringify(sortedCombo)) {
+                total = price;
+                comboFound = true;
+                break;
+            }
+        }
 
-      const newBalance = total - minAbono;
-      form.setValue('ampliacionesDetails.balance', newBalance >= 0 ? newBalance : 0);
-  };
+        // If no special combination matches, sum individual prices
+        if (!comboFound) {
+            total = plans.reduce((sum, plan) => sum + (plan?.price || 0), 0);
+        }
+
+        form.setValue('ampliacionesDetails.courseValue', total);
+
+        const minAbono = total > 100 ? total * 0.5 : total;
+        form.setValue('ampliacionesDetails.downPayment', minAbono);
+        const newBalance = total - minAbono;
+        form.setValue('ampliacionesDetails.balance', newBalance >= 0 ? newBalance : 0);
+    };
 
   const handleAmpliacionesDownPaymentChange = (e: React.FocusEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value) || 0;
@@ -1476,6 +1504,7 @@ export function ContractForm() {
 }
 
     
+
 
 
 

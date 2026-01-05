@@ -94,20 +94,6 @@ const autoMotoDetailsSchema = z.object({
   theoreticalClassDates: z.array(z.date().optional()).optional(),
   practicalClassSchedules: z.array(classScheduleSchema).optional(),
   motoPracticalClassSchedules: z.array(classScheduleSchema).optional(),
-}).superRefine((data, ctx) => {
-    const isSpecialPlan = data.coursePlan ? specialPlans.includes(data.coursePlan) : false;
-
-    // Solo aplicar la validación del 50% si no es un plan especial
-    if (!isSpecialPlan && !data.paidInFull && data.courseValue && data.downPayment) {
-        const fiftyPercent = data.courseValue * 0.5;
-        if (data.downPayment < fiftyPercent - 0.01) { // -0.01 de tolerancia
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ['downPayment'],
-                message: `El abono no puede ser inferior al 50% (B/. ${fiftyPercent.toFixed(2)}).`,
-            });
-        }
-    }
 });
 
 
@@ -359,22 +345,6 @@ export function ContractForm() {
   const ampliacionesCourseValue = form.watch('ampliacionesDetails.courseValue');
   const ampliacionesDownPayment = form.watch('ampliacionesDetails.downPayment');
 
-  useEffect(() => {
-    const newBalance = (courseValue || 0) - (downPayment || 0);
-    form.setValue('autoMotoDetails.balance', newBalance);
-  }, [courseValue, downPayment, form]);
-  
-  useEffect(() => {
-      const total = form.getValues('ampliacionesDetails.selectedPlans')?.reduce((sum, plan) => sum + (plan?.price || 0), 0) || 0;
-      form.setValue('ampliacionesDetails.courseValue', total);
-  }, [form, form.watch('ampliacionesDetails.selectedPlans')]);
-
-  useEffect(() => {
-      const newBalance = (ampliacionesCourseValue || 0) - (ampliacionesDownPayment || 0);
-      form.setValue('ampliacionesDetails.balance', newBalance);
-  }, [ampliacionesCourseValue, ampliacionesDownPayment, form]);
-
-
   const handleCoursePlanChange = (planName: string) => {
     const currentContractType = form.getValues('contractType') as 'Curso Auto' | 'Curso Moto' | 'Curso Mixto';
 
@@ -386,8 +356,15 @@ export function ContractForm() {
 
             form.setValue('autoMotoDetails.courseValue', plan.price);
             form.setValue('autoMotoDetails.paidInFull', isSpecial);
-            form.setValue('autoMotoDetails.downPayment', downPaymentValue);
-            form.setValue('autoMotoDetails.balance', plan.price - downPaymentValue);
+            
+            // Only set downpayment if not paid in full, otherwise let user decide
+            if (isSpecial) {
+                form.setValue('autoMotoDetails.downPayment', plan.price);
+                form.setValue('autoMotoDetails.balance', 0);
+            } else {
+                // For regular plans, do not automatically set the down payment.
+                // Let the user enter it. The balance will be calculated based on that.
+            }
             
             form.clearErrors('autoMotoDetails.downPayment');
 
@@ -410,16 +387,24 @@ export function ContractForm() {
       const currentCourseValue = form.getValues('autoMotoDetails.courseValue') || 0;
       if (checked) {
           form.setValue('autoMotoDetails.downPayment', currentCourseValue);
-          form.setValue('autoMotoDetails.balance', 0);
-      } else {
-          // Revert to 50% if unchecked, or let user edit
-          const fiftyPercent = currentCourseValue * 0.5;
-          form.setValue('autoMotoDetails.downPayment', fiftyPercent);
-          form.setValue('autoMotoDetails.balance', currentCourseValue - fiftyPercent);
       }
       form.clearErrors('autoMotoDetails.downPayment');
   };
 
+  useEffect(() => {
+    const newBalance = (courseValue || 0) - (downPayment || 0);
+    form.setValue('autoMotoDetails.balance', newBalance);
+  }, [courseValue, downPayment, form]);
+  
+  useEffect(() => {
+      const total = form.getValues('ampliacionesDetails.selectedPlans')?.reduce((sum, plan) => sum + (plan?.price || 0), 0) || 0;
+      form.setValue('ampliacionesDetails.courseValue', total);
+  }, [form, form.watch('ampliacionesDetails.selectedPlans')]);
+
+  useEffect(() => {
+      const newBalance = (ampliacionesCourseValue || 0) - (ampliacionesDownPayment || 0);
+      form.setValue('ampliacionesDetails.balance', newBalance);
+  }, [ampliacionesCourseValue, ampliacionesDownPayment, form]);
 
 
   async function onSubmit(values: FormValues) {

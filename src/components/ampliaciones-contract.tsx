@@ -120,12 +120,12 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
                 <p className="text-[10px]">Cédula: <Value>{ampliacionesDetails?.studentIdNumber}</Value></p>
             </div>
         </div>
-
-        <div className="print:block hidden text-xs text-muted-foreground pt-8">
-            {contract.createdBy && (
+        
+        {contract.createdBy && (
+            <div className="print:block hidden text-center text-xs text-muted-foreground pt-12">
                 <span>Confeccionado por: {contract.createdBy}</span>
-            )}
-        </div>
+            </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -89,7 +89,8 @@ const baseSchema = z.object({
 const specialPlans = [
     'Reforzamiento de 4 horas',
     'Ya se manejar Plus 2 horas',
-    'Ya se manejar (Evaluación de estacionamiento)'
+    'Ya se manejar (Evaluación de estacionamiento)',
+    'Reforzamiento Mixto 2Hrs'
 ];
 
 const autoMotoDetailsSchema = z.object({
@@ -197,15 +198,15 @@ const convertDetailsDatesToTimestamps = (details: any, baseValues: any) => {
 
     // Deluxe
     if (newDetails.paymentInstallments) {
-        newDetails.paymentInstallments = newDetails.paymentInstallments.map(toTimestamp);
+        newDetails.paymentInstallments = newDetails.paymentInstallments.map((d: any) => d ? toTimestamp(d) : null);
     }
     if (newDetails.theoreticalClasses) {
-        newDetails.theoreticalClasses = newDetails.theoreticalClasses.map(toTimestamp);
+        newDetails.theoreticalClasses = newDetails.theoreticalClasses.map((d: any) => d ? toTimestamp(d) : null);
     }
     if (newDetails.classSchedules) {
         newDetails.classSchedules = newDetails.classSchedules.map((s: { date?: Date, time?: string }) => ({
             ...s,
-            date: toTimestamp(s.date),
+            date: s.date ? toTimestamp(s.date) : null,
         }));
     }
 
@@ -216,18 +217,18 @@ const convertDetailsDatesToTimestamps = (details: any, baseValues: any) => {
 
     // Auto/Moto specific
     if (newDetails.theoreticalClassDates) {
-        newDetails.theoreticalClassDates = newDetails.theoreticalClassDates.map(toTimestamp);
+        newDetails.theoreticalClassDates = newDetails.theoreticalClassDates.map((d: any) => d ? toTimestamp(d) : null);
     }
     if (newDetails.practicalClassSchedules) {
         newDetails.practicalClassSchedules = newDetails.practicalClassSchedules.map((s: { date?: Date, time?: string }) => ({
             ...s,
-            date: toTimestamp(s.date),
+            date: s.date ? toTimestamp(s.date) : null,
         }));
     }
      if (newDetails.motoPracticalClassSchedules) {
         newDetails.motoPracticalClassSchedules = newDetails.motoPracticalClassSchedules.map((s: { date?: Date, time?: string }) => ({
             ...s,
-            date: toTimestamp(s.date),
+            date: s.date ? toTimestamp(s.date) : null,
         }));
     }
 
@@ -256,9 +257,14 @@ const coursePlans = {
     { name: 'Ya se manejar Plus 2 horas', price: 75.00 },
   ],
   'Curso Mixto': [
-    { name: 'Paquete Básico 8hrs', price: 133.00 },
-    { name: 'Paquete Plus 10hrs', price: 150.00 },
-    { name: 'Paquete Premium 12hrs', price: 175.00 },
+    { name: 'Auto + Moto 10Hrs', price: 290.00 },
+    { name: 'Básico Auto + Moto', price: 153.00 },
+    { name: 'Plus Auto + Moto', price: 170.00 },
+    { name: 'Premium Auto + Moto', price: 195.00 },
+    { name: 'Básico Moto + Auto', price: 135.00 },
+    { name: 'Plus Moto + Auto', price: 155.00 },
+    { name: 'Premium Moto + Auto', price: 175.00 },
+    { name: 'Reforzamiento Mixto 2Hrs', price: 100.00 },
   ],
 };
 
@@ -269,6 +275,15 @@ const planToClassCount: { [key: string]: number } = {
   'Reforzamiento de 4 horas': 2,
   'Ya se manejar Plus 2 horas': 1,
   'Ya se manejar (Evaluación de estacionamiento)': 1,
+  // Mixto
+  'Auto + Moto 10Hrs': 10,
+  'Básico Auto + Moto': 6,
+  'Plus Auto + Moto': 6,
+  'Premium Auto + Moto': 6,
+  'Básico Moto + Auto': 6,
+  'Plus Moto + Auto': 6,
+  'Premium Moto + Auto': 6,
+  'Reforzamiento Mixto 2Hrs': 1,
 };
 
 const practicalClassTimes = [
@@ -841,7 +856,7 @@ export function ContractForm() {
                                             <Input
                                                 type="number"
                                                 step="0.01"
-                                                {...field}
+                                                defaultValue={field.value || ''}
                                                 onBlur={handleDownPaymentChange}
                                             />
                                         </FormControl>
@@ -984,7 +999,7 @@ export function ContractForm() {
                                             <Input
                                                 type="number"
                                                 step="0.01"
-                                                {...field}
+                                                defaultValue={field.value || ''}
                                                 onBlur={handleAmpliacionesDownPaymentChange}
                                             />
                                         </FormControl>
@@ -1004,7 +1019,7 @@ export function ContractForm() {
                                                 readOnly
                                                 className="bg-muted"
                                                 value={field.value || 0}
-                                                onBlur={(e) => {
+                                                 onBlur={(e) => {
                                                     const value = parseFloat(e.target.value) || 0;
                                                     e.target.value = value.toFixed(2);
                                                     field.onChange(value);
@@ -1453,6 +1468,7 @@ export function ContractForm() {
 }
 
     
+
 
 
 

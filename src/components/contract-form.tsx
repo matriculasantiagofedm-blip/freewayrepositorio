@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -105,17 +106,6 @@ const autoMotoDetailsSchema = z.object({
   theoreticalClassDates: z.array(z.date().optional()).optional(),
   practicalClassSchedules: z.array(classScheduleSchema).optional(),
   motoPracticalClassSchedules: z.array(classScheduleSchema).optional(),
-}).superRefine((data, ctx) => {
-    if (data.coursePlan && !specialPlans.includes(data.coursePlan) && !data.paidInFull) {
-        const minDownPayment = (data.courseValue || 0) * 0.5;
-        if (data.downPayment < minDownPayment) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ['downPayment'],
-                message: `El abono no puede ser inferior al 50% (B/. ${minDownPayment.toFixed(2)}).`
-            });
-        }
-    }
 });
 
 
@@ -610,7 +600,7 @@ export function ContractForm() {
 
   const renderPreview = () => {
     const values = form.getValues();
-    return <ContractView contract={values as unknown as Contract} type={contractType} />;
+    return <ContractView contract={{...values, createdBy: currentUserRole} as unknown as Contract} type={contractType} />;
   };
 
   const selectedPlanName = form.watch('autoMotoDetails.coursePlan');
@@ -800,10 +790,20 @@ export function ContractForm() {
                                 name="autoMotoDetails.courseValue"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel>Valor del Curso (B/.)</FormLabel>
-                                    <FormControl><Input type="number" {...field} readOnly className="bg-muted" 
-                                      onBlur={(e) => field.onChange(parseFloat(e.target.value))}
-                                    /></FormControl>
+                                        <FormLabel>Valor del Curso (B/.)</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                readOnly
+                                                className="bg-muted"
+                                                value={field.value || 0}
+                                                onBlur={(e) => {
+                                                    const value = parseFloat(e.target.value) || 0;
+                                                    e.target.value = value.toFixed(2);
+                                                    field.onChange(value);
+                                                }}
+                                            />
+                                        </FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -812,12 +812,16 @@ export function ContractForm() {
                                 name="autoMotoDetails.downPayment"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel>Abono (B/.)</FormLabel>
-                                    <FormControl><Input type="number" step="0.01" {...field}
-                                        onBlur={handleDownPaymentChange}
-                                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                                    /></FormControl>
-                                    <FormMessage />
+                                        <FormLabel>Abono (B/.)</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                step="0.01"
+                                                {...field}
+                                                onBlur={handleDownPaymentChange}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
                                     </FormItem>
                                 )}
                             />
@@ -826,10 +830,20 @@ export function ContractForm() {
                                 name="autoMotoDetails.balance"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel>Saldo Pendiente (B/.)</FormLabel>
-                                    <FormControl><Input type="number" {...field} readOnly className="bg-muted" 
-                                      onBlur={(e) => field.onChange(parseFloat(e.target.value))}
-                                    /></FormControl>
+                                        <FormLabel>Saldo Pendiente (B/.)</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                readOnly
+                                                className="bg-muted"
+                                                value={field.value || 0}
+                                                onBlur={(e) => {
+                                                    const value = parseFloat(e.target.value) || 0;
+                                                    e.target.value = value.toFixed(2);
+                                                    field.onChange(value);
+                                                }}
+                                            />
+                                        </FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -919,10 +933,20 @@ export function ContractForm() {
                                 name="ampliacionesDetails.courseValue"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel>Valor Total (B/.)</FormLabel>
-                                    <FormControl><Input type="number" {...field} readOnly className="bg-muted" 
-                                      onBlur={(e) => field.onChange(parseFloat(e.target.value))}
-                                    /></FormControl>
+                                        <FormLabel>Valor Total (B/.)</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                readOnly
+                                                className="bg-muted"
+                                                value={field.value || 0}
+                                                onBlur={(e) => {
+                                                    const value = parseFloat(e.target.value) || 0;
+                                                    e.target.value = value.toFixed(2);
+                                                    field.onChange(value);
+                                                }}
+                                            />
+                                        </FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -931,11 +955,15 @@ export function ContractForm() {
                                 name="ampliacionesDetails.downPayment"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel>Abono (B/.)</FormLabel>
-                                    <FormControl><Input type="number" step="0.01" {...field}
-                                        onBlur={handleAmpliacionesDownPaymentChange}
-                                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                                     /></FormControl>
+                                        <FormLabel>Abono (B/.)</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                step="0.01"
+                                                {...field}
+                                                onBlur={handleAmpliacionesDownPaymentChange}
+                                            />
+                                        </FormControl>
                                      <FormMessage />
                                     </FormItem>
                                 )}
@@ -945,10 +973,20 @@ export function ContractForm() {
                                 name="ampliacionesDetails.balance"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel>Saldo (B/.)</FormLabel>
-                                    <FormControl><Input type="number" {...field} readOnly className="bg-muted" 
-                                       onBlur={(e) => field.onChange(parseFloat(e.target.value))}
-                                    /></FormControl>
+                                        <FormLabel>Saldo (B/.)</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                readOnly
+                                                className="bg-muted"
+                                                value={field.value || 0}
+                                                onBlur={(e) => {
+                                                    const value = parseFloat(e.target.value) || 0;
+                                                    e.target.value = value.toFixed(2);
+                                                    field.onChange(value);
+                                                }}
+                                            />
+                                        </FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -1391,4 +1429,5 @@ export function ContractForm() {
 }
 
     
+
 

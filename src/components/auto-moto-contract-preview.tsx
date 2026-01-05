@@ -1,4 +1,5 @@
 
+
 'use client';
 import { Card, CardContent } from './ui/card';
 import { cn } from '@/lib/utils';
@@ -143,7 +144,7 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, stude
             <p>SI EL ESTUDIANTE falta a más de una clase práctica sin justificar médicamente, no tendrá derecho a certificado y deberá pagar un recargo de $20.00 por cada clase perdida para poder reprogramarla.</p>
         </div>
 
-        <h3 className="font-bold">CLÁUSULA QUARTA - LUGAR DE INICIO Y TRASLADO</h3>
+        <h3 className="font-bold">CLÁUSULA CUARTA - LUGAR DE INICIO Y TRASLADO</h3>
         <p className='text-[10px]'>Las clases prácticas iniciarán en la oficina de LA ESCUELA. Desde allí, EL ESTUDIANTE será trasladado al circuito de prácticas y posteriormente de regreso. Dicho traslado se encuentra incluido dentro del tiempo de las 2 horas de clase práctica.</p>
 
         <h3 className="font-bold">CLÁUSULA QUINTA - PUNTUALIDAD</h3>

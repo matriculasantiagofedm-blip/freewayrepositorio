@@ -1,4 +1,5 @@
 
+
 'use client';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -42,10 +43,9 @@ interface DeluxePremiumContractPreviewProps {
     folioNumber?: number;
 }
 
-export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, studentIdNumber, studentAddress, studentPhone1, studentPhone2, deluxeDetails, folioNumber }: DeluxePremiumContractPreviewProps) {
+export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, studentIdNumber, studentAddress, studentPhone1, studentPhone2, deluxeDetails, createdBy, folioNumber }: DeluxePremiumContractPreviewProps) {
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
-  const { role: createdBy } = useCurrentRole();
-
+  
   useEffect(() => {
     setCurrentDate(new Date());
   }, []);

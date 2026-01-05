@@ -84,7 +84,7 @@ const autoMotoDetailsSchema = z.object({
   coursePlan: z.string().optional(),
   paidInFull: z.boolean().default(false),
   courseValue: z.number().default(0),
-  downPayment: z.number().default(0),
+  downPayment: z.number().min(0, "El abono no puede ser negativo.").default(0),
   balance: z.number().default(0),
   paymentDeadline: z.date().optional().nullable(),
   vehicle: z.enum(['Spark', 'P. Blanco', 'P. Bronce', 'Moto']).optional(),
@@ -115,7 +115,7 @@ const deluxeDetailsSchema = z.object({
 const ampliacionesDetailsSchema = z.object({
   selectedPlans: z.array(z.object({ name: z.string(), price: z.number() })).optional(),
   courseValue: z.number().default(0),
-  downPayment: z.number().default(0),
+  downPayment: z.number().min(0, "El abono no puede ser negativo.").default(0),
   balance: z.number().default(0),
   paymentDeadline: z.date().optional().nullable(),
   theoreticalClassDate: z.date().optional(),
@@ -351,23 +351,16 @@ export function ContractForm() {
     if (planName && (currentContractType === 'Curso Auto' || currentContractType === 'Curso Moto' || currentContractType === 'Curso Mixto')) {
         const plan = coursePlans[currentContractType].find(p => p.name === planName);
         if (plan) {
-            const isSpecial = specialPlans.includes(plan.name);
-            let downPaymentValue = isSpecial ? plan.price : plan.price * 0.5;
-
             form.setValue('autoMotoDetails.courseValue', plan.price);
+            
+            const isSpecial = specialPlans.includes(plan.name);
             form.setValue('autoMotoDetails.paidInFull', isSpecial);
             
-            // Only set downpayment if not paid in full, otherwise let user decide
             if (isSpecial) {
                 form.setValue('autoMotoDetails.downPayment', plan.price);
                 form.setValue('autoMotoDetails.balance', 0);
-            } else {
-                // For regular plans, do not automatically set the down payment.
-                // Let the user enter it. The balance will be calculated based on that.
             }
             
-            form.clearErrors('autoMotoDetails.downPayment');
-
             const classCount = planToClassCount[planName] || 0;
             if (currentContractType === 'Curso Mixto') {
                 const halfCount = Math.floor(classCount / 2);
@@ -387,15 +380,19 @@ export function ContractForm() {
       const currentCourseValue = form.getValues('autoMotoDetails.courseValue') || 0;
       if (checked) {
           form.setValue('autoMotoDetails.downPayment', currentCourseValue);
+          form.setValue('autoMotoDetails.balance', 0);
       }
-      form.clearErrors('autoMotoDetails.downPayment');
+      form.setValue('autoMotoDetails.paidInFull', checked);
   };
-
-  useEffect(() => {
-    const newBalance = (courseValue || 0) - (downPayment || 0);
-    form.setValue('autoMotoDetails.balance', newBalance);
-  }, [courseValue, downPayment, form]);
   
+   useEffect(() => {
+    const values = form.getValues();
+    const courseValue = values.autoMotoDetails?.courseValue || 0;
+    const downPayment = values.autoMotoDetails?.downPayment || 0;
+    const newBalance = courseValue - downPayment;
+    form.setValue('autoMotoDetails.balance', newBalance >= 0 ? newBalance : 0);
+  }, [form, form.watch('autoMotoDetails.courseValue'), form.watch('autoMotoDetails.downPayment')]);
+
   useEffect(() => {
       const total = form.getValues('ampliacionesDetails.selectedPlans')?.reduce((sum, plan) => sum + (plan?.price || 0), 0) || 0;
       form.setValue('ampliacionesDetails.courseValue', total);
@@ -403,7 +400,7 @@ export function ContractForm() {
 
   useEffect(() => {
       const newBalance = (ampliacionesCourseValue || 0) - (ampliacionesDownPayment || 0);
-      form.setValue('ampliacionesDetails.balance', newBalance);
+      form.setValue('ampliacionesDetails.balance', newBalance >= 0 ? newBalance : 0);
   }, [ampliacionesCourseValue, ampliacionesDownPayment, form]);
 
 
@@ -720,7 +717,7 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Valor del Curso (B/.)</FormLabel>
-                                    <FormControl><Input type="number" step="0.01" {...field} value={Number(field.value || 0).toFixed(2)} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} readOnly /></FormControl>
+                                    <FormControl><Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} readOnly /></FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -730,7 +727,7 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Abono (B/.)</FormLabel>
-                                    <FormControl><Input type="number" step="0.01" {...field} value={Number(field.value || 0).toFixed(2)} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
+                                    <FormControl><Input type="number" step="0.01" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)}/></FormControl>
                                     <FormMessage />
                                     </FormItem>
                                 )}
@@ -741,7 +738,7 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Saldo Pendiente (B/.)</FormLabel>
-                                    <FormControl><Input type="number" step="0.01" {...field} value={Number(field.value || 0).toFixed(2)} readOnly className="bg-muted" /></FormControl>
+                                    <FormControl><Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} readOnly className="bg-muted" /></FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -756,9 +753,7 @@ export function ContractForm() {
                                             <Checkbox
                                                 checked={field.value}
                                                 onCheckedChange={(checked) => {
-                                                    const isChecked = Boolean(checked);
-                                                    field.onChange(isChecked);
-                                                    handlePaidInFullChange(isChecked);
+                                                    handlePaidInFullChange(Boolean(checked));
                                                 }}
                                                 disabled={isSpecialPlan}
                                             />
@@ -837,7 +832,7 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Valor Total (B/.)</FormLabel>
-                                    <FormControl><Input type="number" step="0.01" {...field} value={Number(field.value || 0).toFixed(2)} readOnly className="bg-muted" /></FormControl>
+                                    <FormControl><Input type="number" {...field} readOnly className="bg-muted" /></FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -847,7 +842,7 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Abono (B/.)</FormLabel>
-                                    <FormControl><Input type="number" step="0.01" {...field} value={Number(field.value || 0).toFixed(2)} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
+                                    <FormControl><Input type="number" step="0.01" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -857,7 +852,7 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Saldo (B/.)</FormLabel>
-                                    <FormControl><Input type="number" step="0.01" {...field} value={Number(field.value || 0).toFixed(2)} readOnly className="bg-muted" /></FormControl>
+                                    <FormControl><Input type="number" {...field} readOnly className="bg-muted" /></FormControl>
                                     </FormItem>
                                 )}
                             />

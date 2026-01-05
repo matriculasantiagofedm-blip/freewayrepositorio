@@ -106,6 +106,21 @@ const autoMotoDetailsSchema = z.object({
   theoreticalClassDates: z.array(z.date().optional()).optional(),
   practicalClassSchedules: z.array(classScheduleSchema).optional(),
   motoPracticalClassSchedules: z.array(classScheduleSchema).optional(),
+}).superRefine((data, ctx) => {
+    // Si es un plan especial o está pagado por completo, no aplicamos la validación del 50%
+    if (data.coursePlan && specialPlans.includes(data.coursePlan) || data.paidInFull) {
+        return;
+    }
+    const totalValue = data.courseValue || 0;
+    const minAbono = totalValue * 0.5;
+
+    if (data.downPayment < minAbono) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['downPayment'],
+            message: `El abono debe ser de al menos el 50% (B/. ${minAbono.toFixed(2)}).`
+        });
+    }
 });
 
 
@@ -173,45 +188,52 @@ const convertDetailsDatesToTimestamps = (details: any, baseValues: any) => {
     newDetails.studentPhone1 = baseValues.studentPhone1;
     newDetails.studentPhone2 = baseValues.studentPhone2;
 
+    const toTimestamp = (date: any) => {
+        if (date instanceof Date && !isNaN(date.getTime())) {
+            return Timestamp.fromDate(date);
+        }
+        return null;
+    };
+
     // Deluxe
     if (newDetails.paymentInstallments) {
-        newDetails.paymentInstallments = newDetails.paymentInstallments.map((d: Date | undefined) => d ? Timestamp.fromDate(d) : null);
+        newDetails.paymentInstallments = newDetails.paymentInstallments.map(toTimestamp);
     }
     if (newDetails.theoreticalClasses) {
-        newDetails.theoreticalClasses = newDetails.theoreticalClasses.map((d: Date | undefined) => d ? Timestamp.fromDate(d) : null);
+        newDetails.theoreticalClasses = newDetails.theoreticalClasses.map(toTimestamp);
     }
     if (newDetails.classSchedules) {
         newDetails.classSchedules = newDetails.classSchedules.map((s: { date?: Date, time?: string }) => ({
             ...s,
-            date: s.date ? Timestamp.fromDate(s.date) : null,
+            date: toTimestamp(s.date),
         }));
     }
 
     // Auto/Moto & Ampliaciones - Common paymentDeadline field
-    if (newDetails.paymentDeadline && newDetails.paymentDeadline instanceof Date) {
-        newDetails.paymentDeadline = Timestamp.fromDate(newDetails.paymentDeadline);
+    if (newDetails.paymentDeadline) {
+        newDetails.paymentDeadline = toTimestamp(newDetails.paymentDeadline);
     }
 
     // Auto/Moto specific
     if (newDetails.theoreticalClassDates) {
-        newDetails.theoreticalClassDates = newDetails.theoreticalClassDates.map((d: Date | undefined) => d ? Timestamp.fromDate(d) : null);
+        newDetails.theoreticalClassDates = newDetails.theoreticalClassDates.map(toTimestamp);
     }
     if (newDetails.practicalClassSchedules) {
         newDetails.practicalClassSchedules = newDetails.practicalClassSchedules.map((s: { date?: Date, time?: string }) => ({
             ...s,
-            date: s.date ? Timestamp.fromDate(s.date) : null,
+            date: toTimestamp(s.date),
         }));
     }
      if (newDetails.motoPracticalClassSchedules) {
         newDetails.motoPracticalClassSchedules = newDetails.motoPracticalClassSchedules.map((s: { date?: Date, time?: string }) => ({
             ...s,
-            date: s.date ? Timestamp.fromDate(s.date) : null,
+            date: toTimestamp(s.date),
         }));
     }
 
     // Ampliaciones specific
-    if (newDetails.theoreticalClassDate && newDetails.theoreticalClassDate instanceof Date) {
-        newDetails.theoreticalClassDate = Timestamp.fromDate(newDetails.theoreticalClassDate);
+    if (newDetails.theoreticalClassDate) {
+        newDetails.theoreticalClassDate = toTimestamp(newDetails.theoreticalClassDate);
     }
 
     return newDetails;
@@ -230,6 +252,8 @@ const coursePlans = {
     { name: 'Paquete Básico 8hrs', price: 115.00 },
     { name: 'Paquete Plus 10hrs', price: 135.00 },
     { name: 'Paquete Premium 12hrs', price: 155.00 },
+    { name: 'Reforzamiento de 4 horas', price: 95.00 },
+    { name: 'Ya se manejar Plus 2 horas', price: 75.00 },
   ],
   'Curso Mixto': [
     { name: 'Paquete Básico 8hrs', price: 133.00 },
@@ -383,7 +407,7 @@ export function ContractForm() {
     const newBalance = (courseValue || 0) - value;
     form.setValue('autoMotoDetails.balance', newBalance >= 0 ? newBalance : 0);
 
-    // Validation logic
+    // Validation logic for popup
     if (coursePlan && !specialPlans.includes(coursePlan) && !paidInFull) {
         const minDownPayment = (courseValue || 0) * 0.5;
         if (value < minDownPayment) {
@@ -1429,5 +1453,6 @@ export function ContractForm() {
 }
 
     
+
 
 

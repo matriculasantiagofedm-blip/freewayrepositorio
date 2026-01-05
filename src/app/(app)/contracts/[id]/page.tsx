@@ -1,12 +1,12 @@
 'use client';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, updateDoc, serverTimestamp, runTransaction, DocumentReference } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { ContractView } from '@/components/contract-view';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft, Award, Printer } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import {
@@ -26,9 +26,14 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 
 // Helper to get the next folio number
-const getNextFolio = (lastFolioNum: number): string => {
+const getNextFolio = (lastFolio: string | null): string => {
     const year = new Date().getFullYear();
-    const nextNum = lastFolioNum + 1;
+    if (!lastFolio || !lastFolio.includes('/')) {
+        return `${year} / 0001`;
+    }
+    const parts = lastFolio.split('/');
+    const lastNum = parseInt(parts[1], 10);
+    const nextNum = lastNum + 1;
     const paddedNextNum = String(nextNum).padStart(4, '0');
     return `${year} / ${paddedNextNum}`;
 };
@@ -45,6 +50,12 @@ export default function ContractDetailPage() {
   const [isFolioModalOpen, setIsFolioModalOpen] = useState(false);
   const [certificateFolio, setCertificateFolio] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [lastFolio, setLastFolio] = useState<string | null>(null);
+
+  useEffect(() => {
+    // This effect runs on the client side only
+    setLastFolio(localStorage.getItem('lastCertificateFolio'));
+  }, []);
 
   const contractId = Array.isArray(id) ? id[0] : id;
 
@@ -57,41 +68,14 @@ export default function ContractDetailPage() {
   
   const canGenerateCertificate = contract && ['Curso Auto', 'Curso Moto', 'Curso Deluxe', 'Curso Mixto'].includes(contract.type);
 
-  const handleOpenFolioModal = async () => {
-    if (!db) return;
-    setIsGenerating(true);
-    setCertificateFolio('Generando...');
+  const handleOpenFolioModal = () => {
+    const suggestedFolio = getNextFolio(lastFolio);
+    setCertificateFolio(suggestedFolio);
     setIsFolioModalOpen(true);
-
-    try {
-        const counterRef = doc(db, 'counters', 'certificate_folio');
-        await runTransaction(db, async (transaction) => {
-            const counterDoc = await transaction.get(counterRef);
-            if (!counterDoc.exists()) {
-                // Initialize if it doesn't exist.
-                transaction.set(counterRef, { count: 0 });
-                return 0;
-            }
-            return counterDoc.data().count;
-        }).then(lastFolioNum => {
-            const suggestedFolio = getNextFolio(lastFolioNum);
-            setCertificateFolio(suggestedFolio);
-        });
-    } catch (e) {
-        console.error("Could not access Firestore counter.", e);
-        toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: 'No se pudo obtener el número de folio. Inténtalo de nuevo.',
-        });
-        setCertificateFolio('Error');
-    } finally {
-        setIsGenerating(false);
-    }
   };
   
   const handleProceedToPrint = async () => {
-    if (!certificateFolio || isGenerating || certificateFolio === 'Error' || !db || !contractRef) {
+    if (!certificateFolio || !db || !contractRef) {
         toast({
             variant: 'destructive',
             title: 'Folio Inválido',
@@ -103,23 +87,15 @@ export default function ContractDetailPage() {
     setIsGenerating(true);
 
     try {
-        // Increment the folio counter in a transaction
-        const counterRef = doc(db, 'counters', 'certificate_folio');
-        await runTransaction(db, async (transaction) => {
-            const counterDoc = await transaction.get(counterRef);
-            if (!counterDoc.exists()) {
-                throw new Error("El contador de folios de certificado no existe.");
-            }
-            const newFolioNum = (parseInt(certificateFolio.split('/')[1].trim(), 10));
-            transaction.update(counterRef, { count: newFolioNum });
-        });
-        
-        // Update the contract document
         const updateData = {
             certificateGeneratedAt: serverTimestamp(),
             certificateFolio: certificateFolio,
         };
         await updateDoc(contractRef, updateData);
+
+        // Store the new folio in localStorage
+        localStorage.setItem('lastCertificateFolio', certificateFolio);
+        setLastFolio(certificateFolio);
 
         // Open print window
         const printUrl = `/certificate-print/${contractId}?folio=${encodeURIComponent(certificateFolio)}`;
@@ -198,7 +174,7 @@ export default function ContractDetailPage() {
             <DialogHeader>
                 <DialogTitle>Generar Certificado</DialogTitle>
                 <DialogDescription>
-                    Se usará el siguiente número de folio para el certificado.
+                    Se usará el siguiente número de folio para el certificado. Puedes editarlo si es necesario.
                 </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -212,7 +188,6 @@ export default function ContractDetailPage() {
                         onChange={(e) => setCertificateFolio(e.target.value)}
                         className="col-span-3"
                         placeholder="2026 / 0001"
-                        readOnly={isGenerating}
                     />
                 </div>
             </div>
@@ -220,7 +195,7 @@ export default function ContractDetailPage() {
                 <DialogClose asChild>
                     <Button variant="ghost">Cancelar</Button>
                 </DialogClose>
-                <Button onClick={handleProceedToPrint} disabled={isGenerating || certificateFolio === 'Error'}>Continuar a Impresión</Button>
+                <Button onClick={handleProceedToPrint} disabled={isGenerating}>Continuar a Impresión</Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -75,11 +75,6 @@ service cloud.firestore {
         allow read, write: if isSignedIn();
     }
     
-    // Allow Admin to read/write the certificate folio counter.
-    match /counters/certificate_folio {
-        allow read, write: if isAdmin();
-    }
-    
     // Prevent access to any other documents in the counters collection.
     match /counters/{counterId} {
         allow read, write: if false;

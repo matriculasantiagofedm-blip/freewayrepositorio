@@ -18,6 +18,16 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -94,6 +104,17 @@ const autoMotoDetailsSchema = z.object({
   theoreticalClassDates: z.array(z.date().optional()).optional(),
   practicalClassSchedules: z.array(classScheduleSchema).optional(),
   motoPracticalClassSchedules: z.array(classScheduleSchema).optional(),
+}).superRefine((data, ctx) => {
+    if (data.coursePlan && !specialPlans.includes(data.coursePlan) && !data.paidInFull) {
+        const minDownPayment = (data.courseValue || 0) * 0.5;
+        if (data.downPayment < minDownPayment) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['downPayment'],
+                message: `El abono no puede ser inferior al 50% (B/. ${minDownPayment.toFixed(2)}).`
+            });
+        }
+    }
 });
 
 
@@ -120,6 +141,26 @@ const ampliacionesDetailsSchema = z.object({
   paymentDeadline: z.date().optional().nullable(),
   theoreticalClassDate: z.date().optional(),
   theoreticalClassTime: z.string().optional(),
+}).superRefine((data, ctx) => {
+    const totalValue = data.courseValue || 0;
+    if (totalValue > 100) {
+        const minDownPayment = totalValue * 0.5;
+        if (data.downPayment < minDownPayment) {
+             ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['downPayment'],
+                message: `Para montos superiores a B/.100, el abono mínimo es del 50% (B/. ${minDownPayment.toFixed(2)}).`
+            });
+        }
+    } else {
+        if (data.downPayment < totalValue) {
+             ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['downPayment'],
+                message: `Para montos de B/.100 o menos, se debe cancelar la totalidad (B/. ${totalValue.toFixed(2)}).`
+            });
+        }
+    }
 });
 
 const formSchema = baseSchema.extend({
@@ -247,11 +288,15 @@ export function ContractForm() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [isAbonoDialogOpen, setIsAbonoDialogOpen] = useState(false);
+  const [abonoDialogMessage, setAbonoDialogMessage] = useState('');
+  const [minAbonoRequired, setMinAbonoRequired] = useState(0);
   
   const contractType: ContractType = useMemo(() => contractTypeParam || 'Curso Auto', [contractTypeParam]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
+    mode: 'onBlur', // Trigger validation on blur
     defaultValues: {
       clientName: '',
       clientEmail: '',
@@ -306,7 +351,7 @@ export function ContractForm() {
     if (plan) {
         form.setValue('autoMotoDetails.courseValue', plan.price);
         const isSpecial = specialPlans.includes(plan.name);
-
+        
         const downPaymentValue = isSpecial ? plan.price : plan.price * 0.5;
         form.setValue('autoMotoDetails.downPayment', downPaymentValue);
         form.setValue('autoMotoDetails.balance', isSpecial ? 0 : plan.price - downPaymentValue);
@@ -330,26 +375,80 @@ export function ContractForm() {
         const currentCourseValue = form.getValues('autoMotoDetails.courseValue') || 0;
         form.setValue('autoMotoDetails.downPayment', currentCourseValue);
         form.setValue('autoMotoDetails.balance', 0);
+    } else {
+        const currentCourseValue = form.getValues('autoMotoDetails.courseValue') || 0;
+        const downPayment = currentCourseValue * 0.5;
+        form.setValue('autoMotoDetails.downPayment', downPayment);
+        form.setValue('autoMotoDetails.balance', currentCourseValue - downPayment);
     }
   };
 
-  const handleDownPaymentChange = (value: number) => {
-    const courseValue = form.getValues('autoMotoDetails.courseValue') || 0;
-    const newBalance = courseValue - value;
+  const handleDownPaymentChange = (e: React.FocusEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.target.value) || 0;
+    const { courseValue, coursePlan, paidInFull } = form.getValues('autoMotoDetails');
+
+    // Format the input to two decimal places on blur
+    e.target.value = value.toFixed(2);
+    form.setValue('autoMotoDetails.downPayment', value);
+
+    const newBalance = (courseValue || 0) - value;
     form.setValue('autoMotoDetails.balance', newBalance >= 0 ? newBalance : 0);
+
+    // Validation logic
+    if (coursePlan && !specialPlans.includes(coursePlan) && !paidInFull) {
+        const minDownPayment = (courseValue || 0) * 0.5;
+        if (value < minDownPayment) {
+            setAbonoDialogMessage(`El abono para este plan no puede ser inferior al 50%. El abono mínimo requerido es de B/. ${minDownPayment.toFixed(2)}.`);
+            setMinAbonoRequired(minDownPayment);
+            setIsAbonoDialogOpen(true);
+        }
+    }
   };
   
   const handleAmpliacionesPlanChange = (plans: { name: string; price: number }[]) => {
       const total = plans.reduce((sum, plan) => sum + (plan?.price || 0), 0);
       form.setValue('ampliacionesDetails.courseValue', total);
-      const downPayment = form.getValues('ampliacionesDetails.downPayment') || 0;
-      form.setValue('ampliacionesDetails.balance', total - downPayment);
+
+      const minAbono = total > 100 ? total * 0.5 : total;
+      form.setValue('ampliacionesDetails.downPayment', minAbono);
+
+      const newBalance = total - minAbono;
+      form.setValue('ampliacionesDetails.balance', newBalance >= 0 ? newBalance : 0);
   };
 
-  const handleAmpliacionesDownPaymentChange = (value: number) => {
-      const courseValue = form.getValues('ampliacionesDetails.courseValue') || 0;
-      const newBalance = courseValue - value;
-      form.setValue('ampliacionesDetails.balance', newBalance >= 0 ? newBalance : 0);
+  const handleAmpliacionesDownPaymentChange = (e: React.FocusEvent<HTMLInputElement>) => {
+    const value = parseFloat(e.target.value) || 0;
+    const { courseValue } = form.getValues('ampliacionesDetails');
+    
+    // Format the input to two decimal places on blur
+    e.target.value = value.toFixed(2);
+    form.setValue('ampliacionesDetails.downPayment', value);
+
+    const newBalance = (courseValue || 0) - value;
+    form.setValue('ampliacionesDetails.balance', newBalance >= 0 ? newBalance : 0);
+
+    // Validation Logic
+    const totalValue = courseValue || 0;
+    let minAbono = 0;
+    let message = '';
+    
+    if (totalValue > 100) {
+        minAbono = totalValue * 0.5;
+        if (value < minAbono) {
+            message = `Para montos superiores a B/.100, el abono mínimo es del 50%. El abono mínimo requerido es de B/. ${minAbono.toFixed(2)}.`;
+        }
+    } else if (totalValue > 0) {
+        minAbono = totalValue;
+        if (value < minAbono) {
+            message = `Para montos de B/.100 o menos, se debe cancelar la totalidad. El abono mínimo requerido es de B/. ${minAbono.toFixed(2)}.`;
+        }
+    }
+
+    if (message) {
+        setAbonoDialogMessage(message);
+        setMinAbonoRequired(minAbono);
+        setIsAbonoDialogOpen(true);
+    }
   };
 
 
@@ -703,7 +802,7 @@ export function ContractForm() {
                                     <FormItem>
                                     <FormLabel>Valor del Curso (B/.)</FormLabel>
                                     <FormControl><Input type="number" {...field} readOnly className="bg-muted" 
-                                      onBlur={() => field.onChange(Number(field.value).toFixed(2))}
+                                      onBlur={(e) => field.onChange(parseFloat(e.target.value).toFixed(2))}
                                     /></FormControl>
                                     </FormItem>
                                 )}
@@ -715,12 +814,7 @@ export function ContractForm() {
                                     <FormItem>
                                     <FormLabel>Abono (B/.)</FormLabel>
                                     <FormControl><Input type="number" step="0.01" {...field}
-                                        onChange={e => {
-                                            const value = parseFloat(e.target.value);
-                                            field.onChange(value);
-                                            handleDownPaymentChange(value);
-                                        }}
-                                        onBlur={() => field.onChange(Number(field.value).toFixed(2))}
+                                        onBlur={handleDownPaymentChange}
                                     /></FormControl>
                                     <FormMessage />
                                     </FormItem>
@@ -733,7 +827,7 @@ export function ContractForm() {
                                     <FormItem>
                                     <FormLabel>Saldo Pendiente (B/.)</FormLabel>
                                     <FormControl><Input type="number" {...field} readOnly className="bg-muted" 
-                                      onBlur={() => field.onChange(Number(field.value).toFixed(2))}
+                                      onBlur={(e) => field.onChange(parseFloat(e.target.value).toFixed(2))}
                                     /></FormControl>
                                     </FormItem>
                                 )}
@@ -826,7 +920,7 @@ export function ContractForm() {
                                     <FormItem>
                                     <FormLabel>Valor Total (B/.)</FormLabel>
                                     <FormControl><Input type="number" {...field} readOnly className="bg-muted" 
-                                      onBlur={() => field.onChange(Number(field.value).toFixed(2))}
+                                      onBlur={(e) => field.onChange(parseFloat(e.target.value).toFixed(2))}
                                     /></FormControl>
                                     </FormItem>
                                 )}
@@ -838,13 +932,9 @@ export function ContractForm() {
                                     <FormItem>
                                     <FormLabel>Abono (B/.)</FormLabel>
                                     <FormControl><Input type="number" step="0.01" {...field}
-                                        onChange={e => {
-                                            const value = parseFloat(e.target.value);
-                                            field.onChange(value);
-                                            handleAmpliacionesDownPaymentChange(value);
-                                        }}
-                                        onBlur={() => field.onChange(Number(field.value).toFixed(2))}
+                                        onBlur={handleAmpliacionesDownPaymentChange}
                                      /></FormControl>
+                                     <FormMessage />
                                     </FormItem>
                                 )}
                             />
@@ -855,7 +945,7 @@ export function ContractForm() {
                                     <FormItem>
                                     <FormLabel>Saldo (B/.)</FormLabel>
                                     <FormControl><Input type="number" {...field} readOnly className="bg-muted" 
-                                      onBlur={() => field.onChange(Number(field.value).toFixed(2))}
+                                       onBlur={(e) => field.onChange(parseFloat(e.target.value).toFixed(2))}
                                     /></FormControl>
                                     </FormItem>
                                 )}
@@ -1246,6 +1336,33 @@ export function ContractForm() {
                  )}
             </CardContent>
         </Card>
+
+        <AlertDialog open={isAbonoDialogOpen} onOpenChange={setIsAbonoDialogOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Abono Mínimo Requerido</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        {abonoDialogMessage}
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cerrar y corregir manualmente</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => {
+                        if (contractType === 'Ampliaciones') {
+                            form.setValue('ampliacionesDetails.downPayment', minAbonoRequired);
+                            const balance = (form.getValues('ampliacionesDetails.courseValue') || 0) - minAbonoRequired;
+                            form.setValue('ampliacionesDetails.balance', balance);
+                        } else {
+                            form.setValue('autoMotoDetails.downPayment', minAbonoRequired);
+                            const balance = (form.getValues('autoMotoDetails.courseValue') || 0) - minAbonoRequired;
+                            form.setValue('autoMotoDetails.balance', balance);
+                        }
+                    }}>
+                        Usar Abono Mínimo
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
         
 
         <div className="flex justify-between items-center print:hidden">
@@ -1261,7 +1378,7 @@ export function ContractForm() {
         {showPreview && (
             <div className="print:block">
                 <h3 className="text-lg font-semibold my-4 print:hidden">Vista Previa del Contrato</h3>
-                <div className="border rounded-lg p-4 bg-gray-50 print:border-none print:p-0 print:bg-white">
+                <div className="border rounded-lg p-4 bg-gray-50 print:hidden print:border-none print:p-0 print:bg-white">
                     {renderPreview()}
                 </div>
             </div>
@@ -1270,3 +1387,5 @@ export function ContractForm() {
     </Form>
   );
 }
+
+    

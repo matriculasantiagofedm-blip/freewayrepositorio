@@ -282,13 +282,13 @@ const planToClassCount: { [key: string]: number } = {
   'Ya se manejar Plus 2 horas': 1,
   'Ya se manejar (Evaluación de estacionamiento)': 1,
   // Mixto
-  'Auto + Moto 10Hrs': 5, // 5 auto + 5 moto
-  'Básico Auto + Moto': 3, // 3 auto + 3 moto
-  'Plus Auto + Moto': 3, // 3 auto + 3 moto
-  'Premium Auto + Moto': 3, // 3 auto + 3 moto
-  'Básico Moto + Auto': 3,
-  'Plus Moto + Auto': 3,
-  'Premium Moto + Auto': 3,
+  'Auto + Moto 10Hrs': 6, 
+  'Básico Auto + Moto': 6,
+  'Plus Auto + Moto': 6,
+  'Premium Auto + Moto': 6,
+  'Básico Moto + Auto': 6,
+  'Plus Moto + Auto': 6,
+  'Premium Moto + Auto': 6,
   'Reforzamiento Mixto 2Hrs': 1,
 };
 
@@ -311,6 +311,8 @@ const ampliacionesPlans = [
 ];
 
 const specialCombinations = [
+  { combo: ['D', 'E1', 'E2', 'E3', 'F'], price: 150.00 },
+  { combo: ['B', 'E1', 'E2', 'E3', 'F'], price: 150.00 },
   { combo: ['E1', 'E2', 'E3', 'F'], price: 95.00 },
   { combo: ['E1', 'E2', 'E3'], price: 85.00 },
   { combo: ['D', 'E1'], price: 85.00 },
@@ -457,7 +459,7 @@ export function ContractForm() {
         let total = 0;
         let comboFound = false;
 
-        // Check for special combinations first
+        // Check for special combinations first, longer combos first
         for (const { combo, price } of specialCombinations) {
             const sortedCombo = [...combo].sort();
             if (JSON.stringify(selectedNames) === JSON.stringify(sortedCombo)) {
@@ -1504,6 +1506,7 @@ export function ContractForm() {
 }
 
     
+
 
 
 

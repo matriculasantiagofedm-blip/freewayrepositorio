@@ -299,14 +299,62 @@ export function ContractForm() {
       name: "ampliacionesDetails.selectedPlans",
   });
 
+  const handleCoursePlanChange = (planName: string) => {
+    const currentContractType = form.getValues('contractType') as 'Curso Auto' | 'Curso Moto' | 'Curso Mixto';
+    const plan = coursePlans[currentContractType]?.find(p => p.name === planName);
+
+    if (plan) {
+        form.setValue('autoMotoDetails.courseValue', plan.price);
+        const isSpecial = specialPlans.includes(plan.name);
+
+        const downPaymentValue = isSpecial ? plan.price : plan.price * 0.5;
+        form.setValue('autoMotoDetails.downPayment', downPaymentValue);
+        form.setValue('autoMotoDetails.balance', isSpecial ? 0 : plan.price - downPaymentValue);
+        form.setValue('autoMotoDetails.paidInFull', isSpecial);
+
+        const classCount = planToClassCount[planName] || 0;
+        if (currentContractType === 'Curso Mixto') {
+            const halfCount = Math.floor(classCount / 2);
+            replacePracticalClasses(Array.from({ length: halfCount }, () => ({ date: undefined, time: '' })));
+            replaceMotoPracticalClasses(Array.from({ length: classCount - halfCount }, () => ({ date: undefined, time: '' })));
+        } else {
+            replacePracticalClasses(Array.from({ length: classCount }, () => ({ date: undefined, time: '' })));
+            replaceMotoPracticalClasses([]);
+        }
+    }
+  };
+
+  const handlePaidInFullChange = (checked: boolean) => {
+    form.setValue('autoMotoDetails.paidInFull', checked);
+    if (checked) {
+        const currentCourseValue = form.getValues('autoMotoDetails.courseValue') || 0;
+        form.setValue('autoMotoDetails.downPayment', currentCourseValue);
+        form.setValue('autoMotoDetails.balance', 0);
+    }
+  };
+
+  const handleDownPaymentChange = (value: number) => {
+    const courseValue = form.getValues('autoMotoDetails.courseValue') || 0;
+    const newBalance = courseValue - value;
+    form.setValue('autoMotoDetails.balance', newBalance >= 0 ? newBalance : 0);
+  };
+  
+  const handleAmpliacionesPlanChange = (plans: { name: string; price: number }[]) => {
+      const total = plans.reduce((sum, plan) => sum + (plan?.price || 0), 0);
+      form.setValue('ampliacionesDetails.courseValue', total);
+      const downPayment = form.getValues('ampliacionesDetails.downPayment') || 0;
+      form.setValue('ampliacionesDetails.balance', total - downPayment);
+  };
+
+  const handleAmpliacionesDownPaymentChange = (value: number) => {
+      const courseValue = form.getValues('ampliacionesDetails.courseValue') || 0;
+      const newBalance = courseValue - value;
+      form.setValue('ampliacionesDetails.balance', newBalance >= 0 ? newBalance : 0);
+  };
+
+
   useEffect(() => {
     form.setValue('contractType', contractType);
-    if (contractType === 'Curso Moto') {
-        form.setValue('autoMotoDetails.vehicle', 'Moto');
-    } else {
-        form.setValue('autoMotoDetails.vehicle', undefined);
-    }
-    // Reset fields when type changes
     form.reset({
       clientName: form.getValues('clientName'),
       clientEmail: form.getValues('clientEmail'),
@@ -339,69 +387,6 @@ export function ContractForm() {
       }
     });
   }, [contractType, form]);
-
-  const courseValue = form.watch('autoMotoDetails.courseValue');
-  const downPayment = form.watch('autoMotoDetails.downPayment');
-  const ampliacionesCourseValue = form.watch('ampliacionesDetails.courseValue');
-  const ampliacionesDownPayment = form.watch('ampliacionesDetails.downPayment');
-
-  const handleCoursePlanChange = (planName: string) => {
-    const currentContractType = form.getValues('contractType') as 'Curso Auto' | 'Curso Moto' | 'Curso Mixto';
-
-    if (planName && (currentContractType === 'Curso Auto' || currentContractType === 'Curso Moto' || currentContractType === 'Curso Mixto')) {
-        const plan = coursePlans[currentContractType].find(p => p.name === planName);
-        if (plan) {
-            form.setValue('autoMotoDetails.courseValue', plan.price);
-            
-            const isSpecial = specialPlans.includes(plan.name);
-            form.setValue('autoMotoDetails.paidInFull', isSpecial);
-            
-            if (isSpecial) {
-                form.setValue('autoMotoDetails.downPayment', plan.price);
-                form.setValue('autoMotoDetails.balance', 0);
-            }
-            
-            const classCount = planToClassCount[planName] || 0;
-            if (currentContractType === 'Curso Mixto') {
-                const halfCount = Math.floor(classCount / 2);
-                const autoClasses = Array.from({ length: halfCount }, () => ({ date: undefined, time: '' }));
-                const motoClasses = Array.from({ length: classCount - halfCount }, () => ({ date: undefined, time: '' }));
-                replacePracticalClasses(autoClasses);
-                replaceMotoPracticalClasses(motoClasses);
-            } else {
-                 const newClasses = Array.from({ length: classCount }, () => ({ date: undefined, time: '' }));
-                 replacePracticalClasses(newClasses);
-            }
-        }
-    }
-  };
-  
-  const handlePaidInFullChange = (checked: boolean) => {
-      const currentCourseValue = form.getValues('autoMotoDetails.courseValue') || 0;
-      if (checked) {
-          form.setValue('autoMotoDetails.downPayment', currentCourseValue);
-          form.setValue('autoMotoDetails.balance', 0);
-      }
-      form.setValue('autoMotoDetails.paidInFull', checked);
-  };
-  
-   useEffect(() => {
-    const values = form.getValues();
-    const courseValue = values.autoMotoDetails?.courseValue || 0;
-    const downPayment = values.autoMotoDetails?.downPayment || 0;
-    const newBalance = courseValue - downPayment;
-    form.setValue('autoMotoDetails.balance', newBalance >= 0 ? newBalance : 0);
-  }, [form, form.watch('autoMotoDetails.courseValue'), form.watch('autoMotoDetails.downPayment')]);
-
-  useEffect(() => {
-      const total = form.getValues('ampliacionesDetails.selectedPlans')?.reduce((sum, plan) => sum + (plan?.price || 0), 0) || 0;
-      form.setValue('ampliacionesDetails.courseValue', total);
-  }, [form, form.watch('ampliacionesDetails.selectedPlans')]);
-
-  useEffect(() => {
-      const newBalance = (ampliacionesCourseValue || 0) - (ampliacionesDownPayment || 0);
-      form.setValue('ampliacionesDetails.balance', newBalance >= 0 ? newBalance : 0);
-  }, [ampliacionesCourseValue, ampliacionesDownPayment, form]);
 
 
   async function onSubmit(values: FormValues) {
@@ -717,7 +702,9 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Valor del Curso (B/.)</FormLabel>
-                                    <FormControl><Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} readOnly /></FormControl>
+                                    <FormControl><Input type="number" {...field} readOnly className="bg-muted" 
+                                      onBlur={() => field.onChange(Number(field.value).toFixed(2))}
+                                    /></FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -727,7 +714,14 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Abono (B/.)</FormLabel>
-                                    <FormControl><Input type="number" step="0.01" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)}/></FormControl>
+                                    <FormControl><Input type="number" step="0.01" {...field}
+                                        onChange={e => {
+                                            const value = parseFloat(e.target.value);
+                                            field.onChange(value);
+                                            handleDownPaymentChange(value);
+                                        }}
+                                        onBlur={() => field.onChange(Number(field.value).toFixed(2))}
+                                    /></FormControl>
                                     <FormMessage />
                                     </FormItem>
                                 )}
@@ -738,7 +732,9 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Saldo Pendiente (B/.)</FormLabel>
-                                    <FormControl><Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} readOnly className="bg-muted" /></FormControl>
+                                    <FormControl><Input type="number" {...field} readOnly className="bg-muted" 
+                                      onBlur={() => field.onChange(Number(field.value).toFixed(2))}
+                                    /></FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -752,9 +748,7 @@ export function ContractForm() {
                                         <FormControl>
                                             <Checkbox
                                                 checked={field.value}
-                                                onCheckedChange={(checked) => {
-                                                    handlePaidInFullChange(Boolean(checked));
-                                                }}
+                                                onCheckedChange={(checked) => handlePaidInFullChange(Boolean(checked)) }
                                                 disabled={isSpecialPlan}
                                             />
                                         </FormControl>
@@ -798,19 +792,18 @@ export function ContractForm() {
                                         control={form.control}
                                         name="ampliacionesDetails.selectedPlans"
                                         render={({ field }) => {
+                                            const currentPlans = field.value || [];
                                             return (
                                                 <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
                                                     <FormControl>
                                                         <Checkbox
-                                                            checked={field.value?.some(p => p.name === plan.name)}
+                                                            checked={currentPlans.some(p => p.name === plan.name)}
                                                             onCheckedChange={(checked) => {
-                                                                return checked
-                                                                ? field.onChange([...(field.value || []), plan])
-                                                                : field.onChange(
-                                                                    field.value?.filter(
-                                                                        (value) => value.name !== plan.name
-                                                                    )
-                                                                )
+                                                                const newPlans = checked
+                                                                    ? [...currentPlans, plan]
+                                                                    : currentPlans.filter((p) => p.name !== plan.name);
+                                                                field.onChange(newPlans);
+                                                                handleAmpliacionesPlanChange(newPlans);
                                                             }}
                                                         />
                                                     </FormControl>
@@ -832,7 +825,9 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Valor Total (B/.)</FormLabel>
-                                    <FormControl><Input type="number" {...field} readOnly className="bg-muted" /></FormControl>
+                                    <FormControl><Input type="number" {...field} readOnly className="bg-muted" 
+                                      onBlur={() => field.onChange(Number(field.value).toFixed(2))}
+                                    /></FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -842,7 +837,14 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Abono (B/.)</FormLabel>
-                                    <FormControl><Input type="number" step="0.01" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /></FormControl>
+                                    <FormControl><Input type="number" step="0.01" {...field}
+                                        onChange={e => {
+                                            const value = parseFloat(e.target.value);
+                                            field.onChange(value);
+                                            handleAmpliacionesDownPaymentChange(value);
+                                        }}
+                                        onBlur={() => field.onChange(Number(field.value).toFixed(2))}
+                                     /></FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -852,7 +854,9 @@ export function ContractForm() {
                                 render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>Saldo (B/.)</FormLabel>
-                                    <FormControl><Input type="number" {...field} readOnly className="bg-muted" /></FormControl>
+                                    <FormControl><Input type="number" {...field} readOnly className="bg-muted" 
+                                      onBlur={() => field.onChange(Number(field.value).toFixed(2))}
+                                    /></FormControl>
                                     </FormItem>
                                 )}
                             />

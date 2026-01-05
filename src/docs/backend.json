@@ -192,6 +192,17 @@
             }
           ]
         }
+      },
+       {
+        "path": "/counters/certificate_folio",
+        "definition": {
+          "entityName": "Counter",
+          "schema": {
+            "$ref": "#/backend/entities/Counter"
+          },
+          "description": "Stores the counter for generating sequential certificate folio numbers.",
+          "params": []
+        }
       }
     ],
     "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging. The 'contracts' collection is placed at the root level to simplify security rules for roles like 'Administrador' or 'Ventas' that need to access all contracts. This centralized approach is more efficient for list queries than a nested structure. Authorization independence is maintained by storing the `userId` and `clientId` directly within each contract document, which is crucial for secure and efficient rule evaluations. The `counters` collection remains for managing sequential values in a scalable manner."

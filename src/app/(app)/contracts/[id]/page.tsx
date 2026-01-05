@@ -1,12 +1,12 @@
 'use client';
-import { useParams, useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { useParams, useRouter } from 'next/navigation';
+import { doc, updateDoc, serverTimestamp, runTransaction, DocumentReference } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { ContractView } from '@/components/contract-view';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft, Award, Printer } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import {
@@ -25,45 +25,26 @@ import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 
-const LAST_FOLIO_KEY = 'lastCertificateFolio';
-
 // Helper to get the next folio number
-const getNextFolio = (lastFolio: string | null): string => {
-    if (!lastFolio) {
-        return '2026 / 0001';
-    }
-
-    const parts = lastFolio.split('/');
-    if (parts.length !== 2) {
-        return '2026 / 0001';
-    }
-
-    const year = parts[0].trim();
-    const numPart = parseInt(parts[1].trim(), 10);
-
-    if (isNaN(numPart)) {
-        return '2026 / 0001';
-    }
-
-    const nextNum = numPart + 1;
+const getNextFolio = (lastFolioNum: number): string => {
+    const year = new Date().getFullYear();
+    const nextNum = lastFolioNum + 1;
     const paddedNextNum = String(nextNum).padStart(4, '0');
-
     return `${year} / ${paddedNextNum}`;
 };
 
 
 export default function ContractDetailPage() {
   const { id } = useParams();
-  const searchParams = useSearchParams();
   const db = useDb();
   const { user } = useUser();
   const router = useRouter();
-  const pathname = usePathname();
   const { toast } = useToast();
   const { role } = useCurrentRole();
 
   const [isFolioModalOpen, setIsFolioModalOpen] = useState(false);
   const [certificateFolio, setCertificateFolio] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const contractId = Array.isArray(id) ? id[0] : id;
 
@@ -76,54 +57,94 @@ export default function ContractDetailPage() {
   
   const canGenerateCertificate = contract && ['Curso Auto', 'Curso Moto', 'Curso Deluxe', 'Curso Mixto'].includes(contract.type);
 
-  const handleOpenFolioModal = () => {
-    try {
-        const lastFolio = localStorage.getItem(LAST_FOLIO_KEY);
-        const suggestedFolio = getNextFolio(lastFolio);
-        setCertificateFolio(suggestedFolio);
-    } catch (e) {
-        console.error("Could not access localStorage. Using default folio.", e);
-        setCertificateFolio('2026 / 0001');
-    }
+  const handleOpenFolioModal = async () => {
+    if (!db) return;
+    setIsGenerating(true);
+    setCertificateFolio('Generando...');
     setIsFolioModalOpen(true);
+
+    try {
+        const counterRef = doc(db, 'counters', 'certificate_folio');
+        await runTransaction(db, async (transaction) => {
+            const counterDoc = await transaction.get(counterRef);
+            if (!counterDoc.exists()) {
+                // Initialize if it doesn't exist.
+                transaction.set(counterRef, { count: 0 });
+                return 0;
+            }
+            return counterDoc.data().count;
+        }).then(lastFolioNum => {
+            const suggestedFolio = getNextFolio(lastFolioNum);
+            setCertificateFolio(suggestedFolio);
+        });
+    } catch (e) {
+        console.error("Could not access Firestore counter.", e);
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'No se pudo obtener el número de folio. Inténtalo de nuevo.',
+        });
+        setCertificateFolio('Error');
+    } finally {
+        setIsGenerating(false);
+    }
   };
   
   const handleProceedToPrint = async () => {
-    if (!certificateFolio || !contractRef) {
+    if (!certificateFolio || isGenerating || certificateFolio === 'Error' || !db || !contractRef) {
         toast({
             variant: 'destructive',
-            title: 'Campo Requerido',
-            description: 'Por favor, introduce un número de folio para el certificado.',
+            title: 'Folio Inválido',
+            description: 'No se puede imprimir sin un número de folio válido.',
         });
         return;
     }
-    
-    // Guardar el folio actual para la próxima vez
-    try {
-        localStorage.setItem(LAST_FOLIO_KEY, certificateFolio);
-    } catch (e) {
-        console.warn("Could not save folio to localStorage.", e);
-    }
 
-    const updateData = {
-        certificateGeneratedAt: serverTimestamp(),
-    };
-    
-    // Marcar el contrato como con certificado generado en Firestore
-    updateDoc(contractRef, updateData)
-      .then(() => {
+    setIsGenerating(true);
+
+    try {
+        // Increment the folio counter in a transaction
+        const counterRef = doc(db, 'counters', 'certificate_folio');
+        await runTransaction(db, async (transaction) => {
+            const counterDoc = await transaction.get(counterRef);
+            if (!counterDoc.exists()) {
+                throw new Error("El contador de folios de certificado no existe.");
+            }
+            const newFolioNum = (parseInt(certificateFolio.split('/')[1].trim(), 10));
+            transaction.update(counterRef, { count: newFolioNum });
+        });
+        
+        // Update the contract document
+        const updateData = {
+            certificateGeneratedAt: serverTimestamp(),
+            certificateFolio: certificateFolio,
+        };
+        await updateDoc(contractRef, updateData);
+
+        // Open print window
         const printUrl = `/certificate-print/${contractId}?folio=${encodeURIComponent(certificateFolio)}`;
         window.open(printUrl, '_blank');
         setIsFolioModalOpen(false);
-      })
-      .catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: contractRef.path,
-          operation: 'update',
-          requestResourceData: updateData,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      });
+
+    } catch (serverError: any) {
+        if (serverError instanceof Error && serverError.name === 'FirebaseError') {
+             const permissionError = new FirestorePermissionError({
+                path: contractRef.path,
+                operation: 'update',
+                requestResourceData: { certificateGeneratedAt: 'serverTimestamp()', certificateFolio },
+             });
+             errorEmitter.emit('permission-error', permissionError);
+        } else {
+            console.error("Error updating certificate folio:", serverError);
+            toast({
+                variant: 'destructive',
+                title: 'Error al Guardar',
+                description: 'No se pudo guardar el folio del certificado en la base de datos.',
+            });
+        }
+    } finally {
+        setIsGenerating(false);
+    }
   };
   
   const handlePrintContract = () => {
@@ -177,7 +198,7 @@ export default function ContractDetailPage() {
             <DialogHeader>
                 <DialogTitle>Generar Certificado</DialogTitle>
                 <DialogDescription>
-                    Introduce el número de folio que aparecerá en el certificado.
+                    Se usará el siguiente número de folio para el certificado.
                 </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -191,6 +212,7 @@ export default function ContractDetailPage() {
                         onChange={(e) => setCertificateFolio(e.target.value)}
                         className="col-span-3"
                         placeholder="2026 / 0001"
+                        readOnly={isGenerating}
                     />
                 </div>
             </div>
@@ -198,7 +220,7 @@ export default function ContractDetailPage() {
                 <DialogClose asChild>
                     <Button variant="ghost">Cancelar</Button>
                 </DialogClose>
-                <Button onClick={handleProceedToPrint}>Continuar a Impresión</Button>
+                <Button onClick={handleProceedToPrint} disabled={isGenerating || certificateFolio === 'Error'}>Continuar a Impresión</Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>

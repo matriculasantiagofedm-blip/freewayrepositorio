@@ -70,10 +70,14 @@ service cloud.firestore {
       allow delete: if false; // Prevent client deletion
     }
 
-    // Allow authenticated users (including Admin/Ventas) to read/write 
-    // the specific contract_folio counter for transactional increments on the client.
+    // Allow authenticated users to read/write the contract folio counter.
     match /counters/contract_folio {
-        allow read, write: if isAdmin() || isVentas() || isSignedIn();
+        allow read, write: if isSignedIn();
+    }
+    
+    // Allow Admin to read/write the certificate folio counter.
+    match /counters/certificate_folio {
+        allow read, write: if isAdmin();
     }
     
     // Prevent access to any other documents in the counters collection.

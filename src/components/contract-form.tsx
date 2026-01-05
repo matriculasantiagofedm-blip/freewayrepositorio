@@ -215,7 +215,11 @@ const convertDetailsDatesToTimestamps = (details: any, baseValues: any) => {
     // Auto/Moto & Ampliaciones - Common paymentDeadline field
     if (newDetails.paymentDeadline) {
         newDetails.paymentDeadline = toTimestamp(newDetails.paymentDeadline);
+    } else {
+        // Explicitly set to null if undefined to avoid Firestore error
+        newDetails.paymentDeadline = null;
     }
+
 
     // Auto/Moto specific
     if (newDetails.theoreticalClassDates) {
@@ -313,10 +317,10 @@ const ampliacionesPlans = [
 const specialCombinations = [
   { combo: ['D', 'E1', 'E2', 'E3', 'F'], price: 150.00 },
   { combo: ['B', 'E1', 'E2', 'E3', 'F'], price: 150.00 },
-  { combo: ['E1', 'E2', 'E3', 'F'], price: 95.00 },
-  { combo: ['E1', 'E2', 'E3'], price: 85.00 },
   { combo: ['D', 'E1'], price: 85.00 },
   { combo: ['E1', 'E2'], price: 75.00 },
+  { combo: ['E1', 'E2', 'E3'], price: 85.00 },
+  { combo: ['E1', 'E2', 'E3', 'F'], price: 95.00 },
   { combo: ['B', 'D'], price: 85.00 },
   { combo: ['B', 'E1'], price: 85.00 },
   { combo: ['E2', 'E3'], price: 85.00 },
@@ -1506,6 +1510,7 @@ export function ContractForm() {
 }
 
     
+
 
 
 

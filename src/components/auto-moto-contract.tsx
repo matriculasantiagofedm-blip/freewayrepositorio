@@ -199,7 +199,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
 
         <div className="print:block hidden text-xs text-muted-foreground pt-8">
             {contract.createdBy && (
-            <span>Confeccionado por: {contract.createdBy}</span>
+                <span>Confeccionado por: {contract.createdBy}</span>
             )}
         </div>
       </CardContent>

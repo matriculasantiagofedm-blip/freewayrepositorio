@@ -184,7 +184,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
                 <p className="text-[10px]">N° de identificación: <Value>{deluxeDetails?.studentIdNumber}</Value></p>
             </div>
         </div>
-
+        
         {contract.createdBy && (
             <div className="print:block hidden text-center text-xs text-muted-foreground pt-12">
                 <span>Confeccionado por: {contract.createdBy}</span>

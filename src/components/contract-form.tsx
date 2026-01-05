@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -144,12 +145,12 @@ const ampliacionesDetailsSchema = z.object({
 }).superRefine((data, ctx) => {
     const totalValue = data.courseValue || 0;
     if (totalValue > 100) {
-        const minDownPayment = totalValue * 0.5;
-        if (data.downPayment < minDownPayment) {
+        const minAbono = totalValue * 0.5;
+        if (data.downPayment < minAbono) {
              ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ['downPayment'],
-                message: `Para montos superiores a B/.100, el abono mínimo es del 50% (B/. ${minDownPayment.toFixed(2)}).`
+                message: `Para montos superiores a B/.100, el abono mínimo es del 50% (B/. ${minAbono.toFixed(2)}).`
             });
         }
     } else {
@@ -196,10 +197,12 @@ const convertDetailsDatesToTimestamps = (details: any, baseValues: any) => {
         }));
     }
 
-    // Auto/Moto
-    if (newDetails.paymentDeadline) {
+    // Auto/Moto & Ampliaciones - Common paymentDeadline field
+    if (newDetails.paymentDeadline && newDetails.paymentDeadline instanceof Date) {
         newDetails.paymentDeadline = Timestamp.fromDate(newDetails.paymentDeadline);
     }
+
+    // Auto/Moto specific
     if (newDetails.theoreticalClassDates) {
         newDetails.theoreticalClassDates = newDetails.theoreticalClassDates.map((d: Date | undefined) => d ? Timestamp.fromDate(d) : null);
     }
@@ -216,14 +219,10 @@ const convertDetailsDatesToTimestamps = (details: any, baseValues: any) => {
         }));
     }
 
-    // Ampliaciones
-    if (newDetails.paymentDeadline) {
-        newDetails.paymentDeadline = Timestamp.fromDate(newDetails.paymentDeadline);
-    }
-    if (newDetails.theoreticalClassDate) {
+    // Ampliaciones specific
+    if (newDetails.theoreticalClassDate && newDetails.theoreticalClassDate instanceof Date) {
         newDetails.theoreticalClassDate = Timestamp.fromDate(newDetails.theoreticalClassDate);
     }
-
 
     return newDetails;
 };
@@ -485,7 +484,8 @@ export function ContractForm() {
         balance: 0,
       }
     });
-  }, [contractType, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contractType]);
 
 
   async function onSubmit(values: FormValues) {
@@ -802,7 +802,7 @@ export function ContractForm() {
                                     <FormItem>
                                     <FormLabel>Valor del Curso (B/.)</FormLabel>
                                     <FormControl><Input type="number" {...field} readOnly className="bg-muted" 
-                                      onBlur={(e) => field.onChange(parseFloat(e.target.value).toFixed(2))}
+                                      onBlur={(e) => field.onChange(parseFloat(e.target.value))}
                                     /></FormControl>
                                     </FormItem>
                                 )}
@@ -815,6 +815,7 @@ export function ContractForm() {
                                     <FormLabel>Abono (B/.)</FormLabel>
                                     <FormControl><Input type="number" step="0.01" {...field}
                                         onBlur={handleDownPaymentChange}
+                                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
                                     /></FormControl>
                                     <FormMessage />
                                     </FormItem>
@@ -827,7 +828,7 @@ export function ContractForm() {
                                     <FormItem>
                                     <FormLabel>Saldo Pendiente (B/.)</FormLabel>
                                     <FormControl><Input type="number" {...field} readOnly className="bg-muted" 
-                                      onBlur={(e) => field.onChange(parseFloat(e.target.value).toFixed(2))}
+                                      onBlur={(e) => field.onChange(parseFloat(e.target.value))}
                                     /></FormControl>
                                     </FormItem>
                                 )}
@@ -920,7 +921,7 @@ export function ContractForm() {
                                     <FormItem>
                                     <FormLabel>Valor Total (B/.)</FormLabel>
                                     <FormControl><Input type="number" {...field} readOnly className="bg-muted" 
-                                      onBlur={(e) => field.onChange(parseFloat(e.target.value).toFixed(2))}
+                                      onBlur={(e) => field.onChange(parseFloat(e.target.value))}
                                     /></FormControl>
                                     </FormItem>
                                 )}
@@ -933,6 +934,7 @@ export function ContractForm() {
                                     <FormLabel>Abono (B/.)</FormLabel>
                                     <FormControl><Input type="number" step="0.01" {...field}
                                         onBlur={handleAmpliacionesDownPaymentChange}
+                                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
                                      /></FormControl>
                                      <FormMessage />
                                     </FormItem>
@@ -945,7 +947,7 @@ export function ContractForm() {
                                     <FormItem>
                                     <FormLabel>Saldo (B/.)</FormLabel>
                                     <FormControl><Input type="number" {...field} readOnly className="bg-muted" 
-                                       onBlur={(e) => field.onChange(parseFloat(e.target.value).toFixed(2))}
+                                       onBlur={(e) => field.onChange(parseFloat(e.target.value))}
                                     /></FormControl>
                                     </FormItem>
                                 )}
@@ -961,17 +963,17 @@ export function ContractForm() {
                                                 <FormControl>
                                                 <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
                                                     {field.value ? format(field.value, "P", { locale: es }) : <span>Seleccionar</span>}
-                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                </Button>
-                                                </FormControl>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0" align="start">
-                                                <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-                                            </PopoverContent>
-                                        </Popover>
-                                    </FormItem>
-                                )}
-                            />
+                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                            </Button>
+                                            </FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                                        </PopoverContent>
+                                    </Popover>
+                                </FormItem>
+                            )}
+                        />
                         </div>
                      </div>
                  )}
@@ -1389,3 +1391,4 @@ export function ContractForm() {
 }
 
     
+

@@ -198,16 +198,18 @@ const convertDetailsDatesToTimestamps = (details: any, baseValues: any) => {
 
     // Deluxe
     if (newDetails.paymentInstallments) {
-        newDetails.paymentInstallments = newDetails.paymentInstallments.map((d: any) => d ? toTimestamp(d) : null);
+        newDetails.paymentInstallments = newDetails.paymentInstallments.map((d: any) => d ? toTimestamp(d) : null).filter(Boolean);
     }
     if (newDetails.theoreticalClasses) {
-        newDetails.theoreticalClasses = newDetails.theoreticalClasses.map((d: any) => d ? toTimestamp(d) : null);
+        newDetails.theoreticalClasses = newDetails.theoreticalClasses.map((d: any) => d ? toTimestamp(d) : null).filter(Boolean);
     }
     if (newDetails.classSchedules) {
-        newDetails.classSchedules = newDetails.classSchedules.map((s: { date?: Date, time?: string }) => ({
-            ...s,
-            date: s.date ? toTimestamp(s.date) : null,
-        }));
+        newDetails.classSchedules = newDetails.classSchedules
+            .map((s: { date?: Date, time?: string }) => ({
+                ...s,
+                date: s.date ? toTimestamp(s.date) : null,
+            }))
+            .filter((s: { date: any; }) => s.date);
     }
 
     // Auto/Moto & Ampliaciones - Common paymentDeadline field
@@ -217,19 +219,23 @@ const convertDetailsDatesToTimestamps = (details: any, baseValues: any) => {
 
     // Auto/Moto specific
     if (newDetails.theoreticalClassDates) {
-        newDetails.theoreticalClassDates = newDetails.theoreticalClassDates.map((d: any) => d ? toTimestamp(d) : null);
+        newDetails.theoreticalClassDates = newDetails.theoreticalClassDates.map((d: any) => d ? toTimestamp(d) : null).filter(Boolean);
     }
     if (newDetails.practicalClassSchedules) {
-        newDetails.practicalClassSchedules = newDetails.practicalClassSchedules.map((s: { date?: Date, time?: string }) => ({
-            ...s,
-            date: s.date ? toTimestamp(s.date) : null,
-        }));
+        newDetails.practicalClassSchedules = newDetails.practicalClassSchedules
+            .map((s: { date?: Date, time?: string }) => ({
+                ...s,
+                date: s.date ? toTimestamp(s.date) : null,
+            }))
+            .filter((s: { date: any; }) => s.date);
     }
      if (newDetails.motoPracticalClassSchedules) {
-        newDetails.motoPracticalClassSchedules = newDetails.motoPracticalClassSchedules.map((s: { date?: Date, time?: string }) => ({
-            ...s,
-            date: s.date ? toTimestamp(s.date) : null,
-        }));
+        newDetails.motoPracticalClassSchedules = newDetails.motoPracticalClassSchedules
+            .map((s: { date?: Date, time?: string }) => ({
+                ...s,
+                date: s.date ? toTimestamp(s.date) : null,
+            }))
+            .filter((s: { date: any; }) => s.date);
     }
 
     // Ampliaciones specific
@@ -295,11 +301,13 @@ const practicalClassTimes = [
 
 
 const ampliacionesPlans = [
-    { name: 'Teórico B', price: 20 },
-    { name: 'Teórico C', price: 20 },
-    { name: 'Teórico D', price: 25 },
-    { name: 'Teórico E, F', price: 30 },
-    { name: 'Teórico G, H, I', price: 35 },
+    { name: 'B', price: 57.00 },
+    { name: 'C', price: 57.00 },
+    { name: 'D', price: 57.00 },
+    { name: 'E1', price: 57.00 },
+    { name: 'E2', price: 75.00 },
+    { name: 'E3', price: 75.00 },
+    { name: 'F', price: 80.00 },
 ];
 
 
@@ -1468,6 +1476,7 @@ export function ContractForm() {
 }
 
     
+
 
 
 

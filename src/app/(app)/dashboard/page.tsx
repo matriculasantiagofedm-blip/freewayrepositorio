@@ -138,20 +138,20 @@ export default function DashboardPage() {
 
       <div>
         <h2 className="text-2xl font-bold font-headline mb-4">Crear Nuevo Contrato</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {contractTypes.map((type) => (
-            <Card key={type.name} className={cn("transition-all hover:shadow-xl hover:-translate-y-1 flex flex-col", type.bgColor)}>
-                <CardHeader className="flex-grow">
-                    <div className="flex justify-between items-start">
-                        <CardTitle className={cn("text-lg", type.textColor)}>{type.name}</CardTitle>
-                        <type.icon className={cn("h-8 w-8", type.textColor)} />
+            <Card key={type.name} className="transition-all hover:shadow-lg hover:-translate-y-1">
+                <CardContent className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className={cn("p-2 rounded-lg", type.bgColor)}>
+                           <type.icon className={cn("h-6 w-6", type.textColor)} />
+                        </div>
+                        <span className="font-semibold">{type.name}</span>
                     </div>
-                </CardHeader>
-                <CardFooter>
-                    <Button asChild size="sm" className="w-full">
+                    <Button asChild size="sm" variant="ghost">
                         <Link href={type.href}>Crear</Link>
                     </Button>
-                </CardFooter>
+                </CardContent>
             </Card>
           ))}
         </div>

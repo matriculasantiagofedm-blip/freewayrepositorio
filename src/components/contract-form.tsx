@@ -1242,28 +1242,30 @@ export function ContractForm() {
                                         )}
                                     />
                                 )}
-                                <FormField
-                                    control={form.control}
-                                    name="autoMotoDetails.licenseCategory"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                        <FormLabel>Categoría de Licencia</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl>
-                                            <SelectContent>
-                                                {contractType === 'Curso Moto' ? (
-                                                     <SelectItem value="A, B">A, B</SelectItem>
-                                                ) : (
-                                                    <>
-                                                        <SelectItem value="A, C">A, C</SelectItem>
-                                                        <SelectItem value="A, C, D">A, C, D</SelectItem>
-                                                    </>
-                                                )}
-                                            </SelectContent>
-                                        </Select>
-                                        </FormItem>
-                                    )}
-                                />
+                                {contractType !== 'Curso Solo Practica' && (
+                                    <FormField
+                                        control={form.control}
+                                        name="autoMotoDetails.licenseCategory"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                            <FormLabel>Categoría de Licencia</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl>
+                                                <SelectContent>
+                                                    {contractType === 'Curso Moto' ? (
+                                                        <SelectItem value="A, B">A, B</SelectItem>
+                                                    ) : (
+                                                        <>
+                                                            <SelectItem value="A, C">A, C</SelectItem>
+                                                            <SelectItem value="A, C, D">A, C, D</SelectItem>
+                                                        </>
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
                                  <FormField
                                     control={form.control}
                                     name="autoMotoDetails.vehicle"

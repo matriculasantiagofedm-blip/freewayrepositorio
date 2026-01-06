@@ -105,16 +105,14 @@ export default function DashboardPage() {
 
   const stats = allStats.filter(stat => stat.roles.includes(role || ''));
 
-  const allContractTypes = [
-      { name: 'Curso Auto', icon: Car, href: '/contracts/new?type=Curso%20Auto', bgColor: 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40', textColor: 'text-blue-600 dark:text-blue-300', roles: ['Administrador', 'Ventas']},
-      { name: 'Curso Moto', icon: Bike, href: '/contracts/new?type=Curso%20Moto', bgColor: 'bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/40', textColor: 'text-orange-600 dark:text-orange-300', roles: ['Administrador', 'Ventas']},
-      { name: 'Curso Mixto', icon: Combine, href: '/contracts/new?type=Curso%20Mixto', bgColor: 'bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/40', textColor: 'text-purple-600 dark:text-purple-300', roles: ['Administrador', 'Ventas']},
-      { name: 'Curso Deluxe', icon: Crown, href: '/contracts/new?type=Curso%20Deluxe', bgColor: 'bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40', textColor: 'text-yellow-600 dark:text-yellow-300', roles: ['Administrador', 'Ventas']},
-      { name: 'Ampliaciones', icon: Plus, href: '/contracts/new?type=Ampliaciones', bgColor: 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800', textColor: 'text-slate-600 dark:text-slate-300', roles: ['Administrador', 'Ventas']},
-      { name: 'Curso Solo Practica', icon: CarFront, href: '/contracts/new?type=Curso%20Solo%20Practica', bgColor: 'bg-teal-50 hover:bg-teal-100 dark:bg-teal-900/20 dark:hover:bg-teal-900/40', textColor: 'text-teal-600 dark:text-teal-300', roles: ['Administrador']},
+  const contractTypes = [
+      { name: 'Curso Auto', icon: Car, href: '/contracts/new?type=Curso%20Auto', bgColor: 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40', textColor: 'text-blue-600 dark:text-blue-300'},
+      { name: 'Curso Moto', icon: Bike, href: '/contracts/new?type=Curso%20Moto', bgColor: 'bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/40', textColor: 'text-orange-600 dark:text-orange-300'},
+      { name: 'Curso Mixto', icon: Combine, href: '/contracts/new?type=Curso%20Mixto', bgColor: 'bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/40', textColor: 'text-purple-600 dark:text-purple-300'},
+      { name: 'Curso Deluxe', icon: Crown, href: '/contracts/new?type=Curso%20Deluxe', bgColor: 'bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40', textColor: 'text-yellow-600 dark:text-yellow-300'},
+      { name: 'Ampliaciones', icon: Plus, href: '/contracts/new?type=Ampliaciones', bgColor: 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800', textColor: 'text-slate-600 dark:text-slate-300'},
+      { name: 'Curso Solo Practica', icon: CarFront, href: '/contracts/new?type=Curso%20Solo%20Practica', bgColor: 'bg-teal-50 hover:bg-teal-100 dark:bg-teal-900/20 dark:hover:bg-teal-900/40', textColor: 'text-teal-600 dark:text-teal-300'},
   ];
-
-  const contractTypes = allContractTypes.filter(type => type.roles.includes(role || ''));
 
   return (
     <div className="flex flex-col gap-8">

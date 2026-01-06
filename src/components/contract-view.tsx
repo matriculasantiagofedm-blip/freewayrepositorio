@@ -31,6 +31,7 @@ export function ContractView({ contract, type }: { contract: Contract, type?: Co
       case 'Curso Auto':
       case 'Curso Moto':
       case 'Curso Mixto':
+      case 'Curso Solo Practica':
         return <AutoMotoContractTemplate contract={contract} />;
       case 'Ampliaciones':
         return <AmpliacionesContractTemplate contract={contract} />;

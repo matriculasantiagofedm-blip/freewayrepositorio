@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { FileText, CalendarClock, Users, Car, Bike, Combine, Crown, Plus } from 'lucide-react';
+import { FileText, CalendarClock, Users, Car, Bike, Combine, Crown, Plus, SteeringWheel } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { isPast } from 'date-fns';
 import { collection, query, where }from 'firebase/firestore';
@@ -111,6 +111,7 @@ export default function DashboardPage() {
       { name: 'Curso Mixto', icon: Combine, href: '/contracts/new?type=Curso%20Mixto', color: 'bg-purple-500 hover:bg-purple-600'},
       { name: 'Curso Deluxe', icon: Crown, href: '/contracts/new?type=Curso%20Deluxe', color: 'bg-yellow-500 hover:bg-yellow-600'},
       { name: 'Ampliaciones', icon: Plus, href: '/contracts/new?type=Ampliaciones', color: 'bg-slate-500 hover:bg-slate-600'},
+      { name: 'Curso Solo Practica', icon: SteeringWheel, href: '/contracts/new?type=Curso%20Solo%20Practica', color: 'bg-teal-500 hover:bg-teal-600'},
   ];
 
   return (
@@ -137,7 +138,7 @@ export default function DashboardPage() {
 
       <div>
         <h2 className="text-2xl font-bold font-headline mb-4">Crear Nuevo Contrato</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {contractTypes.map((type) => (
             <Link key={type.name} href={type.href} className="no-underline">
               <Card className={cn("hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col items-center justify-center text-center p-4 h-full text-white", type.color)}>

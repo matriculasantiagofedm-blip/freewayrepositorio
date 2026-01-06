@@ -276,6 +276,14 @@ const coursePlans = {
     { name: 'Premium Moto + Auto', price: 175.00 },
     { name: 'Reforzamiento Mixto 2Hrs', price: 100.00 },
   ],
+  'Curso Solo Practica': [ // Using auto plans as a placeholder
+    { name: 'Paquete Básico 8hrs', price: 133.00 },
+    { name: 'Paquete Plus 10hrs', price: 150.00 },
+    { name: 'Paquete Premium 12hrs', price: 175.00 },
+    { name: 'Reforzamiento de 4 horas', price: 95.00 },
+    { name: 'Ya se manejar Plus 2 horas', price: 75.00 },
+    { name: 'Ya se manejar (Evaluación de estacionamiento)', price: 57.00 },
+  ]
 };
 
 const planToClassCount: { [key: string]: number } = {
@@ -286,14 +294,14 @@ const planToClassCount: { [key: string]: number } = {
   'Ya se manejar Plus 2 horas': 1,
   'Ya se manejar (Evaluación de estacionamiento)': 1,
   // Mixto
-  'Auto + Moto 10Hrs': 6, 
-  'Básico Auto + Moto': 6,
-  'Plus Auto + Moto': 6,
-  'Premium Auto + Moto': 6,
-  'Básico Moto + Auto': 6,
-  'Plus Moto + Auto': 6,
-  'Premium Moto + Auto': 6,
-  'Reforzamiento Mixto 2Hrs': 1,
+  'Auto + Moto 10Hrs': 5, // 5 auto + 5 moto = 10 total. Let's adjust logic for this.
+  'Básico Auto + Moto': 3, // Assuming 3 auto, 3 moto
+  'Plus Auto + Moto': 3,
+  'Premium Auto + Moto': 3,
+  'Básico Moto + Auto': 3,
+  'Plus Moto + Auto': 3,
+  'Premium Moto + Auto': 3,
+  'Reforzamiento Mixto 2Hrs': 1, // 1 auto, 1 moto
 };
 
 const practicalClassTimes = [
@@ -315,16 +323,16 @@ const ampliacionesPlans = [
 ];
 
 const specialCombinations = [
-  { combo: ['D', 'E1', 'E2', 'E3', 'F'], price: 150.00 },
-  { combo: ['B', 'E1', 'E2', 'E3', 'F'], price: 150.00 },
-  { combo: ['D', 'E1'], price: 85.00 },
-  { combo: ['E1', 'E2'], price: 75.00 },
-  { combo: ['E1', 'E2', 'E3'], price: 85.00 },
-  { combo: ['E1', 'E2', 'E3', 'F'], price: 95.00 },
-  { combo: ['B', 'D'], price: 85.00 },
-  { combo: ['B', 'E1'], price: 85.00 },
-  { combo: ['E2', 'E3'], price: 85.00 },
-  { combo: ['B', 'F'], price: 85.00 },
+  { combo: ['D', 'E1', 'E2', 'E3', 'F'].sort(), price: 150.00 },
+  { combo: ['B', 'E1', 'E2', 'E3', 'F'].sort(), price: 150.00 },
+  { combo: ['D', 'E1'].sort(), price: 85.00 },
+  { combo: ['E1', 'E2'].sort(), price: 75.00 },
+  { combo: ['E1', 'E2', 'E3'].sort(), price: 85.00 },
+  { combo: ['E1', 'E2', 'E3', 'F'].sort(), price: 95.00 },
+  { combo: ['B', 'D'].sort(), price: 85.00 },
+  { combo: ['B', 'E1'].sort(), price: 85.00 },
+  { combo: ['E2', 'E3'].sort(), price: 85.00 },
+  { combo: ['B', 'F'].sort(), price: 85.00 },
 ];
 
 
@@ -398,7 +406,7 @@ export function ContractForm() {
   });
 
   const handleCoursePlanChange = (planName: string) => {
-    const currentContractType = form.getValues('contractType') as 'Curso Auto' | 'Curso Moto' | 'Curso Mixto';
+    const currentContractType = form.getValues('contractType') as 'Curso Auto' | 'Curso Moto' | 'Curso Mixto' | 'Curso Solo Practica';
     const plan = coursePlans[currentContractType]?.find(p => p.name === planName);
 
     if (plan) {
@@ -412,9 +420,17 @@ export function ContractForm() {
 
         const classCount = planToClassCount[planName] || 0;
         if (currentContractType === 'Curso Mixto') {
-            const halfCount = Math.floor(classCount / 2);
-            replacePracticalClasses(Array.from({ length: halfCount }, () => ({ date: undefined, time: '' })));
-            replaceMotoPracticalClasses(Array.from({ length: classCount - halfCount }, () => ({ date: undefined, time: '' })));
+             if (planName === 'Auto + Moto 10Hrs') {
+                replacePracticalClasses(Array.from({ length: 5 }, () => ({ date: undefined, time: '' })));
+                replaceMotoPracticalClasses(Array.from({ length: 5 }, () => ({ date: undefined, time: '' })));
+            } else if (planName === 'Reforzamiento Mixto 2Hrs') {
+                replacePracticalClasses(Array.from({ length: 1 }, () => ({ date: undefined, time: '' })));
+                replaceMotoPracticalClasses(Array.from({ length: 1 }, () => ({ date: undefined, time: '' })));
+            }
+            else {
+                replacePracticalClasses(Array.from({ length: 3 }, () => ({ date: undefined, time: '' })));
+                replaceMotoPracticalClasses(Array.from({ length: 3 }, () => ({ date: undefined, time: '' })));
+            }
         } else {
             replacePracticalClasses(Array.from({ length: classCount }, () => ({ date: undefined, time: '' })));
             replaceMotoPracticalClasses([]);
@@ -464,9 +480,10 @@ export function ContractForm() {
         let comboFound = false;
 
         // Check for special combinations first, longer combos first
-        for (const { combo, price } of specialCombinations) {
-            const sortedCombo = [...combo].sort();
-            if (JSON.stringify(selectedNames) === JSON.stringify(sortedCombo)) {
+        const sortedCombinations = [...specialCombinations].sort((a,b) => b.combo.length - a.combo.length);
+
+        for (const { combo, price } of sortedCombinations) {
+            if (JSON.stringify(selectedNames) === JSON.stringify(combo)) {
                 total = price;
                 comboFound = true;
                 break;
@@ -841,7 +858,7 @@ export function ContractForm() {
                         </div>
                     </div>
                 )}
-                 {(contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') && (
+                 {(contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto' || contractType === 'Curso Solo Practica') && (
                      <div className="space-y-4">
                         <FormField
                             control={form.control}
@@ -855,7 +872,7 @@ export function ContractForm() {
                                     }} defaultValue={field.value}>
                                         <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar plan..." /></SelectTrigger></FormControl>
                                         <SelectContent>
-                                            {coursePlans[contractType as 'Curso Auto' | 'Curso Moto' | 'Curso Mixto'].map(plan => (
+                                            {coursePlans[contractType as 'Curso Auto' | 'Curso Moto' | 'Curso Mixto' | 'Curso Solo Practica'].map(plan => (
                                                 <SelectItem key={plan.name} value={plan.name}>
                                                     {plan.name} - B/. {plan.price.toFixed(2)}
                                                 </SelectItem>
@@ -1197,7 +1214,7 @@ export function ContractForm() {
                             </div>
                     </div>
                  )}
-                 {(contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto') && (
+                 {(contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto' || contractType === 'Curso Solo Practica') && (
                      <div className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 {contractType !== 'Curso Moto' && (
@@ -1510,6 +1527,7 @@ export function ContractForm() {
 }
 
     
+
 
 
 

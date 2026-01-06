@@ -35,7 +35,8 @@ export type ContractType =
   | 'Curso Moto' 
   | 'Curso Mixto'
   | 'Curso Deluxe'
-  | 'Ampliaciones';
+  | 'Ampliaciones'
+  | 'Curso Solo Practica';
 
 export interface DeluxeContractDetails {
   firstName?: string;
@@ -65,7 +66,7 @@ export interface AutoMotoContractDetails {
   courseValue?: number;
   downPayment?: number;
   balance?: number;
-  paymentDeadline?: Date;
+  paymentDeadline?: Date | null;
   vehicle?: 'Spark' | 'P. Blanco' | 'P. Bronce' | 'Moto';
   vehicleTransmission?: 'Automático' | 'Manual' | 'Moto';
   licenseCategory?: 'A, C' | 'A, C, D' | 'A, B';
@@ -85,7 +86,7 @@ export interface AmpliacionesContractDetails {
     courseValue?: number;
     downPayment?: number;
     balance?: number;
-    paymentDeadline?: Date;
+    paymentDeadline?: Date | null;
     selectedPlans?: { name: string; price: number }[];
     theoreticalClassDate?: Date;
     theoreticalClassTime?: string;

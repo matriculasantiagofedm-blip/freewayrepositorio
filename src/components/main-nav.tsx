@@ -8,7 +8,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { GanttChartSquare, FileText, Users } from 'lucide-react';
+import { GanttChartSquare, FileText, Users, SteeringWheel } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCurrentRole } from '@/hooks/use-current-role';
 
@@ -30,6 +30,12 @@ const allLinks = [
     label: 'Clientes',
     icon: Users,
     roles: ['Administrador'], 
+  },
+  {
+    href: '/contracts/solo-practica',
+    label: 'Cursos de Solo Práctica',
+    icon: SteeringWheel,
+    roles: ['Administrador', 'Ventas'],
   },
 ];
 

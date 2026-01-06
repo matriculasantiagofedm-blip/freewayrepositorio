@@ -106,12 +106,12 @@ export default function DashboardPage() {
   const stats = allStats.filter(stat => stat.roles.includes(role || ''));
 
   const contractTypes = [
-      { name: 'Curso Auto', icon: Car, href: '/contracts/new?type=Curso%20Auto', description: 'Capacitación para vehículos automáticos o manuales.', color: 'text-blue-500 border-t-blue-500'},
-      { name: 'Curso Moto', icon: Bike, href: '/contracts/new?type=Curso%20Moto', description: 'Formación completa para motociclistas seguros.', color: 'text-orange-500 border-t-orange-500'},
-      { name: 'Curso Mixto', icon: Combine, href: '/contracts/new?type=Curso%20Mixto', description: 'Combina la práctica de auto y moto en un solo curso.', color: 'text-purple-500 border-t-purple-500'},
-      { name: 'Curso Deluxe', icon: Crown, href: '/contracts/new?type=Curso%20Deluxe', description: 'El plan más completo con seguimiento extendido.', color: 'text-yellow-500 border-t-yellow-500'},
-      { name: 'Ampliaciones', icon: Plus, href: '/contracts/new?type=Ampliaciones', description: 'Servicios para ampliar categorías en tu licencia.', color: 'text-slate-500 border-t-slate-500'},
-      { name: 'Curso Solo Practica', icon: CarFront, href: '/contracts/new?type=Curso%20Solo%20Practica', description: 'Refuerza tus habilidades de manejo sin teoría.', color: 'text-teal-500 border-t-teal-500'},
+      { name: 'Curso Auto', icon: Car, href: '/contracts/new?type=Curso%20Auto', bgColor: 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40', textColor: 'text-blue-600 dark:text-blue-300'},
+      { name: 'Curso Moto', icon: Bike, href: '/contracts/new?type=Curso%20Moto', bgColor: 'bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/40', textColor: 'text-orange-600 dark:text-orange-300'},
+      { name: 'Curso Mixto', icon: Combine, href: '/contracts/new?type=Curso%20Mixto', bgColor: 'bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/40', textColor: 'text-purple-600 dark:text-purple-300'},
+      { name: 'Curso Deluxe', icon: Crown, href: '/contracts/new?type=Curso%20Deluxe', bgColor: 'bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:hover:bg-yellow-900/40', textColor: 'text-yellow-600 dark:text-yellow-300'},
+      { name: 'Ampliaciones', icon: Plus, href: '/contracts/new?type=Ampliaciones', bgColor: 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/50 dark:hover:bg-slate-800', textColor: 'text-slate-600 dark:text-slate-300'},
+      { name: 'Curso Solo Practica', icon: CarFront, href: '/contracts/new?type=Curso%20Solo%20Practica', bgColor: 'bg-teal-50 hover:bg-teal-100 dark:bg-teal-900/20 dark:hover:bg-teal-900/40', textColor: 'text-teal-600 dark:text-teal-300'},
   ];
 
   return (
@@ -140,19 +140,19 @@ export default function DashboardPage() {
         <h2 className="text-2xl font-bold font-headline mb-4">Crear Nuevo Contrato</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {contractTypes.map((type) => (
-            <Link key={type.name} href={type.href} className="no-underline group">
-              <Card className={cn("hover:shadow-xl hover:-translate-y-1 transition-all h-full border-t-4", type.color)}>
-                <CardHeader className="flex flex-row items-center gap-4">
-                    <type.icon className={cn("h-8 w-8", type.color)} />
-                    <div>
-                        <CardTitle className="text-lg">{type.name}</CardTitle>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">{type.description}</p>
-                </CardContent>
-              </Card>
-            </Link>
+            <Card key={type.name} className={cn("transition-all hover:shadow-xl hover:-translate-y-1", type.bgColor)}>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle className={cn("text-lg", type.textColor)}>{type.name}</CardTitle>
+                  <type.icon className={cn("h-8 w-8", type.textColor)} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Button asChild className="w-full">
+                  <Link href={type.href}>Crear</Link>
+                </Button>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </div>

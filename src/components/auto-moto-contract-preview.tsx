@@ -205,7 +205,3 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, stude
     </Card>
   );
 }
-
-    
-
-    

@@ -106,12 +106,12 @@ export default function DashboardPage() {
   const stats = allStats.filter(stat => stat.roles.includes(role || ''));
 
   const contractTypes = [
-      { name: 'Curso Auto', icon: Car, href: '/contracts/new?type=Curso%20Auto', color: 'bg-blue-500 hover:bg-blue-600'},
-      { name: 'Curso Moto', icon: Bike, href: '/contracts/new?type=Curso%20Moto', color: 'bg-orange-500 hover:bg-orange-600'},
-      { name: 'Curso Mixto', icon: Combine, href: '/contracts/new?type=Curso%20Mixto', color: 'bg-purple-500 hover:bg-purple-600'},
-      { name: 'Curso Deluxe', icon: Crown, href: '/contracts/new?type=Curso%20Deluxe', color: 'bg-yellow-500 hover:bg-yellow-600'},
-      { name: 'Ampliaciones', icon: Plus, href: '/contracts/new?type=Ampliaciones', color: 'bg-slate-500 hover:bg-slate-600'},
-      { name: 'Curso Solo Practica', icon: CarFront, href: '/contracts/new?type=Curso%20Solo%20Practica', color: 'bg-teal-500 hover:bg-teal-600'},
+      { name: 'Curso Auto', icon: Car, href: '/contracts/new?type=Curso%20Auto', description: 'Capacitación para vehículos automáticos o manuales.', color: 'text-blue-500 border-t-blue-500'},
+      { name: 'Curso Moto', icon: Bike, href: '/contracts/new?type=Curso%20Moto', description: 'Formación completa para motociclistas seguros.', color: 'text-orange-500 border-t-orange-500'},
+      { name: 'Curso Mixto', icon: Combine, href: '/contracts/new?type=Curso%20Mixto', description: 'Combina la práctica de auto y moto en un solo curso.', color: 'text-purple-500 border-t-purple-500'},
+      { name: 'Curso Deluxe', icon: Crown, href: '/contracts/new?type=Curso%20Deluxe', description: 'El plan más completo con seguimiento extendido.', color: 'text-yellow-500 border-t-yellow-500'},
+      { name: 'Ampliaciones', icon: Plus, href: '/contracts/new?type=Ampliaciones', description: 'Servicios para ampliar categorías en tu licencia.', color: 'text-slate-500 border-t-slate-500'},
+      { name: 'Curso Solo Practica', icon: CarFront, href: '/contracts/new?type=Curso%20Solo%20Practica', description: 'Refuerza tus habilidades de manejo sin teoría.', color: 'text-teal-500 border-t-teal-500'},
   ];
 
   return (
@@ -138,15 +138,18 @@ export default function DashboardPage() {
 
       <div>
         <h2 className="text-2xl font-bold font-headline mb-4">Crear Nuevo Contrato</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {contractTypes.map((type) => (
-            <Link key={type.name} href={type.href} className="no-underline">
-              <Card className={cn("hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col items-center justify-center text-center p-4 h-full text-white", type.color)}>
-                <CardHeader className="p-2">
-                    <type.icon className="h-8 w-8 text-white" />
+            <Link key={type.name} href={type.href} className="no-underline group">
+              <Card className={cn("hover:shadow-xl hover:-translate-y-1 transition-all h-full border-t-4", type.color)}>
+                <CardHeader className="flex flex-row items-center gap-4">
+                    <type.icon className={cn("h-8 w-8", type.color)} />
+                    <div>
+                        <CardTitle className="text-lg">{type.name}</CardTitle>
+                    </div>
                 </CardHeader>
-                <CardContent className="p-2">
-                  <p className="font-semibold">{type.name}</p>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">{type.description}</p>
                 </CardContent>
               </Card>
             </Link>

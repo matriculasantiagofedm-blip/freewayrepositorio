@@ -101,7 +101,10 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                         </>
                     )}
                 </p>
-                {!isSoloPractica && (
+                
+                {isSoloPractica ? (
+                     <p>2. Categoría de licencia a aplicar: <Value>No Aplica</Value></p>
+                ) : (
                     <p>2. Categoría de licencia a aplicar: 
                         {(contract.type === 'Curso Auto' || contract.type === 'Curso Mixto') && (
                             <>
@@ -117,6 +120,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                         )}
                     </p>
                 )}
+
                 {!isSoloPractica && (
                     <>
                         <div className="flex items-center gap-2">3. Horario para clases teóricas: <Line><Value>{autoMotoDetails?.theoreticalClassSchedule}</Value></Line></div>
@@ -127,6 +131,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                         </div>
                     </>
                 )}
+
                 <p>4. Horario para clases practicas:</p>
                 {contract.type === 'Curso Mixto' ? (
                     <>
@@ -183,17 +188,17 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
             <h3 className="font-bold">CLÁUSULA NOVENA - CANCELACIÓN DEL CONTRATO</h3>
             <p className='text-[10px]'>En caso de que EL ESTUDIANTE decida cancelar el curso o el contrato, no habrá devolución de dinero bajo ninguna circunstancia.</p>
             
-            {!isSoloPractica && (
-                <>
-                    <h3 className="font-bold">CLÁUSULA DÉCIMA - CERTIFICACIÓN</h3>
-                    <p className='text-[10px]'>El certificado de aprobación del curso será entregado únicamente si EL ESTUDIANTE: Está paz y salvo en sus pagos y ha completado la totalidad del curso teórico y práctico.</p>
-                </>
+            <h3 className="font-bold">CLÁUSULA DÉCIMA - CERTIFICACIÓN</h3>
+            {isSoloPractica ? (
+                <p className='text-[10px] italic'>(Cláusula No Aplica para este tipo de curso)</p>
+            ) : (
+                <p className='text-[10px]'>El certificado de aprobación del curso será entregado únicamente si EL ESTUDIANTE: Está paz y salvo en sus pagos y ha completado la totalidad del curso teórico y práctico.</p>
             )}
 
-            <h3 className="font-bold">{isSoloPractica ? 'CLÁUSULA DÉCIMA' : 'CLÁUSULA DÉCIMA PRIMERA'} - VIGENCIA DEL CURSO</h3>
+            <h3 className="font-bold">CLÁUSULA DÉCIMA PRIMERA - VIGENCIA DEL CURSO</h3>
             <p className='text-[10px]'>Si EL ESTUDIANTE no establece contacto para finalizar su curso en un plazo de tres (3) meses desde la fecha de inicio, se entenderá que renuncia a continuar, sin derecho a devolución del dinero ni a reclamos posteriores.</p>
 
-            <h3 className="font-bold">{isSoloPractica ? 'CLÁUSULA DÉCIMA PRIMERA' : 'CLÁUSULA DÉCIMA SEGUNDA'} - ACEPTACIÓN</h3>
+            <h3 className="font-bold">CLÁUSULA DÉCIMA SEGUNDA - ACEPTACIÓN</h3>
             <p className="text-center text-[10px]">
                 En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los <Value>{format(creationDate, 'd', { locale: es })}</Value> días del mes de <Value>{format(creationDate, 'LLLL', { locale: es })}</Value>, de <Value>{format(creationDate, 'yyyy', { locale: es })}</Value>, a las <Value>{format(creationDate, 'p', { locale: es })}</Value>.
             </p>
@@ -221,5 +226,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
     </Card>
   );
 }
+
+    
 
     

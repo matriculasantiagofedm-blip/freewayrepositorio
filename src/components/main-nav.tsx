@@ -35,7 +35,7 @@ const allLinks = [
     href: '/contracts/solo-practica',
     label: 'Cursos de Solo Práctica',
     icon: CarFront,
-    roles: ['Administrador', 'Ventas'],
+    roles: ['Administrador'],
   },
 ];
 

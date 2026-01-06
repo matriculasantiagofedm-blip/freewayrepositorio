@@ -53,6 +53,7 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, stude
   const creationDate = new Date(); // Use current date for preview
   const paymentDeadline = autoMotoDetails?.paymentDeadline ? toDate(autoMotoDetails.paymentDeadline) : null;
   const courseValue = autoMotoDetails?.courseValue || 0;
+  const isSoloPractica = type === 'Curso Solo Practica';
 
   const formatDate = (dateString?: string | Date) => {
     if (!dateString) return <Line />;
@@ -99,13 +100,19 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, stude
         <h3 className="font-bold">CLÁUSULA SEGUNDA - DETALLES DEL CURSO</h3>
         <div className='space-y-1 text-[10px] pl-4'>
              <p>1. Transmisión del vehículo: Automático <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Automático'} /> / Manual <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Manual'} /> {type === 'Curso Moto' && <> / Moto <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Moto'} /></>}</p>
-             <p>2. Categoría de licencia a aplicar: A, C <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C'} /> / A, C, D <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C, D'} /> {type === 'Curso Moto' && <> / A, B <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, B'} /></>}</p>
-            <div className="flex items-center gap-2">3. Horario para clases teóricas: <Line>{autoMotoDetails?.theoreticalClassSchedule}</Line></div>
-            <div className="pl-4">
-                {autoMotoDetails?.theoreticalClassDates?.map((date, index) => (
-                    <span key={index} className="mr-4">Clase {index + 1}: {formatDate(date)}</span>
-                ))}
-            </div>
+             {!isSoloPractica && (
+                <p>2. Categoría de licencia a aplicar: A, C <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C'} /> / A, C, D <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C, D'} /> {type === 'Curso Moto' && <> / A, B <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, B'} /></>}</p>
+             )}
+            {!isSoloPractica && (
+                <>
+                    <div className="flex items-center gap-2">3. Horario para clases teóricas: <Line>{autoMotoDetails?.theoreticalClassSchedule}</Line></div>
+                    <div className="pl-4">
+                        {autoMotoDetails?.theoreticalClassDates?.map((date, index) => (
+                            <span key={index} className="mr-4">Clase {index + 1}: {formatDate(date)}</span>
+                        ))}
+                    </div>
+                </>
+            )}
             <p>5. Horario para clases practicas:</p>
             {type === 'Curso Mixto' ? (
                 <>
@@ -162,13 +169,17 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, stude
         <h3 className="font-bold">CLÁUSULA NOVENA - CANCELACIÓN DEL CONTRATO</h3>
         <p className='text-[10px]'>En caso de que EL ESTUDIANTE decida cancelar el curso o el contrato, no habrá devolución de dinero bajo ninguna circunstancia.</p>
         
-        <h3 className="font-bold">CLÁUSULA DÉCIMA - CERTIFICACIÓN</h3>
-        <p className='text-[10px]'>El certificado de aprobación del curso será entregado únicamente si EL ESTUDIANTE: Está paz y salvo en sus pagos y ha completado la totalidad del curso teórico y práctico.</p>
+        {!isSoloPractica && (
+            <>
+                <h3 className="font-bold">CLÁUSULA DÉCIMA - CERTIFICACIÓN</h3>
+                <p className='text-[10px]'>El certificado de aprobación del curso será entregado únicamente si EL ESTUDIANTE: Está paz y salvo en sus pagos y ha completado la totalidad del curso teórico y práctico.</p>
+            </>
+        )}
 
-        <h3 className="font-bold">CLÁUSULA DÉCIMA PRIMERA - VIGENCIA DEL CURSO</h3>
+        <h3 className="font-bold">{isSoloPractica ? 'CLÁUSULA DÉCIMA' : 'CLÁUSULA DÉCIMA PRIMERA'} - VIGENCIA DEL CURSO</h3>
         <p className='text-[10px]'>Si EL ESTUDIANTE no establece contacto para finalizar su curso en un plazo de tres (3) meses desde la fecha de inicio, se entenderá que renuncia a continuar, sin derecho a devolución del dinero ni a reclamos posteriores.</p>
 
-        <h3 className="font-bold">CLÁUSULA DÉCIMA SEGUNDA - ACEPTACIÓN</h3>
+        <h3 className="font-bold">{isSoloPractica ? 'CLÁUSULA DÉCIMA PRIMERA' : 'CLÁUSULA DÉCIMA SEGUNDA'} - ACEPTACIÓN</h3>
         <p className="text-center text-[10px]">
             En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los <Value>{format(creationDate, 'd', { locale: es })}</Value> días del mes de <Value>{format(creationDate, 'LLLL', { locale: es })}</Value>, de <Value>{format(creationDate, 'yyyy', { locale: es })}</Value>, a las <Value>{format(creationDate, 'p', { locale: es })}</Value>.
         </p>
@@ -194,5 +205,7 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, stude
     </Card>
   );
 }
+
+    
 
     

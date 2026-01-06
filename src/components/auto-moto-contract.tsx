@@ -51,6 +51,8 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
     }
   };
 
+  const isSoloPractica = contract.type === 'Curso Solo Practica';
+
   return (
     <Card className="p-6 print:shadow-none print:border-none print:p-0 font-serif text-xs">
       <CardContent className="p-0 space-y-2 relative">
@@ -86,39 +88,45 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
             <h3 className="font-bold">CLÁUSULA SEGUNDA - DETALLES DEL CURSO</h3>
             <div className='space-y-1 text-[10px] pl-4'>
                 <p>1. Transmisión del vehículo: 
-                    {(contract.type === 'Curso Auto' || contract.type === 'Curso Mixto') && (
+                    {(contract.type === 'Curso Auto' || contract.type === 'Curso Mixto' || contract.type === 'Curso Solo Practica') && (
                         <>
                             Automático <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Automático'} /> / 
                             Manual <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Manual'} />
                         </>
                     )}
-                    {(contract.type === 'Curso Moto' || contract.type === 'Curso Mixto') && (
+                    {(contract.type === 'Curso Moto' || contract.type === 'Curso Mixto' || contract.type === 'Curso Solo Practica') && (
                         <>
-                            {contract.type === 'Curso Mixto' && ' / '}
+                            {contract.type !== 'Curso Moto' && ' / '}
                             Moto <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Moto'} />
                         </>
                     )}
                 </p>
-                <p>2. Categoría de licencia a aplicar: 
-                    {(contract.type === 'Curso Auto' || contract.type === 'Curso Mixto') && (
-                        <>
-                            A, C <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C'} /> / 
-                            A, C, D <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C, D'} />
-                        </>
-                    )}
-                    {(contract.type === 'Curso Moto' || contract.type === 'Curso Mixto') && (
-                        <>
-                            {contract.type === 'Curso Mixto' && ' / '}
-                            A, B <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, B'} />
-                        </>
-                    )}
-                </p>
-                <div className="flex items-center gap-2">3. Horario para clases teóricas: <Line><Value>{autoMotoDetails?.theoreticalClassSchedule}</Value></Line></div>
-                <div className="pl-4">
-                    {(autoMotoDetails?.theoreticalClassDates || []).map((date, index) => (
-                        <span key={index} className="mr-4">Clase {index + 1}: {formatDate(toDate(date))}</span>
-                    ))}
-                </div>
+                {!isSoloPractica && (
+                    <p>2. Categoría de licencia a aplicar: 
+                        {(contract.type === 'Curso Auto' || contract.type === 'Curso Mixto') && (
+                            <>
+                                A, C <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C'} /> / 
+                                A, C, D <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C, D'} />
+                            </>
+                        )}
+                        {(contract.type === 'Curso Moto' || contract.type === 'Curso Mixto') && (
+                            <>
+                                {contract.type === 'Curso Mixto' && ' / '}
+                                A, B <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, B'} />
+                            </>
+                        )}
+                    </p>
+                )}
+                {!isSoloPractica && (
+                    <>
+                        <div className="flex items-center gap-2">3. Horario para clases teóricas: <Line><Value>{autoMotoDetails?.theoreticalClassSchedule}</Value></Line></div>
+                        <div className="pl-4">
+                            {(autoMotoDetails?.theoreticalClassDates || []).map((date, index) => (
+                                <span key={index} className="mr-4">Clase {index + 1}: {formatDate(toDate(date))}</span>
+                            ))}
+                        </div>
+                    </>
+                )}
                 <p>4. Horario para clases practicas:</p>
                 {contract.type === 'Curso Mixto' ? (
                     <>
@@ -175,13 +183,17 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
             <h3 className="font-bold">CLÁUSULA NOVENA - CANCELACIÓN DEL CONTRATO</h3>
             <p className='text-[10px]'>En caso de que EL ESTUDIANTE decida cancelar el curso o el contrato, no habrá devolución de dinero bajo ninguna circunstancia.</p>
             
-            <h3 className="font-bold">CLÁUSULA DÉCIMA - CERTIFICACIÓN</h3>
-            <p className='text-[10px]'>El certificado de aprobación del curso será entregado únicamente si EL ESTUDIANTE: Está paz y salvo en sus pagos y ha completado la totalidad del curso teórico y práctico.</p>
+            {!isSoloPractica && (
+                <>
+                    <h3 className="font-bold">CLÁUSULA DÉCIMA - CERTIFICACIÓN</h3>
+                    <p className='text-[10px]'>El certificado de aprobación del curso será entregado únicamente si EL ESTUDIANTE: Está paz y salvo en sus pagos y ha completado la totalidad del curso teórico y práctico.</p>
+                </>
+            )}
 
-            <h3 className="font-bold">CLÁUSULA DÉCIMA PRIMERA - VIGENCIA DEL CURSO</h3>
+            <h3 className="font-bold">{isSoloPractica ? 'CLÁUSULA DÉCIMA' : 'CLÁUSULA DÉCIMA PRIMERA'} - VIGENCIA DEL CURSO</h3>
             <p className='text-[10px]'>Si EL ESTUDIANTE no establece contacto para finalizar su curso en un plazo de tres (3) meses desde la fecha de inicio, se entenderá que renuncia a continuar, sin derecho a devolución del dinero ni a reclamos posteriores.</p>
 
-            <h3 className="font-bold">CLÁUSULA DÉCIMA SEGUNDA - ACEPTACIÓN</h3>
+            <h3 className="font-bold">{isSoloPractica ? 'CLÁUSULA DÉCIMA PRIMERA' : 'CLÁUSULA DÉCIMA SEGUNDA'} - ACEPTACIÓN</h3>
             <p className="text-center text-[10px]">
                 En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los <Value>{format(creationDate, 'd', { locale: es })}</Value> días del mes de <Value>{format(creationDate, 'LLLL', { locale: es })}</Value>, de <Value>{format(creationDate, 'yyyy', { locale: es })}</Value>, a las <Value>{format(creationDate, 'p', { locale: es })}</Value>.
             </p>
@@ -209,3 +221,5 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
     </Card>
   );
 }
+
+    

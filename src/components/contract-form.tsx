@@ -276,13 +276,10 @@ const coursePlans = {
     { name: 'Premium Moto + Auto', price: 175.00 },
     { name: 'Reforzamiento Mixto 2Hrs', price: 100.00 },
   ],
-  'Curso Solo Practica': [ // Using auto plans as a placeholder
+  'Curso Solo Practica': [
     { name: 'Paquete Básico 8hrs', price: 133.00 },
     { name: 'Paquete Plus 10hrs', price: 150.00 },
     { name: 'Paquete Premium 12hrs', price: 175.00 },
-    { name: 'Reforzamiento de 4 horas', price: 95.00 },
-    { name: 'Ya se manejar Plus 2 horas', price: 75.00 },
-    { name: 'Ya se manejar (Evaluación de estacionamiento)', price: 57.00 },
   ]
 };
 
@@ -1527,6 +1524,7 @@ export function ContractForm() {
 }
 
     
+
 
 
 

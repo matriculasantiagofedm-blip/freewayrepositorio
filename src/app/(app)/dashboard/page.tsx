@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { FileText, CalendarClock, Users, Car, Bike, Combine, Crown, Plus, CarFront } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { isPast } from 'date-fns';
 import { collection, query, where }from 'firebase/firestore';
 import type { Contract, Deadline } from '@/lib/types';
@@ -140,18 +140,18 @@ export default function DashboardPage() {
         <h2 className="text-2xl font-bold font-headline mb-4">Crear Nuevo Contrato</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {contractTypes.map((type) => (
-            <Card key={type.name} className={cn("transition-all hover:shadow-xl hover:-translate-y-1", type.bgColor)}>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle className={cn("text-lg", type.textColor)}>{type.name}</CardTitle>
-                  <type.icon className={cn("h-8 w-8", type.textColor)} />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Button asChild className="w-full">
-                  <Link href={type.href}>Crear</Link>
-                </Button>
-              </CardContent>
+            <Card key={type.name} className={cn("transition-all hover:shadow-xl hover:-translate-y-1 flex flex-col", type.bgColor)}>
+                <CardHeader className="flex-grow">
+                    <div className="flex justify-between items-start">
+                        <CardTitle className={cn("text-lg", type.textColor)}>{type.name}</CardTitle>
+                        <type.icon className={cn("h-8 w-8", type.textColor)} />
+                    </div>
+                </CardHeader>
+                <CardFooter>
+                    <Button asChild size="sm" className="w-full">
+                        <Link href={type.href}>Crear</Link>
+                    </Button>
+                </CardFooter>
             </Card>
           ))}
         </div>

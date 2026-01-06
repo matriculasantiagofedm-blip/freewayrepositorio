@@ -100,7 +100,7 @@ const autoMotoDetailsSchema = z.object({
   downPayment: z.number().min(0, "El abono no puede ser negativo.").default(0),
   balance: z.number().default(0),
   paymentDeadline: z.date().optional().nullable(),
-  vehicle: z.enum(['Spark', 'P. Blanco', 'P. Bronce', 'Moto']).optional(),
+  vehicle: z.enum(['Spark', 'P. Blanco', 'P. Bronce', 'Moto', 'Motocicleta']).optional(),
   vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).optional(),
   licenseCategory: z.enum(['A, C', 'A, C, D', 'A, B']).optional(),
   theoreticalClassSchedule: z.enum(['Días de Semana- Martes a Viernes de 8:00am a 10:00am', 'Días Sábado- de 3:00pm a 5:00pm']).optional(),
@@ -1272,18 +1272,13 @@ export function ContractForm() {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Vehículo</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={contractType === 'Curso Moto'}>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl>
                                                 <SelectContent>
-                                                    {contractType === 'Curso Moto' ? (
-                                                        <SelectItem value="Moto">Moto</SelectItem>
-                                                    ) : (
-                                                        <>
-                                                            <SelectItem value="Spark">Spark</SelectItem>
-                                                            <SelectItem value="P. Blanco">P. Blanco</SelectItem>
-                                                            <SelectItem value="P. Bronce">P. Bronce</SelectItem>
-                                                        </>
-                                                    )}
+                                                    <SelectItem value="Spark">Spark</SelectItem>
+                                                    <SelectItem value="P. Blanco">P. Blanco</SelectItem>
+                                                    <SelectItem value="P. Bronce">P. Bronce</SelectItem>
+                                                    <SelectItem value="Motocicleta">Motocicleta</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </FormItem>

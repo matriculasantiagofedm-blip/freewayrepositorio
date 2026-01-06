@@ -277,9 +277,12 @@ const coursePlans = {
     { name: 'Reforzamiento Mixto 2Hrs', price: 100.00 },
   ],
   'Curso Solo Practica': [
-    { name: 'Paquete Básico 8hrs', price: 133.00 },
-    { name: 'Paquete Plus 10hrs', price: 150.00 },
-    { name: 'Paquete Premium 12hrs', price: 175.00 },
+    { name: 'Paquete Básico 8hrs (Auto)', price: 133.00 },
+    { name: 'Paquete Plus 10hrs (Auto)', price: 150.00 },
+    { name: 'Paquete Premium 12hrs (Auto)', price: 175.00 },
+    { name: 'Paquete Básico 8hrs (Moto)', price: 115.00 },
+    { name: 'Paquete Plus 10hrs (Moto)', price: 135.00 },
+    { name: 'Paquete Premium 12hrs (Moto)', price: 155.00 },
   ]
 };
 
@@ -299,6 +302,13 @@ const planToClassCount: { [key: string]: number } = {
   'Plus Moto + Auto': 3,
   'Premium Moto + Auto': 3,
   'Reforzamiento Mixto 2Hrs': 1, // 1 auto, 1 moto
+  // Solo Practica
+  'Paquete Básico 8hrs (Auto)': 4,
+  'Paquete Plus 10hrs (Auto)': 5,
+  'Paquete Premium 12hrs (Auto)': 6,
+  'Paquete Básico 8hrs (Moto)': 4,
+  'Paquete Plus 10hrs (Moto)': 5,
+  'Paquete Premium 12hrs (Moto)': 6,
 };
 
 const practicalClassTimes = [
@@ -1278,51 +1288,53 @@ export function ContractForm() {
                                     )}
                                 />
                             </div>
-                             <div>
-                                <FormField
-                                    control={form.control}
-                                    name="autoMotoDetails.theoreticalClassSchedule"
-                                    render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Horario Teórico</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar horario..." /></SelectTrigger></FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="Días de Semana- Martes a Viernes de 8:00am a 10:00am">Días de Semana- Martes a Viernes de 8:00am a 10:00am</SelectItem>
-                                                <SelectItem value="Días Sábado- de 3:00pm a 5:00pm">Días Sábado- de 3:00pm a 5:00pm</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </FormItem>
-                                    )}
-                                />
-                                <div className={cn("grid gap-2 mt-2", numTheoreticalClasses === 4 ? 'grid-cols-4' : 'grid-cols-3')}>
-                                     {Array.from({ length: numTheoreticalClasses }).map((_, index) => (
-                                        <FormField
-                                            key={index}
-                                            control={form.control}
-                                            name={`autoMotoDetails.theoreticalClassDates.${index}`}
-                                            render={({ field }) => (
-                                            <FormItem className="flex flex-col">
-                                                <FormLabel className="text-xs">Clase Teórica {index + 1}</FormLabel>
-                                                <Popover>
-                                                    <PopoverTrigger asChild>
-                                                        <FormControl>
-                                                        <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                                            {field.value ? format(field.value, "P", { locale: es }) : <span>Seleccionar</span>}
-                                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                        </Button>
-                                                        </FormControl>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-auto p-0" align="start">
-                                                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-                                                    </PopoverContent>
-                                                </Popover>
-                                            </FormItem>
-                                            )}
-                                        />
-                                    ))}
+                             {contractType !== 'Curso Solo Practica' && (
+                                <div>
+                                    <FormField
+                                        control={form.control}
+                                        name="autoMotoDetails.theoreticalClassSchedule"
+                                        render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Horario Teórico</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar horario..." /></SelectTrigger></FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="Días de Semana- Martes a Viernes de 8:00am a 10:00am">Días de Semana- Martes a Viernes de 8:00am a 10:00am</SelectItem>
+                                                    <SelectItem value="Días Sábado- de 3:00pm a 5:00pm">Días Sábado- de 3:00pm a 5:00pm</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </FormItem>
+                                        )}
+                                    />
+                                    <div className={cn("grid gap-2 mt-2", numTheoreticalClasses === 4 ? 'grid-cols-4' : 'grid-cols-3')}>
+                                        {Array.from({ length: numTheoreticalClasses }).map((_, index) => (
+                                            <FormField
+                                                key={index}
+                                                control={form.control}
+                                                name={`autoMotoDetails.theoreticalClassDates.${index}`}
+                                                render={({ field }) => (
+                                                <FormItem className="flex flex-col">
+                                                    <FormLabel className="text-xs">Clase Teórica {index + 1}</FormLabel>
+                                                    <Popover>
+                                                        <PopoverTrigger asChild>
+                                                            <FormControl>
+                                                            <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                                {field.value ? format(field.value, "P", { locale: es }) : <span>Seleccionar</span>}
+                                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                            </Button>
+                                                            </FormControl>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-auto p-0" align="start">
+                                                            <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                                                        </PopoverContent>
+                                                    </Popover>
+                                                </FormItem>
+                                                )}
+                                            />
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+                             )}
                             
                             {contractType === 'Curso Mixto' ? (
                                 <>
@@ -1534,3 +1546,6 @@ export function ContractForm() {
 
 
 
+
+
+    

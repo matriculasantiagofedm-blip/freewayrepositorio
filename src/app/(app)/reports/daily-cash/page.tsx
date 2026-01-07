@@ -86,7 +86,8 @@ export default function DailyCashReportPage() {
       const q = query(
         contractsRef,
         where('createdAt', '>=', Timestamp.fromDate(startOfReportDay)),
-        where('createdAt', '<=', Timestamp.fromDate(endOfReportDay))
+        where('createdAt', '<=', Timestamp.fromDate(endOfReportDay)),
+        where('status', '!=', 'expired') // Excluir contratos anulados
       );
 
       try {
@@ -469,5 +470,3 @@ export default function DailyCashReportPage() {
     </div>
   );
 }
-
-    

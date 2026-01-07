@@ -86,13 +86,16 @@ export default function DailyCashReportPage() {
       const q = query(
         contractsRef,
         where('createdAt', '>=', Timestamp.fromDate(startOfReportDay)),
-        where('createdAt', '<=', Timestamp.fromDate(endOfReportDay)),
-        where('status', '!=', 'expired') // Excluir contratos anulados
+        where('createdAt', '<=', Timestamp.fromDate(endOfReportDay))
+        // Firestore limitation: Cannot have inequality filters on a different field than the range filter.
+        // We will filter for 'expired' status on the client side.
       );
 
       try {
         const querySnapshot = await getDocs(q);
-        const fetchedContracts = querySnapshot.docs.map(doc => ({ ...doc.data() } as Contract));
+        const fetchedContracts = querySnapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() } as Contract))
+            .filter(contract => contract.status !== 'expired'); // Filter out annulled contracts here
         
         const newTransactions = fetchedContracts.map((contract, index) => {
             let details: any = null;
@@ -102,21 +105,15 @@ export default function DailyCashReportPage() {
 
             if (contract.type === 'Curso Auto' || contract.type === 'Curso Moto' || contract.type === 'Curso Mixto' || contract.type === 'Curso Solo Practica') {
                 details = contract.autoMotoDetails;
-                studentIdNumber = details?.studentIdNumber || '';
-                studentPhone1 = details?.studentPhone1 || '';
-                downPayment = details?.downPayment || 0;
             } else if (contract.type === 'Curso Deluxe') {
                 details = contract.deluxeDetails;
-                studentIdNumber = details?.studentIdNumber || '';
-                studentPhone1 = details?.studentPhone1 || '';
-                // Deluxe doesn't have a direct downPayment, logic might need adjustment if it's needed.
-                // For now, we assume it might be 0 or calculated differently.
             } else if (contract.type === 'Ampliaciones') {
                 details = contract.ampliacionesDetails;
-                studentIdNumber = details?.studentIdNumber || '';
-                studentPhone1 = details?.studentPhone1 || '';
-                downPayment = details?.downPayment || 0;
             }
+
+            studentIdNumber = details?.studentIdNumber || '';
+            studentPhone1 = details?.studentPhone1 || '';
+            downPayment = details?.downPayment || 0;
 
             return {
                 id: index + 1,

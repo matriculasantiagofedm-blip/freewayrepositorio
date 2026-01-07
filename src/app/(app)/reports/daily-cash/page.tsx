@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -7,10 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle, Trash2, Printer } from 'lucide-react';
+import { PlusCircle, Trash2, Printer, CalendarIcon } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 
 interface Transaction {
   id: number;
@@ -43,7 +46,7 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
 
 export default function DailyCashReportPage() {
   const { role } = useCurrentRole();
-  const [reportDate, setReportDate] = useState(new Date());
+  const [reportDate, setReportDate] = useState<Date>(new Date());
   const [transactions, setTransactions] = useState<Transaction[]>([
     { id: 1, invoice: '', cedula: '', clientName: '', phone: '', service: '', cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 },
   ]);
@@ -164,7 +167,31 @@ export default function DailyCashReportPage() {
     <div className="space-y-6 bg-background p-4 rounded-lg">
       <div className="flex justify-between items-center print-hide">
         <h1 className="text-2xl font-bold font-headline">Reporte de Caja Diario</h1>
-        <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir</Button>
+        <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-[240px] justify-start text-left font-normal",
+                    !reportDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {reportDate ? format(reportDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={reportDate}
+                  onSelect={(date) => setReportDate(date || new Date())}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir</Button>
+        </div>
       </div>
 
       <div className="p-2 bg-yellow-300 text-center font-bold text-sm">
@@ -289,3 +316,5 @@ export default function DailyCashReportPage() {
     </div>
   );
 }
+
+    

@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlusCircle, Trash2, Printer } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 interface Transaction {
   id: number;

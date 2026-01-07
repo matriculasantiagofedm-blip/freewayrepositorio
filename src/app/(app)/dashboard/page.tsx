@@ -182,7 +182,7 @@ export default function DashboardPage() {
                         <span className="font-semibold">Cancelaciones</span>
                     </div>
                     <Button asChild size="sm" variant="destructive">
-                        <Link href="#">Cancelar</Link>
+                        <Link href="/cancellations">Cancelar</Link>
                     </Button>
                 </CardContent>
             </Card>

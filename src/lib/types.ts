@@ -172,6 +172,7 @@ export interface Transaction {
   clientName: string;
   phone: string;
   service: string;
+  amount: number;
   cash: number;
   debit: number;
   credit: number;
@@ -180,3 +181,5 @@ export interface Transaction {
   general: number;
   cheques: number;
 }
+
+    

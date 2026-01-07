@@ -87,8 +87,6 @@ export default function DailyCashReportPage() {
         contractsRef,
         where('createdAt', '>=', Timestamp.fromDate(startOfReportDay)),
         where('createdAt', '<=', Timestamp.fromDate(endOfReportDay))
-        // Firestore limitation: Cannot have inequality filters on a different field than the range filter.
-        // We will filter for 'expired' status on the client side.
       );
 
       try {

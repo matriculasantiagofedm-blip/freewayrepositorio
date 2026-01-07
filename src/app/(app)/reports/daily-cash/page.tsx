@@ -384,10 +384,10 @@ export default function DailyCashReportPage() {
                     </TableRow>
                 </TableBody>
                 </Table>
-                <Button size="sm" variant="outline" onClick={addTransactionRow} className="mt-2 print-hide"><PlusCircle className="mr-2 h-4 w-4" />Añadir Fila Manual</Button>
             </div>
+            <Button size="sm" variant="outline" onClick={addTransactionRow} className="mt-2 print-hide"><PlusCircle className="mr-2 h-4 w-4" />Añadir Fila Manual</Button>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
                 {/* Cash Breakdown */}
                 <div className="md:col-span-2 space-y-4">
                     <h3 className="font-bold text-center">DESGLOSE DE EFECTIVO</h3>

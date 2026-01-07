@@ -14,6 +14,8 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 interface Transaction {
   id: number;
@@ -23,6 +25,8 @@ interface Transaction {
   clientName: string;
   phone: string;
   service: string;
+  amount: number;
+  paymentType: string;
   cash: number;
   debit: number;
   credit: number;
@@ -45,11 +49,21 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
   currency: 'USD',
 });
 
+const paymentTypes = [
+    { value: 'cash', label: 'Efectivo' },
+    { value: 'debit', label: 'T.Débito' },
+    { value: 'credit', label: 'T.Crédito' },
+    { value: 'global', label: 'GLOBAL' },
+    { value: 'bac', label: 'BAC' },
+    { value: 'general', label: 'GENERAL' },
+    { value: 'cheques', label: 'Cheques' },
+];
+
 export default function DailyCashReportPage() {
   const { role } = useCurrentRole();
   const [reportDate, setReportDate] = useState<Date>(new Date());
   const [transactions, setTransactions] = useState<Transaction[]>([
-    { id: 1, invoice: '', contrato: '', cedula: '', clientName: '', phone: '', service: '', cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 },
+    { id: 1, invoice: '', contrato: '', cedula: '', clientName: '', phone: '', service: '', amount: 0, paymentType: '', cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 },
   ]);
   const [billQuantities, setBillQuantities] = useState(initialBillQuantities);
   const [coinQuantities, setCoinQuantities] = useState(initialCoinQuantities);
@@ -93,19 +107,46 @@ export default function DailyCashReportPage() {
 
   const handleTransactionChange = (index: number, field: keyof Transaction, value: any) => {
     const updated = [...transactions];
-    const numericFields = ['cash', 'debit', 'credit', 'global', 'bac', 'general', 'cheques'];
-    if (numericFields.includes(field)) {
-      updated[index] = { ...updated[index], [field]: parseFloat(value) || 0 };
+    let newTransaction = { ...updated[index] };
+
+    const numericFields: (keyof Transaction)[] = ['amount', 'cash', 'debit', 'credit', 'global', 'bac', 'general', 'cheques'];
+    
+    if (field === 'amount') {
+      newTransaction.amount = parseFloat(value) || 0;
+    } else if (field === 'paymentType') {
+      newTransaction.paymentType = value;
+    } else if (numericFields.includes(field)) {
+      (newTransaction[field] as number) = parseFloat(value) || 0;
     } else {
-      updated[index] = { ...updated[index], [field]: value };
+      (newTransaction[field] as string) = value;
     }
+
+    // Si se cambia el tipo de pago o el monto, recalcular las columnas de pago
+    if (field === 'paymentType' || field === 'amount') {
+        // Reset all payment columns
+        newTransaction.cash = 0;
+        newTransaction.debit = 0;
+        newTransaction.credit = 0;
+        newTransaction.global = 0;
+        newTransaction.bac = 0;
+        newTransaction.general = 0;
+        newTransaction.cheques = 0;
+
+        // Set the correct payment column
+        if (newTransaction.paymentType && numericFields.includes(newTransaction.paymentType as keyof Transaction)) {
+            (newTransaction[newTransaction.paymentType as keyof Transaction] as number) = newTransaction.amount;
+        }
+    }
+
+    updated[index] = newTransaction;
     setTransactions(updated);
-  };
+};
+
 
   const addTransactionRow = () => {
     setTransactions([
       ...transactions,
-      { id: transactions.length + 1, invoice: '', contrato: '', cedula: '', clientName: '', phone: '', service: '', cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 },
+      { id: transactions.length + 1, invoice: '', contrato: '', cedula: '', clientName: '', phone: '', service: '', amount: 0, paymentType: '', cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 },
     ]);
   };
   
@@ -204,7 +245,7 @@ export default function DailyCashReportPage() {
         <Table className="min-w-full text-xs border-collapse border border-black">
           <TableHeader>
             <TableRow>
-              {['#', 'FACTURA', 'Contrato', 'Cédula', 'Nombre del cliente', 'Teléfono', 'Servicio', 'Efectivo', 'T.Débito', 'T.Crédito', 'GLOBAL', 'BAC', 'GENERAL', 'Cheques'].map(header => (
+              {['#', 'FACTURA', 'Contrato', 'Cédula', 'Nombre del cliente', 'Teléfono', 'Servicio', 'Monto', 'Tipo de Pago', 'Efectivo', 'T.Débito', 'T.Crédito', 'GLOBAL', 'BAC', 'GENERAL', 'Cheques'].map(header => (
                 <TableHead key={header} className="border border-black p-1 text-center font-bold bg-gray-100">{header}</TableHead>
               ))}
             </TableRow>
@@ -213,21 +254,33 @@ export default function DailyCashReportPage() {
             {transactions.map((transaction, index) => (
               <TableRow key={transaction.id}>
                 <TableCell className="border border-black p-0.5 text-center">{index + 1}</TableCell>
-                {(Object.keys(transaction) as Array<keyof Transaction>).filter(k => k !== 'id').map(key => (
-                  <TableCell key={key} className="border border-black p-0">
-                    <Input
-                      type={typeof transaction[key] === 'number' ? 'number' : 'text'}
-                      value={transaction[key]}
-                      onChange={e => handleTransactionChange(index, key, e.target.value)}
-                      className="w-full h-full border-none rounded-none text-xs p-1"
-                    />
-                  </TableCell>
-                ))}
+                <TableCell className="border border-black p-0"><Input type="text" value={transaction.invoice} onChange={e => handleTransactionChange(index, 'invoice', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1" /></TableCell>
+                <TableCell className="border border-black p-0"><Input type="text" value={transaction.contrato} onChange={e => handleTransactionChange(index, 'contrato', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1" /></TableCell>
+                <TableCell className="border border-black p-0"><Input type="text" value={transaction.cedula} onChange={e => handleTransactionChange(index, 'cedula', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1" /></TableCell>
+                <TableCell className="border border-black p-0"><Input type="text" value={transaction.clientName} onChange={e => handleTransactionChange(index, 'clientName', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1" /></TableCell>
+                <TableCell className="border border-black p-0"><Input type="text" value={transaction.phone} onChange={e => handleTransactionChange(index, 'phone', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1" /></TableCell>
+                <TableCell className="border border-black p-0"><Input type="text" value={transaction.service} onChange={e => handleTransactionChange(index, 'service', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1" /></TableCell>
+                <TableCell className="border border-black p-0"><Input type="number" value={transaction.amount} onChange={e => handleTransactionChange(index, 'amount', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1" /></TableCell>
+                <TableCell className="border border-black p-0">
+                    <Select value={transaction.paymentType} onValueChange={value => handleTransactionChange(index, 'paymentType', value)}>
+                        <SelectTrigger className="w-full h-full border-none rounded-none text-xs p-1"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
+                        <SelectContent>
+                            {paymentTypes.map(pt => <SelectItem key={pt.value} value={pt.value}>{pt.label}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </TableCell>
+                <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.cash} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
+                <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.debit} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
+                <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.credit} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
+                <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.global} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
+                <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.bac} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
+                <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.general} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
+                <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.cheques} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
               </TableRow>
             ))}
             {/* Totals Row */}
             <TableRow className="bg-yellow-200 font-bold">
-                <TableCell colSpan={7} className="text-right p-1 border border-black">TOTAL</TableCell>
+                <TableCell colSpan={9} className="text-right p-1 border border-black">TOTAL</TableCell>
                 <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.cash)}</TableCell>
                 <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.debit)}</TableCell>
                 <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.credit)}</TableCell>
@@ -317,6 +370,3 @@ export default function DailyCashReportPage() {
     </div>
   );
 }
-
-    
-    

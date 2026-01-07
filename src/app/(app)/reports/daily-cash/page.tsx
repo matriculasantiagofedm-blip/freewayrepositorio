@@ -94,16 +94,36 @@ export default function DailyCashReportPage() {
         const fetchedContracts = querySnapshot.docs.map(doc => ({ ...doc.data() } as Contract));
         
         const newTransactions = fetchedContracts.map((contract, index) => {
-            const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
-            const downPayment = details?.downPayment || 0;
+            let details: any = null;
+            let studentIdNumber = '';
+            let studentPhone1 = '';
+            let downPayment = 0;
+
+            if (contract.type === 'Curso Auto' || contract.type === 'Curso Moto' || contract.type === 'Curso Mixto' || contract.type === 'Curso Solo Practica') {
+                details = contract.autoMotoDetails;
+                studentIdNumber = details?.studentIdNumber || '';
+                studentPhone1 = details?.studentPhone1 || '';
+                downPayment = details?.downPayment || 0;
+            } else if (contract.type === 'Curso Deluxe') {
+                details = contract.deluxeDetails;
+                studentIdNumber = details?.studentIdNumber || '';
+                studentPhone1 = details?.studentPhone1 || '';
+                // Deluxe doesn't have a direct downPayment, logic might need adjustment if it's needed.
+                // For now, we assume it might be 0 or calculated differently.
+            } else if (contract.type === 'Ampliaciones') {
+                details = contract.ampliacionesDetails;
+                studentIdNumber = details?.studentIdNumber || '';
+                studentPhone1 = details?.studentPhone1 || '';
+                downPayment = details?.downPayment || 0;
+            }
 
             return {
                 id: index + 1,
                 invoice: '', // Manual field
                 contrato: String(contract.folioNumber || ''),
-                cedula: details?.studentIdNumber || '',
+                cedula: studentIdNumber,
                 clientName: contract.clientName || '',
-                phone: details?.studentPhone1 || '',
+                phone: studentPhone1,
                 service: contract.type || '',
                 amount: downPayment,
                 paymentType: '', // User will select this

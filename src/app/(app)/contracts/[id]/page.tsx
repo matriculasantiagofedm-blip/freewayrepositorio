@@ -5,10 +5,21 @@ import type { Contract } from '@/lib/types';
 import { ContractView } from '@/components/contract-view';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ChevronLeft, Award, Printer } from 'lucide-react';
+import { ChevronLeft, Award, Printer, ShieldX } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentRole } from '@/hooks/use-current-role';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import {
   Dialog,
   DialogContent,
@@ -128,6 +139,52 @@ export default function ContractDetailPage() {
     window.open(printUrl, '_blank');
   };
 
+  const handleAnnulContract = async () => {
+    if (!contractRef || !contract) {
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo encontrar el contrato para anular.' });
+      return;
+    }
+  
+    setIsGenerating(true);
+  
+    try {
+      const updateData = {
+        status: 'expired' as const, // 'expired' es el estado para anulado
+        clientName: 'CONTRATO ANULADO',
+        // Opcional: podrías querer limpiar otros campos
+      };
+  
+      await updateDoc(contractRef, updateData);
+  
+      toast({
+        title: 'Contrato Anulado',
+        description: `El contrato con folio ${contract.folioNumber} ha sido anulado correctamente.`,
+      });
+  
+      // Forzar la actualización de la vista de datos
+      router.refresh(); 
+  
+    } catch (serverError: any) {
+      if (serverError instanceof Error && serverError.name === 'FirebaseError') {
+        const permissionError = new FirestorePermissionError({
+          path: contractRef.path,
+          operation: 'update',
+          requestResourceData: { status: 'expired' },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      } else {
+        console.error("Error al anular contrato:", serverError);
+        toast({
+          variant: 'destructive',
+          title: 'Error al anular',
+          description: 'No se pudo anular el contrato. Revisa los permisos o contacta al administrador.',
+        });
+      }
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
 
   return (
     <div className="flex flex-col gap-8 print-container">
@@ -151,6 +208,30 @@ export default function ContractDetailPage() {
                 <Printer className="mr-2 h-4 w-4" />
                 Imprimir Contrato
               </Button>
+              {role === 'Administrador' && contract && contract.status !== 'expired' && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive">
+                      <ShieldX className="mr-2 h-4 w-4" />
+                      Anular Contrato
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta acción es irreversible. El contrato será marcado como ANULADO y no se podrá revertir. El folio <span className="font-bold">{contract.folioNumber}</span> quedará registrado como anulado.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleAnnulContract} className="bg-destructive hover:bg-destructive/90">
+                        Sí, anular contrato
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </div>
       </div>
       

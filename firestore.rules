@@ -52,9 +52,16 @@ service cloud.firestore {
     match /contracts/{contractId} {
       allow get, list: if isSignedIn();
       allow create: if isOwner(request.resource.data.userId) || isAdmin() || isVentas();
+      // Allow general updates if key fields are unchanged
       allow update: if isSignedIn()
                       && request.resource.data.userId == resource.data.userId
                       && request.resource.data.folioNumber == resource.data.folioNumber;
+      
+      // Allow admin to specifically annul a contract
+      allow update: if isAdmin()
+                      && request.resource.data.status == 'expired'
+                      && request.resource.data.clientName == 'CONTRATO ANULADO';
+
       allow delete: if isAdmin() || isVentas();
     }
 

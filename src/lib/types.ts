@@ -62,12 +62,12 @@ export interface AutoMotoContractDetails {
   studentAddress?: string;
   studentPhone1?: string;
   studentPhone2?: string;
-  coursePlan?: 'Básico' | 'Plus' | 'Premium';
+  coursePlan?: string;
   courseValue?: number;
   downPayment?: number;
   balance?: number;
   paymentDeadline?: Date | null;
-  vehicle?: 'Spark' | 'P. Blanco' | 'P. Bronce' | 'Moto';
+  vehicle?: 'Spark' | 'P. Blanco' | 'P. Bronce' | 'Moto' | 'Motocicleta';
   vehicleTransmission?: 'Automático' | 'Manual' | 'Moto';
   licenseCategory?: 'A, C' | 'A, C, D' | 'A, B';
   theoreticalClassSchedule?: string;
@@ -138,4 +138,45 @@ export interface Certificate {
   cip: string;
   licenseType: string;
   contract?: Contract;
+}
+
+
+export interface Report {
+  id: string;
+  date: Timestamp;
+  transactions: Transaction[];
+  cashBreakdown: {
+    bills: { value: number; quantity: number }[];
+    coins: { value: number; quantity: number }[];
+  };
+  expenses: { description: string; amount: number }[];
+  totals: {
+    creditCard: number;
+    debitCard: number;
+    global: number;
+    bac: number;
+    general: number;
+    cheques: number;
+    cash: number;
+    billed: number;
+    totalExpenses: number;
+    deposit: number;
+    difference: number;
+  };
+}
+
+export interface Transaction {
+  id: string;
+  invoice: string;
+  cedula: string;
+  clientName: string;
+  phone: string;
+  service: string;
+  cash: number;
+  debit: number;
+  credit: number;
+  global: number;
+  bac: number;
+  general: number;
+  cheques: number;
 }

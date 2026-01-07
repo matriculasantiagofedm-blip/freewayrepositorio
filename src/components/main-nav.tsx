@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -8,7 +7,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { GanttChartSquare, FileText, Users, CarFront } from 'lucide-react';
+import { GanttChartSquare, FileText, Users, CarFront, ClipboardPenLine } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCurrentRole } from '@/hooks/use-current-role';
 
@@ -30,6 +29,12 @@ const allLinks = [
     label: 'Clientes',
     icon: Users,
     roles: ['Administrador'], 
+  },
+   {
+    href: '/reports',
+    label: 'Reportes',
+    icon: ClipboardPenLine,
+    roles: ['Administrador'],
   },
   {
     href: '/contracts/solo-practica',

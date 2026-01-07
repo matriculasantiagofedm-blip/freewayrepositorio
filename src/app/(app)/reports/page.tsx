@@ -1,0 +1,38 @@
+'use client';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ClipboardPenLine } from 'lucide-react';
+import Link from 'next/link';
+
+export default function ReportsPage() {
+  const reports = [
+    {
+      title: 'Reporte de Caja Diario',
+      description: 'Genera el reporte de caja para el día actual.',
+      href: '/reports/daily-cash',
+      icon: ClipboardPenLine,
+    },
+  ];
+
+  return (
+    <div className="flex flex-col gap-8">
+      <h1 className="font-headline text-3xl font-bold">Reportes</h1>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {reports.map((report) => (
+          <Link href={report.href} key={report.title} className="no-underline">
+            <Card className="hover:shadow-lg transition-shadow h-full">
+              <CardHeader>
+                <div className="flex items-start gap-4">
+                  <report.icon className="h-6 w-6 text-primary" />
+                  <CardTitle>{report.title}</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <CardDescription>{report.description}</CardDescription>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}

@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { FileText, CalendarClock, Users, Car, Bike, Combine, Crown, Plus, CarFront } from 'lucide-react';
+import { FileText, CalendarClock, Users, Car, Bike, Combine, Crown, Plus, CarFront, RefreshCw, Ban } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { isPast } from 'date-fns';
 import { collection, query, where }from 'firebase/firestore';
@@ -154,6 +154,38 @@ export default function DashboardPage() {
                 </CardContent>
             </Card>
           ))}
+        </div>
+      </div>
+      
+      <div>
+        <h2 className="text-2xl font-bold font-headline mb-4">Otras Acciones</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+            <Card className="transition-all hover:shadow-lg hover:-translate-y-1">
+                <CardContent className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/40">
+                           <RefreshCw className="h-6 w-6 text-green-600 dark:text-green-300" />
+                        </div>
+                        <span className="font-semibold">Actualizaciones</span>
+                    </div>
+                    <Button asChild size="sm">
+                        <Link href="#">Actualizar</Link>
+                    </Button>
+                </CardContent>
+            </Card>
+            <Card className="transition-all hover:shadow-lg hover:-translate-y-1">
+                <CardContent className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40">
+                           <Ban className="h-6 w-6 text-red-600 dark:text-red-300" />
+                        </div>
+                        <span className="font-semibold">Cancelaciones</span>
+                    </div>
+                    <Button asChild size="sm" variant="destructive">
+                        <Link href="#">Cancelar</Link>
+                    </Button>
+                </CardContent>
+            </Card>
         </div>
       </div>
     </div>

@@ -18,6 +18,7 @@ import { Calendar } from '@/components/ui/calendar';
 interface Transaction {
   id: number;
   invoice: string;
+  contrato: string;
   cedula: string;
   clientName: string;
   phone: string;
@@ -48,7 +49,7 @@ export default function DailyCashReportPage() {
   const { role } = useCurrentRole();
   const [reportDate, setReportDate] = useState<Date>(new Date());
   const [transactions, setTransactions] = useState<Transaction[]>([
-    { id: 1, invoice: '', cedula: '', clientName: '', phone: '', service: '', cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 },
+    { id: 1, invoice: '', contrato: '', cedula: '', clientName: '', phone: '', service: '', cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 },
   ]);
   const [billQuantities, setBillQuantities] = useState(initialBillQuantities);
   const [coinQuantities, setCoinQuantities] = useState(initialCoinQuantities);
@@ -104,7 +105,7 @@ export default function DailyCashReportPage() {
   const addTransactionRow = () => {
     setTransactions([
       ...transactions,
-      { id: transactions.length + 1, invoice: '', cedula: '', clientName: '', phone: '', service: '', cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 },
+      { id: transactions.length + 1, invoice: '', contrato: '', cedula: '', clientName: '', phone: '', service: '', cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 },
     ]);
   };
   
@@ -203,7 +204,7 @@ export default function DailyCashReportPage() {
         <Table className="min-w-full text-xs border-collapse border border-black">
           <TableHeader>
             <TableRow>
-              {['#', 'FACTURA', 'Cédula', 'Nombre del cliente', 'Teléfono', 'Servicio', 'Efectivo', 'T.Débito', 'T.Crédito', 'GLOBAL', 'BAC', 'GENERAL', 'Cheques'].map(header => (
+              {['#', 'FACTURA', 'Contrato', 'Cédula', 'Nombre del cliente', 'Teléfono', 'Servicio', 'Efectivo', 'T.Débito', 'T.Crédito', 'GLOBAL', 'BAC', 'GENERAL', 'Cheques'].map(header => (
                 <TableHead key={header} className="border border-black p-1 text-center font-bold bg-gray-100">{header}</TableHead>
               ))}
             </TableRow>
@@ -226,7 +227,7 @@ export default function DailyCashReportPage() {
             ))}
             {/* Totals Row */}
             <TableRow className="bg-yellow-200 font-bold">
-                <TableCell colSpan={6} className="text-right p-1 border border-black">TOTAL</TableCell>
+                <TableCell colSpan={7} className="text-right p-1 border border-black">TOTAL</TableCell>
                 <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.cash)}</TableCell>
                 <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.debit)}</TableCell>
                 <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.credit)}</TableCell>
@@ -317,4 +318,5 @@ export default function DailyCashReportPage() {
   );
 }
 
+    
     

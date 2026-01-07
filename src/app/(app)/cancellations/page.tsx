@@ -54,7 +54,7 @@ export default function CancellationsPage() {
 
       const querySnapshots = await Promise.all(queries.map(q => getDocs(q)));
       
-      const allContracts: Contract[] = [];
+      let allContracts: Contract[] = [];
       querySnapshots.forEach(snapshot => {
         snapshot.forEach(doc => {
             const contractData = { id: doc.id, ...doc.data() } as Contract;
@@ -65,11 +65,13 @@ export default function CancellationsPage() {
         });
       });
 
+      // Filtrar contratos que no estén anulados (status !== 'expired')
+      const activeContracts = allContracts.filter(contract => contract.status !== 'expired');
 
-      if (allContracts.length === 0) {
+      if (activeContracts.length === 0) {
         setFoundContracts(null);
       } else {
-        setFoundContracts(allContracts);
+        setFoundContracts(activeContracts);
       }
     } catch (error) {
       console.error("Error searching for contract:", error);
@@ -137,10 +139,10 @@ export default function CancellationsPage() {
       {searched && !isLoading && (!foundContracts || foundContracts.length === 0) && (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
           <h3 className="mt-4 text-lg font-semibold text-foreground">
-            No se encontraron contratos
+            No se encontraron contratos activos
           </h3>
           <p className="mt-2 text-sm text-muted-foreground">
-            Verifica el número de cédula e inténtalo de nuevo.
+            Verifica el número de cédula o puede que no haya contratos vigentes para este cliente.
           </p>
         </div>
       )}

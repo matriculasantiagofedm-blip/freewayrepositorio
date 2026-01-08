@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
@@ -91,14 +92,14 @@ export default function CancellationsPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex flex-col">
+      <div className="flex flex-col print:flex">
         <h1 className="font-headline text-3xl font-bold">Cancelaciones de Contrato</h1>
         <p className="text-muted-foreground">
           {format(today, "d 'de' MMMM 'de' yyyy", { locale: es })}
         </p>
       </div>
 
-      <Card>
+      <Card className="print:block">
         <CardHeader>
           <CardTitle>Buscar Contrato por Cédula</CardTitle>
           <CardDescription>Introduce el número de cédula o pasaporte del cliente.</CardDescription>
@@ -128,7 +129,7 @@ export default function CancellationsPage() {
       )}
 
       {searched && !isLoading && foundContracts && foundContracts.length > 0 && (
-        <div className='space-y-4'>
+        <div className='space-y-4 print:block'>
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-bold">Contratos Encontrados para "{foundContracts[0].clientName}"</h2>
               <Button variant="outline" onClick={handlePrint} className="print-hide">
@@ -143,9 +144,15 @@ export default function CancellationsPage() {
                             <CardTitle>Contrato N° {String(contract.folioNumber).padStart(6, '0')}</CardTitle>
                             <CardDescription>{contract.type}</CardDescription>
                         </CardHeader>
-                        <CardContent className="flex-grow">
-                            <p className="text-sm font-medium text-muted-foreground">Saldo Pendiente</p>
-                            <p className="font-bold text-xl text-destructive">B/. {getBalance(contract).toFixed(2)}</p>
+                        <CardContent className="flex-grow space-y-4">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Saldo Pendiente</p>
+                                <p className="font-bold text-xl text-destructive">B/. {getBalance(contract).toFixed(2)}</p>
+                            </div>
+                            <div>
+                                <Label htmlFor={`payment-${contract.id}`}>Monto a Pagar</Label>
+                                <Input id={`payment-${contract.id}`} type="number" placeholder="0.00" className="mt-1" />
+                            </div>
                         </CardContent>
                     </Card>
                 ))}

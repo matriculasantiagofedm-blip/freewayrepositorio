@@ -10,7 +10,7 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import type { Contract, Payment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Save } from 'lucide-react';
+import { Loader2, Search, Save, UserPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -26,13 +26,26 @@ export default function UpdatesPage() {
   const { toast } = useToast();
 
   const [studentIdNumber, setStudentIdNumber] = useState('');
+  const [manualName, setManualName] = useState('');
+  const [manualAddress, setManualAddress] = useState('');
+  
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
   const [foundContract, setFoundContract] = useState<Contract | null>(null);
   const [searched, setSearched] = useState(false);
   const [selectedUpdate, setSelectedUpdate] = useState<(typeof updateOptions)[0] | null>(null);
   
   const today = new Date();
+
+  const resetFormState = () => {
+    setStudentIdNumber('');
+    setManualName('');
+    setManualAddress('');
+    setFoundContract(null);
+    setSearched(false);
+    setSelectedUpdate(null);
+  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,13 +56,14 @@ export default function UpdatesPage() {
 
     setIsLoading(true);
     setFoundContract(null);
+    setManualName('');
+    setManualAddress('');
     setSearched(true);
     setSelectedUpdate(null);
 
     try {
       const contractsRef = collection(db, 'contracts');
       
-      // We'll search across all possible detail fields for the ID number
       const q1 = query(contractsRef, where('autoMotoDetails.studentIdNumber', '==', studentIdNumber));
       const q2 = query(contractsRef, where('ampliacionesDetails.studentIdNumber', '==', studentIdNumber));
       const q3 = query(contractsRef, where('deluxeDetails.studentIdNumber', '==', studentIdNumber));
@@ -70,9 +84,7 @@ export default function UpdatesPage() {
       processSnapshot(snapshot2);
       processSnapshot(snapshot3);
 
-      // We just need one contract to identify the student
       const firstContract = contractsMap.size > 0 ? Array.from(contractsMap.values())[0] : null;
-
       setFoundContract(firstContract);
       
     } catch (error) {
@@ -84,15 +96,19 @@ export default function UpdatesPage() {
   };
 
   const handleSaveUpdate = async () => {
-    if (!db || !user || !foundContract || !selectedUpdate) {
-      toast({ variant: 'destructive', title: 'Datos Incompletos', description: 'Asegúrate de haber seleccionado un estudiante y una opción de actualización.' });
+    const isManualEntry = !foundContract;
+    if (!db || !user || !selectedUpdate) {
+      toast({ variant: 'destructive', title: 'Datos Incompletos', description: 'Selecciona una opción de actualización.' });
+      return;
+    }
+    if (isManualEntry && (!manualName || !manualAddress)) {
+      toast({ variant: 'destructive', title: 'Datos Incompletos', description: 'Completa el nombre y la dirección del estudiante.' });
       return;
     }
 
     setIsSaving(true);
     try {
       await runTransaction(db, async (transaction) => {
-        // 1. Get and increment the update folio counter
         const counterRef = doc(db, 'counters', 'update_folio');
         const counterDoc = await transaction.get(counterRef);
         if (!counterDoc.exists()) {
@@ -101,15 +117,15 @@ export default function UpdatesPage() {
         const newUpdateFolio = counterDoc.data().count + 1;
         transaction.update(counterRef, { count: newUpdateFolio });
 
-        // 2. Create a new payment document for the update
         const paymentRef = doc(collection(db, 'payments'));
         const paymentData: Partial<Payment> = {
           amount: selectedUpdate.price,
-          contractId: foundContract.id,
-          contractFolio: foundContract.folioNumber,
+          contractId: foundContract?.id || 'MANUAL',
+          contractFolio: foundContract?.folioNumber || 0,
           updateFolio: newUpdateFolio,
-          clientId: foundContract.clientId,
-          clientName: foundContract.clientName,
+          clientId: foundContract?.clientId || 'MANUAL',
+          clientName: foundContract?.clientName || manualName,
+          clientAddress: foundContract ? (foundContract.autoMotoDetails?.studentAddress || foundContract.ampliacionesDetails?.studentAddress || foundContract.deluxeDetails?.studentAddress) : manualAddress,
           studentIdNumber: studentIdNumber,
           paymentDate: serverTimestamp(),
           userId: user.uid,
@@ -119,11 +135,7 @@ export default function UpdatesPage() {
       });
 
       toast({ title: 'Actualización Registrada', description: `El pago de B/.${selectedUpdate.price.toFixed(2)} ha sido guardado.` });
-      // Reset the state after saving
-      setFoundContract(null);
-      setSearched(false);
-      setStudentIdNumber('');
-      setSelectedUpdate(null);
+      resetFormState();
 
     } catch (error) {
       console.error("Error saving update:", error);
@@ -171,17 +183,37 @@ export default function UpdatesPage() {
           </div>
         )}
 
-        {searched && !isLoading && foundContract && (
+        {searched && !isLoading && (
             <Card className="animate-in fade-in-50">
                 <CardHeader>
-                    <CardTitle>Estudiante Encontrado</CardTitle>
-                    <CardDescription>Selecciona la cantidad de certificados a actualizar para <span className="font-bold text-primary">{foundContract.clientName}</span>.</CardDescription>
+                    <CardTitle>{foundContract ? 'Estudiante Encontrado' : 'Registrar Actualización Manual'}</CardTitle>
+                    <CardDescription>
+                      {foundContract 
+                        ? `Selecciona la cantidad de certificados a actualizar para ${foundContract.clientName}.`
+                        : `No se encontró un contrato para la cédula ingresada. Completa los datos para registrar el pago manualmente.`
+                      }
+                    </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    <div>
-                        <p className="font-medium">Nombre: <span className="font-normal">{foundContract.clientName}</span></p>
-                        <p className="font-medium">Cédula: <span className="font-normal">{studentIdNumber}</span></p>
-                        <p className="font-medium">Contrato Original: <span className="font-normal">{String(foundContract.folioNumber).padStart(6, '0')}</span></p>
+                <CardContent className="space-y-6">
+                    <div className='border rounded-lg p-4 bg-muted/50'>
+                        <p className="font-medium">Cédula / Pasaporte: <span className="font-normal text-primary">{studentIdNumber}</span></p>
+                        {foundContract ? (
+                          <>
+                            <p className="font-medium">Nombre: <span className="font-normal">{foundContract.clientName}</span></p>
+                            <p className="font-medium">Contrato Original: <span className="font-normal">{String(foundContract.folioNumber).padStart(6, '0')}</span></p>
+                          </>
+                        ) : (
+                          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mt-4'>
+                             <div className="space-y-2">
+                                <Label htmlFor="manual-name">Nombre Completo del Estudiante</Label>
+                                <Input id="manual-name" value={manualName} onChange={(e) => setManualName(e.target.value)} placeholder="Introducir nombre" />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="manual-address">Dirección del Estudiante</Label>
+                                <Input id="manual-address" value={manualAddress} onChange={(e) => setManualAddress(e.target.value)} placeholder="Introducir dirección" />
+                              </div>
+                          </div>
+                        )}
                     </div>
 
                     <RadioGroup 
@@ -190,9 +222,10 @@ export default function UpdatesPage() {
                             setSelectedUpdate(option || null);
                         }}
                         className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                        value={selectedUpdate?.id}
                     >
                         {updateOptions.map(option => (
-                             <Label key={option.id} htmlFor={option.id} className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                             <Label key={option.id} htmlFor={option.id} className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
                                 <RadioGroupItem value={option.id} id={option.id} className="sr-only" />
                                 <span className="text-lg font-semibold">{option.label}</span>
                                 <span className="text-2xl font-bold mt-2">B/.{option.price.toFixed(2)}</span>
@@ -207,17 +240,6 @@ export default function UpdatesPage() {
                     </Button>
                 </CardFooter>
             </Card>
-        )}
-
-        {searched && !isLoading && !foundContract && (
-          <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
-            <h3 className="mt-4 text-lg font-semibold text-foreground">
-              No se encontró ningún estudiante
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Verifica el número de cédula e inténtalo de nuevo.
-            </p>
-          </div>
         )}
     </div>
   );

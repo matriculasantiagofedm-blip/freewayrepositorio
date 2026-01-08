@@ -184,6 +184,7 @@ export interface Payment {
   updateFolio?: number;
   clientId: string;
   clientName: string;
+  clientAddress?: string;
   studentIdNumber: string;
   userId: string;
   type: 'abono' | 'cancelacion' | 'actualizacion';

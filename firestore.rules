@@ -77,6 +77,18 @@ service cloud.firestore {
       allow delete: if false; // Prevent client deletion
     }
 
+    /**
+     * @description Manages payment records.
+     * @path /payments/{paymentId}
+     * @allow (read, list) Admins can read payment lists for reporting.
+     * @allow (create) Any signed-in user can create a payment record.
+     */
+    match /payments/{paymentId} {
+        allow read, list: if isAdmin();
+        allow create: if isSignedIn();
+        allow update, delete: if false; // Payments are immutable
+    }
+
     // Allow authenticated users to read/write the contract folio counter.
     match /counters/contract_folio {
         allow read, write: if isSignedIn();
@@ -88,3 +100,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

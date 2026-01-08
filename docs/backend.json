@@ -107,6 +107,45 @@
         "name"
       ]
     },
+    "Payment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Payment",
+      "type": "object",
+      "description": "Represents a financial transaction, such as a down payment or cancellation payment.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Payment entity."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The amount of the payment."
+        },
+        "paymentDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time the payment was made."
+        },
+        "contractId": {
+          "type": "string",
+          "description": "Reference to the associated contract."
+        },
+        "clientId": {
+          "type": "string",
+          "description": "Reference to the client who made the payment."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the user who recorded the payment."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["abono", "cancelacion"],
+          "description": "The type of payment (e.g., down payment, cancellation)."
+        }
+      },
+      "required": ["id", "amount", "paymentDate", "contractId", "clientId", "userId", "type"]
+    },
     "Counter": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Counter",
@@ -178,6 +217,22 @@
         }
       },
       {
+        "path": "/payments/{paymentId}",
+        "definition": {
+          "entityName": "Payment",
+          "schema": {
+            "$ref": "#/backend/entities/Payment"
+          },
+          "description": "Stores all payment transactions for reporting and auditing.",
+          "params": [
+            {
+              "name": "paymentId",
+              "description": "The unique identifier for the payment."
+            }
+          ]
+        }
+      },
+      {
         "path": "/counters/{counterId}",
         "definition": {
           "entityName": "Counter",
@@ -194,6 +249,8 @@
         }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging. The 'contracts' collection is placed at the root level to simplify security rules for roles like 'Administrador' or 'Ventas' that need to access all contracts. This centralized approach is more efficient for list queries than a nested structure. Authorization independence is maintained by storing the `userId` and `clientId` directly within each contract document, which is crucial for secure and efficient rule evaluations. The `counters` collection remains for managing sequential values in a scalable manner."
+    "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging. The 'contracts' collection is placed at the root level to simplify security rules for roles like 'Administrador' or 'Ventas' that need to access all contracts. A new 'payments' collection is added to log all financial transactions, including initial down payments and subsequent cancellation payments, allowing for robust financial reporting without cluttering the contract documents. Authorization independence is maintained by storing the `userId` and `clientId` directly within each contract document, which is crucial for secure and efficient rule evaluations. The `counters` collection remains for managing sequential values in a scalable manner."
   }
 }
+
+    

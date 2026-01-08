@@ -16,11 +16,11 @@ import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDb } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
-import type { Contract } from '@/lib/types';
+import type { Contract, Payment } from '@/lib/types';
 
 
 interface Transaction {
-  id: number;
+  id: string; // Use a unique ID like contract id or payment id
   invoice: string;
   contrato: string;
   cedula: string;
@@ -73,76 +73,78 @@ export default function DailyCashReportPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
-  // Fetch contracts based on selected date
+  // Fetch contracts and payments based on selected date
   useEffect(() => {
     if (!db || !reportDate || role !== 'Administrador') return;
 
-    const fetchContracts = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
       const startOfReportDay = startOfDay(reportDate);
       const endOfReportDay = endOfDay(reportDate);
       
-      const contractsRef = collection(db, 'contracts');
-      const q = query(
-        contractsRef,
-        where('createdAt', '>=', Timestamp.fromDate(startOfReportDay)),
-        where('createdAt', '<=', Timestamp.fromDate(endOfReportDay))
-      );
-
       try {
-        const querySnapshot = await getDocs(q);
-        const fetchedContracts = querySnapshot.docs
+        // 1. Fetch new contracts for the day
+        const contractsRef = collection(db, 'contracts');
+        const contractsQuery = query(
+          contractsRef,
+          where('createdAt', '>=', Timestamp.fromDate(startOfReportDay)),
+          where('createdAt', '<=', Timestamp.fromDate(endOfReportDay))
+        );
+        const contractsSnapshot = await getDocs(contractsQuery);
+        const newContractTransactions = contractsSnapshot.docs
             .map(doc => ({ id: doc.id, ...doc.data() } as Contract))
-            .filter(contract => contract.status !== 'expired'); // Filter out annulled contracts here
-        
-        const newTransactions = fetchedContracts.map((contract, index) => {
-            let details: any = null;
-            let studentIdNumber = '';
-            let studentPhone1 = '';
-            let downPayment = 0;
+            .filter(contract => contract.status !== 'expired')
+            .map((contract): Transaction => {
+                let details: any = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails || {};
+                return {
+                    id: contract.id,
+                    invoice: '',
+                    contrato: String(contract.folioNumber || ''),
+                    cedula: details.studentIdNumber || '',
+                    clientName: contract.clientName || '',
+                    phone: details.studentPhone1 || '',
+                    service: contract.type || '',
+                    amount: details.downPayment || 0,
+                    paymentType: '',
+                    cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
+                };
+            });
 
-            if (contract.type === 'Curso Auto' || contract.type === 'Curso Moto' || contract.type === 'Curso Mixto' || contract.type === 'Curso Solo Practica') {
-                details = contract.autoMotoDetails;
-            } else if (contract.type === 'Curso Deluxe') {
-                details = contract.deluxeDetails;
-            } else if (contract.type === 'Ampliaciones') {
-                details = contract.ampliacionesDetails;
-            }
-
-            studentIdNumber = details?.studentIdNumber || '';
-            studentPhone1 = details?.studentPhone1 || '';
-            downPayment = details?.downPayment || 0;
-
+        // 2. Fetch cancellation payments for the day
+        const paymentsRef = collection(db, 'payments');
+        const paymentsQuery = query(
+          paymentsRef,
+          where('paymentDate', '>=', Timestamp.fromDate(startOfReportDay)),
+          where('paymentDate', '<=', Timestamp.fromDate(endOfReportDay)),
+          where('type', '==', 'cancelacion')
+        );
+        const paymentsSnapshot = await getDocs(paymentsQuery);
+        const cancellationTransactions = paymentsSnapshot.docs.map(doc => {
+            const payment = { id: doc.id, ...doc.data() } as Payment;
             return {
-                id: index + 1,
-                invoice: '', // Manual field
-                contrato: String(contract.folioNumber || ''),
-                cedula: studentIdNumber,
-                clientName: contract.clientName || '',
-                phone: studentPhone1,
-                service: contract.type || '',
-                amount: downPayment,
-                paymentType: '', // User will select this
-                cash: 0,
-                debit: 0,
-                credit: 0,
-                global: 0,
-                bac: 0,
-                general: 0,
-                cheques: 0,
+                id: payment.id,
+                invoice: '',
+                contrato: String(payment.contractFolio || ''),
+                cedula: payment.studentIdNumber || '',
+                clientName: payment.clientName || '',
+                phone: '',
+                service: 'Pago de Saldo',
+                amount: payment.amount || 0,
+                paymentType: '',
+                cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
             };
         });
         
-        setTransactions(newTransactions);
+        setTransactions([...newContractTransactions, ...cancellationTransactions]);
         setIsDataLoaded(true);
       } catch (error) {
-        console.error("Error fetching contracts for report:", error);
+        console.error("Error fetching data for report:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchContracts();
+    fetchData();
   }, [db, reportDate, role]);
 
 
@@ -197,9 +199,7 @@ export default function DailyCashReportPage() {
       (newTransaction[field] as string) = value;
     }
 
-    // Si se cambia el tipo de pago o el monto, recalcular las columnas de pago
     if (field === 'paymentType' || field === 'amount') {
-        // Reset all payment columns
         newTransaction.cash = 0;
         newTransaction.debit = 0;
         newTransaction.credit = 0;
@@ -208,12 +208,10 @@ export default function DailyCashReportPage() {
         newTransaction.general = 0;
         newTransaction.cheques = 0;
 
-        // Set the correct payment column based on paymentType
         if (newTransaction.paymentType && (paymentTypes.some(pt => pt.value === newTransaction.paymentType))) {
            (newTransaction[newTransaction.paymentType as keyof Transaction] as number) = newTransaction.amount;
         }
     }
-
 
     updated[index] = newTransaction;
     setTransactions(updated);
@@ -223,7 +221,7 @@ export default function DailyCashReportPage() {
   const addTransactionRow = () => {
     setTransactions([
       ...transactions,
-      { id: transactions.length + 1, invoice: '', contrato: '', cedula: '', clientName: '', phone: '', service: '', amount: 0, paymentType: '', cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 },
+      { id: `manual-${transactions.length + 1}`, invoice: '', contrato: '', cedula: '', clientName: '', phone: '', service: '', amount: 0, paymentType: '', cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 },
     ]);
   };
   
@@ -320,11 +318,10 @@ export default function DailyCashReportPage() {
        {isLoading && (
          <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="ml-4 text-muted-foreground">Cargando contratos del día...</p>
+            <p className="ml-4 text-muted-foreground">Cargando datos del día...</p>
          </div>
        )}
 
-      {/* Main Transactions Table */}
       {!isLoading && (
         <div className="space-y-4">
             <div>
@@ -368,7 +365,7 @@ export default function DailyCashReportPage() {
                         {isDataLoaded && transactions.length === 0 && (
                             <TableRow>
                                 <TableCell colSpan={16} className="text-center text-muted-foreground p-4 border border-black">
-                                    No se encontraron contratos para la fecha seleccionada.
+                                    No se encontraron transacciones para la fecha seleccionada.
                                 </TableCell>
                             </TableRow>
                         )}
@@ -466,3 +463,5 @@ export default function DailyCashReportPage() {
     </div>
   );
 }
+
+    

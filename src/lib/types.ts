@@ -182,4 +182,17 @@ export interface Transaction {
   cheques: number;
 }
 
+export interface Payment {
+  id: string;
+  amount: number;
+  paymentDate: Timestamp;
+  contractId: string;
+  contractFolio: number;
+  clientId: string;
+  clientName: string;
+  studentIdNumber: string;
+  userId: string;
+  type: 'abono' | 'cancelacion';
+}
+
     

@@ -7,10 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useDb, useUser } from '@/components/firebase-provider';
-import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
-import type { Contract } from '@/lib/types';
+import { collection, query, where, getDocs, writeBatch, serverTimestamp, doc } from 'firebase/firestore';
+import type { Contract, Payment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Printer } from 'lucide-react';
+import { Loader2, Search, Printer, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -21,6 +21,7 @@ export default function CancellationsPage() {
 
   const [studentIdNumber, setStudentIdNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [foundContracts, setFoundContracts] = useState<Contract[] | null>(null);
   const [searched, setSearched] = useState(false);
   const [payments, setPayments] = useState<{ [key: string]: number }>({});
@@ -32,7 +33,7 @@ export default function CancellationsPage() {
         return contract.autoMotoDetails.balance || 0;
     }
     if (contract.deluxeDetails) {
-        return 0;
+        return 0; // Deluxe no tiene saldo de esta forma
     }
     if (contract.ampliacionesDetails) {
         return contract.ampliacionesDetails.balance || 0;
@@ -71,7 +72,6 @@ export default function CancellationsPage() {
       const processSnapshot = (snapshot: any) => {
           snapshot.forEach((doc: any) => {
               const contractData = { id: doc.id, ...doc.data() } as Contract;
-              // Filter out annulled contracts and only add if not already in the map
               if (contractData.status !== 'expired' && !contractsMap.has(doc.id)) {
                 contractsMap.set(doc.id, contractData);
               }
@@ -91,6 +91,64 @@ export default function CancellationsPage() {
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo realizar la búsqueda. Inténtalo de nuevo.' });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSavePayment = async (contract: Contract) => {
+    const paymentAmount = payments[contract.id];
+    if (!db || !user || !paymentAmount || paymentAmount <= 0) {
+      toast({ variant: 'destructive', title: 'Monto Inválido', description: 'Introduce un monto a pagar válido para registrar.' });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const batch = writeBatch(db);
+
+      // 1. Create a new payment document
+      const paymentRef = doc(collection(db, 'payments'));
+      const paymentData: Partial<Payment> = {
+        amount: paymentAmount,
+        contractId: contract.id,
+        contractFolio: contract.folioNumber,
+        clientId: contract.clientId,
+        clientName: contract.clientName,
+        studentIdNumber: studentIdNumber,
+        paymentDate: serverTimestamp(),
+        userId: user.uid,
+        type: 'cancelacion',
+      };
+      batch.set(paymentRef, paymentData);
+
+      // 2. Update the contract balance and status
+      const contractRef = doc(db, 'contracts', contract.id);
+      const newBalance = getBalance(contract) - paymentAmount;
+
+      let contractUpdate: any = {
+        'status': 'completed', // O 'expired', dependiendo de la lógica de negocio
+      };
+      
+      if (contract.autoMotoDetails) {
+          contractUpdate['autoMotoDetails.balance'] = newBalance > 0 ? newBalance : 0;
+          contractUpdate['autoMotoDetails.downPayment'] = (contract.autoMotoDetails.downPayment || 0) + paymentAmount;
+      } else if (contract.ampliacionesDetails) {
+          contractUpdate['ampliacionesDetails.balance'] = newBalance > 0 ? newBalance : 0;
+          contractUpdate['ampliacionesDetails.downPayment'] = (contract.ampliacionesDetails.downPayment || 0) + paymentAmount;
+      }
+
+      batch.update(contractRef, contractUpdate);
+
+      await batch.commit();
+
+      toast({ title: 'Pago Registrado', description: 'El pago ha sido guardado y el contrato actualizado.' });
+      // Refresh the search to show updated data
+      handleSearch(new Event('submit'));
+
+    } catch (error) {
+      console.error("Error saving payment:", error);
+      toast({ variant: 'destructive', title: 'Error al Guardar', description: 'No se pudo registrar el pago. Inténtalo de nuevo.' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -183,6 +241,17 @@ export default function CancellationsPage() {
                                   <p className="font-bold text-lg print:text-base">B/. {currentBalance.toFixed(2)}</p>
                               </div>
                           </div>
+                          <CardFooter className="p-0 pt-2 print-hide">
+                            <Button
+                              size="sm"
+                              onClick={() => handleSavePayment(contract)}
+                              disabled={isSaving || !(payments[contract.id] > 0)}
+                              className='w-full'
+                            >
+                              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                              Registrar Pago
+                            </Button>
+                          </CardFooter>
                       </div>
                   )})}
               </CardContent>
@@ -203,3 +272,5 @@ export default function CancellationsPage() {
     </div>
   );
 }
+
+    

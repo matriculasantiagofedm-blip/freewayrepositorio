@@ -180,6 +180,13 @@ const formSchema = baseSchema.extend({
   ampliacionesDetails: ampliacionesDetailsSchema.optional(),
 });
 
+const deluxeFormSchema = baseSchema.extend({
+  deluxeDetails: deluxeDetailsSchema,
+  autoMotoDetails: autoMotoDetailsSchema.optional(),
+  ampliacionesDetails: ampliacionesDetailsSchema.optional(),
+});
+
+
 type FormValues = z.infer<typeof formSchema>;
 
 // Función auxiliar para convertir las fechas de los detalles a Timestamps de Firestore
@@ -361,7 +368,9 @@ export function ContractForm() {
   const contractType: ContractType = useMemo(() => contractTypeParam || 'Curso Auto', [contractTypeParam]);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(
+      contractType === 'Curso Deluxe' ? deluxeFormSchema : formSchema
+    ),
     mode: 'onBlur', // Trigger validation on blur
     defaultValues: {
       clientName: '',
@@ -556,33 +565,17 @@ export function ContractForm() {
     form.setValue('contractType', contractType);
     const existingValues = form.getValues();
     form.reset({
-      clientName: existingValues.clientName,
-      clientEmail: existingValues.clientEmail,
+      ...existingValues, // Keep clientName, clientEmail, etc.
       contractType: contractType,
       deluxeDetails: {
-        ...existingValues.deluxeDetails,
-        paymentAmount: 0,
-        paymentInstallments: Array(6).fill(undefined),
-        theoreticalClasses: Array(10).fill(undefined),
-        classSchedules: Array(6).fill({ date: undefined, time: '' }),
+        ...form.formState.defaultValues.deluxeDetails,
       },
       autoMotoDetails: {
-        ...existingValues.autoMotoDetails,
-        courseValue: 0,
-        downPayment: 0,
-        balance: 0,
-        theoreticalClassDates: [],
-        practicalClassSchedules: [],
-        motoPracticalClassSchedules: [],
-        paidInFull: false,
+        ...form.formState.defaultValues.autoMotoDetails,
         vehicle: contractType === 'Curso Moto' ? 'Moto' : undefined,
       },
        ampliacionesDetails: {
-        ...existingValues.ampliacionesDetails,
-        selectedPlans: [],
-        courseValue: 0,
-        downPayment: 0,
-        balance: 0,
+        ...form.formState.defaultValues.ampliacionesDetails,
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -727,7 +720,7 @@ export function ContractForm() {
     let contractToPreview = { ...values, createdBy: currentUserRole } as unknown as Contract;
     
     if (contractType === 'Curso Deluxe') {
-        return <DeluxePremiumContractTemplatePreview {...values} createdBy={currentUserRole} />
+      return <DeluxePremiumContractTemplatePreview {...values} createdBy={currentUserRole} />
     }
     
     return <ContractView contract={contractToPreview} type={contractType} />;
@@ -1554,7 +1547,7 @@ export function ContractForm() {
             <Button type="button" variant="outline" onClick={() => setShowPreview(!showPreview)}>
                 {showPreview ? 'Ocultar Vista Previa' : 'Mostrar Vista Previa'}
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting || !form.formState.isValid}>
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 {isSubmitting ? 'Guardando...' : 'Guardar Contrato'}
             </Button>

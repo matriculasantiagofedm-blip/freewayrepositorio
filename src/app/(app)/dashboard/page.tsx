@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { FileText, CalendarClock, Users, Car, Bike, Combine, Crown, Plus, CarFront, RefreshCw, Ban } from 'lucide-react';
+import { FileText, CalendarClock, Users, Car, Bike, Combine, Crown, Plus, CarFront, RefreshCw, HandCoins } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { isPast } from 'date-fns';
 import { collection, query, where }from 'firebase/firestore';
@@ -177,12 +177,12 @@ export default function DashboardPage() {
                 <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="p-2 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40">
-                           <Ban className="h-6 w-6 text-red-600 dark:text-red-300" />
+                           <HandCoins className="h-6 w-6 text-red-600 dark:text-red-300" />
                         </div>
-                        <span className="font-semibold">Cancelaciones</span>
+                        <span className="font-semibold">Cancelación de Saldos de Estudiantes</span>
                     </div>
                     <Button asChild size="sm" variant="destructive">
-                        <Link href="/cancellations">Cancelar</Link>
+                        <Link href="/cancellations">Gestionar Saldos</Link>
                     </Button>
                 </CardContent>
             </Card>

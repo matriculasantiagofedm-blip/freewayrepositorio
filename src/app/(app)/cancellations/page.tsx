@@ -100,27 +100,27 @@ export default function CancellationsPage() {
 
   return (
     <div className="print:w-1/2 print:mx-auto print:mt-8">
-      <div className="flex flex-col gap-8">
-        <div className="flex flex-col print:flex">
-          <h1 className="font-headline text-3xl font-bold">Cancelaciones de Contrato</h1>
-          <p className="text-muted-foreground">
+      <div className="flex flex-col gap-8 print:gap-4">
+        <div className="flex flex-col print:flex print:text-center">
+          <h1 className="font-headline text-3xl font-bold print:text-lg">Cancelaciones de Contrato</h1>
+          <p className="text-muted-foreground print:text-sm">
             {format(today, "d 'de' MMMM 'de' yyyy", { locale: es })}
           </p>
         </div>
 
-        <Card className="print:block">
-          <CardHeader>
-            <CardTitle>Buscar Contrato por Cédula</CardTitle>
-            <CardDescription>Introduce el número de cédula o pasaporte del cliente.</CardDescription>
+        <Card className="print:block print:border-none print:shadow-none print:p-0">
+          <CardHeader className="print:p-2">
+            <CardTitle className="print:text-base">Buscar Contrato por Cédula</CardTitle>
+            <CardDescription className="print:text-xs">Introduce el número de cédula o pasaporte del cliente.</CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSearch} className="flex items-center gap-2">
+          <CardContent className="print:p-2">
+            <form onSubmit={handleSearch} className="flex items-center gap-2 print:flex-col print:items-start">
               <Input
                 type="text"
                 placeholder="Ej: 8-123-456"
                 value={studentIdNumber}
                 onChange={(e) => setStudentIdNumber(e.target.value)}
-                className="max-w-xs"
+                className="max-w-xs print:max-w-full print:text-sm"
               />
               <Button type="submit" disabled={isLoading} className="print-hide">
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
@@ -138,50 +138,52 @@ export default function CancellationsPage() {
         )}
 
         {searched && !isLoading && foundContracts && foundContracts.length > 0 && (
-          <div className='space-y-4 print:block'>
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold">Contratos Encontrados para "{foundContracts[0].clientName}"</h2>
-                <Button variant="outline" onClick={handlePrint} className="print-hide">
-                  <Printer className="mr-2 h-4 w-4" />
-                  Imprimir Cancelación
-                </Button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 print:grid-cols-1 print:gap-6">
+          <Card className='print:border-none print:shadow-none'>
+              <CardHeader className='print:p-2'>
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-bold print:text-base">Contratos Encontrados para "{foundContracts[0].clientName}"</h2>
+                  <Button variant="outline" onClick={handlePrint} className="print-hide">
+                    <Printer className="mr-2 h-4 w-4" />
+                    Imprimir Cancelación
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 print:grid-cols-1 print:gap-2 print:p-2">
                   {foundContracts.map(contract => {
                       const balance = getBalance(contract);
                       const payment = payments[contract.id] || 0;
                       const currentBalance = balance - payment;
 
                       return (
-                      <Card key={contract.id} className="animate-in fade-in-50 print:border print:shadow-none flex flex-col">
-                          <CardHeader>
-                              <CardTitle>Contrato N° {String(contract.folioNumber).padStart(6, '0')}</CardTitle>
-                              <CardDescription>{contract.type}</CardDescription>
-                          </CardHeader>
-                          <CardContent className="flex-grow space-y-4">
+                      <div key={contract.id} className="animate-in fade-in-50 print:border-t print:pt-2 space-y-2">
+                          <div className='flex justify-between'>
+                            <p className="font-bold print:text-sm">Contrato N° {String(contract.folioNumber).padStart(6, '0')}</p>
+                            <p className="text-sm text-muted-foreground print:text-xs">{contract.type}</p>
+                          </div>
+                          <div className="flex justify-between items-end">
                               <div>
-                                  <p className="text-sm font-medium text-muted-foreground">Saldo Pendiente</p>
-                                  <p className="font-bold text-xl text-destructive">B/. {balance.toFixed(2)}</p>
+                                  <p className="text-xs font-medium text-muted-foreground">Saldo Pendiente</p>
+                                  <p className="font-bold text-lg text-destructive print:text-base">B/. {balance.toFixed(2)}</p>
                               </div>
-                              <div>
-                                  <Label htmlFor={`payment-${contract.id}`}>Monto a Pagar</Label>
+                              <div className='w-28'>
+                                  <Label htmlFor={`payment-${contract.id}`} className='text-xs'>Monto a Pagar</Label>
                                   <Input 
                                     id={`payment-${contract.id}`} 
                                     type="number" 
                                     placeholder="0.00" 
-                                    className="mt-1" 
+                                    className="mt-1 h-8 print:text-sm" 
                                     onChange={(e) => handlePaymentChange(contract.id, e.target.value)}
                                   />
                               </div>
-                               <div>
-                                  <p className="text-sm font-medium text-muted-foreground">Saldo Actual</p>
-                                  <p className="font-bold text-xl">B/. {currentBalance.toFixed(2)}</p>
+                               <div className='text-right'>
+                                  <p className="text-xs font-medium text-muted-foreground">Saldo Actual</p>
+                                  <p className="font-bold text-lg print:text-base">B/. {currentBalance.toFixed(2)}</p>
                               </div>
-                          </CardContent>
-                      </Card>
+                          </div>
+                      </div>
                   )})}
-              </div>
-          </div>
+              </CardContent>
+          </Card>
         )}
 
         {searched && !isLoading && (!foundContracts || foundContracts.length === 0) && (

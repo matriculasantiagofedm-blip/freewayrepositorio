@@ -82,7 +82,7 @@ service cloud.firestore {
      */
      match /cancellation_payments/{paymentId} {
       allow create: if isSignedIn();
-      allow read: if isAdmin() || isVentas();
+      allow read: if isSignedIn();
       allow update, delete: if false;
     }
 
@@ -92,7 +92,7 @@ service cloud.firestore {
      */
      match /update_payments/{paymentId} {
       allow create: if isSignedIn();
-      allow read: if isAdmin() || isVentas();
+      allow read: if isSignedIn();
       allow update, delete: if false;
     }
 

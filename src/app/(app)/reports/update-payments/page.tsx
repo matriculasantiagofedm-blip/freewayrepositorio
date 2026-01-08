@@ -4,7 +4,6 @@ import { useState, useMemo } from 'react';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { useDb, useUser } from '@/components/firebase-provider';
-import { useCurrentRole } from '@/hooks/use-current-role';
 import type { Payment } from '@/lib/types';
 import {
   Table,
@@ -35,23 +34,17 @@ function toDate(date: any): Date {
 export default function UpdatePaymentsPage() {
   const db = useDb();
   const { user } = useUser();
-  const { role } = useCurrentRole();
   const [searchTerm, setSearchTerm] = useState('');
 
   const paymentsQuery = useMemoQuery(() => {
-    if (!db || !user || !role) return null;
+    if (!db || !user) return null;
     
-    // Admins and Ventas can see all update payments
-    if (role === 'Administrador' || role === 'Ventas') {
-        return query(
-            collection(db, 'update_payments'), 
-            orderBy('paymentDate', 'desc')
-        );
-    }
-    
-    // Other roles see nothing.
-    return null; 
-  }, [db, user, role]);
+    // Any signed-in user can see the payments.
+    return query(
+        collection(db, 'update_payments'), 
+        orderBy('paymentDate', 'desc')
+    );
+  }, [db, user]);
 
   const { data: payments, isLoading } = useCollection<Payment>(paymentsQuery);
 
@@ -93,10 +86,10 @@ export default function UpdatePaymentsPage() {
                     Acceso Denegado
                 </h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                    No tienes los permisos necesarios para ver este reporte.
+                    Debes iniciar sesión para ver este reporte.
                 </p>
                 <Button asChild className="mt-4">
-                    <Link href="/dashboard">Volver al Panel</Link>
+                    <Link href="/">Iniciar Sesión</Link>
                 </Button>
             </div>
         );

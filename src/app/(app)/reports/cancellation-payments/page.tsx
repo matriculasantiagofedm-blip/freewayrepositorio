@@ -4,7 +4,6 @@ import { useState, useMemo } from 'react';
 import { collection, query, orderBy } from 'firebase/firestore';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { useDb, useUser } from '@/components/firebase-provider';
-import { useCurrentRole } from '@/hooks/use-current-role';
 import type { Payment } from '@/lib/types';
 import {
   Table,
@@ -35,23 +34,17 @@ function toDate(date: any): Date {
 export default function CancellationPaymentsPage() {
   const db = useDb();
   const { user } = useUser();
-  const { role } = useCurrentRole();
   const [searchTerm, setSearchTerm] = useState('');
 
   const paymentsQuery = useMemoQuery(() => {
-    if (!db || !user || !role) return null;
+    if (!db || !user) return null;
     
-    // Admins and Ventas can see all cancellation payments
-    if (role === 'Administrador' || role === 'Ventas') {
-        return query(
-            collection(db, 'cancellation_payments'), 
-            orderBy('paymentDate', 'desc')
-        );
-    }
-    
-    // Other roles see nothing.
-    return null; 
-  }, [db, user, role]);
+    // Any signed-in user can see the payments.
+    return query(
+        collection(db, 'cancellation_payments'), 
+        orderBy('paymentDate', 'desc')
+    );
+  }, [db, user]);
 
   const { data: payments, isLoading } = useCollection<Payment>(paymentsQuery);
 
@@ -86,18 +79,17 @@ export default function CancellationPaymentsPage() {
       );
     }
     
-    // This condition is met if the query is explicitly set to null (e.g., for roles without permission)
     if (!paymentsQuery && !isLoading) {
         return (
              <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
                 <h3 className="mt-4 text-lg font-semibold text-foreground">
-                    Acceso Denegado o sin Permisos
+                    Acceso Denegado
                 </h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                    No tienes los permisos necesarios para ver este reporte.
+                    Debes iniciar sesión para ver este reporte.
                 </p>
                 <Button asChild className="mt-4">
-                    <Link href="/dashboard">Volver al Panel</Link>
+                    <Link href="/">Iniciar Sesión</Link>
                 </Button>
             </div>
         );

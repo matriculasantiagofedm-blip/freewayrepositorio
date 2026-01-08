@@ -8,33 +8,19 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Printer, ShieldX } from 'lucide-react';
+import { Loader2, Search, Printer } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { useRouter } from 'next/navigation';
 
 export default function CancellationsPage() {
   const db = useDb();
   const { user } = useUser();
   const { toast } = useToast();
-  const router = useRouter();
 
   const [studentIdNumber, setStudentIdNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState<string | null>(null);
   const [foundContracts, setFoundContracts] = useState<Contract[] | null>(null);
   const [searched, setSearched] = useState(false);
-  const [contractToCancel, setContractToCancel] = useState<Contract | null>(null);
 
   const today = new Date();
 
@@ -89,47 +75,6 @@ export default function CancellationsPage() {
       setIsLoading(false);
     }
   };
-
-  const handleOpenCancelDialog = (contract: Contract) => {
-    setContractToCancel(contract);
-  };
-  
-  const handleConfirmCancellation = async () => {
-    if (!contractToCancel || !db) return;
-  
-    setIsSaving(contractToCancel.id);
-  
-    try {
-      const contractRef = doc(db, 'contracts', contractToCancel.id);
-      await updateDoc(contractRef, {
-        status: 'expired',
-      });
-  
-      toast({
-        title: 'Cancelación Guardada',
-        description: `El contrato N° ${String(contractToCancel.folioNumber).padStart(6, '0')} ha sido anulado.`,
-      });
-
-      // Print cancellation receipt
-      const printUrl = `/print-cancellation/${contractToCancel.id}`;
-      window.open(printUrl, '_blank');
-  
-      // Refresh the list of contracts
-      setFoundContracts(prev => prev?.filter(c => c.id !== contractToCancel.id) || null);
-      setContractToCancel(null);
-
-    } catch (error) {
-      console.error("Error al guardar la cancelación:", error);
-      toast({
-        variant: 'destructive',
-        title: 'Error al Guardar',
-        description: 'No se pudo guardar la cancelación. Inténtalo de nuevo.',
-      });
-    } finally {
-      setIsSaving(null);
-    }
-  };
-
 
   const handlePrint = () => {
     window.print();
@@ -193,45 +138,11 @@ export default function CancellationsPage() {
                             <p className="text-sm font-medium text-muted-foreground">Saldo Pendiente</p>
                             <p className="font-bold text-xl text-destructive">B/. {getBalance(contract).toFixed(2)}</p>
                         </CardContent>
-                        <CardFooter className="print-hide">
-                           <Button 
-                              variant="destructive" 
-                              className="w-full"
-                              onClick={() => handleOpenCancelDialog(contract)}
-                              disabled={isSaving === contract.id}
-                            >
-                               {isSaving === contract.id ? (
-                                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                               ) : (
-                                   <ShieldX className="mr-2 h-4 w-4" />
-                               )}
-                               Guardar Cancelación
-                           </Button>
-                        </CardFooter>
                     </Card>
                 ))}
             </div>
         </div>
       )}
-      
-      {/* Confirmation Dialog */}
-      <AlertDialog open={!!contractToCancel} onOpenChange={(open) => !open && setContractToCancel(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás seguro de anular este contrato?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción es irreversible. El contrato N° <span className="font-bold">{String(contractToCancel?.folioNumber).padStart(6, '0')}</span> será marcado como ANULADO y no se podrá revertir.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>No, mantener</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmCancellation} className="bg-destructive hover:bg-destructive/90">
-              Sí, guardar cancelación
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
 
       {searched && !isLoading && (!foundContracts || foundContracts.length === 0) && (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center print-hide">

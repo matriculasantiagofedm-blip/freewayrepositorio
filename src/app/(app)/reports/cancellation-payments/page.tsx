@@ -166,9 +166,9 @@ export default function CancellationPaymentsReportPage() {
             </TableBody>
             <TableFooter>
                 <TableRow className="font-bold text-base">
-                    <TableCell colSpan={5}>Total</TableCell>
+                    <TableCell colSpan={6}>Total</TableCell>
                     <TableCell className="text-right">{currencyFormatter.format(totalAmount)}</TableCell>
-                    <TableCell>({payments.length} pagos)</TableCell>
+                    
                 </TableRow>
             </TableFooter>
           </Table>

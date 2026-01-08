@@ -89,7 +89,7 @@ export default function DailyCashReportPage() {
 
   // Fetch contracts and payments based on selected date
   useEffect(() => {
-    if (!db || !reportDate || !role || !['Administrador', 'Ventas'].includes(role)) {
+    if (!db || !reportDate) {
         setTransactions([]);
         setIsDataLoaded(true);
         setIsLoading(false);

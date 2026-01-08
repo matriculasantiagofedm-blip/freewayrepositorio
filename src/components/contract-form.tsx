@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -55,7 +53,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 
 // --- Esquemas de Validación con Zod (para referencia interna y validación manual) ---
-const baseSchema = z.object({
+const baseClientSchema = z.object({
   clientName: z.string().min(1, 'El nombre completo es requerido.'),
   clientEmail: z.string().email('Debe ser un correo electrónico válido.'),
 });
@@ -65,19 +63,19 @@ const deluxeDetailsSchema = z.object({
   studentAddress: z.string().min(1, 'La dirección es requerida.'),
   studentPhone1: z.string().min(1, 'El teléfono 1 es requerido.'),
   studentPhone2: z.string().optional(),
-});
+}).passthrough();
 
 const autoMotoDetailsSchema = z.object({
   studentIdNumber: z.string().min(1, 'La cédula es requerida.'),
   studentAddress: z.string().min(1, 'La dirección es requerida.'),
   studentPhone1: z.string().min(1, 'El teléfono 1 es requerido.'),
-});
+}).passthrough();
 
 const ampliacionesDetailsSchema = z.object({
     studentIdNumber: z.string().min(1, 'La cédula es requerida.'),
     studentAddress: z.string().min(1, 'La dirección es requerida.'),
     studentPhone1: z.string().min(1, 'El teléfono 1 es requerido.'),
-});
+}).passthrough();
 
 
 type FormValues = {
@@ -85,9 +83,9 @@ type FormValues = {
   clientEmail: string;
   contractType: ContractType;
   folioNumber?: number;
-  deluxeDetails?: Partial<z.infer<typeof deluxeDetailsSchema>>;
-  autoMotoDetails?: any; // Mantener flexible por ahora
-  ampliacionesDetails?: any; // Mantener flexible
+  deluxeDetails: Partial<z.infer<typeof deluxeDetailsSchema>>;
+  autoMotoDetails: any; // Mantener flexible por ahora
+  ampliacionesDetails: any; // Mantener flexible
 };
 
 // Función auxiliar para convertir las fechas de los detalles a Timestamps de Firestore
@@ -488,51 +486,47 @@ export function ContractForm() {
       return;
     }
 
-    // --- Manual Validation ---
-    const baseValidation = baseSchema.safeParse(values);
+    // Manual Validation
+    const baseValidation = baseClientSchema.safeParse(values);
     if (!baseValidation.success) {
-        toast({ variant: 'destructive', title: 'Campos Inválidos', description: baseValidation.error.errors[0].message });
-        return;
+      toast({ variant: 'destructive', title: 'Campos Inválidos', description: `Error en datos del cliente: ${baseValidation.error.errors[0].message}` });
+      return;
     }
 
     let details, detailsSchema, studentIdNumber;
     
     switch(values.contractType) {
-        case 'Curso Deluxe':
-            details = values.deluxeDetails;
-            detailsSchema = deluxeDetailsSchema;
-            break;
-        case 'Ampliaciones':
-            details = values.ampliacionesDetails;
-            detailsSchema = ampliacionesDetailsSchema;
-            break;
-        default: // Curso Auto, Moto, Mixto, Solo Practica
-            details = values.autoMotoDetails;
-            detailsSchema = autoMotoDetailsSchema;
-            break;
+      case 'Curso Deluxe':
+        details = values.deluxeDetails;
+        detailsSchema = deluxeDetailsSchema;
+        break;
+      case 'Ampliaciones':
+        details = values.ampliacionesDetails;
+        detailsSchema = ampliacionesDetailsSchema;
+        break;
+      default:
+        details = values.autoMotoDetails;
+        detailsSchema = autoMotoDetailsSchema;
+        break;
     }
     
     const detailsValidation = detailsSchema.safeParse(details);
     if (!detailsValidation.success) {
-        toast({ variant: 'destructive', title: 'Campos Inválidos', description: detailsValidation.error.errors[0].message });
-        return;
+      toast({ variant: 'destructive', title: 'Campos Inválidos', description: `Error en detalles del contrato: ${detailsValidation.error.errors[0].message}` });
+      return;
     }
     
     studentIdNumber = details.studentIdNumber;
-    // --- End Manual Validation ---
 
+    if (!studentIdNumber) {
+      toast({ variant: 'destructive', title: 'Campo Requerido', description: 'La cédula del estudiante es obligatoria.' });
+      return;
+    }
 
     setIsSubmitting(true);
-
-    let finalValues = { ...values };
     let contractData: Partial<Contract> = {};
-    
+
     try {
-      
-      if (!studentIdNumber) {
-        throw new Error("La cédula del estudiante es requerida para guardar el contrato.");
-      }
-      
       const clientsRef = collection(db, 'clients');
       const q = query(clientsRef, where('idNumber', '==', studentIdNumber));
       const clientSnapshot = await getDocs(q);
@@ -553,30 +547,28 @@ export function ContractForm() {
           clientId = newClientRef.id;
           const clientData: Partial<Client> = {
             id: clientId,
-            name: finalValues.clientName,
-            email: finalValues.clientEmail,
+            name: values.clientName,
+            email: values.clientEmail,
             idNumber: studentIdNumber,
             userId: user.uid,
             createdAt: serverTimestamp() as Timestamp,
+            phone: details.studentPhone1,
           };
-          if (finalValues.autoMotoDetails?.studentPhone1) clientData.phone = finalValues.autoMotoDetails.studentPhone1;
-          if (finalValues.deluxeDetails?.studentPhone1) clientData.phone = finalValues.deluxeDetails.studentPhone1;
-          if (finalValues.ampliacionesDetails?.studentPhone1) clientData.phone = finalValues.ampliacionesDetails.studentPhone1;
-
           transaction.set(newClientRef, clientData);
         } else {
           clientId = existingClientDoc.id;
         }
 
         const newContractRef = doc(collection(db, 'contracts'));
+        
         contractData = {
           id: newContractRef.id,
           folioNumber: newFolioNumber,
-          title: finalValues.contractType,
-          clientName: finalValues.clientName,
-          clientEmail: finalValues.clientEmail,
+          title: values.contractType,
+          clientName: values.clientName,
+          clientEmail: values.clientEmail,
           clientId: clientId,
-          type: finalValues.contractType,
+          type: values.contractType,
           status: 'active',
           userId: user.uid,
           createdAt: serverTimestamp() as Timestamp,
@@ -585,13 +577,12 @@ export function ContractForm() {
           deadlines: [],
         };
         
-        if (finalValues.contractType === 'Curso Deluxe') {
-            contractData.deluxeDetails = convertDetailsDatesToTimestamps(finalValues.deluxeDetails);
-        } else if (finalValues.contractType === 'Ampliaciones') {
-            contractData.ampliacionesDetails = convertDetailsDatesToTimestamps(finalValues.ampliacionesDetails);
-        }
-        else {
-            contractData.autoMotoDetails = convertDetailsDatesToTimestamps(finalValues.autoMotoDetails);
+        if (values.contractType === 'Curso Deluxe') {
+            contractData.deluxeDetails = convertDetailsDatesToTimestamps(values.deluxeDetails);
+        } else if (values.contractType === 'Ampliaciones') {
+            contractData.ampliacionesDetails = convertDetailsDatesToTimestamps(values.ampliacionesDetails);
+        } else {
+            contractData.autoMotoDetails = convertDetailsDatesToTimestamps(values.autoMotoDetails);
         }
 
         transaction.set(newContractRef, contractData);
@@ -603,7 +594,7 @@ export function ContractForm() {
       if (newContractId) {
         toast({
           title: 'Contrato Generado Exitosamente',
-          description: `El contrato para ${finalValues.clientName} ha sido creado.`,
+          description: `El contrato para ${values.clientName} ha sido creado.`,
         });
         router.push(`/contracts/${newContractId}`);
       }
@@ -629,10 +620,6 @@ export function ContractForm() {
   const renderPreview = () => {
     const values = form.getValues();
     let contractToPreview = { ...values, createdBy: currentUserRole } as unknown as Contract;
-    
-    if (contractType === 'Curso Deluxe') {
-      return <DeluxePremiumContractTemplatePreview {...values} createdBy={currentUserRole} />
-    }
     
     return <ContractView contract={contractToPreview} type={contractType} />;
   };

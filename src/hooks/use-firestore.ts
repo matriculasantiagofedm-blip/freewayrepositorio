@@ -93,21 +93,16 @@ export function useCollection<T>(q: Query<DocumentData> | CollectionReference<Do
         setIsLoading(false);
         setError(null);
       },
-      async (err) => {
-        let path = 'unknown';
-        if (q instanceof CollectionReference) {
-          path = q.path;
-        } else if (q instanceof Query) {
-          // This is a simplified way; getting the exact path from a query client-side is complex.
-          // We assume the first part of the path is the collection name.
-          // This may need adjustment based on query complexity.
-          try {
-             const querySnapshot = await getDocs(q);
-             path = querySnapshot.query.path;
-          } catch(e) {
-            // if getDocs fails, we may not be able to get the path
-            // this is a best-effort attempt.
+      (err) => {
+        let path = 'unknown path';
+        try {
+          // The 'path' property exists on Query and CollectionReference
+          // This is a more direct way to get it, even if the onSnapshot fails.
+          if ('path' in q) {
+             path = q.path;
           }
+        } catch(e) {
+            console.warn("Could not determine query path for permission error reporting.", e);
         }
 
         const permissionError = new FirestorePermissionError({

@@ -11,7 +11,7 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import type { Contract, Payment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Save, UserPlus } from 'lucide-react';
+import { Loader2, Search, Save, UserPlus, Printer } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -115,11 +115,9 @@ export default function UpdatesPage() {
         
         let newUpdateFolio;
         if (!counterDoc.exists()) {
-          // Si el contador no existe, lo creamos e inicializamos en 1
           newUpdateFolio = 1;
           transaction.set(counterRef, { count: newUpdateFolio });
         } else {
-          // Si existe, lo incrementamos
           newUpdateFolio = counterDoc.data().count + 1;
           transaction.update(counterRef, { count: newUpdateFolio });
         }
@@ -151,17 +149,21 @@ export default function UpdatesPage() {
       setIsSaving(false);
     }
   };
+  
+  const handlePrint = () => {
+    window.print();
+  };
 
   return (
-    <div className="flex flex-col gap-8">
-        <div className="flex flex-col">
+    <div className="flex flex-col gap-8 print:w-3/4 print:mx-auto print:mt-8">
+        <div className="flex flex-col print-hide">
           <h1 className="font-headline text-3xl font-bold">Actualización de Certificados</h1>
           <p className="text-muted-foreground">
             {format(today, "d 'de' MMMM 'de' yyyy", { locale: es })}
           </p>
         </div>
 
-        <Card>
+        <Card className="print-hide">
           <CardHeader>
             <CardTitle>Buscar Estudiante por Cédula</CardTitle>
             <CardDescription>Introduce el número de cédula o pasaporte del estudiante para iniciar el proceso de actualización.</CardDescription>
@@ -184,25 +186,38 @@ export default function UpdatesPage() {
         </Card>
 
         {isLoading && (
-          <div className="flex items-center justify-center p-8">
+          <div className="flex items-center justify-center p-8 print-hide">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <p className="ml-4 text-muted-foreground">Buscando estudiante...</p>
           </div>
         )}
 
         {searched && !isLoading && (
-            <Card className="animate-in fade-in-50">
+            <Card className="animate-in fade-in-50 print:border-none print:shadow-none">
                 <CardHeader>
-                    <CardTitle>{foundContract ? 'Estudiante Encontrado' : 'Registrar Actualización Manual'}</CardTitle>
-                    <CardDescription>
-                      {foundContract 
-                        ? `Selecciona la cantidad de certificados a actualizar para ${foundContract.clientName}.`
-                        : `No se encontró un contrato para la cédula ingresada. Completa los datos para registrar el pago manualmente.`
-                      }
-                    </CardDescription>
+                    <div className='flex justify-between items-start'>
+                        <div>
+                            <CardTitle className='print:text-lg'>
+                                {foundContract ? 'Estudiante Encontrado' : 'Registrar Actualización Manual'}
+                            </CardTitle>
+                            <CardDescription className='print:hidden'>
+                            {foundContract 
+                                ? `Selecciona la cantidad de certificados a actualizar para ${foundContract.clientName}.`
+                                : `No se encontró un contrato para la cédula ingresada. Completa los datos para registrar el pago manualmente.`
+                            }
+                            </CardDescription>
+                             <p className="hidden print:block text-sm text-muted-foreground mt-1">
+                                {format(today, "d 'de' MMMM 'de' yyyy", { locale: es })}
+                            </p>
+                        </div>
+                        <Button variant="outline" onClick={handlePrint} className="print-hide">
+                            <Printer className="mr-2 h-4 w-4" />
+                            Imprimir Recibo
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    <div className='border rounded-lg p-4 bg-muted/50'>
+                    <div className='border rounded-lg p-4 bg-muted/50 print:bg-transparent print:border-b print:rounded-none'>
                         <p className="font-medium">Cédula / Pasaporte: <span className="font-normal text-primary">{studentIdNumber}</span></p>
                         {foundContract ? (
                           <>
@@ -210,14 +225,16 @@ export default function UpdatesPage() {
                             <p className="font-medium">Contrato Original: <span className="font-normal">{String(foundContract.folioNumber).padStart(6, '0')}</span></p>
                           </>
                         ) : (
-                          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mt-4'>
+                          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 print:grid-cols-1'>
                              <div className="space-y-2">
-                                <Label htmlFor="manual-name">Nombre Completo del Estudiante</Label>
-                                <Input id="manual-name" value={manualName} onChange={(e) => setManualName(e.target.value)} placeholder="Introducir nombre" />
+                                <Label htmlFor="manual-name" className='print:hidden'>Nombre Completo del Estudiante</Label>
+                                <p className="font-medium hidden print:block">Nombre: <span className="font-normal">{manualName}</span></p>
+                                <Input id="manual-name" value={manualName} onChange={(e) => setManualName(e.target.value)} placeholder="Introducir nombre" className='print:hidden'/>
                               </div>
                               <div className="space-y-2">
-                                <Label htmlFor="manual-address">Dirección del Estudiante</Label>
-                                <Input id="manual-address" value={manualAddress} onChange={(e) => setManualAddress(e.target.value)} placeholder="Introducir dirección" />
+                                <Label htmlFor="manual-address" className='print:hidden'>Dirección del Estudiante</Label>
+                                <p className="font-medium hidden print:block">Dirección: <span className="font-normal">{manualAddress}</span></p>
+                                <Input id="manual-address" value={manualAddress} onChange={(e) => setManualAddress(e.target.value)} placeholder="Introducir dirección" className='print:hidden' />
                               </div>
                           </div>
                         )}
@@ -228,19 +245,19 @@ export default function UpdatesPage() {
                             const option = updateOptions.find(opt => opt.id === value);
                             setSelectedUpdate(option || null);
                         }}
-                        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                        className="grid grid-cols-1 md:grid-cols-3 gap-4 print:grid-cols-1"
                         value={selectedUpdate?.id}
                     >
                         {updateOptions.map(option => (
-                             <Label key={option.id} htmlFor={option.id} className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                                <RadioGroupItem value={option.id} id={option.id} className="sr-only" />
-                                <span className="text-lg font-semibold">{option.label}</span>
-                                <span className="text-2xl font-bold mt-2">B/.{option.price.toFixed(2)}</span>
+                             <Label key={option.id} htmlFor={option.id} className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary print:flex-row print:justify-between print:p-2 print:border">
+                                <RadioGroupItem value={option.id} id={option.id} className="sr-only print:not-sr-only print:mr-4" />
+                                <span className="text-lg font-semibold print:text-base">{option.label}</span>
+                                <span className="text-2xl font-bold mt-2 print:text-xl print:mt-0">B/.{option.price.toFixed(2)}</span>
                             </Label>
                         ))}
                     </RadioGroup>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="print-hide">
                     <Button onClick={handleSaveUpdate} disabled={isSaving || !selectedUpdate}>
                         {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                         Registrar Actualización y Pago

@@ -80,11 +80,11 @@ service cloud.firestore {
     /**
      * @description Manages payment records.
      * @path /payments/{paymentId}
-     * @allow (read, list) Admins can read payment lists for reporting.
+     * @allow (read, list) Admins and Ventas can read payment lists for reporting.
      * @allow (create) Any signed-in user can create a payment record.
      */
     match /payments/{paymentId} {
-        allow read, list: if isAdmin();
+        allow read, list: if isAdmin() || isVentas();
         allow create: if isSignedIn();
         allow update, delete: if false; // Payments are immutable
     }

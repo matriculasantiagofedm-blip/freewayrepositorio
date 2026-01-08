@@ -1,23 +1,31 @@
+
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ClipboardPenLine, ListChecks } from 'lucide-react';
 import Link from 'next/link';
+import { useCurrentRole } from '@/hooks/use-current-role';
 
 export default function ReportsPage() {
-  const reports = [
+  const { role } = useCurrentRole();
+
+  const allReports = [
     {
       title: 'Reporte de Caja Diario',
       description: 'Genera el reporte de caja para el día actual.',
       href: '/reports/daily-cash',
       icon: ClipboardPenLine,
+      roles: ['Administrador'],
     },
-     {
+    {
       title: 'Listado de Pagos',
       description: 'Ver y filtrar todos los pagos de cancelación registrados.',
       href: '/reports/cancellation-payments',
       icon: ListChecks,
+      roles: ['Administrador', 'Ventas'],
     },
   ];
+
+  const reports = allReports.filter(report => report.roles.includes(role || ''));
 
   return (
     <div className="flex flex-col gap-8">

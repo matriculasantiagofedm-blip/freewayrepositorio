@@ -81,12 +81,19 @@ service cloud.firestore {
      * @path /payments/{paymentId}
      */
     match /payments/{paymentId} {
-        // Allows admins and sales to read single documents or list them for reports.
-        allow read: if isAdmin() || isVentas();
-        // Allow any signed-in user to create a payment record (e.g., from the cancellations page).
-        allow create: if isSignedIn();
-        // Payments are immutable and cannot be updated or deleted.
-        allow update, delete: if false;
+      // Allow creation of any payment type by any signed-in user.
+      allow create: if isSignedIn();
+      
+      // Allow admins and sales to read payments of type 'cancelacion' or 'actualizacion'.
+      // This is crucial for the reports to work.
+      allow read: if (isAdmin() || isVentas()) && 
+                     (resource.data.type == 'cancelacion' || resource.data.type == 'actualizacion');
+      
+      // Also allow reading any payment document if it's not a list query (for general-purpose reads)
+      allow get: if isAdmin() || isVentas();
+      
+      // Payments are immutable and cannot be updated or deleted.
+      allow update, delete: if false;
     }
 
 

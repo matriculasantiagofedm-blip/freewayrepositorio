@@ -98,100 +98,103 @@ export default function CancellationsPage() {
   };
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex flex-col print:flex">
-        <h1 className="font-headline text-3xl font-bold">Cancelaciones de Contrato</h1>
-        <p className="text-muted-foreground">
-          {format(today, "d 'de' MMMM 'de' yyyy", { locale: es })}
-        </p>
-      </div>
-
-      <Card className="print:block">
-        <CardHeader>
-          <CardTitle>Buscar Contrato por Cédula</CardTitle>
-          <CardDescription>Introduce el número de cédula o pasaporte del cliente.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSearch} className="flex items-center gap-2">
-            <Input
-              type="text"
-              placeholder="Ej: 8-123-456"
-              value={studentIdNumber}
-              onChange={(e) => setStudentIdNumber(e.target.value)}
-              className="max-w-xs"
-            />
-            <Button type="submit" disabled={isLoading} className="print-hide">
-              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-              Buscar
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      {isLoading && (
-        <div className="flex items-center justify-center p-8 print-hide">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="ml-4 text-muted-foreground">Buscando contratos...</p>
-        </div>
-      )}
-
-      {searched && !isLoading && foundContracts && foundContracts.length > 0 && (
-        <div className='space-y-4 print:block'>
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold">Contratos Encontrados para "{foundContracts[0].clientName}"</h2>
-              <Button variant="outline" onClick={handlePrint} className="print-hide">
-                <Printer className="mr-2 h-4 w-4" />
-                Imprimir Cancelación
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 print:grid-cols-2 print:gap-6">
-                {foundContracts.map(contract => {
-                    const balance = getBalance(contract);
-                    const payment = payments[contract.id] || 0;
-                    const currentBalance = balance - payment;
-
-                    return (
-                    <Card key={contract.id} className="animate-in fade-in-50 print:border print:shadow-none flex flex-col">
-                        <CardHeader>
-                            <CardTitle>Contrato N° {String(contract.folioNumber).padStart(6, '0')}</CardTitle>
-                            <CardDescription>{contract.type}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex-grow space-y-4">
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">Saldo Pendiente</p>
-                                <p className="font-bold text-xl text-destructive">B/. {balance.toFixed(2)}</p>
-                            </div>
-                            <div>
-                                <Label htmlFor={`payment-${contract.id}`}>Monto a Pagar</Label>
-                                <Input 
-                                  id={`payment-${contract.id}`} 
-                                  type="number" 
-                                  placeholder="0.00" 
-                                  className="mt-1" 
-                                  onChange={(e) => handlePaymentChange(contract.id, e.target.value)}
-                                />
-                            </div>
-                             <div>
-                                <p className="text-sm font-medium text-muted-foreground">Saldo Actual</p>
-                                <p className="font-bold text-xl">B/. {currentBalance.toFixed(2)}</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                )})}
-            </div>
-        </div>
-      )}
-
-      {searched && !isLoading && (!foundContracts || foundContracts.length === 0) && (
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center print-hide">
-          <h3 className="mt-4 text-lg font-semibold text-foreground">
-            No se encontraron contratos activos
-          </h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Verifica el número de cédula o puede que no haya contratos vigentes para este cliente.
+    <div className="print:flex print:flex-col print:min-h-screen">
+      <div className="print:flex-grow"></div>
+      <div className="flex flex-col gap-8">
+        <div className="flex flex-col print:flex">
+          <h1 className="font-headline text-3xl font-bold">Cancelaciones de Contrato</h1>
+          <p className="text-muted-foreground">
+            {format(today, "d 'de' MMMM 'de' yyyy", { locale: es })}
           </p>
         </div>
-      )}
+
+        <Card className="print:block">
+          <CardHeader>
+            <CardTitle>Buscar Contrato por Cédula</CardTitle>
+            <CardDescription>Introduce el número de cédula o pasaporte del cliente.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSearch} className="flex items-center gap-2">
+              <Input
+                type="text"
+                placeholder="Ej: 8-123-456"
+                value={studentIdNumber}
+                onChange={(e) => setStudentIdNumber(e.target.value)}
+                className="max-w-xs"
+              />
+              <Button type="submit" disabled={isLoading} className="print-hide">
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+                Buscar
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {isLoading && (
+          <div className="flex items-center justify-center p-8 print-hide">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="ml-4 text-muted-foreground">Buscando contratos...</p>
+          </div>
+        )}
+
+        {searched && !isLoading && foundContracts && foundContracts.length > 0 && (
+          <div className='space-y-4 print:block'>
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-bold">Contratos Encontrados para "{foundContracts[0].clientName}"</h2>
+                <Button variant="outline" onClick={handlePrint} className="print-hide">
+                  <Printer className="mr-2 h-4 w-4" />
+                  Imprimir Cancelación
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 print:grid-cols-2 print:gap-6">
+                  {foundContracts.map(contract => {
+                      const balance = getBalance(contract);
+                      const payment = payments[contract.id] || 0;
+                      const currentBalance = balance - payment;
+
+                      return (
+                      <Card key={contract.id} className="animate-in fade-in-50 print:border print:shadow-none flex flex-col">
+                          <CardHeader>
+                              <CardTitle>Contrato N° {String(contract.folioNumber).padStart(6, '0')}</CardTitle>
+                              <CardDescription>{contract.type}</CardDescription>
+                          </CardHeader>
+                          <CardContent className="flex-grow space-y-4">
+                              <div>
+                                  <p className="text-sm font-medium text-muted-foreground">Saldo Pendiente</p>
+                                  <p className="font-bold text-xl text-destructive">B/. {balance.toFixed(2)}</p>
+                              </div>
+                              <div>
+                                  <Label htmlFor={`payment-${contract.id}`}>Monto a Pagar</Label>
+                                  <Input 
+                                    id={`payment-${contract.id}`} 
+                                    type="number" 
+                                    placeholder="0.00" 
+                                    className="mt-1" 
+                                    onChange={(e) => handlePaymentChange(contract.id, e.target.value)}
+                                  />
+                              </div>
+                               <div>
+                                  <p className="text-sm font-medium text-muted-foreground">Saldo Actual</p>
+                                  <p className="font-bold text-xl">B/. {currentBalance.toFixed(2)}</p>
+                              </div>
+                          </CardContent>
+                      </Card>
+                  )})}
+              </div>
+          </div>
+        )}
+
+        {searched && !isLoading && (!foundContracts || foundContracts.length === 0) && (
+          <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center print-hide">
+            <h3 className="mt-4 text-lg font-semibold text-foreground">
+              No se encontraron contratos activos
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Verifica el número de cédula o puede que no haya contratos vigentes para este cliente.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

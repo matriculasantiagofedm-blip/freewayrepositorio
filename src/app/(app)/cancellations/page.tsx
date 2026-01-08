@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -113,8 +112,8 @@ export default function CancellationsPage() {
         const newCancellationFolio = counterDoc.data().count + 1;
         transaction.update(counterRef, { count: newCancellationFolio });
 
-        // 2. Create a new payment document
-        const paymentRef = doc(collection(db, 'payments'));
+        // 2. Create a new payment document in the 'cancellation_payments' collection
+        const paymentRef = doc(collection(db, 'cancellation_payments'));
         const paymentData: Partial<Payment> = {
           amount: paymentAmount,
           contractId: contract.id,
@@ -280,5 +279,3 @@ export default function CancellationsPage() {
     </div>
   );
 }
-
-    

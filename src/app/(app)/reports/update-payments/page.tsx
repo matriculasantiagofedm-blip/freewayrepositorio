@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
-import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -45,8 +44,7 @@ export default function UpdatePaymentsPage() {
     // Admins and Ventas can see all update payments
     if (role === 'Administrador' || role === 'Ventas') {
         return query(
-            collection(db, 'payments'), 
-            where('type', '==', 'actualizacion'),
+            collection(db, 'update_payments'), 
             orderBy('paymentDate', 'desc')
         );
     }

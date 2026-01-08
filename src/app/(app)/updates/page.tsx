@@ -130,7 +130,7 @@ export default function UpdatesPage() {
           transaction.update(counterRef, { count: newUpdateFolio });
         }
 
-        const paymentRef = doc(collection(db, 'payments'));
+        const paymentRef = doc(collection(db, 'update_payments'));
         const paymentData: Partial<Payment> = {
           amount: selectedUpdate.price,
           contractId: foundContract?.id || 'MANUAL',

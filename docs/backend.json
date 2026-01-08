@@ -225,17 +225,33 @@
         }
       },
       {
-        "path": "/payments/{paymentId}",
+        "path": "/cancellation_payments/{paymentId}",
         "definition": {
           "entityName": "Payment",
           "schema": {
             "$ref": "#/backend/entities/Payment"
           },
-          "description": "Stores all payment transactions for reporting and auditing.",
+          "description": "Stores cancellation payment transactions for reporting and auditing.",
           "params": [
             {
               "name": "paymentId",
-              "description": "The unique identifier for the payment."
+              "description": "The unique identifier for the cancellation payment."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/update_payments/{paymentId}",
+        "definition": {
+          "entityName": "Payment",
+          "schema": {
+            "$ref": "#/backend/entities/Payment"
+          },
+          "description": "Stores certificate update payment transactions for reporting and auditing.",
+          "params": [
+            {
+              "name": "paymentId",
+              "description": "The unique identifier for the update payment."
             }
           ]
         }
@@ -257,6 +273,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging. The 'contracts' collection is placed at the root level to simplify security rules for roles like 'Administrador' or 'Ventas' that need to access all contracts. A new 'payments' collection is added to log all financial transactions, including initial down payments and subsequent cancellation payments, allowing for robust financial reporting without cluttering the contract documents. Authorization independence is maintained by storing the `userId` and `clientId` directly within each contract document, which is crucial for secure and efficient rule evaluations. The `counters` collection remains for managing sequential values in a scalable manner, now including a counter for cancellation folios and update folios."
+    "reasoning": "The Firestore data structure has been updated to separate payment types into distinct collections: `cancellation_payments` and `update_payments`. This simplifies security rules and improves query performance for reports. By not having a single large `payments` collection, rules no longer need complex conditions to check the payment `type`, which was causing permission errors. Each new collection has simple, direct security rules, making the system more robust and easier to debug."
   }
 }

@@ -77,23 +77,24 @@ service cloud.firestore {
     }
 
     /**
-     * @description Manages individual payment documents.
-     * @path /payments/{paymentId}
+     * @description Manages cancellation payment documents.
+     * @path /cancellation_payments/{paymentId}
      */
-     match /payments/{paymentId} {
-      // Allow creation of any payment type by any signed-in user.
+     match /cancellation_payments/{paymentId} {
       allow create: if isSignedIn();
-
-      // Allow admins and sales to read individual payments for reporting purposes.
-      allow get: if isAdmin() || isVentas();
-
-      // Allow listing payments ONLY if the query is filtering by type.
-      allow list: if (isAdmin() || isVentas()) && ('type' in request.query.where);
-
-      // Payments are immutable and cannot be updated or deleted.
+      allow read: if isAdmin() || isVentas();
       allow update, delete: if false;
     }
 
+     /**
+     * @description Manages update payment documents.
+     * @path /update_payments/{paymentId}
+     */
+     match /update_payments/{paymentId} {
+      allow create: if isSignedIn();
+      allow read: if isAdmin() || isVentas();
+      allow update, delete: if false;
+    }
 
     // Allow authenticated users to read/write the contract folio counter.
     match /counters/contract_folio {

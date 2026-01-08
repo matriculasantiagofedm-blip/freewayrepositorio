@@ -47,6 +47,14 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
   const { data: client } = useDoc<Client>(clientRef);
   const deluxeDetails = contract.deluxeDetails;
 
+  const fullStudentName = [
+    deluxeDetails?.firstName,
+    deluxeDetails?.middleName,
+    deluxeDetails?.lastName,
+    deluxeDetails?.secondLastName,
+  ].filter(Boolean).join(' ');
+
+
   const formatDate = (date: Date) => {
     if (!date || isNaN(date.getTime()) || date.getFullYear() <= 1970) return <Line />;
     try {
@@ -86,7 +94,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
         </p>
 
         <div className="space-y-0.5">
-            <p>Entre <Value>{contract.clientName}</Value>, con cédula <Value>{deluxeDetails?.studentIdNumber}</Value>,</p>
+            <p>Entre <Value>{fullStudentName || contract.clientName}</Value>, con cédula <Value>{deluxeDetails?.studentIdNumber}</Value>,</p>
             <div className="flex items-center flex-wrap">
                 , con domicilio en 
                 <Line><Value>{deluxeDetails?.studentAddress}</Value></Line>
@@ -105,6 +113,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
             <p>LA EMPRESA se compromete a brindar a EL ESTUDIANTE la capacitación teórico-práctica del curso “PAQUETE DELUXE: PLAN PREMIUM”, con una duración total de 12 semanas, que incluye: 20 horas teóricas (clases presenciales nocturnas), 12 horas prácticas (entrenamiento en circuito cerrado), y Certificación según categoría: A, C o A, C, D.</p>
 
             <h3 className="font-bold">CLÁUSULA SEGUNDA - VALOR, MATRÍCULA Y FORMA DE PAGO</h3>
+            <p>El costo de la matrícula es de B/. 15.00.</p>
             <p><Value>{paymentDetailsText}</Value></p>
             <p>El pago se realizará de la siguiente manera: 6 cuotas de B/.<Value>{paymentAmount.toFixed(2)}</Value> cada una, con fechas de pago establecidas cada dos semanas a partir del inicio del curso.</p>
             <div className="grid grid-cols-2 gap-x-6 gap-y-0 text-[10px]">

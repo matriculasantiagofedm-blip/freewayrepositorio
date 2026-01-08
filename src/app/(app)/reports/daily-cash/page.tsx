@@ -89,7 +89,12 @@ export default function DailyCashReportPage() {
 
   // Fetch contracts and payments based on selected date
   useEffect(() => {
-    if (!db || !reportDate || !role) return;
+    if (!db || !reportDate || !role || !['Administrador', 'Ventas'].includes(role)) {
+        setTransactions([]);
+        setIsDataLoaded(true);
+        setIsLoading(false);
+        return;
+    };
 
     const fetchData = async () => {
       setIsLoading(true);
@@ -125,30 +130,8 @@ export default function DailyCashReportPage() {
                 };
             });
 
-        // 2. Fetch cancellation payments for the day
-        const paymentsRef = collection(db, 'payments');
-        const paymentsQuery = query(
-          paymentsRef,
-          where('paymentDate', '>=', Timestamp.fromDate(startOfReportDay)),
-          where('paymentDate', '<=', Timestamp.fromDate(endOfReportDay)),
-          where('type', '==', 'cancelacion')
-        );
-        const paymentsSnapshot = await getDocs(paymentsQuery);
-        const cancellationTransactions = paymentsSnapshot.docs.map(doc => {
-            const payment = { id: doc.id, ...doc.data() } as Payment;
-            return {
-                id: payment.id,
-                invoice: '',
-                contrato: String(payment.contractFolio || ''),
-                cedula: payment.studentIdNumber || '',
-                clientName: payment.clientName || '',
-                phone: '',
-                service: 'Pago de Saldo',
-                amount: payment.amount || 0,
-                paymentType: '',
-                cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
-            };
-        });
+        // 2. Fetch cancellation payments for the day - TEMPORARILY DISABLED
+        const cancellationTransactions: Transaction[] = [];
         
         setTransactions([...newContractTransactions, ...cancellationTransactions]);
         setIsDataLoaded(true);
@@ -475,4 +458,3 @@ export default function DailyCashReportPage() {
     </div>
   );
 }
-

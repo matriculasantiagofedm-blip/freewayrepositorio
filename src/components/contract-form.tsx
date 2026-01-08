@@ -726,6 +726,10 @@ export function ContractForm() {
     const values = form.getValues();
     let contractToPreview = { ...values, createdBy: currentUserRole } as unknown as Contract;
     
+    if (contractType === 'Curso Deluxe') {
+        return <DeluxePremiumContractTemplatePreview {...values} createdBy={currentUserRole} />
+    }
+    
     return <ContractView contract={contractToPreview} type={contractType} />;
   };
 
@@ -1574,3 +1578,4 @@ export function ContractForm() {
     
 
     
+

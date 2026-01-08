@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -35,7 +34,7 @@ const allLinks = [
     href: '/reports',
     label: 'Reportes',
     icon: ClipboardPenLine,
-    roles: ['Administrador', 'Ventas'],
+    roles: ['Administrador'],
   },
   {
     href: '/contracts/solo-practica',

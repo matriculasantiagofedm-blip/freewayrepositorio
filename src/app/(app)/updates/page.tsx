@@ -11,7 +11,7 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import type { Contract, Payment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Save, UserPlus, Printer } from 'lucide-react';
+import { Loader2, Search, Save, UserPlus, Printer, PlusCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -36,6 +36,7 @@ export default function UpdatesPage() {
   const [foundContract, setFoundContract] = useState<Contract | null>(null);
   const [searched, setSearched] = useState(false);
   const [selectedUpdate, setSelectedUpdate] = useState<(typeof updateOptions)[0] | null>(null);
+  const [paymentSaved, setPaymentSaved] = useState(false);
   
   const today = new Date();
 
@@ -46,6 +47,7 @@ export default function UpdatesPage() {
     setFoundContract(null);
     setSearched(false);
     setSelectedUpdate(null);
+    setPaymentSaved(false);
   };
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -60,6 +62,7 @@ export default function UpdatesPage() {
     setManualName('');
     setManualAddress('');
     setSelectedUpdate(null);
+    setPaymentSaved(false);
     setIsLoading(true);
     setSearched(true);
 
@@ -141,8 +144,7 @@ export default function UpdatesPage() {
       });
 
       toast({ title: 'Actualización Registrada', description: `El pago de B/.${selectedUpdate.price.toFixed(2)} ha sido guardado. Ahora puedes imprimir el recibo.` });
-      // Do not reset the form state here, so the user can print the receipt.
-      // resetFormState();
+      setPaymentSaved(true);
 
     } catch (error) {
       console.error("Error saving update:", error);
@@ -212,10 +214,6 @@ export default function UpdatesPage() {
                                 {format(today, "d 'de' MMMM 'de' yyyy", { locale: es })}
                             </p>
                         </div>
-                        <Button variant="outline" onClick={handlePrint} className="print-hide">
-                            <Printer className="mr-2 h-4 w-4" />
-                            Imprimir Recibo
-                        </Button>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -249,6 +247,7 @@ export default function UpdatesPage() {
                         }}
                         className="grid grid-cols-1 md:grid-cols-3 gap-4 print:grid-cols-1"
                         value={selectedUpdate?.id}
+                        disabled={paymentSaved}
                     >
                         {updateOptions.map(option => (
                              <Label key={option.id} htmlFor={option.id} className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary print:flex-row print:justify-between print:p-2 print:border">
@@ -260,10 +259,23 @@ export default function UpdatesPage() {
                     </RadioGroup>
                 </CardContent>
                 <CardFooter className="print-hide">
-                    <Button onClick={handleSaveUpdate} disabled={isSaving || !selectedUpdate}>
-                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                        Registrar Actualización y Pago
-                    </Button>
+                    {!paymentSaved ? (
+                        <Button onClick={handleSaveUpdate} disabled={isSaving || !selectedUpdate}>
+                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                            Registrar Actualización y Pago
+                        </Button>
+                    ) : (
+                        <div className='flex gap-2'>
+                            <Button variant="outline" onClick={handlePrint}>
+                                <Printer className="mr-2 h-4 w-4" />
+                                Imprimir Recibo
+                            </Button>
+                            <Button onClick={resetFormState}>
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Nueva Actualización
+                            </Button>
+                        </div>
+                    )}
                 </CardFooter>
             </Card>
         )}

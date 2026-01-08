@@ -18,7 +18,7 @@ export default function ReportsPage() {
       roles: ['Administrador', 'Ventas'],
     },
     {
-      title: 'Listado de Pagos',
+      title: 'Listado de Pagos de Cancelación',
       description: 'Ver y filtrar todos los pagos de cancelación registrados.',
       href: '/reports/cancellation-payments',
       icon: ListChecks,

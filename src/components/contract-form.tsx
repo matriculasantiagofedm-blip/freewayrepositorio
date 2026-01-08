@@ -54,22 +54,29 @@ import { useDb, useUser } from './firebase-provider';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 
-
 // --- Esquemas de Validación con Zod (para referencia interna y validación manual) ---
+const baseSchema = z.object({
+  clientName: z.string().min(1, 'El nombre completo es requerido.'),
+  clientEmail: z.string().email('Debe ser un correo electrónico válido.'),
+});
 
 const deluxeDetailsSchema = z.object({
   studentIdNumber: z.string().min(1, 'La cédula es requerida.'),
   studentAddress: z.string().min(1, 'La dirección es requerida.'),
-  studentPhone1: z.string().min(1, 'El teléfono es requerido.'),
+  studentPhone1: z.string().min(1, 'El teléfono 1 es requerido.'),
   studentPhone2: z.string().optional(),
-  paymentDetails: z.enum(['Premium B/ 201.00', 'Deluxe B/ 270.00']).optional(),
-  paymentAmount: z.number().optional(),
-  paymentInstallments: z.array(z.date().optional()).optional(),
-  vehicleTransmission: z.enum(['Automático', 'Manual']).optional(),
-  licenseCategory: z.enum(['A, C', 'A, C, D']).optional(),
-  theoreticalClassSchedule: z.enum(['Lunes', 'Miércoles']).optional(),
-  theoreticalClasses: z.array(z.date().optional()).optional(),
-  classSchedules: z.array(z.object({ date: z.date().optional(), time: z.string().optional() })).optional(),
+});
+
+const autoMotoDetailsSchema = z.object({
+  studentIdNumber: z.string().min(1, 'La cédula es requerida.'),
+  studentAddress: z.string().min(1, 'La dirección es requerida.'),
+  studentPhone1: z.string().min(1, 'El teléfono 1 es requerido.'),
+});
+
+const ampliacionesDetailsSchema = z.object({
+    studentIdNumber: z.string().min(1, 'La cédula es requerida.'),
+    studentAddress: z.string().min(1, 'La dirección es requerida.'),
+    studentPhone1: z.string().min(1, 'El teléfono 1 es requerido.'),
 });
 
 
@@ -482,32 +489,38 @@ export function ContractForm() {
     }
 
     // --- Manual Validation ---
-    if (!values.clientName) {
-        toast({ variant: 'destructive', title: 'Campo Obligatorio', description: 'Por favor, introduce el nombre completo del estudiante.' });
-        return;
-    }
-    if (!values.clientEmail || !z.string().email().safeParse(values.clientEmail).success) {
-        toast({ variant: 'destructive', title: 'Campo Obligatorio', description: 'Por favor, introduce un correo electrónico válido.' });
+    const baseValidation = baseSchema.safeParse(values);
+    if (!baseValidation.success) {
+        toast({ variant: 'destructive', title: 'Campos Inválidos', description: baseValidation.error.errors[0].message });
         return;
     }
 
-    if (values.contractType === 'Curso Deluxe') {
-        const details = values.deluxeDetails;
-        if (!details?.studentIdNumber) {
-            toast({ variant: 'destructive', title: 'Campo Obligatorio', description: 'La cédula es requerida para el Curso Deluxe.' });
-            return;
-        }
-        if (!details?.studentAddress) {
-            toast({ variant: 'destructive', title: 'Campo Obligatorio', description: 'La dirección es requerida para el Curso Deluxe.' });
-            return;
-        }
-        if (!details?.studentPhone1) {
-            toast({ variant: 'destructive', title: 'Campo Obligatorio', description: 'El teléfono 1 es requerido para el Curso Deluxe.' });
-            return;
-        }
+    let details, detailsSchema, studentIdNumber;
+    
+    switch(values.contractType) {
+        case 'Curso Deluxe':
+            details = values.deluxeDetails;
+            detailsSchema = deluxeDetailsSchema;
+            break;
+        case 'Ampliaciones':
+            details = values.ampliacionesDetails;
+            detailsSchema = ampliacionesDetailsSchema;
+            break;
+        default: // Curso Auto, Moto, Mixto, Solo Practica
+            details = values.autoMotoDetails;
+            detailsSchema = autoMotoDetailsSchema;
+            break;
     }
-    // Add similar manual validations for other contract types if needed...
+    
+    const detailsValidation = detailsSchema.safeParse(details);
+    if (!detailsValidation.success) {
+        toast({ variant: 'destructive', title: 'Campos Inválidos', description: detailsValidation.error.errors[0].message });
+        return;
+    }
+    
+    studentIdNumber = details.studentIdNumber;
     // --- End Manual Validation ---
+
 
     setIsSubmitting(true);
 
@@ -515,10 +528,6 @@ export function ContractForm() {
     let contractData: Partial<Contract> = {};
     
     try {
-      const studentIdNumber =
-        finalValues.contractType === 'Curso Deluxe' ? finalValues.deluxeDetails?.studentIdNumber :
-        finalValues.contractType === 'Ampliaciones' ? finalValues.ampliacionesDetails?.studentIdNumber :
-        finalValues.autoMotoDetails?.studentIdNumber;
       
       if (!studentIdNumber) {
         throw new Error("La cédula del estudiante es requerida para guardar el contrato.");

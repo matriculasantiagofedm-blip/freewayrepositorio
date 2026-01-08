@@ -84,8 +84,11 @@ service cloud.firestore {
       // Allow creation of any payment type by any signed-in user.
       allow create: if isSignedIn();
 
-      // Allow admins and sales to read payments for reporting purposes.
-      allow read: if isAdmin() || isVentas();
+      // Allow admins and sales to read individual payments for reporting purposes.
+      allow get: if isAdmin() || isVentas();
+
+      // Allow listing payments ONLY if the query is filtering by type.
+      allow list: if (isAdmin() || isVentas()) && ('type' in request.query.where);
 
       // Payments are immutable and cannot be updated or deleted.
       allow update, delete: if false;

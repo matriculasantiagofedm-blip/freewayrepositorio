@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -16,13 +15,13 @@ import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDb } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, Timestamp, CollectionReference, Query } from 'firebase/firestore';
-import type { Contract, Payment } from '@/lib/types';
+import type { Contract } from '@/lib/types';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 
 
 interface Transaction {
-  id: string; // Use a unique ID like contract id or payment id
+  id: string;
   invoice: string;
   contrato: string;
   cedula: string;
@@ -63,18 +62,6 @@ const paymentTypes = [
     { value: 'cheques', label: 'Cheques' },
 ];
 
-// Helper to get path from a query for error reporting
-const getQueryPath = (q: Query | CollectionReference): string => {
-    try {
-        if ('path' in q) return (q as CollectionReference).path;
-        // This is a private property but often the only way to get path from a query
-        return (q as any)._query.path.segments.join('/');
-    } catch {
-        return 'unknown path';
-    }
-};
-
-
 export default function DailyCashReportPage() {
   const { role } = useCurrentRole();
   const db = useDb();
@@ -87,7 +74,7 @@ export default function DailyCashReportPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
-  // Fetch contracts and payments based on selected date
+  // Fetch contracts based on selected date
   useEffect(() => {
     if (!db || !reportDate) {
         setTransactions([]);
@@ -96,32 +83,30 @@ export default function DailyCashReportPage() {
         return;
     };
 
-    const fetchData = async () => {
+    const fetchContracts = async () => {
       setIsLoading(true);
       setIsDataLoaded(false);
       const startOfReportDay = startOfDay(reportDate);
       const endOfReportDay = endOfDay(reportDate);
       
       try {
-        const allTransactions: Transaction[] = [];
-
-        // 1. Fetch new contracts for the day (down payments)
         const contractsRef = collection(db, 'contracts');
-        const contractsQuery = query(
+        const q = query(
           contractsRef,
           where('createdAt', '>=', Timestamp.fromDate(startOfReportDay)),
           where('createdAt', '<=', Timestamp.fromDate(endOfReportDay))
         );
-        const contractsSnapshot = await getDocs(contractsQuery);
-
-        contractsSnapshot.docs
+        const querySnapshot = await getDocs(q);
+        
+        const fetchedTransactions: Transaction[] = [];
+        querySnapshot.docs
             .map(doc => ({ id: doc.id, ...doc.data() } as Contract))
             .filter(contract => contract.status !== 'expired')
             .forEach((contract) => {
                 let details: any = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails || {};
                 
                 // Add transaction for the down payment
-                allTransactions.push({
+                fetchedTransactions.push({
                     id: contract.id,
                     invoice: '',
                     contrato: String(contract.folioNumber || ''),
@@ -136,7 +121,7 @@ export default function DailyCashReportPage() {
                 
                 // If it's a Deluxe contract, add a separate transaction for the enrollment fee
                 if (contract.type === 'Curso Deluxe') {
-                    allTransactions.push({
+                    fetchedTransactions.push({
                         id: `${contract.id}-matricula`,
                         invoice: '',
                         contrato: String(contract.folioNumber || ''),
@@ -151,53 +136,25 @@ export default function DailyCashReportPage() {
                 }
             });
 
-        // 2. Fetch 'actualizacion' and 'cancelacion' payments for the day
-        const paymentsRef = collection(db, 'payments');
-        const paymentsQuery = query(
-          paymentsRef,
-          where('paymentDate', '>=', Timestamp.fromDate(startOfReportDay)),
-          where('paymentDate', '<=', Timestamp.fromDate(endOfReportDay)),
-          where('type', 'in', ['actualizacion', 'cancelacion'])
-        );
-        const paymentsSnapshot = await getDocs(paymentsQuery);
-        
-        paymentsSnapshot.docs
-          .map(doc => ({ id: doc.id, ...doc.data() } as Payment))
-          .forEach((payment) => {
-            allTransactions.push({
-                id: payment.id,
-                invoice: '',
-                contrato: String(payment.updateFolio || payment.cancellationFolio || '').padStart(6, '0'),
-                cedula: payment.studentIdNumber || '',
-                clientName: payment.clientName || '',
-                phone: '', // Phone not available on payment record
-                service: payment.type === 'actualizacion' ? 'Actualización Certificado' : 'Cancelación de Saldo',
-                amount: payment.amount,
-                paymentType: '',
-                cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
-            });
-          });
-        
-        setTransactions(allTransactions);
+        setTransactions(fetchedTransactions);
         setIsDataLoaded(true);
+
       } catch (error: any) {
         if (error.code === 'permission-denied') {
-            const failedQuery = error.message.includes('contracts') ? 'contracts' : 'payments';
             const permissionError = new FirestorePermissionError({
-                path: failedQuery,
+                path: 'contracts',
                 operation: 'list',
             });
             errorEmitter.emit('permission-error', permissionError);
         } else {
-             // Handle other errors (e.g., network issues)
-            console.error("Error fetching data for report:", error);
+            console.error("Error fetching contracts for report:", error);
         }
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchData();
+    fetchContracts();
   }, [db, reportDate, role]);
 
 

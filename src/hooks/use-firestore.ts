@@ -96,13 +96,14 @@ export function useCollection<T>(q: Query<DocumentData> | CollectionReference<Do
       (err) => {
         let path = 'unknown path';
         try {
-          // The 'path' property exists on Query and CollectionReference
-          // This is a more direct way to get it, even if the onSnapshot fails.
-          if ('path' in q) {
-             path = q.path;
+          if (q instanceof CollectionReference) {
+            path = q.path;
+          } else if (q instanceof Query) {
+            // This is a private property but often the only way to get path from a query
+            path = (q as any)._query.path.segments.join('/');
           }
-        } catch(e) {
-            console.warn("Could not determine query path for permission error reporting.", e);
+        } catch (e) {
+          console.warn("Could not determine query path for permission error reporting.", e);
         }
 
         const permissionError = new FirestorePermissionError({

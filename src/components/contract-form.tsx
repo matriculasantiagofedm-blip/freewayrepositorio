@@ -49,7 +49,7 @@ import { cn } from '@/lib/utils';
 import { Timestamp, collection, query, where, getDocs, writeBatch, doc, serverTimestamp, runTransaction, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import type { Contract, ContractType, Client } from '@/lib/types';
+import type { Contract, ContractType, Client, DeluxeContractDetails } from '@/lib/types';
 import { DeluxePremiumContractTemplatePreview } from './deluxe-premium-contract-preview';
 import { AutoMotoContractTemplatePreview } from './auto-moto-contract-preview';
 import { Checkbox } from './ui/checkbox';
@@ -764,19 +764,35 @@ export function ContractForm() {
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                        control={form.control}
-                        name="clientName"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Nombre Completo del Estudiante</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Ej: John Doe" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
+                     {contractType === 'Curso Deluxe' ? (
+                         <FormField
+                            control={form.control}
+                            name="clientName"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Nombre Completo del Estudiante</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Ej: John Doe" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
                         />
+                     ) : (
+                        <FormField
+                            control={form.control}
+                            name="clientName"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Nombre Completo del Estudiante</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Ej: John Doe" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                     )}
                     <FormField
                         control={form.control}
                         name="clientEmail"
@@ -1566,10 +1582,18 @@ export function ContractForm() {
             <Button type="button" variant="outline" onClick={() => setShowPreview(!showPreview)}>
                 {showPreview ? 'Ocultar Vista Previa' : 'Mostrar Vista Previa'}
             </Button>
-            <Button type="submit" disabled={isSubmitting || !form.formState.isValid}>
-                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {isSubmitting ? 'Guardando...' : 'Guardar Contrato'}
-            </Button>
+            <div className="flex items-center gap-2">
+                 {contractType === 'Curso Deluxe' && (
+                    <Button type="submit" disabled={isSubmitting || !form.formState.isValid} variant="secondary">
+                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Guardar Contrato Deluxe
+                    </Button>
+                )}
+                <Button type="submit" disabled={isSubmitting || !form.formState.isValid}>
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {isSubmitting ? 'Guardando...' : 'Guardar Contrato'}
+                </Button>
+            </div>
         </div>
 
         {showPreview && (

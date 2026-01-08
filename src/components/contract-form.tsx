@@ -178,6 +178,10 @@ const formSchema = z.object({
 }).superRefine((values, ctx) => {
     switch (values.contractType) {
         case 'Curso Deluxe':
+            if (!values.deluxeDetails) {
+                 ctx.addIssue({ code: 'custom', path: ['deluxeDetails'], message: 'Detalles del curso Deluxe son requeridos.' });
+                 return;
+            }
             const deluxeResult = deluxeDetailsSchema.safeParse(values.deluxeDetails);
             if (!deluxeResult.success) {
                 deluxeResult.error.issues.forEach(issue => {
@@ -189,6 +193,10 @@ const formSchema = z.object({
         case 'Curso Moto':
         case 'Curso Mixto':
         case 'Curso Solo Practica':
+            if (!values.autoMotoDetails) {
+                 ctx.addIssue({ code: 'custom', path: ['autoMotoDetails'], message: 'Detalles del curso son requeridos.' });
+                 return;
+            }
             const autoMotoResult = autoMotoDetailsSchema.safeParse(values.autoMotoDetails);
              if (!autoMotoResult.success) {
                 autoMotoResult.error.issues.forEach(issue => {
@@ -197,6 +205,10 @@ const formSchema = z.object({
             }
             break;
         case 'Ampliaciones':
+             if (!values.ampliacionesDetails) {
+                 ctx.addIssue({ code: 'custom', path: ['ampliacionesDetails'], message: 'Detalles de ampliaciones son requeridos.' });
+                 return;
+            }
             const ampliacionesResult = ampliacionesDetailsSchema.safeParse(values.ampliacionesDetails);
              if (!ampliacionesResult.success) {
                 ampliacionesResult.error.issues.forEach(issue => {
@@ -764,35 +776,19 @@ export function ContractForm() {
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     {contractType === 'Curso Deluxe' ? (
-                         <FormField
-                            control={form.control}
-                            name="clientName"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Nombre Completo del Estudiante</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Ej: John Doe" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                     ) : (
-                        <FormField
-                            control={form.control}
-                            name="clientName"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Nombre Completo del Estudiante</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Ej: John Doe" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                     )}
+                    <FormField
+                        control={form.control}
+                        name="clientName"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Nombre Completo del Estudiante</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Ej: John Doe" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                     <FormField
                         control={form.control}
                         name="clientEmail"
@@ -1583,16 +1579,16 @@ export function ContractForm() {
                 {showPreview ? 'Ocultar Vista Previa' : 'Mostrar Vista Previa'}
             </Button>
             <div className="flex items-center gap-2">
-                 {contractType === 'Curso Deluxe' && (
+                <Button type="submit" disabled={isSubmitting || !form.formState.isValid}>
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {isSubmitting ? 'Guardando...' : 'Guardar Contrato'}
+                </Button>
+                {contractType === 'Curso Deluxe' && (
                     <Button type="submit" disabled={isSubmitting || !form.formState.isValid} variant="secondary">
                         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                         Guardar Contrato Deluxe
                     </Button>
                 )}
-                <Button type="submit" disabled={isSubmitting || !form.formState.isValid}>
-                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    {isSubmitting ? 'Guardando...' : 'Guardar Contrato'}
-                </Button>
             </div>
         </div>
 

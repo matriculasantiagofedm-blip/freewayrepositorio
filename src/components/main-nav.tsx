@@ -35,7 +35,7 @@ const allLinks = [
     href: '/reports',
     label: 'Reportes',
     icon: ClipboardPenLine,
-    roles: ['Administrador'],
+    roles: ['Administrador', 'Ventas'],
   },
   {
     href: '/contracts/solo-practica',

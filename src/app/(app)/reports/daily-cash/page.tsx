@@ -89,7 +89,7 @@ export default function DailyCashReportPage() {
 
   // Fetch contracts and payments based on selected date
   useEffect(() => {
-    if (!db || !reportDate || !role || !['Administrador', 'Ventas'].includes(role)) return;
+    if (!db || !reportDate || !role) return;
 
     const fetchData = async () => {
       setIsLoading(true);
@@ -291,19 +291,6 @@ export default function DailyCashReportPage() {
       }
     };
   }, []);
-
-
-  if (role && !['Administrador', 'Ventas'].includes(role)) {
-    return (
-      <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
-        <h3 className="mt-4 text-lg font-semibold text-foreground">Acceso Restringido</h3>
-        <p className="mt-2 text-sm text-muted-foreground">No tienes permiso para ver esta sección.</p>
-        <Button asChild className="mt-4">
-          <Link href="/dashboard">Volver al Panel</Link>
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 bg-background p-4 rounded-lg">

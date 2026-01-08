@@ -7,7 +7,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { GanttChartSquare, FileText, Users, CarFront, ClipboardPenLine, RefreshCw } from 'lucide-react';
+import { GanttChartSquare, FileText, Users, CarFront, ClipboardPenLine, RefreshCw, HandCoins } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCurrentRole } from '@/hooks/use-current-role';
 
@@ -34,14 +34,20 @@ const allLinks = [
     href: '/reports',
     label: 'Reportes',
     icon: ClipboardPenLine,
-    roles: ['Administrador', 'Ventas'],
+    roles: ['Administrador'],
   },
   {
     href: '/updates',
     label: 'Actualizaciones',
     icon: RefreshCw,
-    roles: ['Administrador', 'Ventas'],
+    roles: ['Administrador'],
   },
+  {
+    href: '/cancellations',
+    label: 'Gestionar Saldos',
+    icon: HandCoins,
+    roles: ['Administrador', 'Ventas'],
+  }
 ];
 
 export function MainNav({ className }: { className?: string }) {

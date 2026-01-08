@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -114,6 +113,13 @@ export default function DashboardPage() {
       { name: 'Curso Solo Practica', icon: CarFront, href: '/contracts/new?type=Curso%20Solo%20Practica', bgColor: 'bg-teal-50 hover:bg-teal-100 dark:bg-teal-900/20 dark:hover:bg-teal-900/40', textColor: 'text-teal-600 dark:text-teal-300'},
   ];
 
+  const otherActions = [
+      { name: 'Actualizaciones de Certificado', icon: Award, href: '/updates', bgColor: 'bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/40', textColor: 'text-green-600 dark:text-green-300', roles: ['Administrador'] },
+      { name: 'Pago de Saldos Estudiantes', icon: HandCoins, href: '/cancellations', bgColor: 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40', textColor: 'text-blue-600 dark:text-blue-300', roles: ['Administrador', 'Ventas'] },
+  ];
+  
+  const visibleOtherActions = otherActions.filter(action => action.roles.includes(role || ''));
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -157,37 +163,28 @@ export default function DashboardPage() {
         </div>
       </div>
       
-      <div>
-        <h2 className="text-2xl font-bold font-headline mb-4">Otras Acciones</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
-            <Card className="transition-all hover:shadow-lg hover:-translate-y-1">
-                <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/40">
-                           <Award className="h-6 w-6 text-green-600 dark:text-green-300" />
-                        </div>
-                        <span className="font-semibold">Actualizaciones de Certificado</span>
-                    </div>
-                    <Button asChild size="sm">
-                        <Link href="/updates">Actualizar</Link>
-                    </Button>
-                </CardContent>
-            </Card>
-            <Card className="transition-all hover:shadow-lg hover:-translate-y-1">
-                <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40">
-                           <HandCoins className="h-6 w-6 text-blue-600 dark:text-blue-300" />
-                        </div>
-                        <span className="font-semibold">Pago de Saldos Estudiantes</span>
-                    </div>
-                    <Button asChild size="sm">
-                        <Link href="/cancellations">Gestionar Saldos</Link>
-                    </Button>
-                </CardContent>
-            </Card>
+      {visibleOtherActions.length > 0 && (
+        <div>
+          <h2 className="text-2xl font-bold font-headline mb-4">Otras Acciones</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+              {visibleOtherActions.map((action) => (
+                  <Card key={action.name} className="transition-all hover:shadow-lg hover:-translate-y-1">
+                      <CardContent className="p-4 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                              <div className={cn("p-2 rounded-lg", action.bgColor)}>
+                                <action.icon className={cn("h-6 w-6", action.textColor)} />
+                              </div>
+                              <span className="font-semibold">{action.name}</span>
+                          </div>
+                          <Button asChild size="sm">
+                              <Link href={action.href}>Ir</Link>
+                          </Button>
+                      </CardContent>
+                  </Card>
+              ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -114,7 +114,7 @@ export default function DashboardPage() {
   ];
 
   const otherActions = [
-      { name: 'Actualizaciones de Certificado', icon: Award, href: '/updates', bgColor: 'bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/40', textColor: 'text-green-600 dark:text-green-300', roles: ['Administrador'] },
+      { name: 'Actualizaciones de Certificado', icon: Award, href: '/updates', bgColor: 'bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/40', textColor: 'text-green-600 dark:text-green-300', roles: ['Administrador', 'Ventas'] },
       { name: 'Pago de Saldos Estudiantes', icon: HandCoins, href: '/cancellations', bgColor: 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40', textColor: 'text-blue-600 dark:text-blue-300', roles: ['Administrador', 'Ventas'] },
   ];
   

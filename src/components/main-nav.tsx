@@ -34,13 +34,13 @@ const allLinks = [
     href: '/reports',
     label: 'Reportes',
     icon: ClipboardPenLine,
-    roles: ['Administrador'],
+    roles: ['Administrador', 'Ventas'],
   },
   {
     href: '/updates',
     label: 'Actualizaciones',
     icon: RefreshCw,
-    roles: ['Administrador'],
+    roles: ['Administrador', 'Ventas'],
   },
   {
     href: '/cancellations',

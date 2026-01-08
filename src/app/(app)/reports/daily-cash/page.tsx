@@ -89,7 +89,7 @@ export default function DailyCashReportPage() {
 
   // Fetch contracts and payments based on selected date
   useEffect(() => {
-    if (!db || !reportDate || role !== 'Administrador') return;
+    if (!db || !reportDate || !role || !['Administrador', 'Ventas'].includes(role)) return;
 
     const fetchData = async () => {
       setIsLoading(true);
@@ -293,7 +293,7 @@ export default function DailyCashReportPage() {
   }, []);
 
 
-  if (role && role !== 'Administrador') {
+  if (role && !['Administrador', 'Ventas'].includes(role)) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
         <h3 className="mt-4 text-lg font-semibold text-foreground">Acceso Restringido</h3>
@@ -489,5 +489,3 @@ export default function DailyCashReportPage() {
   );
 }
 
-
-    

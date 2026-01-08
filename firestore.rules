@@ -68,11 +68,11 @@ service cloud.firestore {
     /**
      * @description Manages client data.
      * @path /clients/{clientId}
-     * @allow (get, list) Admins can view client lists and details.
+     * @allow (get, list) Signed-in users can view client lists and details for contract creation.
      * @allow (create, update) Any signed-in user can create or update a client.
      */
     match /clients/{clientId} {
-      allow list, get: if isAdmin();
+      allow list, get: if isSignedIn();
       allow create, update: if isSignedIn();
       allow delete: if false; // Prevent client deletion
     }

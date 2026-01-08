@@ -4,22 +4,39 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useDb } from '@/components/firebase-provider';
-import { collection, query, where, getDocs, DocumentData } from 'firebase/firestore';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { useDb, useUser } from '@/components/firebase-provider';
+import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Printer } from 'lucide-react';
+import { Loader2, Search, Printer, ShieldX } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { useRouter } from 'next/navigation';
 
 export default function CancellationsPage() {
   const db = useDb();
+  const { user } = useUser();
   const { toast } = useToast();
+  const router = useRouter();
+
   const [studentIdNumber, setStudentIdNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [foundContracts, setFoundContracts] = useState<Contract[] | null>(null);
   const [searched, setSearched] = useState(false);
+  const [isAnnulling, setIsAnnulling] = useState<string | null>(null);
+
   const today = new Date();
 
   const getBalance = (contract: Contract): number => {
@@ -27,7 +44,7 @@ export default function CancellationsPage() {
         return contract.autoMotoDetails.balance || 0;
     }
     if (contract.deluxeDetails) {
-        return 0; // Deluxe might have a different balance calculation, assuming 0 for now
+        return 0;
     }
     if (contract.ampliacionesDetails) {
         return contract.ampliacionesDetails.balance || 0;
@@ -37,7 +54,7 @@ export default function CancellationsPage() {
   
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!studentIdNumber.trim()) {
+    if (!studentIdNumber.trim() || !db) {
       toast({ variant: 'destructive', title: 'Error', description: 'Por favor, introduce un número de cédula.' });
       return;
     }
@@ -61,21 +78,16 @@ export default function CancellationsPage() {
       querySnapshots.forEach(snapshot => {
         snapshot.forEach(doc => {
             const contractData = { id: doc.id, ...doc.data() } as Contract;
-            // Evitar duplicados si una cédula está en más de un details object
             if (!allContracts.some(c => c.id === contractData.id)) {
                 allContracts.push(contractData);
             }
         });
       });
 
-      // Filtrar contratos que no estén anulados (status !== 'expired')
       const activeContracts = allContracts.filter(contract => contract.status !== 'expired');
 
-      if (activeContracts.length === 0) {
-        setFoundContracts(null);
-      } else {
-        setFoundContracts(activeContracts);
-      }
+      setFoundContracts(activeContracts.length > 0 ? activeContracts : null);
+      
     } catch (error) {
       console.error("Error searching for contract:", error);
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo realizar la búsqueda. Inténtalo de nuevo.' });
@@ -83,6 +95,39 @@ export default function CancellationsPage() {
       setIsLoading(false);
     }
   };
+
+  const handleAnnulContract = async (contractToAnnul: Contract) => {
+    if (!db || !contractToAnnul.id) return;
+
+    setIsAnnulling(contractToAnnul.id);
+
+    try {
+      const contractRef = doc(db, 'contracts', contractToAnnul.id);
+      await updateDoc(contractRef, {
+        status: 'expired',
+        clientName: 'CONTRATO ANULADO',
+      });
+
+      toast({
+        title: 'Contrato Anulado',
+        description: `El contrato N° ${String(contractToAnnul.folioNumber).padStart(6, '0')} ha sido anulado.`,
+      });
+
+      // Remove the annulled contract from the list
+      setFoundContracts(prev => prev?.filter(c => c.id !== contractToAnnul.id) || null);
+
+      // Open print window for the cancellation receipt
+      const printUrl = `/print-cancellation/${contractToAnnul.id}`;
+      window.open(printUrl, '_blank');
+
+    } catch (error) {
+      console.error("Error annulling contract:", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo anular el contrato.' });
+    } finally {
+      setIsAnnulling(null);
+    }
+  };
+
 
   const handlePrint = () => {
     window.print();
@@ -137,17 +182,46 @@ export default function CancellationsPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 print:grid-cols-2 print:gap-6">
                 {foundContracts.map(contract => (
-                     <Card key={contract.id} className="animate-in fade-in-50 print:border print:shadow-none">
+                     <Card key={contract.id} className="animate-in fade-in-50 print:border print:shadow-none flex flex-col">
                         <CardHeader>
                             <CardTitle>Contrato N° {String(contract.folioNumber).padStart(6, '0')}</CardTitle>
                             <CardDescription>{contract.type}</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent className="space-y-4 flex-grow">
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">Saldo Pendiente</p>
                                 <p className="font-bold text-xl text-destructive">B/. {getBalance(contract).toFixed(2)}</p>
                             </div>
                         </CardContent>
+                        <CardFooter className="print-hide">
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" className='w-full' disabled={isAnnulling === contract.id}>
+                                         {isAnnulling === contract.id ? (
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                         ) : (
+                                            <ShieldX className="mr-2 h-4 w-4" />
+                                         )}
+                                        Anular
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>¿Anular Contrato N° {String(contract.folioNumber).padStart(6, '0')}?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Esta acción es irreversible. El contrato será marcado como ANULADO y no se podrá revertir. 
+                                        Se generará un comprobante de anulación.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleAnnulContract(contract)} className="bg-destructive hover:bg-destructive/90">
+                                        Sí, anular contrato
+                                    </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </CardFooter>
                     </Card>
                 ))}
             </div>

@@ -51,7 +51,7 @@ service cloud.firestore {
      */
     match /contracts/{contractId} {
       allow get, list: if isSignedIn();
-      allow create: if isOwner(request.resource.data.userId) || isAdmin() || isVentas();
+      allow create: if isOwner(request.resource.data.userId);
       // Allow general updates if key fields are unchanged
       allow update: if isSignedIn()
                       && request.resource.data.userId == resource.data.userId
@@ -80,7 +80,7 @@ service cloud.firestore {
     /**
      * @description Manages payment records.
      * @path /payments/{paymentId}
-     * @allow (read, list) Admins can read payment lists for reporting.
+     * @allow (read, list) Admins and Ventas can read payment lists for reporting.
      * @allow (create) Any signed-in user can create a payment record.
      */
     match /payments/{paymentId} {

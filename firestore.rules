@@ -77,21 +77,14 @@ service cloud.firestore {
     }
 
     /**
-     * @description Manages payment records. Allows Admins/Ventas to list payments for reports.
-     * @path /payments
-     */
-    match /payments/{document=**} {
-      // Rule for listing the collection, required for queries with orderBy/where.
-      allow list: if isAdmin() || isVentas();
-    }
-
-    /**
      * @description Manages individual payment documents.
      * @path /payments/{paymentId}
      */
     match /payments/{paymentId} {
         // Allows fetching a single document.
         allow get: if isAdmin() || isVentas();
+        // Allows listing for reports.
+        allow list: if isAdmin() || isVentas();
         // Allow any signed-in user to create a payment record (e.g., from the cancellations page).
         allow create: if isSignedIn();
         // Payments are immutable and cannot be updated or deleted.

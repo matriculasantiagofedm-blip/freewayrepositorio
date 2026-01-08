@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -15,7 +16,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, Timestamp, orderBy } from 'firebase/firestore';
 import type { Payment } from '@/lib/types';
-import { useCollection } from '@/hooks/use-firestore';
+import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -43,7 +44,7 @@ export default function CancellationPaymentsReportPage() {
     to: new Date(),
   });
 
-  const paymentsQuery = useMemo(() => {
+  const paymentsQuery = useMemoQuery(() => {
     if (!db || !dateRange?.from || !dateRange.to) return null;
     return query(
       collection(db, 'payments'),
@@ -142,6 +143,7 @@ export default function CancellationPaymentsReportPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Fecha de Pago</TableHead>
+                <TableHead>Folio Cancelación</TableHead>
                 <TableHead>Folio Contrato</TableHead>
                 <TableHead>Cliente</TableHead>
                 <TableHead>Cédula</TableHead>
@@ -153,6 +155,7 @@ export default function CancellationPaymentsReportPage() {
               {payments.map((payment) => (
                 <TableRow key={payment.id}>
                   <TableCell>{format(toDate(payment.paymentDate), "dd/MM/yyyy HH:mm")}</TableCell>
+                  <TableCell className="font-medium text-destructive">{String(payment.cancellationFolio).padStart(6, '0')}</TableCell>
                   <TableCell className="font-medium">{String(payment.contractFolio).padStart(6, '0')}</TableCell>
                   <TableCell>{payment.clientName}</TableCell>
                   <TableCell>{payment.studentIdNumber}</TableCell>
@@ -163,7 +166,7 @@ export default function CancellationPaymentsReportPage() {
             </TableBody>
             <TableFooter>
                 <TableRow className="font-bold text-base">
-                    <TableCell colSpan={4}>Total</TableCell>
+                    <TableCell colSpan={5}>Total</TableCell>
                     <TableCell className="text-right">{currencyFormatter.format(totalAmount)}</TableCell>
                     <TableCell>({payments.length} pagos)</TableCell>
                 </TableRow>
@@ -178,3 +181,5 @@ export default function CancellationPaymentsReportPage() {
     </div>
   );
 }
+
+    

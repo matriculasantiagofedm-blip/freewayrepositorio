@@ -188,11 +188,14 @@ export interface Payment {
   paymentDate: Timestamp;
   contractId: string;
   contractFolio: number;
+  cancellationFolio: number;
   clientId: string;
   clientName: string;
   studentIdNumber: string;
   userId: string;
   type: 'abono' | 'cancelacion';
 }
+
+    
 
     

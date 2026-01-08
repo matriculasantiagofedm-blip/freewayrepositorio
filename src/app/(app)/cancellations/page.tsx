@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useDb, useUser } from '@/components/firebase-provider';
-import { collection, query, where, getDocs, writeBatch, serverTimestamp, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import type { Contract, Payment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Search, Printer, Save } from 'lucide-react';
@@ -103,46 +103,54 @@ export default function CancellationsPage() {
 
     setIsSaving(true);
     try {
-      const batch = writeBatch(db);
+      await runTransaction(db, async (transaction) => {
+        // 1. Get and increment the cancellation folio counter
+        const counterRef = doc(db, 'counters', 'cancellation_folio');
+        const counterDoc = await transaction.get(counterRef);
+        if (!counterDoc.exists()) {
+          throw new Error("El contador de folios de cancelación no existe.");
+        }
+        const newCancellationFolio = counterDoc.data().count + 1;
+        transaction.update(counterRef, { count: newCancellationFolio });
 
-      // 1. Create a new payment document
-      const paymentRef = doc(collection(db, 'payments'));
-      const paymentData: Partial<Payment> = {
-        amount: paymentAmount,
-        contractId: contract.id,
-        contractFolio: contract.folioNumber,
-        clientId: contract.clientId,
-        clientName: contract.clientName,
-        studentIdNumber: studentIdNumber,
-        paymentDate: serverTimestamp(),
-        userId: user.uid,
-        type: 'cancelacion',
-      };
-      batch.set(paymentRef, paymentData);
+        // 2. Create a new payment document
+        const paymentRef = doc(collection(db, 'payments'));
+        const paymentData: Partial<Payment> = {
+          amount: paymentAmount,
+          contractId: contract.id,
+          contractFolio: contract.folioNumber,
+          cancellationFolio: newCancellationFolio,
+          clientId: contract.clientId,
+          clientName: contract.clientName,
+          studentIdNumber: studentIdNumber,
+          paymentDate: serverTimestamp(),
+          userId: user.uid,
+          type: 'cancelacion',
+        };
+        transaction.set(paymentRef, paymentData);
 
-      // 2. Update the contract balance and status
-      const contractRef = doc(db, 'contracts', contract.id);
-      const newBalance = getBalance(contract) - paymentAmount;
+        // 3. Update the contract balance and status
+        const contractRef = doc(db, 'contracts', contract.id);
+        const newBalance = getBalance(contract) - paymentAmount;
 
-      let contractUpdate: any = {
-        'status': 'completed', // O 'expired', dependiendo de la lógica de negocio
-      };
-      
-      if (contract.autoMotoDetails) {
-          contractUpdate['autoMotoDetails.balance'] = newBalance > 0 ? newBalance : 0;
-          contractUpdate['autoMotoDetails.downPayment'] = (contract.autoMotoDetails.downPayment || 0) + paymentAmount;
-      } else if (contract.ampliacionesDetails) {
-          contractUpdate['ampliacionesDetails.balance'] = newBalance > 0 ? newBalance : 0;
-          contractUpdate['ampliacionesDetails.downPayment'] = (contract.ampliacionesDetails.downPayment || 0) + paymentAmount;
-      }
+        let contractUpdate: any = {
+          status: 'completed',
+        };
+        
+        if (contract.autoMotoDetails) {
+            contractUpdate['autoMotoDetails.balance'] = newBalance > 0 ? newBalance : 0;
+            contractUpdate['autoMotoDetails.downPayment'] = (contract.autoMotoDetails.downPayment || 0) + paymentAmount;
+        } else if (contract.ampliacionesDetails) {
+            contractUpdate['ampliacionesDetails.balance'] = newBalance > 0 ? newBalance : 0;
+            contractUpdate['ampliacionesDetails.downPayment'] = (contract.ampliacionesDetails.downPayment || 0) + paymentAmount;
+        }
 
-      batch.update(contractRef, contractUpdate);
-
-      await batch.commit();
+        transaction.update(contractRef, contractUpdate);
+      });
 
       toast({ title: 'Pago Registrado', description: 'El pago ha sido guardado y el contrato actualizado.' });
       // Refresh the search to show updated data
-      handleSearch(new Event('submit'));
+      handleSearch(new Event('submit') as any);
 
     } catch (error) {
       console.error("Error saving payment:", error);
@@ -159,7 +167,7 @@ export default function CancellationsPage() {
   return (
     <div className="print:w-1/2 print:mx-auto print:mt-8">
       <div className="flex flex-col gap-8 print:gap-4">
-        <div className="flex flex-col print:text-center">
+        <div className="flex flex-col">
           <h1 className="font-headline text-3xl font-bold print:text-lg">Cancelaciones de Contrato</h1>
           <p className="text-muted-foreground print:text-sm">
             {format(today, "d 'de' MMMM 'de' yyyy", { locale: es })}
@@ -201,7 +209,7 @@ export default function CancellationsPage() {
                 <div className="flex justify-between items-start">
                   <div>
                     <h2 className="text-xl font-bold print:text-base">Contratos Encontrados para "{foundContracts[0].clientName}"</h2>
-                    <p className="hidden print:block print:text-xs">Cédula: {studentIdNumber}</p>
+                    <p className="hidden print:block text-xs">Cédula: {studentIdNumber}</p>
                   </div>
                   <Button variant="outline" onClick={handlePrint} className="print-hide">
                     <Printer className="mr-2 h-4 w-4" />

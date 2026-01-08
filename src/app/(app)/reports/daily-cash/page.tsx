@@ -129,32 +129,8 @@ export default function DailyCashReportPage() {
                     cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
                 };
             });
-
-        // 2. Fetch cancellation payments for the day
-        const paymentsRef = collection(db, 'payments');
-        const paymentsQuery = query(
-          paymentsRef,
-          where('type', '==', 'cancelacion'),
-          where('paymentDate', '>=', Timestamp.fromDate(startOfReportDay)),
-          where('paymentDate', '<=', Timestamp.fromDate(endOfReportDay))
-        );
-        const paymentsSnapshot = await getDocs(paymentsQuery);
-        const cancellationTransactions = paymentsSnapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() } as Payment))
-            .map((payment): Transaction => ({
-                id: payment.id,
-                invoice: '',
-                contrato: String(payment.contractFolio || ''),
-                cedula: payment.studentIdNumber || '',
-                clientName: payment.clientName || '',
-                phone: '', // Phone is not on the payment record
-                service: 'Pago de Saldo',
-                amount: payment.amount || 0,
-                paymentType: '',
-                cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
-            }));
         
-        setTransactions([...newContractTransactions, ...cancellationTransactions]);
+        setTransactions([...newContractTransactions]);
         setIsDataLoaded(true);
       } catch (error: any) {
         if (error.code === 'permission-denied') {
@@ -280,21 +256,6 @@ export default function DailyCashReportPage() {
   const removeExpenseRow = (index: number) => {
     setExpenses(expenses.filter((_, i) => i !== index));
   }
-
-
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.id = 'print-styles-report';
-    style.innerHTML = `@page { size: landscape; margin: 0.5in; } body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } .print-hide { display: none !important; }`;
-    document.head.appendChild(style);
-
-    return () => {
-      const styleTag = document.getElementById('print-styles-report');
-      if (styleTag) {
-        document.head.removeChild(styleTag);
-      }
-    };
-  }, []);
 
   return (
     <div className="space-y-6 bg-background p-4 rounded-lg">

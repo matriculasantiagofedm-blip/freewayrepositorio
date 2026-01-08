@@ -625,6 +625,10 @@ export function ContractForm() {
     try {
       const studentIdNumber = finalValues.deluxeDetails?.studentIdNumber || finalValues.autoMotoDetails?.studentIdNumber || finalValues.ampliacionesDetails?.studentIdNumber || '';
       
+      if (!studentIdNumber) {
+        throw new Error("La cédula del estudiante es requerida para guardar el contrato.");
+      }
+      
       // Step 1: Check for existing client outside the transaction
       const clientsRef = collection(db, 'clients');
       const q = query(clientsRef, where('idNumber', '==', studentIdNumber));
@@ -645,7 +649,7 @@ export function ContractForm() {
 
         if (!existingClientDoc) {
           // Client doesn't exist, create them within the transaction
-          const newClientRef = doc(clientsRef); // Create a new doc ref
+          const newClientRef = doc(collection(db, 'clients'));
           clientId = newClientRef.id;
           const clientData: Partial<Client> = {
             id: clientId,
@@ -773,11 +777,62 @@ export function ContractForm() {
                         <FormField control={form.control} name="deluxeDetails.middleName" render={({ field }) => (<FormItem><FormLabel>Segundo Nombre (Opcional)</FormLabel><FormControl><Input placeholder="Ej: Fitzgerald" {...field} /></FormControl></FormItem>)} />
                         <FormField control={form.control} name="deluxeDetails.lastName" render={({ field }) => (<FormItem><FormLabel>Primer Apellido</FormLabel><FormControl><Input placeholder="Ej: Doe" {...field} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name="deluxeDetails.secondLastName" render={({ field }) => (<FormItem><FormLabel>Segundo Apellido (Opcional)</FormLabel><FormControl><Input placeholder="Ej: Smith" {...field} /></FormControl></FormItem>)} />
-                        <FormField control={form.control} name="deluxeDetails.studentIdNumber" render={({ field }) => (<FormItem><FormLabel>Cédula o Pasaporte</FormLabel><FormControl><Input placeholder="Ej: 8-123-456" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="clientEmail" render={({ field }) => (<FormItem><FormLabel>Correo Electrónico</FormLabel><FormControl><Input placeholder="Ej: john.doe@example.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="deluxeDetails.studentAddress" render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>Dirección</FormLabel><FormControl><Input placeholder="Dirección completa" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="deluxeDetails.studentPhone1" render={({ field }) => (<FormItem><FormLabel>Teléfono 1</FormLabel><FormControl><Input placeholder="Ej: 6123-4567" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="deluxeDetails.studentPhone2" render={({ field }) => (<FormItem><FormLabel>Teléfono 2 (Opcional)</FormLabel><FormControl><Input placeholder="Ej: 345-6789" {...field} /></FormControl></FormItem>)} />
+                         <FormField
+                            control={form.control}
+                            name="deluxeDetails.studentIdNumber"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Cédula o Pasaporte</FormLabel>
+                                <FormControl><Input placeholder="Ej: 8-123-456" {...field} /></FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="clientEmail"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Correo Electrónico</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Ej: john.doe@example.com" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="deluxeDetails.studentAddress"
+                            render={({ field }) => (
+                                <FormItem className="md:col-span-2">
+                                <FormLabel>Dirección</FormLabel>
+                                <FormControl><Input placeholder="Dirección completa" {...field} /></FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="deluxeDetails.studentPhone1"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Teléfono 1</FormLabel>
+                                <FormControl><Input placeholder="Ej: 6123-4567" {...field} /></FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="deluxeDetails.studentPhone2"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Teléfono 2 (Opcional)</FormLabel>
+                                <FormControl><Input placeholder="Ej: 345-6789" {...field} /></FormControl>
+                                </FormItem>
+                            )}
+                        />
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1586,6 +1641,8 @@ export function ContractForm() {
     </Form>
   );
 }
+
+    
 
     
 

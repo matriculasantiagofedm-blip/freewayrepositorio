@@ -258,7 +258,7 @@ export default function DailyCashReportPage() {
   }
 
   return (
-    <div className="space-y-6 bg-background p-4 rounded-lg print:bg-white print:scale-90 print:origin-top-left">
+    <div className="space-y-6 rounded-lg print:bg-white print:scale-90 print:origin-top-left">
       <div className="flex justify-between items-center print-hide">
         <h1 className="text-2xl font-bold font-headline">Reporte de Caja Diario</h1>
         <div className="flex items-center gap-2">
@@ -430,7 +430,7 @@ export default function DailyCashReportPage() {
                         <TableBody>
                             <TableRow><TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">TOTAL EFECTIVO MENOS GASTOS</TableCell><TableCell className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(grandTotals.totalEfectivoMenosGastos)}</TableCell></TableRow>
                             <TableRow><TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">Total / Deposito</TableCell><TableCell className="border border-black p-0 w-28"><Input type="number" onChange={e => setTotalDeposit(parseFloat(e.target.value) || 0)} className="w-full h-full border-none rounded-none text-xs p-1 text-right print:text-[8px] print:p-0.5" /></TableCell></TableRow>
-                            <TableRow className={cn("font-bold", grandTotals.diferencia !== 0 ? 'bg-red-200' : 'bg-green-200')}><TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">Diferencia</TableCell><TableCell className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(grandTotals.diferencia)}</TableCell></TableRow>
+                            <TableRow className={cn("font-bold", grandTotals.diferencia !== 0 ? "bg-red-200" : "bg-green-200")}><TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">Diferencia</TableCell><TableCell className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(grandTotals.diferencia)}</TableCell></TableRow>
                         </TableBody>
                     </Table>
                 </div>

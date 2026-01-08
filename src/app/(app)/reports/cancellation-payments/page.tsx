@@ -51,7 +51,7 @@ export default function CancellationPaymentsPage() {
         );
     }
     
-    // Other roles see nothing for now, can be adjusted if needed
+    // Other roles see nothing.
     return null; 
   }, [db, user, role]);
 
@@ -87,8 +87,9 @@ export default function CancellationPaymentsPage() {
         </div>
       );
     }
-
-    if (!payments && !isLoading) {
+    
+    // This condition is met if the query is explicitly set to null (e.g., for roles without permission)
+    if (!paymentsQuery && !isLoading) {
         return (
              <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
                 <h3 className="mt-4 text-lg font-semibold text-foreground">

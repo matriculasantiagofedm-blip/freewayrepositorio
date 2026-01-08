@@ -101,28 +101,28 @@ export default function CancellationsPage() {
   return (
     <div className="print:w-1/2 print:mx-auto print:mt-8">
       <div className="flex flex-col gap-8 print:gap-4">
-        <div className="flex flex-col print:flex print:text-center">
+        <div className="flex flex-col print:text-center">
           <h1 className="font-headline text-3xl font-bold print:text-lg">Cancelaciones de Contrato</h1>
           <p className="text-muted-foreground print:text-sm">
             {format(today, "d 'de' MMMM 'de' yyyy", { locale: es })}
           </p>
         </div>
 
-        <Card className="print:block print:border-none print:shadow-none print:p-0">
-          <CardHeader className="print:p-2">
-            <CardTitle className="print:text-base">Buscar Contrato por Cédula</CardTitle>
-            <CardDescription className="print:text-xs">Introduce el número de cédula o pasaporte del cliente.</CardDescription>
+        <Card className="print:hidden">
+          <CardHeader>
+            <CardTitle>Buscar Contrato por Cédula</CardTitle>
+            <CardDescription>Introduce el número de cédula o pasaporte del cliente.</CardDescription>
           </CardHeader>
-          <CardContent className="print:p-2">
-            <form onSubmit={handleSearch} className="flex items-center gap-2 print:flex-col print:items-start">
+          <CardContent>
+            <form onSubmit={handleSearch} className="flex items-center gap-2">
               <Input
                 type="text"
                 placeholder="Ej: 8-123-456"
                 value={studentIdNumber}
                 onChange={(e) => setStudentIdNumber(e.target.value)}
-                className="max-w-xs print:max-w-full print:text-sm"
+                className="max-w-xs"
               />
-              <Button type="submit" disabled={isLoading} className="print-hide">
+              <Button type="submit" disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
                 Buscar
               </Button>
@@ -140,8 +140,11 @@ export default function CancellationsPage() {
         {searched && !isLoading && foundContracts && foundContracts.length > 0 && (
           <Card className='print:border-none print:shadow-none'>
               <CardHeader className='print:p-2'>
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-bold print:text-base">Contratos Encontrados para "{foundContracts[0].clientName}"</h2>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-xl font-bold print:text-base">Contratos Encontrados para "{foundContracts[0].clientName}"</h2>
+                    <p className="hidden print:block print:text-xs">Cédula: {studentIdNumber}</p>
+                  </div>
                   <Button variant="outline" onClick={handlePrint} className="print-hide">
                     <Printer className="mr-2 h-4 w-4" />
                     Imprimir Cancelación

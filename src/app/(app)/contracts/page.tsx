@@ -1,3 +1,4 @@
+
 'use client';
 import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import type { Contract, Deadline } from '@/lib/types';
@@ -62,80 +63,6 @@ const isOverdue = (contract: Contract): boolean => {
     return false;
 }
 
-// --- Placeholder for Annulled Contracts ---
-const annulledContracts: Contract[] = [
-    {
-        id: 'annulled-17',
-        folioNumber: 17,
-        clientName: 'CONTRATO ANULADO',
-        type: 'N/A',
-        status: 'expired', // Visually represents 'Annulled'
-        createdAt: Timestamp.fromDate(new Date('2024-01-01')),
-        title: 'Contrato Anulado',
-        clientEmail: '',
-        clientId: '',
-        content: '',
-        deadlines: [],
-        userId: '',
-    },
-    {
-        id: 'annulled-18',
-        folioNumber: 18,
-        clientName: 'CONTRATO ANULADO',
-        type: 'N/A',
-        status: 'expired',
-        createdAt: Timestamp.fromDate(new Date('2024-01-01')),
-        title: 'Contrato Anulado',
-        clientEmail: '',
-        clientId: '',
-        content: '',
-        deadlines: [],
-        userId: '',
-    },
-    {
-        id: 'annulled-27',
-        folioNumber: 27,
-        clientName: 'CONTRATO ANULADO',
-        type: 'N/A',
-        status: 'expired',
-        createdAt: Timestamp.fromDate(new Date('2024-01-01')),
-        title: 'Contrato Anulado',
-        clientEmail: '',
-        clientId: '',
-        content: '',
-        deadlines: [],
-        userId: '',
-    },
-    {
-        id: 'annulled-28',
-        folioNumber: 28,
-        clientName: 'CONTRATO ANULADO',
-        type: 'N/A',
-        status: 'expired',
-        createdAt: Timestamp.fromDate(new Date('2024-01-01')),
-        title: 'Contrato Anulado',
-        clientEmail: '',
-        clientId: '',
-        content: '',
-        deadlines: [],
-        userId: '',
-    },
-    {
-        id: 'annulled-29',
-        folioNumber: 29,
-        clientName: 'CONTRATO ANULADO',
-        type: 'N/A',
-        status: 'expired',
-        createdAt: Timestamp.fromDate(new Date('2024-01-01')),
-        title: 'Contrato Anulado',
-        clientEmail: '',
-        clientId: '',
-        content: '',
-        deadlines: [],
-        userId: '',
-    },
-];
-
 export default function AllContractsPage() {
   const db = useDb();
   const { user } = useUser();
@@ -159,25 +86,6 @@ export default function AllContractsPage() {
 
   const { data: allContracts, isLoading } = useCollection<Contract>(contractsQuery);
 
-  const combinedContracts = useMemo(() => {
-    if (!allContracts) return null;
-
-    // Create a Set of existing folio numbers for efficient lookup
-    const existingFolios = new Set(allContracts.map(c => c.folioNumber));
-
-    // Filter out annulled contracts that might already exist (e.g., if manually added)
-    const annulledPlaceholders = annulledContracts.filter(ac => !existingFolios.has(ac.folioNumber));
-    
-    const combined = [...allContracts, ...annulledPlaceholders];
-    
-    // Sort the combined list by folioNumber in descending order
-    combined.sort((a, b) => (b.folioNumber || 0) - (a.folioNumber || 0));
-
-    return combined;
-
-  }, [allContracts]);
-
-
   const statusColors: { [key: string]: string } = {
     active: 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
     draft: 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700',
@@ -195,7 +103,7 @@ export default function AllContractsPage() {
   }
   
   const filteredContracts =
-    combinedContracts?.filter((contract) => {
+    allContracts?.filter((contract) => {
       const folio = String(contract.folioNumber || '').padStart(6, '0');
       const client = contract.clientName.toLowerCase();
       const type = contract.type.toLowerCase();
@@ -231,7 +139,7 @@ export default function AllContractsPage() {
         </div>
       </div>
       {isLoading && <p>Cargando contratos...</p>}
-      {!isLoading && combinedContracts && (
+      {!isLoading && allContracts && (
         <>
             {filteredContracts.length > 0 ? (
                  <div className="rounded-lg border">
@@ -248,20 +156,20 @@ export default function AllContractsPage() {
                         </TableHeader>
                         <TableBody>
                             {filteredContracts.map((contract) => {
-                                const isAnnulledPlaceholder = contract.id.startsWith('annulled-');
+                                const isAnnulled = contract.status === 'expired';
                                 
                                 return (
-                                <TableRow key={contract.id} className={cn(isAnnulledPlaceholder && 'bg-muted/50 hover:bg-muted/60')}>
+                                <TableRow key={contract.id} className={cn(isAnnulled && 'bg-muted/50 hover:bg-muted/60')}>
                                     <TableCell className="font-medium text-primary">
                                         {String(contract.folioNumber || '').padStart(6, '0')}
                                     </TableCell>
                                     <TableCell>{contract.clientName}</TableCell>
                                     <TableCell>{contract.type}</TableCell>
                                     <TableCell>
-                                        {isAnnulledPlaceholder ? (
+                                        {isAnnulled ? (
                                             <div className="flex items-center gap-2 text-muted-foreground">
                                                 <Ban className="h-4 w-4" />
-                                                <span>N/A</span>
+                                                <span>Anulado</span>
                                             </div>
                                         ) : contract.certificateGeneratedAt ? (
                                             <div className="flex items-center gap-2 text-green-600">
@@ -276,21 +184,15 @@ export default function AllContractsPage() {
                                         )}
                                     </TableCell>
                                     <TableCell>
-                                        {isAnnulledPlaceholder ? 'N/A' : format(toDate(contract.createdAt), 'dd/MM/yyyy', { locale: es })}
+                                        {format(toDate(contract.createdAt), 'dd/MM/yyyy', { locale: es })}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        {isAnnulledPlaceholder ? (
-                                             <Button variant="ghost" size="icon" disabled>
+                                        <Button asChild variant="ghost" size="icon">
+                                            <Link href={`/contracts/${contract.id}`}>
                                                 <Eye className="h-4 w-4" />
-                                             </Button>
-                                        ) : (
-                                            <Button asChild variant="ghost" size="icon">
-                                                <Link href={`/contracts/${contract.id}`}>
-                                                    <Eye className="h-4 w-4" />
-                                                    <span className="sr-only">Ver Contrato</span>
-                                                </Link>
-                                            </Button>
-                                        )}
+                                                <span className="sr-only">Ver Contrato</span>
+                                            </Link>
+                                        </Button>
                                     </TableCell>
                                 </TableRow>
                                 )

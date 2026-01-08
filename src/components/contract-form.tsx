@@ -623,7 +623,10 @@ export function ContractForm() {
 
     let contractData: Partial<Contract> = {};
     try {
-      const studentIdNumber = finalValues.deluxeDetails?.studentIdNumber || finalValues.autoMotoDetails?.studentIdNumber || finalValues.ampliacionesDetails?.studentIdNumber || '';
+      const studentIdNumber =
+        finalValues.contractType === 'Curso Deluxe' ? finalValues.deluxeDetails?.studentIdNumber :
+        finalValues.contractType === 'Ampliaciones' ? finalValues.ampliacionesDetails?.studentIdNumber :
+        finalValues.autoMotoDetails?.studentIdNumber;
       
       if (!studentIdNumber) {
         throw new Error("La cédula del estudiante es requerida para guardar el contrato.");

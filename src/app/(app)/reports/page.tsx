@@ -17,13 +17,6 @@ export default function ReportsPage() {
       icon: ClipboardPenLine,
       roles: ['Administrador'],
     },
-    {
-      title: 'Listado de Pagos',
-      description: 'Ver y filtrar todos los pagos de cancelación registrados.',
-      href: '/reports/cancellation-payments',
-      icon: ListChecks,
-      roles: ['Administrador'],
-    },
   ];
 
   if (role && role !== 'Administrador') {

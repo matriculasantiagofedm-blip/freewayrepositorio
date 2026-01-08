@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, where, Timestamp } from 'firebase/firestore';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { useDb, useUser } from '@/components/firebase-provider';
 import type { Payment } from '@/lib/types';
@@ -15,10 +15,13 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Loader2 } from 'lucide-react';
+import { Search, Loader2, CalendarIcon } from 'lucide-react';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { format, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 function toDate(date: any): Date {
   if (!date) return new Date(0);
@@ -35,16 +38,21 @@ export default function UpdatePaymentsPage() {
   const db = useDb();
   const { user } = useUser();
   const [searchTerm, setSearchTerm] = useState('');
+  const [reportDate, setReportDate] = useState<Date>(new Date());
 
   const paymentsQuery = useMemoQuery(() => {
-    if (!db || !user) return null;
+    if (!db || !user || !reportDate) return null;
     
-    // Any signed-in user can see the payments.
+    const start = startOfDay(reportDate);
+    const end = endOfDay(reportDate);
+
     return query(
         collection(db, 'update_payments'), 
+        where('paymentDate', '>=', Timestamp.fromDate(start)),
+        where('paymentDate', '<=', Timestamp.fromDate(end)),
         orderBy('paymentDate', 'desc')
     );
-  }, [db, user]);
+  }, [db, user, reportDate]);
 
   const { data: payments, isLoading } = useCollection<Payment>(paymentsQuery);
 
@@ -79,7 +87,7 @@ export default function UpdatePaymentsPage() {
       );
     }
     
-    if (!paymentsQuery && !isLoading) {
+    if (!user && !isLoading) {
         return (
              <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
                 <h3 className="mt-4 text-lg font-semibold text-foreground">
@@ -102,7 +110,7 @@ export default function UpdatePaymentsPage() {
                     No se encontraron pagos
                 </h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                    {searchTerm ? "Intenta con otro término de búsqueda." : "No se han registrado pagos de actualización."}
+                    {searchTerm ? "Intenta con otro término de búsqueda." : "No se han registrado pagos de actualización para la fecha seleccionada."}
                 </p>
             </div>
         );
@@ -154,17 +162,41 @@ export default function UpdatePaymentsPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="font-headline text-3xl font-bold">Listado de Pagos de Actualización</h1>
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar por folio, cliente o cédula..."
-            className="pl-8 sm:w-[300px]"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-[240px] justify-start text-left font-normal",
+                    !reportDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {reportDate ? format(reportDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={reportDate}
+                  onSelect={(date) => setReportDate(date || new Date())}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+                type="search"
+                placeholder="Buscar por folio, cliente..."
+                className="pl-8 sm:w-[250px]"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            </div>
         </div>
       </div>
       {renderContent()}

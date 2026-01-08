@@ -123,6 +123,7 @@ export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, 
         <p>Ambas partes convienen celebrar este contrato en el cual la empresa se compromete a brindar al cliente, un servicio de capacitación y adiestramiento teórico y práctico relacionado con el aprendizaje de conducción de vehículos a motor. El mismo se regirá bajo los términos y condiciones que se detallan en las siguientes cláusulas.</p>
         
         <h3 className="font-bold">CLÁUSULA SEGUNDA - VALOR, MATRÍCULA Y FORMA DE PAGO</h3>
+        <p>El costo de la matrícula es de B/. 15.00.</p>
         <p><Value>{paymentDetailsText}</Value></p>
         <p>El pago se realizará de la siguiente manera: 6 cuotas de B/.<Value>{paymentAmount.toFixed(2)}</Value> cada una, con fechas de pago establecidas cada dos semanas a partir del inicio del curso.</p>
         <div className="grid grid-cols-2 gap-x-6 gap-y-0 text-[10px]">
@@ -213,5 +214,3 @@ export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, 
     </Card>
   );
 }
-
-    

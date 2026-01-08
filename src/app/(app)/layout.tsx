@@ -18,7 +18,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
       <SidebarProvider>
-        <Sidebar>
+        <Sidebar className="print-hide">
           <SidebarRail />
           <SidebarHeader>
             <Link
@@ -37,7 +37,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </SidebarFooter>
         </Sidebar>
         <SidebarInset>
-          <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 sm:pt-4">
+          <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 sm:pt-4 print-hide">
             <SidebarTrigger className="sm:hidden" />
             <div className="flex-1" />
             {/* UserNav moved to sidebar footer */}

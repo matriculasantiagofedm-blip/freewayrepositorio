@@ -77,16 +77,27 @@ service cloud.firestore {
     }
 
     /**
-     * @description Manages payment records.
+     * @description Manages payment records. Allows Admins/Ventas to list payments for reports.
+     * @path /payments
+     */
+    match /payments/{document=**} {
+      // Rule for listing the collection, required for queries with orderBy/where.
+      allow list: if isAdmin() || isVentas();
+    }
+
+    /**
+     * @description Manages individual payment documents.
      * @path /payments/{paymentId}
-     * @allow (get, list) Admins and Ventas can read payment lists for reporting.
-     * @allow (create) Any signed-in user can create a payment record.
      */
     match /payments/{paymentId} {
-        allow get, list: if isAdmin() || isVentas();
+        // Allows fetching a single document.
+        allow get: if isAdmin() || isVentas();
+        // Allow any signed-in user to create a payment record (e.g., from the cancellations page).
         allow create: if isSignedIn();
-        allow update, delete: if false; // Payments are immutable
+        // Payments are immutable and cannot be updated or deleted.
+        allow update, delete: if false;
     }
+
 
     // Allow authenticated users to read/write the contract folio counter.
     match /counters/contract_folio {
@@ -104,4 +115,3 @@ service cloud.firestore {
     }
   }
 }
-

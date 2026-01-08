@@ -258,7 +258,7 @@ export default function DailyCashReportPage() {
   }
 
   return (
-    <div className="space-y-6 bg-background p-4 rounded-lg print:scale-90 print:origin-top-left">
+    <div className="space-y-6 bg-background p-4 rounded-lg print:bg-white print:scale-90 print:origin-top-left">
       <div className="flex justify-between items-center print-hide">
         <h1 className="text-2xl font-bold font-headline">Reporte de Caja Diario</h1>
         <div className="flex items-center gap-2">

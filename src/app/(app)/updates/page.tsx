@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -111,11 +112,17 @@ export default function UpdatesPage() {
       await runTransaction(db, async (transaction) => {
         const counterRef = doc(db, 'counters', 'update_folio');
         const counterDoc = await transaction.get(counterRef);
+        
+        let newUpdateFolio;
         if (!counterDoc.exists()) {
-          throw new Error("El contador de folios de actualización no existe.");
+          // Si el contador no existe, lo creamos e inicializamos en 1
+          newUpdateFolio = 1;
+          transaction.set(counterRef, { count: newUpdateFolio });
+        } else {
+          // Si existe, lo incrementamos
+          newUpdateFolio = counterDoc.data().count + 1;
+          transaction.update(counterRef, { count: newUpdateFolio });
         }
-        const newUpdateFolio = counterDoc.data().count + 1;
-        transaction.update(counterRef, { count: newUpdateFolio });
 
         const paymentRef = doc(collection(db, 'payments'));
         const paymentData: Partial<Payment> = {

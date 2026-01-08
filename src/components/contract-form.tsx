@@ -126,10 +126,6 @@ const autoMotoDetailsSchema = z.object({
 
 
 const deluxeDetailsSchema = z.object({
-  firstName: z.string().min(1, "El primer nombre es requerido"),
-  middleName: z.string().optional(),
-  lastName: z.string().min(1, "El apellido es requerido"),
-  secondLastName: z.string().optional(),
   studentIdNumber: z.string().min(1, 'La cédula es requerida.'),
   studentAddress: z.string().min(1, 'La dirección es requerida.'),
   studentPhone1: z.string().min(1, 'El teléfono es requerido.'),
@@ -372,10 +368,6 @@ export function ContractForm() {
       clientEmail: '',
       contractType: contractType,
       deluxeDetails: {
-        firstName: '',
-        middleName: '',
-        lastName: '',
-        secondLastName: '',
         studentIdNumber: '',
         studentAddress: '',
         studentPhone1: '',
@@ -611,16 +603,6 @@ export function ContractForm() {
 
     let finalValues = { ...values };
 
-    if (contractType === 'Curso Deluxe' && finalValues.deluxeDetails) {
-        finalValues.clientName = [
-            finalValues.deluxeDetails.firstName,
-            finalValues.deluxeDetails.middleName,
-            finalValues.deluxeDetails.lastName,
-            finalValues.deluxeDetails.secondLastName,
-        ].filter(Boolean).join(' ');
-    }
-
-
     let contractData: Partial<Contract> = {};
     try {
       const studentIdNumber =
@@ -743,15 +725,6 @@ export function ContractForm() {
   const renderPreview = () => {
     const values = form.getValues();
     let contractToPreview = { ...values, createdBy: currentUserRole } as unknown as Contract;
-
-    if (contractType === 'Curso Deluxe' && values.deluxeDetails) {
-        contractToPreview.clientName = [
-            values.deluxeDetails.firstName,
-            values.deluxeDetails.middleName,
-            values.deluxeDetails.lastName,
-            values.deluxeDetails.secondLastName,
-        ].filter(Boolean).join(' ');
-    }
     
     return <ContractView contract={contractToPreview} type={contractType} />;
   };
@@ -774,144 +747,95 @@ export function ContractForm() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                {contractType === 'Curso Deluxe' ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField control={form.control} name="deluxeDetails.firstName" render={({ field }) => (<FormItem><FormLabel>Primer Nombre</FormLabel><FormControl><Input placeholder="Ej: John" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="deluxeDetails.middleName" render={({ field }) => (<FormItem><FormLabel>Segundo Nombre (Opcional)</FormLabel><FormControl><Input placeholder="Ej: Fitzgerald" {...field} /></FormControl></FormItem>)} />
-                        <FormField control={form.control} name="deluxeDetails.lastName" render={({ field }) => (<FormItem><FormLabel>Primer Apellido</FormLabel><FormControl><Input placeholder="Ej: Doe" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="deluxeDetails.secondLastName" render={({ field }) => (<FormItem><FormLabel>Segundo Apellido (Opcional)</FormLabel><FormControl><Input placeholder="Ej: Smith" {...field} /></FormControl></FormItem>)} />
-                         <FormField
-                            control={form.control}
-                            name="deluxeDetails.studentIdNumber"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Cédula o Pasaporte</FormLabel>
-                                <FormControl><Input placeholder="Ej: 8-123-456" {...field} /></FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                        control={form.control}
+                        name="clientName"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Nombre Completo del Estudiante</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Ej: John Doe" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
                         />
-                        <FormField
-                            control={form.control}
-                            name="clientEmail"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Correo Electrónico</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Ej: john.doe@example.com" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
+                    <FormField
+                        control={form.control}
+                        name="clientEmail"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Correo Electrónico</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Ej: john.doe@example.com" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name={
+                            contractType === 'Curso Deluxe' ? 'deluxeDetails.studentIdNumber' :
+                            contractType === 'Ampliaciones' ? 'ampliacionesDetails.studentIdNumber' :
+                            'autoMotoDetails.studentIdNumber'
+                        }
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Cédula o Pasaporte</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Ej: 8-123-456" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
                         />
-                        <FormField
-                            control={form.control}
-                            name="deluxeDetails.studentAddress"
-                            render={({ field }) => (
-                                <FormItem className="md:col-span-2">
-                                <FormLabel>Dirección</FormLabel>
-                                <FormControl><Input placeholder="Dirección completa" {...field} /></FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="deluxeDetails.studentPhone1"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Teléfono 1</FormLabel>
-                                <FormControl><Input placeholder="Ej: 6123-4567" {...field} /></FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                         <FormField
-                            control={form.control}
-                            name="deluxeDetails.studentPhone2"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Teléfono 2 (Opcional)</FormLabel>
-                                <FormControl><Input placeholder="Ej: 345-6789" {...field} /></FormControl>
-                                </FormItem>
-                            )}
-                        />
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                            control={form.control}
-                            name="clientName"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Nombre Completo del Estudiante</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Ej: John Doe" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                            />
-                        <FormField
-                            control={form.control}
-                            name={contractType === 'Ampliaciones' ? 'ampliacionesDetails.studentIdNumber' : 'autoMotoDetails.studentIdNumber'}
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Cédula o Pasaporte</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Ej: 8-123-456" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                            />
-                        <FormField
-                            control={form.control}
-                            name="clientEmail"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Correo Electrónico</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Ej: john.doe@example.com" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                            />
-                        <FormField
-                            control={form.control}
-                            name={contractType === 'Ampliaciones' ? 'ampliacionesDetails.studentAddress' : 'autoMotoDetails.studentAddress'}
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Dirección</FormLabel>
-                                <FormControl><Input placeholder="Dirección completa" {...field} /></FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name={contractType === 'Ampliaciones' ? 'ampliacionesDetails.studentPhone1' : 'autoMotoDetails.studentPhone1'}
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Teléfono 1</FormLabel>
-                                <FormControl><Input placeholder="Ej: 6123-4567" {...field} /></FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                             name={contractType === 'Ampliaciones' ? 'ampliacionesDetails.studentPhone2' : 'autoMotoDetails.studentPhone2'}
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Teléfono 2 (Opcional)</FormLabel>
-                                <FormControl><Input placeholder="Ej: 345-6789" {...field} /></FormControl>
-                                </FormItem>
-                            )}
-                        />
-                    </div>
-                )}
+                    <FormField
+                        control={form.control}
+                        name={
+                            contractType === 'Curso Deluxe' ? 'deluxeDetails.studentAddress' :
+                            contractType === 'Ampliaciones' ? 'ampliacionesDetails.studentAddress' :
+                            'autoMotoDetails.studentAddress'
+                        }
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Dirección</FormLabel>
+                            <FormControl><Input placeholder="Dirección completa" {...field} /></FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name={
+                            contractType === 'Curso Deluxe' ? 'deluxeDetails.studentPhone1' :
+                            contractType === 'Ampliaciones' ? 'ampliacionesDetails.studentPhone1' :
+                            'autoMotoDetails.studentPhone1'
+                        }
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Teléfono 1</FormLabel>
+                            <FormControl><Input placeholder="Ej: 6123-4567" {...field} /></FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name={
+                            contractType === 'Curso Deluxe' ? 'deluxeDetails.studentPhone2' :
+                            contractType === 'Ampliaciones' ? 'ampliacionesDetails.studentPhone2' :
+                            'autoMotoDetails.studentPhone2'
+                        }
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Teléfono 2 (Opcional)</FormLabel>
+                            <FormControl><Input placeholder="Ej: 345-6789" {...field} /></FormControl>
+                            </FormItem>
+                        )}
+                    />
+                </div>
             </CardContent>
         </Card>
 

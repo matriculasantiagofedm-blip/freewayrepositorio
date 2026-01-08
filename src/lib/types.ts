@@ -39,10 +39,6 @@ export type ContractType =
   | 'Curso Solo Practica';
 
 export interface DeluxeContractDetails {
-  firstName?: string;
-  middleName?: string;
-  lastName?: string;
-  secondLastName?: string;
   studentIdNumber?: string;
   studentAddress?: string;
   studentPhone1?: string;

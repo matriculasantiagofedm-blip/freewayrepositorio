@@ -1,4 +1,5 @@
 
+
 'use client';
 import type { Contract, Client } from '@/lib/types';
 import { doc } from 'firebase/firestore';
@@ -38,22 +39,7 @@ const Checkbox = ({ checked }: { checked: boolean }) => (
 );
 
 export function DeluxePremiumContractTemplate({ contract }: { contract: Contract }) {
-  const db = useDb();
-  const clientRef = useMemoDoc(() => {
-    if (!db || !contract.clientId) return null;
-    return doc(db, 'clients', contract.clientId);
-  }, [db, contract.clientId]);
-
-  const { data: client } = useDoc<Client>(clientRef);
   const deluxeDetails = contract.deluxeDetails;
-
-  const fullStudentName = [
-    deluxeDetails?.firstName,
-    deluxeDetails?.middleName,
-    deluxeDetails?.lastName,
-    deluxeDetails?.secondLastName,
-  ].filter(Boolean).join(' ');
-
 
   const formatDate = (date: Date) => {
     if (!date || isNaN(date.getTime()) || date.getFullYear() <= 1970) return <Line />;
@@ -94,7 +80,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
         </p>
 
         <div className="space-y-0.5">
-            <p>Entre <Value>{fullStudentName || contract.clientName}</Value>, con cédula <Value>{deluxeDetails?.studentIdNumber}</Value>,</p>
+            <p>Entre <Value>{contract.clientName}</Value>, con cédula <Value>{deluxeDetails?.studentIdNumber}</Value>,</p>
             <div className="flex items-center flex-wrap">
                 , con domicilio en 
                 <Line><Value>{deluxeDetails?.studentAddress}</Value></Line>
@@ -103,7 +89,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
             </div>
              <div className="flex items-center flex-wrap">
                 , correo electrónico:
-                <Value>{client?.email}</Value>
+                <Value>{contract.clientEmail}</Value>
                 , en adelante denominado EL ESTUDIANTE.
             </div>
         </div>

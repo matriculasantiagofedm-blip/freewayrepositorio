@@ -10,6 +10,8 @@ import { collection, query, where, getDocs, DocumentData } from 'firebase/firest
 import type { Contract } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Search } from 'lucide-react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export default function CancellationsPage() {
   const db = useDb();
@@ -18,6 +20,7 @@ export default function CancellationsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [foundContracts, setFoundContracts] = useState<Contract[] | null>(null);
   const [searched, setSearched] = useState(false);
+  const today = new Date();
 
   const getBalance = (contract: Contract): number => {
     if (contract.autoMotoDetails) {
@@ -83,7 +86,12 @@ export default function CancellationsPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <h1 className="font-headline text-3xl font-bold">Cancelaciones de Contrato</h1>
+      <div className="flex flex-col">
+        <h1 className="font-headline text-3xl font-bold">Cancelaciones de Contrato</h1>
+        <p className="text-muted-foreground">
+          {format(today, "d 'de' MMMM 'de' yyyy", { locale: es })}
+        </p>
+      </div>
 
       <Card>
         <CardHeader>

@@ -14,9 +14,9 @@ export class FirestorePermissionError extends Error {
   public readonly context: SecurityRuleContext;
   public readonly name = 'FirestorePermissionError';
   
-  constructor(context: SecurityRuleContext) {
+  constructor(context: SecurityRule_Context) {
     const message = `
-FirestoreError: Missing or insufficient permissions: The following request was denied by Firestore Security Rules:
+FirestoreError: Missing or insufficient permissions. The following request was denied by Firestore Security Rules:
 ${JSON.stringify({
   // We mimic the structure of a real Firestore security rule debug error.
   rules: {
@@ -28,7 +28,7 @@ ${JSON.stringify({
           "/* This is a mock token. See the actual user's token below. */": "/* The user's auth token is not available in the client-side error. */"
         }
       },
-      method: context.operation,
+      method: context.operation.toUpperCase(),
       path: `/databases/(default)/documents/${context.path}`,
       // Add a note about the resource data.
       ...(context.requestResourceData && { resource: { data: context.requestResourceData } }),
@@ -46,3 +46,6 @@ ${JSON.stringify({
     Object.setPrototypeOf(this, FirestorePermissionError.prototype);
   }
 }
+
+// Renamed to avoid conflict with global type
+export type SecurityRule_Context = SecurityRuleContext;

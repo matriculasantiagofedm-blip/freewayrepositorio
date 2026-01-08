@@ -15,8 +15,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDb } from '@/components/firebase-provider';
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp, CollectionReference, Query } from 'firebase/firestore';
 import type { Contract, Payment } from '@/lib/types';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { errorEmitter } from '@/firebase/error-emitter';
 
 
 interface Transaction {
@@ -61,6 +63,18 @@ const paymentTypes = [
     { value: 'cheques', label: 'Cheques' },
 ];
 
+// Helper to get path from a query for error reporting
+const getQueryPath = (q: Query | CollectionReference): string => {
+    try {
+        if ('path' in q) return (q as CollectionReference).path;
+        // This is a private property but often the only way to get path from a query
+        return (q as any)._query.path.segments.join('/');
+    } catch {
+        return 'unknown path';
+    }
+};
+
+
 export default function DailyCashReportPage() {
   const { role } = useCurrentRole();
   const db = useDb();
@@ -79,6 +93,7 @@ export default function DailyCashReportPage() {
 
     const fetchData = async () => {
       setIsLoading(true);
+      setIsDataLoaded(false);
       const startOfReportDay = startOfDay(reportDate);
       const endOfReportDay = endOfDay(reportDate);
       
@@ -137,8 +152,18 @@ export default function DailyCashReportPage() {
         
         setTransactions([...newContractTransactions, ...cancellationTransactions]);
         setIsDataLoaded(true);
-      } catch (error) {
-        console.error("Error fetching data for report:", error);
+      } catch (error: any) {
+        if (error.code === 'permission-denied') {
+            const failedQuery = error.message.includes('contracts') ? 'contracts' : 'payments';
+            const permissionError = new FirestorePermissionError({
+                path: failedQuery,
+                operation: 'list',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        } else {
+             // Handle other errors (e.g., network issues)
+            console.error("Error fetching data for report:", error);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -464,4 +489,3 @@ export default function DailyCashReportPage() {
   );
 }
 
-    

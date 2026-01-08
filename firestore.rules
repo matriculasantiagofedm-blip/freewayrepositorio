@@ -84,7 +84,7 @@ service cloud.firestore {
      * @allow (create) Any signed-in user can create a payment record.
      */
     match /payments/{paymentId} {
-        allow read, list: if isAdmin();
+        allow read, list: if isAdmin() || isVentas();
         allow create: if isSignedIn();
         allow update, delete: if false; // Payments are immutable
     }

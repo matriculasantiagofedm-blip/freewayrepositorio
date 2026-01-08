@@ -103,7 +103,9 @@ export default function DailyCashReportPage() {
       const endOfReportDay = endOfDay(reportDate);
       
       try {
-        // 1. Fetch new contracts for the day
+        const allTransactions: Transaction[] = [];
+
+        // 1. Fetch new contracts for the day (down payments)
         const contractsRef = collection(db, 'contracts');
         const contractsQuery = query(
           contractsRef,
@@ -111,7 +113,6 @@ export default function DailyCashReportPage() {
           where('createdAt', '<=', Timestamp.fromDate(endOfReportDay))
         );
         const contractsSnapshot = await getDocs(contractsQuery);
-        const allTransactions: Transaction[] = [];
 
         contractsSnapshot.docs
             .map(doc => ({ id: doc.id, ...doc.data() } as Contract))
@@ -124,7 +125,7 @@ export default function DailyCashReportPage() {
                     id: contract.id,
                     invoice: '',
                     contrato: String(contract.folioNumber || ''),
-                    cedula: details.studentIdNumber || '',
+                    cedula: details.studentIdNumber || contract.studentIdNumber || '',
                     clientName: contract.clientName || '',
                     phone: details.studentPhone1 || '',
                     service: contract.type || '',
@@ -139,7 +140,7 @@ export default function DailyCashReportPage() {
                         id: `${contract.id}-matricula`,
                         invoice: '',
                         contrato: String(contract.folioNumber || ''),
-                        cedula: details.studentIdNumber || '',
+                        cedula: details.studentIdNumber || contract.studentIdNumber || '',
                         clientName: contract.clientName || '',
                         phone: details.studentPhone1 || '',
                         service: 'Matrícula', // Specific service name for the fee
@@ -149,6 +150,33 @@ export default function DailyCashReportPage() {
                     });
                 }
             });
+
+        // 2. Fetch 'actualizacion' and 'cancelacion' payments for the day
+        const paymentsRef = collection(db, 'payments');
+        const paymentsQuery = query(
+          paymentsRef,
+          where('paymentDate', '>=', Timestamp.fromDate(startOfReportDay)),
+          where('paymentDate', '<=', Timestamp.fromDate(endOfReportDay)),
+          where('type', 'in', ['actualizacion', 'cancelacion'])
+        );
+        const paymentsSnapshot = await getDocs(paymentsQuery);
+        
+        paymentsSnapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() } as Payment))
+          .forEach((payment) => {
+            allTransactions.push({
+                id: payment.id,
+                invoice: '',
+                contrato: String(payment.updateFolio || payment.cancellationFolio || '').padStart(6, '0'),
+                cedula: payment.studentIdNumber || '',
+                clientName: payment.clientName || '',
+                phone: '', // Phone not available on payment record
+                service: payment.type === 'actualizacion' ? 'Actualización Certificado' : 'Cancelación de Saldo',
+                amount: payment.amount,
+                paymentType: '',
+                cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
+            });
+          });
         
         setTransactions(allTransactions);
         setIsDataLoaded(true);

@@ -111,12 +111,16 @@ export default function DailyCashReportPage() {
           where('createdAt', '<=', Timestamp.fromDate(endOfReportDay))
         );
         const contractsSnapshot = await getDocs(contractsQuery);
-        const newContractTransactions = contractsSnapshot.docs
+        const allTransactions: Transaction[] = [];
+
+        contractsSnapshot.docs
             .map(doc => ({ id: doc.id, ...doc.data() } as Contract))
             .filter(contract => contract.status !== 'expired')
-            .map((contract): Transaction => {
+            .forEach((contract) => {
                 let details: any = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails || {};
-                return {
+                
+                // Add transaction for the down payment
+                allTransactions.push({
                     id: contract.id,
                     invoice: '',
                     contrato: String(contract.folioNumber || ''),
@@ -127,10 +131,26 @@ export default function DailyCashReportPage() {
                     amount: details.downPayment || 0,
                     paymentType: '',
                     cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
-                };
+                });
+                
+                // If it's a Deluxe contract, add a separate transaction for the enrollment fee
+                if (contract.type === 'Curso Deluxe') {
+                    allTransactions.push({
+                        id: `${contract.id}-matricula`,
+                        invoice: '',
+                        contrato: String(contract.folioNumber || ''),
+                        cedula: details.studentIdNumber || '',
+                        clientName: contract.clientName || '',
+                        phone: details.studentPhone1 || '',
+                        service: 'Matrícula', // Specific service name for the fee
+                        amount: 15.00, // Fixed enrollment fee
+                        paymentType: '',
+                        cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
+                    });
+                }
             });
         
-        setTransactions([...newContractTransactions]);
+        setTransactions(allTransactions);
         setIsDataLoaded(true);
       } catch (error: any) {
         if (error.code === 'permission-denied') {

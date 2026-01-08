@@ -130,8 +130,29 @@ export default function DailyCashReportPage() {
                 };
             });
 
-        // 2. Fetch cancellation payments for the day - TEMPORARILY DISABLED
-        const cancellationTransactions: Transaction[] = [];
+        // 2. Fetch cancellation payments for the day
+        const paymentsRef = collection(db, 'payments');
+        const paymentsQuery = query(
+          paymentsRef,
+          where('type', '==', 'cancelacion'),
+          where('paymentDate', '>=', Timestamp.fromDate(startOfReportDay)),
+          where('paymentDate', '<=', Timestamp.fromDate(endOfReportDay))
+        );
+        const paymentsSnapshot = await getDocs(paymentsQuery);
+        const cancellationTransactions = paymentsSnapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() } as Payment))
+            .map((payment): Transaction => ({
+                id: payment.id,
+                invoice: '',
+                contrato: String(payment.contractFolio || ''),
+                cedula: payment.studentIdNumber || '',
+                clientName: payment.clientName || '',
+                phone: '', // Phone is not on the payment record
+                service: 'Pago de Saldo',
+                amount: payment.amount || 0,
+                paymentType: '',
+                cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
+            }));
         
         setTransactions([...newContractTransactions, ...cancellationTransactions]);
         setIsDataLoaded(true);

@@ -176,12 +176,12 @@ export default function DashboardPage() {
             <Card className="transition-all hover:shadow-lg hover:-translate-y-1">
                 <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/40">
-                           <HandCoins className="h-6 w-6 text-red-600 dark:text-red-300" />
+                        <div className="p-2 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40">
+                           <HandCoins className="h-6 w-6 text-blue-600 dark:text-blue-300" />
                         </div>
                         <span className="font-semibold">Pago de Saldos Estudiantes</span>
                     </div>
-                    <Button asChild size="sm" variant="destructive">
+                    <Button asChild size="sm">
                         <Link href="/cancellations">Gestionar Saldos</Link>
                     </Button>
                 </CardContent>

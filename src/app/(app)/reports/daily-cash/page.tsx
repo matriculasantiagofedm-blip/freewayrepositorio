@@ -258,7 +258,7 @@ export default function DailyCashReportPage() {
   }
 
   return (
-    <div className="space-y-6 bg-background p-4 rounded-lg">
+    <div className="space-y-6 bg-background p-4 rounded-lg print:scale-90 print:origin-top-left">
       <div className="flex justify-between items-center print-hide">
         <h1 className="text-2xl font-bold font-headline">Reporte de Caja Diario</h1>
         <div className="flex items-center gap-2">
@@ -288,7 +288,7 @@ export default function DailyCashReportPage() {
         </div>
       </div>
 
-      <div className="p-2 bg-yellow-300 text-center font-bold text-sm">
+      <div className="p-2 bg-yellow-300 text-center font-bold text-sm print:text-xs">
         {format(reportDate, "EEEE d 'DE' LLLL 'DE' yyyy", { locale: es }).toUpperCase()}
       </div>
 
@@ -307,36 +307,36 @@ export default function DailyCashReportPage() {
                     <TableHeader>
                         <TableRow>
                         {['#', 'FACTURA', 'Contrato', 'Cédula', 'Nombre del cliente', 'Teléfono', 'Servicio', 'Monto', 'Tipo de Pago', 'Efectivo', 'T.Débito', 'T.Crédito', 'GLOBAL', 'BAC', 'GENERAL', 'Cheques'].map(header => (
-                            <TableHead key={header} className="border border-black p-1 text-center font-bold bg-gray-100">{header}</TableHead>
+                            <TableHead key={header} className="border border-black p-1 text-center font-bold bg-gray-100 print:text-[8px] print:p-0.5">{header}</TableHead>
                         ))}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {transactions.map((transaction, index) => (
                         <TableRow key={transaction.id}>
-                            <TableCell className="border border-black p-0.5 text-center">{index + 1}</TableCell>
-                            <TableCell className="border border-black p-0"><Input type="text" value={transaction.invoice} onChange={e => handleTransactionChange(index, 'invoice', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1" /></TableCell>
-                            <TableCell className="border border-black p-0"><Input type="text" value={transaction.contrato} onChange={e => handleTransactionChange(index, 'contrato', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30" readOnly /></TableCell>
-                            <TableCell className="border border-black p-0"><Input type="text" value={transaction.cedula} onChange={e => handleTransactionChange(index, 'cedula', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30" readOnly /></TableCell>
-                            <TableCell className="border border-black p-0"><Input type="text" value={transaction.clientName} onChange={e => handleTransactionChange(index, 'clientName', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30" readOnly /></TableCell>
-                            <TableCell className="border border-black p-0"><Input type="text" value={transaction.phone} onChange={e => handleTransactionChange(index, 'phone', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30" readOnly /></TableCell>
-                            <TableCell className="border border-black p-0"><Input type="text" value={transaction.service} onChange={e => handleTransactionChange(index, 'service', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30" readOnly /></TableCell>
-                            <TableCell className="border border-black p-0"><Input type="number" value={transaction.amount} onChange={e => handleTransactionChange(index, 'amount', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1" /></TableCell>
+                            <TableCell className="border border-black p-0.5 text-center print:text-[8px] print:p-0.5">{index + 1}</TableCell>
+                            <TableCell className="border border-black p-0 print:w-16"><Input type="text" value={transaction.invoice} onChange={e => handleTransactionChange(index, 'invoice', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 print:text-[8px] print:p-0.5" /></TableCell>
+                            <TableCell className="border border-black p-0"><Input type="text" value={transaction.contrato} onChange={e => handleTransactionChange(index, 'contrato', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30 print:text-[8px] print:p-0.5" readOnly /></TableCell>
+                            <TableCell className="border border-black p-0 print:w-20"><Input type="text" value={transaction.cedula} onChange={e => handleTransactionChange(index, 'cedula', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30 print:text-[8px] print:p-0.5" readOnly /></TableCell>
+                            <TableCell className="border border-black p-0"><Input type="text" value={transaction.clientName} onChange={e => handleTransactionChange(index, 'clientName', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30 print:text-[8px] print:p-0.5" readOnly /></TableCell>
+                            <TableCell className="border border-black p-0 print:w-20"><Input type="text" value={transaction.phone} onChange={e => handleTransactionChange(index, 'phone', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30 print:text-[8px] print:p-0.5" readOnly /></TableCell>
+                            <TableCell className="border border-black p-0"><Input type="text" value={transaction.service} onChange={e => handleTransactionChange(index, 'service', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30 print:text-[8px] print:p-0.5" readOnly /></TableCell>
+                            <TableCell className="border border-black p-0"><Input type="number" value={transaction.amount} onChange={e => handleTransactionChange(index, 'amount', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 print:text-[8px] print:p-0.5" /></TableCell>
                             <TableCell className="border border-black p-0">
                                 <Select value={transaction.paymentType} onValueChange={value => handleTransactionChange(index, 'paymentType', value)}>
-                                    <SelectTrigger className="w-full h-full border-none rounded-none text-xs p-1"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
+                                    <SelectTrigger className="w-full h-full border-none rounded-none text-xs p-1 print:text-[8px] print:p-0.5"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
                                     <SelectContent>
                                         {paymentTypes.map(pt => <SelectItem key={pt.value} value={pt.value}>{pt.label}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </TableCell>
-                            <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.cash} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
-                            <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.debit} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
-                            <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.credit} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
-                            <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.global} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
-                            <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.bac} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
-                            <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.general} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
-                            <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.cheques} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
+                            <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.cash} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50 print:text-[8px] print:p-0.5" /></TableCell>
+                            <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.debit} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50 print:text-[8px] print:p-0.5" /></TableCell>
+                            <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.credit} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50 print:text-[8px] print:p-0.5" /></TableCell>
+                            <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.global} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50 print:text-[8px] print:p-0.5" /></TableCell>
+                            <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.bac} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50 print:text-[8px] print:p-0.5" /></TableCell>
+                            <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.general} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50 print:text-[8px] print:p-0.5" /></TableCell>
+                            <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.cheques} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50 print:text-[8px] print:p-0.5" /></TableCell>
                         </TableRow>
                         ))}
                         {isDataLoaded && transactions.length === 0 && (
@@ -348,14 +348,14 @@ export default function DailyCashReportPage() {
                         )}
                         {/* Totals Row */}
                         <TableRow className="bg-yellow-200 font-bold">
-                            <TableCell colSpan={9} className="text-right p-1 border border-black">TOTAL</TableCell>
-                            <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.cash)}</TableCell>
-                            <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.debit)}</TableCell>
-                            <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.credit)}</TableCell>
-                            <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.global)}</TableCell>
-                            <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.bac)}</TableCell>
-                            <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.general)}</TableCell>
-                            <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.cheques)}</TableCell>
+                            <TableCell colSpan={9} className="text-right p-1 border border-black print:text-[8px] print:p-0.5">TOTAL</TableCell>
+                            <TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">{currencyFormatter.format(transactionTotals.cash)}</TableCell>
+                            <TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">{currencyFormatter.format(transactionTotals.debit)}</TableCell>
+                            <TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">{currencyFormatter.format(transactionTotals.credit)}</TableCell>
+                            <TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">{currencyFormatter.format(transactionTotals.global)}</TableCell>
+                            <TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">{currencyFormatter.format(transactionTotals.bac)}</TableCell>
+                            <TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">{currencyFormatter.format(transactionTotals.general)}</TableCell>
+                            <TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">{currencyFormatter.format(transactionTotals.cheques)}</TableCell>
                         </TableRow>
                     </TableBody>
                     </Table>
@@ -365,72 +365,72 @@ export default function DailyCashReportPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
                 {/* Cash Breakdown */}
                 <div className="md:col-span-2 space-y-4">
-                    <h3 className="font-bold text-center">DESGLOSE DE EFECTIVO</h3>
+                    <h3 className="font-bold text-center print:text-sm">DESGLOSE DE EFECTIVO</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Table className="text-xs border-collapse border border-black">
-                            <TableHeader><TableRow><TableHead className="border border-black p-1 font-bold">Cant.</TableHead><TableHead className="border border-black p-1 font-bold">Billetes</TableHead><TableHead className="border border-black p-1 font-bold">Monto</TableHead></TableRow></TableHeader>
+                            <TableHeader><TableRow><TableHead className="border border-black p-1 font-bold print:text-[8px] print:p-0.5">Cant.</TableHead><TableHead className="border border-black p-1 font-bold print:text-[8px] print:p-0.5">Billetes</TableHead><TableHead className="border border-black p-1 font-bold print:text-[8px] print:p-0.5">Monto</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {Object.keys(billQuantities).map(bill => (
                                     <TableRow key={bill}>
-                                        <TableCell className="border border-black p-0"><Input type="number" onChange={e => handleCashChange('bill', bill, e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1" /></TableCell>
-                                        <TableCell className="border border-black p-1 text-right">{currencyFormatter.format(parseFloat(bill))}</TableCell>
-                                        <TableCell className="border border-black p-1 text-right">{currencyFormatter.format(parseFloat(bill) * (billQuantities[bill] || 0))}</TableCell>
+                                        <TableCell className="border border-black p-0"><Input type="number" onChange={e => handleCashChange('bill', bill, e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 print:text-[8px] print:p-0.5" /></TableCell>
+                                        <TableCell className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(parseFloat(bill))}</TableCell>
+                                        <TableCell className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(parseFloat(bill) * (billQuantities[bill] || 0))}</TableCell>
                                     </TableRow>
                                 ))}
-                                <TableRow className="font-bold bg-gray-100"><TableCell colSpan={2} className="text-right p-1 border border-black">TOTAL</TableCell><TableCell className="p-1 border border-black text-right">{currencyFormatter.format(cashBreakdownTotals.billTotal)}</TableCell></TableRow>
+                                <TableRow className="font-bold bg-gray-100"><TableCell colSpan={2} className="text-right p-1 border border-black print:text-[8px] print:p-0.5">TOTAL</TableCell><TableCell className="p-1 border border-black text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(cashBreakdownTotals.billTotal)}</TableCell></TableRow>
                             </TableBody>
                         </Table>
                         <Table className="text-xs border-collapse border border-black">
-                            <TableHeader><TableRow><TableHead className="border border-black p-1 font-bold">Cant.</TableHead><TableHead className="border border-black p-1 font-bold">Monedas</TableHead><TableHead className="border border-black p-1 font-bold">Monto</TableHead></TableRow></TableHeader>
+                            <TableHeader><TableRow><TableHead className="border border-black p-1 font-bold print:text-[8px] print:p-0.5">Cant.</TableHead><TableHead className="border border-black p-1 font-bold print:text-[8px] print:p-0.5">Monedas</TableHead><TableHead className="border border-black p-1 font-bold print:text-[8px] print:p-0.5">Monto</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {Object.keys(coinQuantities).map(coin => (
                                     <TableRow key={coin}>
-                                        <TableCell className="border border-black p-0"><Input type="number" onChange={e => handleCashChange('coin', coin, e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1" /></TableCell>
-                                        <TableCell className="border border-black p-1 text-right">{currencyFormatter.format(parseFloat(coin))}</TableCell>
-                                        <TableCell className="border border-black p-1 text-right">{currencyFormatter.format(parseFloat(coin) * (coinQuantities[coin] || 0))}</TableCell>
+                                        <TableCell className="border border-black p-0"><Input type="number" onChange={e => handleCashChange('coin', coin, e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 print:text-[8px] print:p-0.5" /></TableCell>
+                                        <TableCell className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(parseFloat(coin))}</TableCell>
+                                        <TableCell className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(parseFloat(coin) * (coinQuantities[coin] || 0))}</TableCell>
                                     </TableRow>
                                 ))}
-                                <TableRow className="font-bold bg-gray-100"><TableCell colSpan={2} className="text-right p-1 border border-black">TOTAL</TableCell><TableCell className="p-1 border border-black text-right">{currencyFormatter.format(cashBreakdownTotals.coinTotal)}</TableCell></TableRow>
+                                <TableRow className="font-bold bg-gray-100"><TableCell colSpan={2} className="text-right p-1 border border-black print:text-[8px] print:p-0.5">TOTAL</TableCell><TableCell className="p-1 border border-black text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(cashBreakdownTotals.coinTotal)}</TableCell></TableRow>
                             </TableBody>
                         </Table>
                     </div>
-                    <div className="text-right font-bold">TOTAL BILLETES Y MONEDAS: {currencyFormatter.format(cashBreakdownTotals.total)}</div>
+                    <div className="text-right font-bold print:text-sm">TOTAL BILLETES Y MONEDAS: {currencyFormatter.format(cashBreakdownTotals.total)}</div>
                 </div>
 
                 {/* Totals and Expenses */}
                 <div className="space-y-4">
                     <Table className="text-xs border-collapse border border-black">
-                        <TableHeader><TableRow><TableHead colSpan={2} className="text-center font-bold p-1 bg-gray-100 border border-black">Totales</TableHead></TableRow></TableHeader>
+                        <TableHeader><TableRow><TableHead colSpan={2} className="text-center font-bold p-1 bg-gray-100 border border-black print:text-sm">Totales</TableHead></TableRow></TableHeader>
                         <TableBody>
-                            <TableRow><TableCell className="border border-black p-1">Total tarjetas CRÉDITO</TableCell><TableCell className="border border-black p-1 text-right">{currencyFormatter.format(transactionTotals.credit)}</TableCell></TableRow>
-                            <TableRow><TableCell className="border border-black p-1">Total tarjetas DÉBITO</TableCell><TableCell className="border border-black p-1 text-right">{currencyFormatter.format(transactionTotals.debit)}</TableCell></TableRow>
-                            <TableRow><TableCell className="border border-black p-1">GLOBAL</TableCell><TableCell className="border border-black p-1 text-right">{currencyFormatter.format(transactionTotals.global)}</TableCell></TableRow>
-                            <TableRow><TableCell className="border border-black p-1">BAC</TableCell><TableCell className="border border-black p-1 text-right">{currencyFormatter.format(transactionTotals.bac)}</TableCell></TableRow>
-                            <TableRow><TableCell className="border border-black p-1">GENERAL</TableCell><TableCell className="border border-black p-1 text-right">{currencyFormatter.format(transactionTotals.general)}</TableCell></TableRow>
-                            <TableRow><TableCell className="border border-black p-1">Cheques</TableCell><TableCell className="border border-black p-1 text-right">{currencyFormatter.format(transactionTotals.cheques)}</TableCell></TableRow>
-                            <TableRow><TableCell className="border border-black p-1">Total Efectivo</TableCell><TableCell className="border border-black p-1 text-right">{currencyFormatter.format(cashBreakdownTotals.total)}</TableCell></TableRow>
-                            <TableRow className="font-bold bg-yellow-200"><TableCell className="border border-black p-1">Total Facturado</TableCell><TableCell className="border border-black p-1 text-right">{currencyFormatter.format(grandTotals.totalFacturado)}</TableCell></TableRow>
+                            <TableRow><TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">Total tarjetas CRÉDITO</TableCell><TableCell className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(transactionTotals.credit)}</TableCell></TableRow>
+                            <TableRow><TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">Total tarjetas DÉBITO</TableCell><TableCell className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(transactionTotals.debit)}</TableCell></TableRow>
+                            <TableRow><TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">GLOBAL</TableCell><TableCell className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(transactionTotals.global)}</TableCell></TableRow>
+                            <TableRow><TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">BAC</TableCell><TableCell className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(transactionTotals.bac)}</TableCell></TableRow>
+                            <TableRow><TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">GENERAL</TableCell><TableCell className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(transactionTotals.general)}</TableCell></TableRow>
+                            <TableRow><TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">Cheques</TableCell><TableCell className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(transactionTotals.cheques)}</TableCell></TableRow>
+                            <TableRow><TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">Total Efectivo</TableCell><TableCell className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(cashBreakdownTotals.total)}</TableCell></TableRow>
+                            <TableRow className="font-bold bg-yellow-200"><TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">Total Facturado</TableCell><TableCell className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(grandTotals.totalFacturado)}</TableCell></TableRow>
                         </TableBody>
                     </Table>
                     <Table className="text-xs border-collapse border border-black">
-                        <TableHeader><TableRow><TableHead colSpan={3} className="text-center font-bold p-1 bg-gray-100 border border-black">GASTOS DEL DIA</TableHead></TableRow></TableHeader>
+                        <TableHeader><TableRow><TableHead colSpan={3} className="text-center font-bold p-1 bg-gray-100 border border-black print:text-sm">GASTOS DEL DIA</TableHead></TableRow></TableHeader>
                         <TableBody>
                             {expenses.map((expense, index) => (
                                 <TableRow key={index}>
-                                    <TableCell className="border border-black p-0"><Input placeholder="Descripción" value={expense.description} onChange={e => handleExpenseChange(index, 'description', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1" /></TableCell>
-                                    <TableCell className="border border-black p-0 w-28"><Input type="number" value={expense.amount || ''} onChange={e => handleExpenseChange(index, 'amount', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 text-right" /></TableCell>
+                                    <TableCell className="border border-black p-0"><Input placeholder="Descripción" value={expense.description} onChange={e => handleExpenseChange(index, 'description', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 print:text-[8px] print:p-0.5" /></TableCell>
+                                    <TableCell className="border border-black p-0 w-28"><Input type="number" value={expense.amount || ''} onChange={e => handleExpenseChange(index, 'amount', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 text-right print:text-[8px] print:p-0.5" /></TableCell>
                                     <TableCell className="p-0.5 border-black border w-8 text-center print-hide"><Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeExpenseRow(index)}><Trash2 className="h-3 w-3 text-destructive"/></Button></TableCell>
                                 </TableRow>
                             ))}
                             <TableRow><TableCell colSpan={3} className="p-1 print-hide"><Button size="sm" variant="outline" onClick={addExpenseRow}><PlusCircle className="mr-2 h-4 w-4"/>Añadir Gasto</Button></TableCell></TableRow>
-                            <TableRow className="font-bold bg-gray-100"><TableCell className="border border-black p-1">Total de Gastos</TableCell><TableCell colSpan={2} className="border border-black p-1 text-right">{currencyFormatter.format(totalExpenses)}</TableCell></TableRow>
+                            <TableRow className="font-bold bg-gray-100"><TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">Total de Gastos</TableCell><TableCell colSpan={2} className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(totalExpenses)}</TableCell></TableRow>
                         </TableBody>
                     </Table>
                     <Table className="text-xs border-collapse border border-black">
                         <TableBody>
-                            <TableRow><TableCell className="border border-black p-1">TOTAL EFECTIVO MENOS GASTOS</TableCell><TableCell className="border border-black p-1 text-right">{currencyFormatter.format(grandTotals.totalEfectivoMenosGastos)}</TableCell></TableRow>
-                            <TableRow><TableCell className="border border-black p-1">Total / Deposito</TableCell><TableCell className="border border-black p-0 w-28"><Input type="number" onChange={e => setTotalDeposit(parseFloat(e.target.value) || 0)} className="w-full h-full border-none rounded-none text-xs p-1 text-right" /></TableCell></TableRow>
-                            <TableRow className={cn("font-bold", grandTotals.diferencia !== 0 ? 'bg-red-200' : 'bg-green-200')}><TableCell className="border border-black p-1">Diferencia</TableCell><TableCell className="border border-black p-1 text-right">{currencyFormatter.format(grandTotals.diferencia)}</TableCell></TableRow>
+                            <TableRow><TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">TOTAL EFECTIVO MENOS GASTOS</TableCell><TableCell className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(grandTotals.totalEfectivoMenosGastos)}</TableCell></TableRow>
+                            <TableRow><TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">Total / Deposito</TableCell><TableCell className="border border-black p-0 w-28"><Input type="number" onChange={e => setTotalDeposit(parseFloat(e.target.value) || 0)} className="w-full h-full border-none rounded-none text-xs p-1 text-right print:text-[8px] print:p-0.5" /></TableCell></TableRow>
+                            <TableRow className={cn("font-bold", grandTotals.diferencia !== 0 ? 'bg-red-200' : 'bg-green-200')}><TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">Diferencia</TableCell><TableCell className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(grandTotals.diferencia)}</TableCell></TableRow>
                         </TableBody>
                     </Table>
                 </div>

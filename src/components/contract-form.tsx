@@ -71,17 +71,6 @@ const classScheduleSchema = z.object({
     time: z.string().optional(),
 });
 
-const baseSchema = z.object({
-  clientName: z.string()
-    .min(1, 'El nombre del cliente es requerido.')
-    .refine((name) => !/\d/.test(name), {
-        message: "El nombre no debe contener números.",
-    }),
-  clientEmail: z.string().email('Por favor, introduce una dirección de correo electrónico válida.'),
-  contractType: z.custom<ContractType>(),
-  folioNumber: z.number().optional(),
-});
-
 const specialPlans = [
     'Reforzamiento de 4 horas',
     'Ya se manejar Plus 2 horas',
@@ -174,17 +163,50 @@ const ampliacionesDetailsSchema = z.object({
     }
 });
 
-const formSchema = baseSchema.extend({
+const formSchema = z.object({
+  clientName: z.string()
+    .min(1, 'El nombre del cliente es requerido.')
+    .refine((name) => !/\d/.test(name), {
+        message: "El nombre no debe contener números.",
+    }),
+  clientEmail: z.string().email('Por favor, introduce una dirección de correo electrónico válida.'),
+  contractType: z.custom<ContractType>(),
+  folioNumber: z.number().optional(),
   deluxeDetails: deluxeDetailsSchema.optional(),
   autoMotoDetails: autoMotoDetailsSchema.optional(),
   ampliacionesDetails: ampliacionesDetailsSchema.optional(),
+}).superRefine((values, ctx) => {
+    switch (values.contractType) {
+        case 'Curso Deluxe':
+            const deluxeResult = deluxeDetailsSchema.safeParse(values.deluxeDetails);
+            if (!deluxeResult.success) {
+                deluxeResult.error.issues.forEach(issue => {
+                    ctx.addIssue({ ...issue, path: ['deluxeDetails', ...issue.path] });
+                });
+            }
+            break;
+        case 'Curso Auto':
+        case 'Curso Moto':
+        case 'Curso Mixto':
+        case 'Curso Solo Practica':
+            const autoMotoResult = autoMotoDetailsSchema.safeParse(values.autoMotoDetails);
+             if (!autoMotoResult.success) {
+                autoMotoResult.error.issues.forEach(issue => {
+                    ctx.addIssue({ ...issue, path: ['autoMotoDetails', ...issue.path] });
+                });
+            }
+            break;
+        case 'Ampliaciones':
+            const ampliacionesResult = ampliacionesDetailsSchema.safeParse(values.ampliacionesDetails);
+             if (!ampliacionesResult.success) {
+                ampliacionesResult.error.issues.forEach(issue => {
+                    ctx.addIssue({ ...issue, path: ['ampliacionesDetails', ...issue.path] });
+                });
+            }
+            break;
+    }
 });
 
-const deluxeFormSchema = baseSchema.extend({
-  deluxeDetails: deluxeDetailsSchema,
-  autoMotoDetails: autoMotoDetailsSchema.optional(),
-  ampliacionesDetails: ampliacionesDetailsSchema.optional(),
-});
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -367,9 +389,7 @@ export function ContractForm() {
   const contractType: ContractType = useMemo(() => contractTypeParam || 'Curso Auto', [contractTypeParam]);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(
-      contractType === 'Curso Deluxe' ? deluxeFormSchema : formSchema
-    ),
+    resolver: zodResolver(formSchema),
     mode: 'onBlur',
     defaultValues: {
       clientName: '',
@@ -636,9 +656,9 @@ export function ContractForm() {
             userId: user.uid,
             createdAt: serverTimestamp() as Timestamp,
           };
-          if (finalValues.autoMotoDetails?.studentPhone1) clientData.phone = finalValues.autoMotoDetails?.studentPhone1;
-          if (finalValues.deluxeDetails?.studentPhone1) clientData.phone = finalValues.deluxeDetails?.studentPhone1;
-          if (finalValues.ampliacionesDetails?.studentPhone1) clientData.phone = finalValues.ampliacionesDetails?.studentPhone1;
+          if (finalValues.autoMotoDetails?.studentPhone1) clientData.phone = finalValues.autoMotoDetails.studentPhone1;
+          if (finalValues.deluxeDetails?.studentPhone1) clientData.phone = finalValues.deluxeDetails.studentPhone1;
+          if (finalValues.ampliacionesDetails?.studentPhone1) clientData.phone = finalValues.ampliacionesDetails.studentPhone1;
 
 
           transaction.set(newClientRef, clientData);
@@ -1564,11 +1584,3 @@ export function ContractForm() {
     </Form>
   );
 }
-
-    
-
-    
-
-    
-
-

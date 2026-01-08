@@ -39,9 +39,9 @@ export type ContractType =
   | 'Curso Solo Practica';
 
 export interface DeluxeContractDetails {
-  studentIdNumber?: string;
-  studentAddress?: string;
-  studentPhone1?: string;
+  studentIdNumber: string;
+  studentAddress: string;
+  studentPhone1: string;
   studentPhone2?: string;
   paymentDetails?: 'Premium B/ 201.00' | 'Deluxe B/ 270.00';
   paymentAmount?: number;
@@ -188,5 +188,3 @@ export interface Payment {
   userId: string;
   type: 'abono' | 'cancelacion' | 'actualizacion';
 }
-
-    

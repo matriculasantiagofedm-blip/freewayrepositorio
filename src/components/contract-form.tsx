@@ -721,7 +721,18 @@ export function ContractForm() {
 
   const renderPreview = () => {
     const values = form.getValues();
-    return <ContractView contract={{...values, createdBy: currentUserRole} as unknown as Contract} type={contractType} />;
+    const contractToPreview = { ...values, createdBy: currentUserRole } as unknown as Contract;
+
+    if (contractType === 'Curso Deluxe' && values.deluxeDetails) {
+        contractToPreview.clientName = [
+            values.deluxeDetails.firstName,
+            values.deluxeDetails.middleName,
+            values.deluxeDetails.lastName,
+            values.deluxeDetails.secondLastName,
+        ].filter(Boolean).join(' ');
+    }
+    
+    return <ContractView contract={contractToPreview} type={contractType} />;
   };
 
   const selectedPlanName = form.watch('autoMotoDetails.coursePlan');

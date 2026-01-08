@@ -14,7 +14,7 @@ export class FirestorePermissionError extends Error {
   public readonly context: SecurityRuleContext;
   public readonly name = 'FirestorePermissionError';
   
-  constructor(context: SecurityRule_Context) {
+  constructor(context: SecurityRuleContext) {
     const message = `
 FirestoreError: Missing or insufficient permissions. The following request was denied by Firestore Security Rules:
 ${JSON.stringify({
@@ -47,5 +47,4 @@ ${JSON.stringify({
   }
 }
 
-// Renamed to avoid conflict with global type
-export type SecurityRule_Context = SecurityRuleContext;
+    

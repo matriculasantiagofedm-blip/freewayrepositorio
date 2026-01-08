@@ -46,7 +46,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, PlusCircle, Loader2, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Timestamp, collection, query, where, getDocs, writeBatch, doc, serverTimestamp, runTransaction } from 'firebase/firestore';
+import { Timestamp, collection, query, where, getDocs, writeBatch, doc, serverTimestamp, runTransaction, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { Contract, ContractType, Client } from '@/lib/types';
@@ -599,8 +599,9 @@ export function ContractForm() {
         values.clientName = [values.deluxeDetails.firstName, values.deluxeDetails.middleName, values.deluxeDetails.lastName, values.deluxeDetails.secondLastName].filter(Boolean).join(' ');
     }
     
+    let contractData: Partial<Contract> = {};
     try {
-        await runTransaction(db, async (transaction) => {
+        const newContractId = await runTransaction(db, async (transaction) => {
             const counterRef = doc(db, 'counters', 'contract_folio');
             const counterDoc = await transaction.get(counterRef);
 
@@ -609,7 +610,6 @@ export function ContractForm() {
             }
 
             const newFolioNumber = counterDoc.data().count + 1;
-            transaction.update(counterRef, { count: newFolioNumber });
             
             const clientsRef = collection(db, 'clients');
             const q = query(clientsRef, where("idNumber", "==", values.studentIdNumber));
@@ -639,7 +639,7 @@ export function ContractForm() {
             // 2. Create the contract
             const newContractRef = doc(collection(db, 'contracts'));
             
-            const contractData: Partial<Contract> = {
+            contractData = {
                 id: newContractRef.id,
                 folioNumber: newFolioNumber,
                 title: values.contractType,
@@ -672,24 +672,33 @@ export function ContractForm() {
             }
             
             transaction.set(newContractRef, contractData);
+            transaction.update(counterRef, { count: newFolioNumber });
 
             return newContractRef.id;
-        }).then((newContractId) => {
-             if (newContractId) {
-                toast({
-                    title: 'Contrato Generado Exitosamente',
-                    description: `El contrato para ${values.clientName} ha sido creado.`,
-                });
-                router.push(`/contracts/${newContractId}`);
-            }
         });
+
+        if (newContractId) {
+            toast({
+                title: 'Contrato Generado Exitosamente',
+                description: `El contrato para ${values.clientName} ha sido creado.`,
+            });
+            router.push(`/contracts/${newContractId}`);
+        }
+
     } catch (e: any) {
-        console.error("Error al crear contrato: ", e);
-        if (e.name !== 'FirestorePermissionError') {
-             toast({
+        if (e.name === 'FirebaseError') {
+             const permissionError = new FirestorePermissionError({
+                path: 'contracts', // The path being written to
+                operation: 'create',
+                requestResourceData: contractData, // The data payload
+             });
+             errorEmitter.emit('permission-error', permissionError);
+        } else {
+            console.error("Error al crear contrato: ", e);
+            toast({
                 variant: 'destructive',
                 title: 'Error al Guardar',
-                description: e.message || 'No se pudo crear el contrato. Revisa los permisos de Firestore.',
+                description: e.message || 'No se pudo crear el contrato. Revisa la consola para más detalles.',
             });
         }
     } finally {
@@ -1544,5 +1553,7 @@ export function ContractForm() {
 
 
 
+
+    
 
     

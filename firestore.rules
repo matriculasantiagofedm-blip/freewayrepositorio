@@ -59,8 +59,7 @@ service cloud.firestore {
       
       // Allow admin to specifically annul a contract
       allow update: if isAdmin()
-                      && request.resource.data.status == 'expired'
-                      && request.resource.data.clientName == 'CONTRATO ANULADO';
+                      && request.resource.data.status == 'expired';
 
       allow delete: if isAdmin() || isVentas();
     }
@@ -80,11 +79,11 @@ service cloud.firestore {
     /**
      * @description Manages payment records.
      * @path /payments/{paymentId}
-     * @allow (read, list) Admins and Ventas can read payment lists for reporting.
+     * @allow (get, list) Admins and Ventas can read payment lists for reporting.
      * @allow (create) Any signed-in user can create a payment record.
      */
     match /payments/{paymentId} {
-        allow read, list: if isAdmin() || isVentas();
+        allow get, list: if isAdmin() || isVentas();
         allow create: if isSignedIn();
         allow update, delete: if false; // Payments are immutable
     }
@@ -105,3 +104,4 @@ service cloud.firestore {
     }
   }
 }
+

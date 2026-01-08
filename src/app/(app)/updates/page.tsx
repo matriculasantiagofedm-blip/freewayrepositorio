@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -37,6 +36,7 @@ export default function UpdatesPage() {
   const [searched, setSearched] = useState(false);
   const [selectedUpdate, setSelectedUpdate] = useState<(typeof updateOptions)[0] | null>(null);
   const [paymentSaved, setPaymentSaved] = useState(false);
+  const [savedPaymentData, setSavedPaymentData] = useState<Partial<Payment> | null>(null);
   
   const today = new Date();
 
@@ -48,6 +48,7 @@ export default function UpdatesPage() {
     setSearched(false);
     setSelectedUpdate(null);
     setPaymentSaved(false);
+    setSavedPaymentData(null);
   };
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -63,6 +64,7 @@ export default function UpdatesPage() {
     setManualAddress('');
     setSelectedUpdate(null);
     setPaymentSaved(false);
+    setSavedPaymentData(null);
     setIsLoading(true);
     setSearched(true);
 
@@ -113,6 +115,8 @@ export default function UpdatesPage() {
 
     setIsSaving(true);
     try {
+      const paymentDataToSave: Partial<Payment> = {};
+
       await runTransaction(db, async (transaction) => {
         const counterRef = doc(db, 'counters', 'update_folio');
         const counterDoc = await transaction.get(counterRef);
@@ -141,8 +145,12 @@ export default function UpdatesPage() {
           type: 'actualizacion',
         };
         transaction.set(paymentRef, paymentData);
+
+        // Store data for printing
+        Object.assign(paymentDataToSave, { ...paymentData, id: paymentRef.id, paymentDate: new Date() as any });
       });
 
+      setSavedPaymentData(paymentDataToSave);
       toast({ title: 'Actualización Registrada', description: `El pago de B/.${selectedUpdate.price.toFixed(2)} ha sido guardado. Ahora puedes imprimir el recibo.` });
       setPaymentSaved(true);
 
@@ -155,19 +163,32 @@ export default function UpdatesPage() {
   };
   
   const handlePrint = () => {
-    window.print();
+    if (!savedPaymentData || !selectedUpdate) return;
+    
+    const queryParams = new URLSearchParams({
+        folio: String(savedPaymentData.updateFolio).padStart(6, '0'),
+        date: format(new Date(), 'PPP', { locale: es }),
+        name: savedPaymentData.clientName || '',
+        idNumber: savedPaymentData.studentIdNumber || '',
+        address: savedPaymentData.clientAddress || '',
+        concept: `Actualización - ${selectedUpdate.label}`,
+        amount: String(selectedUpdate.price.toFixed(2)),
+    });
+
+    const printUrl = `/print-receipt?${queryParams.toString()}`;
+    window.open(printUrl, '_blank');
   };
 
   return (
-    <div className="flex flex-col gap-8 print:w-3/4 print:mx-auto print:mt-8">
-        <div className="flex flex-col print-hide">
+    <div className="flex flex-col gap-8">
+        <div className="flex flex-col">
           <h1 className="font-headline text-3xl font-bold">Actualización de Certificados</h1>
           <p className="text-muted-foreground">
             {format(today, "d 'de' MMMM 'de' yyyy", { locale: es })}
           </p>
         </div>
 
-        <Card className="print-hide">
+        <Card>
           <CardHeader>
             <CardTitle>Buscar Estudiante por Cédula</CardTitle>
             <CardDescription>Introduce el número de cédula o pasaporte del estudiante para iniciar el proceso de actualización.</CardDescription>
@@ -190,34 +211,31 @@ export default function UpdatesPage() {
         </Card>
 
         {isLoading && (
-          <div className="flex items-center justify-center p-8 print-hide">
+          <div className="flex items-center justify-center p-8">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <p className="ml-4 text-muted-foreground">Buscando estudiante...</p>
           </div>
         )}
 
         {searched && !isLoading && (
-            <Card className="animate-in fade-in-50 print:border-none print:shadow-none">
+            <Card className="animate-in fade-in-50">
                 <CardHeader>
                     <div className='flex justify-between items-start'>
                         <div>
-                            <CardTitle className='print:text-lg'>
+                            <CardTitle>
                                 {foundContract ? 'Estudiante Encontrado' : 'Registrar Actualización Manual'}
                             </CardTitle>
-                            <CardDescription className='print:hidden'>
+                            <CardDescription>
                             {foundContract 
                                 ? `Selecciona la cantidad de certificados a actualizar para ${foundContract.clientName}.`
                                 : `No se encontró un contrato para la cédula ingresada. Completa los datos para registrar el pago manualmente.`
                             }
                             </CardDescription>
-                             <p className="hidden print:block text-sm text-muted-foreground mt-1">
-                                {format(today, "d 'de' MMMM 'de' yyyy", { locale: es })}
-                            </p>
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    <div className='border rounded-lg p-4 bg-muted/50 print:bg-transparent print:border-b print:rounded-none'>
+                    <div className='border rounded-lg p-4 bg-muted/50'>
                         <p className="font-medium">Cédula / Pasaporte: <span className="font-normal text-primary">{studentIdNumber}</span></p>
                         {foundContract ? (
                           <>
@@ -225,16 +243,14 @@ export default function UpdatesPage() {
                             <p className="font-medium">Contrato Original: <span className="font-normal">{String(foundContract.folioNumber).padStart(6, '0')}</span></p>
                           </>
                         ) : (
-                          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 print:grid-cols-1'>
+                          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mt-4'>
                              <div className="space-y-2">
-                                <Label htmlFor="manual-name" className='print:hidden'>Nombre Completo del Estudiante</Label>
-                                <p className="font-medium hidden print:block">Nombre: <span className="font-normal">{manualName}</span></p>
-                                <Input id="manual-name" value={manualName} onChange={(e) => setManualName(e.target.value)} placeholder="Introducir nombre" className='print:hidden'/>
+                                <Label htmlFor="manual-name">Nombre Completo del Estudiante</Label>
+                                <Input id="manual-name" value={manualName} onChange={(e) => setManualName(e.target.value)} placeholder="Introducir nombre"/>
                               </div>
                               <div className="space-y-2">
-                                <Label htmlFor="manual-address" className='print:hidden'>Dirección del Estudiante</Label>
-                                <p className="font-medium hidden print:block">Dirección: <span className="font-normal">{manualAddress}</span></p>
-                                <Input id="manual-address" value={manualAddress} onChange={(e) => setManualAddress(e.target.value)} placeholder="Introducir dirección" className='print:hidden' />
+                                <Label htmlFor="manual-address">Dirección del Estudiante</Label>
+                                <Input id="manual-address" value={manualAddress} onChange={(e) => setManualAddress(e.target.value)} placeholder="Introducir dirección" />
                               </div>
                           </div>
                         )}
@@ -245,20 +261,20 @@ export default function UpdatesPage() {
                             const option = updateOptions.find(opt => opt.id === value);
                             setSelectedUpdate(option || null);
                         }}
-                        className="grid grid-cols-1 md:grid-cols-3 gap-4 print:grid-cols-1"
+                        className="grid grid-cols-1 md:grid-cols-3 gap-4"
                         value={selectedUpdate?.id}
                         disabled={paymentSaved}
                     >
                         {updateOptions.map(option => (
-                             <Label key={option.id} htmlFor={option.id} className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary print:flex-row print:justify-between print:p-2 print:border">
-                                <RadioGroupItem value={option.id} id={option.id} className="sr-only print:not-sr-only print:mr-4" />
-                                <span className="text-lg font-semibold print:text-base">{option.label}</span>
-                                <span className="text-2xl font-bold mt-2 print:text-xl print:mt-0">B/.{option.price.toFixed(2)}</span>
+                             <Label key={option.id} htmlFor={option.id} className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                <RadioGroupItem value={option.id} id={option.id} className="sr-only" />
+                                <span className="text-lg font-semibold">{option.label}</span>
+                                <span className="text-2xl font-bold mt-2">B/.{option.price.toFixed(2)}</span>
                             </Label>
                         ))}
                     </RadioGroup>
                 </CardContent>
-                <CardFooter className="print-hide">
+                <CardFooter>
                     {!paymentSaved ? (
                         <Button onClick={handleSaveUpdate} disabled={isSaving || !selectedUpdate}>
                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}

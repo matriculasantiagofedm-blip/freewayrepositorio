@@ -55,12 +55,13 @@ export default function UpdatesPage() {
       return;
     }
 
-    setIsLoading(true);
+    // Reset part of the state for a new search
     setFoundContract(null);
     setManualName('');
     setManualAddress('');
-    setSearched(true);
     setSelectedUpdate(null);
+    setIsLoading(true);
+    setSearched(true);
 
     try {
       const contractsRef = collection(db, 'contracts');
@@ -139,8 +140,9 @@ export default function UpdatesPage() {
         transaction.set(paymentRef, paymentData);
       });
 
-      toast({ title: 'Actualización Registrada', description: `El pago de B/.${selectedUpdate.price.toFixed(2)} ha sido guardado.` });
-      resetFormState();
+      toast({ title: 'Actualización Registrada', description: `El pago de B/.${selectedUpdate.price.toFixed(2)} ha sido guardado. Ahora puedes imprimir el recibo.` });
+      // Do not reset the form state here, so the user can print the receipt.
+      // resetFormState();
 
     } catch (error) {
       console.error("Error saving update:", error);

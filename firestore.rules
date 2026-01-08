@@ -68,11 +68,11 @@ service cloud.firestore {
     /**
      * @description Manages client data.
      * @path /clients/{clientId}
-     * @allow (get, list) Any signed-in user can view client lists and details.
+     * @allow (get, list) Admins can view client lists and details.
      * @allow (create, update) Any signed-in user can create or update a client.
      */
     match /clients/{clientId} {
-      allow list, get: if isSignedIn();
+      allow list, get: if isAdmin();
       allow create, update: if isSignedIn();
       allow delete: if false; // Prevent client deletion
     }
@@ -80,11 +80,11 @@ service cloud.firestore {
     /**
      * @description Manages payment records.
      * @path /payments/{paymentId}
-     * @allow (read, list) Admins and Ventas can read payment lists for reporting.
+     * @allow (read, list) Admins can read payment lists for reporting.
      * @allow (create) Any signed-in user can create a payment record.
      */
     match /payments/{paymentId} {
-        allow read, list: if isAdmin() || isVentas();
+        allow read, list: if isAdmin();
         allow create: if isSignedIn();
         allow update, delete: if false; // Payments are immutable
     }

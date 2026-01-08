@@ -65,7 +65,7 @@ export default function CancellationPaymentsReportPage() {
   };
   
   if (isUserLoading) return <p>Cargando...</p>;
-  if (role && !['Administrador', 'Ventas'].includes(role)) {
+  if (role && role !== 'Administrador') {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
         <h3 className="mt-4 text-lg font-semibold text-foreground">Acceso Restringido</h3>
@@ -166,9 +166,9 @@ export default function CancellationPaymentsReportPage() {
             </TableBody>
             <TableFooter>
                 <TableRow className="font-bold text-base">
-                    <TableCell colSpan={6}>Total</TableCell>
+                    <TableCell colSpan={5}>Total</TableCell>
                     <TableCell className="text-right">{currencyFormatter.format(totalAmount)}</TableCell>
-                    
+                    <TableCell></TableCell>
                 </TableRow>
             </TableFooter>
           </Table>

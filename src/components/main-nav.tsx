@@ -23,19 +23,19 @@ const allLinks = [
     href: '/contracts',
     label: 'Todos los Contratos',
     icon: FileText,
-    roles: ['Administrador'], 
+    roles: ['Administrador'],
   },
   {
     href: '/clients',
     label: 'Clientes',
     icon: Users,
-    roles: ['Administrador', 'Ventas'],
+    roles: ['Administrador'],
   },
    {
     href: '/reports',
     label: 'Reportes',
     icon: ClipboardPenLine,
-    roles: ['Administrador', 'Ventas'],
+    roles: ['Administrador'],
   },
   {
     href: '/contracts/solo-practica',

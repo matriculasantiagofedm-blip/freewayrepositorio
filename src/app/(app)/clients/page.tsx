@@ -1,3 +1,4 @@
+
 'use client';
 import { collection, query } from 'firebase/firestore';
 import type { Client } from '@/lib/types';
@@ -23,9 +24,9 @@ export default function ClientsPage() {
   const { role } = useCurrentRole();
   const [searchTerm, setSearchTerm] = useState('');
 
-  // 'Administrador' y 'Ventas' pueden ver todos los clientes directamente.
+  // 'Administrador' puede ver todos los clientes directamente.
   const clientsQuery = useMemoQuery(() => {
-    if (!db || !role || (role !== 'Administrador' && role !== 'Ventas')) return null;
+    if (!db || !role || role !== 'Administrador') return null;
     return collection(db, 'clients');
   }, [db, role]);
 
@@ -41,8 +42,8 @@ export default function ClientsPage() {
     }) || [];
 
   const renderContent = () => {
-    // Si no es un administrador o ventas, mostrar acceso restringido de inmediato.
-    if (role && role !== 'Administrador' && role !== 'Ventas') {
+    // Si no es un administrador, mostrar acceso restringido de inmediato.
+    if (role && role !== 'Administrador') {
       return (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
           <h3 className="mt-4 text-lg font-semibold text-foreground">

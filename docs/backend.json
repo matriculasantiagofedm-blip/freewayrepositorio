@@ -134,6 +134,10 @@
           "type": "number",
           "description": "Sequential folio number specifically for cancellation payments."
         },
+        "updateFolio": {
+          "type": "number",
+          "description": "Sequential folio number for certificate update payments."
+        },
         "clientId": {
           "type": "string",
           "description": "Reference to the client who made the payment."
@@ -144,11 +148,11 @@
         },
         "type": {
           "type": "string",
-          "enum": ["abono", "cancelacion"],
-          "description": "The type of payment (e.g., down payment, cancellation)."
+          "enum": ["abono", "cancelacion", "actualizacion"],
+          "description": "The type of payment (e.g., down payment, cancellation, update)."
         }
       },
-      "required": ["id", "amount", "paymentDate", "contractId", "clientId", "userId", "type", "cancellationFolio"]
+      "required": ["id", "amount", "paymentDate", "contractId", "clientId", "userId", "type"]
     },
     "Counter": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -243,18 +247,16 @@
           "schema": {
             "$ref": "#/backend/entities/Counter"
           },
-          "description": "Stores distributed counters. Used for generating sequential folio numbers for contracts.",
+          "description": "Stores distributed counters. Used for generating sequential folio numbers for contracts, cancellations, and updates.",
           "params": [
             {
               "name": "counterId",
-              "description": "The unique identifier for the counter (e.g., 'contract_folio', 'cancellation_folio')."
+              "description": "The unique identifier for the counter (e.g., 'contract_folio', 'cancellation_folio', 'update_folio')."
             }
           ]
         }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging. The 'contracts' collection is placed at the root level to simplify security rules for roles like 'Administrador' or 'Ventas' that need to access all contracts. A new 'payments' collection is added to log all financial transactions, including initial down payments and subsequent cancellation payments, allowing for robust financial reporting without cluttering the contract documents. Authorization independence is maintained by storing the `userId` and `clientId` directly within each contract document, which is crucial for secure and efficient rule evaluations. The `counters` collection remains for managing sequential values in a scalable manner, now including a counter for cancellation folios."
+    "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging. The 'contracts' collection is placed at the root level to simplify security rules for roles like 'Administrador' or 'Ventas' that need to access all contracts. A new 'payments' collection is added to log all financial transactions, including initial down payments and subsequent cancellation payments, allowing for robust financial reporting without cluttering the contract documents. Authorization independence is maintained by storing the `userId` and `clientId` directly within each contract document, which is crucial for secure and efficient rule evaluations. The `counters` collection remains for managing sequential values in a scalable manner, now including a counter for cancellation folios and update folios."
   }
 }
-
-    

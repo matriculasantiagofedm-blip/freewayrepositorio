@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { FileText, CalendarClock, Users, Car, Bike, Combine, Crown, Plus, CarFront, RefreshCw, HandCoins } from 'lucide-react';
+import { FileText, CalendarClock, Users, Car, Bike, Combine, Crown, Plus, CarFront, RefreshCw, HandCoins, Award } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { isPast } from 'date-fns';
 import { collection, query, where }from 'firebase/firestore';
@@ -164,12 +164,12 @@ export default function DashboardPage() {
                 <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="p-2 rounded-lg bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/40">
-                           <RefreshCw className="h-6 w-6 text-green-600 dark:text-green-300" />
+                           <Award className="h-6 w-6 text-green-600 dark:text-green-300" />
                         </div>
-                        <span className="font-semibold">Actualizaciones</span>
+                        <span className="font-semibold">Actualizaciones de Certificado</span>
                     </div>
                     <Button asChild size="sm">
-                        <Link href="#">Actualizar</Link>
+                        <Link href="/updates">Actualizar</Link>
                     </Button>
                 </CardContent>
             </Card>

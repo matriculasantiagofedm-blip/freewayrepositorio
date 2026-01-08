@@ -108,6 +108,11 @@ service cloud.firestore {
     match /counters/cancellation_folio {
         allow read, write: if isSignedIn();
     }
+
+    // Allow authenticated users to read/write the update folio counter.
+    match /counters/update_folio {
+        allow read, write: if isSignedIn();
+    }
     
     // Prevent access to any other documents in the counters collection.
     match /counters/{counterId} {

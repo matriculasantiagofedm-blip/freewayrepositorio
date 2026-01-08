@@ -133,7 +133,7 @@ export default function CancellationsPage() {
               <h2 className="text-xl font-bold">Contratos Encontrados para "{foundContracts[0].clientName}"</h2>
               <Button variant="outline" onClick={handlePrint}>
                 <Printer className="mr-2 h-4 w-4" />
-                Imprimir Lista
+                Imprimir Cancelación
               </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 print:grid-cols-2 print:gap-6">

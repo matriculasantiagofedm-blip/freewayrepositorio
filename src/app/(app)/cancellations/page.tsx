@@ -22,6 +22,7 @@ export default function CancellationsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [foundContracts, setFoundContracts] = useState<Contract[] | null>(null);
   const [searched, setSearched] = useState(false);
+  const [payments, setPayments] = useState<{ [key: string]: number }>({});
 
   const today = new Date();
 
@@ -37,6 +38,11 @@ export default function CancellationsPage() {
     }
     return 0;
   }
+
+  const handlePaymentChange = (contractId: string, amount: string) => {
+    const numericAmount = parseFloat(amount) || 0;
+    setPayments(prev => ({ ...prev, [contractId]: numericAmount }));
+  };
   
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +54,7 @@ export default function CancellationsPage() {
     setIsLoading(true);
     setFoundContracts(null);
     setSearched(true);
+    setPayments({});
 
     try {
       const contractsRef = collection(db, 'contracts');
@@ -138,7 +145,12 @@ export default function CancellationsPage() {
               </Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 print:grid-cols-2 print:gap-6">
-                {foundContracts.map(contract => (
+                {foundContracts.map(contract => {
+                    const balance = getBalance(contract);
+                    const payment = payments[contract.id] || 0;
+                    const currentBalance = balance - payment;
+
+                    return (
                     <Card key={contract.id} className="animate-in fade-in-50 print:border print:shadow-none flex flex-col">
                         <CardHeader>
                             <CardTitle>Contrato N° {String(contract.folioNumber).padStart(6, '0')}</CardTitle>
@@ -147,15 +159,25 @@ export default function CancellationsPage() {
                         <CardContent className="flex-grow space-y-4">
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">Saldo Pendiente</p>
-                                <p className="font-bold text-xl text-destructive">B/. {getBalance(contract).toFixed(2)}</p>
+                                <p className="font-bold text-xl text-destructive">B/. {balance.toFixed(2)}</p>
                             </div>
                             <div>
                                 <Label htmlFor={`payment-${contract.id}`}>Monto a Pagar</Label>
-                                <Input id={`payment-${contract.id}`} type="number" placeholder="0.00" className="mt-1" />
+                                <Input 
+                                  id={`payment-${contract.id}`} 
+                                  type="number" 
+                                  placeholder="0.00" 
+                                  className="mt-1" 
+                                  onChange={(e) => handlePaymentChange(contract.id, e.target.value)}
+                                />
+                            </div>
+                             <div>
+                                <p className="text-sm font-medium text-muted-foreground">Saldo Actual</p>
+                                <p className="font-bold text-xl">B/. {currentBalance.toFixed(2)}</p>
                             </div>
                         </CardContent>
                     </Card>
-                ))}
+                )})}
             </div>
         </div>
       )}

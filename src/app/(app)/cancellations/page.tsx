@@ -51,20 +51,29 @@ export default function CancellationsPage() {
     try {
       const contractsRef = collection(db, 'contracts');
       
-      // Firestore does not support querying across different fields in nested objects in this manner.
-      // We must fetch all contracts for the client based on a common field like clientName or clientId if available,
-      // or perform multiple queries and merge, as we are doing.
-      const q = query(contractsRef, where('studentIdNumber', '==', studentIdNumber));
-      const querySnapshot = await getDocs(q);
+      const q1 = query(contractsRef, where('autoMotoDetails.studentIdNumber', '==', studentIdNumber));
+      const q2 = query(contractsRef, where('ampliacionesDetails.studentIdNumber', '==', studentIdNumber));
+      const q3 = query(contractsRef, where('deluxeDetails.studentIdNumber', '==', studentIdNumber));
 
-      let allContracts: Contract[] = [];
-      querySnapshot.forEach(doc => {
-          const contractData = { id: doc.id, ...doc.data() } as Contract;
-          // Filter out annulled contracts
-          if (contractData.status !== 'expired') {
-            allContracts.push(contractData);
-          }
-      });
+      const [snapshot1, snapshot2, snapshot3] = await Promise.all([getDocs(q1), getDocs(q2), getDocs(q3)]);
+
+      const contractsMap = new Map<string, Contract>();
+
+      const processSnapshot = (snapshot: any) => {
+          snapshot.forEach((doc: any) => {
+              const contractData = { id: doc.id, ...doc.data() } as Contract;
+              // Filter out annulled contracts and only add if not already in the map
+              if (contractData.status !== 'expired' && !contractsMap.has(doc.id)) {
+                contractsMap.set(doc.id, contractData);
+              }
+          });
+      };
+      
+      processSnapshot(snapshot1);
+      processSnapshot(snapshot2);
+      processSnapshot(snapshot3);
+
+      const allContracts = Array.from(contractsMap.values());
 
       setFoundContracts(allContracts.length > 0 ? allContracts : null);
       

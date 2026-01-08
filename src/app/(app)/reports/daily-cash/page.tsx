@@ -16,7 +16,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDb } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, Timestamp, CollectionReference, Query } from 'firebase/firestore';
-import type { Contract } from '@/lib/types';
+import type { Contract, Payment } from '@/lib/types';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 
@@ -84,52 +84,51 @@ export default function DailyCashReportPage() {
         return;
     };
 
-    const fetchContracts = async () => {
+    const fetchDailyData = async () => {
       setIsLoading(true);
       setIsDataLoaded(false);
       const startOfReportDay = startOfDay(reportDate);
       const endOfReportDay = endOfDay(reportDate);
       
       try {
+        const fetchedTransactions: Transaction[] = [];
+
+        // 1. Fetch new contracts for the day
         const contractsRef = collection(db, 'contracts');
-        const q = query(
+        const contractsQuery = query(
           contractsRef,
           where('createdAt', '>=', Timestamp.fromDate(startOfReportDay)),
           where('createdAt', '<=', Timestamp.fromDate(endOfReportDay))
         );
-        const querySnapshot = await getDocs(q);
+        const contractsSnapshot = await getDocs(contractsQuery);
         
-        const fetchedTransactions: Transaction[] = [];
-        querySnapshot.docs
+        contractsSnapshot.docs
             .map(doc => ({ id: doc.id, ...doc.data() } as Contract))
             .filter(contract => contract.status !== 'expired')
             .forEach((contract) => {
-                const details: any = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails || {};
-                
                 if (contract.type === 'Curso Deluxe') {
-                    // If it's a Deluxe contract, add only the transaction for the enrollment fee
                     fetchedTransactions.push({
                         id: `${contract.id}-matricula`,
                         invoice: '',
                         contrato: String(contract.folioNumber || ''),
-                        cedula: details.studentIdNumber || contract.studentIdNumber || '',
+                        cedula: contract.deluxeDetails?.studentIdNumber || '',
                         clientName: contract.clientName || '',
-                        phone: details.studentPhone1 || '',
-                        service: 'Matrícula', // Specific service name for the fee
-                        amount: 15.00, // Fixed enrollment fee
+                        phone: contract.deluxeDetails?.studentPhone1 || '',
+                        service: 'Matrícula Deluxe',
+                        amount: 15.00,
                         paymentType: '',
                         cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
                     });
                 } else {
-                    // For all other contract types, add transaction for the down payment
+                    const details: any = contract.autoMotoDetails || contract.ampliacionesDetails || {};
                     fetchedTransactions.push({
                         id: contract.id,
                         invoice: '',
                         contrato: String(contract.folioNumber || ''),
-                        cedula: details.studentIdNumber || contract.studentIdNumber || '',
+                        cedula: details.studentIdNumber || '',
                         clientName: contract.clientName || '',
                         phone: details.studentPhone1 || '',
-                        service: contract.type || '',
+                        service: `Abono Contrato ${contract.type}`,
                         amount: details.downPayment || 0,
                         paymentType: '',
                         cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
@@ -137,25 +136,73 @@ export default function DailyCashReportPage() {
                 }
             });
 
+        // 2. Fetch cancellation payments for the day
+        const cancellationPaymentsRef = collection(db, 'cancellation_payments');
+        const cancellationQuery = query(
+          cancellationPaymentsRef,
+          where('paymentDate', '>=', Timestamp.fromDate(startOfReportDay)),
+          where('paymentDate', '<=', Timestamp.fromDate(endOfReportDay))
+        );
+        const cancellationSnapshot = await getDocs(cancellationQuery);
+        cancellationSnapshot.docs.forEach(doc => {
+            const payment = doc.data() as Payment;
+            fetchedTransactions.push({
+                id: doc.id,
+                invoice: '',
+                contrato: String(payment.cancellationFolio || '').padStart(6, '0'),
+                cedula: payment.studentIdNumber || '',
+                clientName: payment.clientName || '',
+                phone: '', // Phone not available on payment record
+                service: 'Cancelación/Abono de Saldo',
+                amount: payment.amount || 0,
+                paymentType: '',
+                cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
+            });
+        });
+
+        // 3. Fetch update payments for the day
+        const updatePaymentsRef = collection(db, 'update_payments');
+        const updateQuery = query(
+          updatePaymentsRef,
+          where('paymentDate', '>=', Timestamp.fromDate(startOfReportDay)),
+          where('paymentDate', '<=', Timestamp.fromDate(endOfReportDay))
+        );
+        const updateSnapshot = await getDocs(updateQuery);
+        updateSnapshot.docs.forEach(doc => {
+            const payment = doc.data() as Payment;
+            fetchedTransactions.push({
+                id: doc.id,
+                invoice: '',
+                contrato: String(payment.updateFolio || '').padStart(6, '0'),
+                cedula: payment.studentIdNumber || '',
+                clientName: payment.clientName || '',
+                phone: '', // Phone not available on payment record
+                service: 'Actualización de Certificado',
+                amount: payment.amount || 0,
+                paymentType: '',
+                cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
+            });
+        });
+
         setTransactions(fetchedTransactions);
         setIsDataLoaded(true);
 
       } catch (error: any) {
         if (error.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
-                path: 'contracts',
+                path: 'contracts or payments',
                 operation: 'list',
             });
             errorEmitter.emit('permission-error', permissionError);
         } else {
-            console.error("Error fetching contracts for report:", error);
+            console.error("Error fetching data for report:", error);
         }
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchContracts();
+    fetchDailyData();
   }, [db, reportDate, role]);
 
 

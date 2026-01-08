@@ -5,7 +5,7 @@ import type { Contract } from '@/lib/types';
 import { ContractView } from '@/components/contract-view';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ChevronLeft, Award, Printer, ShieldX } from 'lucide-react';
+import { ChevronLeft, Award, Printer, ShieldX, Undo } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -148,21 +148,19 @@ export default function ContractDetailPage() {
     setIsGenerating(true);
   
     try {
+      // NON-DESTRUCTIVE: Only change the status
       const updateData = {
-        status: 'expired' as const, // 'expired' es el estado para anulado
-        clientName: 'CONTRATO ANULADO',
-        // Opcional: podrías querer limpiar otros campos
+        status: 'expired' as const,
       };
   
       await updateDoc(contractRef, updateData);
   
       toast({
         title: 'Contrato Anulado',
-        description: `El contrato con folio ${contract.folioNumber} ha sido anulado correctamente.`,
+        description: `El contrato con folio ${contract.folioNumber} ha sido marcado como anulado.`,
       });
   
-      // Forzar la actualización de la vista de datos
-      router.refresh(); 
+      router.refresh();
   
     } catch (serverError: any) {
       if (serverError instanceof Error && serverError.name === 'FirebaseError') {
@@ -182,6 +180,45 @@ export default function ContractDetailPage() {
       }
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleReactivateContract = async () => {
+    if (!contractRef || !contract) {
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo encontrar el contrato para reactivar.' });
+      return;
+    }
+
+    setIsGenerating(true);
+
+    try {
+      const updateData = {
+        status: 'active' as const,
+      };
+      await updateDoc(contractRef, updateData);
+      toast({
+        title: 'Contrato Reactivado',
+        description: `El contrato con folio ${contract.folioNumber} ha sido reactivado.`,
+      });
+      router.refresh();
+    } catch (serverError: any) {
+        if (serverError instanceof Error && serverError.name === 'FirebaseError') {
+            const permissionError = new FirestorePermissionError({
+                path: contractRef.path,
+                operation: 'update',
+                requestResourceData: { status: 'active' },
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        } else {
+            console.error("Error al reactivar contrato:", serverError);
+            toast({
+                variant: 'destructive',
+                title: 'Error al Reactivar',
+                description: 'No se pudo reactivar el contrato. Revisa los permisos.',
+            });
+        }
+    } finally {
+        setIsGenerating(false);
     }
   };
 
@@ -208,7 +245,7 @@ export default function ContractDetailPage() {
                 <Printer className="mr-2 h-4 w-4" />
                 Imprimir Contrato
               </Button>
-              {role === 'Administrador' && contract && contract.status !== 'expired' && (
+              {role === 'Administrador' && contract && contract.status === 'active' && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive">
@@ -220,7 +257,7 @@ export default function ContractDetailPage() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Esta acción es irreversible. El contrato será marcado como ANULADO y no se podrá revertir. El folio <span className="font-bold">{contract.folioNumber}</span> quedará registrado como anulado.
+                        Esta acción marcará el contrato como ANULADO, pero no eliminará ningún dato. Podrás reactivarlo más tarde si es necesario. El folio <span className="font-bold">{contract.folioNumber}</span> será afectado.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -232,6 +269,12 @@ export default function ContractDetailPage() {
                   </AlertDialogContent>
                 </AlertDialog>
               )}
+               {role === 'Administrador' && contract && contract.status === 'expired' && (
+                <Button variant="secondary" onClick={handleReactivateContract}>
+                    <Undo className="mr-2 h-4 w-4" />
+                    Reactivar Contrato
+                </Button>
+               )}
             </div>
       </div>
       

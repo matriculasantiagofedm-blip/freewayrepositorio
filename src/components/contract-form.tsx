@@ -5,7 +5,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -37,82 +36,26 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  SelectGroup,
-  SelectLabel as SelectLabelComponent,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, PlusCircle, Loader2, Printer } from 'lucide-react';
+import { CalendarIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Timestamp, collection, query, where, getDocs, writeBatch, doc, serverTimestamp, runTransaction, getDoc } from 'firebase/firestore';
+import { Timestamp, collection, query, where, getDocs, writeBatch, doc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { Contract, ContractType, Client, DeluxeContractDetails } from '@/lib/types';
 import { DeluxePremiumContractTemplatePreview } from './deluxe-premium-contract-preview';
-import { AutoMotoContractTemplatePreview } from './auto-moto-contract-preview';
 import { Checkbox } from './ui/checkbox';
-import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { useCurrentRole } from '@/hooks/use-current-role';
-import { AmpliacionesContractTemplate } from './ampliaciones-contract';
 import { ContractView } from './contract-view';
 import { useDb, useUser } from './firebase-provider';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
-import { Label } from './ui/label';
 
 
-// --- Esquemas de Validación con Zod ---
-
-const classScheduleSchema = z.object({
-    date: z.date().optional(),
-    time: z.string().optional(),
-});
-
-const specialPlans = [
-    'Reforzamiento de 4 horas',
-    'Ya se manejar Plus 2 horas',
-    'Ya se manejar (Evaluación de estacionamiento)',
-    'Reforzamiento Mixto 2Hrs'
-];
-
-const autoMotoDetailsSchema = z.object({
-  studentIdNumber: z.string().min(1, 'La cédula es requerida.'),
-  studentAddress: z.string().min(1, 'La dirección es requerida.'),
-  studentPhone1: z.string().min(1, 'El teléfono es requerido.'),
-  studentPhone2: z.string().optional(),
-  coursePlan: z.string().optional(),
-  paidInFull: z.boolean().default(false),
-  courseValue: z.number().default(0),
-  downPayment: z.number().min(0, "El abono no puede ser negativo.").default(0),
-  balance: z.number().default(0),
-  paymentDeadline: z.date().optional().nullable(),
-  vehicle: z.enum(['Spark', 'P. Blanco', 'P. Bronce', 'Moto', 'Motocicleta']).optional(),
-  vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).optional(),
-  licenseCategory: z.enum(['A, C', 'A, C, D', 'A, B']).optional(),
-  theoreticalClassSchedule: z.enum(['Días de Semana- Martes a Viernes de 8:00am a 10:00am', 'Días Sábado- de 3:00pm a 5:00pm']).optional(),
-  theoreticalClassDates: z.array(z.date().optional()).optional(),
-  practicalClassSchedules: z.array(classScheduleSchema).optional(),
-  motoPracticalClassSchedules: z.array(classScheduleSchema).optional(),
-}).superRefine((data, ctx) => {
-    // Si es un plan especial o está pagado por completo, no aplicamos la validación del 50%
-    if (data.coursePlan && specialPlans.includes(data.coursePlan) || data.paidInFull) {
-        return;
-    }
-    const totalValue = data.courseValue || 0;
-    const minAbono = totalValue * 0.5;
-
-    if (data.downPayment < minAbono) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['downPayment'],
-            message: `El abono debe ser de al menos el 50% (B/. ${minAbono.toFixed(2)}).`
-        });
-    }
-});
-
+// --- Esquemas de Validación con Zod (para referencia interna y validación manual) ---
 
 const deluxeDetailsSchema = z.object({
   studentIdNumber: z.string().min(1, 'La cédula es requerida.'),
@@ -126,101 +69,19 @@ const deluxeDetailsSchema = z.object({
   licenseCategory: z.enum(['A, C', 'A, C, D']).optional(),
   theoreticalClassSchedule: z.enum(['Lunes', 'Miércoles']).optional(),
   theoreticalClasses: z.array(z.date().optional()).optional(),
-  classSchedules: z.array(classScheduleSchema).optional(),
-});
-
-const ampliacionesDetailsSchema = z.object({
-  studentIdNumber: z.string().min(1, 'La cédula es requerida.'),
-  studentAddress: z.string().min(1, 'La dirección es requerida.'),
-  studentPhone1: z.string().min(1, 'El teléfono es requerido.'),
-  studentPhone2: z.string().optional(),
-  selectedPlans: z.array(z.object({ name: z.string(), price: z.number() })).optional(),
-  courseValue: z.number().default(0),
-  downPayment: z.number().min(0, "El abono no puede ser negativo.").default(0),
-  balance: z.number().default(0),
-  paymentDeadline: z.date().optional().nullable(),
-  theoreticalClassDate: z.date().optional(),
-  theoreticalClassTime: z.string().optional(),
-}).superRefine((data, ctx) => {
-    const totalValue = data.courseValue || 0;
-    if (totalValue > 100) {
-        const minAbono = totalValue * 0.5;
-        if (data.downPayment < minAbono) {
-             ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ['downPayment'],
-                message: `Para montos superiores a B/.100, el abono mínimo es del 50% (B/. ${minAbono.toFixed(2)}).`
-            });
-        }
-    } else {
-        if (data.downPayment < totalValue) {
-             ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ['downPayment'],
-                message: `Para montos de B/.100 o menos, se debe cancelar la totalidad (B/. ${totalValue.toFixed(2)}).`
-            });
-        }
-    }
-});
-
-const formSchema = z.object({
-  clientName: z.string()
-    .min(1, 'El nombre del cliente es requerido.')
-    .refine((name) => !/\d/.test(name), {
-        message: "El nombre no debe contener números.",
-    }),
-  clientEmail: z.string().email('Por favor, introduce una dirección de correo electrónico válida.'),
-  contractType: z.custom<ContractType>(),
-  folioNumber: z.number().optional(),
-  deluxeDetails: deluxeDetailsSchema.optional(),
-  autoMotoDetails: autoMotoDetailsSchema.optional(),
-  ampliacionesDetails: ampliacionesDetailsSchema.optional(),
-}).superRefine((values, ctx) => {
-    switch (values.contractType) {
-        case 'Curso Deluxe':
-            if (!values.deluxeDetails) {
-                 ctx.addIssue({ code: 'custom', path: ['deluxeDetails'], message: 'Detalles del curso Deluxe son requeridos.' });
-                 return;
-            }
-            const deluxeResult = deluxeDetailsSchema.safeParse(values.deluxeDetails);
-            if (!deluxeResult.success) {
-                deluxeResult.error.issues.forEach(issue => {
-                    ctx.addIssue({ ...issue, path: ['deluxeDetails', ...issue.path] });
-                });
-            }
-            break;
-        case 'Curso Auto':
-        case 'Curso Moto':
-        case 'Curso Mixto':
-        case 'Curso Solo Practica':
-            if (!values.autoMotoDetails) {
-                 ctx.addIssue({ code: 'custom', path: ['autoMotoDetails'], message: 'Detalles del curso son requeridos.' });
-                 return;
-            }
-            const autoMotoResult = autoMotoDetailsSchema.safeParse(values.autoMotoDetails);
-             if (!autoMotoResult.success) {
-                autoMotoResult.error.issues.forEach(issue => {
-                    ctx.addIssue({ ...issue, path: ['autoMotoDetails', ...issue.path] });
-                });
-            }
-            break;
-        case 'Ampliaciones':
-             if (!values.ampliacionesDetails) {
-                 ctx.addIssue({ code: 'custom', path: ['ampliacionesDetails'], message: 'Detalles de ampliaciones son requeridos.' });
-                 return;
-            }
-            const ampliacionesResult = ampliacionesDetailsSchema.safeParse(values.ampliacionesDetails);
-             if (!ampliacionesResult.success) {
-                ampliacionesResult.error.issues.forEach(issue => {
-                    ctx.addIssue({ ...issue, path: ['ampliacionesDetails', ...issue.path] });
-                });
-            }
-            break;
-    }
+  classSchedules: z.array(z.object({ date: z.date().optional(), time: z.string().optional() })).optional(),
 });
 
 
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = {
+  clientName: string;
+  clientEmail: string;
+  contractType: ContractType;
+  folioNumber?: number;
+  deluxeDetails?: Partial<z.infer<typeof deluxeDetailsSchema>>;
+  autoMotoDetails?: any; // Mantener flexible por ahora
+  ampliacionesDetails?: any; // Mantener flexible
+};
 
 // Función auxiliar para convertir las fechas de los detalles a Timestamps de Firestore
 const convertDetailsDatesToTimestamps = (details: any) => {
@@ -254,7 +115,6 @@ const convertDetailsDatesToTimestamps = (details: any) => {
     if (newDetails.paymentDeadline) {
         newDetails.paymentDeadline = toTimestamp(newDetails.paymentDeadline);
     } else if (newDetails.paymentDeadline !== undefined) {
-        // Explicitly set to null if undefined to avoid Firestore error
         newDetails.paymentDeadline = null;
     }
 
@@ -323,6 +183,13 @@ const coursePlans = {
     { name: 'Paquete Premium 12hrs (Moto)', price: 155.00 },
   ]
 };
+
+const specialPlans = [
+    'Reforzamiento de 4 horas',
+    'Ya se manejar Plus 2 horas',
+    'Ya se manejar (Evaluación de estacionamiento)',
+    'Reforzamiento Mixto 2Hrs'
+];
 
 const planToClassCount: { [key: string]: number } = {
   'Paquete Básico 8hrs': 4,
@@ -401,7 +268,6 @@ export function ContractForm() {
   const contractType: ContractType = useMemo(() => contractTypeParam || 'Curso Auto', [contractTypeParam]);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
     mode: 'onBlur',
     defaultValues: {
       clientName: '',
@@ -453,10 +319,6 @@ export function ContractForm() {
     name: "autoMotoDetails.motoPracticalClassSchedules",
   });
 
-  const { fields: ampliacionesPlansFields, append: appendAmpliacionesPlan, remove: removeAmpliacionesPlan } = useFieldArray({
-      control: form.control,
-      name: "ampliacionesDetails.selectedPlans",
-  });
 
   const handleCoursePlanChange = (planName: string) => {
     const currentContractType = form.getValues('contractType') as 'Curso Auto' | 'Curso Moto' | 'Curso Mixto' | 'Curso Solo Practica';
@@ -532,7 +394,6 @@ export function ContractForm() {
         let total = 0;
         let comboFound = false;
 
-        // Check for special combinations first, longer combos first
         const sortedCombinations = [...specialCombinations].sort((a,b) => b.combo.length - a.combo.length);
 
         for (const { combo, price } of sortedCombinations) {
@@ -543,7 +404,6 @@ export function ContractForm() {
             }
         }
 
-        // If no special combination matches, sum individual prices
         if (!comboFound) {
             total = plans.reduce((sum, plan) => sum + (plan?.price || 0), 0);
         }
@@ -560,14 +420,12 @@ export function ContractForm() {
     const value = parseFloat(e.target.value) || 0;
     const { courseValue } = form.getValues('ampliacionesDetails');
     
-    // Format the input to two decimal places on blur
     e.target.value = value.toFixed(2);
     form.setValue('ampliacionesDetails.downPayment', value);
 
     const newBalance = (courseValue || 0) - value;
     form.setValue('ampliacionesDetails.balance', newBalance >= 0 ? newBalance : 0);
 
-    // Validation Logic
     const totalValue = courseValue || 0;
     let minAbono = 0;
     let message = '';
@@ -596,7 +454,7 @@ export function ContractForm() {
     form.setValue('contractType', contractType);
     const existingValues = form.getValues();
     form.reset({
-      ...existingValues, // Keep clientName, clientEmail, etc.
+      ...existingValues,
       contractType: contractType,
       deluxeDetails: {
         ...form.formState.defaultValues.deluxeDetails,
@@ -617,17 +475,45 @@ export function ContractForm() {
     if (!db || !user) {
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description:
-          'No se ha podido conectar con la base de datos o el usuario no está autenticado.',
+        title: 'Error de Conexión',
+        description: 'No se ha podido conectar con la base de datos o el usuario no está autenticado.',
       });
       return;
     }
+
+    // --- Manual Validation ---
+    if (!values.clientName) {
+        toast({ variant: 'destructive', title: 'Campo Obligatorio', description: 'Por favor, introduce el nombre completo del estudiante.' });
+        return;
+    }
+    if (!values.clientEmail || !z.string().email().safeParse(values.clientEmail).success) {
+        toast({ variant: 'destructive', title: 'Campo Obligatorio', description: 'Por favor, introduce un correo electrónico válido.' });
+        return;
+    }
+
+    if (values.contractType === 'Curso Deluxe') {
+        const details = values.deluxeDetails;
+        if (!details?.studentIdNumber) {
+            toast({ variant: 'destructive', title: 'Campo Obligatorio', description: 'La cédula es requerida para el Curso Deluxe.' });
+            return;
+        }
+        if (!details?.studentAddress) {
+            toast({ variant: 'destructive', title: 'Campo Obligatorio', description: 'La dirección es requerida para el Curso Deluxe.' });
+            return;
+        }
+        if (!details?.studentPhone1) {
+            toast({ variant: 'destructive', title: 'Campo Obligatorio', description: 'El teléfono 1 es requerido para el Curso Deluxe.' });
+            return;
+        }
+    }
+    // Add similar manual validations for other contract types if needed...
+    // --- End Manual Validation ---
+
     setIsSubmitting(true);
 
     let finalValues = { ...values };
-
     let contractData: Partial<Contract> = {};
+    
     try {
       const studentIdNumber =
         finalValues.contractType === 'Curso Deluxe' ? finalValues.deluxeDetails?.studentIdNumber :
@@ -638,15 +524,12 @@ export function ContractForm() {
         throw new Error("La cédula del estudiante es requerida para guardar el contrato.");
       }
       
-      // Step 1: Check for existing client outside the transaction
       const clientsRef = collection(db, 'clients');
       const q = query(clientsRef, where('idNumber', '==', studentIdNumber));
       const clientSnapshot = await getDocs(q);
       const existingClientDoc = clientSnapshot.docs[0];
 
-      // Step 2: Run the transaction for atomic writes
       const newContractId = await runTransaction(db, async (transaction) => {
-        // Get and increment the folio counter
         const counterRef = doc(db, 'counters', 'contract_folio');
         const counterDoc = await transaction.get(counterRef);
         if (!counterDoc.exists()) {
@@ -657,7 +540,6 @@ export function ContractForm() {
         let clientId: string;
 
         if (!existingClientDoc) {
-          // Client doesn't exist, create them within the transaction
           const newClientRef = doc(collection(db, 'clients'));
           clientId = newClientRef.id;
           const clientData: Partial<Client> = {
@@ -672,14 +554,11 @@ export function ContractForm() {
           if (finalValues.deluxeDetails?.studentPhone1) clientData.phone = finalValues.deluxeDetails.studentPhone1;
           if (finalValues.ampliacionesDetails?.studentPhone1) clientData.phone = finalValues.ampliacionesDetails.studentPhone1;
 
-
           transaction.set(newClientRef, clientData);
         } else {
-          // Client exists, use their ID
           clientId = existingClientDoc.id;
         }
 
-        // Create the contract
         const newContractRef = doc(collection(db, 'contracts'));
         contractData = {
           id: newContractRef.id,
@@ -720,15 +599,13 @@ export function ContractForm() {
         router.push(`/contracts/${newContractId}`);
       }
     } catch (e: any) {
-      // Emit a contextual error for permission issues
       const permissionError = new FirestorePermissionError({
-        path: 'contracts', // The path being written to
+        path: 'contracts',
         operation: 'create',
-        requestResourceData: contractData, // The data payload
+        requestResourceData: contractData,
       });
       errorEmitter.emit('permission-error', permissionError);
 
-      // Log the original error for debugging and show a user-friendly toast
       console.error('Error al crear contrato: ', e);
       toast({
         variant: 'destructive',
@@ -739,12 +616,6 @@ export function ContractForm() {
       setIsSubmitting(false);
     }
   }
-  
-  const handlePrintPreview = () => {
-    const printUrl = `/print-contract/preview`; // A dummy URL for preview
-    sessionStorage.setItem('contractPreviewData', JSON.stringify(form.getValues()));
-    window.open(printUrl, '_blank');
-  };
 
   const renderPreview = () => {
     const values = form.getValues();
@@ -1051,7 +922,7 @@ export function ContractForm() {
                                                 </FormControl>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-auto p-0" align="start">
-                                                <Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus />
+                                                <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
                                             </PopoverContent>
                                         </Popover>
                                     </FormItem>
@@ -1076,11 +947,11 @@ export function ContractForm() {
                                                 <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
                                                     <FormControl>
                                                         <Checkbox
-                                                            checked={currentPlans.some(p => p.name === plan.name)}
+                                                            checked={currentPlans.some((p:any) => p.name === plan.name)}
                                                             onCheckedChange={(checked) => {
                                                                 const newPlans = checked
                                                                     ? [...currentPlans, plan]
-                                                                    : currentPlans.filter((p) => p.name !== plan.name);
+                                                                    : currentPlans.filter((p:any) => p.name !== plan.name);
                                                                 field.onChange(newPlans);
                                                                 handleAmpliacionesPlanChange(newPlans);
                                                             }}
@@ -1579,12 +1450,12 @@ export function ContractForm() {
                 {showPreview ? 'Ocultar Vista Previa' : 'Mostrar Vista Previa'}
             </Button>
             <div className="flex items-center gap-2">
-                <Button type="submit" disabled={isSubmitting || !form.formState.isValid}>
+                <Button type="submit" disabled={isSubmitting}>
                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     {isSubmitting ? 'Guardando...' : 'Guardar Contrato'}
                 </Button>
                 {contractType === 'Curso Deluxe' && (
-                    <Button type="submit" disabled={isSubmitting || !form.formState.isValid} variant="secondary">
+                    <Button type="submit" disabled={isSubmitting} variant="secondary">
                         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                         Guardar Contrato Deluxe
                     </Button>

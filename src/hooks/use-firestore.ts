@@ -9,8 +9,12 @@ import {
   DocumentReference,
   DocumentData,
   CollectionReference,
+  getDoc,
+  getDocs,
 } from 'firebase/firestore';
 import { useDb } from '@/components/firebase-provider';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 // Type to add an 'id' to a document's data
 export type WithId<T> = T & { id: string };
@@ -41,10 +45,15 @@ export function useDoc<T>(ref: DocumentReference<DocumentData> | null | undefine
           setData(null);
         }
         setIsLoading(false);
+        setError(null);
       },
-      (err) => {
-        console.error(err);
-        setError(err);
+      async (err) => {
+        const permissionError = new FirestorePermissionError({
+          path: ref.path,
+          operation: 'get',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        setError(permissionError);
         setIsLoading(false);
       }
     );
@@ -82,10 +91,31 @@ export function useCollection<T>(q: Query<DocumentData> | CollectionReference<Do
         })) as WithId<T>[];
         setData(documents);
         setIsLoading(false);
+        setError(null);
       },
-      (err) => {
-        console.error(err);
-        setError(err);
+      async (err) => {
+        let path = 'unknown';
+        if (q instanceof CollectionReference) {
+          path = q.path;
+        } else if (q instanceof Query) {
+          // This is a simplified way; getting the exact path from a query client-side is complex.
+          // We assume the first part of the path is the collection name.
+          // This may need adjustment based on query complexity.
+          try {
+             const querySnapshot = await getDocs(q);
+             path = querySnapshot.query.path;
+          } catch(e) {
+            // if getDocs fails, we may not be able to get the path
+            // this is a best-effort attempt.
+          }
+        }
+
+        const permissionError = new FirestorePermissionError({
+          path: path,
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        setError(permissionError);
         setIsLoading(false);
       }
     );

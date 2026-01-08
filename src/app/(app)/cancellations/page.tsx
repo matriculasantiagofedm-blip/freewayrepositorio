@@ -9,7 +9,7 @@ import { useDb } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, DocumentData } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, Printer } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -84,16 +84,20 @@ export default function CancellationsPage() {
     }
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex flex-col">
+      <div className="flex flex-col print-hide">
         <h1 className="font-headline text-3xl font-bold">Cancelaciones de Contrato</h1>
         <p className="text-muted-foreground">
           {format(today, "d 'de' MMMM 'de' yyyy", { locale: es })}
         </p>
       </div>
 
-      <Card>
+      <Card className="print-hide">
         <CardHeader>
           <CardTitle>Buscar Contrato por Cédula</CardTitle>
           <CardDescription>Introduce el número de cédula o pasaporte del cliente.</CardDescription>
@@ -116,7 +120,7 @@ export default function CancellationsPage() {
       </Card>
 
       {isLoading && (
-        <div className="flex items-center justify-center p-8">
+        <div className="flex items-center justify-center p-8 print-hide">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="ml-4 text-muted-foreground">Buscando contratos...</p>
         </div>
@@ -124,10 +128,16 @@ export default function CancellationsPage() {
 
       {searched && !isLoading && foundContracts && foundContracts.length > 0 && (
         <div className='space-y-4'>
-            <h2 className="text-xl font-bold">Contratos Encontrados para "{foundContracts[0].clientName}"</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-bold">Contratos Encontrados para "{foundContracts[0].clientName}"</h2>
+              <Button variant="outline" onClick={handlePrint} className="print-hide">
+                <Printer className="mr-2 h-4 w-4" />
+                Imprimir
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 print:grid-cols-2 print:gap-6">
                 {foundContracts.map(contract => (
-                     <Card key={contract.id} className="animate-in fade-in-50">
+                     <Card key={contract.id} className="animate-in fade-in-50 print:border print:shadow-none">
                         <CardHeader>
                             <CardTitle>Contrato N° {String(contract.folioNumber).padStart(6, '0')}</CardTitle>
                             <CardDescription>{contract.type}</CardDescription>
@@ -145,7 +155,7 @@ export default function CancellationsPage() {
       )}
 
       {searched && !isLoading && (!foundContracts || foundContracts.length === 0) && (
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
+        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center print-hide">
           <h3 className="mt-4 text-lg font-semibold text-foreground">
             No se encontraron contratos activos
           </h3>

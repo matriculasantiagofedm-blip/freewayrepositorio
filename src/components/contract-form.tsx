@@ -186,7 +186,6 @@ const deluxeFormSchema = baseSchema.extend({
   ampliacionesDetails: ampliacionesDetailsSchema.optional(),
 });
 
-
 type FormValues = z.infer<typeof formSchema>;
 
 // Función auxiliar para convertir las fechas de los detalles a Timestamps de Firestore
@@ -371,7 +370,7 @@ export function ContractForm() {
     resolver: zodResolver(
       contractType === 'Curso Deluxe' ? deluxeFormSchema : formSchema
     ),
-    mode: 'onBlur', // Trigger validation on blur
+    mode: 'onBlur',
     defaultValues: {
       clientName: '',
       clientEmail: '',
@@ -1571,4 +1570,5 @@ export function ContractForm() {
     
 
     
+
 

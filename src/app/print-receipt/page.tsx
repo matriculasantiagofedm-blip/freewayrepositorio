@@ -55,7 +55,7 @@ function ReceiptContent() {
                         </div>
                     </div>
                     
-                    <div className="border rounded-lg p-4 bg-muted/30 space-y-1">
+                    <div className="border rounded-lg p-4 space-y-1">
                         <h3 className="font-semibold mb-2 text-base">Información del Cliente</h3>
                         <p><strong>Nombre:</strong> {name}</p>
                         <p><strong>Cédula / Pasaporte:</strong> {idNumber}</p>

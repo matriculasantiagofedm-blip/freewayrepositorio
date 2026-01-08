@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ClipboardPenLine, ListChecks } from 'lucide-react';
 import Link from 'next/link';
 import { useCurrentRole } from '@/hooks/use-current-role';
+import { Button } from '@/components/ui/button';
 
 export default function ReportsPage() {
   const { role } = useCurrentRole();
@@ -24,6 +25,22 @@ export default function ReportsPage() {
       roles: ['Administrador'],
     },
   ];
+
+  if (role && role !== 'Administrador') {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
+        <h3 className="mt-4 text-lg font-semibold text-foreground">
+          Acceso Restringido
+        </h3>
+        <p className="mt-2 text-sm text-muted-foreground">
+          No tienes permiso para ver esta sección.
+        </p>
+        <Button asChild className="mt-4">
+          <Link href="/dashboard">Volver al Panel</Link>
+        </Button>
+      </div>
+    );
+  }
 
   const reports = allReports.filter(report => report.roles.includes(role || ''));
 

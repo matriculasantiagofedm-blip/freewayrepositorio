@@ -463,5 +463,3 @@ export default function DailyCashReportPage() {
     </div>
   );
 }
-
-    

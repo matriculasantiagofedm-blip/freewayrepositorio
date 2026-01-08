@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -103,24 +104,10 @@ export default function DailyCashReportPage() {
             .map(doc => ({ id: doc.id, ...doc.data() } as Contract))
             .filter(contract => contract.status !== 'expired')
             .forEach((contract) => {
-                let details: any = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails || {};
+                const details: any = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails || {};
                 
-                // Add transaction for the down payment
-                fetchedTransactions.push({
-                    id: contract.id,
-                    invoice: '',
-                    contrato: String(contract.folioNumber || ''),
-                    cedula: details.studentIdNumber || contract.studentIdNumber || '',
-                    clientName: contract.clientName || '',
-                    phone: details.studentPhone1 || '',
-                    service: contract.type || '',
-                    amount: details.downPayment || 0,
-                    paymentType: '',
-                    cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
-                });
-                
-                // If it's a Deluxe contract, add a separate transaction for the enrollment fee
                 if (contract.type === 'Curso Deluxe') {
+                    // If it's a Deluxe contract, add only the transaction for the enrollment fee
                     fetchedTransactions.push({
                         id: `${contract.id}-matricula`,
                         invoice: '',
@@ -130,6 +117,20 @@ export default function DailyCashReportPage() {
                         phone: details.studentPhone1 || '',
                         service: 'Matrícula', // Specific service name for the fee
                         amount: 15.00, // Fixed enrollment fee
+                        paymentType: '',
+                        cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
+                    });
+                } else {
+                    // For all other contract types, add transaction for the down payment
+                    fetchedTransactions.push({
+                        id: contract.id,
+                        invoice: '',
+                        contrato: String(contract.folioNumber || ''),
+                        cedula: details.studentIdNumber || contract.studentIdNumber || '',
+                        clientName: contract.clientName || '',
+                        phone: details.studentPhone1 || '',
+                        service: contract.type || '',
+                        amount: details.downPayment || 0,
                         paymentType: '',
                         cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
                     });

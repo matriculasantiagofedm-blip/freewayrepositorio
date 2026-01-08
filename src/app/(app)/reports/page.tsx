@@ -15,7 +15,14 @@ export default function ReportsPage() {
       description: 'Genera el reporte de caja para el día actual.',
       href: '/reports/daily-cash',
       icon: ClipboardPenLine,
-      roles: ['Administrador', 'Ventas'], // Visible for both
+      roles: ['Administrador', 'Ventas'],
+    },
+    {
+      title: 'Listado de Pagos',
+      description: 'Ver y filtrar todos los pagos de cancelación registrados.',
+      href: '/reports/cancellation-payments',
+      icon: ListChecks,
+      roles: ['Administrador', 'Ventas'],
     },
   ];
 

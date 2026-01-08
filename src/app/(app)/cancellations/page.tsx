@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -98,8 +99,7 @@ export default function CancellationsPage() {
   };
 
   return (
-    <div className="print:flex print:flex-col print:min-h-screen">
-      <div className="print:flex-grow"></div>
+    <div className="print:w-1/2 print:mx-auto print:mt-8">
       <div className="flex flex-col gap-8">
         <div className="flex flex-col print:flex">
           <h1 className="font-headline text-3xl font-bold">Cancelaciones de Contrato</h1>
@@ -146,7 +146,7 @@ export default function CancellationsPage() {
                   Imprimir Cancelación
                 </Button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 print:grid-cols-2 print:gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 print:grid-cols-1 print:gap-6">
                   {foundContracts.map(contract => {
                       const balance = getBalance(contract);
                       const payment = payments[contract.id] || 0;

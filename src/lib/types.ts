@@ -50,8 +50,8 @@ export interface DeluxeContractDetails {
   paymentDetails?: 'Premium B/ 201.00' | 'Deluxe B/ 270.00';
   paymentAmount?: number;
   paymentInstallments?: (Date | undefined)[];
-  vehicleTransmission: 'Automático' | 'Manual';
-  licenseCategory: 'A, C' | 'A, C, D';
+  vehicleTransmission?: 'Automático' | 'Manual';
+  licenseCategory?: 'A, C' | 'A, C, D';
   theoreticalClassSchedule?: 'Lunes' | 'Miércoles';
   theoreticalClasses?: (Date | undefined)[];
   classSchedules?: { date?: Date; time?: string }[];
@@ -100,10 +100,6 @@ export interface Contract {
   clientName: string;
   clientEmail: string;
   clientId: string;
-  studentIdNumber?: string;
-  studentAddress?: string;
-  studentPhone1?: string;
-  studentPhone2?: string;
   content: string;
   deadlines: Deadline[];
   status: ContractStatus;
@@ -196,3 +192,5 @@ export interface Payment {
   userId: string;
   type: 'abono' | 'cancelacion' | 'actualizacion';
 }
+
+    

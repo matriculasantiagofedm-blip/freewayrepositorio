@@ -78,10 +78,6 @@ const baseSchema = z.object({
         message: "El nombre no debe contener números.",
     }),
   clientEmail: z.string().email('Por favor, introduce una dirección de correo electrónico válida.'),
-  studentIdNumber: z.string().min(1, 'La cédula es requerida.'),
-  studentAddress: z.string().min(1, 'La dirección es requerida.'),
-  studentPhone1: z.string().min(1, 'El teléfono es requerido.'),
-  studentPhone2: z.string().optional(),
   contractType: z.custom<ContractType>(),
   folioNumber: z.number().optional(),
 });
@@ -94,6 +90,10 @@ const specialPlans = [
 ];
 
 const autoMotoDetailsSchema = z.object({
+  studentIdNumber: z.string().min(1, 'La cédula es requerida.'),
+  studentAddress: z.string().min(1, 'La dirección es requerida.'),
+  studentPhone1: z.string().min(1, 'El teléfono es requerido.'),
+  studentPhone2: z.string().optional(),
   coursePlan: z.string().optional(),
   paidInFull: z.boolean().default(false),
   courseValue: z.number().default(0),
@@ -126,10 +126,14 @@ const autoMotoDetailsSchema = z.object({
 
 
 const deluxeDetailsSchema = z.object({
-  firstName: z.string().optional(),
+  firstName: z.string().min(1, "El primer nombre es requerido"),
   middleName: z.string().optional(),
-  lastName: z.string().optional(),
+  lastName: z.string().min(1, "El apellido es requerido"),
   secondLastName: z.string().optional(),
+  studentIdNumber: z.string().min(1, 'La cédula es requerida.'),
+  studentAddress: z.string().min(1, 'La dirección es requerida.'),
+  studentPhone1: z.string().min(1, 'El teléfono es requerido.'),
+  studentPhone2: z.string().optional(),
   paymentDetails: z.enum(['Premium B/ 201.00', 'Deluxe B/ 270.00']).optional(),
   paymentAmount: z.number().optional(),
   paymentInstallments: z.array(z.date().optional()).optional(),
@@ -141,6 +145,10 @@ const deluxeDetailsSchema = z.object({
 });
 
 const ampliacionesDetailsSchema = z.object({
+  studentIdNumber: z.string().min(1, 'La cédula es requerida.'),
+  studentAddress: z.string().min(1, 'La dirección es requerida.'),
+  studentPhone1: z.string().min(1, 'El teléfono es requerido.'),
+  studentPhone2: z.string().optional(),
   selectedPlans: z.array(z.object({ name: z.string(), price: z.number() })).optional(),
   courseValue: z.number().default(0),
   downPayment: z.number().min(0, "El abono no puede ser negativo.").default(0),
@@ -179,15 +187,9 @@ const formSchema = baseSchema.extend({
 type FormValues = z.infer<typeof formSchema>;
 
 // Función auxiliar para convertir las fechas de los detalles a Timestamps de Firestore
-const convertDetailsDatesToTimestamps = (details: any, baseValues: any) => {
-    if (!details) details = {};
+const convertDetailsDatesToTimestamps = (details: any) => {
+    if (!details) return {};
     const newDetails = { ...details };
-
-    // Common fields
-    newDetails.studentIdNumber = baseValues.studentIdNumber;
-    newDetails.studentAddress = baseValues.studentAddress;
-    newDetails.studentPhone1 = baseValues.studentPhone1;
-    newDetails.studentPhone2 = baseValues.studentPhone2;
 
     const toTimestamp = (date: any) => {
         if (date instanceof Date && !isNaN(date.getTime())) {
@@ -215,7 +217,7 @@ const convertDetailsDatesToTimestamps = (details: any, baseValues: any) => {
     // Auto/Moto & Ampliaciones - Common paymentDeadline field
     if (newDetails.paymentDeadline) {
         newDetails.paymentDeadline = toTimestamp(newDetails.paymentDeadline);
-    } else {
+    } else if (newDetails.paymentDeadline !== undefined) {
         // Explicitly set to null if undefined to avoid Firestore error
         newDetails.paymentDeadline = null;
     }
@@ -368,18 +370,26 @@ export function ContractForm() {
     defaultValues: {
       clientName: '',
       clientEmail: '',
-      studentIdNumber: '',
-      studentAddress: '',
-      studentPhone1: '',
-      studentPhone2: '',
       contractType: contractType,
       deluxeDetails: {
+        firstName: '',
+        middleName: '',
+        lastName: '',
+        secondLastName: '',
+        studentIdNumber: '',
+        studentAddress: '',
+        studentPhone1: '',
+        studentPhone2: '',
         paymentAmount: 0,
         paymentInstallments: Array(6).fill(undefined),
         theoreticalClasses: Array(10).fill(undefined),
         classSchedules: Array(6).fill({ date: undefined, time: '' }),
       },
       autoMotoDetails: {
+        studentIdNumber: '',
+        studentAddress: '',
+        studentPhone1: '',
+        studentPhone2: '',
         courseValue: 0,
         downPayment: 0,
         balance: 0,
@@ -389,6 +399,10 @@ export function ContractForm() {
         paidInFull: false,
       },
        ampliacionesDetails: {
+        studentIdNumber: '',
+        studentAddress: '',
+        studentPhone1: '',
+        studentPhone2: '',
         selectedPlans: [],
         courseValue: 0,
         downPayment: 0,
@@ -548,21 +562,20 @@ export function ContractForm() {
 
   useEffect(() => {
     form.setValue('contractType', contractType);
+    const existingValues = form.getValues();
     form.reset({
-      clientName: form.getValues('clientName'),
-      clientEmail: form.getValues('clientEmail'),
-      studentIdNumber: form.getValues('studentIdNumber'),
-      studentAddress: form.getValues('studentAddress'),
-      studentPhone1: form.getValues('studentPhone1'),
-      studentPhone2: form.getValues('studentPhone2'),
+      clientName: existingValues.clientName,
+      clientEmail: existingValues.clientEmail,
       contractType: contractType,
       deluxeDetails: {
+        ...existingValues.deluxeDetails,
         paymentAmount: 0,
         paymentInstallments: Array(6).fill(undefined),
         theoreticalClasses: Array(10).fill(undefined),
         classSchedules: Array(6).fill({ date: undefined, time: '' }),
       },
       autoMotoDetails: {
+        ...existingValues.autoMotoDetails,
         courseValue: 0,
         downPayment: 0,
         balance: 0,
@@ -573,6 +586,7 @@ export function ContractForm() {
         vehicle: contractType === 'Curso Moto' ? 'Moto' : undefined,
       },
        ampliacionesDetails: {
+        ...existingValues.ampliacionesDetails,
         selectedPlans: [],
         courseValue: 0,
         downPayment: 0,
@@ -595,22 +609,25 @@ export function ContractForm() {
     }
     setIsSubmitting(true);
 
-    if (contractType === 'Curso Deluxe' && values.deluxeDetails) {
-      values.clientName = [
-        values.deluxeDetails.firstName,
-        values.deluxeDetails.middleName,
-        values.deluxeDetails.lastName,
-        values.deluxeDetails.secondLastName,
-      ]
-        .filter(Boolean)
-        .join(' ');
+    let finalValues = { ...values };
+
+    if (contractType === 'Curso Deluxe' && finalValues.deluxeDetails) {
+        finalValues.clientName = [
+            finalValues.deluxeDetails.firstName,
+            finalValues.deluxeDetails.middleName,
+            finalValues.deluxeDetails.lastName,
+            finalValues.deluxeDetails.secondLastName,
+        ].filter(Boolean).join(' ');
     }
+
 
     let contractData: Partial<Contract> = {};
     try {
+      const studentIdNumber = finalValues.deluxeDetails?.studentIdNumber || finalValues.autoMotoDetails?.studentIdNumber || finalValues.ampliacionesDetails?.studentIdNumber || '';
+      
       // Step 1: Check for existing client outside the transaction
       const clientsRef = collection(db, 'clients');
-      const q = query(clientsRef, where('idNumber', '==', values.studentIdNumber));
+      const q = query(clientsRef, where('idNumber', '==', studentIdNumber));
       const clientSnapshot = await getDocs(q);
       const existingClientDoc = clientSnapshot.docs[0];
 
@@ -630,15 +647,19 @@ export function ContractForm() {
           // Client doesn't exist, create them within the transaction
           const newClientRef = doc(clientsRef); // Create a new doc ref
           clientId = newClientRef.id;
-          const clientData = {
+          const clientData: Partial<Client> = {
             id: clientId,
-            name: values.clientName,
-            email: values.clientEmail,
-            idNumber: values.studentIdNumber,
-            phone: values.studentPhone1,
+            name: finalValues.clientName,
+            email: finalValues.clientEmail,
+            idNumber: studentIdNumber,
             userId: user.uid,
             createdAt: serverTimestamp() as Timestamp,
           };
+          if (finalValues.autoMotoDetails?.studentPhone1) clientData.phone = finalValues.autoMotoDetails?.studentPhone1;
+          if (finalValues.deluxeDetails?.studentPhone1) clientData.phone = finalValues.deluxeDetails?.studentPhone1;
+          if (finalValues.ampliacionesDetails?.studentPhone1) clientData.phone = finalValues.ampliacionesDetails?.studentPhone1;
+
+
           transaction.set(newClientRef, clientData);
         } else {
           // Client exists, use their ID
@@ -650,11 +671,11 @@ export function ContractForm() {
         contractData = {
           id: newContractRef.id,
           folioNumber: newFolioNumber,
-          title: values.contractType,
-          clientName: values.clientName,
-          clientEmail: values.clientEmail,
+          title: finalValues.contractType,
+          clientName: finalValues.clientName,
+          clientEmail: finalValues.clientEmail,
           clientId: clientId,
-          type: values.contractType,
+          type: finalValues.contractType,
           status: 'active',
           userId: user.uid,
           createdAt: serverTimestamp() as Timestamp,
@@ -662,21 +683,14 @@ export function ContractForm() {
           content: '',
           deadlines: [],
         };
-
-        const baseValues = {
-            studentIdNumber: values.studentIdNumber,
-            studentAddress: values.studentAddress,
-            studentPhone1: values.studentPhone1,
-            studentPhone2: values.studentPhone2,
-        };
-
-        if (values.contractType === 'Curso Deluxe') {
-            contractData.deluxeDetails = convertDetailsDatesToTimestamps(values.deluxeDetails, baseValues);
-        } else if (values.contractType === 'Ampliaciones') {
-            contractData.ampliacionesDetails = convertDetailsDatesToTimestamps(values.ampliacionesDetails, baseValues);
+        
+        if (finalValues.contractType === 'Curso Deluxe') {
+            contractData.deluxeDetails = convertDetailsDatesToTimestamps(finalValues.deluxeDetails);
+        } else if (finalValues.contractType === 'Ampliaciones') {
+            contractData.ampliacionesDetails = convertDetailsDatesToTimestamps(finalValues.ampliacionesDetails);
         }
         else {
-            contractData.autoMotoDetails = convertDetailsDatesToTimestamps(values.autoMotoDetails, baseValues);
+            contractData.autoMotoDetails = convertDetailsDatesToTimestamps(finalValues.autoMotoDetails);
         }
 
         transaction.set(newContractRef, contractData);
@@ -688,7 +702,7 @@ export function ContractForm() {
       if (newContractId) {
         toast({
           title: 'Contrato Generado Exitosamente',
-          description: `El contrato para ${values.clientName} ha sido creado.`,
+          description: `El contrato para ${finalValues.clientName} ha sido creado.`,
         });
         router.push(`/contracts/${newContractId}`);
       }
@@ -721,7 +735,7 @@ export function ContractForm() {
 
   const renderPreview = () => {
     const values = form.getValues();
-    const contractToPreview = { ...values, createdBy: currentUserRole } as unknown as Contract;
+    let contractToPreview = { ...values, createdBy: currentUserRole } as unknown as Contract;
 
     if (contractType === 'Curso Deluxe' && values.deluxeDetails) {
         contractToPreview.clientName = [
@@ -753,79 +767,93 @@ export function ContractForm() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                        control={form.control}
-                        name="clientName"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Nombre Completo del Estudiante</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Ej: John Doe" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
+                {contractType === 'Curso Deluxe' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField control={form.control} name="deluxeDetails.firstName" render={({ field }) => (<FormItem><FormLabel>Primer Nombre</FormLabel><FormControl><Input placeholder="Ej: John" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="deluxeDetails.middleName" render={({ field }) => (<FormItem><FormLabel>Segundo Nombre (Opcional)</FormLabel><FormControl><Input placeholder="Ej: Fitzgerald" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={form.control} name="deluxeDetails.lastName" render={({ field }) => (<FormItem><FormLabel>Primer Apellido</FormLabel><FormControl><Input placeholder="Ej: Doe" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="deluxeDetails.secondLastName" render={({ field }) => (<FormItem><FormLabel>Segundo Apellido (Opcional)</FormLabel><FormControl><Input placeholder="Ej: Smith" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={form.control} name="deluxeDetails.studentIdNumber" render={({ field }) => (<FormItem><FormLabel>Cédula o Pasaporte</FormLabel><FormControl><Input placeholder="Ej: 8-123-456" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="clientEmail" render={({ field }) => (<FormItem><FormLabel>Correo Electrónico</FormLabel><FormControl><Input placeholder="Ej: john.doe@example.com" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="deluxeDetails.studentAddress" render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>Dirección</FormLabel><FormControl><Input placeholder="Dirección completa" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="deluxeDetails.studentPhone1" render={({ field }) => (<FormItem><FormLabel>Teléfono 1</FormLabel><FormControl><Input placeholder="Ej: 6123-4567" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="deluxeDetails.studentPhone2" render={({ field }) => (<FormItem><FormLabel>Teléfono 2 (Opcional)</FormLabel><FormControl><Input placeholder="Ej: 345-6789" {...field} /></FormControl></FormItem>)} />
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="clientName"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Nombre Completo del Estudiante</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Ej: John Doe" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                        <FormField
+                            control={form.control}
+                            name={contractType === 'Ampliaciones' ? 'ampliacionesDetails.studentIdNumber' : 'autoMotoDetails.studentIdNumber'}
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Cédula o Pasaporte</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Ej: 8-123-456" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                        <FormField
+                            control={form.control}
+                            name="clientEmail"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Correo Electrónico</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Ej: john.doe@example.com" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                        <FormField
+                            control={form.control}
+                            name={contractType === 'Ampliaciones' ? 'ampliacionesDetails.studentAddress' : 'autoMotoDetails.studentAddress'}
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Dirección</FormLabel>
+                                <FormControl><Input placeholder="Dirección completa" {...field} /></FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
                         />
-                    <FormField
-                        control={form.control}
-                        name="studentIdNumber"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Cédula o Pasaporte</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Ej: 8-123-456" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
+                        <FormField
+                            control={form.control}
+                            name={contractType === 'Ampliaciones' ? 'ampliacionesDetails.studentPhone1' : 'autoMotoDetails.studentPhone1'}
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Teléfono 1</FormLabel>
+                                <FormControl><Input placeholder="Ej: 6123-4567" {...field} /></FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
                         />
-                     <FormField
-                        control={form.control}
-                        name="clientEmail"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Correo Electrónico</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Ej: john.doe@example.com" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
+                        <FormField
+                            control={form.control}
+                             name={contractType === 'Ampliaciones' ? 'ampliacionesDetails.studentPhone2' : 'autoMotoDetails.studentPhone2'}
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Teléfono 2 (Opcional)</FormLabel>
+                                <FormControl><Input placeholder="Ej: 345-6789" {...field} /></FormControl>
+                                </FormItem>
+                            )}
                         />
-                    <FormField
-                        control={form.control}
-                        name="studentAddress"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Dirección</FormLabel>
-                            <FormControl><Input placeholder="Dirección completa" {...field} /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="studentPhone1"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Teléfono 1</FormLabel>
-                            <FormControl><Input placeholder="Ej: 6123-4567" {...field} /></FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="studentPhone2"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Teléfono 2 (Opcional)</FormLabel>
-                            <FormControl><Input placeholder="Ej: 345-6789" {...field} /></FormControl>
-                            </FormItem>
-                        )}
-                    />
-                </div>
+                    </div>
+                )}
             </CardContent>
         </Card>
 
@@ -1558,21 +1586,6 @@ export function ContractForm() {
     </Form>
   );
 }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    
 
     
 

@@ -585,124 +585,131 @@ export function ContractForm() {
 
   async function onSubmit(values: FormValues) {
     if (!db || !user) {
-        toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: 'No se ha podido conectar con la base de datos o el usuario no está autenticado.',
-        });
-        return;
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description:
+          'No se ha podido conectar con la base de datos o el usuario no está autenticado.',
+      });
+      return;
     }
     setIsSubmitting(true);
-    
-    // Combine names for deluxe contract
+
     if (contractType === 'Curso Deluxe' && values.deluxeDetails) {
-        values.clientName = [values.deluxeDetails.firstName, values.deluxeDetails.middleName, values.deluxeDetails.lastName, values.deluxeDetails.secondLastName].filter(Boolean).join(' ');
+      values.clientName = [
+        values.deluxeDetails.firstName,
+        values.deluxeDetails.middleName,
+        values.deluxeDetails.lastName,
+        values.deluxeDetails.secondLastName,
+      ]
+        .filter(Boolean)
+        .join(' ');
     }
-    
+
     let contractData: Partial<Contract> = {};
     try {
-        const newContractId = await runTransaction(db, async (transaction) => {
-            const counterRef = doc(db, 'counters', 'contract_folio');
-            const counterDoc = await transaction.get(counterRef);
+      // Step 1: Check for existing client outside the transaction
+      const clientsRef = collection(db, 'clients');
+      const q = query(clientsRef, where('idNumber', '==', values.studentIdNumber));
+      const clientSnapshot = await getDocs(q);
+      const existingClientDoc = clientSnapshot.docs[0];
 
-            if (!counterDoc.exists()) {
-                throw new Error("El contador de folios no existe. Por favor, inicialízalo en la base de datos.");
-            }
-
-            const newFolioNumber = counterDoc.data().count + 1;
-            
-            const clientsRef = collection(db, 'clients');
-            const q = query(clientsRef, where("idNumber", "==", values.studentIdNumber));
-            const clientSnapshot = await getDocs(q);
-
-            let clientId: string;
-            
-            if (clientSnapshot.empty) {
-                // Create new client
-                const newClientRef = doc(clientsRef);
-                clientId = newClientRef.id;
-                const clientData = {
-                    id: clientId,
-                    name: values.clientName,
-                    email: values.clientEmail,
-                    idNumber: values.studentIdNumber,
-                    phone: values.studentPhone1,
-                    userId: user.uid,
-                    createdAt: serverTimestamp() as Timestamp,
-                };
-                transaction.set(newClientRef, clientData);
-            } else {
-                // Use existing client
-                clientId = clientSnapshot.docs[0].id;
-            }
-
-            // 2. Create the contract
-            const newContractRef = doc(collection(db, 'contracts'));
-            
-            contractData = {
-                id: newContractRef.id,
-                folioNumber: newFolioNumber,
-                title: values.contractType,
-                clientName: values.clientName,
-                clientEmail: values.clientEmail,
-                clientId: clientId,
-                type: values.contractType,
-                status: 'active',
-                userId: user.uid,
-                createdAt: serverTimestamp() as Timestamp,
-                createdBy: currentUserRole,
-                content: '',
-                deadlines: [],
-            };
-
-            const baseValues = {
-                studentIdNumber: values.studentIdNumber,
-                studentAddress: values.studentAddress,
-                studentPhone1: values.studentPhone1,
-                studentPhone2: values.studentPhone2,
-            };
-
-            if (values.contractType === 'Curso Deluxe') {
-                 contractData.deluxeDetails = convertDetailsDatesToTimestamps(values.deluxeDetails, baseValues);
-            } else if (values.contractType === 'Ampliaciones') {
-                contractData.ampliacionesDetails = convertDetailsDatesToTimestamps(values.ampliacionesDetails, baseValues);
-            }
-            else {
-                contractData.autoMotoDetails = convertDetailsDatesToTimestamps(values.autoMotoDetails, baseValues);
-            }
-            
-            transaction.set(newContractRef, contractData);
-            transaction.update(counterRef, { count: newFolioNumber });
-
-            return newContractRef.id;
-        });
-
-        if (newContractId) {
-            toast({
-                title: 'Contrato Generado Exitosamente',
-                description: `El contrato para ${values.clientName} ha sido creado.`,
-            });
-            router.push(`/contracts/${newContractId}`);
+      // Step 2: Run the transaction for atomic writes
+      const newContractId = await runTransaction(db, async (transaction) => {
+        // Get and increment the folio counter
+        const counterRef = doc(db, 'counters', 'contract_folio');
+        const counterDoc = await transaction.get(counterRef);
+        if (!counterDoc.exists()) {
+          throw new Error('El contador de folios no existe.');
         }
+        const newFolioNumber = counterDoc.data().count + 1;
 
-    } catch (e: any) {
-        if (e.name === 'FirebaseError') {
-             const permissionError = new FirestorePermissionError({
-                path: 'contracts', // The path being written to
-                operation: 'create',
-                requestResourceData: contractData, // The data payload
-             });
-             errorEmitter.emit('permission-error', permissionError);
+        let clientId: string;
+
+        if (!existingClientDoc) {
+          // Client doesn't exist, create them within the transaction
+          const newClientRef = doc(clientsRef); // Create a new doc ref
+          clientId = newClientRef.id;
+          const clientData = {
+            id: clientId,
+            name: values.clientName,
+            email: values.clientEmail,
+            idNumber: values.studentIdNumber,
+            phone: values.studentPhone1,
+            userId: user.uid,
+            createdAt: serverTimestamp() as Timestamp,
+          };
+          transaction.set(newClientRef, clientData);
         } else {
-            console.error("Error al crear contrato: ", e);
-            toast({
-                variant: 'destructive',
-                title: 'Error al Guardar',
-                description: e.message || 'No se pudo crear el contrato. Revisa la consola para más detalles.',
-            });
+          // Client exists, use their ID
+          clientId = existingClientDoc.id;
         }
+
+        // Create the contract
+        const newContractRef = doc(collection(db, 'contracts'));
+        contractData = {
+          id: newContractRef.id,
+          folioNumber: newFolioNumber,
+          title: values.contractType,
+          clientName: values.clientName,
+          clientEmail: values.clientEmail,
+          clientId: clientId,
+          type: values.contractType,
+          status: 'active',
+          userId: user.uid,
+          createdAt: serverTimestamp() as Timestamp,
+          createdBy: currentUserRole,
+          content: '',
+          deadlines: [],
+        };
+
+        const baseValues = {
+            studentIdNumber: values.studentIdNumber,
+            studentAddress: values.studentAddress,
+            studentPhone1: values.studentPhone1,
+            studentPhone2: values.studentPhone2,
+        };
+
+        if (values.contractType === 'Curso Deluxe') {
+            contractData.deluxeDetails = convertDetailsDatesToTimestamps(values.deluxeDetails, baseValues);
+        } else if (values.contractType === 'Ampliaciones') {
+            contractData.ampliacionesDetails = convertDetailsDatesToTimestamps(values.ampliacionesDetails, baseValues);
+        }
+        else {
+            contractData.autoMotoDetails = convertDetailsDatesToTimestamps(values.autoMotoDetails, baseValues);
+        }
+
+        transaction.set(newContractRef, contractData);
+        transaction.update(counterRef, { count: newFolioNumber });
+
+        return newContractRef.id;
+      });
+
+      if (newContractId) {
+        toast({
+          title: 'Contrato Generado Exitosamente',
+          description: `El contrato para ${values.clientName} ha sido creado.`,
+        });
+        router.push(`/contracts/${newContractId}`);
+      }
+    } catch (e: any) {
+      // Emit a contextual error for permission issues
+      const permissionError = new FirestorePermissionError({
+        path: 'contracts', // The path being written to
+        operation: 'create',
+        requestResourceData: contractData, // The data payload
+      });
+      errorEmitter.emit('permission-error', permissionError);
+
+      // Log the original error for debugging and show a user-friendly toast
+      console.error('Error al crear contrato: ', e);
+      toast({
+        variant: 'destructive',
+        title: 'Error al Guardar',
+        description: e.message || 'No se pudo crear el contrato. Revisa la consola para más detalles.',
+      });
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   }
   
@@ -1553,6 +1560,8 @@ export function ContractForm() {
 
 
 
+
+    
 
     
 

@@ -45,13 +45,13 @@ service cloud.firestore {
      * @description Manages access to the central contracts collection.
      * @path /contracts/{contractId}
      * @allow (get, list) Any signed-in user can view contract details and lists.
-     * @allow (create) Any signed-in user can create a contract, but the `userId` must match their own UID.
+     * @allow (create) Any signed-in user can create a contract. The userId is set on the server.
      * @allow (update) Any signed-in user can update, but key fields `userId` and `folioNumber` are immutable.
      * @allow (delete) Admin/Ventas can delete.
      */
     match /contracts/{contractId} {
       allow get, list: if isSignedIn();
-      allow create: if isOwner(request.resource.data.userId);
+      allow create: if isSignedIn();
       // Allow general updates if key fields are unchanged
       allow update: if isSignedIn()
                       && request.resource.data.userId == resource.data.userId

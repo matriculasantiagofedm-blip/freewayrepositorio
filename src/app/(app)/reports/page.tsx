@@ -1,6 +1,6 @@
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ClipboardPenLine } from 'lucide-react';
+import { ClipboardPenLine, ListChecks } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ReportsPage() {
@@ -10,6 +10,12 @@ export default function ReportsPage() {
       description: 'Genera el reporte de caja para el día actual.',
       href: '/reports/daily-cash',
       icon: ClipboardPenLine,
+    },
+     {
+      title: 'Listado de Pagos',
+      description: 'Ver y filtrar todos los pagos de cancelación registrados.',
+      href: '/reports/cancellation-payments',
+      icon: ListChecks,
     },
   ];
 

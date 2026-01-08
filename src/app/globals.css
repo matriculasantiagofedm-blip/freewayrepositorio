@@ -83,7 +83,7 @@
 
   @media print {
     @page { 
-      size: landscape;
+      size: letter landscape;
       margin: 0.5in;
     }
     body {

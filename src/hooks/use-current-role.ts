@@ -17,29 +17,23 @@ export function useCurrentRole() {
 
   useEffect(() => {
     if (isUserLoading) {
-      setRole(null);
       setIsLoading(true);
       return;
     }
     
-    // Si el usuario es anónimo, intentamos obtener el rol de la variable global.
-    if (user && user.isAnonymous) {
-      const selectedRole = (window as any).selectedRoleForAnonymousSession;
-      if (selectedRole && selectedRole.name) {
-        // Usamos el mapeo para obtener el rol funcional
-        const functionalRole = roleMapping[selectedRole.name] || 'Ventas';
-        setRole(functionalRole);
-      } else {
-        // Si no hay rol seleccionado, podría ser un error o un estado inesperado.
-        setRole(null);
+    let userRole: string | null = null;
+    if (user) {
+      if (user.isAnonymous) {
+        const selectedRole = (window as any).selectedRoleForAnonymousSession;
+        if (selectedRole && selectedRole.name) {
+          userRole = roleMapping[selectedRole.name] || 'Ventas';
+        }
+      } else if (user.email) {
+        userRole = roleMapping[user.email] || null;
       }
-    } else if (user && user.email) {
-      // Si es un usuario con email, usamos el mapeo.
-      const userRole = roleMapping[user.email] || null;
-      setRole(userRole);
-    } else {
-      setRole(null);
     }
+    
+    setRole(userRole);
     setIsLoading(false);
   }, [user, isUserLoading]);
 

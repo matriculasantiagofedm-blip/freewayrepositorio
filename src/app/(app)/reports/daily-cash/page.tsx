@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -6,26 +5,52 @@ import { format, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, Trash2, Printer, CalendarIcon, Loader2, Save } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { PlusCircle, Trash2, Printer, CalendarIcon, Loader2 } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useDb, useUser } from '@/components/firebase-provider';
-import { collection, query, where, getDocs, Timestamp, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import type { Contract, Payment, Transaction, DailyReport } from '@/lib/types';
+import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import type { Contract, Payment, Transaction } from '@/lib/types';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
-import { useToast } from '@/hooks/use-toast';
 
 const initialBillQuantities: { [key: string]: number } = {
-  '100.00': 0, '50.00': 0, '20.00': 0, '10.00': 0, '5.00': 0, '1.00': 0,
+  '100.00': 0,
+  '50.00': 0,
+  '20.00': 0,
+  '10.00': 0,
+  '5.00': 0,
+  '1.00': 0,
 };
 const initialCoinQuantities: { [key: string]: number } = {
-  '1.00': 0, '0.50': 0, '0.25': 0, '0.10': 0, '0.05': 0, '0.01': 0,
+  '1.00': 0,
+  '0.50': 0,
+  '0.25': 0,
+  '0.10': 0,
+  '0.05': 0,
+  '0.01': 0,
 };
 const initialExpenses = [{ description: '', amount: 0 }];
 
@@ -45,10 +70,9 @@ const paymentTypes = [
 ];
 
 export default function DailyCashReportPage() {
-  const { role } = useCurrentRole();
+  const { role, isLoading: isRoleLoading } = useCurrentRole();
   const db = useDb();
-  const { user } = useUser();
-  const { toast } = useToast();
+  const { user, isUserLoading } = useUser();
   
   const [reportDate, setReportDate] = useState<Date>(new Date());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -57,11 +81,10 @@ export default function DailyCashReportPage() {
   const [expenses, setExpenses] = useState(initialExpenses);
   const [totalDeposit, setTotalDeposit] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   useEffect(() => {
-    if (!db || !reportDate || !user) {
+    if (!db || !user || !role || !reportDate) {
         setIsLoading(false);
         return;
     };
@@ -69,95 +92,123 @@ export default function DailyCashReportPage() {
     const fetchDailyData = async () => {
       setIsLoading(true);
       setIsDataLoaded(false);
-      const reportId = format(reportDate, 'yyyy-MM-dd');
-      const reportRef = doc(db, 'daily_reports', reportId);
+      
+      const startOfReportDay = startOfDay(reportDate);
+      const endOfReportDay = endOfDay(reportDate);
+      const fetchedTransactions: Transaction[] = [];
 
       try {
-        const reportSnap = await getDoc(reportRef);
+        const contractsRef = collection(db, 'contracts');
+        const contractsQuery = query(contractsRef, where('createdAt', '>=', Timestamp.fromDate(startOfReportDay)), where('createdAt', '<=', Timestamp.fromDate(endOfReportDay)));
+        const contractsSnapshot = await getDocs(contractsQuery);
+        contractsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Contract)).filter(contract => contract.status !== 'expired').forEach((contract) => {
+            if (contract.type === 'Curso Deluxe') {
+                fetchedTransactions.push({
+                    id: `${contract.id}-matricula`,
+                    invoice: '',
+                    contrato: String(contract.folioNumber || ''),
+                    cedula: contract.deluxeDetails?.studentIdNumber || '',
+                    clientName: contract.clientName || '',
+                    phone: contract.deluxeDetails?.studentPhone1 || '',
+                    service: 'Matrícula Deluxe',
+                    amount: 15.00,
+                    paymentType: '',
+                    cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
+                });
+            } else {
+                 const details: any = contract.autoMotoDetails || contract.ampliacionesDetails || {};
+                 if (details.downPayment > 0) {
+                     fetchedTransactions.push({
+                        id: contract.id,
+                        invoice: '',
+                        contrato: String(contract.folioNumber || ''),
+                        cedula: details.studentIdNumber || '',
+                        clientName: contract.clientName || '',
+                        phone: details.studentPhone1 || '',
+                        service: `Abono Contrato ${contract.type}`,
+                        amount: details.downPayment || 0,
+                        paymentType: '',
+                        cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
+                    });
+                 }
+            }
+        });
 
-        if (reportSnap.exists()) {
-            const reportData = reportSnap.data() as DailyReport;
-            setTransactions(reportData.transactions);
-            setExpenses(reportData.expenses.length > 0 ? reportData.expenses : initialExpenses);
-            setBillQuantities(reportData.cashBreakdown.billQuantities);
-            setCoinQuantities(reportData.cashBreakdown.coinQuantities);
-            setTotalDeposit(reportData.totalDeposit);
-            toast({ title: 'Reporte Cargado', description: 'Se cargó un reporte guardado para esta fecha.' });
-        } else {
-            // Reset state for new report
-            setExpenses(initialExpenses);
-            setBillQuantities(initialBillQuantities);
-            setCoinQuantities(initialCoinQuantities);
-            setTotalDeposit(0);
-
-            // Fetch transactions from scratch
-            const startOfReportDay = startOfDay(reportDate);
-            const endOfReportDay = endOfDay(reportDate);
-            const fetchedTransactions: Transaction[] = [];
-
-            const contractsRef = collection(db, 'contracts');
-            const contractsQuery = query(contractsRef, where('createdAt', '>=', Timestamp.fromDate(startOfReportDay)), where('createdAt', '<=', Timestamp.fromDate(endOfReportDay)));
-            const contractsSnapshot = await getDocs(contractsQuery);
-            contractsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Contract)).filter(contract => contract.status !== 'expired').forEach((contract) => {
-                if (contract.type === 'Curso Deluxe') { fetchedTransactions.push({ id: `${contract.id}-matricula`, invoice: '', contrato: String(contract.folioNumber || ''), cedula: contract.deluxeDetails?.studentIdNumber || '', clientName: contract.clientName || '', phone: contract.deluxeDetails?.studentPhone1 || '', service: 'Matrícula Deluxe', amount: 15.00, paymentType: '', cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 }); } else { const details: any = contract.autoMotoDetails || contract.ampliacionesDetails || {}; fetchedTransactions.push({ id: contract.id, invoice: '', contrato: String(contract.folioNumber || ''), cedula: details.studentIdNumber || '', clientName: contract.clientName || '', phone: details.studentPhone1 || '', service: `Abono Contrato ${contract.type}`, amount: details.downPayment || 0, paymentType: '', cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 }); }
+        const cancellationPaymentsRef = collection(db, 'cancellation_payments');
+        const cancellationQuery = query(cancellationPaymentsRef, where('paymentDate', '>=', Timestamp.fromDate(startOfReportDay)), where('paymentDate', '<=', Timestamp.fromDate(endOfReportDay)));
+        const cancellationSnapshot = await getDocs(cancellationQuery);
+        cancellationSnapshot.docs.forEach(doc => {
+            const payment = doc.data() as Payment;
+            fetchedTransactions.push({
+                id: doc.id,
+                invoice: '',
+                contrato: String(payment.cancellationFolio || '').padStart(6, '0'),
+                cedula: payment.studentIdNumber || '',
+                clientName: payment.clientName || '',
+                phone: '',
+                service: 'Cancelación/Abono de Saldo',
+                amount: payment.amount || 0,
+                paymentType: '',
+                cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
             });
+        });
 
-            const cancellationPaymentsRef = collection(db, 'cancellation_payments');
-            const cancellationQuery = query(cancellationPaymentsRef, where('paymentDate', '>=', Timestamp.fromDate(startOfReportDay)), where('paymentDate', '<=', Timestamp.fromDate(endOfReportDay)));
-            const cancellationSnapshot = await getDocs(cancellationQuery);
-            cancellationSnapshot.docs.forEach(doc => { const payment = doc.data() as Payment; fetchedTransactions.push({ id: doc.id, invoice: '', contrato: String(payment.cancellationFolio || '').padStart(6, '0'), cedula: payment.studentIdNumber || '', clientName: payment.clientName || '', phone: '', service: 'Cancelación/Abono de Saldo', amount: payment.amount || 0, paymentType: '', cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 }); });
+        const updatePaymentsRef = collection(db, 'update_payments');
+        const updateQuery = query(updatePaymentsRef, where('paymentDate', '>=', Timestamp.fromDate(startOfReportDay)), where('paymentDate', '<=', Timestamp.fromDate(endOfReportDay)));
+        const updateSnapshot = await getDocs(updateQuery);
+        updateSnapshot.docs.forEach(doc => {
+            const payment = doc.data() as Payment;
+            fetchedTransactions.push({
+                id: doc.id,
+                invoice: '',
+                contrato: String(payment.updateFolio || '').padStart(6, '0'),
+                cedula: payment.studentIdNumber || '',
+                clientName: payment.clientName || '',
+                phone: '',
+                service: 'Actualización de Certificado',
+                amount: payment.amount || 0,
+                paymentType: '',
+                cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
+            });
+        });
 
-            const updatePaymentsRef = collection(db, 'update_payments');
-            const updateQuery = query(updatePaymentsRef, where('paymentDate', '>=', Timestamp.fromDate(startOfReportDay)), where('paymentDate', '<=', Timestamp.fromDate(endOfReportDay)));
-            const updateSnapshot = await getDocs(updateQuery);
-            updateSnapshot.docs.forEach(doc => { const payment = doc.data() as Payment; fetchedTransactions.push({ id: doc.id, invoice: '', contrato: String(payment.updateFolio || '').padStart(6, '0'), cedula: payment.studentIdNumber || '', clientName: payment.clientName || '', phone: '', service: 'Actualización de Certificado', amount: payment.amount || 0, paymentType: '', cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 }); });
-
-            setTransactions(fetchedTransactions);
-        }
+        setTransactions(fetchedTransactions);
+        setExpenses(initialExpenses);
+        setBillQuantities(initialBillQuantities);
+        setCoinQuantities(initialCoinQuantities);
+        setTotalDeposit(0);
         setIsDataLoaded(true);
 
       } catch (error: any) {
-        if (error.code === 'permission-denied') { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'daily_reports or other collections', operation: 'list' })); } else { console.error("Error fetching data for report:", error); }
+        if (error.code === 'permission-denied') {
+             errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: 'contracts, cancellation_payments, or update_payments',
+                operation: 'list'
+             }));
+        } else {
+            console.error("Error fetching data for report:", error);
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchDailyData();
-  }, [db, reportDate, user, toast]);
-
-  const handleSaveReport = async () => {
-    if (!db || !user) {
-        toast({ variant: 'destructive', title: 'Error', description: 'No se puede guardar el reporte. Usuario no autenticado.' });
-        return;
-    }
-    setIsSaving(true);
-    const reportId = format(reportDate, 'yyyy-MM-dd');
-    const reportRef = doc(db, 'daily_reports', reportId);
-
-    const reportData: DailyReport = {
-        date: Timestamp.fromDate(reportDate),
-        transactions,
-        expenses,
-        cashBreakdown: { billQuantities, coinQuantities },
-        totalDeposit,
-        createdBy: user.uid,
-        lastUpdated: serverTimestamp() as Timestamp,
-    };
-    
-    try {
-        await setDoc(reportRef, reportData, { merge: true });
-        toast({ title: 'Reporte Guardado', description: 'El estado del reporte de caja se ha guardado exitosamente.' });
-    } catch (error: any) {
-        console.error('Error saving report:', error);
-        toast({ variant: 'destructive', title: 'Error al Guardar', description: 'No se pudo guardar el reporte. Revisa los permisos.' });
-    } finally {
-        setIsSaving(false);
-    }
-  };
+  }, [db, reportDate, user, role]);
 
   const transactionTotals = useMemo(() => {
-    return transactions.reduce( (acc, curr) => ({ cash: acc.cash + (curr.cash || 0), debit: acc.debit + (curr.debit || 0), credit: acc.credit + (curr.credit || 0), global: acc.global + (curr.global || 0), bac: acc.bac + (curr.bac || 0), general: acc.general + (curr.general || 0), cheques: acc.cheques + (curr.cheques || 0), }), { cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 } );
+    return transactions.reduce(
+      (acc, curr) => ({
+        cash: acc.cash + (curr.cash || 0),
+        debit: acc.debit + (curr.debit || 0),
+        credit: acc.credit + (curr.credit || 0),
+        global: acc.global + (curr.global || 0),
+        bac: acc.bac + (curr.bac || 0),
+        general: acc.general + (curr.general || 0),
+        cheques: acc.cheques + (curr.cheques || 0),
+      }),
+      { cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 }
+    );
   }, [transactions]);
 
   const cashBreakdownTotals = useMemo(() => {
@@ -181,11 +232,27 @@ export default function DailyCashReportPage() {
     let newTransaction = { ...updated[index] };
     const numericFields: (keyof Transaction)[] = ['amount', 'cash', 'debit', 'credit', 'global', 'bac', 'general', 'cheques'];
     
-    if (field === 'amount') { newTransaction.amount = parseFloat(value) || 0; } else if (field === 'paymentType') { newTransaction.paymentType = value; } else if (numericFields.includes(field)) { (newTransaction[field] as number) = parseFloat(value) || 0; } else { (newTransaction[field] as string) = value; }
+    if (field === 'amount') {
+        newTransaction.amount = parseFloat(value) || 0;
+    } else if (field === 'paymentType') {
+        newTransaction.paymentType = value;
+    } else if (numericFields.includes(field)) {
+        (newTransaction[field] as number) = parseFloat(value) || 0;
+    } else {
+        (newTransaction[field] as string) = value;
+    }
 
     if (field === 'paymentType' || field === 'amount') {
-        newTransaction.cash = 0; newTransaction.debit = 0; newTransaction.credit = 0; newTransaction.global = 0; newTransaction.bac = 0; newTransaction.general = 0; newTransaction.cheques = 0;
-        if (newTransaction.paymentType && (paymentTypes.some(pt => pt.value === newTransaction.paymentType))) { (newTransaction[newTransaction.paymentType as keyof Transaction] as number) = newTransaction.amount; }
+        newTransaction.cash = 0;
+        newTransaction.debit = 0;
+        newTransaction.credit = 0;
+        newTransaction.global = 0;
+        newTransaction.bac = 0;
+        newTransaction.general = 0;
+        newTransaction.cheques = 0;
+        if (newTransaction.paymentType && (paymentTypes.some(pt => pt.value === newTransaction.paymentType))) {
+            (newTransaction[newTransaction.paymentType as keyof Transaction] as number) = newTransaction.amount;
+        }
     }
     updated[index] = newTransaction;
     setTransactions(updated);
@@ -193,37 +260,109 @@ export default function DailyCashReportPage() {
 
 
   const addTransactionRow = () => {
-    setTransactions([ ...transactions, { id: `manual-${transactions.length + 1}`, invoice: '', contrato: '', cedula: '', clientName: '', phone: '', service: '', amount: 0, paymentType: '', cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 }, ]);
+    setTransactions([
+      ...transactions,
+      {
+        id: `manual-${transactions.length + 1}`,
+        invoice: '',
+        contrato: '',
+        cedula: '',
+        clientName: '',
+        phone: '',
+        service: '',
+        amount: 0,
+        paymentType: '',
+        cash: 0,
+        debit: 0,
+        credit: 0,
+        global: 0,
+        bac: 0,
+        general: 0,
+        cheques: 0,
+      },
+    ]);
   };
   
   const handleCashChange = (type: 'bill' | 'coin', value: string, quantity: string) => {
     const qty = parseInt(quantity) || 0;
-    if (type === 'bill') { setBillQuantities(prev => ({ ...prev, [value]: qty })); } else { setCoinQuantities(prev => ({ ...prev, [value]: qty })); }
+    if (type === 'bill') {
+      setBillQuantities(prev => ({ ...prev, [value]: qty }));
+    } else {
+      setCoinQuantities(prev => ({ ...prev, [value]: qty }));
+    }
   };
 
   const handleExpenseChange = (index: number, field: 'description' | 'amount', value: any) => {
     const updated = [...expenses];
-    if (field === 'amount') { updated[index] = { ...updated[index], [field]: parseFloat(value) || 0 }; } else { updated[index] = { ...updated[index], [field]: value }; }
+    if (field === 'amount') {
+      updated[index] = { ...updated[index], [field]: parseFloat(value) || 0 };
+    } else {
+      updated[index] = { ...updated[index], [field]: value };
+    }
     setExpenses(updated);
   };
 
-  const addExpenseRow = () => { setExpenses([...expenses, { description: '', amount: 0 }]); };
-  const removeExpenseRow = (index: number) => { setExpenses(expenses.filter((_, i) => i !== index)); }
+  const addExpenseRow = () => {
+    setExpenses([...expenses, { description: '', amount: 0 }]);
+  };
+  const removeExpenseRow = (index: number) => {
+    setExpenses(expenses.filter((_, i) => i !== index));
+  }
+  
+  if (isUserLoading || isRoleLoading) {
+    return (
+        <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="ml-4 text-muted-foreground">Cargando reporte...</p>
+        </div>
+    );
+  }
+
+  if (!role || (role !== 'Administrador' && role !== 'Ventas')) {
+    return (
+        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
+          <h3 className="mt-4 text-lg font-semibold text-foreground">
+            Acceso Restringido
+          </h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            No tienes permiso para ver esta sección.
+          </p>
+          <Button asChild className="mt-4">
+            <Link href="/dashboard">Volver al Panel</Link>
+          </Button>
+        </div>
+      );
+  }
 
   return (
     <div className="space-y-6 rounded-lg print:bg-white print:scale-90 print:origin-top-left">
       <div className="flex justify-between items-center print-hide">
         <h1 className="text-2xl font-bold font-headline">Reporte de Caja Diario</h1>
         <div className="flex items-center gap-2">
-            {role !== 'Ventas' && (
+            {role === 'Administrador' && (
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant={"outline"} className={cn("w-[240px] justify-start text-left font-normal", !reportDate && "text-muted-foreground")} > <CalendarIcon className="mr-2 h-4 w-4" /> {reportDate ? format(reportDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>} </Button>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-[240px] justify-start text-left font-normal",
+                      !reportDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {reportDate ? format(reportDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                  </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end"> <Calendar mode="single" selected={reportDate} onSelect={(date) => setReportDate(date || new Date())} initialFocus /> </PopoverContent>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <Calendar
+                    mode="single"
+                    selected={reportDate}
+                    onSelect={(date) => setReportDate(date || new Date())}
+                    initialFocus
+                  />
+                </PopoverContent>
               </Popover>
             )}
-            <Button onClick={handleSaveReport} disabled={isSaving || isLoading}> {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Guardar Reporte </Button>
             <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir</Button>
         </div>
       </div>
@@ -232,7 +371,7 @@ export default function DailyCashReportPage() {
         {format(reportDate, "EEEE d 'DE' LLLL 'DE' yyyy", { locale: es }).toUpperCase()}
       </div>
 
-       {isLoading && (
+       {(isLoading) && (
          <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <p className="ml-4 text-muted-foreground">Cargando datos del día...</p>

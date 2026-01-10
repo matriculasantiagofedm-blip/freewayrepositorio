@@ -118,11 +118,15 @@ export default function CancellationsPage() {
         await runTransaction(db, async (transaction) => {
             const counterRef = doc(db, 'counters', 'cancellation_folio');
             const counterDoc = await transaction.get(counterRef);
+            
+            let newCancellationFolio;
             if (!counterDoc.exists()) {
-                throw new Error("El contador de folios de cancelación no existe.");
+                newCancellationFolio = 1;
+                transaction.set(counterRef, { count: newCancellationFolio });
+            } else {
+                newCancellationFolio = counterDoc.data().count + 1;
+                transaction.update(counterRef, { count: newCancellationFolio });
             }
-            const newCancellationFolio = counterDoc.data().count + 1;
-            transaction.update(counterRef, { count: newCancellationFolio });
 
             const paymentRef = doc(collection(db, 'cancellation_payments'));
             const paymentData: Partial<Payment> = {

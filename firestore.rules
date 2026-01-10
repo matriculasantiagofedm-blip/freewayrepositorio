@@ -85,16 +85,6 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow update, delete: if false;
     }
-    
-    /**
-     * @description Manages daily cash reports.
-     * @path /daily_reports/{reportId}
-     */
-    match /daily_reports/{reportId} {
-      allow read, create, update: if isAdmin() || isVentas();
-      allow delete: if isAdmin();
-    }
-
 
     // Allow authenticated users to read/write the contract folio counter.
     match /counters/contract_folio {

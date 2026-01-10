@@ -166,55 +166,6 @@
         }
       },
       "required": ["count"]
-    },
-    "DailyReport": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "DailyReport",
-      "type": "object",
-      "description": "Stores the state of the daily cash report for a specific day.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "The date of the report in 'YYYY-MM-DD' format, used as the document ID."
-        },
-        "date": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp of the report date."
-        },
-        "transactions": {
-          "type": "array",
-          "items": { "type": "object" },
-          "description": "An array of transaction objects for the day."
-        },
-        "cashBreakdown": {
-          "type": "object",
-          "properties": {
-            "billQuantities": { "type": "object" },
-            "coinQuantities": { "type": "object" }
-          },
-          "description": "The breakdown of cash in bills and coins."
-        },
-        "expenses": {
-          "type": "array",
-          "items": { "type": "object" },
-          "description": "An array of expense objects for the day."
-        },
-        "totalDeposit": {
-          "type": "number",
-          "description": "The total amount deposited."
-        },
-        "createdBy": {
-          "type": "string",
-          "description": "The UID of the user who created the report."
-        },
-        "lastUpdated": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp of the last update."
-        }
-      },
-      "required": ["id", "date", "transactions", "cashBreakdown", "expenses", "totalDeposit", "createdBy", "lastUpdated"]
     }
   },
   "auth": {
@@ -317,22 +268,6 @@
             {
               "name": "counterId",
               "description": "The unique identifier for the counter (e.g., 'contract_folio', 'cancellation_folio', 'update_folio')."
-            }
-          ]
-        }
-      },
-       {
-        "path": "/daily_reports/{reportId}",
-        "definition": {
-          "entityName": "DailyReport",
-          "schema": {
-            "$ref": "#/backend/entities/DailyReport"
-          },
-          "description": "Stores the state of the daily cash report. The document ID is the date in YYYY-MM-DD format.",
-          "params": [
-            {
-              "name": "reportId",
-              "description": "The date of the report, e.g., '2024-07-30'."
             }
           ]
         }

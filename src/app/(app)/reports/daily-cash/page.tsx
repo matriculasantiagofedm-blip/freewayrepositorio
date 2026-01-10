@@ -84,7 +84,7 @@ export default function DailyCashReportPage() {
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   useEffect(() => {
-    if (!db || !user || !role || !reportDate) {
+    if (!db || !user || !role) {
         setIsLoading(false);
         return;
     };

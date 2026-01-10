@@ -132,20 +132,6 @@ export interface Certificate {
   contract?: Contract;
 }
 
-export interface DailyReport {
-  id?: string; // yyyy-MM-dd
-  date: Timestamp;
-  transactions: Transaction[];
-  cashBreakdown: {
-    billQuantities: { [key: string]: number };
-    coinQuantities: { [key: string]: number };
-  };
-  expenses: { description: string; amount: number }[];
-  totalDeposit: number;
-  createdBy: string;
-  lastUpdated: Timestamp;
-}
-
 export interface Transaction {
   id: string;
   invoice: string;

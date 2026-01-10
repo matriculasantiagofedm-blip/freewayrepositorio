@@ -7,38 +7,19 @@ import { es } from 'date-fns/locale';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, Trash2, Printer, CalendarIcon, Loader2 } from 'lucide-react';
+import { PlusCircle, Trash2, Printer, CalendarIcon, Loader2, Save } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useDb } from '@/components/firebase-provider';
-import { collection, query, where, getDocs, Timestamp, CollectionReference, Query } from 'firebase/firestore';
-import type { Contract, Payment } from '@/lib/types';
+import { useDb, useUser } from '@/components/firebase-provider';
+import { collection, query, where, getDocs, Timestamp, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import type { Contract, Payment, Transaction, DailyReport } from '@/lib/types';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
-
-
-interface Transaction {
-  id: string;
-  invoice: string;
-  contrato: string;
-  cedula: string;
-  clientName: string;
-  phone: string;
-  service: string;
-  amount: number;
-  paymentType: string;
-  cash: number;
-  debit: number;
-  credit: number;
-  global: number;
-  bac: number;
-  general: number;
-  cheques: number;
-}
+import { useToast } from '@/hooks/use-toast';
 
 const initialBillQuantities: { [key: string]: number } = {
   '100.00': 0, '50.00': 0, '20.00': 0, '10.00': 0, '5.00': 0, '1.00': 0,
@@ -66,20 +47,21 @@ const paymentTypes = [
 export default function DailyCashReportPage() {
   const { role } = useCurrentRole();
   const db = useDb();
+  const { user } = useUser();
+  const { toast } = useToast();
+  
   const [reportDate, setReportDate] = useState<Date>(new Date());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [billQuantities, setBillQuantities] = useState(initialBillQuantities);
   const [coinQuantities, setCoinQuantities] = useState(initialCoinQuantities);
   const [expenses, setExpenses] = useState(initialExpenses);
   const [totalDeposit, setTotalDeposit] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
-  // Fetch contracts based on selected date
   useEffect(() => {
-    if (!db || !reportDate) {
-        setTransactions([]);
-        setIsDataLoaded(true);
+    if (!db || !reportDate || !user) {
         setIsLoading(false);
         return;
     };
@@ -87,152 +69,105 @@ export default function DailyCashReportPage() {
     const fetchDailyData = async () => {
       setIsLoading(true);
       setIsDataLoaded(false);
-      const startOfReportDay = startOfDay(reportDate);
-      const endOfReportDay = endOfDay(reportDate);
-      
+      const reportId = format(reportDate, 'yyyy-MM-dd');
+      const reportRef = doc(db, 'daily_reports', reportId);
+
       try {
-        const fetchedTransactions: Transaction[] = [];
+        const reportSnap = await getDoc(reportRef);
 
-        // 1. Fetch new contracts for the day
-        const contractsRef = collection(db, 'contracts');
-        const contractsQuery = query(
-          contractsRef,
-          where('createdAt', '>=', Timestamp.fromDate(startOfReportDay)),
-          where('createdAt', '<=', Timestamp.fromDate(endOfReportDay))
-        );
-        const contractsSnapshot = await getDocs(contractsQuery);
-        
-        contractsSnapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() } as Contract))
-            .filter(contract => contract.status !== 'expired')
-            .forEach((contract) => {
-                if (contract.type === 'Curso Deluxe') {
-                    fetchedTransactions.push({
-                        id: `${contract.id}-matricula`,
-                        invoice: '',
-                        contrato: String(contract.folioNumber || ''),
-                        cedula: contract.deluxeDetails?.studentIdNumber || '',
-                        clientName: contract.clientName || '',
-                        phone: contract.deluxeDetails?.studentPhone1 || '',
-                        service: 'Matrícula Deluxe',
-                        amount: 15.00,
-                        paymentType: '',
-                        cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
-                    });
-                } else {
-                    const details: any = contract.autoMotoDetails || contract.ampliacionesDetails || {};
-                    fetchedTransactions.push({
-                        id: contract.id,
-                        invoice: '',
-                        contrato: String(contract.folioNumber || ''),
-                        cedula: details.studentIdNumber || '',
-                        clientName: contract.clientName || '',
-                        phone: details.studentPhone1 || '',
-                        service: `Abono Contrato ${contract.type}`,
-                        amount: details.downPayment || 0,
-                        paymentType: '',
-                        cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
-                    });
-                }
+        if (reportSnap.exists()) {
+            const reportData = reportSnap.data() as DailyReport;
+            setTransactions(reportData.transactions);
+            setExpenses(reportData.expenses.length > 0 ? reportData.expenses : initialExpenses);
+            setBillQuantities(reportData.cashBreakdown.billQuantities);
+            setCoinQuantities(reportData.cashBreakdown.coinQuantities);
+            setTotalDeposit(reportData.totalDeposit);
+            toast({ title: 'Reporte Cargado', description: 'Se cargó un reporte guardado para esta fecha.' });
+        } else {
+            // Reset state for new report
+            setExpenses(initialExpenses);
+            setBillQuantities(initialBillQuantities);
+            setCoinQuantities(initialCoinQuantities);
+            setTotalDeposit(0);
+
+            // Fetch transactions from scratch
+            const startOfReportDay = startOfDay(reportDate);
+            const endOfReportDay = endOfDay(reportDate);
+            const fetchedTransactions: Transaction[] = [];
+
+            const contractsRef = collection(db, 'contracts');
+            const contractsQuery = query(contractsRef, where('createdAt', '>=', Timestamp.fromDate(startOfReportDay)), where('createdAt', '<=', Timestamp.fromDate(endOfReportDay)));
+            const contractsSnapshot = await getDocs(contractsQuery);
+            contractsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Contract)).filter(contract => contract.status !== 'expired').forEach((contract) => {
+                if (contract.type === 'Curso Deluxe') { fetchedTransactions.push({ id: `${contract.id}-matricula`, invoice: '', contrato: String(contract.folioNumber || ''), cedula: contract.deluxeDetails?.studentIdNumber || '', clientName: contract.clientName || '', phone: contract.deluxeDetails?.studentPhone1 || '', service: 'Matrícula Deluxe', amount: 15.00, paymentType: '', cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 }); } else { const details: any = contract.autoMotoDetails || contract.ampliacionesDetails || {}; fetchedTransactions.push({ id: contract.id, invoice: '', contrato: String(contract.folioNumber || ''), cedula: details.studentIdNumber || '', clientName: contract.clientName || '', phone: details.studentPhone1 || '', service: `Abono Contrato ${contract.type}`, amount: details.downPayment || 0, paymentType: '', cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 }); }
             });
 
-        // 2. Fetch cancellation payments for the day
-        const cancellationPaymentsRef = collection(db, 'cancellation_payments');
-        const cancellationQuery = query(
-          cancellationPaymentsRef,
-          where('paymentDate', '>=', Timestamp.fromDate(startOfReportDay)),
-          where('paymentDate', '<=', Timestamp.fromDate(endOfReportDay))
-        );
-        const cancellationSnapshot = await getDocs(cancellationQuery);
-        cancellationSnapshot.docs.forEach(doc => {
-            const payment = doc.data() as Payment;
-            fetchedTransactions.push({
-                id: doc.id,
-                invoice: '',
-                contrato: String(payment.cancellationFolio || '').padStart(6, '0'),
-                cedula: payment.studentIdNumber || '',
-                clientName: payment.clientName || '',
-                phone: '', // Phone not available on payment record
-                service: 'Cancelación/Abono de Saldo',
-                amount: payment.amount || 0,
-                paymentType: '',
-                cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
-            });
-        });
+            const cancellationPaymentsRef = collection(db, 'cancellation_payments');
+            const cancellationQuery = query(cancellationPaymentsRef, where('paymentDate', '>=', Timestamp.fromDate(startOfReportDay)), where('paymentDate', '<=', Timestamp.fromDate(endOfReportDay)));
+            const cancellationSnapshot = await getDocs(cancellationQuery);
+            cancellationSnapshot.docs.forEach(doc => { const payment = doc.data() as Payment; fetchedTransactions.push({ id: doc.id, invoice: '', contrato: String(payment.cancellationFolio || '').padStart(6, '0'), cedula: payment.studentIdNumber || '', clientName: payment.clientName || '', phone: '', service: 'Cancelación/Abono de Saldo', amount: payment.amount || 0, paymentType: '', cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 }); });
 
-        // 3. Fetch update payments for the day
-        const updatePaymentsRef = collection(db, 'update_payments');
-        const updateQuery = query(
-          updatePaymentsRef,
-          where('paymentDate', '>=', Timestamp.fromDate(startOfReportDay)),
-          where('paymentDate', '<=', Timestamp.fromDate(endOfReportDay))
-        );
-        const updateSnapshot = await getDocs(updateQuery);
-        updateSnapshot.docs.forEach(doc => {
-            const payment = doc.data() as Payment;
-            fetchedTransactions.push({
-                id: doc.id,
-                invoice: '',
-                contrato: String(payment.updateFolio || '').padStart(6, '0'),
-                cedula: payment.studentIdNumber || '',
-                clientName: payment.clientName || '',
-                phone: '', // Phone not available on payment record
-                service: 'Actualización de Certificado',
-                amount: payment.amount || 0,
-                paymentType: '',
-                cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
-            });
-        });
+            const updatePaymentsRef = collection(db, 'update_payments');
+            const updateQuery = query(updatePaymentsRef, where('paymentDate', '>=', Timestamp.fromDate(startOfReportDay)), where('paymentDate', '<=', Timestamp.fromDate(endOfReportDay)));
+            const updateSnapshot = await getDocs(updateQuery);
+            updateSnapshot.docs.forEach(doc => { const payment = doc.data() as Payment; fetchedTransactions.push({ id: doc.id, invoice: '', contrato: String(payment.updateFolio || '').padStart(6, '0'), cedula: payment.studentIdNumber || '', clientName: payment.clientName || '', phone: '', service: 'Actualización de Certificado', amount: payment.amount || 0, paymentType: '', cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 }); });
 
-        setTransactions(fetchedTransactions);
+            setTransactions(fetchedTransactions);
+        }
         setIsDataLoaded(true);
 
       } catch (error: any) {
-        if (error.code === 'permission-denied') {
-            const permissionError = new FirestorePermissionError({
-                path: 'contracts or payments',
-                operation: 'list',
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        } else {
-            console.error("Error fetching data for report:", error);
-        }
+        if (error.code === 'permission-denied') { errorEmitter.emit('permission-error', new FirestorePermissionError({ path: 'daily_reports or other collections', operation: 'list' })); } else { console.error("Error fetching data for report:", error); }
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchDailyData();
-  }, [db, reportDate, role]);
+  }, [db, reportDate, user, toast]);
 
+  const handleSaveReport = async () => {
+    if (!db || !user) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No se puede guardar el reporte. Usuario no autenticado.' });
+        return;
+    }
+    setIsSaving(true);
+    const reportId = format(reportDate, 'yyyy-MM-dd');
+    const reportRef = doc(db, 'daily_reports', reportId);
 
-  // Totales de Transacciones
+    const reportData: DailyReport = {
+        date: Timestamp.fromDate(reportDate),
+        transactions,
+        expenses,
+        cashBreakdown: { billQuantities, coinQuantities },
+        totalDeposit,
+        createdBy: user.uid,
+        lastUpdated: serverTimestamp() as Timestamp,
+    };
+    
+    try {
+        await setDoc(reportRef, reportData, { merge: true });
+        toast({ title: 'Reporte Guardado', description: 'El estado del reporte de caja se ha guardado exitosamente.' });
+    } catch (error: any) {
+        console.error('Error saving report:', error);
+        toast({ variant: 'destructive', title: 'Error al Guardar', description: 'No se pudo guardar el reporte. Revisa los permisos.' });
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
   const transactionTotals = useMemo(() => {
-    return transactions.reduce(
-      (acc, curr) => ({
-        cash: acc.cash + (curr.cash || 0),
-        debit: acc.debit + (curr.debit || 0),
-        credit: acc.credit + (curr.credit || 0),
-        global: acc.global + (curr.global || 0),
-        bac: acc.bac + (curr.bac || 0),
-        general: acc.general + (curr.general || 0),
-        cheques: acc.cheques + (curr.cheques || 0),
-      }),
-      { cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 }
-    );
+    return transactions.reduce( (acc, curr) => ({ cash: acc.cash + (curr.cash || 0), debit: acc.debit + (curr.debit || 0), credit: acc.credit + (curr.credit || 0), global: acc.global + (curr.global || 0), bac: acc.bac + (curr.bac || 0), general: acc.general + (curr.general || 0), cheques: acc.cheques + (curr.cheques || 0), }), { cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 } );
   }, [transactions]);
 
-  // Totales de Desglose de Efectivo
   const cashBreakdownTotals = useMemo(() => {
     const billTotal = Object.entries(billQuantities).reduce((acc, [bill, qty]) => acc + parseFloat(bill) * qty, 0);
     const coinTotal = Object.entries(coinQuantities).reduce((acc, [coin, qty]) => acc + parseFloat(coin) * qty, 0);
     return { billTotal, coinTotal, total: billTotal + coinTotal };
   }, [billQuantities, coinQuantities]);
   
-  // Totales de Gastos
   const totalExpenses = useMemo(() => expenses.reduce((acc, curr) => acc + (curr.amount || 0), 0), [expenses]);
   
-  // Gran Total
   const grandTotals = useMemo(() => {
     const totalFacturado = Object.values(transactionTotals).reduce((sum, val) => sum + val, 0);
     const totalEfectivoMenosGastos = cashBreakdownTotals.total - totalExpenses;
@@ -244,71 +179,36 @@ export default function DailyCashReportPage() {
   const handleTransactionChange = (index: number, field: keyof Transaction, value: any) => {
     const updated = [...transactions];
     let newTransaction = { ...updated[index] };
-
     const numericFields: (keyof Transaction)[] = ['amount', 'cash', 'debit', 'credit', 'global', 'bac', 'general', 'cheques'];
     
-    if (field === 'amount') {
-      newTransaction.amount = parseFloat(value) || 0;
-    } else if (field === 'paymentType') {
-      newTransaction.paymentType = value;
-    } else if (numericFields.includes(field)) {
-      (newTransaction[field] as number) = parseFloat(value) || 0;
-    } else {
-      (newTransaction[field] as string) = value;
-    }
+    if (field === 'amount') { newTransaction.amount = parseFloat(value) || 0; } else if (field === 'paymentType') { newTransaction.paymentType = value; } else if (numericFields.includes(field)) { (newTransaction[field] as number) = parseFloat(value) || 0; } else { (newTransaction[field] as string) = value; }
 
     if (field === 'paymentType' || field === 'amount') {
-        newTransaction.cash = 0;
-        newTransaction.debit = 0;
-        newTransaction.credit = 0;
-        newTransaction.global = 0;
-        newTransaction.bac = 0;
-        newTransaction.general = 0;
-        newTransaction.cheques = 0;
-
-        if (newTransaction.paymentType && (paymentTypes.some(pt => pt.value === newTransaction.paymentType))) {
-           (newTransaction[newTransaction.paymentType as keyof Transaction] as number) = newTransaction.amount;
-        }
+        newTransaction.cash = 0; newTransaction.debit = 0; newTransaction.credit = 0; newTransaction.global = 0; newTransaction.bac = 0; newTransaction.general = 0; newTransaction.cheques = 0;
+        if (newTransaction.paymentType && (paymentTypes.some(pt => pt.value === newTransaction.paymentType))) { (newTransaction[newTransaction.paymentType as keyof Transaction] as number) = newTransaction.amount; }
     }
-
     updated[index] = newTransaction;
     setTransactions(updated);
 };
 
 
   const addTransactionRow = () => {
-    setTransactions([
-      ...transactions,
-      { id: `manual-${transactions.length + 1}`, invoice: '', contrato: '', cedula: '', clientName: '', phone: '', service: '', amount: 0, paymentType: '', cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 },
-    ]);
+    setTransactions([ ...transactions, { id: `manual-${transactions.length + 1}`, invoice: '', contrato: '', cedula: '', clientName: '', phone: '', service: '', amount: 0, paymentType: '', cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 }, ]);
   };
   
   const handleCashChange = (type: 'bill' | 'coin', value: string, quantity: string) => {
     const qty = parseInt(quantity) || 0;
-    if (type === 'bill') {
-      setBillQuantities(prev => ({ ...prev, [value]: qty }));
-    } else {
-      setCoinQuantities(prev => ({ ...prev, [value]: qty }));
-    }
+    if (type === 'bill') { setBillQuantities(prev => ({ ...prev, [value]: qty })); } else { setCoinQuantities(prev => ({ ...prev, [value]: qty })); }
   };
 
   const handleExpenseChange = (index: number, field: 'description' | 'amount', value: any) => {
     const updated = [...expenses];
-    if (field === 'amount') {
-      updated[index] = { ...updated[index], [field]: parseFloat(value) || 0 };
-    } else {
-       updated[index] = { ...updated[index], [field]: value };
-    }
+    if (field === 'amount') { updated[index] = { ...updated[index], [field]: parseFloat(value) || 0 }; } else { updated[index] = { ...updated[index], [field]: value }; }
     setExpenses(updated);
   };
 
-  const addExpenseRow = () => {
-    setExpenses([...expenses, { description: '', amount: 0 }]);
-  };
-  
-  const removeExpenseRow = (index: number) => {
-    setExpenses(expenses.filter((_, i) => i !== index));
-  }
+  const addExpenseRow = () => { setExpenses([...expenses, { description: '', amount: 0 }]); };
+  const removeExpenseRow = (index: number) => { setExpenses(expenses.filter((_, i) => i !== index)); }
 
   return (
     <div className="space-y-6 rounded-lg print:bg-white print:scale-90 print:origin-top-left">
@@ -318,28 +218,13 @@ export default function DailyCashReportPage() {
             {role !== 'Ventas' && (
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-[240px] justify-start text-left font-normal",
-                      !reportDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {reportDate ? format(reportDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
-                  </Button>
+                  <Button variant={"outline"} className={cn("w-[240px] justify-start text-left font-normal", !reportDate && "text-muted-foreground")} > <CalendarIcon className="mr-2 h-4 w-4" /> {reportDate ? format(reportDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>} </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                  <Calendar
-                    mode="single"
-                    selected={reportDate}
-                    onSelect={(date) => setReportDate(date || new Date())}
-                    initialFocus
-                  />
-                </PopoverContent>
+                <PopoverContent className="w-auto p-0" align="end"> <Calendar mode="single" selected={reportDate} onSelect={(date) => setReportDate(date || new Date())} initialFocus /> </PopoverContent>
               </Popover>
             )}
-          <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir</Button>
+            <Button onClick={handleSaveReport} disabled={isSaving || isLoading}> {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Guardar Reporte </Button>
+            <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir</Button>
         </div>
       </div>
 
@@ -401,7 +286,6 @@ export default function DailyCashReportPage() {
                                 </TableCell>
                             </TableRow>
                         )}
-                        {/* Totals Row */}
                         <TableRow className="font-bold">
                             <TableCell colSpan={9} className="text-right p-1 border border-black print:text-[8px] print:p-0.5">TOTAL</TableCell>
                             <TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">{currencyFormatter.format(transactionTotals.cash)}</TableCell>
@@ -418,7 +302,6 @@ export default function DailyCashReportPage() {
                 <Button size="sm" variant="outline" onClick={addTransactionRow} className="mt-2 print-hide"><PlusCircle className="mr-2 h-4 w-4" />Añadir Fila Manual</Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-                {/* Cash Breakdown */}
                 <div className="md:col-span-2 space-y-4">
                     <h3 className="font-bold text-center print:text-sm">DESGLOSE DE EFECTIVO</h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -427,7 +310,7 @@ export default function DailyCashReportPage() {
                             <TableBody>
                                 {Object.keys(billQuantities).map(bill => (
                                     <TableRow key={bill}>
-                                        <TableCell className="border border-black p-0"><Input type="number" onChange={e => handleCashChange('bill', bill, e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 print:text-[8px] print:p-0.5" /></TableCell>
+                                        <TableCell className="border border-black p-0"><Input type="number" value={billQuantities[bill] || ''} onChange={e => handleCashChange('bill', bill, e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 print:text-[8px] print:p-0.5" /></TableCell>
                                         <TableCell className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(parseFloat(bill))}</TableCell>
                                         <TableCell className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(parseFloat(bill) * (billQuantities[bill] || 0))}</TableCell>
                                     </TableRow>
@@ -440,7 +323,7 @@ export default function DailyCashReportPage() {
                             <TableBody>
                                 {Object.keys(coinQuantities).map(coin => (
                                     <TableRow key={coin}>
-                                        <TableCell className="border border-black p-0"><Input type="number" onChange={e => handleCashChange('coin', coin, e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 print:text-[8px] print:p-0.5" /></TableCell>
+                                        <TableCell className="border border-black p-0"><Input type="number" value={coinQuantities[coin] || ''} onChange={e => handleCashChange('coin', coin, e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 print:text-[8px] print:p-0.5" /></TableCell>
                                         <TableCell className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(parseFloat(coin))}</TableCell>
                                         <TableCell className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(parseFloat(coin) * (coinQuantities[coin] || 0))}</TableCell>
                                     </TableRow>
@@ -452,7 +335,6 @@ export default function DailyCashReportPage() {
                     <div className="text-right font-bold print:text-sm">TOTAL BILLETES Y MONEDAS: {currencyFormatter.format(cashBreakdownTotals.total)}</div>
                 </div>
 
-                {/* Totals and Expenses */}
                 <div className="space-y-4">
                     <Table className="text-xs border-collapse border border-black">
                         <TableHeader><TableRow><TableHead colSpan={2} className="text-center font-bold p-1 border border-black print:text-sm">Totales</TableHead></TableRow></TableHeader>
@@ -484,7 +366,7 @@ export default function DailyCashReportPage() {
                     <Table className="text-xs border-collapse border border-black">
                         <TableBody>
                             <TableRow><TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">TOTAL EFECTIVO MENOS GASTOS</TableCell><TableCell className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(grandTotals.totalEfectivoMenosGastos)}</TableCell></TableRow>
-                            <TableRow><TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">Total / Deposito</TableCell><TableCell className="border border-black p-0 w-28"><Input type="number" onChange={e => setTotalDeposit(parseFloat(e.target.value) || 0)} className="w-full h-full border-none rounded-none text-xs p-1 text-right print:text-[8px] print:p-0.5" /></TableCell></TableRow>
+                            <TableRow><TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">Total / Deposito</TableCell><TableCell className="border border-black p-0 w-28"><Input type="number" value={totalDeposit || ''} onChange={e => setTotalDeposit(parseFloat(e.target.value) || 0)} className="w-full h-full border-none rounded-none text-xs p-1 text-right print:text-[8px] print:p-0.5" /></TableCell></TableRow>
                             <TableRow className={cn("font-bold", grandTotals.diferencia !== 0 ? "bg-red-200" : "bg-green-200")}><TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">Diferencia</TableCell><TableCell className="border border-black p-1 text-right print:text-[8px] print:p-0.5">{currencyFormatter.format(grandTotals.diferencia)}</TableCell></TableRow>
                         </TableBody>
                     </Table>

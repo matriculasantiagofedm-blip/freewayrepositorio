@@ -44,32 +44,22 @@ service cloud.firestore {
     /**
      * @description Manages access to the central contracts collection.
      * @path /contracts/{contractId}
-     * @allow (get, list) Any signed-in user can view contract details and lists.
-     * @allow (create) Any signed-in user can create a contract, ensuring the userId matches their own.
-     * @allow (update) Any signed-in user can update, but key fields `userId` and `folioNumber` are immutable.
-     * @allow (delete) Admin/Ventas can delete.
      */
     match /contracts/{contractId} {
       allow get, list: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      // Allow general updates if key fields are unchanged
-      allow update: if isSignedIn()
+      // Allow general updates if key fields are unchanged, OR if user is Admin/Ventas (for balance updates etc.)
+      allow update: if (isSignedIn()
                       && request.resource.data.userId == resource.data.userId
-                      && request.resource.data.folioNumber == resource.data.folioNumber;
+                      && request.resource.data.folioNumber == resource.data.folioNumber)
+                      || isAdmin() || isVentas();
       
-      // Allow admin to specifically annul a contract
-      allow update: if isAdmin()
-                      && request.resource.data.status == 'expired';
-
       allow delete: if isAdmin() || isVentas();
     }
 
     /**
      * @description Manages client data.
      * @path /clients/{clientId}
-     * @allow (get) Signed-in users can view client details for contract creation.
-     * @allow (list) Allows querying the collection (e.g., to check for existing clients by ID number).
-     * @allow (create, update) Any signed-in user can create or update a client.
      */
     match /clients/{clientId} {
       allow get, list, create, update: if isSignedIn();
@@ -95,6 +85,16 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow update, delete: if false;
     }
+    
+    /**
+     * @description Manages daily cash reports.
+     * @path /daily_reports/{reportId}
+     */
+    match /daily_reports/{reportId} {
+      allow read, create, update: if isAdmin() || isVentas();
+      allow delete: if isAdmin();
+    }
+
 
     // Allow authenticated users to read/write the contract folio counter.
     match /counters/contract_folio {

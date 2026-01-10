@@ -166,6 +166,55 @@
         }
       },
       "required": ["count"]
+    },
+    "DailyReport": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "DailyReport",
+      "type": "object",
+      "description": "Stores the state of the daily cash report for a specific day.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The date of the report in 'YYYY-MM-DD' format, used as the document ID."
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the report date."
+        },
+        "transactions": {
+          "type": "array",
+          "items": { "type": "object" },
+          "description": "An array of transaction objects for the day."
+        },
+        "cashBreakdown": {
+          "type": "object",
+          "properties": {
+            "billQuantities": { "type": "object" },
+            "coinQuantities": { "type": "object" }
+          },
+          "description": "The breakdown of cash in bills and coins."
+        },
+        "expenses": {
+          "type": "array",
+          "items": { "type": "object" },
+          "description": "An array of expense objects for the day."
+        },
+        "totalDeposit": {
+          "type": "number",
+          "description": "The total amount deposited."
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "The UID of the user who created the report."
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the last update."
+        }
+      },
+      "required": ["id", "date", "transactions", "cashBreakdown", "expenses", "totalDeposit", "createdBy", "lastUpdated"]
     }
   },
   "auth": {
@@ -271,8 +320,24 @@
             }
           ]
         }
+      },
+       {
+        "path": "/daily_reports/{reportId}",
+        "definition": {
+          "entityName": "DailyReport",
+          "schema": {
+            "$ref": "#/backend/entities/DailyReport"
+          },
+          "description": "Stores the state of the daily cash report. The document ID is the date in YYYY-MM-DD format.",
+          "params": [
+            {
+              "name": "reportId",
+              "description": "The date of the report, e.g., '2024-07-30'."
+            }
+          ]
+        }
       }
     ],
-    "reasoning": "The Firestore data structure has been updated to separate payment types into distinct collections: `cancellation_payments` and `update_payments`. This simplifies security rules and improves query performance for reports. By not having a single large `payments` collection, rules no longer need complex conditions to check the payment `type`, which was causing permission errors. Each new collection has simple, direct security rules, making the system more robust and easier to debug."
+    "reasoning": "The Firestore data structure has been updated to separate payment types into distinct collections: `cancellation_payments` and `update_payments`. This simplifies security rules and improves query performance for reports. By not having a single large `payments` collection, rules no longer need complex conditions to check the payment `type`, which was causing permission errors. Each new collection has simple, direct security rules, making the system more robust and easier to debug. A new 'daily_reports' collection has been added to persist the state of the daily cash report, allowing users to save their work and continue later."
   }
 }

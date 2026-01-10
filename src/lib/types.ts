@@ -132,39 +132,30 @@ export interface Certificate {
   contract?: Contract;
 }
 
-
-export interface Report {
-  id: string;
+export interface DailyReport {
+  id?: string; // yyyy-MM-dd
   date: Timestamp;
   transactions: Transaction[];
   cashBreakdown: {
-    bills: { value: number; quantity: number }[];
-    coins: { value: number; quantity: number }[];
+    billQuantities: { [key: string]: number };
+    coinQuantities: { [key: string]: number };
   };
   expenses: { description: string; amount: number }[];
-  totals: {
-    creditCard: number;
-    debitCard: number;
-    global: number;
-    bac: number;
-    general: number;
-    cheques: number;
-    cash: number;
-    billed: number;
-    totalExpenses: number;
-    deposit: number;
-    difference: number;
-  };
+  totalDeposit: number;
+  createdBy: string;
+  lastUpdated: Timestamp;
 }
 
 export interface Transaction {
   id: string;
   invoice: string;
+  contrato: string;
   cedula: string;
   clientName: string;
   phone: string;
   service: string;
   amount: number;
+  paymentType: string;
   cash: number;
   debit: number;
   credit: number;

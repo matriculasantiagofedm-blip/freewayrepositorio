@@ -26,7 +26,7 @@ export default function CertificatePrintIdPage() {
   const [certificate, setCertificate] = useState<Certificate | null>(null);
 
   useEffect(() => {
-    if (contract && customFolio) {
+    if (contract && customFolio && !isContractLoading) {
       
       const details = contract.autoMotoDetails || contract.deluxeDetails;
 
@@ -45,22 +45,6 @@ export default function CertificatePrintIdPage() {
       };
       setCertificate(certificateData);
 
-      const style = document.createElement('style');
-      style.id = 'print-styles';
-      style.innerHTML = `
-        @media print {
-            @page { 
-                size: letter landscape;
-                margin: 0;
-            }
-            body {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-        }
-      `;
-      document.head.appendChild(style);
-
       // Activar automáticamente el diálogo de impresión
       const timer = setTimeout(() => {
         window.print();
@@ -68,13 +52,9 @@ export default function CertificatePrintIdPage() {
       
       return () => {
         clearTimeout(timer);
-        const styleTag = document.getElementById('print-styles');
-        if (styleTag) {
-          document.head.removeChild(styleTag);
-        }
       };
     }
-  }, [contract, customFolio]);
+  }, [contract, customFolio, isContractLoading]);
 
   if (isContractLoading || isRoleLoading) {
     return (
@@ -120,6 +100,18 @@ export default function CertificatePrintIdPage() {
   // La página solo contiene la plantilla del certificado para una impresión limpia.
   return (
     <div className="print:p-0 print:m-0 print:bg-white bg-gray-100">
+        <style jsx global>{`
+          @media print {
+            @page { 
+                size: letter landscape;
+                margin: 0;
+            }
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+          }
+        `}</style>
         <CertificateTemplate certificate={certificate} />
     </div>
   );

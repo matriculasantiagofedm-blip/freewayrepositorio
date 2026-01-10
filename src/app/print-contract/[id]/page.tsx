@@ -49,15 +49,19 @@ export default function PrintContractPage() {
   return (
     <div className="bg-white font-serif text-xs">
         <style jsx global>{`
-          @page {
-            size: letter portrait;
-            margin-top: 10mm;
-            margin-bottom: 13mm;
-            margin-left: 6.5mm;
-            margin-right: 6.5mm;
-          }
-          body {
-            background-color: white !important;
+          @media print {
+            @page {
+              size: letter portrait;
+              margin-top: 10mm;
+              margin-bottom: 13mm;
+              margin-left: 6.5mm;
+              margin-right: 6.5mm;
+            }
+            body {
+              background-color: white !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
           }
         `}</style>
       <ContractView contract={contract} />

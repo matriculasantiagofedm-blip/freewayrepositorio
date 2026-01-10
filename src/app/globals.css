@@ -82,14 +82,10 @@
   }
 
   @media print {
-    @page { 
-      size: letter landscape;
-      margin: 0.5in;
-    }
     body {
+      background-color: white !important;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
-      background-color: white !important;
     }
 
     .print-hide {

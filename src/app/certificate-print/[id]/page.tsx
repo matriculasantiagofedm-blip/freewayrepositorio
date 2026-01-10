@@ -47,7 +47,18 @@ export default function CertificatePrintIdPage() {
 
       const style = document.createElement('style');
       style.id = 'print-styles';
-      style.innerHTML = `@page { size: letter landscape; margin: 0; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }`;
+      style.innerHTML = `
+        @media print {
+            @page { 
+                size: letter landscape;
+                margin: 0;
+            }
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+      `;
       document.head.appendChild(style);
 
       // Activar automáticamente el diálogo de impresión

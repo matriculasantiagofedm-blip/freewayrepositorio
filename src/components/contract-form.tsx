@@ -600,22 +600,20 @@ export function ContractForm() {
       }
     } catch (e: any) {
       console.error('Error al crear contrato: ', e);
-      // Let the error emitter handle the permission error display
-      if (e.code !== 'permission-denied') {
+      if (e.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+          path: 'contracts',
+          operation: 'create',
+          requestResourceData: contractData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      } else {
         toast({
           variant: 'destructive',
           title: 'Error al Guardar',
           description: e.message || 'No se pudo crear el contrato. Revisa la consola para más detalles.',
         });
       }
-      
-       const permissionError = new FirestorePermissionError({
-        path: 'contracts',
-        operation: 'create',
-        requestResourceData: contractData,
-      });
-      errorEmitter.emit('permission-error', permissionError);
-
     } finally {
       setIsSubmitting(false);
     }

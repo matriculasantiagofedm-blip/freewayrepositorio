@@ -25,6 +25,13 @@ export default function CancellationsPage() {
   const [searched, setSearched] = useState(false);
   const [payments, setPayments] = useState<{ [key: string]: number }>({});
   const [savedPayments, setSavedPayments] = useState<{ [contractId: string]: Partial<Payment> }>({});
+  
+  // State for manual entry
+  const [manualName, setManualName] = useState('');
+  const [manualAddress, setManualAddress] = useState('');
+  const [manualPayment, setManualPayment] = useState(0);
+  const [manualPaymentSaved, setManualPaymentSaved] = useState(false);
+  const [manualSavedPaymentData, setManualSavedPaymentData] = useState<Partial<Payment> | null>(null);
 
   const today = new Date();
   
@@ -34,6 +41,11 @@ export default function CancellationsPage() {
     setSearched(false);
     setPayments({});
     setSavedPayments({});
+    setManualName('');
+    setManualAddress('');
+    setManualPayment(0);
+    setManualPaymentSaved(false);
+    setManualSavedPaymentData(null);
   };
 
 
@@ -62,11 +74,10 @@ export default function CancellationsPage() {
       return;
     }
 
+    resetForm();
     setIsLoading(true);
-    setFoundContracts(null);
     setSearched(true);
-    setPayments({});
-    setSavedPayments({});
+    setStudentIdNumber(studentIdNumber); // Keep the searched ID
 
     try {
       const contractsRef = collection(db, 'contracts');
@@ -93,7 +104,6 @@ export default function CancellationsPage() {
       processSnapshot(snapshot3);
 
       const allContracts = Array.from(contractsMap.values());
-
       setFoundContracts(allContracts.length > 0 ? allContracts : null);
       
     } catch (error) {
@@ -104,10 +114,16 @@ export default function CancellationsPage() {
     }
   };
 
-  const handleSavePayment = async (contract: Contract) => {
-    const paymentAmount = payments[contract.id];
+  const handleSavePayment = async (contract: Contract | null) => {
+    const isManual = contract === null;
+    const paymentAmount = isManual ? manualPayment : payments[contract.id];
+    
     if (!db || !user || !paymentAmount || paymentAmount <= 0) {
       toast({ variant: 'destructive', title: 'Monto Inválido', description: 'Introduce un monto a pagar válido para registrar.' });
+      return;
+    }
+    if (isManual && (!manualName || !manualAddress)) {
+      toast({ variant: 'destructive', title: 'Datos Incompletos', description: 'Completa el nombre y la dirección del estudiante para el registro manual.' });
       return;
     }
 
@@ -129,42 +145,51 @@ export default function CancellationsPage() {
             }
 
             const paymentRef = doc(collection(db, 'cancellation_payments'));
+            
             const paymentData: Partial<Payment> = {
                 amount: paymentAmount,
-                contractId: contract.id,
-                contractFolio: contract.folioNumber,
+                contractId: contract?.id || 'MANUAL',
+                contractFolio: contract?.folioNumber || 0,
                 cancellationFolio: newCancellationFolio,
-                clientId: contract.clientId,
-                clientName: contract.clientName,
+                clientId: contract?.clientId || 'MANUAL',
+                clientName: contract?.clientName || manualName,
                 studentIdNumber: studentIdNumber,
                 paymentDate: serverTimestamp(),
                 userId: user.uid,
                 type: 'cancelacion',
-                clientAddress: contract.autoMotoDetails?.studentAddress || contract.ampliacionesDetails?.studentAddress || contract.deluxeDetails?.studentAddress || '',
+                clientAddress: contract ? (contract.autoMotoDetails?.studentAddress || contract.ampliacionesDetails?.studentAddress || contract.deluxeDetails?.studentAddress || '') : manualAddress,
             };
             transaction.set(paymentRef, paymentData);
-
-            const contractRef = doc(db, 'contracts', contract.id);
-            const newBalance = getBalance(contract) - paymentAmount;
-            let contractUpdate: any = {};
-            if (newBalance <= 0) {
-              contractUpdate.status = 'completed';
-            }
             
-            if (contract.autoMotoDetails) {
-                contractUpdate['autoMotoDetails.balance'] = newBalance > 0 ? newBalance : 0;
-                contractUpdate['autoMotoDetails.downPayment'] = (contract.autoMotoDetails.downPayment || 0) + paymentAmount;
-            } else if (contract.ampliacionesDetails) {
-                contractUpdate['ampliacionesDetails.balance'] = newBalance > 0 ? newBalance : 0;
-                contractUpdate['ampliacionesDetails.downPayment'] = (contract.ampliacionesDetails.downPayment || 0) + paymentAmount;
-            }
-            transaction.update(contractRef, contractUpdate);
-
             Object.assign(savedPaymentData, { ...paymentData, id: paymentRef.id, paymentDate: new Date() as any });
+            
+            if (contract) {
+                const contractRef = doc(db, 'contracts', contract.id);
+                const newBalance = getBalance(contract) - paymentAmount;
+                let contractUpdate: any = {};
+                if (newBalance <= 0) {
+                  contractUpdate.status = 'completed';
+                }
+                
+                if (contract.autoMotoDetails) {
+                    contractUpdate['autoMotoDetails.balance'] = newBalance > 0 ? newBalance : 0;
+                    contractUpdate['autoMotoDetails.downPayment'] = (contract.autoMotoDetails.downPayment || 0) + paymentAmount;
+                } else if (contract.ampliacionesDetails) {
+                    contractUpdate['ampliacionesDetails.balance'] = newBalance > 0 ? newBalance : 0;
+                    contractUpdate['ampliacionesDetails.downPayment'] = (contract.ampliacionesDetails.downPayment || 0) + paymentAmount;
+                }
+                transaction.update(contractRef, contractUpdate);
+            }
         });
       
-        setSavedPayments(prev => ({ ...prev, [contract.id]: savedPaymentData }));
-        toast({ title: 'Pago Registrado', description: 'El pago ha sido guardado y el contrato actualizado.' });
+        if (isManual) {
+            setManualSavedPaymentData(savedPaymentData);
+            setManualPaymentSaved(true);
+        } else if (contract) {
+            setSavedPayments(prev => ({ ...prev, [contract.id]: savedPaymentData }));
+        }
+
+        toast({ title: 'Pago Registrado', description: 'El pago ha sido guardado exitosamente.' });
 
     } catch (error) {
         console.error("Error saving payment:", error);
@@ -175,7 +200,9 @@ export default function CancellationsPage() {
   };
 
   const handlePrint = (contractId: string) => {
-    const payment = savedPayments[contractId];
+    const isManual = contractId === 'MANUAL';
+    const payment = isManual ? manualSavedPaymentData : savedPayments[contractId];
+
     if (!payment || !payment.cancellationFolio) return;
 
     const queryParams = new URLSearchParams({
@@ -184,7 +211,7 @@ export default function CancellationsPage() {
         name: payment.clientName || '',
         idNumber: payment.studentIdNumber || '',
         address: payment.clientAddress || '',
-        concept: `Cancelación/Abono a Contrato N° ${String(payment.contractFolio).padStart(6, '0')}`,
+        concept: `Cancelación/Abono a Contrato N° ${payment.contractFolio ? String(payment.contractFolio).padStart(6, '0') : '(Manual)'}`,
         amount: String(payment.amount?.toFixed(2)),
     });
 
@@ -309,16 +336,46 @@ export default function CancellationsPage() {
               </CardContent>
           </Card>
         )}
-
-        {searched && !isLoading && (!foundContracts || foundContracts.length === 0) && (
-          <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center print-hide">
-            <h3 className="mt-4 text-lg font-semibold text-foreground">
-              No se encontraron contratos activos
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Verifica el número de cédula o puede que no haya contratos vigentes para este cliente.
-            </p>
-          </div>
+        
+        {searched && !isLoading && !foundContracts && (
+          <Card className="animate-in fade-in-50 print-hide">
+            <CardHeader>
+                <CardTitle>Registro de Pago Manual</CardTitle>
+                <CardDescription>No se encontraron contratos. Introduce los datos para registrar un pago manual para la cédula <span className="font-bold text-primary">{studentIdNumber}</span>.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                 <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                    <div className="space-y-2">
+                        <Label htmlFor="manual-name">Nombre Completo del Estudiante</Label>
+                        <Input id="manual-name" value={manualName} onChange={(e) => setManualName(e.target.value)} placeholder="Introducir nombre" disabled={manualPaymentSaved}/>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="manual-address">Dirección del Estudiante</Label>
+                        <Input id="manual-address" value={manualAddress} onChange={(e) => setManualAddress(e.target.value)} placeholder="Introducir dirección" disabled={manualPaymentSaved}/>
+                    </div>
+                 </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="manual-payment">Monto a Pagar</Label>
+                    <Input id="manual-payment" type="number" placeholder="0.00" onChange={(e) => setManualPayment(parseFloat(e.target.value) || 0)} disabled={manualPaymentSaved}/>
+                </div>
+            </CardContent>
+            <CardFooter>
+                {!manualPaymentSaved ? (
+                     <Button
+                        onClick={() => handleSavePayment(null)}
+                        disabled={isSaving || manualPayment <= 0 || !manualName || !manualAddress}
+                    >
+                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                        Registrar Pago Manual
+                    </Button>
+                ) : (
+                    <Button variant="outline" onClick={() => handlePrint('MANUAL')}>
+                        <Printer className="mr-2 h-4 w-4" />
+                        Imprimir Recibo N° {String(manualSavedPaymentData?.cancellationFolio).padStart(6, '0')}
+                    </Button>
+                )}
+            </CardFooter>
+          </Card>
         )}
       </div>
     </div>

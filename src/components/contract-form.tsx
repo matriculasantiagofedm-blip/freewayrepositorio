@@ -251,6 +251,7 @@ const specialCombinations = [
   { combo: ['B', 'E1'].sort(), price: 85.00 },
   { combo: ['E2', 'E3'].sort(), price: 85.00 },
   { combo: ['B', 'F'].sort(), price: 85.00 },
+  { combo: ['D', 'E1', 'E2', 'E3'].sort(), price: 95.00 },
 ];
 
 

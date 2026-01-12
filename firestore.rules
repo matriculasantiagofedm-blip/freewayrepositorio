@@ -49,11 +49,8 @@ service cloud.firestore {
       allow get, list: if isSignedIn();
       // Allow creation for any signed-in user (including anonymous)
       allow create: if isSignedIn();
-      // Allow general updates if key fields are unchanged, OR if user is Admin/Ventas (for balance updates etc.)
-      allow update: if (isSignedIn()
-                      && request.resource.data.userId == resource.data.userId
-                      && request.resource.data.folioNumber == resource.data.folioNumber)
-                      || isAdmin() || isVentas();
+      // Allow administrators and sales roles to update any field.
+      allow update: if isAdmin() || isVentas();
       
       allow delete: if isAdmin() || isVentas();
     }

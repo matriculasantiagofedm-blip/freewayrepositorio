@@ -23,14 +23,20 @@ export function useCurrentRole() {
     
     let userRole: string | null = null;
     if (user) {
-      if (user.isAnonymous) {
+        // This handles anonymous users who have selected a profile on the login screen
         const selectedRole = (window as any).selectedRoleForAnonymousSession;
         if (selectedRole && selectedRole.name) {
-          userRole = roleMapping[selectedRole.name] || 'Ventas';
+          userRole = roleMapping[selectedRole.name] || null;
+        } else if (user.email) { // This handles registered users
+          userRole = roleMapping[user.email] || null;
+        } else if (user.isAnonymous && !selectedRole) {
+            // If the user is anonymous but somehow didn't get a role assigned,
+            // we can try to get it from sessionStorage as a fallback.
+            const storedRoleName = sessionStorage.getItem('anonymousUserRole');
+            if(storedRoleName) {
+                 userRole = roleMapping[storedRoleName] || null;
+            }
         }
-      } else if (user.email) {
-        userRole = roleMapping[user.email] || null;
-      }
     }
     
     setRole(userRole);

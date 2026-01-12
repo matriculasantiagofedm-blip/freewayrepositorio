@@ -48,7 +48,10 @@ export default function LoginPage() {
       await signInAnonymously(auth);
 
       // Guardar el rol seleccionado en una variable global para esta sesión
-      (window as any).selectedRoleForAnonymousSession = { name: roleInput };
+      // Y también en sessionStorage para persistencia en recargas de página
+      const selectedRole = { name: roleInput };
+      (window as any).selectedRoleForAnonymousSession = selectedRole;
+      sessionStorage.setItem('anonymousUserRole', roleInput);
       
       toast({
         title: 'Inicio de Sesión Exitoso',

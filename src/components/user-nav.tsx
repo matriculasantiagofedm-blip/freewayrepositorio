@@ -28,6 +28,10 @@ export function UserNav() {
     if (auth) {
         await auth.signOut();
     }
+    // Limpiar el rol guardado en la sesión al cerrar sesión
+    sessionStorage.removeItem('anonymousUserRole');
+    (window as any).selectedRoleForAnonymousSession = undefined;
+
     // Forzar la redirección a la página de inicio y recargar la ventana.
     // Esto asegura que todos los estados de sesión se limpien por completo.
     window.location.href = '/';
@@ -60,8 +64,8 @@ export function UserNav() {
             <p className="text-sm font-medium leading-none">
               {currentUser}
             </p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {user.email}
+             <p className="text-xs leading-none text-muted-foreground">
+              {user.isAnonymous ? `ID: ${user.uid.substring(0, 10)}...` : user.email}
             </p>
           </div>
         </DropdownMenuLabel>

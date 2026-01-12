@@ -550,7 +550,7 @@ export function ContractForm() {
             name: values.clientName,
             email: values.clientEmail,
             idNumber: studentIdNumber,
-            userId: user.uid,
+            userId: user.uid, // The UID of the currently signed-in user
             createdAt: serverTimestamp() as Timestamp,
             phone: details.studentPhone1,
           };
@@ -570,7 +570,7 @@ export function ContractForm() {
           clientId: clientId,
           type: values.contractType,
           status: 'active',
-          userId: user.uid,
+          userId: user.uid, // The UID of the currently signed-in user
           createdAt: serverTimestamp() as Timestamp,
           createdBy: currentUserRole,
           content: '',
@@ -599,19 +599,23 @@ export function ContractForm() {
         router.push(`/contracts/${newContractId}`);
       }
     } catch (e: any) {
-      const permissionError = new FirestorePermissionError({
+      console.error('Error al crear contrato: ', e);
+      // Let the error emitter handle the permission error display
+      if (e.code !== 'permission-denied') {
+        toast({
+          variant: 'destructive',
+          title: 'Error al Guardar',
+          description: e.message || 'No se pudo crear el contrato. Revisa la consola para más detalles.',
+        });
+      }
+      
+       const permissionError = new FirestorePermissionError({
         path: 'contracts',
         operation: 'create',
         requestResourceData: contractData,
       });
       errorEmitter.emit('permission-error', permissionError);
 
-      console.error('Error al crear contrato: ', e);
-      toast({
-        variant: 'destructive',
-        title: 'Error al Guardar',
-        description: e.message || 'No se pudo crear el contrato. Revisa la consola para más detalles.',
-      });
     } finally {
       setIsSubmitting(false);
     }

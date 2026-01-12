@@ -47,7 +47,8 @@ service cloud.firestore {
      */
     match /contracts/{contractId} {
       allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      // Allow creation for any signed-in user (including anonymous)
+      allow create: if isSignedIn();
       // Allow general updates if key fields are unchanged, OR if user is Admin/Ventas (for balance updates etc.)
       allow update: if (isSignedIn()
                       && request.resource.data.userId == resource.data.userId

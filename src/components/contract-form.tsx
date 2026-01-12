@@ -99,7 +99,7 @@ const convertDetailsDatesToTimestamps = (details: any) => {
         }
         return null;
     };
-
+    
     // Deluxe
     if (newDetails.paymentInstallments) {
         newDetails.paymentInstallments = newDetails.paymentInstallments.map((d: any) => d ? toTimestamp(d) : null).filter(Boolean);
@@ -117,10 +117,11 @@ const convertDetailsDatesToTimestamps = (details: any) => {
     }
 
     // Auto/Moto & Ampliaciones - Common paymentDeadline field
-    if (newDetails.paymentDeadline) {
-        newDetails.paymentDeadline = toTimestamp(newDetails.paymentDeadline);
-    } else if (newDetails.paymentDeadline !== undefined) {
-        newDetails.paymentDeadline = null;
+    // Si la fecha límite no está definida o es inválida, usar la fecha actual.
+    if (details.paymentDeadline && details.paymentDeadline instanceof Date && !isNaN(details.paymentDeadline.getTime())) {
+        newDetails.paymentDeadline = Timestamp.fromDate(details.paymentDeadline);
+    } else {
+        newDetails.paymentDeadline = Timestamp.fromDate(new Date());
     }
 
 

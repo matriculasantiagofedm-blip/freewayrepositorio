@@ -117,7 +117,6 @@ const convertDetailsDatesToTimestamps = (details: any) => {
     }
 
     // Auto/Moto & Ampliaciones - Common paymentDeadline field
-    // Si la fecha límite no está definida o es inválida, usar la fecha actual.
     if (details.paymentDeadline && details.paymentDeadline instanceof Date && !isNaN(details.paymentDeadline.getTime())) {
         newDetails.paymentDeadline = Timestamp.fromDate(details.paymentDeadline);
     } else {
@@ -157,8 +156,8 @@ const convertDetailsDatesToTimestamps = (details: any) => {
 const coursePlans = {
   'Curso Auto': [
     { name: 'Paquete Básico 8hrs', price: 133.00 },
-    { name: 'Paquete Plus 10hrs', price: 150.00 },
-    { name: 'Paquete Premium 12hrs', price: 175.00 },
+    { name: 'Paquete Plus 10hrs', price: 155.00 },
+    { name: 'Paquete Premium 12hrs', price: 180.00 },
     { name: 'Reforzamiento de 4 horas', price: 95.00 },
     { name: 'Ya se manejar Plus 2 horas', price: 75.00 },
     { name: 'Ya se manejar (Evaluación de estacionamiento)', price: 57.00 },
@@ -572,7 +571,7 @@ export function ContractForm() {
           clientId: clientId,
           type: values.contractType,
           status: 'active',
-          userId: user.uid, // The UID of the currently signed-in user
+          userId: user.uid,
           createdAt: serverTimestamp() as Timestamp,
           createdBy: currentUserRole,
           content: '',

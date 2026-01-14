@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -157,7 +158,7 @@ const coursePlans = {
   'Curso Auto': [
     { name: 'Paquete Básico 8hrs', price: 133.00 },
     { name: 'Paquete Plus 10hrs', price: 155.00 },
-    { name: 'Paquete Premium 12hrs', price: 175.00 },
+    { name: 'Paquete Premium 12hrs', price: 180.00 },
     { name: 'Reforzamiento de 4 horas', price: 95.00 },
     { name: 'Ya se manejar Plus 2 horas', price: 75.00 },
     { name: 'Ya se manejar (Evaluación de estacionamiento)', price: 57.00 },

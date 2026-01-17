@@ -16,7 +16,7 @@ import { es } from 'date-fns/locale';
 
 const books = [
     { id: 'compendio', title: 'Compendio de Conocimientos Viales', price: 5.00 },
-    { id: 'guia', title: 'Guía Integral de Seguridad Vial', price: 5.00 },
+    { id: 'guia', title: 'Guía Integral de Seguridad Vial', price: 15.00 },
 ];
 
 export default function BookSalesPage() {

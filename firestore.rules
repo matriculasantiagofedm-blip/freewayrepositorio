@@ -84,6 +84,16 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    /**
+     * @description Manages book sale payment documents.
+     * @path /book_sale_payments/{paymentId}
+     */
+     match /book_sale_payments/{paymentId} {
+      allow create: if isSignedIn();
+      allow read: if isSignedIn();
+      allow update, delete: if false;
+    }
+
     // Allow authenticated users to read/write the contract folio counter.
     match /counters/contract_folio {
         allow read, write: if isSignedIn();
@@ -96,6 +106,11 @@ service cloud.firestore {
 
     // Allow authenticated users to read/write the update folio counter.
     match /counters/update_folio {
+        allow read, write: if isSignedIn();
+    }
+
+    // Allow authenticated users to read/write the book sale folio counter.
+    match /counters/book_sale_folio {
         allow read, write: if isSignedIn();
     }
     

@@ -154,6 +154,48 @@
       },
       "required": ["id", "amount", "paymentDate", "contractId", "clientId", "userId", "type"]
     },
+    "BookSalePayment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Book Sale Payment",
+      "type": "object",
+      "description": "Represents a payment for a book sale.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the BookSalePayment entity."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The amount of the payment."
+        },
+        "paymentDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time the payment was made."
+        },
+        "bookSaleFolio": {
+          "type": "number",
+          "description": "Sequential folio number for book sale payments."
+        },
+        "bookTitle": {
+          "type": "string",
+          "description": "The title of the book sold."
+        },
+        "clientName": {
+            "type": "string",
+            "description": "Name of the person who bought the book."
+        },
+        "studentIdNumber": {
+            "type": "string",
+            "description": "ID number of the person who bought the book."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the user who recorded the payment."
+        }
+      },
+      "required": ["id", "amount", "paymentDate", "bookSaleFolio", "bookTitle", "clientName", "userId"]
+    },
     "Counter": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Counter",
@@ -257,22 +299,38 @@
         }
       },
       {
+        "path": "/book_sale_payments/{paymentId}",
+        "definition": {
+          "entityName": "BookSalePayment",
+          "schema": {
+            "$ref": "#/backend/entities/BookSalePayment"
+          },
+          "description": "Stores book sale payment transactions for reporting and auditing.",
+          "params": [
+            {
+              "name": "paymentId",
+              "description": "The unique identifier for the book sale payment."
+            }
+          ]
+        }
+      },
+      {
         "path": "/counters/{counterId}",
         "definition": {
           "entityName": "Counter",
           "schema": {
             "$ref": "#/backend/entities/Counter"
           },
-          "description": "Stores distributed counters. Used for generating sequential folio numbers for contracts, cancellations, and updates.",
+          "description": "Stores distributed counters. Used for generating sequential folio numbers for contracts, cancellations, updates, and book sales.",
           "params": [
             {
               "name": "counterId",
-              "description": "The unique identifier for the counter (e.g., 'contract_folio', 'cancellation_folio', 'update_folio')."
+              "description": "The unique identifier for the counter (e.g., 'contract_folio', 'cancellation_folio', 'update_folio', 'book_sale_folio')."
             }
           ]
         }
       }
     ],
-    "reasoning": "The Firestore data structure has been updated to separate payment types into distinct collections: `cancellation_payments` and `update_payments`. This simplifies security rules and improves query performance for reports. By not having a single large `payments` collection, rules no longer need complex conditions to check the payment `type`, which was causing permission errors. Each new collection has simple, direct security rules, making the system more robust and easier to debug. A new 'daily_reports' collection has been added to persist the state of the daily cash report, allowing users to save their work and continue later."
+    "reasoning": "The Firestore data structure has been updated to separate payment types into distinct collections: `cancellation_payments`, `update_payments`, and now `book_sale_payments`. This simplifies security rules and improves query performance for reports. By not having a single large `payments` collection, rules no longer need complex conditions to check the payment `type`, which was causing permission errors. Each new collection has simple, direct security rules, making the system more robust and easier to debug. A new 'daily_reports' collection has been added to persist the state of the daily cash report, allowing users to save their work and continue later."
   }
 }

@@ -166,3 +166,14 @@ export interface Payment {
   userId: string;
   type: 'abono' | 'cancelacion' | 'actualizacion';
 }
+
+export interface BookSalePayment {
+  id: string;
+  amount: number;
+  paymentDate: Timestamp;
+  bookSaleFolio: number;
+  bookTitle: string;
+  clientName: string;
+  studentIdNumber: string;
+  userId: string;
+}

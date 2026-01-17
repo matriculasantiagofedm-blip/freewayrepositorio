@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/select';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
-import type { Contract, Payment, Transaction } from '@/lib/types';
+import type { Contract, Payment, Transaction, BookSalePayment } from '@/lib/types';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 
@@ -172,6 +172,25 @@ export default function DailyCashReportPage() {
             });
         });
 
+        const bookSalePaymentsRef = collection(db, 'book_sale_payments');
+        const bookSaleQuery = query(bookSalePaymentsRef, where('paymentDate', '>=', Timestamp.fromDate(startOfReportDay)), where('paymentDate', '<=', Timestamp.fromDate(endOfReportDay)));
+        const bookSaleSnapshot = await getDocs(bookSaleQuery);
+        bookSaleSnapshot.docs.forEach(doc => {
+            const payment = doc.data() as BookSalePayment;
+            fetchedTransactions.push({
+                id: doc.id,
+                invoice: '',
+                contrato: String(payment.bookSaleFolio || '').padStart(6, '0'),
+                cedula: payment.studentIdNumber || '',
+                clientName: payment.clientName || '',
+                phone: '', // Not collected for book sales
+                service: `Venta de Libro: ${payment.bookTitle}`,
+                amount: payment.amount || 0,
+                paymentType: '',
+                cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
+            });
+        });
+
         setTransactions(fetchedTransactions);
         setExpenses(initialExpenses);
         setBillQuantities(initialBillQuantities);
@@ -182,7 +201,7 @@ export default function DailyCashReportPage() {
       } catch (error: any) {
         if (error.code === 'permission-denied') {
              errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: 'contracts, cancellation_payments, or update_payments',
+                path: 'contracts, cancellation_payments, update_payments, or book_sale_payments',
                 operation: 'list'
              }));
         } else {

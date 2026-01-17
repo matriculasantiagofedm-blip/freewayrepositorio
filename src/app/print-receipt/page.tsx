@@ -20,8 +20,17 @@ function ReceiptContent() {
         const timer = setTimeout(() => {
           window.print();
         }, 500); // Small delay to ensure content renders
+
+        const handleAfterPrint = () => {
+          // Some browsers need a moment before closing is allowed.
+          setTimeout(() => window.close(), 100);
+        };
+        window.addEventListener('afterprint', handleAfterPrint);
     
-        return () => clearTimeout(timer);
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener('afterprint', handleAfterPrint);
+        }
       }, []);
 
     return (

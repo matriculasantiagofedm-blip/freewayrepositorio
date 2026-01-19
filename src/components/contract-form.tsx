@@ -1210,7 +1210,6 @@ export function ContractForm() {
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl>
                                                 <SelectContent>
-                                                    <SelectItem value="Spark">Spark</SelectItem>
                                                     <SelectItem value="P. Blanco">P. Blanco</SelectItem>
                                                     <SelectItem value="P. Bronce">P. Bronce</SelectItem>
                                                     <SelectItem value="Motocicleta">Motocicleta</SelectItem>

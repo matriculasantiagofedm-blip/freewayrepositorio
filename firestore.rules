@@ -99,8 +99,7 @@ service cloud.firestore {
      * @path /mileage_logs/{logId}
      */
     match /mileage_logs/{logId} {
-      allow read, create: if isSignedIn() && (isAdmin() || isVentas());
-      allow update, delete: if isAdmin();
+      allow read, create, update, delete: if isSignedIn();
     }
 
     // Allow authenticated users to read/write the contract folio counter.

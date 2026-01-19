@@ -179,7 +179,7 @@ export interface BookSalePayment {
 }
 
 export interface CarMileage {
-  name: 'Picanto Blanco' | 'Picanto Bronce';
+  name: 'Picanto Blanco' | 'Picanto Bronce' | 'Spark';
   initialMileage: number;
   finalMileage: number;
   distance: number;

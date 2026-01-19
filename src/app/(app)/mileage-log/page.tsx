@@ -25,6 +25,7 @@ type CarMileageState = {
 const initialCars: CarMileageState[] = [
     { name: 'Picanto Blanco', initialMileage: '', finalMileage: '', distance: 0 },
     { name: 'Picanto Bronce', initialMileage: '', finalMileage: '', distance: 0 },
+    { name: 'Spark', initialMileage: '', finalMileage: '', distance: 0 },
 ];
 
 export default function MileageLogPage() {

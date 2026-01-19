@@ -7,7 +7,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { GanttChartSquare, FileText, Users, CarFront, ClipboardPenLine, RefreshCw, HandCoins } from 'lucide-react';
+import { GanttChartSquare, FileText, Users, CarFront, ClipboardPenLine, RefreshCw, HandCoins, Gauge } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCurrentRole } from '@/hooks/use-current-role';
 
@@ -47,7 +47,13 @@ const allLinks = [
     label: 'Gestionar Saldos',
     icon: HandCoins,
     roles: ['Administrador', 'Ventas'],
-  }
+  },
+  {
+    href: '/mileage-log',
+    label: 'Kilometraje',
+    icon: Gauge,
+    roles: ['Administrador', 'Ventas'],
+  },
 ];
 
 export function MainNav({ className }: { className?: string }) {

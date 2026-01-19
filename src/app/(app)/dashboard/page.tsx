@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { FileText, CalendarClock, Users, Car, Bike, Combine, Crown, Plus, CarFront, RefreshCw, HandCoins, Award, BookMarked } from 'lucide-react';
+import { FileText, CalendarClock, Users, Car, Bike, Combine, Crown, Plus, CarFront, RefreshCw, HandCoins, Award, BookMarked, Gauge } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { isPast } from 'date-fns';
 import { collection, query, where }from 'firebase/firestore';
@@ -117,6 +117,7 @@ export default function DashboardPage() {
       { name: 'Actualizaciones de Certificado', icon: Award, href: '/updates', bgColor: 'bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/40', textColor: 'text-green-600 dark:text-green-300', roles: ['Administrador', 'Ventas'] },
       { name: 'Pago de Saldos Estudiantes', icon: HandCoins, href: '/cancellations', bgColor: 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40', textColor: 'text-blue-600 dark:text-blue-300', roles: ['Administrador', 'Ventas'] },
       { name: 'Venta de Libros', icon: BookMarked, href: '/book-sales', bgColor: 'bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40', textColor: 'text-indigo-600 dark:text-indigo-300', roles: ['Administrador', 'Ventas'] },
+      { name: 'Control de Kilometraje', icon: Gauge, href: '/mileage-log', bgColor: 'bg-gray-50 hover:bg-gray-100 dark:bg-gray-800/50 dark:hover:bg-gray-800', textColor: 'text-gray-600 dark:text-gray-300', roles: ['Administrador', 'Ventas'] },
   ];
   
   const visibleOtherActions = otherActions.filter(action => action.roles.includes(role || ''));

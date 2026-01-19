@@ -196,6 +196,31 @@
       },
       "required": ["id", "amount", "paymentDate", "bookSaleFolio", "bookTitle", "clientName", "userId"]
     },
+    "MileageLog": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Mileage Log",
+      "type": "object",
+      "description": "Represents a daily mileage log for company vehicles.",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "userId": { "type": "string" },
+        "cars": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "enum": ["Picanto Blanco", "Picanto Bronce", "Spark"] },
+              "initialMileage": { "type": "number" },
+              "finalMileage": { "type": "number" },
+              "distance": { "type": "number" }
+            },
+            "required": ["name", "initialMileage", "finalMileage", "distance"]
+          }
+        }
+      },
+      "required": ["id", "date", "userId", "cars"]
+    },
     "Counter": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Counter",
@@ -314,6 +339,22 @@
           ]
         }
       },
+       {
+        "path": "/mileage_logs/{logId}",
+        "definition": {
+          "entityName": "MileageLog",
+          "schema": {
+            "$ref": "#/backend/entities/MileageLog"
+          },
+          "description": "Stores daily mileage logs for vehicles.",
+          "params": [
+            {
+              "name": "logId",
+              "description": "The unique identifier for the mileage log, typically the date."
+            }
+          ]
+        }
+      },
       {
         "path": "/counters/{counterId}",
         "definition": {
@@ -331,6 +372,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore data structure has been updated to separate payment types into distinct collections: `cancellation_payments`, `update_payments`, and now `book_sale_payments`. This simplifies security rules and improves query performance for reports. By not having a single large `payments` collection, rules no longer need complex conditions to check the payment `type`, which was causing permission errors. Each new collection has simple, direct security rules, making the system more robust and easier to debug. A new 'daily_reports' collection has been added to persist the state of the daily cash report, allowing users to save their work and continue later."
+    "reasoning": "The Firestore data structure has been updated to separate payment types into distinct collections: `cancellation_payments`, `update_payments`, and now `book_sale_payments`. This simplifies security rules and improves query performance for reports. By not having a single large `payments` collection, rules no longer need complex conditions to check the payment `type`, which was causing permission errors. Each new collection has simple, direct security rules, making the system more robust and easier to debug. A new 'daily_reports' collection has been added to persist the state of the daily cash report, allowing users to save their work and continue later. A `mileage_logs` collection is added to store vehicle mileage records."
   }
 }

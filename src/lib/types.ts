@@ -177,3 +177,17 @@ export interface BookSalePayment {
   studentIdNumber: string;
   userId: string;
 }
+
+export interface CarMileage {
+  name: 'Picanto Blanco' | 'Picanto Bronce' | 'Spark';
+  initialMileage: number;
+  finalMileage: number;
+  distance: number;
+}
+
+export interface MileageLog {
+  id: string;
+  date: Timestamp;
+  userId: string;
+  cars: CarMileage[];
+}

@@ -190,4 +190,5 @@ export interface MileageLog {
   date: Timestamp;
   userId: string;
   cars: CarMileage[];
+  totalDistance?: number;
 }

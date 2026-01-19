@@ -1,7 +1,7 @@
 
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ClipboardPenLine, ListChecks, Award } from 'lucide-react';
+import { ClipboardPenLine, ListChecks, Award, Gauge } from 'lucide-react';
 import Link from 'next/link';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,13 @@ export default function ReportsPage() {
       description: 'Ver y filtrar todos los pagos por actualización de certificados.',
       href: '/reports/update-payments',
       icon: Award,
+      roles: ['Administrador', 'Ventas'],
+    },
+    {
+      title: 'Reporte de Kilometraje',
+      description: 'Ver y filtrar el historial de kilometraje diario de los vehículos.',
+      href: '/reports/mileage-log',
+      icon: Gauge,
       roles: ['Administrador', 'Ventas'],
     },
   ];

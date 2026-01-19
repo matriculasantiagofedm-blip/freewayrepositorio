@@ -1,16 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useDb, useUser } from '@/components/firebase-provider';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, orderBy, limit, getDocs, Timestamp } from 'firebase/firestore';
 import type { MileageLog } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Printer, Gauge, PlusCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 type CarMileageState = {
@@ -37,6 +37,63 @@ export default function MileageLogPage() {
     const [logDate, setLogDate] = useState(new Date());
 
     const today = new Date();
+
+    useEffect(() => {
+        const fetchLastLog = async () => {
+            if (!db) return;
+
+            try {
+                const todayStart = startOfDay(new Date());
+                const logsRef = collection(db, 'mileage_logs');
+                const q = query(
+                    logsRef,
+                    orderBy('date', 'desc'),
+                    where('date', '<', Timestamp.fromDate(todayStart)),
+                    limit(1)
+                );
+
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    const lastLog = querySnapshot.docs[0].data() as MileageLog;
+                    
+                    const newCarsState = cars.map(car => {
+                        const lastLogCar = lastLog.cars.find(c => c.name === car.name);
+                        if (lastLogCar && lastLogCar.finalMileage) {
+                            return {
+                                ...car,
+                                initialMileage: String(lastLogCar.finalMileage),
+                            };
+                        }
+                        return car;
+                    });
+
+                    newCarsState.forEach(car => {
+                        const initial = parseFloat(car.initialMileage);
+                        const final = parseFloat(car.finalMileage);
+                
+                        if (!isNaN(initial) && !isNaN(final) && final >= initial) {
+                            car.distance = final - initial;
+                        } else {
+                            car.distance = 0;
+                        }
+                    });
+
+                    setCars(newCarsState);
+                }
+            } catch (error) {
+                console.error("Error fetching last mileage log:", error);
+                toast({
+                    variant: 'destructive',
+                    title: 'Error al cargar datos previos',
+                    description: 'No se pudo cargar el kilometraje del día anterior.',
+                });
+            }
+        };
+
+        fetchLastLog();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [db]);
 
     const handleMileageChange = (index: number, field: 'initialMileage' | 'finalMileage', value: string) => {
         const newCars = [...cars];

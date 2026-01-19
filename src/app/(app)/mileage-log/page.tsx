@@ -83,13 +83,21 @@ export default function MileageLogPage() {
 
                     setCars(newCarsState);
                 }
-            } catch (error) {
-                console.error("Error fetching last mileage log:", error);
-                toast({
-                    variant: 'destructive',
-                    title: 'Error al cargar datos previos',
-                    description: 'No se pudo cargar el kilometraje del día anterior.',
-                });
+            } catch (serverError: any) {
+                if (serverError.code === 'permission-denied') {
+                     const permissionError = new FirestorePermissionError({
+                        path: 'mileage_logs',
+                        operation: 'list',
+                     });
+                     errorEmitter.emit('permission-error', permissionError);
+                } else {
+                    console.error("Error fetching last mileage log:", serverError);
+                    toast({
+                        variant: 'destructive',
+                        title: 'Error al cargar datos previos',
+                        description: 'No se pudo cargar el kilometraje del día anterior.',
+                    });
+                }
             }
         };
 

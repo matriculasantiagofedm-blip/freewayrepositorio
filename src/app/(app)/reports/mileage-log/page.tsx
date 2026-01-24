@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -92,10 +91,9 @@ export default function MileageLogReportPage() {
               <TableHead className="w-[100px]"></TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
             {logs.map((log) => (
               <Collapsible asChild key={log.id}>
-                <tbody className="contents">
+                <tbody>
                 <TableRow>
                   <TableCell className="font-medium">
                     {format(toDate(log.date), 'PPP', { locale: es })}
@@ -144,7 +142,6 @@ export default function MileageLogReportPage() {
                 </tbody>
               </Collapsible>
             ))}
-          </TableBody>
         </Table>
       </div>
     );

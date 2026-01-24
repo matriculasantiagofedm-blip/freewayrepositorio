@@ -47,12 +47,9 @@ service cloud.firestore {
      */
     match /contracts/{contractId} {
       allow get, list: if isSignedIn();
-      // Allow creation for any signed-in user (including anonymous)
       allow create: if isSignedIn();
-      // Allow administrators and sales roles to update any field.
-      allow update: if isAdmin() || isVentas();
-      
-      allow delete: if isAdmin() || isVentas();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     /**

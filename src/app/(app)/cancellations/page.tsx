@@ -12,6 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Search, Printer, Save, PlusCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { errorEmitter } from '@/firebase/error-emitter';
 
 export default function CancellationsPage() {
   const db = useDb();
@@ -114,9 +116,9 @@ export default function CancellationsPage() {
     }
   };
 
-  const handleSavePayment = async (contract: Contract | null) => {
+  const handleSavePayment = (contract: Contract | null) => {
     const isManual = contract === null;
-    const paymentAmount = isManual ? manualPayment : payments[contract.id];
+    const paymentAmount = isManual ? manualPayment : payments[contract!.id];
     
     if (!db || !user || !paymentAmount || paymentAmount <= 0) {
       toast({ variant: 'destructive', title: 'Monto Inválido', description: 'Introduce un monto a pagar válido para registrar.' });
@@ -128,75 +130,96 @@ export default function CancellationsPage() {
     }
 
     setIsSaving(true);
-    try {
-        const savedPaymentData: Partial<Payment> = {};
+    
+    let paymentDataForTransaction: Partial<Payment> | null = null;
+    let contractUpdateForTransaction: any = {};
+    if(contract) {
+      const newBalance = getBalance(contract) - paymentAmount;
+      if (newBalance <= 0) {
+        contractUpdateForTransaction.status = 'completed';
+      }
+      if (contract.autoMotoDetails) {
+          contractUpdateForTransaction['autoMotoDetails.balance'] = newBalance > 0 ? newBalance : 0;
+          contractUpdateForTransaction['autoMotoDetails.downPayment'] = (contract.autoMotoDetails.downPayment || 0) + paymentAmount;
+      } else if (contract.ampliacionesDetails) {
+          contractUpdateForTransaction['ampliacionesDetails.balance'] = newBalance > 0 ? newBalance : 0;
+          contractUpdateForTransaction['ampliacionesDetails.downPayment'] = (contract.ampliacionesDetails.downPayment || 0) + paymentAmount;
+      }
+    }
 
-        await runTransaction(db, async (transaction) => {
-            const counterRef = doc(db, 'counters', 'cancellation_folio');
-            const counterDoc = await transaction.get(counterRef);
-            
-            let newCancellationFolio;
-            if (!counterDoc.exists()) {
-                newCancellationFolio = 1;
-                transaction.set(counterRef, { count: newCancellationFolio });
-            } else {
-                newCancellationFolio = counterDoc.data().count + 1;
-                transaction.update(counterRef, { count: newCancellationFolio });
-            }
+    runTransaction(db, async (transaction) => {
+        const counterRef = doc(db, 'counters', 'cancellation_folio');
+        const counterDoc = await transaction.get(counterRef);
+        
+        let newCancellationFolio;
+        if (!counterDoc.exists()) {
+            newCancellationFolio = 1;
+            transaction.set(counterRef, { count: newCancellationFolio });
+        } else {
+            newCancellationFolio = counterDoc.data().count + 1;
+            transaction.update(counterRef, { count: newCancellationFolio });
+        }
 
-            const paymentRef = doc(collection(db, 'cancellation_payments'));
-            
-            const paymentData: Partial<Payment> = {
-                amount: paymentAmount,
-                contractId: contract?.id || 'MANUAL',
-                contractFolio: contract?.folioNumber || 0,
-                cancellationFolio: newCancellationFolio,
-                clientId: contract?.clientId || 'MANUAL',
-                clientName: contract?.clientName || manualName,
-                studentIdNumber: studentIdNumber,
-                paymentDate: serverTimestamp(),
-                userId: user.uid,
-                type: 'cancelacion',
-                clientAddress: contract ? (contract.autoMotoDetails?.studentAddress || contract.ampliacionesDetails?.studentAddress || contract.deluxeDetails?.studentAddress || '') : manualAddress,
-            };
-            transaction.set(paymentRef, paymentData);
-            
-            Object.assign(savedPaymentData, { ...paymentData, id: paymentRef.id, paymentDate: new Date() as any });
-            
-            if (contract) {
-                const contractRef = doc(db, 'contracts', contract.id);
-                const newBalance = getBalance(contract) - paymentAmount;
-                let contractUpdate: any = {};
-                if (newBalance <= 0) {
-                  contractUpdate.status = 'completed';
-                }
-                
-                if (contract.autoMotoDetails) {
-                    contractUpdate['autoMotoDetails.balance'] = newBalance > 0 ? newBalance : 0;
-                    contractUpdate['autoMotoDetails.downPayment'] = (contract.autoMotoDetails.downPayment || 0) + paymentAmount;
-                } else if (contract.ampliacionesDetails) {
-                    contractUpdate['ampliacionesDetails.balance'] = newBalance > 0 ? newBalance : 0;
-                    contractUpdate['ampliacionesDetails.downPayment'] = (contract.ampliacionesDetails.downPayment || 0) + paymentAmount;
-                }
-                transaction.update(contractRef, contractUpdate);
-            }
-        });
-      
+        const paymentRef = doc(collection(db, 'cancellation_payments'));
+        
+        const paymentData: Partial<Payment> = {
+            amount: paymentAmount,
+            contractId: contract?.id || 'MANUAL',
+            contractFolio: contract?.folioNumber || 0,
+            cancellationFolio: newCancellationFolio,
+            clientId: contract?.clientId || 'MANUAL',
+            clientName: contract?.clientName || manualName,
+            studentIdNumber: studentIdNumber,
+            paymentDate: serverTimestamp(),
+            userId: user.uid,
+            type: 'cancelacion',
+            clientAddress: contract ? (contract.autoMotoDetails?.studentAddress || contract.ampliacionesDetails?.studentAddress || contract.deluxeDetails?.studentAddress || '') : manualAddress,
+        };
+        paymentDataForTransaction = paymentData;
+        transaction.set(paymentRef, paymentData);
+        
+        if (contract) {
+            const contractRef = doc(db, 'contracts', contract.id);
+            transaction.update(contractRef, contractUpdateForTransaction);
+        }
+
+        return { ...paymentData, id: paymentRef.id, paymentDate: new Date() as any };
+    })
+    .then((savedPaymentData) => {
         if (isManual) {
             setManualSavedPaymentData(savedPaymentData);
             setManualPaymentSaved(true);
         } else if (contract) {
             setSavedPayments(prev => ({ ...prev, [contract.id]: savedPaymentData }));
         }
-
         toast({ title: 'Pago Registrado', description: 'El pago ha sido guardado exitosamente.' });
+    })
+    .catch((serverError) => {
+        let errorContextPath = 'cancellation_payments';
+        let errorContextOperation: 'create' | 'update' = 'create';
+        let errorContextData: any = paymentDataForTransaction;
 
-    } catch (error) {
-        console.error("Error saving payment:", error);
-        toast({ variant: 'destructive', title: 'Error al Guardar', description: 'No se pudo registrar el pago. Inténtalo de nuevo.' });
-    } finally {
+        if (contract) {
+            errorContextPath = `contracts/${contract.id}`;
+            errorContextOperation = 'update';
+            errorContextData = contractUpdateForTransaction;
+        }
+        
+        const permissionError = new FirestorePermissionError({
+            path: errorContextPath,
+            operation: errorContextOperation,
+            requestResourceData: errorContextData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+
+        if (serverError.code !== 'permission-denied') {
+            console.error("Error saving payment transaction:", serverError);
+            toast({ variant: 'destructive', title: 'Error en la Transacción', description: 'No se pudo completar la operación. Inténtalo de nuevo.' });
+        }
+    })
+    .finally(() => {
         setIsSaving(false);
-    }
+    });
   };
 
   const handlePrint = (contractId: string) => {

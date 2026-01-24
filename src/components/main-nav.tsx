@@ -7,7 +7,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { GanttChartSquare, FileText, Users, CarFront, ClipboardPenLine, RefreshCw, HandCoins, Gauge } from 'lucide-react';
+import { GanttChartSquare, FileText, Users, CarFront, ClipboardPenLine, RefreshCw, HandCoins, Gauge, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCurrentRole } from '@/hooks/use-current-role';
 
@@ -54,6 +54,12 @@ const allLinks = [
     icon: Gauge,
     roles: ['Administrador', 'Ventas'],
   },
+  {
+    href: '/maintenance',
+    label: 'Mantenimiento',
+    icon: Wrench,
+    roles: ['Administrador', 'Ventas'],
+  },
 ];
 
 export function MainNav({ className }: { className?: string }) {
@@ -85,3 +91,5 @@ export function MainNav({ className }: { className?: string }) {
     </nav>
   );
 }
+
+    

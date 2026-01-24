@@ -63,7 +63,7 @@ export interface AutoMotoContractDetails {
   downPayment?: number;
   balance?: number;
   paymentDeadline?: Date | null;
-  vehicle?: 'Spark' | 'P. Blanco' | 'P. Bronce' | 'Moto' | 'Motocicleta';
+  vehicle?: 'Spark' | 'P. Blanco' | 'P. Bronce' | 'Motocicleta';
   vehicleTransmission?: 'Automático' | 'Manual' | 'Moto';
   licenseCategory?: 'A, C' | 'A, C, D' | 'A, B';
   theoreticalClassSchedule?: string;
@@ -192,3 +192,19 @@ export interface MileageLog {
   cars: CarMileage[];
   totalDistance?: number;
 }
+
+export type MaintenanceType = 'Cambio de Aceite' | 'Revisión de Frenos' | 'Rotación de Llantas' | 'Mantenimiento General' | 'Otro';
+
+export interface MaintenanceLog {
+  id: string;
+  date: Timestamp;
+  userId: string;
+  vehicle: 'Picanto Blanco' | 'Picanto Bronce' | 'Spark';
+  mileage: number;
+  type: MaintenanceType;
+  description: string;
+  cost: number;
+  nextServiceDate?: Timestamp;
+}
+
+    

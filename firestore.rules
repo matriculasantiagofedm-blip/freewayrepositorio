@@ -99,6 +99,14 @@ service cloud.firestore {
       allow read, create, update, delete: if isSignedIn();
     }
 
+    /**
+     * @description Manages vehicle maintenance logs.
+     * @path /maintenance_logs/{logId}
+     */
+    match /maintenance_logs/{logId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
     // Allow authenticated users to read/write the contract folio counter.
     match /counters/contract_folio {
         allow read, write: if isSignedIn();
@@ -125,3 +133,5 @@ service cloud.firestore {
     }
   }
 }
+
+    

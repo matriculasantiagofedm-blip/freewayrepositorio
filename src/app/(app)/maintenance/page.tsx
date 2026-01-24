@@ -19,7 +19,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useDb, useUser } from '@/components/firebase-provider';
-import { collection, addDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, Timestamp } from 'firebase/firestore';
 import type { MaintenanceLog, MaintenanceType } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Wrench, CalendarIcon } from 'lucide-react';
@@ -85,12 +85,20 @@ export default function MaintenancePage() {
         }
 
         setIsSaving(true);
-        const logData = {
-            ...data,
+        
+        // Create a new object for Firestore, excluding `nextServiceDate` if it's undefined
+        // and converting dates to Timestamps.
+        const { nextServiceDate, ...restOfData } = data;
+        const logData: any = {
+            ...restOfData,
             userId: user.uid,
-            date: serverTimestamp(),
-            ...(data.nextServiceDate && { nextServiceDate: serverTimestamp() }), // Convert date to timestamp
+            date: Timestamp.fromDate(data.date), // Use the service date from the form
         };
+        
+        // Only add nextServiceDate if it's provided by the user
+        if (nextServiceDate) {
+            logData.nextServiceDate = Timestamp.fromDate(nextServiceDate);
+        }
 
         const maintenanceLogsCollection = collection(db, 'maintenance_logs');
         addDoc(maintenanceLogsCollection, logData)
@@ -270,5 +278,3 @@ export default function MaintenancePage() {
         </div>
     );
 }
-
-    

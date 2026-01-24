@@ -95,7 +95,7 @@ export default function MileageLogReportPage() {
           <TableBody>
             {logs.map((log) => (
               <Collapsible asChild key={log.id}>
-                <>
+                <tbody className="contents">
                 <TableRow>
                   <TableCell className="font-medium">
                     {format(toDate(log.date), 'PPP', { locale: es })}
@@ -141,7 +141,7 @@ export default function MileageLogReportPage() {
                         </td>
                     </tr>
                 </CollapsibleContent>
-                </>
+                </tbody>
               </Collapsible>
             ))}
           </TableBody>

@@ -58,7 +58,7 @@ const allLinks = [
     href: '/maintenance',
     label: 'Mantenimiento',
     icon: Wrench,
-    roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+    roles: ['Administrador'],
   },
 ];
 

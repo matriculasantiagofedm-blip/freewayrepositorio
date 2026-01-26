@@ -16,7 +16,7 @@ const allLinks = [
     href: '/dashboard',
     label: 'Panel de Control',
     icon: GanttChartSquare,
-    roles: ['Administrador', 'Ventas'],
+    roles: ['Administrador', 'Ventas', 'Ventas Externas'],
   },
   {
     href: '/contracts',
@@ -34,31 +34,31 @@ const allLinks = [
     href: '/reports',
     label: 'Reportes',
     icon: ClipboardPenLine,
-    roles: ['Administrador', 'Ventas'],
+    roles: ['Administrador', 'Ventas', 'Ventas Externas'],
   },
   {
     href: '/updates',
     label: 'Actualizaciones',
     icon: RefreshCw,
-    roles: ['Administrador', 'Ventas'],
+    roles: ['Administrador', 'Ventas', 'Ventas Externas'],
   },
   {
     href: '/cancellations',
     label: 'Gestionar Saldos',
     icon: HandCoins,
-    roles: ['Administrador', 'Ventas'],
+    roles: ['Administrador', 'Ventas', 'Ventas Externas'],
   },
   {
     href: '/mileage-log',
     label: 'Kilometraje',
     icon: Gauge,
-    roles: ['Administrador', 'Ventas'],
+    roles: ['Administrador', 'Ventas', 'Ventas Externas'],
   },
   {
     href: '/maintenance',
     label: 'Mantenimiento',
     icon: Wrench,
-    roles: ['Administrador', 'Ventas'],
+    roles: ['Administrador', 'Ventas', 'Ventas Externas'],
   },
 ];
 
@@ -91,5 +91,3 @@ export function MainNav({ className }: { className?: string }) {
     </nav>
   );
 }
-
-    

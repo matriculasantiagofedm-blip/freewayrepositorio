@@ -114,11 +114,11 @@ export default function DashboardPage() {
   ];
 
   const otherActions = [
-      { name: 'Actualizaciones de Certificado', icon: Award, href: '/updates', bgColor: 'bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/40', textColor: 'text-green-600 dark:text-green-300', roles: ['Administrador', 'Ventas'] },
-      { name: 'Pago de Saldos Estudiantes', icon: HandCoins, href: '/cancellations', bgColor: 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40', textColor: 'text-blue-600 dark:text-blue-300', roles: ['Administrador', 'Ventas'] },
-      { name: 'Venta de Libros', icon: BookMarked, href: '/book-sales', bgColor: 'bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40', textColor: 'text-indigo-600 dark:text-indigo-300', roles: ['Administrador', 'Ventas'] },
-      { name: 'Control de Kilometraje', icon: Gauge, href: '/mileage-log', bgColor: 'bg-gray-50 hover:bg-gray-100 dark:bg-gray-800/50 dark:hover:bg-gray-800', textColor: 'text-gray-600 dark:text-gray-300', roles: ['Administrador', 'Ventas'] },
-      { name: 'Registro de Mantenimiento', icon: Wrench, href: '/maintenance', bgColor: 'bg-stone-50 hover:bg-stone-100 dark:bg-stone-900/20 dark:hover:bg-stone-900/40', textColor: 'text-stone-600 dark:text-stone-300', roles: ['Administrador', 'Ventas'] },
+      { name: 'Actualizaciones de Certificado', icon: Award, href: '/updates', bgColor: 'bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/40', textColor: 'text-green-600 dark:text-green-300', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+      { name: 'Pago de Saldos Estudiantes', icon: HandCoins, href: '/cancellations', bgColor: 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40', textColor: 'text-blue-600 dark:text-blue-300', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+      { name: 'Venta de Libros', icon: BookMarked, href: '/book-sales', bgColor: 'bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40', textColor: 'text-indigo-600 dark:text-indigo-300', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+      { name: 'Control de Kilometraje', icon: Gauge, href: '/mileage-log', bgColor: 'bg-gray-50 hover:bg-gray-100 dark:bg-gray-800/50 dark:hover:bg-gray-800', textColor: 'text-gray-600 dark:text-gray-300', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+      { name: 'Registro de Mantenimiento', icon: Wrench, href: '/maintenance', bgColor: 'bg-stone-50 hover:bg-stone-100 dark:bg-stone-900/20 dark:hover:bg-stone-900/40', textColor: 'text-stone-600 dark:text-stone-300', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
   ];
   
   const visibleOtherActions = otherActions.filter(action => action.roles.includes(role || ''));
@@ -191,5 +191,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

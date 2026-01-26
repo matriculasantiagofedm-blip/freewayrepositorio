@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Search, Save, UserPlus, Printer, PlusCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useCurrentRole } from '@/hooks/use-current-role';
 
 const updateOptions = [
     { id: '1', label: '1 Certificado', price: 59.00 },
@@ -24,6 +25,7 @@ export default function UpdatesPage() {
   const db = useDb();
   const { user } = useUser();
   const { toast } = useToast();
+  const { role } = useCurrentRole();
 
   const [studentIdNumber, setStudentIdNumber] = useState('');
   const [manualName, setManualName] = useState('');
@@ -143,6 +145,7 @@ export default function UpdatesPage() {
           paymentDate: serverTimestamp(),
           userId: user.uid,
           type: 'actualizacion',
+          createdBy: role || undefined,
         };
         transaction.set(paymentRef, paymentData);
 

@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Printer, PlusCircle, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useCurrentRole } from '@/hooks/use-current-role';
 
 const books = [
     { id: 'compendio', title: 'Compendio de Conocimientos Viales', price: 5.00 },
@@ -23,6 +24,7 @@ export default function BookSalesPage() {
   const db = useDb();
   const { user } = useUser();
   const { toast } = useToast();
+  const { role } = useCurrentRole();
 
   const [clientName, setClientName] = useState('');
   const [studentIdNumber, setStudentIdNumber] = useState('');
@@ -79,6 +81,7 @@ export default function BookSalesPage() {
           studentIdNumber: studentIdNumber,
           paymentDate: serverTimestamp(),
           userId: user.uid,
+          createdBy: role || undefined,
         };
         transaction.set(paymentRef, paymentData);
 

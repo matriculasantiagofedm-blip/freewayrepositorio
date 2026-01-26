@@ -149,6 +149,7 @@ export interface Transaction {
   bac: number;
   general: number;
   cheques: number;
+  createdBy?: string;
 }
 
 export interface Payment {
@@ -165,6 +166,7 @@ export interface Payment {
   studentIdNumber: string;
   userId: string;
   type: 'abono' | 'cancelacion' | 'actualizacion';
+  createdBy?: string;
 }
 
 export interface BookSalePayment {
@@ -176,10 +178,11 @@ export interface BookSalePayment {
   clientName: string;
   studentIdNumber: string;
   userId: string;
+  createdBy?: string;
 }
 
 export interface CarMileage {
-  name: 'Picanto Blanco' | 'Picanto Bronce';
+  name: 'Picanto Blanco' | 'Picanto Bronce' | 'Spark';
   initialMileage: number;
   finalMileage: number;
   distance: number;
@@ -206,5 +209,3 @@ export interface MaintenanceLog {
   cost: number;
   nextServiceDate?: Timestamp;
 }
-
-    

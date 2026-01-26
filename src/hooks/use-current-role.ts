@@ -7,6 +7,7 @@ import { useUser } from '@/components/firebase-provider';
 // Asocia un correo electrónico de usuario o un perfil de inicio de sesión a un rol específico en la aplicación.
 const roleMapping: { [key: string]: string } = {
     'ventas123': 'Ventas',
+    'ventasext123': 'Ventas Externas',
     'Ayax/2022': 'Administrador', // Este perfil ahora tiene el rol de Administrador
 };
 

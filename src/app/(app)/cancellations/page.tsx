@@ -14,11 +14,13 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
+import { useCurrentRole } from '@/hooks/use-current-role';
 
 export default function CancellationsPage() {
   const db = useDb();
   const { user } = useUser();
   const { toast } = useToast();
+  const { role } = useCurrentRole();
 
   const [studentIdNumber, setStudentIdNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -174,6 +176,7 @@ export default function CancellationsPage() {
             userId: user.uid,
             type: 'cancelacion',
             clientAddress: contract ? (contract.autoMotoDetails?.studentAddress || contract.ampliacionesDetails?.studentAddress || contract.deluxeDetails?.studentAddress || '') : manualAddress,
+            createdBy: role || undefined,
         };
         paymentDataForTransaction = paymentData;
         transaction.set(paymentRef, paymentData);

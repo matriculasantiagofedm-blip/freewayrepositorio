@@ -130,10 +130,11 @@ export default function DailyCashReportPage() {
             getDocs(bookSaleQuery)
         ]);
 
-        // Helper to filter docs by user ID on the client if not an admin
+        // Helper to filter docs by user ID or role on the client
         const docsToProcess = (snapshot: any) => {
             if (isAdmin) return snapshot.docs;
-            return snapshot.docs.filter((doc: any) => doc.data().userId === user.uid);
+            // The user wants to see transactions based on their role, not their specific user ID.
+            return snapshot.docs.filter((doc: any) => doc.data().createdBy === role);
         }
 
         docsToProcess(contractsSnapshot).map((doc: any) => ({ id: doc.id, ...doc.data() } as Contract)).filter((contract: Contract) => contract.status !== 'expired').forEach((contract: Contract) => {
@@ -455,7 +456,7 @@ export default function DailyCashReportPage() {
         <div className="space-y-4">
             <div>
                 <div className="overflow-x-auto">
-                    <Table className="min-w-full text-[10px] print:text-xs border-collapse border border-black">
+                    <Table className="min-w-full text-[10px] print:text-base border-collapse border border-black">
                     <TableHeader>
                         <TableRow>
                         {['#', 'FACTURA', 'Contrato', 'Cédula', 'Nombre del cliente', 'Teléfono', 'Servicio', 'Monto', 'Tipo de Pago', 'Efectivo', 'T.Débito', 'T.Crédito', 'GLOBAL', 'BAC', 'GENERAL', 'Cheques'].map(header => (

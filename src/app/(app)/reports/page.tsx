@@ -1,4 +1,3 @@
-
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ClipboardPenLine, ListChecks, Award, Gauge } from 'lucide-react';
@@ -15,28 +14,28 @@ export default function ReportsPage() {
       description: 'Genera el reporte de caja para el día actual.',
       href: '/reports/daily-cash',
       icon: ClipboardPenLine,
-      roles: ['Administrador', 'Ventas'],
+      roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     },
     {
       title: 'Listado de Pagos de Cancelación',
       description: 'Ver y filtrar todos los pagos de cancelación registrados.',
       href: '/reports/cancellation-payments',
       icon: ListChecks,
-      roles: ['Administrador', 'Ventas'],
+      roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     },
     {
       title: 'Listado de Pagos de Actualización',
       description: 'Ver y filtrar todos los pagos por actualización de certificados.',
       href: '/reports/update-payments',
       icon: Award,
-      roles: ['Administrador', 'Ventas'],
+      roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     },
     {
       title: 'Reporte de Kilometraje',
       description: 'Ver y filtrar el historial de kilometraje diario de los vehículos.',
       href: '/reports/mileage-log',
       icon: Gauge,
-      roles: ['Administrador', 'Ventas'],
+      roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     },
   ];
 

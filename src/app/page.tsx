@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/firebase-provider';
 
 // Los roles válidos ahora se usan para validación interna
-const validRoles = ['Ayax/2022', 'ventas123'];
+const validRoles = ['Ayax/2022', 'ventas123', 'ventasext123'];
 
 export default function LoginPage() {
   const router = useRouter();

@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useDb, useUser } from '@/components/firebase-provider';
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp, type DocumentData } from 'firebase/firestore';
 import type { Contract, Payment, Transaction, BookSalePayment } from '@/lib/types';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -101,19 +101,22 @@ export default function DailyCashReportPage() {
       try {
         const isAdmin = role === 'Administrador';
 
-        const createQuery = (collName: string) => {
+        // Simplified query creator - only filters by date range
+        const createDateQuery = (collName: string) => {
             const baseRef = collection(db, collName);
             const dateField = (collName === 'contracts') ? 'createdAt' : 'paymentDate';
             
-            const dateQuery = query(baseRef, where(dateField, '>=', Timestamp.fromDate(startOfReportDay)), where(dateField, '<=', Timestamp.fromDate(endOfReportDay)));
-
-            return isAdmin ? dateQuery : query(dateQuery, where('userId', '==', user.uid));
+            return query(
+                baseRef, 
+                where(dateField, '>=', Timestamp.fromDate(startOfReportDay)), 
+                where(dateField, '<=', Timestamp.fromDate(endOfReportDay))
+            );
         };
         
-        const contractsQuery = createQuery('contracts');
-        const cancellationQuery = createQuery('cancellation_payments');
-        const updateQuery = createQuery('update_payments');
-        const bookSaleQuery = createQuery('book_sale_payments');
+        const contractsQuery = createDateQuery('contracts');
+        const cancellationQuery = createDateQuery('cancellation_payments');
+        const updateQuery = createDateQuery('update_payments');
+        const bookSaleQuery = createDateQuery('book_sale_payments');
 
         const [
             contractsSnapshot,
@@ -127,7 +130,13 @@ export default function DailyCashReportPage() {
             getDocs(bookSaleQuery)
         ]);
 
-        contractsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Contract)).filter(contract => contract.status !== 'expired').forEach((contract) => {
+        // Helper to filter docs by user ID on the client if not an admin
+        const docsToProcess = (snapshot: any) => {
+            if (isAdmin) return snapshot.docs;
+            return snapshot.docs.filter((doc: any) => doc.data().userId === user.uid);
+        }
+
+        docsToProcess(contractsSnapshot).map((doc: any) => ({ id: doc.id, ...doc.data() } as Contract)).filter((contract: Contract) => contract.status !== 'expired').forEach((contract: Contract) => {
             if (contract.type === 'Curso Deluxe') {
                 fetchedTransactions.push({
                     id: `${contract.id}-matricula`,
@@ -162,7 +171,7 @@ export default function DailyCashReportPage() {
             }
         });
 
-        cancellationSnapshot.docs.forEach(doc => {
+        docsToProcess(cancellationSnapshot).forEach((doc: any) => {
             const payment = doc.data() as Payment;
             fetchedTransactions.push({
                 id: doc.id,
@@ -179,7 +188,7 @@ export default function DailyCashReportPage() {
             });
         });
 
-        updateSnapshot.docs.forEach(doc => {
+        docsToProcess(updateSnapshot).forEach((doc: any) => {
             const payment = doc.data() as Payment;
             fetchedTransactions.push({
                 id: doc.id,
@@ -196,7 +205,7 @@ export default function DailyCashReportPage() {
             });
         });
 
-        bookSaleSnapshot.docs.forEach(doc => {
+        docsToProcess(bookSaleSnapshot).forEach((doc: any) => {
             const payment = doc.data() as BookSalePayment;
             fetchedTransactions.push({
                 id: doc.id,

@@ -403,40 +403,42 @@ export default function DailyCashReportPage() {
         <h1 className="text-2xl font-bold font-headline">Reporte de Caja Diario</h1>
         <div className="flex items-center gap-2">
             {role === 'Administrador' && (
-              <Select value={sellerFilter} onValueChange={setSellerFilter}>
-                  <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder="Filtrar por vendedor..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                      <SelectItem value="all">Todos los Vendedores</SelectItem>
-                      <SelectItem value="Administrador">Administrador</SelectItem>
-                      <SelectItem value="Ventas">Ventas</SelectItem>
-                      <SelectItem value="Ventas Externas">Ventas Externas</SelectItem>
-                  </SelectContent>
-              </Select>
+              <>
+                <Select value={sellerFilter} onValueChange={setSellerFilter}>
+                    <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="Filtrar por vendedor..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos los Vendedores</SelectItem>
+                        <SelectItem value="Administrador">Administrador</SelectItem>
+                        <SelectItem value="Ventas">Ventas</SelectItem>
+                        <SelectItem value="Ventas Externas">Ventas Externas</SelectItem>
+                    </SelectContent>
+                </Select>
+                <Popover>
+                    <PopoverTrigger asChild>
+                    <Button
+                        variant={"outline"}
+                        className={cn(
+                        "w-[240px] justify-start text-left font-normal",
+                        !reportDate && "text-muted-foreground"
+                        )}
+                    >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {reportDate ? format(reportDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                    </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar
+                        mode="single"
+                        selected={reportDate}
+                        onSelect={(date) => setReportDate(date || new Date())}
+                        initialFocus
+                    />
+                    </PopoverContent>
+                </Popover>
+              </>
             )}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-[240px] justify-start text-left font-normal",
-                    !reportDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {reportDate ? format(reportDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                  mode="single"
-                  selected={reportDate}
-                  onSelect={(date) => setReportDate(date || new Date())}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
             <Button onClick={() => window.print()}><Printer className="mr-2 h-4 w-4" /> Imprimir</Button>
         </div>
       </div>

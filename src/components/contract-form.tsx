@@ -180,12 +180,12 @@ const coursePlans = {
     { name: 'Reforzamiento Mixto 2Hrs', price: 100.00 },
   ],
   'Curso Solo Practica': [
-    { name: 'Paquete Básico 8hrs (Auto)', price: 133.00 },
-    { name: 'Paquete Plus 10hrs (Auto)', price: 150.00 },
-    { name: 'Paquete Premium 12hrs (Auto)', price: 175.00 },
-    { name: 'Paquete Básico 8hrs (Moto)', price: 115.00 },
-    { name: 'Paquete Plus 10hrs (Moto)', price: 135.00 },
-    { name: 'Paquete Premium 12hrs (Moto)', price: 155.00 },
+    { name: 'Paquete Básico 8hrs (Auto)', price: 125.00 },
+    { name: 'Paquete Plus 10hrs (Auto)', price: 135.00 },
+    { name: 'Paquete Premium 12hrs (Auto)', price: 155.00 },
+    { name: 'Paquete Básico 8hrs (Moto)', price: 103.00 },
+    { name: 'Paquete Plus 10hrs (Moto)', price: 117.00 },
+    { name: 'Paquete Premium 12hrs (Moto)', price: 130.00 },
   ]
 };
 

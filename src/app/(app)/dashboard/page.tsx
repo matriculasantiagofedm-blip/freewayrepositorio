@@ -32,21 +32,36 @@ function toDate(date: any): Date {
   return new Date(0);
 }
 
+const getBalance = (contract: Contract): number => {
+    if (contract.autoMotoDetails) {
+        return contract.autoMotoDetails.balance || 0;
+    }
+    if (contract.ampliacionesDetails) {
+        return contract.ampliacionesDetails.balance || 0;
+    }
+    return 0;
+}
+
 const isOverdue = (contract: Contract): boolean => {
     if (contract.status !== 'active') return false;
 
-    const hasOverdueGeneralDeadline = (contract.deadlines as Deadline[] || [])
-        .some(d => d && d.date && isPast(toDate(d.date)));
-    
-    if (hasOverdueGeneralDeadline) return true;
+    const balance = getBalance(contract);
+    if (balance <= 0) return false;
 
-    if ((contract.type === 'Curso Auto' || contract.type === 'Curso Moto') && contract.autoMotoDetails?.paymentDeadline) {
-        const paymentDate = toDate(contract.autoMotoDetails.paymentDeadline);
+    let deadline: Date | undefined | null = undefined;
+    if (contract.autoMotoDetails?.paymentDeadline) {
+        deadline = contract.autoMotoDetails.paymentDeadline;
+    } else if (contract.ampliacionesDetails?.paymentDeadline) {
+        deadline = contract.ampliacionesDetails.paymentDeadline;
+    }
+
+    if (deadline) {
+        const paymentDate = toDate(deadline);
         if (paymentDate.getTime() > 0 && isPast(paymentDate)) {
             return true;
         }
     }
-    
+
     return false;
 }
 

@@ -1,4 +1,3 @@
-
 'use client';
 import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import type { Contract, Deadline } from '@/lib/types';
@@ -45,21 +44,36 @@ function toDate(date: any): Date {
   return new Date(0);
 }
 
+const getBalance = (contract: Contract): number => {
+    if (contract.autoMotoDetails) {
+        return contract.autoMotoDetails.balance || 0;
+    }
+    if (contract.ampliacionesDetails) {
+        return contract.ampliacionesDetails.balance || 0;
+    }
+    return 0;
+}
+
 const isOverdue = (contract: Contract): boolean => {
     if (contract.status !== 'active') return false;
 
-    const hasOverdueGeneralDeadline = (contract.deadlines as Deadline[] || [])
-        .some(d => d && d.date && isPast(toDate(d.date)));
-    
-    if (hasOverdueGeneralDeadline) return true;
+    const balance = getBalance(contract);
+    if (balance <= 0) return false;
 
-    if ((contract.type === 'Curso Auto' || contract.type === 'Curso Moto') && contract.autoMotoDetails?.paymentDeadline) {
-        const paymentDate = toDate(contract.autoMotoDetails.paymentDeadline);
+    let deadline: Date | undefined | null = undefined;
+    if (contract.autoMotoDetails?.paymentDeadline) {
+        deadline = contract.autoMotoDetails.paymentDeadline;
+    } else if (contract.ampliacionesDetails?.paymentDeadline) {
+        deadline = contract.ampliacionesDetails.paymentDeadline;
+    }
+
+    if (deadline) {
+        const paymentDate = toDate(deadline);
         if (paymentDate.getTime() > 0 && isPast(paymentDate)) {
             return true;
         }
     }
-    
+
     return false;
 }
 
@@ -151,12 +165,14 @@ export default function AllContractsPage() {
                                 <TableHead>Tipo</TableHead>
                                 <TableHead>Certificado</TableHead>
                                 <TableHead>Fecha de Creación</TableHead>
+                                {filter === 'overdue' && <TableHead className="text-right">Monto Adeudado</TableHead>}
                                 <TableHead className="text-right">Acciones</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {filteredContracts.map((contract) => {
                                 const isAnnulled = contract.status === 'expired';
+                                const balance = getBalance(contract);
                                 
                                 return (
                                 <TableRow key={contract.id} className={cn(isAnnulled && 'bg-muted/50 hover:bg-muted/60')}>
@@ -186,6 +202,11 @@ export default function AllContractsPage() {
                                     <TableCell>
                                         {format(toDate(contract.createdAt), 'dd/MM/yyyy', { locale: es })}
                                     </TableCell>
+                                     {filter === 'overdue' && (
+                                        <TableCell className="text-right font-semibold text-destructive">
+                                            B/. {balance.toFixed(2)}
+                                        </TableCell>
+                                    )}
                                     <TableCell className="text-right">
                                         <Button asChild variant="ghost" size="icon">
                                             <Link href={`/contracts/${contract.id}`}>

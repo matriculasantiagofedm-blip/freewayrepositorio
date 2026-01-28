@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import * as React from 'react';
-import { GanttChartSquare, Users, ClipboardPenLine, RefreshCw, HandCoins, Gauge, Wrench, Car, ChevronDown } from 'lucide-react';
+import { GanttChartSquare, Users, ClipboardPenLine, RefreshCw, HandCoins, Gauge, Wrench, Car } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Button } from '@/components/ui/button';
@@ -98,13 +98,12 @@ function HoverDropdownMenu({ link, visibleChildren, pathname, linkClass }: any) 
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className={cn(linkClass, 'gap-1', isChildActive && 'text-foreground font-semibold')}
+          className={cn(linkClass, isChildActive && 'text-foreground font-semibold')}
           onMouseEnter={handleOpen}
           onMouseLeave={handleClose}
           aria-haspopup="true"
         >
           {link.label}
-          <ChevronDown className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent

@@ -13,7 +13,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { format, isPast } from 'date-fns';
+import { format, isPast, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Eye, Search, CheckCircle, XCircle, Ban } from 'lucide-react';
@@ -77,6 +77,35 @@ const isOverdue = (contract: Contract): boolean => {
     return false;
 }
 
+const getDebtAgeInfo = (contract: Contract): { category: string; days: number } | null => {
+    if (!isOverdue(contract)) return null;
+
+    let deadline: Date | undefined | null = undefined;
+    if (contract.autoMotoDetails?.paymentDeadline) {
+        deadline = contract.autoMotoDetails.paymentDeadline;
+    } else if (contract.ampliacionesDetails?.paymentDeadline) {
+        deadline = contract.ampliacionesDetails.paymentDeadline;
+    }
+
+    if (!deadline) return null;
+
+    const paymentDate = toDate(deadline);
+    if (paymentDate.getFullYear() <= 1970) return null;
+    const daysOverdue = differenceInDays(new Date(), paymentDate);
+
+    if (daysOverdue <= 30) {
+        return { category: '0-30 días', days: daysOverdue };
+    }
+    if (daysOverdue <= 60) {
+        return { category: '31-60 días', days: daysOverdue };
+    }
+    if (daysOverdue <= 90) {
+        return { category: '61-90 días', days: daysOverdue };
+    }
+    return { category: '90+ días', days: daysOverdue };
+};
+
+
 export default function AllContractsPage() {
   const db = useDb();
   const { user } = useUser();
@@ -108,6 +137,13 @@ export default function AllContractsPage() {
     overdue: 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700',
   };
 
+  const ageCategoryColors: { [key: string]: string } = {
+    '0-30 días': 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700',
+    '31-60 días': 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-900/50 dark:text-orange-300 dark:border-orange-700',
+    '61-90 días': 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700',
+    '90+ días': 'bg-red-200 text-red-900 border-red-400 font-bold dark:bg-red-900 dark:text-red-200 dark:border-red-700',
+  };
+
   const statusTranslations: { [key: string]: string } = {
     active: 'Activo',
     draft: 'Borrador',
@@ -117,7 +153,10 @@ export default function AllContractsPage() {
   }
   
   const filteredContracts =
-    allContracts?.filter((contract) => {
+    allContracts?.map(contract => {
+        const debtInfo = getDebtAgeInfo(contract);
+        return { ...contract, debtInfo };
+    }).filter((contract) => {
       const folio = String(contract.folioNumber || '').padStart(6, '0');
       const client = contract.clientName.toLowerCase();
       const type = contract.type.toLowerCase();
@@ -135,6 +174,11 @@ export default function AllContractsPage() {
       }
 
       return true; // if no filter or search, show all (or all overdue if filter is set)
+    }).sort((a, b) => {
+        if (filter === 'overdue') {
+            return (b.debtInfo?.days || 0) - (a.debtInfo?.days || 0);
+        }
+        return 0; // No specific sort order for other views
     }) || [];
 
   return (
@@ -165,6 +209,7 @@ export default function AllContractsPage() {
                                 <TableHead>Tipo</TableHead>
                                 <TableHead>Certificado</TableHead>
                                 <TableHead>Fecha de Creación</TableHead>
+                                {filter === 'overdue' && <TableHead>Antigüedad</TableHead>}
                                 {filter === 'overdue' && <TableHead className="text-right">Monto Adeudado</TableHead>}
                                 <TableHead className="text-right">Acciones</TableHead>
                             </TableRow>
@@ -202,6 +247,15 @@ export default function AllContractsPage() {
                                     <TableCell>
                                         {format(toDate(contract.createdAt), 'dd/MM/yyyy', { locale: es })}
                                     </TableCell>
+                                    {filter === 'overdue' && (
+                                        <TableCell>
+                                            {contract.debtInfo && (
+                                                <Badge variant="outline" className={cn(ageCategoryColors[contract.debtInfo.category])}>
+                                                    {contract.debtInfo.category}
+                                                </Badge>
+                                            )}
+                                        </TableCell>
+                                    )}
                                      {filter === 'overdue' && (
                                         <TableCell className="text-right font-semibold text-destructive">
                                             B/. {balance.toFixed(2)}

@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
-import { format, startOfDay, endOfDay } from 'date-fns';
+import { format, startOfDay, endOfDay, startOfMonth, endOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -23,6 +23,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface ReportRow {
   concept: string;
@@ -39,6 +40,7 @@ export default function FinanceReportPage() {
   const db = useDb();
   const { user } = useUser();
   const [reportDate, setReportDate] = useState<Date>(new Date());
+  const [view, setView] = useState('daily');
   const [reportData, setReportData] = useState<ReportRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -50,8 +52,8 @@ export default function FinanceReportPage() {
 
     const fetchData = async () => {
       setIsLoading(true);
-      const start = startOfDay(reportDate);
-      const end = endOfDay(reportDate);
+      const start = view === 'daily' ? startOfDay(reportDate) : startOfMonth(reportDate);
+      const end = view === 'daily' ? endOfDay(reportDate) : endOfMonth(reportDate);
 
       const contractQuery = query(
         collection(db, 'contracts'),
@@ -148,7 +150,7 @@ export default function FinanceReportPage() {
     };
 
     fetchData();
-  }, [db, user, reportDate]);
+  }, [db, user, reportDate, view]);
 
   const totalIncome = useMemo(() => {
     return reportData.reduce((sum, row) => sum + row.total, 0);
@@ -172,6 +174,12 @@ export default function FinanceReportPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Tabs defaultValue="daily" onValueChange={setView} className="w-[200px]">
+              <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="daily">Diario</TabsTrigger>
+                  <TabsTrigger value="monthly">Mensual</TabsTrigger>
+              </TabsList>
+           </Tabs>
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -179,7 +187,7 @@ export default function FinanceReportPage() {
                 className={cn("w-[280px] justify-start text-left font-normal", !reportDate && "text-muted-foreground")}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {reportDate ? format(reportDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                {reportDate ? format(reportDate, view === 'daily' ? "PPP" : "LLLL yyyy", { locale: es }) : <span>Seleccionar fecha</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="end">
@@ -205,7 +213,7 @@ export default function FinanceReportPage() {
                 No se encontraron ingresos
             </h3>
             <p className="mt-2 text-sm text-muted-foreground">
-                No se registraron transacciones para la fecha seleccionada.
+                No se registraron transacciones para el período seleccionado.
             </p>
         </div>
       ) : (
@@ -214,7 +222,7 @@ export default function FinanceReportPage() {
                 <CardHeader>
                     <CardTitle>Desglose de Ingresos</CardTitle>
                     <CardDescription>
-                        Total de ingresos para el día {format(reportDate, 'PPP', { locale: es })}.
+                        Total de ingresos para {view === 'daily' ? `el día ${format(reportDate, 'PPP', { locale: es })}` : `el mes de ${format(reportDate, 'LLLL yyyy', { locale: es })}`}.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>

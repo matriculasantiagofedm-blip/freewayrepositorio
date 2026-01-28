@@ -73,6 +73,61 @@ const navLinks = [
   },
 ];
 
+function HoverDropdownMenu({ link, visibleChildren, pathname, linkClass }: any) {
+  const [open, setOpen] = React.useState(false);
+  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleOpen = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    timerRef.current = setTimeout(() => {
+      setOpen(false);
+    }, 100); // 100ms delay to allow moving cursor to content
+  };
+
+  const isChildActive = visibleChildren.some((child: any) => pathname.startsWith(child.href!));
+
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          className={cn(linkClass, 'gap-1', isChildActive && 'text-foreground font-semibold')}
+          onMouseEnter={handleOpen}
+          onMouseLeave={handleClose}
+          aria-haspopup="true"
+        >
+          {link.label}
+          <ChevronDown className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align="start"
+        onMouseEnter={handleOpen}
+        onMouseLeave={handleClose}
+      >
+        {visibleChildren.map((child: any) => (
+          <DropdownMenuItem key={child.href} asChild>
+            <Link
+              href={child.href!}
+              className={cn('cursor-pointer', pathname.startsWith(child.href!) && 'font-semibold text-primary')}
+            >
+              {child.label}
+            </Link>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+
 export function MainNav({ className, isMobile = false }: { className?: string, isMobile?: boolean }) {
   const pathname = usePathname();
   const { role } = useCurrentRole();
@@ -98,9 +153,8 @@ export function MainNav({ className, isMobile = false }: { className?: string, i
             const visibleChildren = link.children.filter(child => child.roles.includes(role));
             if (visibleChildren.length === 0) return null;
 
-            const isChildActive = visibleChildren.some(child => pathname.startsWith(child.href!));
-
             if (isMobile) {
+              const isChildActive = visibleChildren.some(child => pathname.startsWith(child.href!));
               return (
                 <React.Fragment key={link.label}>
                    <span className={cn(linkClass, 'font-semibold', isChildActive ? 'text-primary' : 'text-foreground' )}>
@@ -123,23 +177,7 @@ export function MainNav({ className, isMobile = false }: { className?: string, i
             }
             
             return (
-              <DropdownMenu key={link.label}>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className={cn(linkClass, 'gap-1', isChildActive && 'text-foreground font-semibold')}>
-                        {link.label}
-                        <ChevronDown className="h-4 w-4" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  {visibleChildren.map((child) => (
-                    <DropdownMenuItem key={child.href} asChild>
-                      <Link href={child.href!} className={cn('cursor-pointer', pathname.startsWith(child.href!) && 'font-semibold text-primary')}>
-                        {child.label}
-                      </Link>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <HoverDropdownMenu key={link.label} link={link} visibleChildren={visibleChildren} pathname={pathname} linkClass={linkClass} />
             );
         }
 

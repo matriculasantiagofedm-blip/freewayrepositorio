@@ -174,11 +174,6 @@ export default function AllContractsPage() {
       }
 
       return true; // if no filter or search, show all (or all overdue if filter is set)
-    }).sort((a, b) => {
-        if (filter === 'overdue') {
-            return (b.debtInfo?.days || 0) - (a.debtInfo?.days || 0);
-        }
-        return 0; // No specific sort order for other views
     }) || [];
 
   return (

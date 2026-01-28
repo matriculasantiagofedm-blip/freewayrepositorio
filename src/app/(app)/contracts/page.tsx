@@ -152,6 +152,23 @@ export default function AllContractsPage() {
     overdue: 'Vencido',
   }
   
+  const getPaymentDeadline = (contract: Contract): Date | null => {
+    let deadline: Date | undefined | null = undefined;
+    if (contract.autoMotoDetails?.paymentDeadline) {
+        deadline = contract.autoMotoDetails.paymentDeadline;
+    } else if (contract.ampliacionesDetails?.paymentDeadline) {
+        deadline = contract.ampliacionesDetails.paymentDeadline;
+    }
+
+    if (deadline) {
+        const paymentDate = toDate(deadline);
+        if (paymentDate.getFullYear() > 1970) {
+            return paymentDate;
+        }
+    }
+    return null;
+  };
+
   const filteredContracts =
     allContracts?.map(contract => {
         const debtInfo = getDebtAgeInfo(contract);
@@ -204,6 +221,7 @@ export default function AllContractsPage() {
                                 <TableHead>Tipo</TableHead>
                                 <TableHead>Certificado</TableHead>
                                 <TableHead>Fecha de Creación</TableHead>
+                                {filter === 'overdue' && <TableHead>Fecha de Cancelación</TableHead>}
                                 {filter === 'overdue' && <TableHead>Antigüedad</TableHead>}
                                 {filter === 'overdue' && <TableHead className="text-right">Monto Adeudado</TableHead>}
                                 <TableHead className="text-right">Acciones</TableHead>
@@ -213,6 +231,7 @@ export default function AllContractsPage() {
                             {filteredContracts.map((contract) => {
                                 const isAnnulled = contract.status === 'expired';
                                 const balance = getBalance(contract);
+                                const paymentDeadline = getPaymentDeadline(contract);
                                 
                                 return (
                                 <TableRow key={contract.id} className={cn(isAnnulled && 'bg-muted/50 hover:bg-muted/60')}>
@@ -242,6 +261,11 @@ export default function AllContractsPage() {
                                     <TableCell>
                                         {format(toDate(contract.createdAt), 'dd/MM/yyyy', { locale: es })}
                                     </TableCell>
+                                    {filter === 'overdue' && (
+                                        <TableCell className='text-muted-foreground'>
+                                            {paymentDeadline ? format(paymentDeadline, 'dd/MM/yyyy') : 'N/A'}
+                                        </TableCell>
+                                    )}
                                     {filter === 'overdue' && (
                                         <TableCell>
                                             {contract.debtInfo && (

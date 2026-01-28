@@ -3,7 +3,7 @@ import { GanttChartSquare, Menu } from 'lucide-react';
 import Link from 'next/link';
 import { UserNav } from '@/components/user-nav';
 import { MainNav } from '@/components/main-nav';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -35,6 +35,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </Button>
             </SheetTrigger>
             <SheetContent side="left">
+              <SheetTitle className="sr-only">Menú de Navegación</SheetTitle>
               <nav className="grid gap-6 text-lg font-medium p-6">
                 <Link
                   href="/dashboard"

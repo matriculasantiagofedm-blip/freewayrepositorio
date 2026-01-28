@@ -87,7 +87,7 @@ export default function DashboardPage() {
       roles: ['Administrador']
     },
     {
-      title: 'Vencimientos',
+      title: 'Contratos por Cobrar',
       value: isLoading ? '...' : overdueDeadlines,
       icon: CalendarClock,
       href: '/contracts?filter=overdue',

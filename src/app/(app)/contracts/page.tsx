@@ -126,7 +126,7 @@ export default function AllContractsPage() {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <h1 className="font-headline text-3xl font-bold">{filter === 'overdue' ? 'Contratos Vencidos' : 'Todos los Contratos'}</h1>
+        <h1 className="font-headline text-3xl font-bold">{filter === 'overdue' ? 'Contratos por Cobrar' : 'Todos los Contratos'}</h1>
          <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -206,7 +206,7 @@ export default function AllContractsPage() {
                         {searchTerm ? 'No se encontraron contratos' : 'No hay contratos para mostrar'}
                     </h3>
                     <p className="mt-2 text-sm text-muted-foreground">
-                        {searchTerm ? 'Intenta con otro término de búsqueda.' : (filter === 'overdue' ? 'No hay contratos vencidos.' : 'Comienza creando un nuevo contrato para verlo aquí.')}
+                        {searchTerm ? 'Intenta con otro término de búsqueda.' : (filter === 'overdue' ? 'No hay contratos por cobrar.' : 'Comienza creando un nuevo contrato para verlo aquí.')}
                     </p>
                 </div>
             )}

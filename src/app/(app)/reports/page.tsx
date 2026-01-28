@@ -1,6 +1,6 @@
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ClipboardPenLine, ListChecks, Award, Gauge } from 'lucide-react';
+import { ClipboardPenLine, ListChecks, Award, Gauge, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,13 @@ export default function ReportsPage() {
   const { role } = useCurrentRole();
 
   const allReports = [
+    {
+      title: 'Todos los Contratos',
+      description: 'Ver, buscar y filtrar todos los contratos activos y pasados.',
+      href: '/contracts',
+      icon: FileText,
+      roles: ['Administrador'],
+    },
     {
       title: 'Reporte de Caja Diario',
       description: 'Genera el reporte de caja para el día actual.',

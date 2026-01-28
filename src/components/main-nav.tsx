@@ -14,12 +14,6 @@ const allLinks = [
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
   },
   {
-    href: '/contracts',
-    label: 'Todos los Contratos',
-    icon: FileText,
-    roles: ['Administrador'],
-  },
-  {
     href: '/clients',
     label: 'Clientes',
     icon: Users,

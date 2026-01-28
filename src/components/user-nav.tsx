@@ -10,18 +10,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, User, ChevronsUpDown } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { LogOut, User } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Skeleton } from './ui/skeleton';
 import { useAuth, useUser } from './firebase-provider';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export function UserNav() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const { role: currentUser } = useCurrentRole();
   const router = useRouter();
+  const userAvatar = PlaceHolderImages.find(img => img.id === 'user-avatar');
 
 
   const handleLogout = async () => {
@@ -38,7 +41,7 @@ export function UserNav() {
   }
 
   if (isUserLoading || (user && !currentUser)) {
-    return <Skeleton className="h-10 w-full" />;
+    return <Skeleton className="h-8 w-8 rounded-full" />;
   }
 
   if (!user) {
@@ -50,12 +53,13 @@ export function UserNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="w-full justify-between">
-            <div className='flex items-center gap-2'>
-                 <User className="h-4 w-4" />
-                 <span className="truncate">{currentUser || 'Usuario'}</span>
-            </div>
-            <ChevronsUpDown className="h-4 w-4 opacity-50" />
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={userAvatar?.imageUrl} alt={currentUser || 'Avatar'} />
+              <AvatarFallback>
+                <User />
+              </AvatarFallback>
+            </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>

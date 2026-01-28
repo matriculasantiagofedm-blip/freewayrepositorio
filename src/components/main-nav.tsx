@@ -2,12 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-} from '@/components/ui/sidebar';
-import { GanttChartSquare, FileText, Users, CarFront, ClipboardPenLine, RefreshCw, HandCoins, Gauge, Wrench } from 'lucide-react';
+import { GanttChartSquare, FileText, Users, ClipboardPenLine, RefreshCw, HandCoins, Gauge, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCurrentRole } from '@/hooks/use-current-role';
 
@@ -62,32 +57,35 @@ const allLinks = [
   },
 ];
 
-export function MainNav({ className }: { className?: string }) {
+export function MainNav({ className, isMobile = false }: { className?: string, isMobile?: boolean }) {
   const pathname = usePathname();
   const { role } = useCurrentRole();
 
-  if (!role) return null; // No mostrar nada si el rol no está definido
+  if (!role) return null;
 
   const links = allLinks.filter(link => link.roles.includes(role));
 
+  const navClass = isMobile
+    ? "grid items-start gap-4"
+    : "flex items-center gap-4 lg:gap-5";
+
+  const linkClass = isMobile
+    ? "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+    : "text-muted-foreground transition-colors hover:text-foreground";
+
+
   return (
-    <nav className={cn('flex flex-col h-full', className)}>
-      <SidebarMenu className="flex-1">
-        {links.map((link) => (
-          <SidebarMenuItem key={link.href}>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname === link.href || (link.href !== '/dashboard' && pathname.startsWith(link.href))}
-              tooltip={link.label}
-            >
-              <Link href={link.href}>
-                <link.icon />
-                <span>{link.label}</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        ))}
-      </SidebarMenu>
+    <nav className={cn(navClass, className)}>
+      {links.map((link) => (
+        <Link
+          key={link.href}
+          href={link.href}
+          className={cn(linkClass, (pathname === link.href || (link.href !== '/dashboard' && pathname.startsWith(link.href))) && (isMobile ? 'bg-muted text-primary' : 'text-foreground font-semibold'))}
+        >
+          {isMobile && <link.icon className="h-4 w-4" />}
+          {link.label}
+        </Link>
+      ))}
     </nav>
   );
 }

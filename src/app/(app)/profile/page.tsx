@@ -1,16 +1,20 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { User as UserIcon } from 'lucide-react';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useUser } from '@/components/firebase-provider';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const { role: currentUserRole } = useCurrentRole();
-  const userAvatar = PlaceHolderImages.find(img => img.id === 'user-avatar');
+
+  const getInitials = (role: string | null): string => {
+    if (!role) return '';
+    const words = role.split(' ');
+    return words.map(word => word[0]).join('').toUpperCase();
+  };
 
   if (isUserLoading) {
     return <p>Cargando perfil...</p>;
@@ -31,9 +35,8 @@ export default function ProfilePage() {
         <CardContent className="space-y-4">
             <div className="flex items-center gap-4">
                 <Avatar className="h-20 w-20">
-                    <AvatarImage src={userAvatar?.imageUrl} alt="User Avatar" />
-                    <AvatarFallback>
-                        <UserIcon className="h-10 w-10" />
+                    <AvatarFallback className="text-3xl">
+                        {currentUserRole ? getInitials(currentUserRole) : <UserIcon className="h-10 w-10" />}
                     </AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">

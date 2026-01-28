@@ -10,21 +10,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LogOut, User } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Skeleton } from './ui/skeleton';
 import { useAuth, useUser } from './firebase-provider';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export function UserNav() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const { role: currentUser } = useCurrentRole();
   const router = useRouter();
-  const userAvatar = PlaceHolderImages.find(img => img.id === 'user-avatar');
 
 
   const handleLogout = async () => {
@@ -39,6 +37,12 @@ export function UserNav() {
     // Esto asegura que todos los estados de sesión se limpien por completo.
     window.location.href = '/';
   }
+
+  const getInitials = (role: string | null): string => {
+    if (!role) return '';
+    const words = role.split(' ');
+    return words.map(word => word[0]).join('').toUpperCase();
+  };
 
   if (isUserLoading || (user && !currentUser)) {
     return <Skeleton className="h-8 w-8 rounded-full" />;
@@ -55,9 +59,8 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={userAvatar?.imageUrl} alt={currentUser || 'Avatar'} />
               <AvatarFallback>
-                <User />
+                {currentUser ? getInitials(currentUser) : <User />}
               </AvatarFallback>
             </Avatar>
         </Button>

@@ -89,7 +89,9 @@ export default function DashboardPage() {
 
   const activeContracts = contracts?.filter((c) => c.status === 'active').length || 0;
   
-  const overdueDeadlines = contracts?.filter(isOverdue).length || 0;
+  const overdueContracts = contracts?.filter(isOverdue) || [];
+  const overdueCount = overdueContracts.length;
+  const overdueTotalAmount = overdueContracts.reduce((sum, contract) => sum + getBalance(contract), 0);
   
   const totalClients = contracts ? new Set(contracts.map((c) => c.clientId)).size : 0;
 
@@ -99,21 +101,22 @@ export default function DashboardPage() {
       value: isLoading ? '...' : activeContracts,
       icon: FileText,
       href: '/contracts',
-      roles: ['Administrador']
+      roles: ['Administrador'],
     },
     {
       title: 'Contratos por Cobrar',
-      value: isLoading ? '...' : overdueDeadlines,
+      value: isLoading ? '...' : overdueCount,
+      secondaryValue: isLoading ? '...' : `B/. ${overdueTotalAmount.toFixed(2)}`,
       icon: CalendarClock,
       href: '/contracts?filter=overdue',
-      roles: ['Administrador']
+      roles: ['Administrador'],
     },
     {
       title: 'Clientes',
       value: isLoading ? '...' : totalClients,
       icon: Users,
       href: '/clients',
-       roles: ['Administrador']
+       roles: ['Administrador'],
     },
   ];
 
@@ -145,7 +148,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        {stats.map((stat) => (
+        {stats.map((stat: any) => (
             <Link key={stat.title} href={stat.href} className="no-underline">
                 <Card className="hover:shadow-lg transition-shadow">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -153,7 +156,10 @@ export default function DashboardPage() {
                     <stat.icon className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                    <div className="text-2xl font-bold">{stat.value}</div>
+                        <div className="flex items-baseline gap-2">
+                            <div className="text-2xl font-bold">{stat.value}</div>
+                            {stat.secondaryValue && <p className="text-sm font-semibold text-destructive">{stat.secondaryValue}</p>}
+                        </div>
                     </CardContent>
                 </Card>
             </Link>

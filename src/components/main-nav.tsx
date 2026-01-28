@@ -34,16 +34,23 @@ const navLinks = [
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
   },
   {
-    href: '/updates',
-    label: 'Actualizaciones',
-    icon: RefreshCw,
-    roles: ['Administrador', 'Ventas', 'Ventas Externas'],
-  },
-  {
-    href: '/cancellations',
-    label: 'Gestionar Saldos',
+    label: 'Pagos',
     icon: HandCoins,
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+    children: [
+        {
+            href: '/updates',
+            label: 'Actualizaciones',
+            icon: RefreshCw,
+            roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+        },
+        {
+            href: '/cancellations',
+            label: 'Gestionar Saldos',
+            icon: HandCoins,
+            roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+        }
+    ]
   },
   {
     label: 'Vehículos',

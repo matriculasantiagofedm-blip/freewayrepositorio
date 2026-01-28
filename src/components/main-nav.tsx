@@ -27,12 +27,6 @@ const navLinks = [
     icon: Users,
     roles: ['Administrador'],
   },
-   {
-    href: '/reports',
-    label: 'Reportes',
-    icon: ClipboardPenLine,
-    roles: ['Administrador', 'Ventas', 'Ventas Externas'],
-  },
   {
     label: 'Pagos',
     icon: HandCoins,
@@ -70,6 +64,12 @@ const navLinks = [
             roles: ['Administrador'],
         }
     ]
+  },
+  {
+    href: '/reports',
+    label: 'Reportes',
+    icon: ClipboardPenLine,
+    roles: ['Administrador', 'Ventas', 'Ventas Externas'],
   },
 ];
 

@@ -1,6 +1,6 @@
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ClipboardPenLine, ListChecks, Award, Gauge, FileText } from 'lucide-react';
+import { ClipboardPenLine, ListChecks, Award, Gauge, FileText, Banknote } from 'lucide-react';
 import Link from 'next/link';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,13 @@ export default function ReportsPage() {
       href: '/reports/daily-cash',
       icon: ClipboardPenLine,
       roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+    },
+    {
+      title: 'Reporte Financiero',
+      description: 'Analiza los ingresos por tipo de curso y período.',
+      href: '/reports/finance',
+      icon: Banknote,
+      roles: ['Administrador'],
     },
     {
       title: 'Listado de Pagos de Cancelación',

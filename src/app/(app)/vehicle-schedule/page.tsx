@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -10,13 +9,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useDb, useUser } from '@/components/firebase-provider';
-import { doc, setDoc, getDoc, Timestamp } from 'firebase/firestore';
-import type { VehicleSchedule, VehicleName, TimeSlot, InstructorName, VehicleAssignment } from '@/lib/types';
+import { doc, setDoc, getDoc, Timestamp, collection, query, where } from 'firebase/firestore';
+import type { VehicleSchedule, VehicleName, TimeSlot, InstructorName, VehicleAssignment, Contract } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, CalendarIcon, Clock } from 'lucide-react';
 import { format, startOfDay } from 'date-fns';
@@ -24,6 +23,7 @@ import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 
 const VEHICLES: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
 const TIME_SLOTS: { id: TimeSlot, label: string }[] = [
@@ -52,6 +52,27 @@ export default function VehicleSchedulePage() {
     const [isLoading, setIsLoading] = useState(true);
 
     const dateId = format(startOfDay(selectedDate), 'yyyy-MM-dd');
+
+    // Fetch contracts for student dropdown
+    const { data: contracts, isLoading: isLoadingContracts } = useCollection<Contract>(
+        useMemoQuery(() => {
+            if (!db) return null;
+            return query(collection(db, 'contracts'), where('status', '==', 'active'));
+        }, [db])
+    );
+    
+    // Memoize the list of students
+    const students = useMemo(() => {
+        if (!contracts) return [];
+        const studentMap = new Map<string, { name: string, id: string }>();
+        contracts.forEach(contract => {
+            // Using clientId as a key to ensure uniqueness even if names are the same
+            if (contract.clientName && !studentMap.has(contract.clientId)) {
+                studentMap.set(contract.clientId, { name: contract.clientName, id: contract.clientId });
+            }
+        });
+        return Array.from(studentMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+    }, [contracts]);
 
     useEffect(() => {
         if (!db || !dateId) return;
@@ -99,8 +120,8 @@ export default function VehicleSchedulePage() {
         const newScheduleData = new Map(scheduleData);
         const currentData = newScheduleData.get(key) || { instructor: '', studentName: '' };
         
-        // When 'none' is selected for instructor, store it as an empty string.
-        const finalValue = (field === 'instructor' && value === 'none') ? '' : value;
+        // When 'none' is selected, store it as an empty string.
+        const finalValue = value === 'none' ? '' : value;
 
         newScheduleData.set(key, { ...currentData, [field]: finalValue });
         setScheduleData(newScheduleData);
@@ -207,7 +228,7 @@ export default function VehicleSchedulePage() {
                                                     <TableCell key={vehicle} className="min-w-[250px]">
                                                         <div className="space-y-2">
                                                             <Select
-                                                                value={assignment.instructor || 'none'}
+                                                                value={assignment.instructor || ''}
                                                                 onValueChange={(value) => handleScheduleChange(vehicle, timeSlot, 'instructor', value)}
                                                             >
                                                                 <SelectTrigger>
@@ -220,11 +241,21 @@ export default function VehicleSchedulePage() {
                                                                     ))}
                                                                 </SelectContent>
                                                             </Select>
-                                                            <Input
-                                                                placeholder="Nombre del estudiante..."
-                                                                value={assignment.studentName}
-                                                                onChange={(e) => handleScheduleChange(vehicle, timeSlot, 'studentName', e.target.value)}
-                                                            />
+                                                            <Select
+                                                                value={assignment.studentName || ''}
+                                                                onValueChange={(value) => handleScheduleChange(vehicle, timeSlot, 'studentName', value)}
+                                                                disabled={isLoadingContracts}
+                                                            >
+                                                                <SelectTrigger>
+                                                                    <SelectValue placeholder={isLoadingContracts ? "Cargando..." : "Seleccionar estudiante..."} />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem value="none">Sin asignar</SelectItem>
+                                                                    {students.map(student => (
+                                                                        <SelectItem key={student.id} value={student.name}>{student.name}</SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
                                                         </div>
                                                     </TableCell>
                                                 )

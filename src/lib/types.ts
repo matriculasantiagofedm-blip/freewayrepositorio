@@ -181,8 +181,8 @@ export interface BookSalePayment {
   createdBy?: string;
 }
 
-export interface CarMileage {
-  name: 'Picanto Blanco' | 'Picanto Bronce' | 'Spark';
+export interface VehicleMileage {
+  name: VehicleName;
   initialMileage: number;
   finalMileage: number;
   distance: number;
@@ -192,7 +192,7 @@ export interface MileageLog {
   id: string;
   date: Timestamp;
   userId: string;
-  cars: CarMileage[];
+  cars: VehicleMileage[];
   totalDistance?: number;
 }
 
@@ -202,7 +202,7 @@ export interface MaintenanceLog {
   id: string;
   date: Timestamp;
   userId: string;
-  vehicle: 'Picanto Blanco' | 'Picanto Bronce' | 'Spark';
+  vehicle: VehicleName;
   mileage: number;
   type: MaintenanceType;
   description: string;
@@ -210,7 +210,7 @@ export interface MaintenanceLog {
   nextServiceDate?: Timestamp;
 }
 
-export type VehicleName = 'Picanto Blanco' | 'Picanto Bronce' | 'Spark';
+export type VehicleName = 'Picanto Blanco' | 'Picanto Bronce' | 'Spark' | 'Moto Roja' | 'Moto Negra';
 export type TimeSlot = '8am-10am' | '10am-12pm' | '1pm-3pm' | '3pm-5pm';
 export type InstructorName = 'Julisse Alonso' | 'Emmanuel Camargo' | 'Adrian Gordon' | '';
 

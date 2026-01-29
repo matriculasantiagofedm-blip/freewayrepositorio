@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, addDoc, serverTimestamp, query, where, orderBy, limit, getDocs, Timestamp } from 'firebase/firestore';
-import type { MileageLog } from '@/lib/types';
+import type { MileageLog, VehicleName } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Printer, Gauge, PlusCircle } from 'lucide-react';
 import { format, startOfDay } from 'date-fns';
@@ -15,16 +15,19 @@ import { es } from 'date-fns/locale';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
-type CarMileageState = {
-    name: string;
+type VehicleMileageState = {
+    name: VehicleName;
     initialMileage: string;
     finalMileage: string;
     distance: number;
 };
 
-const initialCars: CarMileageState[] = [
+const initialVehicles: VehicleMileageState[] = [
     { name: 'Picanto Blanco', initialMileage: '', finalMileage: '', distance: 0 },
     { name: 'Picanto Bronce', initialMileage: '', finalMileage: '', distance: 0 },
+    { name: 'Spark', initialMileage: '', finalMileage: '', distance: 0 },
+    { name: 'Moto Roja', initialMileage: '', finalMileage: '', distance: 0 },
+    { name: 'Moto Negra', initialMileage: '', finalMileage: '', distance: 0 },
 ];
 
 export default function MileageLogPage() {
@@ -32,7 +35,7 @@ export default function MileageLogPage() {
     const { user } = useUser();
     const { toast } = useToast();
 
-    const [cars, setCars] = useState<CarMileageState[]>(initialCars);
+    const [cars, setCars] = useState<VehicleMileageState[]>(initialVehicles);
     const [isSaving, setIsSaving] = useState(false);
     const [logSaved, setLogSaved] = useState(false);
     const [logDate, setLogDate] = useState(new Date());
@@ -177,7 +180,7 @@ export default function MileageLogPage() {
     };
 
     const handleNewLog = () => {
-        setCars(initialCars);
+        setCars(initialVehicles);
         setLogSaved(false);
     }
 

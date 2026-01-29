@@ -210,7 +210,7 @@
           "items": {
             "type": "object",
             "properties": {
-              "name": { "type": "string", "enum": ["Picanto Blanco", "Picanto Bronce", "Spark"] },
+              "name": { "type": "string", "enum": ["Picanto Blanco", "Picanto Bronce", "Spark", "Moto Roja", "Moto Negra"] },
               "initialMileage": { "type": "number" },
               "finalMileage": { "type": "number" },
               "distance": { "type": "number" }
@@ -230,7 +230,7 @@
         "id": { "type": "string" },
         "date": { "type": "string", "format": "date-time" },
         "userId": { "type": "string" },
-        "vehicle": { "type": "string", "enum": ["Picanto Blanco", "Picanto Bronce", "Spark"] },
+        "vehicle": { "type": "string", "enum": ["Picanto Blanco", "Picanto Bronce", "Spark", "Moto Roja", "Moto Negra"] },
         "mileage": { "type": "number" },
         "type": { "type": "string", "enum": ["Cambio de Aceite", "Revisión de Frenos", "Rotación de Llantas", "Mantenimiento General", "Otro"] },
         "description": { "type": "string" },
@@ -253,7 +253,7 @@
           "items": {
             "type": "object",
             "properties": {
-              "vehicle": { "type": "string", "enum": ["Picanto Blanco", "Picanto Bronce", "Spark"] },
+              "vehicle": { "type": "string", "enum": ["Picanto Blanco", "Picanto Bronce", "Spark", "Moto Roja", "Moto Negra"] },
               "timeSlot": { "type": "string", "enum": ["8am-10am", "10am-12pm", "1pm-3pm", "3pm-5pm"] },
               "instructor": { "type": "string", "enum": ["Julisse Alonso", "Emmanuel Camargo", "Adrian Gordon"] },
               "studentName": { "type": "string" }

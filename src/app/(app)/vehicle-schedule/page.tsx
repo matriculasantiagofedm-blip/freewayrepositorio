@@ -17,15 +17,17 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { doc, setDoc, getDoc, Timestamp, collection, query, where } from 'firebase/firestore';
 import type { VehicleSchedule, VehicleName, TimeSlot, InstructorName, VehicleAssignment, Contract } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, CalendarIcon, Clock } from 'lucide-react';
+import { Loader2, Save, CalendarIcon, Clock, ChevronsUpDown } from 'lucide-react';
 import { format, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
-const VEHICLES: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
+const VEHICLES: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Moto Roja', 'Moto Negra'];
 const TIME_SLOTS: { id: TimeSlot, label: string }[] = [
     { id: '8am-10am', label: '8:00am - 10:00am' },
     { id: '10am-12pm', label: '10:00am - 12:00pm' },
@@ -34,11 +36,81 @@ const TIME_SLOTS: { id: TimeSlot, label: string }[] = [
 ];
 const INSTRUCTORS: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon'];
 
-// Using a Map for efficient updates
 type ScheduleData = Map<string, { instructor: InstructorName; studentName: string }>;
 
 function generateScheduleKey(vehicle: VehicleName, timeSlot: TimeSlot): string {
     return `${vehicle}-${timeSlot}`;
+}
+
+interface StudentComboboxProps {
+    students: { id: string, name: string }[];
+    value: string;
+    onChange: (value: string) => void;
+    disabled?: boolean;
+}
+
+function StudentCombobox({ students, value, onChange, disabled }: StudentComboboxProps) {
+    const [open, setOpen] = useState(false);
+    const [searchValue, setSearchValue] = useState("");
+
+    const filteredStudents = useMemo(() => {
+        if (!searchValue) return students;
+        return students.filter(student =>
+            student.name.toLowerCase().includes(searchValue.toLowerCase())
+        );
+    }, [students, searchValue]);
+
+    const handleSelect = (studentName: string) => {
+        onChange(studentName);
+        setOpen(false);
+        setSearchValue('');
+    };
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-full justify-between font-normal"
+                    disabled={disabled}
+                >
+                    {value || "Seleccionar estudiante..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="p-0">
+                <Input
+                    placeholder="Buscar estudiante..."
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    className="m-1 w-[calc(100%-0.5rem)]"
+                />
+                <ScrollArea className="h-[200px]">
+                    <div className="p-1">
+                        <Button
+                            variant="ghost"
+                            className="w-full justify-start"
+                            onClick={() => handleSelect('')}
+                        >
+                            Sin asignar
+                        </Button>
+                        {filteredStudents.map(student => (
+                            <Button
+                                key={student.id}
+                                variant="ghost"
+                                className={cn("w-full justify-start", value === student.name && "font-bold bg-accent")}
+                                onClick={() => handleSelect(student.name)}
+                            >
+                                {student.name}
+                            </Button>
+                        ))}
+                    </div>
+                </ScrollArea>
+            </PopoverContent>
+        </Popover>
+    );
 }
 
 export default function VehicleSchedulePage() {
@@ -53,7 +125,6 @@ export default function VehicleSchedulePage() {
 
     const dateId = format(startOfDay(selectedDate), 'yyyy-MM-dd');
 
-    // Fetch contracts for student dropdown
     const { data: contracts, isLoading: isLoadingContracts } = useCollection<Contract>(
         useMemoQuery(() => {
             if (!db) return null;
@@ -61,12 +132,10 @@ export default function VehicleSchedulePage() {
         }, [db])
     );
     
-    // Memoize the list of students
     const students = useMemo(() => {
         if (!contracts) return [];
         const studentMap = new Map<string, { name: string, id: string }>();
         contracts.forEach(contract => {
-            // Using clientId as a key to ensure uniqueness even if names are the same
             if (contract.clientName && !studentMap.has(contract.clientId)) {
                 studentMap.set(contract.clientId, { name: contract.clientName, id: contract.clientId });
             }
@@ -91,7 +160,7 @@ export default function VehicleSchedulePage() {
                     });
                     setScheduleData(newScheduleData);
                 } else {
-                    setScheduleData(new Map()); // Reset if no data found
+                    setScheduleData(new Map());
                 }
             } catch (serverError: any) {
                 if (serverError.code === 'permission-denied') {
@@ -118,9 +187,8 @@ export default function VehicleSchedulePage() {
     const handleScheduleChange = (vehicle: VehicleName, timeSlot: TimeSlot, field: 'instructor' | 'studentName', value: string) => {
         const key = generateScheduleKey(vehicle, timeSlot);
         const newScheduleData = new Map(scheduleData);
-        const currentData = newScheduleData.get(key) || { instructor: '', studentName: '' };
+        const currentData = newScheduleData.get(key) || { instructor: '' as InstructorName, studentName: '' };
         
-        // When 'none' is selected, store it as an empty string.
         const finalValue = value === 'none' ? '' : value;
 
         newScheduleData.set(key, { ...currentData, [field]: finalValue });
@@ -136,8 +204,8 @@ export default function VehicleSchedulePage() {
 
         const assignments: VehicleAssignment[] = [];
         scheduleData.forEach((value, key) => {
-            const [vehicle, timeSlot] = key.split('-') as [VehicleName, TimeSlot];
-            if (value.instructor || value.studentName) { // Only save if there's data
+            const [vehicle, timeSlot] = key.split(/-(.*)/s) as [VehicleName, TimeSlot];
+            if (value.instructor || value.studentName) {
                 assignments.push({ vehicle, timeSlot, ...value });
             }
         });
@@ -241,21 +309,12 @@ export default function VehicleSchedulePage() {
                                                                     ))}
                                                                 </SelectContent>
                                                             </Select>
-                                                            <Select
-                                                                value={assignment.studentName || ''}
-                                                                onValueChange={(value) => handleScheduleChange(vehicle, timeSlot, 'studentName', value)}
+                                                            <StudentCombobox
+                                                                students={students}
+                                                                value={assignment.studentName}
+                                                                onChange={(value) => handleScheduleChange(vehicle, timeSlot, 'studentName', value)}
                                                                 disabled={isLoadingContracts}
-                                                            >
-                                                                <SelectTrigger>
-                                                                    <SelectValue placeholder={isLoadingContracts ? "Cargando..." : "Seleccionar estudiante..."} />
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                    <SelectItem value="none">Sin asignar</SelectItem>
-                                                                    {students.map(student => (
-                                                                        <SelectItem key={student.id} value={student.name}>{student.name}</SelectItem>
-                                                                    ))}
-                                                                </SelectContent>
-                                                            </Select>
+                                                            />
                                                         </div>
                                                     </TableCell>
                                                 )

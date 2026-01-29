@@ -20,7 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, addDoc, query, orderBy, Timestamp } from 'firebase/firestore';
-import type { MaintenanceLog, MaintenanceType } from '@/lib/types';
+import type { MaintenanceLog, MaintenanceType, VehicleName } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Wrench, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
@@ -32,7 +32,7 @@ import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const maintenanceSchema = z.object({
-  vehicle: z.enum(['Picanto Blanco', 'Picanto Bronce', 'Spark']),
+  vehicle: z.enum(['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Moto Roja', 'Moto Negra']),
   date: z.date({ required_error: 'La fecha es requerida.' }),
   mileage: z.coerce.number().min(1, 'El kilometraje debe ser mayor a 0.'),
   type: z.enum(['Cambio de Aceite', 'Revisión de Frenos', 'Rotación de Llantas', 'Mantenimiento General', 'Otro']),
@@ -44,6 +44,8 @@ const maintenanceSchema = z.object({
 type MaintenanceFormValues = z.infer<typeof maintenanceSchema>;
 
 const maintenanceTypes: MaintenanceType[] = ['Cambio de Aceite', 'Revisión de Frenos', 'Rotación de Llantas', 'Mantenimiento General', 'Otro'];
+const vehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Moto Roja', 'Moto Negra'];
+
 
 function toDate(date: any): Date {
   if (!date) return new Date(0);
@@ -86,16 +88,13 @@ export default function MaintenancePage() {
 
         setIsSaving(true);
         
-        // Create a new object for Firestore, excluding `nextServiceDate` if it's undefined
-        // and converting dates to Timestamps.
         const { nextServiceDate, ...restOfData } = data;
         const logData: any = {
             ...restOfData,
             userId: user.uid,
-            date: Timestamp.fromDate(data.date), // Use the service date from the form
+            date: Timestamp.fromDate(data.date),
         };
         
-        // Only add nextServiceDate if it's provided by the user
         if (nextServiceDate) {
             logData.nextServiceDate = Timestamp.fromDate(nextServiceDate);
         }
@@ -146,9 +145,7 @@ export default function MaintenancePage() {
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <SelectTrigger><SelectValue placeholder="Seleccionar vehículo..." /></SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="Picanto Blanco">Picanto Blanco</SelectItem>
-                                                <SelectItem value="Picanto Bronce">Picanto Bronce</SelectItem>
-                                                <SelectItem value="Spark">Spark</SelectItem>
+                                                {vehicles.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
                                         {fieldState.error && <p className="text-sm text-destructive">{fieldState.error.message}</p>}

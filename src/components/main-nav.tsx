@@ -58,16 +58,16 @@ const navLinks = [
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     children: [
         {
-            href: '/mileage-log',
-            label: 'Kilometraje',
-            icon: Gauge,
-            roles: ['Administrador', 'Ventas', 'Ventas Externas'],
-        },
-         {
             href: '/vehicle-schedule',
             label: 'Asignación de Horarios',
             icon: CalendarClock,
             roles: ['Administrador'],
+        },
+        {
+            href: '/mileage-log',
+            label: 'Kilometraje',
+            icon: Gauge,
+            roles: ['Administrador', 'Ventas', 'Ventas Externas'],
         },
         {
             href: '/maintenance',

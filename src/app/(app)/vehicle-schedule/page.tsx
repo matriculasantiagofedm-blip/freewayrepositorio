@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -228,7 +228,7 @@ export default function VehicleSchedulePage() {
                                                     <TableCell key={vehicle} className="min-w-[250px]">
                                                         <div className="space-y-2">
                                                             <Select
-                                                                value={assignment.instructor || ''}
+                                                                value={assignment.instructor || 'none'}
                                                                 onValueChange={(value) => handleScheduleChange(vehicle, timeSlot, 'instructor', value)}
                                                             >
                                                                 <SelectTrigger>

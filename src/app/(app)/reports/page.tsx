@@ -1,6 +1,6 @@
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ClipboardPenLine, ListChecks, Award, Gauge, FileText, Banknote } from 'lucide-react';
+import { ClipboardPenLine, ListChecks, Award, Gauge, FileText, Banknote, CalendarClock } from 'lucide-react';
 import Link from 'next/link';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Button } from '@/components/ui/button';
@@ -50,6 +50,13 @@ export default function ReportsPage() {
       href: '/reports/mileage-log',
       icon: Gauge,
       roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+    },
+    {
+      title: 'Reporte de Asignación de Horarios',
+      description: 'Ver el horario de vehículos e instructores por día.',
+      href: '/reports/vehicle-schedule',
+      icon: CalendarClock,
+      roles: ['Administrador'],
     },
   ];
 

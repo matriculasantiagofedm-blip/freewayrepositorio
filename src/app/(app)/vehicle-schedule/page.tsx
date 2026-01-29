@@ -99,7 +99,10 @@ export default function VehicleSchedulePage() {
         const newScheduleData = new Map(scheduleData);
         const currentData = newScheduleData.get(key) || { instructor: '', studentName: '' };
         
-        newScheduleData.set(key, { ...currentData, [field]: value });
+        // When 'none' is selected for instructor, store it as an empty string.
+        const finalValue = (field === 'instructor' && value === 'none') ? '' : value;
+
+        newScheduleData.set(key, { ...currentData, [field]: finalValue });
         setScheduleData(newScheduleData);
     };
 
@@ -113,7 +116,9 @@ export default function VehicleSchedulePage() {
         const assignments: VehicleAssignment[] = [];
         scheduleData.forEach((value, key) => {
             const [vehicle, timeSlot] = key.split('-') as [VehicleName, TimeSlot];
-            assignments.push({ vehicle, timeSlot, ...value });
+            if (value.instructor || value.studentName) { // Only save if there's data
+                assignments.push({ vehicle, timeSlot, ...value });
+            }
         });
 
         const scheduleDoc: Omit<VehicleSchedule, 'id'> = {
@@ -202,16 +207,16 @@ export default function VehicleSchedulePage() {
                                                     <TableCell key={vehicle} className="min-w-[250px]">
                                                         <div className="space-y-2">
                                                             <Select
-                                                                value={assignment.instructor}
+                                                                value={assignment.instructor || 'none'}
                                                                 onValueChange={(value) => handleScheduleChange(vehicle, timeSlot, 'instructor', value)}
                                                             >
                                                                 <SelectTrigger>
                                                                     <SelectValue placeholder="Seleccionar instructor..." />
                                                                 </SelectTrigger>
                                                                 <SelectContent>
-                                                                    <SelectItem value="">Sin asignar</SelectItem>
+                                                                    <SelectItem value="none">Sin asignar</SelectItem>
                                                                     {INSTRUCTORS.map(name => (
-                                                                        <SelectItem key={name} value={name}>{name}</SelectItem>
+                                                                        name && <SelectItem key={name} value={name}>{name}</SelectItem>
                                                                     ))}
                                                                 </SelectContent>
                                                             </Select>

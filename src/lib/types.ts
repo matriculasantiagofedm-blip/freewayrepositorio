@@ -209,3 +209,21 @@ export interface MaintenanceLog {
   cost: number;
   nextServiceDate?: Timestamp;
 }
+
+export type VehicleName = 'Picanto Blanco' | 'Picanto Bronce' | 'Spark';
+export type TimeSlot = '8am-10am' | '10am-12pm' | '1pm-3pm' | '3pm-5pm';
+export type InstructorName = 'Julisse Alonso' | 'Emmanuel Camargo' | 'Adrian Gordon' | '';
+
+export interface VehicleAssignment {
+  vehicle: VehicleName;
+  timeSlot: TimeSlot;
+  instructor: InstructorName;
+  studentName: string;
+}
+
+export interface VehicleSchedule {
+  id: string;
+  date: Timestamp;
+  userId: string;
+  assignments: VehicleAssignment[];
+}

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import * as React from 'react';
-import { GanttChartSquare, Users, ClipboardPenLine, RefreshCw, HandCoins, Gauge, Wrench, Car, BookMarked } from 'lucide-react';
+import { GanttChartSquare, Users, ClipboardPenLine, RefreshCw, HandCoins, Gauge, Wrench, Car, BookMarked, CalendarClock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Button } from '@/components/ui/button';
@@ -62,6 +62,12 @@ const navLinks = [
             label: 'Kilometraje',
             icon: Gauge,
             roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+        },
+         {
+            href: '/vehicle-schedule',
+            label: 'Asignación de Horarios',
+            icon: CalendarClock,
+            roles: ['Administrador'],
         },
         {
             href: '/maintenance',

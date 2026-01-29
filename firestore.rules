@@ -107,6 +107,15 @@ service cloud.firestore {
       allow read, create, update, delete: if isSignedIn();
     }
 
+    /**
+     * @description Manages daily vehicle schedules.
+     * @path /vehicle_schedules/{scheduleId}
+     */
+    match /vehicle_schedules/{scheduleId} {
+      allow read, create, update: if isSignedIn();
+      allow delete: if false;
+    }
+
     // Allow authenticated users to read/write the contract folio counter.
     match /counters/contract_folio {
         allow read, write: if isSignedIn();
@@ -133,5 +142,3 @@ service cloud.firestore {
     }
   }
 }
-
-    

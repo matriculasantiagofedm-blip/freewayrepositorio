@@ -239,6 +239,31 @@
       },
       "required": ["id", "date", "userId", "vehicle", "mileage", "type", "description", "cost"]
     },
+    "VehicleSchedule": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Vehicle Schedule",
+      "type": "object",
+      "description": "Represents the daily schedule of vehicle assignments.",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "userId": { "type": "string" },
+        "assignments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "vehicle": { "type": "string", "enum": ["Picanto Blanco", "Picanto Bronce", "Spark"] },
+              "timeSlot": { "type": "string", "enum": ["8am-10am", "10am-12pm", "1pm-3pm", "3pm-5pm"] },
+              "instructor": { "type": "string", "enum": ["Julisse Alonso", "Emmanuel Camargo", "Adrian Gordon"] },
+              "studentName": { "type": "string" }
+            },
+            "required": ["vehicle", "timeSlot"]
+          }
+        }
+      },
+      "required": ["id", "date", "userId", "assignments"]
+    },
     "Counter": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Counter",
@@ -390,6 +415,22 @@
         }
       },
       {
+        "path": "/vehicle_schedules/{scheduleId}",
+        "definition": {
+          "entityName": "VehicleSchedule",
+          "schema": {
+            "$ref": "#/backend/entities/VehicleSchedule"
+          },
+          "description": "Stores daily vehicle assignments.",
+          "params": [
+            {
+              "name": "scheduleId",
+              "description": "The unique identifier for the schedule, typically the date in YYYY-MM-DD format."
+            }
+          ]
+        }
+      },
+      {
         "path": "/counters/{counterId}",
         "definition": {
           "entityName": "Counter",
@@ -406,8 +447,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore data structure has been updated to separate payment types into distinct collections: `cancellation_payments`, `update_payments`, and now `book_sale_payments`. This simplifies security rules and improves query performance for reports. By not having a single large `payments` collection, rules no longer need complex conditions to check the payment `type`, which was causing permission errors. Each new collection has simple, direct security rules, making the system more robust and easier to debug. A new 'daily_reports' collection has been added to persist the state of the daily cash report, allowing users to save their work and continue later. A `mileage_logs` collection is added to store vehicle mileage records. A `maintenance_logs` collection is added to store vehicle maintenance records."
+    "reasoning": "The Firestore data structure has been updated to separate payment types into distinct collections: `cancellation_payments`, `update_payments`, and now `book_sale_payments`. This simplifies security rules and improves query performance for reports. By not having a single large `payments` collection, rules no longer need complex conditions to check the payment `type`, which was causing permission errors. Each new collection has simple, direct security rules, making the system more robust and easier to debug. A new 'daily_reports' collection has been added to persist the state of the daily cash report, allowing users to save their work and continue later. A `mileage_logs` collection is added to store vehicle mileage records. A `maintenance_logs` collection is added to store vehicle maintenance records. A `vehicle_schedules` collection is added to manage daily vehicle assignments."
   }
 }
-
-    

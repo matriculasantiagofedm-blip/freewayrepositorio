@@ -141,7 +141,6 @@ export interface Transaction {
   contrato: string;
   cedula: string;
   clientName: string;
-  phone: string;
   service: string;
   amount: number;
   paymentType: string;

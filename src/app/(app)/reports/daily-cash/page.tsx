@@ -142,11 +142,13 @@ export default function DailyCashReportPage() {
             let amount: number = 0;
             let paymentColumns: any = { cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 };
             
+            let details: any = {};
             if (contract.type === 'Curso Deluxe') {
-                paymentType = contract.deluxeDetails?.paymentType || 'cash';
+                details = contract.deluxeDetails;
+                paymentType = details?.paymentType || 'cash';
                 amount = 15.00; // Matrícula for Deluxe
             } else {
-                 const details: any = contract.autoMotoDetails || contract.ampliacionesDetails || {};
+                 details = contract.autoMotoDetails || contract.ampliacionesDetails || {};
                  if (details.downPayment > 0) {
                     paymentType = details.paymentType || 'cash';
                     amount = details.downPayment || 0;
@@ -158,14 +160,12 @@ export default function DailyCashReportPage() {
             }
             
             if(amount > 0) {
-                 const details: any = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
                  fetchedTransactions.push({
                     id: contract.id,
                     invoice: '',
                     contrato: String(contract.folioNumber || ''),
                     cedula: details.studentIdNumber || '',
                     clientName: contract.clientName || '',
-                    phone: details.studentPhone1 || '',
                     service: contract.type === 'Curso Deluxe' ? 'Matrícula Deluxe' : `Abono Contrato ${contract.type}`,
                     amount: amount,
                     paymentType: paymentType,
@@ -183,7 +183,6 @@ export default function DailyCashReportPage() {
                 contrato: String(payment.cancellationFolio || '').padStart(6, '0'),
                 cedula: payment.studentIdNumber || '',
                 clientName: payment.clientName || '',
-                phone: '',
                 service: 'Cancelación/Abono de Saldo',
                 amount: payment.amount || 0,
                 paymentType: 'cash', // Assuming cash, as it's not specified
@@ -200,7 +199,6 @@ export default function DailyCashReportPage() {
                 contrato: String(payment.updateFolio || '').padStart(6, '0'),
                 cedula: payment.studentIdNumber || '',
                 clientName: payment.clientName || '',
-                phone: '',
                 service: 'Actualización de Certificado',
                 amount: payment.amount || 0,
                 paymentType: 'cash', // Assuming cash
@@ -217,7 +215,6 @@ export default function DailyCashReportPage() {
                 contrato: String(payment.bookSaleFolio || '').padStart(6, '0'),
                 cedula: payment.studentIdNumber || '',
                 clientName: payment.clientName || '',
-                phone: '', // Not collected for book sales
                 service: `Venta de Libro: ${payment.bookTitle}`,
                 amount: payment.amount || 0,
                 paymentType: 'cash', // Assuming cash
@@ -333,7 +330,6 @@ export default function DailyCashReportPage() {
         contrato: '',
         cedula: '',
         clientName: '',
-        phone: '',
         service: '',
         amount: 0,
         paymentType: '',
@@ -482,7 +478,6 @@ export default function DailyCashReportPage() {
                           <TableHead className="border border-black p-1 text-center font-bold print:p-0.5 min-w-[100px]">Contrato</TableHead>
                           <TableHead className="border border-black p-1 text-center font-bold print:p-0.5 min-w-[120px]">Cédula</TableHead>
                           <TableHead className="border border-black p-1 text-center font-bold print:p-0.5 min-w-[220px]">Nombre del cliente</TableHead>
-                          <TableHead className="border border-black p-1 text-center font-bold print:p-0.5 min-w-[110px]">Teléfono</TableHead>
                           <TableHead className="border border-black p-1 text-center font-bold print:p-0.5 min-w-[200px]">Servicio</TableHead>
                           <TableHead className="border border-black p-1 text-center font-bold print:p-0.5">Monto</TableHead>
                           <TableHead className="border border-black p-1 text-center font-bold print:p-0.5 min-w-[120px]">Tipo de Pago</TableHead>
@@ -503,7 +498,6 @@ export default function DailyCashReportPage() {
                             <TableCell className="border border-black p-0"><Input type="text" value={transaction.contrato} onChange={e => handleTransactionChange(index, 'contrato', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30 print:text-[8px] print:p-0.5" readOnly /></TableCell>
                             <TableCell className="border border-black p-0"><Input type="text" value={transaction.cedula} onChange={e => handleTransactionChange(index, 'cedula', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30 print:text-[8px] print:p-0.5" readOnly /></TableCell>
                             <TableCell className="border border-black p-0"><Input type="text" value={transaction.clientName} onChange={e => handleTransactionChange(index, 'clientName', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30 print:text-[8px] print:p-0.5" readOnly /></TableCell>
-                            <TableCell className="border border-black p-0"><Input type="text" value={transaction.phone} onChange={e => handleTransactionChange(index, 'phone', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30 print:text-[8px] print:p-0.5" readOnly /></TableCell>
                             <TableCell className="border border-black p-0"><Input type="text" value={transaction.service} onChange={e => handleTransactionChange(index, 'service', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30 print:text-[8px] print:p-0.5" readOnly /></TableCell>
                             <TableCell className="border border-black p-0"><Input type="number" value={transaction.amount} onChange={e => handleTransactionChange(index, 'amount', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 print:text-[8px] print:p-0.5" /></TableCell>
                             <TableCell className="border border-black p-0">
@@ -525,13 +519,13 @@ export default function DailyCashReportPage() {
                         ))}
                         {isDataLoaded && filteredTransactions.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={16} className="text-center text-muted-foreground p-4 border border-black">
+                                <TableCell colSpan={15} className="text-center text-muted-foreground p-4 border border-black">
                                     No se encontraron transacciones para la fecha seleccionada.
                                 </TableCell>
                             </TableRow>
                         )}
                         <TableRow className="font-bold">
-                            <TableCell colSpan={9} className="text-right p-1 border border-black print:text-[8px] print:p-0.5">TOTAL</TableCell>
+                            <TableCell colSpan={8} className="text-right p-1 border border-black print:text-[8px] print:p-0.5">TOTAL</TableCell>
                             <TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">{currencyFormatter.format(transactionTotals.cash)}</TableCell>
                             <TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">{currencyFormatter.format(transactionTotals.debit)}</TableCell>
                             <TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">{currencyFormatter.format(transactionTotals.credit)}</TableCell>

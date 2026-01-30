@@ -465,16 +465,16 @@ export default function DailyCashReportPage() {
         <div className="space-y-4">
             <div>
                 <div className="overflow-x-auto print:overflow-visible">
-                    <Table className="min-w-full text-[10px] print:text-[8px] border-collapse border border-black">
+                    <Table className="min-w-full text-xs print:text-[8px] border-collapse border border-black">
                     <TableHeader>
                         <TableRow>
                           <TableHead className="border border-black p-1 text-center font-bold print:p-0.5">#</TableHead>
-                          <TableHead className="border border-black p-1 text-center font-bold print:p-0.5 min-w-[100px]">Contrato</TableHead>
-                          <TableHead className="border border-black p-1 text-center font-bold print:p-0.5 min-w-[120px]">Cédula</TableHead>
-                          <TableHead className="border border-black p-1 text-center font-bold print:p-0.5 min-w-[220px]">Nombre del cliente</TableHead>
-                          <TableHead className="border border-black p-1 text-center font-bold print:p-0.5 min-w-[200px]">Servicio</TableHead>
+                          <TableHead className="border border-black p-1 text-center font-bold print:p-0.5 min-w-[80px]">Contrato</TableHead>
+                          <TableHead className="border border-black p-1 text-center font-bold print:p-0.5 min-w-[80px]">Cédula</TableHead>
+                          <TableHead className="border border-black p-1 text-center font-bold print:p-0.5 min-w-[120px]">Nombre del cliente</TableHead>
+                          <TableHead className="border border-black p-1 text-center font-bold print:p-0.5 min-w-[120px]">Servicio</TableHead>
                           <TableHead className="border border-black p-1 text-center font-bold print:p-0.5">Monto</TableHead>
-                          <TableHead className="border border-black p-1 text-center font-bold print:p-0.5 min-w-[120px]">Tipo de Pago</TableHead>
+                          <TableHead className="border border-black p-1 text-center font-bold print:p-0.5 min-w-[80px]">Tipo de Pago</TableHead>
                           <TableHead className="border border-black p-1 text-center font-bold print:p-0.5">Efectivo</TableHead>
                           <TableHead className="border border-black p-1 text-center font-bold print:p-0.5">T.Débito</TableHead>
                           <TableHead className="border border-black p-1 text-center font-bold print:p-0.5">T.Crédito</TableHead>

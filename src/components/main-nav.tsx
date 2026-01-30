@@ -47,6 +47,10 @@ const navLinks = [
             roles: ['Administrador', 'Ventas', 'Ventas Externas'],
         },
         {
+            separator: true,
+            roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+        },
+        {
             href: '/book-sales',
             label: 'Venta de Libros',
             icon: BookMarked,
@@ -63,6 +67,10 @@ const navLinks = [
             href: '/vehicle-schedule',
             label: 'Asignación de Horarios',
             icon: CalendarClock,
+            roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+        },
+        {
+            separator: true,
             roles: ['Administrador', 'Ventas', 'Ventas Externas'],
         },
         {
@@ -118,7 +126,7 @@ const navLinks = [
           icon: Banknote,
           roles: ['Administrador'],
       },
-      {
+       {
           separator: true,
           roles: ['Administrador'],
       },

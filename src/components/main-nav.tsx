@@ -119,6 +119,10 @@ const navLinks = [
           roles: ['Administrador'],
       },
       {
+          separator: true,
+          roles: ['Administrador'],
+      },
+      {
           href: '/reports/mileage-log',
           label: 'Kilometraje',
           icon: Gauge,

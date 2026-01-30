@@ -51,6 +51,7 @@ export interface DeluxeContractDetails {
   theoreticalClassSchedule?: 'Lunes' | 'Miércoles';
   theoreticalClasses?: (Date | undefined)[];
   classSchedules?: { date?: Date; time?: string }[];
+  paymentType?: string;
 }
 
 export interface AutoMotoContractDetails {
@@ -71,6 +72,7 @@ export interface AutoMotoContractDetails {
   practicalClassSchedules?: { date?: Date; time?: string }[];
   motoPracticalClassSchedules?: { date?: Date; time?: string }[];
   paidInFull?: boolean;
+  paymentType?: string;
 }
 
 
@@ -86,6 +88,7 @@ export interface AmpliacionesContractDetails {
     selectedPlans?: { name: string; price: number }[];
     theoreticalClassDate?: Date;
     theoreticalClassTime?: string;
+    paymentType?: string;
 }
 
 export interface Contract {

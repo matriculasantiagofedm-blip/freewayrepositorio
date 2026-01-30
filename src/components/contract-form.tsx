@@ -253,6 +253,15 @@ const specialCombinations = [
   { combo: ['D', 'E1', 'E2', 'E3'].sort(), price: 95.00 },
 ];
 
+const paymentTypes = [
+    { value: 'Efectivo', label: 'Efectivo' },
+    { value: 'T.Débito', label: 'T.Débito' },
+    { value: 'T.Crédito', label: 'T.Crédito' },
+    { value: 'GLOBAL', label: 'GLOBAL' },
+    { value: 'BAC', label: 'BAC' },
+    { value: 'GENERAL', label: 'GENERAL' },
+    { value: 'Cheques', label: 'Cheques' },
+];
 
 // --- Componente del Formulario ---
 
@@ -288,6 +297,7 @@ export function ContractForm() {
         paymentInstallments: Array(6).fill(undefined),
         theoreticalClasses: Array(10).fill(undefined),
         classSchedules: Array(6).fill({ date: undefined, time: '' }),
+        paymentType: 'Efectivo',
       },
       autoMotoDetails: {
         studentIdNumber: '',
@@ -301,6 +311,7 @@ export function ContractForm() {
         practicalClassSchedules: [],
         motoPracticalClassSchedules: [],
         paidInFull: false,
+        paymentType: 'Efectivo',
       },
        ampliacionesDetails: {
         studentIdNumber: '',
@@ -311,6 +322,7 @@ export function ContractForm() {
         courseValue: 0,
         downPayment: 0,
         balance: 0,
+        paymentType: 'Efectivo',
       }
     },
   });
@@ -748,26 +760,43 @@ export function ContractForm() {
             <CardContent className="space-y-6">
                 {contractType === 'Curso Deluxe' && (
                     <div className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="deluxeDetails.paymentDetails"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Plan de Pago</FormLabel>
-                                <Select onValueChange={(value) => {
-                                    field.onChange(value);
-                                    const amount = value === 'Premium B/ 201.00' ? 33.50 : 45.00;
-                                    form.setValue('deluxeDetails.paymentAmount', amount);
-                                }} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar plan..." /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="Premium B/ 201.00">Premium - 6 cuotas de B/. 33.50</SelectItem>
-                                        <SelectItem value="Deluxe B/ 270.00">Deluxe - 6 cuotas de B/. 45.00</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                </FormItem>
-                            )}
-                        />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="deluxeDetails.paymentDetails"
+                                render={({ field }) => (
+                                    <FormItem>
+                                    <FormLabel>Plan de Pago</FormLabel>
+                                    <Select onValueChange={(value) => {
+                                        field.onChange(value);
+                                        const amount = value === 'Premium B/ 201.00' ? 33.50 : 45.00;
+                                        form.setValue('deluxeDetails.paymentAmount', amount);
+                                    }} defaultValue={field.value}>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar plan..." /></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="Premium B/ 201.00">Premium - 6 cuotas de B/. 33.50</SelectItem>
+                                            <SelectItem value="Deluxe B/ 270.00">Deluxe - 6 cuotas de B/. 45.00</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="deluxeDetails.paymentType"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Tipo de Pago (Matrícula)</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar tipo..." /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                                {paymentTypes.map(pt => <SelectItem key={pt.value} value={pt.value}>{pt.label}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
                         <div>
                             <FormLabel>Fechas de Pago (6 Cuotas Quincenales)</FormLabel>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
@@ -888,7 +917,7 @@ export function ContractForm() {
                                 )}
                             />
                         </div>
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4 items-end'>
+                        <div className='grid grid-cols-1 md:grid-cols-3 gap-4 items-end'>
                             <FormField
                                 control={form.control}
                                 name="autoMotoDetails.paidInFull"
@@ -924,6 +953,21 @@ export function ContractForm() {
                                                 <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
                                             </PopoverContent>
                                         </Popover>
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="autoMotoDetails.paymentType"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Tipo de Abono</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                                {paymentTypes.map(pt => <SelectItem key={pt.value} value={pt.value}>{pt.label}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
                                     </FormItem>
                                 )}
                             />
@@ -1053,6 +1097,21 @@ export function ContractForm() {
                             )}
                         />
                         </div>
+                        <FormField
+                            control={form.control}
+                            name="ampliacionesDetails.paymentType"
+                            render={({ field }) => (
+                                <FormItem className="max-w-xs">
+                                    <FormLabel>Tipo de Abono</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            {paymentTypes.map(pt => <SelectItem key={pt.value} value={pt.value}>{pt.label}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </FormItem>
+                            )}
+                        />
                      </div>
                  )}
             </CardContent>

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import * as React from 'react';
-import { GanttChartSquare, Users, ClipboardPenLine, RefreshCw, HandCoins, Gauge, Wrench, Car, BookMarked, CalendarClock } from 'lucide-react';
+import { GanttChartSquare, Users, ClipboardPenLine, RefreshCw, HandCoins, Gauge, Wrench, Car, BookMarked, CalendarClock, FileText, Banknote, ListChecks, Award } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Button } from '@/components/ui/button';
@@ -78,10 +78,53 @@ const navLinks = [
     ]
   },
   {
-    href: '/reports',
     label: 'Reportes',
     icon: ClipboardPenLine,
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+    children: [
+      {
+          href: '/contracts',
+          label: 'Todos los Contratos',
+          icon: FileText,
+          roles: ['Administrador'],
+      },
+      {
+          href: '/reports/daily-cash',
+          label: 'Caja Diario',
+          icon: ClipboardPenLine,
+          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+      },
+      {
+          href: '/reports/finance',
+          label: 'Financiero',
+          icon: Banknote,
+          roles: ['Administrador'],
+      },
+      {
+          href: '/reports/cancellation-payments',
+          label: 'Cancelaciones',
+          icon: ListChecks,
+          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+      },
+      {
+          href: '/reports/update-payments',
+          label: 'Actualizaciones',
+          icon: Award,
+          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+      },
+      {
+          href: '/reports/mileage-log',
+          label: 'Kilometraje',
+          icon: Gauge,
+          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+      },
+      {
+          href: '/reports/vehicle-schedule',
+          label: 'Horarios',
+          icon: CalendarClock,
+          roles: ['Administrador'],
+      },
+    ]
   },
 ];
 

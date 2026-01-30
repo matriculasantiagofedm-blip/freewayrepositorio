@@ -138,53 +138,40 @@ export default function DailyCashReportPage() {
         }
 
         docsToProcess(contractsSnapshot).map((doc: any) => ({ id: doc.id, ...doc.data() } as Contract)).filter((contract: Contract) => contract.status !== 'expired').forEach((contract: Contract) => {
+            let paymentType: string = '';
+            let amount: number = 0;
+            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 };
+            
             if (contract.type === 'Curso Deluxe') {
-                const paymentType = contract.deluxeDetails?.paymentType || '';
-                const amount = 15.00;
-                const paymentColumns: any = { cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 };
-                
-                if (Object.keys(paymentColumns).includes(paymentType)) {
-                    paymentColumns[paymentType as keyof typeof paymentColumns] = amount;
-                }
+                paymentType = contract.deluxeDetails?.paymentType || '';
+                amount = 15.00; // Matrícula for Deluxe
+            } else {
+                 const details: any = contract.autoMotoDetails || contract.ampliacionesDetails || {};
+                 if (details.downPayment > 0) {
+                    paymentType = details.paymentType || '';
+                    amount = details.downPayment || 0;
+                 }
+            }
 
-                fetchedTransactions.push({
-                    id: `${contract.id}-matricula`,
+            if(amount > 0 && Object.keys(paymentColumns).includes(paymentType)) {
+                paymentColumns[paymentType as keyof typeof paymentColumns] = amount;
+            }
+            
+            if(amount > 0) {
+                 const details: any = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
+                 fetchedTransactions.push({
+                    id: contract.id,
                     invoice: '',
                     contrato: String(contract.folioNumber || ''),
-                    cedula: contract.deluxeDetails?.studentIdNumber || '',
+                    cedula: details.studentIdNumber || '',
                     clientName: contract.clientName || '',
-                    phone: contract.deluxeDetails?.studentPhone1 || '',
-                    service: 'Matrícula Deluxe',
+                    phone: details.studentPhone1 || '',
+                    service: contract.type === 'Curso Deluxe' ? 'Matrícula Deluxe' : `Abono Contrato ${contract.type}`,
                     amount: amount,
                     paymentType: paymentType,
                     createdBy: contract.createdBy,
                     ...paymentColumns,
                 });
-            } else {
-                 const details: any = contract.autoMotoDetails || contract.ampliacionesDetails || {};
-                 if (details.downPayment > 0) {
-                     const paymentType = details.paymentType || '';
-                     const amount = details.downPayment || 0;
-                     const paymentColumns: any = { cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 };
-                     
-                     if (Object.keys(paymentColumns).includes(paymentType)) {
-                         paymentColumns[paymentType as keyof typeof paymentColumns] = amount;
-                     }
-
-                     fetchedTransactions.push({
-                        id: contract.id,
-                        invoice: '',
-                        contrato: String(contract.folioNumber || ''),
-                        cedula: details.studentIdNumber || '',
-                        clientName: contract.clientName || '',
-                        phone: details.studentPhone1 || '',
-                        service: `Abono Contrato ${contract.type}`,
-                        amount: amount,
-                        paymentType: paymentType,
-                        createdBy: contract.createdBy,
-                        ...paymentColumns,
-                    });
-                 }
             }
         });
 
@@ -199,9 +186,9 @@ export default function DailyCashReportPage() {
                 phone: '',
                 service: 'Cancelación/Abono de Saldo',
                 amount: payment.amount || 0,
-                paymentType: '',
+                paymentType: 'cash', // Assuming cash, as it's not specified
                 createdBy: payment.createdBy,
-                cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
+                cash: payment.amount || 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
             });
         });
 
@@ -216,9 +203,9 @@ export default function DailyCashReportPage() {
                 phone: '',
                 service: 'Actualización de Certificado',
                 amount: payment.amount || 0,
-                paymentType: '',
+                paymentType: 'cash', // Assuming cash
                 createdBy: payment.createdBy,
-                cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
+                cash: payment.amount || 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
             });
         });
 
@@ -233,9 +220,9 @@ export default function DailyCashReportPage() {
                 phone: '', // Not collected for book sales
                 service: `Venta de Libro: ${payment.bookTitle}`,
                 amount: payment.amount || 0,
-                paymentType: '',
+                paymentType: 'cash', // Assuming cash
                 createdBy: payment.createdBy,
-                cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
+                cash: payment.amount || 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
             });
         });
 
@@ -477,20 +464,33 @@ export default function DailyCashReportPage() {
                     <Table className="min-w-full text-[10px] print:text-base border-collapse border border-black">
                     <TableHeader>
                         <TableRow>
-                        {['#', 'FACTURA', 'Contrato', 'Cédula', 'Nombre del cliente', 'Teléfono', 'Servicio', 'Monto', 'Tipo de Pago', 'Efectivo', 'T.Débito', 'T.Crédito', 'GLOBAL', 'BAC', 'GENERAL', 'Cheques'].map(header => (
-                            <TableHead key={header} className="border border-black p-1 text-center font-bold print:text-[10px] print:p-0.5">{header}</TableHead>
-                        ))}
+                          <TableHead className="border border-black p-1 text-center font-bold print:text-[10px] print:p-0.5">#</TableHead>
+                          <TableHead className="border border-black p-1 text-center font-bold print:text-[10px] print:p-0.5">FACTURA</TableHead>
+                          <TableHead className="border border-black p-1 text-center font-bold print:text-[10px] print:p-0.5 min-w-[90px]">Contrato</TableHead>
+                          <TableHead className="border border-black p-1 text-center font-bold print:text-[10px] print:p-0.5 min-w-[110px]">Cédula</TableHead>
+                          <TableHead className="border border-black p-1 text-center font-bold print:text-[10px] print:p-0.5 min-w-[200px]">Nombre del cliente</TableHead>
+                          <TableHead className="border border-black p-1 text-center font-bold print:text-[10px] print:p-0.5 min-w-[100px]">Teléfono</TableHead>
+                          <TableHead className="border border-black p-1 text-center font-bold print:text-[10px] print:p-0.5 min-w-[180px]">Servicio</TableHead>
+                          <TableHead className="border border-black p-1 text-center font-bold print:text-[10px] print:p-0.5">Monto</TableHead>
+                          <TableHead className="border border-black p-1 text-center font-bold print:text-[10px] print:p-0.5 min-w-[110px]">Tipo de Pago</TableHead>
+                          <TableHead className="border border-black p-1 text-center font-bold print:text-[10px] print:p-0.5">Efectivo</TableHead>
+                          <TableHead className="border border-black p-1 text-center font-bold print:text-[10px] print:p-0.5">T.Débito</TableHead>
+                          <TableHead className="border border-black p-1 text-center font-bold print:text-[10px] print:p-0.5">T.Crédito</TableHead>
+                          <TableHead className="border border-black p-1 text-center font-bold print:text-[10px] print:p-0.5">GLOBAL</TableHead>
+                          <TableHead className="border border-black p-1 text-center font-bold print:text-[10px] print:p-0.5">BAC</TableHead>
+                          <TableHead className="border border-black p-1 text-center font-bold print:text-[10px] print:p-0.5">GENERAL</TableHead>
+                          <TableHead className="border border-black p-1 text-center font-bold print:text-[10px] print:p-0.5">Cheques</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {filteredTransactions.map((transaction, index) => (
                         <TableRow key={transaction.id}>
                             <TableCell className="border border-black p-1 text-center print:text-[10px] print:p-0.5">{index + 1}</TableCell>
-                            <TableCell className="border border-black p-0 print:w-16"><Input type="text" value={transaction.invoice} onChange={e => handleTransactionChange(index, 'invoice', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 print:text-[10px] print:p-0.5" /></TableCell>
+                            <TableCell className="border border-black p-0"><Input type="text" value={transaction.invoice} onChange={e => handleTransactionChange(index, 'invoice', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 print:text-[10px] print:p-0.5" /></TableCell>
                             <TableCell className="border border-black p-0"><Input type="text" value={transaction.contrato} onChange={e => handleTransactionChange(index, 'contrato', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30 print:text-[10px] print:p-0.5" readOnly /></TableCell>
-                            <TableCell className="border border-black p-0 print:w-20"><Input type="text" value={transaction.cedula} onChange={e => handleTransactionChange(index, 'cedula', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30 print:text-[10px] print:p-0.5" readOnly /></TableCell>
+                            <TableCell className="border border-black p-0"><Input type="text" value={transaction.cedula} onChange={e => handleTransactionChange(index, 'cedula', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30 print:text-[10px] print:p-0.5" readOnly /></TableCell>
                             <TableCell className="border border-black p-0"><Input type="text" value={transaction.clientName} onChange={e => handleTransactionChange(index, 'clientName', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30 print:text-[10px] print:p-0.5" readOnly /></TableCell>
-                            <TableCell className="border border-black p-0 print:w-20"><Input type="text" value={transaction.phone} onChange={e => handleTransactionChange(index, 'phone', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30 print:text-[10px] print:p-0.5" readOnly /></TableCell>
+                            <TableCell className="border border-black p-0"><Input type="text" value={transaction.phone} onChange={e => handleTransactionChange(index, 'phone', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30 print:text-[10px] print:p-0.5" readOnly /></TableCell>
                             <TableCell className="border border-black p-0"><Input type="text" value={transaction.service} onChange={e => handleTransactionChange(index, 'service', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30 print:text-[10px] print:p-0.5" readOnly /></TableCell>
                             <TableCell className="border border-black p-0"><Input type="number" value={transaction.amount} onChange={e => handleTransactionChange(index, 'amount', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 print:text-[10px] print:p-0.5" /></TableCell>
                             <TableCell className="border border-black p-0">

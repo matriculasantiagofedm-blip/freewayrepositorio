@@ -275,10 +275,10 @@ export default function DailyCashReportPage() {
   
   const grandTotals = useMemo(() => {
     const totalFacturado = Object.values(transactionTotals).reduce((sum, val) => sum + val, 0);
-    const totalEfectivoMenosGastos = cashBreakdownTotals.total - totalExpenses;
+    const totalEfectivoMenosGastos = transactionTotals.cash - totalExpenses;
     const diferencia = totalEfectivoMenosGastos - totalDeposit;
     return { totalFacturado, totalEfectivoMenosGastos, diferencia };
-  }, [transactionTotals, cashBreakdownTotals, totalExpenses, totalDeposit]);
+  }, [transactionTotals, totalExpenses, totalDeposit]);
   
 
   const handleTransactionChange = (index: number, field: keyof Transaction, value: any) => {
@@ -576,7 +576,7 @@ export default function DailyCashReportPage() {
                             <TableRow><TableCell className="border border-black p-1">BAC</TableCell><TableCell className="border border-black p-1 text-right">{currencyFormatter.format(transactionTotals.bac)}</TableCell></TableRow>
                             <TableRow><TableCell className="border border-black p-1">GENERAL</TableCell><TableCell className="border border-black p-1 text-right">{currencyFormatter.format(transactionTotals.general)}</TableCell></TableRow>
                             <TableRow><TableCell className="border border-black p-1">Cheques</TableCell><TableCell className="border border-black p-1 text-right">{currencyFormatter.format(transactionTotals.cheques)}</TableCell></TableRow>
-                            <TableRow><TableCell className="border border-black p-1">Total Efectivo</TableCell><TableCell className="border border-black p-1 text-right">{currencyFormatter.format(cashBreakdownTotals.total)}</TableCell></TableRow>
+                            <TableRow><TableCell className="border border-black p-1">Total Efectivo</TableCell><TableCell className="border border-black p-1 text-right">{currencyFormatter.format(transactionTotals.cash)}</TableCell></TableRow>
                             <TableRow className="font-bold"><TableCell className="border border-black p-1">Total Facturado</TableCell><TableCell className="border border-black p-1 text-right">{currencyFormatter.format(grandTotals.totalFacturado)}</TableCell></TableRow>
                         </TableBody>
                     </Table>

@@ -32,10 +32,10 @@ import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const maintenanceSchema = z.object({
-  vehicle: z.enum(['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Moto Roja', 'Moto Negra']),
+  vehicle: z.enum(['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Moto Roja', 'Moto Negra'], { required_error: "Debe seleccionar un vehículo."}),
   date: z.date({ required_error: 'La fecha es requerida.' }),
   mileage: z.coerce.number().min(1, 'El kilometraje debe ser mayor a 0.'),
-  type: z.enum(['Cambio de Aceite', 'Revisión de Frenos', 'Rotación de Llantas', 'Mantenimiento General', 'Otro']),
+  type: z.enum(['Cambio de Aceite', 'Revisión de Frenos', 'Rotación de Llantas', 'Mantenimiento General', 'Otro'], { required_error: "Debe seleccionar un tipo."}),
   description: z.string().min(1, 'La descripción es requerida.'),
   cost: z.coerce.number().min(0, 'El costo no puede ser negativo.'),
   nextServiceDate: z.date().optional(),
@@ -70,6 +70,7 @@ export default function MaintenancePage() {
             date: new Date(),
             mileage: 0,
             cost: 0,
+            description: '',
         },
     });
 
@@ -142,7 +143,7 @@ export default function MaintenancePage() {
                                 render={({ field, fieldState }) => (
                                     <div className="space-y-2">
                                         <Label>Vehículo</Label>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <Select onValueChange={field.onChange} value={field.value}>
                                             <SelectTrigger><SelectValue placeholder="Seleccionar vehículo..." /></SelectTrigger>
                                             <SelectContent>
                                                 {vehicles.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
@@ -184,7 +185,7 @@ export default function MaintenancePage() {
                                 render={({ field, fieldState }) => (
                                     <div className="space-y-2">
                                         <Label>Tipo de Mantenimiento</Label>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <Select onValueChange={field.onChange} value={field.value}>
                                             <SelectTrigger><SelectValue placeholder="Seleccionar tipo..." /></SelectTrigger>
                                             <SelectContent>
                                                 {maintenanceTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}

@@ -1407,7 +1407,17 @@ export function ContractForm() {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Hora de Clase Teórica</FormLabel>
-                                    <FormControl><Input placeholder="Ej: 9:00 AM" {...field} /></FormControl>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Seleccionar hora..." />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="8:00 am a 10:00 am">8:00 am a 10:00 am</SelectItem>
+                                            <SelectItem value="3:00 pm a 5:00 pm">3:00 pm a 5:00 pm</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </FormItem>
                             )}
                         />

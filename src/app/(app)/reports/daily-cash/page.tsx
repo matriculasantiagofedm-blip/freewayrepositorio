@@ -139,6 +139,14 @@ export default function DailyCashReportPage() {
 
         docsToProcess(contractsSnapshot).map((doc: any) => ({ id: doc.id, ...doc.data() } as Contract)).filter((contract: Contract) => contract.status !== 'expired').forEach((contract: Contract) => {
             if (contract.type === 'Curso Deluxe') {
+                const paymentType = contract.deluxeDetails?.paymentType || '';
+                const amount = 15.00;
+                const paymentColumns: any = { cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 };
+                
+                if (Object.keys(paymentColumns).includes(paymentType)) {
+                    paymentColumns[paymentType as keyof typeof paymentColumns] = amount;
+                }
+
                 fetchedTransactions.push({
                     id: `${contract.id}-matricula`,
                     invoice: '',
@@ -147,14 +155,22 @@ export default function DailyCashReportPage() {
                     clientName: contract.clientName || '',
                     phone: contract.deluxeDetails?.studentPhone1 || '',
                     service: 'Matrícula Deluxe',
-                    amount: 15.00,
-                    paymentType: '',
+                    amount: amount,
+                    paymentType: paymentType,
                     createdBy: contract.createdBy,
-                    cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
+                    ...paymentColumns,
                 });
             } else {
                  const details: any = contract.autoMotoDetails || contract.ampliacionesDetails || {};
                  if (details.downPayment > 0) {
+                     const paymentType = details.paymentType || '';
+                     const amount = details.downPayment || 0;
+                     const paymentColumns: any = { cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 };
+                     
+                     if (Object.keys(paymentColumns).includes(paymentType)) {
+                         paymentColumns[paymentType as keyof typeof paymentColumns] = amount;
+                     }
+
                      fetchedTransactions.push({
                         id: contract.id,
                         invoice: '',
@@ -163,10 +179,10 @@ export default function DailyCashReportPage() {
                         clientName: contract.clientName || '',
                         phone: details.studentPhone1 || '',
                         service: `Abono Contrato ${contract.type}`,
-                        amount: details.downPayment || 0,
-                        paymentType: '',
+                        amount: amount,
+                        paymentType: paymentType,
                         createdBy: contract.createdBy,
-                        cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
+                        ...paymentColumns,
                     });
                  }
             }

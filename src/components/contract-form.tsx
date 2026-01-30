@@ -254,13 +254,13 @@ const specialCombinations = [
 ];
 
 const paymentTypes = [
-    { value: 'Efectivo', label: 'Efectivo' },
-    { value: 'T.Débito', label: 'T.Débito' },
-    { value: 'T.Crédito', label: 'T.Crédito' },
-    { value: 'GLOBAL', label: 'GLOBAL' },
-    { value: 'BAC', label: 'BAC' },
-    { value: 'GENERAL', label: 'GENERAL' },
-    { value: 'Cheques', label: 'Cheques' },
+    { value: 'cash', label: 'Efectivo' },
+    { value: 'debit', label: 'T.Débito' },
+    { value: 'credit', label: 'T.Crédito' },
+    { value: 'global', label: 'GLOBAL' },
+    { value: 'bac', label: 'BAC' },
+    { value: 'general', label: 'GENERAL' },
+    { value: 'cheques', label: 'Cheques' },
 ];
 
 // --- Componente del Formulario ---
@@ -297,7 +297,7 @@ export function ContractForm() {
         paymentInstallments: Array(6).fill(undefined),
         theoreticalClasses: Array(10).fill(undefined),
         classSchedules: Array(6).fill({ date: undefined, time: '' }),
-        paymentType: 'Efectivo',
+        paymentType: 'cash',
       },
       autoMotoDetails: {
         studentIdNumber: '',
@@ -311,7 +311,7 @@ export function ContractForm() {
         practicalClassSchedules: [],
         motoPracticalClassSchedules: [],
         paidInFull: false,
-        paymentType: 'Efectivo',
+        paymentType: 'cash',
       },
        ampliacionesDetails: {
         studentIdNumber: '',
@@ -322,7 +322,7 @@ export function ContractForm() {
         courseValue: 0,
         downPayment: 0,
         balance: 0,
-        paymentType: 'Efectivo',
+        paymentType: 'cash',
       }
     },
   });

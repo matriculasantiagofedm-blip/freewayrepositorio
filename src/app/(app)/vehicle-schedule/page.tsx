@@ -51,21 +51,35 @@ interface StudentComboboxProps {
 
 function StudentCombobox({ students, value, onChange, disabled }: StudentComboboxProps) {
     const [open, setOpen] = useState(false);
+    const [inputValue, setInputValue] = useState(value || "");
 
-    const filteredStudents = useMemo(() => {
-        if (!value) return students;
-        return students.filter(student =>
-            student.name.toLowerCase().includes(value.toLowerCase())
-        );
-    }, [students, value]);
+    useEffect(() => {
+        setInputValue(value || "");
+    }, [value]);
 
     const handleSelect = (studentName: string) => {
         onChange(studentName);
+        setInputValue(studentName);
         setOpen(false);
     };
 
+    const handleOpenChange = (isOpen: boolean) => {
+        if (!isOpen) {
+            onChange(inputValue);
+        }
+        setOpen(isOpen);
+    }
+
+    const filteredStudents = useMemo(() => {
+        if (!inputValue) return students;
+        return students.filter(student =>
+            student.name.toLowerCase().includes(inputValue.toLowerCase())
+        );
+    }, [students, inputValue]);
+
+
     return (
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover open={open} onOpenChange={handleOpenChange}>
             <PopoverTrigger asChild>
                  <Button
                     variant="outline"
@@ -83,8 +97,8 @@ function StudentCombobox({ students, value, onChange, disabled }: StudentCombobo
             <PopoverContent className="p-0 w-[--radix-popover-trigger-width]">
                  <Input
                     placeholder="Buscar o escribir nombre..."
-                    value={value || ''}
-                    onChange={(e) => onChange(e.target.value)}
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
                     className="m-1 w-[calc(100%-0.5rem)] h-9"
                     autoFocus
                 />
@@ -101,15 +115,15 @@ function StudentCombobox({ students, value, onChange, disabled }: StudentCombobo
                             <Button
                                 key={student.id}
                                 variant="ghost"
-                                className={cn("w-full justify-start text-left h-auto py-1.5", value === student.name && "font-bold bg-accent")}
+                                className={cn("w-full justify-start text-left h-auto py-1.5", inputValue === student.name && "font-bold bg-accent")}
                                 onClick={() => handleSelect(student.name)}
                             >
                                 {student.name}
                             </Button>
                         ))}
-                         {filteredStudents.length === 0 && value && (
+                         {filteredStudents.length === 0 && inputValue && (
                             <div className="p-2 text-sm text-muted-foreground text-center">
-                                Se guardará: "{value}"
+                                Se guardará: "{inputValue}"
                             </div>
                         )}
                     </div>

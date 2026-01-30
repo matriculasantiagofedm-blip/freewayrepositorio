@@ -61,7 +61,7 @@ const navLinks = [
             href: '/vehicle-schedule',
             label: 'Asignación de Horarios',
             icon: CalendarClock,
-            roles: ['Administrador'],
+            roles: ['Administrador', 'Ventas', 'Ventas Externas'],
         },
         {
             href: '/mileage-log',

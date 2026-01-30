@@ -89,18 +89,6 @@ const navLinks = [
           roles: ['Administrador'],
       },
       {
-          href: '/reports/daily-cash',
-          label: 'Caja Diario',
-          icon: ClipboardPenLine,
-          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
-      },
-      {
-          href: '/reports/finance',
-          label: 'Financiero',
-          icon: Banknote,
-          roles: ['Administrador'],
-      },
-      {
           href: '/reports/cancellation-payments',
           label: 'Cancelaciones',
           icon: ListChecks,
@@ -111,6 +99,18 @@ const navLinks = [
           label: 'Actualizaciones',
           icon: Award,
           roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+      },
+      {
+          href: '/reports/daily-cash',
+          label: 'Caja Diario',
+          icon: ClipboardPenLine,
+          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+      },
+      {
+          href: '/reports/finance',
+          label: 'Financiero',
+          icon: Banknote,
+          roles: ['Administrador'],
       },
       {
           href: '/reports/mileage-log',

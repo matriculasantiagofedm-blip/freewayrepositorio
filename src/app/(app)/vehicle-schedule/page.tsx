@@ -51,41 +51,42 @@ interface StudentComboboxProps {
 
 function StudentCombobox({ students, value, onChange, disabled }: StudentComboboxProps) {
     const [open, setOpen] = useState(false);
-    const [searchValue, setSearchValue] = useState("");
 
     const filteredStudents = useMemo(() => {
-        if (!searchValue) return students;
+        if (!value) return students;
         return students.filter(student =>
-            student.name.toLowerCase().includes(searchValue.toLowerCase())
+            student.name.toLowerCase().includes(value.toLowerCase())
         );
-    }, [students, searchValue]);
+    }, [students, value]);
 
     const handleSelect = (studentName: string) => {
         onChange(studentName);
         setOpen(false);
-        setSearchValue('');
     };
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-                <Button
+                 <Button
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    className="w-full justify-between font-normal"
+                    className="w-full justify-between font-normal text-left h-10"
                     disabled={disabled}
                 >
-                    {value || "Seleccionar estudiante..."}
+                    <span className="truncate">
+                        {value || "Buscar o escribir nombre..."}
+                    </span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="p-0">
-                <Input
-                    placeholder="Buscar estudiante..."
-                    value={searchValue}
-                    onChange={(e) => setSearchValue(e.target.value)}
-                    className="m-1 w-[calc(100%-0.5rem)]"
+            <PopoverContent className="p-0 w-[--radix-popover-trigger-width]">
+                 <Input
+                    placeholder="Buscar o escribir nombre..."
+                    value={value || ''}
+                    onChange={(e) => onChange(e.target.value)}
+                    className="m-1 w-[calc(100%-0.5rem)] h-9"
+                    autoFocus
                 />
                 <ScrollArea className="h-[200px]">
                     <div className="p-1">
@@ -100,12 +101,17 @@ function StudentCombobox({ students, value, onChange, disabled }: StudentCombobo
                             <Button
                                 key={student.id}
                                 variant="ghost"
-                                className={cn("w-full justify-start", value === student.name && "font-bold bg-accent")}
+                                className={cn("w-full justify-start text-left h-auto py-1.5", value === student.name && "font-bold bg-accent")}
                                 onClick={() => handleSelect(student.name)}
                             >
                                 {student.name}
                             </Button>
                         ))}
+                         {filteredStudents.length === 0 && value && (
+                            <div className="p-2 text-sm text-muted-foreground text-center">
+                                Se guardará: "{value}"
+                            </div>
+                        )}
                     </div>
                 </ScrollArea>
             </PopoverContent>

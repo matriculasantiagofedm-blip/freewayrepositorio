@@ -12,7 +12,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import { Separator } from './ui/separator';
 
 const navLinks = [
   {
@@ -101,6 +103,10 @@ const navLinks = [
           roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
       {
+          separator: true,
+          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+      },
+      {
           href: '/reports/daily-cash',
           label: 'Caja Diario',
           icon: ClipboardPenLine,
@@ -166,16 +172,21 @@ function HoverDropdownMenu({ link, visibleChildren, pathname, linkClass }: any) 
         onMouseEnter={handleOpen}
         onMouseLeave={handleClose}
       >
-        {visibleChildren.map((child: any) => (
-          <DropdownMenuItem key={child.href} asChild>
-            <Link
-              href={child.href!}
-              className={cn('cursor-pointer', pathname.startsWith(child.href!) && 'font-semibold text-primary')}
-            >
-              {child.label}
-            </Link>
-          </DropdownMenuItem>
-        ))}
+        {visibleChildren.map((child: any, index: number) => {
+          if (child.separator) {
+            return <DropdownMenuSeparator key={`sep-${index}`} />;
+          }
+          return (
+            <DropdownMenuItem key={child.href} asChild>
+                <Link
+                href={child.href!}
+                className={cn('cursor-pointer', pathname.startsWith(child.href!) && 'font-semibold text-primary')}
+                >
+                {child.label}
+                </Link>
+            </DropdownMenuItem>
+          );
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -208,7 +219,7 @@ export function MainNav({ className, isMobile = false }: { className?: string, i
             if (visibleChildren.length === 0) return null;
 
             if (isMobile) {
-              const isChildActive = visibleChildren.some(child => pathname.startsWith(child.href!));
+              const isChildActive = visibleChildren.some(child => child.href && pathname.startsWith(child.href!));
               return (
                 <React.Fragment key={link.label}>
                    <span className={cn(linkClass, 'font-semibold', isChildActive ? 'text-primary' : 'text-foreground' )}>
@@ -216,15 +227,19 @@ export function MainNav({ className, isMobile = false }: { className?: string, i
                       {link.label}
                   </span>
                   <div className="grid auto-rows-auto items-start pl-7 text-base">
-                    {visibleChildren.map(child => (
+                    {visibleChildren.map((child, index) => {
+                      if (child.separator) {
+                        return <Separator key={`sep-mobile-${index}`} className="my-2" />;
+                      }
+                      return (
                        <Link
                         key={child.href}
                         href={child.href!}
-                        className={cn("rounded-lg py-2 text-muted-foreground transition-all hover:text-primary", pathname.startsWith(child.href!) && 'text-primary font-semibold')}
+                        className={cn("rounded-lg py-2 text-muted-foreground transition-all hover:text-primary", child.href && pathname.startsWith(child.href!) && 'text-primary font-semibold')}
                       >
                         {child.label}
                       </Link>
-                    ))}
+                    )})}
                   </div>
                 </React.Fragment>
               )

@@ -30,7 +30,7 @@ function toDate(date: any): Date {
 
 export function AmpliacionesContractTemplate({ contract }: { contract: Contract }) {
   const ampliacionesDetails = contract.ampliacionesDetails;
-  const creationDate = toDate(contract.createdAt);
+  const creationDate = contract.createdAt ? toDate(contract.createdAt) : new Date();
   const paymentDeadline = toDate(ampliacionesDetails?.paymentDeadline);
   const balance = ampliacionesDetails?.balance || 0;
   
@@ -107,7 +107,7 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
 
             <h3 className="font-bold">SEXTA: ACEPTACIÓN</h3>
             <p className="text-center text-[10px]">
-                En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, a los <Value>{format(creationDate, 'd', { locale: es })}</Value> días del mes de <Value>{format(creationDate, 'LLLL', { locale: es })}</Value> de <Value>{format(creationDate, 'yyyy', { locale: es })}</Value>.
+                En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, a los <Value>{format(creationDate, 'd', { locale: es })}</Value> días del mes de <Value>{format(creationDate, 'LLLL', { locale: es })}</Value> de <Value>{format(creationDate, 'yyyy', { locale: es })}</Value>, a las <Value>{format(creationDate, 'p', { locale: es })}</Value>.
             </p>
         </div>
 

@@ -137,7 +137,6 @@ export interface Certificate {
 
 export interface Transaction {
   id: string;
-  invoice: string;
   contrato: string;
   cedula: string;
   clientName: string;

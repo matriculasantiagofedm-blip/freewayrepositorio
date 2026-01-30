@@ -162,7 +162,6 @@ export default function DailyCashReportPage() {
             if(amount > 0) {
                  fetchedTransactions.push({
                     id: contract.id,
-                    invoice: '',
                     contrato: String(contract.folioNumber || ''),
                     cedula: details.studentIdNumber || '',
                     clientName: contract.clientName || '',
@@ -179,7 +178,6 @@ export default function DailyCashReportPage() {
             const payment = doc.data() as Payment;
             fetchedTransactions.push({
                 id: doc.id,
-                invoice: '',
                 contrato: String(payment.cancellationFolio || '').padStart(6, '0'),
                 cedula: payment.studentIdNumber || '',
                 clientName: payment.clientName || '',
@@ -195,7 +193,6 @@ export default function DailyCashReportPage() {
             const payment = doc.data() as Payment;
             fetchedTransactions.push({
                 id: doc.id,
-                invoice: '',
                 contrato: String(payment.updateFolio || '').padStart(6, '0'),
                 cedula: payment.studentIdNumber || '',
                 clientName: payment.clientName || '',
@@ -211,7 +208,6 @@ export default function DailyCashReportPage() {
             const payment = doc.data() as BookSalePayment;
             fetchedTransactions.push({
                 id: doc.id,
-                invoice: '',
                 contrato: String(payment.bookSaleFolio || '').padStart(6, '0'),
                 cedula: payment.studentIdNumber || '',
                 clientName: payment.clientName || '',
@@ -326,7 +322,6 @@ export default function DailyCashReportPage() {
       ...transactions,
       {
         id: `manual-${transactions.length + 1}`,
-        invoice: '',
         contrato: '',
         cedula: '',
         clientName: '',
@@ -474,7 +469,6 @@ export default function DailyCashReportPage() {
                     <TableHeader>
                         <TableRow>
                           <TableHead className="border border-black p-1 text-center font-bold print:p-0.5">#</TableHead>
-                          <TableHead className="border border-black p-1 text-center font-bold print:p-0.5">FACTURA</TableHead>
                           <TableHead className="border border-black p-1 text-center font-bold print:p-0.5 min-w-[100px]">Contrato</TableHead>
                           <TableHead className="border border-black p-1 text-center font-bold print:p-0.5 min-w-[120px]">Cédula</TableHead>
                           <TableHead className="border border-black p-1 text-center font-bold print:p-0.5 min-w-[220px]">Nombre del cliente</TableHead>
@@ -494,7 +488,6 @@ export default function DailyCashReportPage() {
                         {filteredTransactions.map((transaction, index) => (
                         <TableRow key={transaction.id}>
                             <TableCell className="border border-black p-1 text-center print:p-0.5">{index + 1}</TableCell>
-                            <TableCell className="border border-black p-0"><Input type="text" value={transaction.invoice} onChange={e => handleTransactionChange(index, 'invoice', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 print:text-[8px] print:p-0.5" /></TableCell>
                             <TableCell className="border border-black p-0"><Input type="text" value={transaction.contrato} onChange={e => handleTransactionChange(index, 'contrato', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30 print:text-[8px] print:p-0.5" readOnly /></TableCell>
                             <TableCell className="border border-black p-0"><Input type="text" value={transaction.cedula} onChange={e => handleTransactionChange(index, 'cedula', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30 print:text-[8px] print:p-0.5" readOnly /></TableCell>
                             <TableCell className="border border-black p-0"><Input type="text" value={transaction.clientName} onChange={e => handleTransactionChange(index, 'clientName', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30 print:text-[8px] print:p-0.5" readOnly /></TableCell>
@@ -519,13 +512,13 @@ export default function DailyCashReportPage() {
                         ))}
                         {isDataLoaded && filteredTransactions.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={15} className="text-center text-muted-foreground p-4 border border-black">
+                                <TableCell colSpan={14} className="text-center text-muted-foreground p-4 border border-black">
                                     No se encontraron transacciones para la fecha seleccionada.
                                 </TableCell>
                             </TableRow>
                         )}
                         <TableRow className="font-bold">
-                            <TableCell colSpan={8} className="text-right p-1 border border-black print:text-[8px] print:p-0.5">TOTAL</TableCell>
+                            <TableCell colSpan={7} className="text-right p-1 border border-black print:text-[8px] print:p-0.5">TOTAL</TableCell>
                             <TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">{currencyFormatter.format(transactionTotals.cash)}</TableCell>
                             <TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">{currencyFormatter.format(transactionTotals.debit)}</TableCell>
                             <TableCell className="border border-black p-1 print:text-[8px] print:p-0.5">{currencyFormatter.format(transactionTotals.credit)}</TableCell>

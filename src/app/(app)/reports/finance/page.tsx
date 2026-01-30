@@ -31,10 +31,27 @@ interface ReportRow {
   total: number;
 }
 
+interface PaymentTypeRow {
+  paymentType: string;
+  transactions: number;
+  total: number;
+}
+
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',
 });
+
+const paymentTypeLabels: { [key: string]: string } = {
+    cash: 'Efectivo',
+    debit: 'T.Débito',
+    credit: 'T.Crédito',
+    global: 'GLOBAL',
+    bac: 'BAC',
+    general: 'GENERAL',
+    cheques: 'Cheques',
+    desconocido: 'Desconocido'
+};
 
 export default function FinanceReportPage() {
   const db = useDb();
@@ -42,6 +59,7 @@ export default function FinanceReportPage() {
   const [reportDate, setReportDate] = useState<Date>(new Date());
   const [view, setView] = useState('daily');
   const [reportData, setReportData] = useState<ReportRow[]>([]);
+  const [paymentTypeData, setPaymentTypeData] = useState<PaymentTypeRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -90,8 +108,9 @@ export default function FinanceReportPage() {
         ]);
 
         const aggregated: { [key: string]: { transactions: number; total: number } } = {};
+        const paymentTypeAggregated: { [key: string]: { transactions: number; total: number } } = {};
 
-        // Helper to aggregate data
+        // Helper to aggregate data by concept
         const aggregate = (concept: string, amount: number) => {
           if (!aggregated[concept]) {
             aggregated[concept] = { transactions: 0, total: 0 };
@@ -99,21 +118,41 @@ export default function FinanceReportPage() {
           aggregated[concept].transactions += 1;
           aggregated[concept].total += amount;
         };
+        
+        // Helper to aggregate data by payment type
+        const aggregateByPaymentType = (paymentType: string, amount: number) => {
+          if (!paymentTypeAggregated[paymentType]) {
+            paymentTypeAggregated[paymentType] = { transactions: 0, total: 0 };
+          }
+          paymentTypeAggregated[paymentType].transactions += 1;
+          paymentTypeAggregated[paymentType].total += amount;
+        };
 
         // 1. Contract down payments
         contractsSnap.forEach((doc) => {
           const contract = doc.data() as Contract;
           if (contract.status === 'expired') return;
 
+          let amount = 0;
+          let paymentType = 'desconocido';
+          let concept = '';
+
           if (contract.type === 'Curso Deluxe') {
-            // Matrícula for Deluxe
-            aggregate('Matrícula Deluxe', 15.00);
+            concept = 'Matrícula Deluxe';
+            amount = 15.00;
+            paymentType = contract.deluxeDetails?.paymentType || 'cash';
           } else {
             const details = contract.autoMotoDetails || contract.ampliacionesDetails;
             if (details && details.downPayment && details.downPayment > 0) {
-              const concept = `Abono - ${contract.type}`;
-              aggregate(concept, details.downPayment);
+              concept = `Abono - ${contract.type}`;
+              amount = details.downPayment;
+              paymentType = details.paymentType || 'cash';
             }
+          }
+
+          if (amount > 0) {
+            aggregate(concept, amount);
+            aggregateByPaymentType(paymentType, amount);
           }
         });
 
@@ -121,29 +160,38 @@ export default function FinanceReportPage() {
         cancellationsSnap.forEach((doc) => {
           const payment = doc.data() as Payment;
           aggregate('Abono/Cancelación de Saldo', payment.amount);
+          aggregateByPaymentType('cash', payment.amount);
         });
 
         // 3. Update payments
         updatesSnap.forEach((doc) => {
           const payment = doc.data() as Payment;
           aggregate('Actualización de Certificado', payment.amount);
+          aggregateByPaymentType('cash', payment.amount);
         });
 
         // 4. Book sale payments
         bookSalesSnap.forEach((doc) => {
           const payment = doc.data() as BookSalePayment;
           aggregate('Venta de Libros', payment.amount);
+           aggregateByPaymentType('cash', payment.amount);
         });
 
         const finalReport = Object.entries(aggregated).map(([concept, data]) => ({
           concept,
           ...data,
-        })).sort((a, b) => b.total - a.total); // Sort by total amount
+        })).sort((a, b) => b.total - a.total);
+
+        const finalPaymentTypeReport = Object.entries(paymentTypeAggregated).map(([type, data]) => ({
+          paymentType: type,
+          ...data,
+        })).sort((a, b) => b.total - a.total);
 
         setReportData(finalReport);
+        setPaymentTypeData(finalPaymentTypeReport);
+
       } catch (error) {
         console.error("Error fetching financial data:", error);
-        // Here you would normally use a toast notification
       } finally {
         setIsLoading(false);
       }
@@ -217,43 +265,77 @@ export default function FinanceReportPage() {
             </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-            <Card className="lg:col-span-3">
-                <CardHeader>
-                    <CardTitle>Desglose de Ingresos</CardTitle>
-                    <CardDescription>
-                        Total de ingresos para {view === 'daily' ? `el día ${format(reportDate, 'PPP', { locale: es })}` : `el mes de ${format(reportDate, 'LLLL yyyy', { locale: es })}`}.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Concepto</TableHead>
-                                <TableHead className="text-center"># Transacciones</TableHead>
-                                <TableHead className="text-right">Total Ingresado</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {reportData.map((row) => (
-                                <TableRow key={row.concept}>
-                                    <TableCell className="font-medium">{row.concept}</TableCell>
-                                    <TableCell className="text-center">{row.transactions}</TableCell>
-                                    <TableCell className="text-right">{currencyFormatter.format(row.total)}</TableCell>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 flex flex-col gap-8">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Desglose de Ingresos por Concepto</CardTitle>
+                        <CardDescription>
+                            Total de ingresos para {view === 'daily' ? `el día ${format(reportDate, 'PPP', { locale: es })}` : `el mes de ${format(reportDate, 'LLLL yyyy', { locale: es })}`}.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Concepto</TableHead>
+                                    <TableHead className="text-center"># Transacciones</TableHead>
+                                    <TableHead className="text-right">Total Ingresado</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                        <TableFooter>
-                            <TableRow className="font-bold text-base">
-                                <TableCell colSpan={2}>Total General</TableCell>
-                                <TableCell className="text-right">{currencyFormatter.format(totalIncome)}</TableCell>
-                            </TableRow>
-                        </TableFooter>
-                    </Table>
-                </CardContent>
-            </Card>
+                            </TableHeader>
+                            <TableBody>
+                                {reportData.map((row) => (
+                                    <TableRow key={row.concept}>
+                                        <TableCell className="font-medium">{row.concept}</TableCell>
+                                        <TableCell className="text-center">{row.transactions}</TableCell>
+                                        <TableCell className="text-right">{currencyFormatter.format(row.total)}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                            <TableFooter>
+                                <TableRow className="font-bold text-base">
+                                    <TableCell colSpan={2}>Total General</TableCell>
+                                    <TableCell className="text-right">{currencyFormatter.format(totalIncome)}</TableCell>
+                                </TableRow>
+                            </TableFooter>
+                        </Table>
+                    </CardContent>
+                </Card>
+                
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Desglose por Tipo de Pago</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                         <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Tipo de Pago</TableHead>
+                                    <TableHead className="text-center"># Transacciones</TableHead>
+                                    <TableHead className="text-right">Total Ingresado</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {paymentTypeData.map((row) => (
+                                    <TableRow key={row.paymentType}>
+                                        <TableCell className="font-medium">{paymentTypeLabels[row.paymentType] || row.paymentType}</TableCell>
+                                        <TableCell className="text-center">{row.transactions}</TableCell>
+                                        <TableCell className="text-right">{currencyFormatter.format(row.total)}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                            <TableFooter>
+                                <TableRow className="font-bold text-base">
+                                    <TableCell colSpan={2}>Total General</TableCell>
+                                    <TableCell className="text-right">{currencyFormatter.format(totalIncome)}</TableCell>
+                                </TableRow>
+                            </TableFooter>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </div>
 
-            <Card className="lg:col-span-2">
+            <Card className="lg:col-span-1">
                 <CardHeader>
                     <CardTitle>Gráfico de Ingresos</CardTitle>
                      <CardDescription>
@@ -261,7 +343,7 @@ export default function FinanceReportPage() {
                     </CardDescription>
                 </CardHeader>
                  <CardContent>
-                     <ResponsiveContainer width="100%" height={350}>
+                     <ResponsiveContainer width="100%" height={400}>
                         <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 30 }}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis type="number" tickFormatter={(value) => currencyFormatter.format(value as number)} />

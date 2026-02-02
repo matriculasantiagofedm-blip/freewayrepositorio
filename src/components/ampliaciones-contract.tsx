@@ -85,7 +85,7 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
                 {balance > 0 && paymentDeadline && (
                     <p>El saldo pendiente se cancelará a más tardar el día {formatDate(paymentDeadline)}.</p>
                 )}
-                <p>Si el monto total es de B/.100.00 o menos, debe ser cancelado en su totalidad al momento de la inscripción. Para montos superiores, se requiere un abono del 50%.</p>
+                <p>Si el monto total es de B/.100.00 o menos, debe ser cancelado en su totalidad al momento de la inscripción. Para montos superiores, se requiere un abono del 25%.</p>
             </div>
             
             <h3 className="font-bold">TERCERA: DETALLES DE LA CAPACITACIÓN</h3>

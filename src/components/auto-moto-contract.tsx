@@ -79,8 +79,8 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                 <p>El valor total del curso es de <Line><Value>{courseValue.toFixed(2)}</Value></Line> (B/.).</p>
                 <p>"El estudiante ha efectuado un abono por la suma de B/. <Line><Value>{downPayment.toFixed(2)}</Value></Line>, quedando un saldo pendiente de B/. <Line><Value>{balance > 0 ? balance.toFixed(2) : '0.00'}</Value></Line>, el cual se compromete a cancelar en su totalidad el día {formatDate(paymentDeadline)}."</p>
                 <ul className="list-disc list-inside pl-2">
-                    <li>Para la inscripción, EL ESTUDIANTE deberá abonar el 50% del valor total como reserva de su cupo y horario.</li>
-                    <li>El 50% restante deberá cancelarse antes de iniciar la primera clase práctica.</li>
+                    <li>Para la inscripción, EL ESTUDIANTE deberá abonar el 25% del valor total como reserva de su cupo y horario.</li>
+                    <li>El saldo restante deberá cancelarse antes de iniciar la primera clase práctica.</li>
                     <li>En caso de incumplimiento en los pagos, EL ESTUDIANTE no podrá continuar el curso.</li>
                 </ul>
             </div>

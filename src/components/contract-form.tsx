@@ -346,7 +346,7 @@ export function ContractForm() {
         form.setValue('autoMotoDetails.courseValue', plan.price);
         const isSpecial = specialPlans.includes(plan.name);
         
-        const downPaymentValue = isSpecial ? plan.price : plan.price * 0.5;
+        const downPaymentValue = isSpecial ? plan.price : plan.price * 0.25;
         form.setValue('autoMotoDetails.downPayment', downPaymentValue);
         form.setValue('autoMotoDetails.balance', isSpecial ? 0 : plan.price - downPaymentValue);
         form.setValue('autoMotoDetails.paidInFull', isSpecial);
@@ -379,7 +379,7 @@ export function ContractForm() {
         form.setValue('autoMotoDetails.balance', 0);
     } else {
         const currentCourseValue = form.getValues('autoMotoDetails.courseValue') || 0;
-        const downPayment = currentCourseValue * 0.5;
+        const downPayment = currentCourseValue * 0.25;
         form.setValue('autoMotoDetails.downPayment', downPayment);
         form.setValue('autoMotoDetails.balance', currentCourseValue - downPayment);
     }
@@ -398,9 +398,9 @@ export function ContractForm() {
 
     // Validation logic for popup
     if (coursePlan && !specialPlans.includes(coursePlan) && !paidInFull) {
-        const minDownPayment = (courseValue || 0) * 0.5;
+        const minDownPayment = (courseValue || 0) * 0.25;
         if (value < minDownPayment) {
-            setAbonoDialogMessage(`El abono para este plan no puede ser inferior al 50%. El abono mínimo requerido es de B/. ${minDownPayment.toFixed(2)}.`);
+            setAbonoDialogMessage(`El abono para este plan no puede ser inferior al 25%. El abono mínimo requerido es de B/. ${minDownPayment.toFixed(2)}.`);
             setMinAbonoRequired(minDownPayment);
             setIsAbonoDialogOpen(true);
         }
@@ -428,7 +428,7 @@ export function ContractForm() {
 
         form.setValue('ampliacionesDetails.courseValue', total);
 
-        const minAbono = total > 100 ? total * 0.5 : total;
+        const minAbono = total > 100 ? total * 0.25 : total;
         form.setValue('ampliacionesDetails.downPayment', minAbono);
         const newBalance = total - minAbono;
         form.setValue('ampliacionesDetails.balance', newBalance >= 0 ? newBalance : 0);
@@ -449,9 +449,9 @@ export function ContractForm() {
     let message = '';
     
     if (totalValue > 100) {
-        minAbono = totalValue * 0.5;
+        minAbono = totalValue * 0.25;
         if (value < minAbono) {
-            message = `Para montos superiores a B/.100, el abono mínimo es del 50%. El abono mínimo requerido es de B/. ${minAbono.toFixed(2)}.`;
+            message = `Para montos superiores a B/.100, el abono mínimo es del 25%. El abono mínimo requerido es de B/. ${minAbono.toFixed(2)}.`;
         }
     } else if (totalValue > 0) {
         minAbono = totalValue;

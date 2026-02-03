@@ -1,6 +1,6 @@
 'use client';
-import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
-import type { Contract, Deadline } from '@/lib/types';
+import { collection, query, where, orderBy, Timestamp, doc, getDoc, setDoc } from 'firebase/firestore';
+import type { Contract, Deadline, VehicleAssignment, VehicleName, TimeSlot, InstructorName } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import {
   Table,
@@ -13,7 +13,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { format, isPast, differenceInDays } from 'date-fns';
+import { format, isPast, differenceInDays, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Eye, Search, CheckCircle, XCircle, Ban, CalendarClock } from 'lucide-react';
@@ -22,6 +22,60 @@ import { Input } from '@/components/ui/input';
 import { useSearchParams } from 'next/navigation';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
+import { syncCalendarEvent } from '@/lib/actions';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { errorEmitter } from '@/firebase/error-emitter';
+
+const VEHICLES: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Moto Roja', 'Moto Negra'];
+const TIME_SLOTS: { id: TimeSlot, label: string }[] = [
+    { id: '8am-10am', label: '8:00am - 10:00am' },
+    { id: '10am-12pm', label: '10:00am - 12:00pm' },
+    { id: '1pm-3pm', label: '1:00pm - 3:00pm' },
+    { id: '3pm-5pm', label: '3:00pm - 5:00pm' },
+];
+const INSTRUCTORS: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon'];
+
+const convertToISODateTime = (date: Date, timeSlot: TimeSlot): { startISO: string, endISO: string } => {
+    const timeParts = {
+        '8am-10am': { start: 8, end: 10 },
+        '10am-12pm': { start: 10, end: 12 },
+        '1pm-3pm': { start: 13, end: 15 },
+        '3pm-5pm': { start: 15, end: 17 },
+    };
+
+    const { start, end } = timeParts[timeSlot];
+
+    const startDate = new Date(date);
+    startDate.setHours(start, 0, 0, 0);
+
+    const endDate = new Date(date);
+    endDate.setHours(end, 0, 0, 0);
+
+    return {
+        startISO: startDate.toISOString(),
+        endISO: endDate.toISOString(),
+    };
+};
 
 
 function toDate(date: any): Date {
@@ -112,6 +166,15 @@ export default function AllContractsPage() {
   const { role } = useCurrentRole();
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
+  const { toast } = useToast();
+
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+  const [scheduleDate, setScheduleDate] = useState<Date>(new Date());
+  const [timeSlot, setTimeSlot] = useState<TimeSlot | ''>('');
+  const [vehicle, setVehicle] = useState<VehicleName | ''>('');
+  const [instructor, setInstructor] = useState<InstructorName | ''>('');
+  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
 
   const filter = searchParams.get('filter');
 
@@ -192,6 +255,104 @@ export default function AllContractsPage() {
 
       return true; // if no filter or search, show all (or all overdue if filter is set)
     }) || [];
+
+    const handleOpenScheduleModal = (contract: Contract) => {
+        setSelectedContract(contract);
+        // Reset form fields
+        setScheduleDate(new Date());
+        setTimeSlot('');
+        setVehicle('');
+        setInstructor('');
+        setIsScheduleModalOpen(true);
+    };
+
+    const handleSaveSchedule = async () => {
+        if (!db || !user || !selectedContract || !scheduleDate || !timeSlot || !vehicle || !instructor) {
+          toast({
+            variant: 'destructive',
+            title: 'Faltan datos',
+            description: 'Por favor, completa todos los campos para agendar la clase.',
+          });
+          return;
+        }
+    
+        setIsSavingSchedule(true);
+    
+        const dateId = format(startOfDay(scheduleDate), 'yyyy-MM-dd');
+        const scheduleRef = doc(db, 'vehicle_schedules', dateId);
+    
+        try {
+          const scheduleSnap = await getDoc(scheduleRef);
+          const existingAssignments: VehicleAssignment[] = scheduleSnap.exists() ? scheduleSnap.data().assignments : [];
+    
+          const isSlotTaken = existingAssignments.some(
+            (assignment) => assignment.vehicle === vehicle && assignment.timeSlot === timeSlot
+          );
+    
+          if (isSlotTaken) {
+            toast({
+              variant: 'destructive',
+              title: 'Horario Ocupado',
+              description: `El vehículo ${vehicle} ya está asignado en el turno de ${timeSlot}.`,
+            });
+            setIsSavingSchedule(false);
+            return;
+          }
+    
+          const newAssignment: VehicleAssignment = {
+            vehicle,
+            timeSlot,
+            instructor,
+            studentName: selectedContract.clientName,
+          };
+          
+          const updatedAssignments = [...existingAssignments, newAssignment];
+          
+          const scheduleDoc = {
+            id: dateId,
+            date: Timestamp.fromDate(startOfDay(scheduleDate)),
+            userId: user.uid,
+            assignments: updatedAssignments,
+          };
+    
+          await setDoc(scheduleRef, scheduleDoc, { merge: true });
+    
+          const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          const { startISO, endISO } = convertToISODateTime(scheduleDate, timeSlot);
+    
+          await syncCalendarEvent({
+            summary: `Clase Práctica: ${selectedContract.clientName}`,
+            description: `Instructor: ${instructor}\nVehículo: ${vehicle}\nEstudiante: ${selectedContract.clientName}\nContrato: ${String(selectedContract.folioNumber).padStart(6, '0')}`,
+            start: { dateTime: startISO, timeZone: timeZone },
+            end: { dateTime: endISO, timeZone: timeZone },
+            vehicle,
+          });
+    
+          toast({
+            title: 'Clase Agendada y Sincronizada',
+            description: `La clase para ${selectedContract.clientName} ha sido guardada en el calendario.`,
+          });
+    
+          setIsScheduleModalOpen(false);
+        } catch (error: any) {
+          console.error('Error saving schedule:', error);
+          if (error.code === 'permission-denied') {
+            const permissionError = new FirestorePermissionError({
+              path: `vehicle_schedules/${dateId}`,
+              operation: 'update',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+          } else {
+            toast({
+              variant: 'destructive',
+              title: 'Error al Guardar',
+              description: 'No se pudo guardar el horario. ' + error.message,
+            });
+          }
+        } finally {
+          setIsSavingSchedule(false);
+        }
+      };
 
   return (
     <div className="flex flex-col gap-8">
@@ -287,11 +448,9 @@ export default function AllContractsPage() {
                                                 <span className="sr-only">Ver Contrato</span>
                                             </Link>
                                         </Button>
-                                        <Button asChild variant="ghost" size="icon" title="Generar Horario">
-                                            <Link href="/vehicle-schedule">
-                                                <CalendarClock className="h-4 w-4" />
-                                                <span className="sr-only">Generar Horario</span>
-                                            </Link>
+                                        <Button variant="ghost" size="icon" title="Generar Horario" onClick={() => handleOpenScheduleModal(contract)}>
+                                            <CalendarClock className="h-4 w-4" />
+                                            <span className="sr-only">Generar Horario</span>
                                         </Button>
                                     </TableCell>
                                 </TableRow>
@@ -312,6 +471,74 @@ export default function AllContractsPage() {
             )}
         </>
       )}
+
+      <Dialog open={isScheduleModalOpen} onOpenChange={setIsScheduleModalOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Agendar Clase Práctica</DialogTitle>
+                <DialogDescription>
+                    Asignar un horario para el estudiante <span className="font-semibold text-primary">{selectedContract?.clientName}</span>.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label>Fecha de la Clase</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                variant={"outline"}
+                                className={cn("w-full justify-start text-left font-normal", !scheduleDate && "text-muted-foreground")}
+                                >
+                                <CalendarClock className="mr-2 h-4 w-4" />
+                                {scheduleDate ? format(scheduleDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar mode="single" selected={scheduleDate} onSelect={(date) => setScheduleDate(date || new Date())} initialFocus />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                     <div className="space-y-2">
+                        <Label>Turno</Label>
+                        <Select value={timeSlot} onValueChange={(value) => setTimeSlot(value as TimeSlot)}>
+                            <SelectTrigger><SelectValue placeholder="Seleccionar turno..." /></SelectTrigger>
+                            <SelectContent>
+                                {TIME_SLOTS.map(slot => <SelectItem key={slot.id} value={slot.id}>{slot.label}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                     <div className="space-y-2">
+                        <Label>Vehículo</Label>
+                        <Select value={vehicle} onValueChange={(value) => setVehicle(value as VehicleName)}>
+                            <SelectTrigger><SelectValue placeholder="Seleccionar vehículo..." /></SelectTrigger>
+                            <SelectContent>
+                                {VEHICLES.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                     <div className="space-y-2">
+                        <Label>Instructor</Label>
+                        <Select value={instructor} onValueChange={(value) => setInstructor(value as InstructorName)}>
+                            <SelectTrigger><SelectValue placeholder="Seleccionar instructor..." /></SelectTrigger>
+                            <SelectContent>
+                                {INSTRUCTORS.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+            </div>
+            <DialogFooter>
+                <Button variant="ghost" onClick={() => setIsScheduleModalOpen(false)}>Cancelar</Button>
+                <Button onClick={handleSaveSchedule} disabled={isSavingSchedule}>
+                    {isSavingSchedule ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Guardar Horario
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

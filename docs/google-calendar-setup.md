@@ -49,10 +49,7 @@ Tu aplicación usará una identidad automática creada por Firebase para interac
 
 1.  En la misma página de configuración de cada calendario, ve a la sección **"Integrar el calendario"**.
 2.  Copia el valor que aparece en **"ID de calendario"**. Tendrá un formato similar a `xxxxxxxxxx@group.calendar.google.com`.
-3.  Necesitaremos este ID para cada vehículo. Ya me has proporcionado el de "Moto Negra". Cuando los tengas, necesitaré los IDs para:
-    *   Picanto Blanco
-    *   Picanto Bronce
-    *   Spark
-    *   Moto Roja
+3.  Necesitaremos este ID para cada vehículo. Ya me has proporcionado los IDs para "Picanto Blanco", "Picanto Bronce", "Spark" y "Moto Roja". Cuando lo tengas, necesitaré el ID para:
+    *   Moto Negra
 
 Estos IDs se configurarán en la aplicación para que sepa en qué calendario crear los eventos según el vehículo asignado.

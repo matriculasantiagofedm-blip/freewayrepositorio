@@ -115,6 +115,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
             <div className="space-y-0.5 pl-4">
                 <p>1. Transmisión del vehículo: Automático <Checkbox checked={deluxeDetails?.vehicleTransmission === 'Automático'} /> / Manual <Checkbox checked={deluxeDetails?.vehicleTransmission === 'Manual'} /></p>
                 <p>2. Categoría de licencia a aplicar: A, C <Checkbox checked={deluxeDetails?.licenseCategory === 'A, C'} /> / A, C, D <Checkbox checked={deluxeDetails?.licenseCategory === 'A, C, D'} /></p>
+                <p>3. Instructor Asignado: <Line><Value>{deluxeDetails?.instructor || 'No asignado'}</Value></Line></p>
             </div>
 
             <h3 className="font-bold">CLÁUSULA CUARTA - HORARIO DE CAPACITACIÓN</h3>

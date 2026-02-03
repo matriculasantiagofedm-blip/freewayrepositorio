@@ -285,6 +285,8 @@ export default function AllContractsPage() {
             // 'Motocicleta' is ambiguous, so it is not pre-selected.
         }
         
+        const assignedInstructor = contract.autoMotoDetails?.instructor || contract.deluxeDetails?.instructor || '';
+
         setSchedulesToSync(allSchedules.map(schedule => {
             let preselectedVehicle: VehicleName | '' = '';
 
@@ -300,7 +302,7 @@ export default function AllContractsPage() {
                 time: schedule.time,
                 classType: schedule.classType,
                 vehicle: preselectedVehicle,
-                instructor: '',
+                instructor: assignedInstructor,
             };
         }));
         

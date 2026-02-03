@@ -52,6 +52,7 @@ export interface DeluxeContractDetails {
   theoreticalClasses?: (Date | undefined)[];
   classSchedules?: { date?: Date; time?: string }[];
   paymentType?: string;
+  instructor?: InstructorName;
 }
 
 export interface AutoMotoContractDetails {
@@ -73,6 +74,7 @@ export interface AutoMotoContractDetails {
   motoPracticalClassSchedules?: { date?: Date; time?: string }[];
   paidInFull?: boolean;
   paymentType?: string;
+  instructor?: InstructorName;
 }
 
 

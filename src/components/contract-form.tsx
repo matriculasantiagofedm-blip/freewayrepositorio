@@ -43,7 +43,7 @@ import { cn } from '@/lib/utils';
 import { Timestamp, collection, query, where, getDocs, writeBatch, doc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import type { Contract, ContractType, Client, DeluxeContractDetails } from '@/lib/types';
+import type { Contract, ContractType, Client, DeluxeContractDetails, InstructorName } from '@/lib/types';
 import { DeluxePremiumContractTemplatePreview } from './deluxe-premium-contract-preview';
 import { Checkbox } from './ui/checkbox';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -263,6 +263,8 @@ const paymentTypes = [
     { value: 'cheques', label: 'Cheques' },
 ];
 
+const INSTRUCTORS: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', ''];
+
 // --- Componente del Formulario ---
 
 export function ContractForm() {
@@ -298,6 +300,7 @@ export function ContractForm() {
         theoreticalClasses: Array(10).fill(undefined),
         classSchedules: Array(6).fill({ date: undefined, time: '' }),
         paymentType: 'cash',
+        instructor: '',
       },
       autoMotoDetails: {
         studentIdNumber: '',
@@ -312,6 +315,7 @@ export function ContractForm() {
         motoPracticalClassSchedules: [],
         paidInFull: false,
         paymentType: 'cash',
+        instructor: '',
       },
        ampliacionesDetails: {
         studentIdNumber: '',
@@ -1127,7 +1131,7 @@ export function ContractForm() {
             <CardContent>
                  {contractType === 'Curso Deluxe' && (
                     <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                                 <FormField
                                     control={form.control}
                                     name="deluxeDetails.vehicleTransmission"
@@ -1155,6 +1159,23 @@ export function ContractForm() {
                                             <SelectContent>
                                                 <SelectItem value="A, C">A, C</SelectItem>
                                                 <SelectItem value="A, C, D">A, C, D</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="deluxeDetails.instructor"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                        <FormLabel>Instructor Asignado</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar instructor..." /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                                {INSTRUCTORS.map(name => (
+                                                    <SelectItem key={name} value={name}>{name || 'Sin Asignar'}</SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                         </FormItem>
@@ -1217,7 +1238,7 @@ export function ContractForm() {
                  )}
                  {(contractType === 'Curso Auto' || contractType === 'Curso Moto' || contractType === 'Curso Mixto' || contractType === 'Curso Solo Practica') && (
                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                 {contractType !== 'Curso Moto' && (
                                     <FormField
                                         control={form.control}
@@ -1273,6 +1294,23 @@ export function ContractForm() {
                                                     <SelectItem value="P. Blanco">P. Blanco</SelectItem>
                                                     <SelectItem value="P. Bronce">P. Bronce</SelectItem>
                                                     <SelectItem value="Motocicleta">Motocicleta</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="autoMotoDetails.instructor"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Instructor Asignado</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl>
+                                                <SelectContent>
+                                                    {INSTRUCTORS.map(name => (
+                                                        <SelectItem key={name} value={name}>{name || 'Sin Asignar'}</SelectItem>
+                                                    ))}
                                                 </SelectContent>
                                             </Select>
                                         </FormItem>

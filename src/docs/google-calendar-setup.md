@@ -1,68 +1,43 @@
-# Guía de Configuración y Solución de Problemas de Google Calendar
+# Guía de Configuración de Google Calendar
 
-Sigue estos pasos para autorizar de forma segura que tu aplicación gestione eventos en tu Google Calendar. Este método usa la identidad del entorno de ejecución de Firebase, que es más seguro porque no requiere gestionar archivos de claves privadas.
+Sigue estos pasos para autorizar de forma segura que tu aplicación gestione eventos en tu Google Calendar. Este método usa la identidad del entorno de ejecución de Firebase (una Cuenta de Servicio), que es más seguro porque no requiere gestionar archivos de claves privadas.
 
-## Paso 1: Usar la Cuenta de Servicio Correcta
+## Paso 1: Habilitar la API de Google Calendar
 
-La identidad que tu aplicación usará para conectarse a Google Calendar es la siguiente cuenta de servicio:
+1.  **Abre el siguiente enlace.** Te llevará directamente a la página para habilitar la API de Google Calendar en tu proyecto:
 
-**`freeways@project-c95d505f-7783-4848-afe.iam.gserviceaccount.com`**
+    [Habilitar la API de Google Calendar para tu Proyecto](https://console.cloud.google.com/apis/library/calendar-json.googleapis.com?project=contracttime2-17074294-10501)
 
-Copia esta dirección de correo electrónico completa. La necesitarás en el siguiente paso.
+2.  **Verifica el Estado:**
+    *   Si ves un botón azul que dice **"HABILITAR"**, haz clic en él.
+    *   Si ves un botón gris que dice **"API HABILITADA"**, entonces este paso ya está completado.
 
-## Paso 2: Compartir tu Google Calendar con la Cuenta de Servicio
+## Paso 2: Identificar la Cuenta de Servicio y Compartir tu Calendario
 
-Ahora, necesitas darle permiso a esa identidad para que pueda ver y modificar tu calendario.
+Tu aplicación usará una identidad automática creada por Firebase para interactuar con Google Calendar.
 
-1.  **Abrir Google Calendar:**
-    *   Ve a [https://calendar.google.com/](https://calendar.google.com/) e inicia sesión con la cuenta de Google que posee el calendario que quieres sincronizar (es decir, **matriculas.freeway@gmail.com**).
+1.  **Ve a la página de IAM en Google Cloud:**
 
-2.  **Ir a la configuración del calendario:**
-    *   En el panel izquierdo, en "Mis calendarios", pasa el cursor sobre el calendario que quieres usar (el que tiene el ID `caa22a55efb4ec8120e449941e8df3d2731613826485af050c0b7ec0b60be588@group.calendar.google.com`).
-    *   Haz clic en los tres puntos verticales (⋮) y selecciona **Configurar y compartir**.
+    [Ir a la página de IAM de tu Proyecto](https://console.cloud.google.com/iam-admin/iam?project=contracttime2-17074294-10501)
 
-3.  **Compartir con la cuenta de servicio:**
-    *   En el menú de la izquierda, ve a **Compartir con personas y grupos específicos**.
-    *   Haz clic en **+ Agregar personas y grupos**.
-    *   En el campo que aparece, pega la dirección de correo de la cuenta de servicio que copiaste en el paso 1.
+2.  **Encuentra la Cuenta de Servicio de App Hosting:**
+    *   En la lista de "Principales", busca una cuenta que se llame **"Firebase App Hosting Service Agent"**.
+    *   El correo electrónico de esta cuenta tendrá un formato similar a: `service-[NUMERO-DE-PROYECTO]@gcp-sa-apphosting.iam.gserviceaccount.com`.
+    *   Para tu proyecto, debería ser: **`service-476712003174@gcp-sa-apphosting.iam.gserviceaccount.com`**
+    *   Copia esta dirección de correo electrónico completa.
 
-4.  **Asignar los permisos correctos:**
-    *   En el menú desplegable de "Permisos", asegúrate de seleccionar **Hacer cambios en los eventos**. Esto es fundamental.
-    *   Haz clic en **Enviar**. Acepta cualquier advertencia sobre compartir fuera de tu organización si aparece.
+3.  **Comparte tu Google Calendar:**
+    *   Abre [Google Calendar](https://calendar.google.com/) con la cuenta que posee el calendario que quieres usar (`matriculas.freeway@gmail.com`).
+    *   En el panel izquierdo, busca tu calendario, haz clic en los tres puntos (⋮) y selecciona **"Configurar y compartir"**.
+    *   En la sección **"Compartir con personas y grupos específicos"**, haz clic en **"+ Agregar personas y grupos"**.
+    *   Pega la dirección de correo de la cuenta de servicio que copiaste.
+    *   En el menú desplegable de "Permisos", selecciona **"Hacer cambios en los eventos"**. Esto es fundamental.
+    *   Haz clic en **"Enviar"**.
 
-## Paso 3: Verificar que la API de Google Calendar esté Habilitada
+## Paso 3: Obtener el ID de tu Calendario
 
-1.  Abre el siguiente enlace: [https://console.cloud.google.com/apis/library/calendar-json.googleapis.com?project=project-c95d505f-7783-4848-afe](https://console.cloud.google.com/apis/library/calendar-json.googleapis.com?project=project-c95d505f-7783-4848-afe)
-2.  Verifica que el botón muestre **"API HABILITADA"**. Si dice "HABILITAR", haz clic en él.
+1.  En la misma página de configuración de tu calendario, ve a la sección **"Integrar el calendario"**.
+2.  Copia el valor que aparece en **"ID de calendario"**. Tendrá un formato similar a `tu-correo@gmail.com` o `xxxxxxxxxx@group.calendar.google.com`.
+3.  Este ID será necesario para que la aplicación sepa en qué calendario crear los eventos.
 
-## Paso 4: Probar la Conexión
-
-Una vez completados todos los pasos anteriores, ve al panel de control de la aplicación y usa el botón **"Probar Conexión"**. Si todo es correcto, debería mostrar un mensaje de éxito.
-
----
-
-## Resolución de Problemas Avanzados
-
-Si después de seguir todos los pasos anteriores al pie de la letra, sigues recibiendo un error de conexión (especialmente un error 500 o de "token de acceso"), el problema probablemente no está en el código de la aplicación, sino en la configuración de tu proyecto de Google Cloud o de tu organización de Google Workspace.
-
-Aquí hay algunas cosas que puedes revisar:
-
-1.  **Políticas de la Organización (IAM):**
-    *   Ve a la sección [IAM y Administración > Políticas de la organización](https://console.cloud.google.com/iam-admin/orgpolicies?project=project-c95d505f-7783-4848-afe) en tu Google Cloud Console.
-    *   Busca políticas que puedan restringir el acceso entre servicios o el uso de APIs. Una política común que causa problemas es "Uso compartido restringido de servicios de dominio".
-
-2.  **Estado de Facturación del Proyecto:**
-    *   Aunque la API de Calendar tiene un nivel gratuito generoso, algunos proyectos de Google Cloud requieren que una cuenta de facturación esté activa para usar cualquier API. Verifica que tu proyecto `project-c95d505f-7783-4848-afe` tenga una cuenta de facturación válida asociada.
-
-3.  **Logs de Auditoría de la API:**
-    *   Puedes obtener información más detallada sobre por qué falla una solicitud mirando los logs de la API.
-    *   Ve a [Explorador de registros](https://console.cloud.google.com/logs/query?project=project-c95d505f-7783-4848-afe) en Google Cloud.
-    *   Ejecuta una consulta para la API de Google Calendar para ver los detalles de las solicitudes fallidas:
-        ```
-        resource.type="audited_resource"
-        resource.labels.service="calendar-json.googleapis.com"
-        protoPayload.authenticationInfo.principalEmail="freeways@project-c95d505f-7783-4848-afe.iam.gserviceaccount.com"
-        severity>=ERROR
-        ```
-
-Estos pasos de diagnóstico avanzado deberían ayudarte a identificar la causa raíz del problema a nivel de infraestructura.
+Una vez que hayamos implementado la funcionalidad completa, usaremos esta configuración para que la sincronización funcione correctamente.

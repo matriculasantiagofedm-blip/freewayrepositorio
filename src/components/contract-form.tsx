@@ -263,7 +263,7 @@ const paymentTypes = [
     { value: 'cheques', label: 'Cheques' },
 ];
 
-const INSTRUCTORS: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', ''];
+const INSTRUCTORS: Exclude<InstructorName, ''>[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon'];
 
 // --- Componente del Formulario ---
 
@@ -1170,11 +1170,12 @@ export function ContractForm() {
                                     render={({ field }) => (
                                         <FormItem>
                                         <FormLabel>Instructor Asignado</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <Select onValueChange={(v) => field.onChange(v === 'unassigned' ? '' : v)} value={field.value || 'unassigned'}>
                                             <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar instructor..." /></SelectTrigger></FormControl>
                                             <SelectContent>
+                                                <SelectItem value="unassigned">Sin Asignar</SelectItem>
                                                 {INSTRUCTORS.map(name => (
-                                                    <SelectItem key={name} value={name}>{name || 'Sin Asignar'}</SelectItem>
+                                                    <SelectItem key={name} value={name}>{name}</SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
@@ -1305,11 +1306,12 @@ export function ContractForm() {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Instructor Asignado</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <Select onValueChange={(v) => field.onChange(v === 'unassigned' ? '' : v)} value={field.value || 'unassigned'}>
                                                 <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl>
                                                 <SelectContent>
+                                                    <SelectItem value="unassigned">Sin Asignar</SelectItem>
                                                     {INSTRUCTORS.map(name => (
-                                                        <SelectItem key={name} value={name}>{name || 'Sin Asignar'}</SelectItem>
+                                                        <SelectItem key={name} value={name}>{name}</SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>

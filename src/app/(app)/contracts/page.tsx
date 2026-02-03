@@ -16,7 +16,7 @@ import Link from 'next/link';
 import { format, isPast, differenceInDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Eye, Search, CheckCircle, XCircle, Ban } from 'lucide-react';
+import { Eye, Search, CheckCircle, XCircle, Ban, CalendarClock } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { useSearchParams } from 'next/navigation';
@@ -281,10 +281,16 @@ export default function AllContractsPage() {
                                         </TableCell>
                                     )}
                                     <TableCell className="text-right">
-                                        <Button asChild variant="ghost" size="icon">
+                                        <Button asChild variant="ghost" size="icon" title="Ver Contrato">
                                             <Link href={`/contracts/${contract.id}`}>
                                                 <Eye className="h-4 w-4" />
                                                 <span className="sr-only">Ver Contrato</span>
+                                            </Link>
+                                        </Button>
+                                        <Button asChild variant="ghost" size="icon" title="Generar Horario">
+                                            <Link href="/vehicle-schedule">
+                                                <CalendarClock className="h-4 w-4" />
+                                                <span className="sr-only">Generar Horario</span>
                                             </Link>
                                         </Button>
                                     </TableCell>

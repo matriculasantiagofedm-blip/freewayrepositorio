@@ -275,14 +275,34 @@ export default function AllContractsPage() {
             .map(s => ({ ...s, classType: 'Moto' }));
 
         const allSchedules = [...autoSchedules, ...motoSchedules];
+
+        const contractVehicleFormValue = contract.autoMotoDetails?.vehicle;
+        let mappedVehicle: VehicleName | '' = '';
+        if (contractVehicleFormValue) {
+            if (contractVehicleFormValue === 'Spark') mappedVehicle = 'Spark';
+            else if (contractVehicleFormValue === 'P. Blanco') mappedVehicle = 'Picanto Blanco';
+            else if (contractVehicleFormValue === 'P. Bronce') mappedVehicle = 'Picanto Bronce';
+            // 'Motocicleta' is ambiguous, so it is not pre-selected.
+        }
         
-        setSchedulesToSync(allSchedules.map(schedule => ({
-            date: toDate(schedule.date),
-            time: schedule.time,
-            classType: schedule.classType,
-            vehicle: '',
-            instructor: '',
-        })));
+        setSchedulesToSync(allSchedules.map(schedule => {
+            let preselectedVehicle: VehicleName | '' = '';
+
+            // Pre-select vehicle only if class type matches vehicle type from contract
+            const isCar = mappedVehicle === 'Spark' || mappedVehicle === 'Picanto Blanco' || mappedVehicle === 'Picanto Bronce';
+            
+            if (schedule.classType === 'Auto' && isCar) {
+                preselectedVehicle = mappedVehicle;
+            }
+
+            return {
+                date: toDate(schedule.date),
+                time: schedule.time,
+                classType: schedule.classType,
+                vehicle: preselectedVehicle,
+                instructor: '',
+            };
+        }));
         
         setIsScheduleModalOpen(true);
     };

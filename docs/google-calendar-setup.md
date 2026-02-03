@@ -1,6 +1,6 @@
 # Guía de Configuración de Google Calendar
 
-Sigue estos pasos para autorizar de forma segura que tu aplicación gestione eventos en tu Google Calendar. Este método usa la identidad del entorno de ejecución de Firebase (una Cuenta de Servicio), que es más seguro porque no requiere gestionar archivos de claves privadas.
+Sigue estos pasos para autorizar de forma segura que tu aplicación gestione eventos en tus calendarios de Google Calendar, uno para cada vehículo.
 
 ## Paso 1: Habilitar la API de Google Calendar
 
@@ -12,9 +12,19 @@ Sigue estos pasos para autorizar de forma segura que tu aplicación gestione eve
     *   Si ves un botón azul que dice **"HABILITAR"**, haz clic en él.
     *   Si ves un botón gris que dice **"API HABILITADA"**, entonces este paso ya está completado.
 
-## Paso 2: Identificar la Cuenta de Servicio y Compartir tu Calendario
+## Paso 2: Crear un Calendario para Cada Vehículo
 
-Tu aplicación usará una identidad automática creada por Firebase para interactuar con Google Calendar.
+Para una organización óptima, te recomendamos crear un calendario separado en Google Calendar para cada vehículo de la flota (`Picanto Blanco`, `Picanto Bronce`, `Spark`, `Moto Roja`, `Moto Negra`).
+
+1.  Abre [Google Calendar](https://calendar.google.com/) con la cuenta `matriculas.freeway@gmail.com`.
+2.  En el panel izquierdo, junto a "Otros calendarios", haz clic en el signo más (+) y selecciona **"Crear un calendario"**.
+3.  Dale al calendario el nombre exacto del vehículo (ej. "Moto Negra").
+4.  Haz clic en **"Crear calendario"**.
+5.  Repite este proceso para cada vehículo de la flota.
+
+## Paso 3: Identificar la Cuenta de Servicio y Compartir CADA Calendario
+
+Tu aplicación usará una identidad automática creada por Firebase para interactuar con Google Calendar. Deberás compartir cada uno de los calendarios de los vehículos con esta identidad.
 
 1.  **Ve a la página de IAM en Google Cloud:**
 
@@ -26,18 +36,23 @@ Tu aplicación usará una identidad automática creada por Firebase para interac
     *   Para tu proyecto, debería ser: **`service-476712003174@gcp-sa-apphosting.iam.gserviceaccount.com`**
     *   Copia esta dirección de correo electrónico completa.
 
-3.  **Comparte tu Google Calendar:**
-    *   Abre [Google Calendar](https://calendar.google.com/) con la cuenta que posee el calendario que quieres usar (ej. `matriculas.freeway@gmail.com`).
-    *   En el panel izquierdo, busca tu calendario, haz clic en los tres puntos (⋮) y selecciona **"Configurar y compartir"**.
+3.  **Comparte CADA Calendario de Vehículo:**
+    *   Vuelve a [Google Calendar](https://calendar.google.com/) con la cuenta `matriculas.freeway@gmail.com`.
+    *   En el panel izquierdo, busca el primer calendario de vehículo (ej. "Moto Negra"), haz clic en los tres puntos (⋮) y selecciona **"Configurar y compartir"**.
     *   En la sección **"Compartir con personas y grupos específicos"**, haz clic en **"+ Agregar personas y grupos"**.
     *   Pega la dirección de correo de la cuenta de servicio que copiaste.
     *   En el menú desplegable de "Permisos", selecciona **"Hacer cambios en los eventos"**. Esto es fundamental.
     *   Haz clic en **"Enviar"**.
+    *   **Repite este proceso para cada uno de los calendarios que creaste para los otros vehículos.**
 
-## Paso 3: Obtener el ID de tu Calendario
+## Paso 4: Obtener el ID de CADA Calendario
 
-1.  En la misma página de configuración de tu calendario, ve a la sección **"Integrar el calendario"**.
-2.  Copia el valor que aparece en **"ID de calendario"**. Tendrá un formato similar a `tu-correo@gmail.com` o `xxxxxxxxxx@group.calendar.google.com`.
-3.  Este ID será necesario para que la aplicación sepa en qué calendario crear los eventos.
+1.  En la misma página de configuración de cada calendario, ve a la sección **"Integrar el calendario"**.
+2.  Copia el valor que aparece en **"ID de calendario"**. Tendrá un formato similar a `xxxxxxxxxx@group.calendar.google.com`.
+3.  Necesitaremos este ID para cada vehículo. Ya me has proporcionado el de "Moto Negra". Cuando los tengas, necesitaré los IDs para:
+    *   Picanto Blanco
+    *   Picanto Bronce
+    *   Spark
+    *   Moto Roja
 
-Una vez que hayamos implementado la funcionalidad completa, usaremos esta configuración para que la sincronización funcione correctamente.
+Estos IDs se configurarán en la aplicación para que sepa en qué calendario crear los eventos según el vehículo asignado.

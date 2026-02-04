@@ -61,7 +61,6 @@ function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate 
                 </div>
 
                 <header className="flex w-full flex-col items-center justify-center mb-4 relative pt-4">
-                    <p className="text-sm font-bold tracking-wider">FREEWAY ESCUELA DE MANEJO S.A.</p>
                     <div className="text-center absolute w-full pt-8">
                         <h1 className="text-5xl font-extrabold tracking-widest">FREEWAY</h1>
                         <p className="text-xl tracking-[0.3em]">ESCUELA DE MANEJO</p>

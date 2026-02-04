@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { useDb, useUser } from '@/components/firebase-provider';
-import type { Contract, VehicleName, TimeSlot } from '@/lib/types';
+import type { Contract, VehicleName, TimeSlot, AutoMotoContractDetails, DeluxeContractDetails } from '@/lib/types';
 import {
   Table,
   TableBody,
@@ -13,7 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addDays, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -100,8 +100,13 @@ export default function VehicleScheduleReportPage() {
     const newWeeklyAssignments = new Map<string, LocalAssignment[]>();
 
     contracts.forEach(contract => {
-        const details = contract.autoMotoDetails;
+        const details = contract.autoMotoDetails || contract.deluxeDetails;
         if (!details) return;
+
+        // Note: Deluxe contracts practical classes are not stored in DB as per form logic.
+        // This will primarily work for auto/moto/mixto.
+        const practicalSchedules = contract.autoMotoDetails?.practicalClassSchedules || [];
+        const motoSchedules = contract.autoMotoDetails?.motoPracticalClassSchedules || [];
 
         const processSchedules = (schedules: any[], classType: 'Auto' | 'Moto') => {
             schedules.forEach((schedule, index) => {
@@ -109,7 +114,11 @@ export default function VehicleScheduleReportPage() {
                 if (classDate.getFullYear() > 1970 && isWithinInterval(classDate, weekInterval)) {
                     const dateKey = format(classDate, 'yyyy-MM-dd');
                     const timeSlot = timeStringToTimeSlot(schedule.time);
-                    const vehicle = details.vehicle ? vehicleNameMapping[details.vehicle] || 'Spark' : 'Spark';
+                    
+                    let vehicle: VehicleName = 'Spark'; // Default
+                    if (contract.autoMotoDetails?.vehicle) {
+                        vehicle = vehicleNameMapping[contract.autoMotoDetails.vehicle] || 'Spark';
+                    }
 
                     if (timeSlot) {
                         const assignment: LocalAssignment = {
@@ -128,8 +137,8 @@ export default function VehicleScheduleReportPage() {
             });
         };
 
-        processSchedules(details.practicalClassSchedules || [], 'Auto');
-        processSchedules(details.motoPracticalClassSchedules || [], 'Moto');
+        processSchedules(practicalSchedules, 'Auto');
+        processSchedules(motoSchedules, 'Moto');
     });
 
     setWeeklyAssignments(newWeeklyAssignments);
@@ -185,7 +194,10 @@ export default function VehicleScheduleReportPage() {
                                     {assignmentsInSlot.map((assignment, index) => (
                                     <div key={index} className={cn("p-1.5 rounded border text-xs shadow-sm", vehicleColors[assignment.vehicle] || 'bg-gray-100 border-gray-300')}>
                                         <p className="font-bold truncate">{assignment.studentName}</p>
-                                        <p className="truncate text-muted-foreground">{assignment.instructor}</p>
+                                        <div className="flex items-center gap-1 truncate opacity-90">
+                                            <User className="h-3 w-3 shrink-0" />
+                                            <span>{assignment.instructor}</span>
+                                        </div>
                                         <p className="opacity-80 truncate">{assignment.vehicle}</p>
                                         <p className="font-semibold text-primary truncate pt-1 mt-1 border-t border-black/10">Clase #{assignment.classNumber} ({assignment.classType})</p>
                                     </div>

@@ -26,7 +26,6 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { syncCalendarEvent } from '@/lib/actions';
 
 const VEHICLES: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Moto Roja', 'Moto Negra'];
 const TIME_SLOTS: { id: TimeSlot, label: string }[] = [
@@ -42,28 +41,6 @@ type ScheduleData = Map<string, { instructor: InstructorName; studentName: strin
 function generateScheduleKey(vehicle: VehicleName, timeSlot: TimeSlot): string {
     return `${vehicle}-${timeSlot}`;
 }
-
-const convertToISODateTime = (date: Date, timeSlot: TimeSlot): { startISO: string, endISO: string } => {
-    const timeParts = {
-        '8am-10am': { start: 8, end: 10 },
-        '10am-12pm': { start: 10, end: 12 },
-        '1pm-3pm': { start: 13, end: 15 },
-        '3pm-5pm': { start: 15, end: 17 },
-    };
-
-    const { start, end } = timeParts[timeSlot];
-
-    const startDate = new Date(date);
-    startDate.setHours(start, 0, 0, 0);
-
-    const endDate = new Date(date);
-    endDate.setHours(end, 0, 0, 0);
-
-    return {
-        startISO: startDate.toISOString(),
-        endISO: endDate.toISOString(),
-    };
-};
 
 interface StudentComboboxProps {
     students: { id: string, name: string }[];
@@ -263,29 +240,8 @@ export default function VehicleSchedulePage() {
             const scheduleRef = doc(db, 'vehicle_schedules', dateId);
             await setDoc(scheduleRef, scheduleDoc, { merge: true });
             
-            toast({ 
-                title: 'Horario Guardado', 
-                description: 'Sincronizando con Google Calendar...' 
-            });
+            toast({ title: 'Horario Guardado', description: `El horario para el ${format(selectedDate, 'PPP', { locale: es })} ha sido guardado.` });
 
-            const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            for (const assignment of assignments) {
-                const { startISO, endISO } = convertToISODateTime(selectedDate, assignment.timeSlot);
-                
-                if (!assignment.studentName && !assignment.instructor) {
-                    continue;
-                }
-
-                await syncCalendarEvent({
-                    summary: `Clase Práctica: ${assignment.studentName || 'Sin Estudiante'}`,
-                    description: `Instructor: ${assignment.instructor || 'Sin Asignar'}\nVehículo: ${assignment.vehicle}\nEstudiante: ${assignment.studentName || 'Sin Asignar'}`,
-                    start: { dateTime: startISO, timeZone: timeZone },
-                    end: { dateTime: endISO, timeZone: timeZone },
-                    vehicle: assignment.vehicle,
-                });
-            }
-
-            toast({ title: 'Horario Sincronizado', description: `El horario para el ${format(selectedDate, 'PPP', { locale: es })} ha sido guardado y sincronizado.` });
         } catch (serverError: any) {
              const permissionError = new FirestorePermissionError({
                 path: `vehicle_schedules/${dateId}`,

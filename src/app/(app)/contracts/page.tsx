@@ -40,7 +40,6 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { syncCalendarEvent } from '@/lib/actions';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
 
@@ -63,29 +62,6 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: TimeSlot } = {
 const timeStringToTimeSlot = (timeString: string): TimeSlot | null => {
     return TIME_STRING_TO_SLOT_MAP[timeString] || null;
 }
-
-const convertToISODateTime = (date: Date, timeSlot: TimeSlot): { startISO: string, endISO: string } => {
-    const timeParts = {
-        '8am-10am': { start: 8, end: 10 },
-        '10am-12pm': { start: 10, end: 12 },
-        '1pm-3pm': { start: 13, end: 15 },
-        '3pm-5pm': { start: 15, end: 17 },
-    };
-
-    const { start, end } = timeParts[timeSlot];
-
-    const startDate = new Date(date);
-    startDate.setHours(start, 0, 0, 0);
-
-    const endDate = new Date(date);
-    endDate.setHours(end, 0, 0, 0);
-
-    return {
-        startISO: startDate.toISOString(),
-        endISO: endDate.toISOString(),
-    };
-};
-
 
 function toDate(date: any): Date {
   if (!date) return new Date(0); // Return an invalid date if input is null/undefined
@@ -373,17 +349,6 @@ export default function AllContractsPage() {
                     }, { merge: true });
                 });
 
-                const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                const { startISO, endISO } = convertToISODateTime(date, timeSlot);
-                
-                await syncCalendarEvent({
-                    summary: `Clase: ${selectedContract.clientName}`,
-                    description: `Instructor: ${instructor}\nVehículo: ${vehicle}\nContrato: ${String(selectedContract.folioNumber).padStart(6, '0')}`,
-                    start: { dateTime: startISO, timeZone },
-                    end: { dateTime: endISO, timeZone },
-                    vehicle,
-                });
-
             } catch (error: any) {
                 allSavesSuccessful = false;
                 errors.push(error.message || `Error al guardar la clase ${index + 1}.`);
@@ -400,8 +365,8 @@ export default function AllContractsPage() {
 
         if (allSavesSuccessful) {
             toast({
-                title: 'Clases Agendadas y Sincronizadas',
-                description: 'Las clases seleccionadas han sido guardadas y sincronizadas con Google Calendar.',
+                title: 'Clases Agendadas',
+                description: 'Las clases seleccionadas han sido guardadas.',
             });
             setIsScheduleModalOpen(false);
         } else {
@@ -576,7 +541,7 @@ export default function AllContractsPage() {
                 <Button variant="ghost" onClick={() => setIsScheduleModalOpen(false)}>Cancelar</Button>
                 <Button onClick={handleSaveSchedule} disabled={isSavingSchedule || schedulesToSync.length === 0}>
                     {isSavingSchedule ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    Guardar y Sincronizar
+                    Guardar Horario
                 </Button>
             </DialogFooter>
         </DialogContent>

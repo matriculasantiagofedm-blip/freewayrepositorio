@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addDays, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { cn, toDate } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 
@@ -64,28 +64,6 @@ interface LocalAssignment {
     classNumber: number;
     classType: 'Auto' | 'Moto';
 }
-
-function toDate(date: any): Date {
-  if (!date) return new Date('invalid');
-  if (date instanceof Date) {
-    return date;
-  }
-  // Handle Firestore Timestamp
-  if (date && typeof date.toDate === 'function') {
-    return date.toDate();
-  }
-  // Handle ISO strings or other string formats
-  if (typeof date === 'string') {
-    // Attempt to parse, replacing hyphens for better cross-browser compatibility
-    const parsed = new Date(date.replace(/-/g, '/'));
-    if (!isNaN(parsed.getTime())) {
-      return parsed;
-    }
-  }
-  // Fallback for unexpected types
-  return new Date('invalid');
-}
-
 
 export default function VehicleScheduleReportPage() {
   const db = useDb();

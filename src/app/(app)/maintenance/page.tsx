@@ -28,7 +28,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { cn } from '@/lib/utils';
+import { cn, toDate } from '@/lib/utils';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -46,28 +46,6 @@ type MaintenanceFormValues = z.infer<typeof maintenanceSchema>;
 
 const maintenanceTypes: MaintenanceType[] = ['Cambio de Aceite', 'Revisión de Frenos', 'Rotación de Llantas', 'Mantenimiento General', 'Otro'];
 const vehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Moto Roja', 'Moto Negra'];
-
-
-function toDate(date: any): Date {
-  if (!date) return new Date('invalid');
-  if (date instanceof Date) {
-    return date;
-  }
-  // Handle Firestore Timestamp
-  if (date && typeof date.toDate === 'function') {
-    return date.toDate();
-  }
-  // Handle ISO strings or other string formats
-  if (typeof date === 'string') {
-    // Attempt to parse, replacing hyphens for better cross-browser compatibility
-    const parsed = new Date(date.replace(/-/g, '/'));
-    if (!isNaN(parsed.getTime())) {
-      return parsed;
-    }
-  }
-  // Fallback for unexpected types
-  return new Date('invalid');
-}
 
 export default function MaintenancePage() {
     const db = useDb();

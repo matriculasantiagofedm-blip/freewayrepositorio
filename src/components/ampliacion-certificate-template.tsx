@@ -4,27 +4,7 @@ import type { Certificate } from '@/lib/types';
 import { format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Image from 'next/image';
-
-function toDate(date: any): Date {
-  if (!date) return new Date('invalid');
-  if (date instanceof Date) {
-    return date;
-  }
-  // Handle Firestore Timestamp
-  if (date && typeof date.toDate === 'function') {
-    return date.toDate();
-  }
-  // Handle ISO strings or other string formats
-  if (typeof date === 'string') {
-    // Attempt to parse, replacing hyphens for better cross-browser compatibility
-    const parsed = new Date(date.replace(/-/g, '/'));
-    if (!isNaN(parsed.getTime())) {
-      return parsed;
-    }
-  }
-  // Fallback for unexpected types
-  return new Date('invalid');
-}
+import { toDate } from '@/lib/utils';
 
 const getHighestLicenseType = (licenseTypes: string = ''): string => {
     if (!licenseTypes) return '';

@@ -33,7 +33,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
     const auth = getAuth(app);
     // Explicitly connect to the '(default)' database to avoid ambiguity.
-    const db = getFirestore(app);
+    const db = getFirestore(app, '(default)');
     return { app, auth, db };
   }, []);
 

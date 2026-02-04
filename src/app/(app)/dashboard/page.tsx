@@ -9,30 +9,9 @@ import { isPast } from 'date-fns';
 import { collection, query, where }from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
-import { cn } from '@/lib/utils';
+import { cn, toDate } from '@/lib/utils';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
-
-function toDate(date: any): Date {
-  if (!date) return new Date('invalid');
-  if (date instanceof Date) {
-    return date;
-  }
-  // Handle Firestore Timestamp
-  if (date && typeof date.toDate === 'function') {
-    return date.toDate();
-  }
-  // Handle ISO strings or other string formats
-  if (typeof date === 'string') {
-    // Attempt to parse, replacing hyphens for better cross-browser compatibility
-    const parsed = new Date(date.replace(/-/g, '/'));
-    if (!isNaN(parsed.getTime())) {
-      return parsed;
-    }
-  }
-  // Fallback for unexpected types
-  return new Date('invalid');
-}
 
 const getBalance = (contract: Contract): number => {
     if (contract.autoMotoDetails) {

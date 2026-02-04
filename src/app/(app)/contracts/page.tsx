@@ -16,34 +16,13 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { format, isPast, differenceInDays, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+import { cn, toDate } from '@/lib/utils';
 import { Eye, Search, CheckCircle, XCircle, Ban } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { useSearchParams } from 'next/navigation';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
-
-function toDate(date: any): Date {
-  if (!date) return new Date('invalid');
-  if (date instanceof Date) {
-    return date;
-  }
-  // Handle Firestore Timestamp
-  if (date && typeof date.toDate === 'function') {
-    return date.toDate();
-  }
-  // Handle ISO strings or other string formats
-  if (typeof date === 'string') {
-    // Attempt to parse, replacing hyphens for better cross-browser compatibility
-    const parsed = new Date(date.replace(/-/g, '/'));
-    if (!isNaN(parsed.getTime())) {
-      return parsed;
-    }
-  }
-  // Fallback for unexpected types
-  return new Date('invalid');
-}
 
 const getBalance = (contract: Contract): number => {
     if (contract.autoMotoDetails) {

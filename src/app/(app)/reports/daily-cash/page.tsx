@@ -148,13 +148,13 @@ export default function DailyCashReportPage() {
                 amount = 15.00; // Matrícula for Deluxe
                 studentIdNumber = contract.deluxeDetails?.studentIdNumber || studentIdNumber;
             } else if (contract.autoMotoDetails?.downPayment && contract.autoMotoDetails.downPayment > 0) {
-                 paymentType = contract.autoMotoDetails.paymentType || 'cash';
-                 amount = contract.autoMotoDetails.downPayment;
-                 studentIdNumber = contract.autoMotoDetails.studentIdNumber || studentIdNumber;
+                 paymentType = contract.autoMotoDetails?.paymentType || 'cash';
+                 amount = contract.autoMotoDetails?.downPayment;
+                 studentIdNumber = contract.autoMotoDetails?.studentIdNumber || studentIdNumber;
             } else if (contract.ampliacionesDetails?.downPayment && contract.ampliacionesDetails.downPayment > 0) {
-                paymentType = contract.ampliacionesDetails.paymentType || 'cash';
-                amount = contract.ampliacionesDetails.downPayment;
-                studentIdNumber = contract.ampliacionesDetails.studentIdNumber || studentIdNumber;
+                paymentType = contract.ampliacionesDetails?.paymentType || 'cash';
+                amount = contract.ampliacionesDetails?.downPayment;
+                studentIdNumber = contract.ampliacionesDetails?.studentIdNumber || studentIdNumber;
             }
 
             if(amount > 0 && Object.keys(paymentColumns).includes(paymentType)) {

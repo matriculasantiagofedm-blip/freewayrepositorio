@@ -59,7 +59,7 @@ export interface AutoMotoContractDetails {
   downPayment?: number;
   balance?: number;
   paymentDeadline?: Date | null;
-  vehicle?: 'Spark' | 'P. Blanco' | 'P. Bronce' | 'Motocicleta' | 'Moto Roja' | 'Moto Negra';
+  vehicle?: VehicleName;
   vehicleTransmission?: 'Automático' | 'Manual' | 'Moto';
   licenseCategory?: 'A, C' | 'A, C, D' | 'A, B';
   theoreticalClassSchedule?: string;
@@ -105,7 +105,7 @@ export interface Contract {
   createdAt: Timestamp;
   createdBy?: string;
   deluxeDetails?: Partial<DeluxeContractDetails>;
-  autoMotoDetails?: Partial<AutoMotoDetails>;
+  autoMotoDetails?: Partial<AutoMotoContractDetails>;
   ampliacionesDetails?: Partial<AmpliacionesContractDetails>;
   certificateGeneratedAt?: Timestamp;
   certificateFolio?: string;

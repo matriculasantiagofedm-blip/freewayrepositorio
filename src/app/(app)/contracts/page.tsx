@@ -1,7 +1,7 @@
 
 'use client';
 import { collection, query, where, orderBy, Timestamp, doc, runTransaction } from 'firebase/firestore';
-import type { Contract, Deadline } from '@/lib/types';
+import type { Contract } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import {
   Table,

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -1301,15 +1302,15 @@ export function ContractForm() {
                                                     {(contractType === 'Curso Auto' || (contractType === 'Curso Solo Practica' && coursePlan?.includes('(Auto)'))) && (
                                                         <>
                                                             <SelectItem value="Spark">Spark</SelectItem>
-                                                            <SelectItem value="P. Blanco">P. Blanco</SelectItem>
-                                                            <SelectItem value="P. Bronce">P. Bronce</SelectItem>
+                                                            <SelectItem value="Picanto Blanco">P. Blanco</SelectItem>
+                                                            <SelectItem value="Picanto Bronce">P. Bronce</SelectItem>
                                                         </>
                                                     )}
                                                     {contractType === 'Curso Mixto' && (
                                                         <>
                                                             <SelectItem value="Spark">Spark</SelectItem>
-                                                            <SelectItem value="P. Blanco">P. Blanco</SelectItem>
-                                                            <SelectItem value="P. Bronce">P. Bronce</SelectItem>
+                                                            <SelectItem value="Picanto Blanco">P. Blanco</SelectItem>
+                                                            <SelectItem value="Picanto Bronce">P. Bronce</SelectItem>
                                                             <SelectItem value="Moto Roja">Moto Roja</SelectItem>
                                                             <SelectItem value="Moto Negra">Moto Negra</SelectItem>
                                                         </>

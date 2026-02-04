@@ -7,7 +7,7 @@ import { FileText, CalendarClock, Users, Car, Bike, Combine, Crown, Plus, CarFro
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { isPast } from 'date-fns';
 import { collection, query, where }from 'firebase/firestore';
-import type { Contract, Deadline } from '@/lib/types';
+import type { Contract } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { cn } from '@/lib/utils';
 import { useDb, useUser } from '@/components/firebase-provider';

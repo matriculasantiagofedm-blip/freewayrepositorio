@@ -23,6 +23,11 @@ const getHighestLicenseType = (licenseTypes: string = ''): string => {
     return letters[letters.length - 1] || '';
 };
 
+const getLicenseTypeText = (licenseType?: string) => {
+    if (!licenseType) return '';
+    return licenseType.split(',').map(l => l.trim()).join(',');
+}
+
 const getFolioParts = (folio?: string) => {
     if (!folio || !folio.includes('/')) {
         const currentYear = new Date().getFullYear();
@@ -43,60 +48,62 @@ function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate 
     const { num: folioNum, year: folioYear } = getFolioParts(certificate.folio);
     
     return (
-        <div className="w-[11in] h-[8.5in] p-8 bg-white text-black font-serif print:[-webkit-print-color-adjust:exact] print:[color-adjust:exact]">
-            <div className="w-full h-full border-2 border-black flex flex-col p-4 relative">
-                {/* Header */}
-                <header className="flex w-full items-start justify-between mb-4 relative">
-                    <div className="w-1/3">
-                        {/* Logo can go here */}
+        <div className="w-[11in] h-[8.5in] p-8 bg-white text-black font-serif">
+            <div className="w-full h-full border-2 border-black flex flex-col p-8 relative">
+                 {/* Decorative Top Bar */}
+                <div className="absolute top-0 left-0 h-4 w-48 print:[-webkit-print-color-adjust:exact] print:[color-adjust:exact]">
+                    <div className="h-full w-full bg-yellow-400 -skew-x-[45deg] origin-top-left flex print:[-webkit-print-color-adjust:exact] print:[color-adjust:exact]">
+                        <div className="w-1/4 h-full bg-black print:[-webkit-print-color-adjust:exact] print:[color-adjust:exact]"></div>
+                        <div className="w-1/4 h-full bg-yellow-400 print:[-webkit-print-color-adjust:exact] print:[color-adjust:exact]"></div>
+                        <div className="w-1/4 h-full bg-black print:[-webkit-print-color-adjust:exact] print:[color-adjust:exact]"></div>
+                        <div className="w-1/4 h-full bg-yellow-400 print:[-webkit-print-color-adjust:exact] print:[color-adjust:exact]"></div>
                     </div>
-                    <div className="w-1/3 text-center">
-                        <h1 className="text-3xl font-extrabold tracking-wider">FREEWAY</h1>
-                        <p className="text-lg tracking-[0.2em]">ESCUELA DE MANEJO</p>
+                </div>
+
+                <header className="flex w-full flex-col items-center justify-center mb-4 relative pt-4">
+                    <p className="text-sm font-bold tracking-wider">FREEWAY ESCUELA DE MANEJO S.A.</p>
+                    <div className="text-center absolute w-full pt-8">
+                        <h1 className="text-5xl font-extrabold tracking-widest">FREEWAY</h1>
+                        <p className="text-xl tracking-[0.3em]">ESCUELA DE MANEJO</p>
                     </div>
-                    <div className="w-1/3 flex justify-end">
-                        <div className="text-center border-l-2 border-b-2 border-black p-2">
-                             <p className="text-5xl font-bold">{getHighestLicenseType(certificate.licenseType)}</p>
-                             <p className="text-xs">{folioNum} / {folioYear}</p>
-                             <div className="w-20 h-24 border-2 border-black mt-2 bg-gray-200 flex items-center justify-center text-gray-500 text-xs">FOTO</div>
-                        </div>
+                    <div className="absolute top-0 right-0 text-center">
+                         <p className="text-5xl font-bold">{getHighestLicenseType(certificate.licenseType)}</p>
+                         <p className="text-xs">{folioNum} / {folioYear}</p>
+                         <div className="w-20 h-24 border-2 border-black mt-2 bg-gray-200 flex items-center justify-center text-gray-500 text-xs">FOTO</div>
                     </div>
                 </header>
 
-                <main className="flex-grow flex flex-col justify-center text-center -mt-16">
-                    <h2 className="text-2xl font-bold tracking-wider">CERTIFICADO DE CAPACITACIÓN PARA</h2>
-                    <h2 className="text-2xl font-bold tracking-wider">CONDUCTORES DE TRANSPORTE PÚBLICO</h2>
-                    
-                    <div className="text-sm leading-relaxed max-w-4xl mx-auto mt-8 text-left">
+                <main className="flex-grow flex flex-col justify-start text-center pt-20">
+                    <p className="text-base">Casa Matriz Chorrera</p>
+                    <p className="mt-2 text-base">Otorga el presente Certificado a:</p>
+
+                    <div className="my-4">
+                        <p className="font-bold text-3xl tracking-wider">{certificate.clientName}</p>
+                        <p className="font-bold text-xl mt-1 tracking-wider">C.I.P. {certificate.cip}</p>
+                    </div>
+
+                    <div className="text-sm leading-snug max-w-3xl mx-auto border border-dashed border-gray-400 p-4">
                         <p>
-                            Por este medio hacemos constar que el/la señor(a) <span className="font-bold underline">{certificate.clientName}</span>,
-                            portador(a) del documento de identidad personal N° <span className="font-bold underline">{certificate.cip}</span>,
-                            ha cumplido satisfactoriamente con el curso de capacitación para aspirantes a obtener la licencia de conducir tipo
-                            <span className="font-bold underline"> {certificate.licenseType} </span> por un total de <span className="font-bold underline">80</span> horas.
-                        </p>
-                        <p className="mt-4">
-                            En cumplimiento de lo que establece la Ley 146 del 15 de Abril de 2020.
+                            Por haber aprobado el curso de capacitación <span className="font-bold">TEÓRICO Y PRÁCTICO</span>, para optar por la licencia de
+                            conducir tipo <span className="font-bold">{getLicenseTypeText(certificate.licenseType)}</span> con una duración de <span className="font-bold">80</span> horas, en cumplimiento de la Ley 146 del 15 de Abril
+                            de 2020, acápite a.
                         </p>
                     </div>
 
-                    <div className="text-center mt-8 font-bold text-sm">
-                        <p>Dado en la República de Panamá, a los {formattedDay} días del mes de {formattedMonth} de {formattedYear}.</p>
+                    <div className="text-xs mx-auto mt-4">
+                        <p>
+                            Reconocida por la Autoridad del Tránsito y Transporte Terrestre, Resuelto N°380 (04 de diciembre de 2000) Resolución AL-325
+                        </p>
+                    </div>
+                    <div className="text-center mt-4 font-bold text-sm">
+                        <p>***Dado en la república de Panamá, a los {formattedDay} dias del mes de {formattedMonth} de {formattedYear}***</p>
                     </div>
                 </main>
                 
-                <footer className="w-full flex-shrink-0 pt-16">
-                    <div className="flex justify-around">
-                        <div className="text-center">
-                            <p className="inline-block border-t-2 border-black px-16 pt-1 font-semibold">Lic. Ayax Ortega</p>
-                            <p>CEO—Representante Legal</p>
-                        </div>
-                         <div className="text-center">
-                            <p className="inline-block border-t-2 border-black px-16 pt-1 font-semibold">&nbsp;</p>
-                            <p>DIRECTORA ACADÉMICA</p>
-                        </div>
-                    </div>
-                     <div className="text-center text-xs mt-4">
-                        <p>Reconocida por la Autoridad del Tránsito y Transporte Terrestre, Resuelto N°380 (04 de diciembre de 2000) Resolución AL-325</p>
+                <footer className="w-full flex-shrink-0 pt-8 pb-4">
+                    <div className="text-center">
+                        <p className="inline-block border-t-2 border-black px-24 pt-1 font-semibold">CEO—Representante Legal</p>
+                         <p>Lic. Ayax Ortega</p>
                     </div>
                 </footer>
             </div>

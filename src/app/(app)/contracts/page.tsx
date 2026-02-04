@@ -1,3 +1,4 @@
+
 'use client';
 import { collection, query, where, orderBy, Timestamp, doc, runTransaction } from 'firebase/firestore';
 import type { Contract, Deadline, VehicleAssignment, VehicleName, TimeSlot, InstructorName } from '@/lib/types';

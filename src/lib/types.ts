@@ -97,6 +97,10 @@ export interface Contract {
   id: string;
   folioNumber: number;
   title: string;
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  secondLastName?: string;
   client?: Client;
   clientName: string;
   clientEmail: string;
@@ -112,6 +116,8 @@ export interface Contract {
   autoMotoDetails?: Partial<AutoMotoContractDetails>;
   ampliacionesDetails?: Partial<AmpliacionesContractDetails>;
   certificateGeneratedAt?: Timestamp;
+  certificateFolio?: string;
+  studentIdNumber?: string;
 }
 
 export interface CertificateData {

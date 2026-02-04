@@ -130,29 +130,31 @@ export default function DailyCashReportPage() {
             getDocs(bookSaleQuery)
         ]);
 
-        // Helper to filter docs by user ID or role on the client
+        // Helper to filter docs by user role on the client
         const docsToProcess = (snapshot: any) => {
             if (isAdmin) return snapshot.docs;
-            // The user wants to see transactions based on their role, not their specific user ID.
             return snapshot.docs.filter((doc: any) => doc.data().createdBy === role);
         }
 
         docsToProcess(contractsSnapshot).map((doc: any) => ({ id: doc.id, ...doc.data() } as Contract)).filter((contract: Contract) => contract.status !== 'expired').forEach((contract: Contract) => {
-            let paymentType: string = '';
+            let paymentType: string = 'cash';
             let amount: number = 0;
             let paymentColumns: any = { cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 };
             
-            let details: any = {};
+            let studentIdNumber = contract.studentIdNumber || '';
+
             if (contract.type === 'Curso Deluxe') {
-                details = contract.deluxeDetails;
-                paymentType = details?.paymentType || 'cash';
+                paymentType = contract.deluxeDetails?.paymentType || 'cash';
                 amount = 15.00; // Matrícula for Deluxe
-            } else {
-                 details = contract.autoMotoDetails || contract.ampliacionesDetails || {};
-                 if (details.downPayment > 0) {
-                    paymentType = details.paymentType || 'cash';
-                    amount = details.downPayment || 0;
-                 }
+                studentIdNumber = contract.deluxeDetails?.studentIdNumber || studentIdNumber;
+            } else if (contract.autoMotoDetails?.downPayment && contract.autoMotoDetails.downPayment > 0) {
+                 paymentType = contract.autoMotoDetails.paymentType || 'cash';
+                 amount = contract.autoMotoDetails.downPayment;
+                 studentIdNumber = contract.autoMotoDetails.studentIdNumber || studentIdNumber;
+            } else if (contract.ampliacionesDetails?.downPayment && contract.ampliacionesDetails.downPayment > 0) {
+                paymentType = contract.ampliacionesDetails.paymentType || 'cash';
+                amount = contract.ampliacionesDetails.downPayment;
+                studentIdNumber = contract.ampliacionesDetails.studentIdNumber || studentIdNumber;
             }
 
             if(amount > 0 && Object.keys(paymentColumns).includes(paymentType)) {
@@ -163,7 +165,7 @@ export default function DailyCashReportPage() {
                  fetchedTransactions.push({
                     id: contract.id,
                     contrato: String(contract.folioNumber || ''),
-                    cedula: details.studentIdNumber || '',
+                    cedula: studentIdNumber,
                     clientName: contract.clientName || '',
                     service: contract.type === 'Curso Deluxe' ? 'Matrícula Deluxe' : `Abono Contrato ${contract.type}`,
                     amount: amount,

@@ -68,7 +68,6 @@ function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate 
                     <div className="absolute top-0 right-0 text-center">
                          <p className="text-5xl font-bold">{getHighestLicenseType(certificate.licenseType)}</p>
                          <p className="text-xs">{folioNum} / {folioYear}</p>
-                         <div className="w-20 h-24 border-2 border-black mt-2 bg-gray-200 flex items-center justify-center text-gray-500 text-xs">FOTO</div>
                     </div>
                 </header>
 

@@ -39,11 +39,11 @@ const timeStringToTimeSlot = (timeString: string): TimeSlot | null => {
 }
 
 const vehicleColors: Record<string, string> = {
-    'Picanto Blanco': 'bg-blue-100 border-blue-300 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700',
-    'Picanto Bronce': 'bg-yellow-100 border-yellow-300 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700',
-    'Spark': 'bg-green-100 border-green-300 text-green-800 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
-    'Moto Roja': 'bg-red-100 border-red-300 text-red-800 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700',
-    'Moto Negra': 'bg-purple-100 border-purple-300 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700',
+    'Picanto Blanco': 'bg-blue-200 border-blue-400 text-blue-900 dark:bg-blue-800 dark:text-blue-100 dark:border-blue-600',
+    'Picanto Bronce': 'bg-yellow-200 border-yellow-400 text-yellow-900 dark:bg-yellow-800 dark:text-yellow-100 dark:border-yellow-600',
+    'Spark': 'bg-green-200 border-green-400 text-green-900 dark:bg-green-800 dark:text-green-100 dark:border-green-600',
+    'Moto Roja': 'bg-red-200 border-red-400 text-red-900 dark:bg-red-800 dark:text-red-100 dark:border-red-600',
+    'Moto Negra': 'bg-purple-200 border-purple-400 text-purple-900 dark:bg-purple-800 dark:text-purple-100 dark:border-purple-600',
 };
 
 const vehicleNameMapping: { [key: string]: VehicleName } = {

@@ -125,14 +125,16 @@ export default function VehicleScheduleReportPage() {
                             <TableCell key={day.toISOString()} className="border p-1 align-top">
                                 {assignments.length > 0 ? (
                                 <div className="grid grid-cols-1 gap-1">
-                                    {assignments.map((assignment: VehicleAssignment) => (
-                                    <div key={`${assignment.vehicle}-${assignment.studentName}`} className={cn("p-1.5 rounded border text-xs shadow-sm", vehicleColors[assignment.vehicle] || 'bg-gray-100 border-gray-300')}>
+                                    {assignments.map((assignment: Partial<VehicleAssignment>) => (
+                                    <div key={`${assignment.vehicle}-${assignment.studentName}`} className={cn("p-1.5 rounded border text-xs shadow-sm", vehicleColors[assignment.vehicle!] || 'bg-gray-100 border-gray-300')}>
                                         <p className="font-bold truncate">{assignment.studentName || 'Sin estudiante'}</p>
                                         <p className="truncate text-muted-foreground">{assignment.instructor || 'Sin instructor'}</p>
                                         <p className="opacity-80 truncate">{assignment.vehicle}</p>
-                                        {assignment.classNumber && (
+                                        {assignment.classNumber && assignment.classType ? (
                                             <p className="font-semibold text-primary truncate pt-1 mt-1 border-t border-black/10">Clase #{assignment.classNumber} ({assignment.classType})</p>
-                                        )}
+                                        ) : assignment.studentName ? (
+                                            <p className="text-xs text-muted-foreground truncate pt-1 mt-1 border-t border-black/10">(Clase manual)</p>
+                                        ): null}
                                     </div>
                                     ))}
                                 </div>

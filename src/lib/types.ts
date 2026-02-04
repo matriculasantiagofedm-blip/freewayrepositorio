@@ -228,9 +228,9 @@ export interface VehicleAssignment {
   timeSlot: TimeSlot;
   instructor: InstructorName;
   studentName: string;
-  contractId: string;
-  classNumber: number;
-  classType: 'Auto' | 'Moto';
+  contractId?: string;
+  classNumber?: number;
+  classType?: 'Auto' | 'Moto';
 }
 
 export interface VehicleSchedule {
@@ -239,3 +239,4 @@ export interface VehicleSchedule {
   userId: string;
   assignments: VehicleAssignment[];
 }
+

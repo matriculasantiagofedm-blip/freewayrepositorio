@@ -37,8 +37,6 @@ const TIME_SLOTS: { id: TimeSlot, label: string }[] = [
 ];
 const INSTRUCTORS: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon'];
 
-type ScheduleData = Map<string, { instructor: InstructorName; studentName: string }>;
-
 function generateScheduleKey(vehicle: VehicleName, timeSlot: TimeSlot): string {
     return `${vehicle}-${timeSlot}`;
 }
@@ -48,6 +46,19 @@ interface StudentComboboxProps {
     value: string;
     onChange: (value: string) => void;
     disabled?: boolean;
+}
+
+function toDate(date: any): Date {
+  if (!date) return new Date(0);
+  if (date instanceof Date) return date;
+  if (date && typeof date.toDate === 'function') return date.toDate();
+  if (typeof date === 'string') {
+    const parsed = new Date(date);
+    if (!isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+  return new Date(0);
 }
 
 function StudentCombobox({ students, value, onChange, disabled }: StudentComboboxProps) {
@@ -140,7 +151,7 @@ export default function VehicleSchedulePage() {
     const { toast } = useToast();
 
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-    const [scheduleData, setScheduleData] = useState<ScheduleData>(new Map());
+    const [scheduleData, setScheduleData] = useState<Map<string, Partial<VehicleAssignment>>>(new Map());
     const [isSaving, setIsSaving] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -174,10 +185,10 @@ export default function VehicleSchedulePage() {
                 const docSnap = await getDoc(scheduleRef);
                 if (docSnap.exists()) {
                     const data = docSnap.data() as Omit<VehicleSchedule, 'id'>;
-                    const newScheduleData = new Map<string, { instructor: InstructorName; studentName: string }>();
+                    const newScheduleData = new Map<string, Partial<VehicleAssignment>>();
                     data.assignments.forEach(assignment => {
                         const key = generateScheduleKey(assignment.vehicle, assignment.timeSlot);
-                        newScheduleData.set(key, { instructor: assignment.instructor, studentName: assignment.studentName });
+                        newScheduleData.set(key, assignment);
                     });
                     setScheduleData(newScheduleData);
                 } else {
@@ -208,11 +219,50 @@ export default function VehicleSchedulePage() {
     const handleScheduleChange = (vehicle: VehicleName, timeSlot: TimeSlot, field: 'instructor' | 'studentName', value: string) => {
         const key = generateScheduleKey(vehicle, timeSlot);
         const newScheduleData = new Map(scheduleData);
-        const currentData = newScheduleData.get(key) || { instructor: '' as InstructorName, studentName: '' };
+        const currentData = newScheduleData.get(key) || { vehicle, timeSlot };
         
-        const finalValue = value === 'none' ? '' : value;
+        let updatedData: Partial<VehicleAssignment> = { ...currentData };
 
-        newScheduleData.set(key, { ...currentData, [field]: finalValue });
+        if (field === 'instructor') {
+            updatedData.instructor = value as InstructorName;
+        } else if (field === 'studentName') {
+            updatedData.studentName = value;
+
+            // Reset contract info when student changes
+            delete updatedData.contractId;
+            delete updatedData.classNumber;
+            delete updatedData.classType;
+
+            const student = students.find(s => s.name === value);
+            if (student) {
+                const studentContracts = contracts?.filter(c => c.clientId === student.id);
+                if (studentContracts && studentContracts.length > 0) {
+                    let foundClass = false;
+                    for (const contract of studentContracts) {
+                        updatedData.contractId = contract.id;
+                        const allClasses = [
+                            ...(contract.autoMotoDetails?.practicalClassSchedules || []).map((s, i) => ({...s, type: 'Auto' as const, classNum: i+1})),
+                            ...(contract.autoMotoDetails?.motoPracticalClassSchedules || []).map((s, i) => ({...s, type: 'Moto' as const, classNum: i+1}))
+                        ];
+
+                        const classOnDate = allClasses.find(c => {
+                            if (!c.date) return false;
+                            const classDate = toDate(c.date);
+                            return format(classDate, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
+                        });
+                        
+                        if (classOnDate) {
+                            updatedData.classNumber = classOnDate.classNum;
+                            updatedData.classType = classOnDate.type;
+                            foundClass = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        newScheduleData.set(key, updatedData);
         setScheduleData(newScheduleData);
     };
 
@@ -222,19 +272,15 @@ export default function VehicleSchedulePage() {
             return;
         }
         setIsSaving(true);
-
-        const assignments: VehicleAssignment[] = [];
-        scheduleData.forEach((value, key) => {
-            const [vehicle, timeSlot] = key.split(/-(.*)/s) as [VehicleName, TimeSlot];
-            if (value.instructor || value.studentName) {
-                assignments.push({ vehicle, timeSlot, ...value });
-            }
-        });
+        
+        const assignments = Array.from(scheduleData.values()).filter(
+            (assignment) => assignment.instructor || assignment.studentName
+        );
 
         const scheduleDoc: Omit<VehicleSchedule, 'id'> = {
             date: Timestamp.fromDate(startOfDay(selectedDate)),
             userId: user.uid,
-            assignments,
+            assignments: assignments as VehicleAssignment[],
         };
 
         try {
@@ -334,7 +380,7 @@ export default function VehicleSchedulePage() {
                                                             </Select>
                                                             <StudentCombobox
                                                                 students={students}
-                                                                value={assignment.studentName}
+                                                                value={assignment.studentName || ''}
                                                                 onChange={(value) => handleScheduleChange(vehicle, timeSlot, 'studentName', value)}
                                                                 disabled={isLoadingContracts}
                                                             />

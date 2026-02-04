@@ -1,7 +1,7 @@
 
 'use client';
 import { collection, query, where, orderBy, Timestamp, doc, runTransaction } from 'firebase/firestore';
-import type { Contract, Deadline, VehicleAssignment, VehicleName, TimeSlot, InstructorName } from '@/lib/types';
+import type { Contract, Deadline } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import {
   Table,
@@ -17,52 +17,12 @@ import Link from 'next/link';
 import { format, isPast, differenceInDays, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { Eye, Search, CheckCircle, XCircle, Ban, CalendarClock } from 'lucide-react';
+import { Eye, Search, CheckCircle, XCircle, Ban } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { useSearchParams } from 'next/navigation';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { errorEmitter } from '@/firebase/error-emitter';
-
-const VEHICLES: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Moto Roja', 'Moto Negra'];
-const TIME_SLOTS: { id: TimeSlot, label: string }[] = [
-    { id: '8am-10am', label: '8:00am - 10:00am' },
-    { id: '10am-12pm', label: '10:00am - 12:00pm' },
-    { id: '1pm-3pm', label: '1:00pm - 3:00pm' },
-    { id: '3pm-5pm', label: '3:00pm - 5:00pm' },
-];
-const INSTRUCTORS: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon'];
-
-const TIME_STRING_TO_SLOT_MAP: { [key: string]: TimeSlot } = {
-    '8:00am a 10:00am': '8am-10am',
-    '10:00am a 12:pm': '10am-12pm',
-    '1:00pm a 3:00pm': '1pm-3pm',
-    '3:00pm a 5:00pm': '3pm-5pm',
-};
-
-const timeStringToTimeSlot = (timeString: string): TimeSlot | null => {
-    return TIME_STRING_TO_SLOT_MAP[timeString] || null;
-}
 
 function toDate(date: any): Date {
   if (!date) return new Date(0); // Return an invalid date if input is null/undefined
@@ -152,13 +112,6 @@ export default function AllContractsPage() {
   const { role } = useCurrentRole();
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
-  const { toast } = useToast();
-
-  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
-  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
-  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
-  
-  const [schedulesToSync, setSchedulesToSync] = useState<any[]>([]);
 
   const filter = searchParams.get('filter');
 
@@ -239,151 +192,6 @@ export default function AllContractsPage() {
 
       return true; // if no filter or search, show all (or all overdue if filter is set)
     }) || [];
-
-    const handleOpenScheduleModal = (contract: Contract) => {
-        setSelectedContract(contract);
-        
-        const autoSchedules = (contract.autoMotoDetails?.practicalClassSchedules || [])
-            .filter(s => s && s.date && s.time)
-            .map((s, index) => ({ ...s, classType: 'Auto' as const, classNumber: index + 1 }));
-
-        const motoSchedules = (contract.autoMotoDetails?.motoPracticalClassSchedules || [])
-            .filter(s => s && s.date && s.time)
-            .map((s, index) => ({ ...s, classType: 'Moto' as const, classNumber: index + 1 }));
-
-        const allSchedules = [...autoSchedules, ...motoSchedules];
-
-        const contractVehicleFormValue = contract.autoMotoDetails?.vehicle;
-        let mappedVehicle: VehicleName | '' = '';
-        if (contractVehicleFormValue) {
-            if (contractVehicleFormValue === 'Spark') mappedVehicle = 'Spark';
-            else if (contractVehicleFormValue === 'P. Blanco') mappedVehicle = 'Picanto Blanco';
-            else if (contractVehicleFormValue === 'P. Bronce') mappedVehicle = 'Picanto Bronce';
-            // 'Motocicleta' is ambiguous, so it is not pre-selected.
-        }
-        
-        const assignedInstructor = contract.autoMotoDetails?.instructor || contract.deluxeDetails?.instructor || '';
-
-        setSchedulesToSync(allSchedules.map(schedule => {
-            let preselectedVehicle: VehicleName | '' = '';
-
-            // Pre-select vehicle only if class type matches vehicle type from contract
-            const isCar = mappedVehicle === 'Spark' || mappedVehicle === 'Picanto Blanco' || mappedVehicle === 'Picanto Bronce';
-            
-            if (schedule.classType === 'Auto' && isCar) {
-                preselectedVehicle = mappedVehicle;
-            }
-
-            return {
-                date: toDate(schedule.date),
-                time: schedule.time,
-                classType: schedule.classType,
-                vehicle: preselectedVehicle,
-                instructor: assignedInstructor,
-                classNumber: schedule.classNumber,
-            };
-        }));
-        
-        setIsScheduleModalOpen(true);
-    };
-
-    const handleScheduleItemChange = (index: number, field: 'vehicle' | 'instructor', value: string) => {
-        const newSchedules = [...schedulesToSync];
-        newSchedules[index][field] = value;
-        setSchedulesToSync(newSchedules);
-    };
-
-
-    const handleSaveSchedule = async () => {
-        if (!db || !user || !selectedContract) return;
-
-        const schedulesToProcess = schedulesToSync.filter(s => s.vehicle && s.instructor);
-
-        if (schedulesToProcess.length === 0) {
-            toast({
-                variant: 'destructive',
-                title: 'Faltan datos',
-                description: 'Por favor, asigna un vehículo y un instructor al menos a una clase.',
-            });
-            return;
-        }
-
-        setIsSavingSchedule(true);
-
-        let allSavesSuccessful = true;
-        let errors: string[] = [];
-
-        for (const schedule of schedulesToProcess) {
-            const { date, time, vehicle, instructor, classType, classNumber } = schedule;
-            
-            const timeSlot = timeStringToTimeSlot(time);
-            if (!timeSlot) {
-                errors.push(`Formato de hora "${time}" inválido para la clase ${classNumber}.`);
-                continue;
-            }
-
-            const dateId = format(startOfDay(date), 'yyyy-MM-dd');
-            const scheduleRef = doc(db, 'vehicle_schedules', dateId);
-            
-            try {
-                await runTransaction(db, async (transaction) => {
-                    const scheduleSnap = await transaction.get(scheduleRef);
-                    const existingAssignments: VehicleAssignment[] = scheduleSnap.exists() ? scheduleSnap.data().assignments : [];
-                    
-                    const isSlotTaken = existingAssignments.some(
-                        (a) => a.vehicle === vehicle && a.timeSlot === timeSlot
-                    );
-
-                    if (isSlotTaken) {
-                        throw new Error(`El ${vehicle} ya está asignado el ${format(date, 'P', {locale: es})} a las ${time}.`);
-                    }
-
-                    const newAssignment: VehicleAssignment = {
-                        vehicle, timeSlot, instructor,
-                        studentName: selectedContract.clientName,
-                        contractId: selectedContract.id,
-                        classNumber: classNumber,
-                        classType: classType,
-                    };
-
-                    transaction.set(scheduleRef, { 
-                        id: dateId,
-                        date: Timestamp.fromDate(startOfDay(date)),
-                        userId: user.uid,
-                        assignments: [...existingAssignments, newAssignment] 
-                    }, { merge: true });
-                });
-
-            } catch (error: any) {
-                allSavesSuccessful = false;
-                errors.push(error.message || `Error al guardar la clase ${classNumber}.`);
-                
-                if (error.code === 'permission-denied') {
-                    errorEmitter.emit('permission-error', new FirestorePermissionError({
-                        path: `vehicle_schedules/${dateId}`, operation: 'update',
-                    }));
-                }
-            }
-        }
-
-        setIsSavingSchedule(false);
-
-        if (allSavesSuccessful) {
-            toast({
-                title: 'Clases Agendadas',
-                description: 'Las clases seleccionadas han sido guardadas.',
-            });
-            setIsScheduleModalOpen(false);
-        } else {
-            toast({
-                variant: 'destructive',
-                title: 'Ocurrieron Errores',
-                description: <ul>{errors.map((e, i) => <li key={i}>- {e}</li>)}</ul>,
-                duration: 10000,
-            });
-        }
-    };
-
 
   return (
     <div className="flex flex-col gap-8">
@@ -479,10 +287,6 @@ export default function AllContractsPage() {
                                                 <span className="sr-only">Ver Contrato</span>
                                             </Link>
                                         </Button>
-                                        <Button variant="ghost" size="icon" title="Generar Horario" onClick={() => handleOpenScheduleModal(contract)}>
-                                            <CalendarClock className="h-4 w-4" />
-                                            <span className="sr-only">Generar Horario</span>
-                                        </Button>
                                     </TableCell>
                                 </TableRow>
                                 )
@@ -502,55 +306,6 @@ export default function AllContractsPage() {
             )}
         </>
       )}
-
-      <Dialog open={isScheduleModalOpen} onOpenChange={setIsScheduleModalOpen}>
-        <DialogContent className="sm:max-w-3xl">
-            <DialogHeader>
-                <DialogTitle>Agendar Clases Prácticas</DialogTitle>
-                <DialogDescription>
-                    Asigna un vehículo e instructor para las clases de <span className="font-semibold text-primary">{selectedContract?.clientName}</span>.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
-                {schedulesToSync.length > 0 ? schedulesToSync.map((schedule, index) => (
-                    <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end border-b pb-4">
-                        <div className="space-y-1">
-                            <Label className="text-sm">Clase {schedule.classNumber} ({schedule.classType})</Label>
-                            <p className="font-semibold text-base">{format(schedule.date, "PPP", { locale: es })}</p>
-                            <p className="text-sm text-muted-foreground">{schedule.time}</p>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Vehículo</Label>
-                            <Select value={schedule.vehicle} onValueChange={(value) => handleScheduleItemChange(index, 'vehicle', value)}>
-                                <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
-                                <SelectContent>
-                                    {VEHICLES.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Instructor</Label>
-                            <Select value={schedule.instructor} onValueChange={(value) => handleScheduleItemChange(index, 'instructor', value)}>
-                                <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
-                                <SelectContent>
-                                    {INSTRUCTORS.map(i => <SelectItem key={i} value={i}>{i || 'Sin Asignar'}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                )) : (
-                    <p className="text-center text-muted-foreground py-8">Este contrato no tiene clases prácticas definidas.</p>
-                )}
-            </div>
-            <DialogFooter>
-                <Button variant="ghost" onClick={() => setIsScheduleModalOpen(false)}>Cancelar</Button>
-                <Button onClick={handleSaveSchedule} disabled={isSavingSchedule || schedulesToSync.length === 0}>
-                    {isSavingSchedule ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    Guardar Horario
-                </Button>
-            </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

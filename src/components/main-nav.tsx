@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -64,11 +63,6 @@ const navLinks = [
     icon: Car,
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     children: [
-        {
-            href: '/vehicle-schedule',
-            label: 'Planificador Diario',
-            roles: ['Administrador'],
-        },
         {
             href: '/mileage-log',
             label: 'Kilometraje',

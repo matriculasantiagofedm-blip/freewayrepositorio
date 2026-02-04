@@ -232,10 +232,3 @@ export interface VehicleAssignment {
   classNumber?: number;
   classType?: 'Auto' | 'Moto';
 }
-
-export interface VehicleSchedule {
-  id: string;
-  date: Timestamp;
-  userId: string;
-  assignments: VehicleAssignment[];
-}

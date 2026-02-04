@@ -4,7 +4,7 @@ import { doc, Timestamp } from 'firebase/firestore';
 import type { Certificate, Contract } from '@/lib/types';
 import { CertificateTemplate } from '@/components/certificate-template';
 import { AmpliacionCertificateTemplate } from '@/components/ampliacion-certificate-template';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useDb } from '@/components/firebase-provider';
 import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -76,6 +76,22 @@ export default function CertificatePrintIdPage() {
     }
   }, [contract, isContractLoading, searchParams]);
 
+  // Determine if the special "Ampliacion" template should be used.
+  const shouldUseAmpliacionTemplate = useMemo(() => {
+    if (!certificate || !certificate.contract) {
+        return false;
+    }
+    // It must be an "Ampliaciones" contract...
+    if (certificate.contract.type !== 'Ampliaciones') {
+        return false;
+    }
+
+    // ...and it must be for licenses E1, E2, or E3.
+    const hasELicense = certificate.licenseType && ['E1', 'E2', 'E3'].some(l => certificate.licenseType.includes(l));
+    
+    return hasELicense;
+  }, [certificate]);
+
   if (isContractLoading || isRoleLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -132,7 +148,7 @@ export default function CertificatePrintIdPage() {
             }
           }
         `}</style>
-        {certificate && certificate.contract?.type === 'Ampliaciones' ? (
+        {shouldUseAmpliacionTemplate ? (
           <AmpliacionCertificateTemplate certificate={certificate} />
         ) : (
           <CertificateTemplate certificate={certificate} />

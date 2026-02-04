@@ -5,7 +5,7 @@ import type { Contract } from '@/lib/types';
 import { ContractView } from '@/components/contract-view';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ChevronLeft, Award, Printer, ShieldX, Undo } from 'lucide-react';
+import { ChevronLeft, Award, Printer, ShieldX, Undo, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -58,8 +58,14 @@ export default function ContractDetailPage() {
   const { toast } = useToast();
   const { role } = useCurrentRole();
 
-  const [isFolioModalOpen, setIsFolioModalOpen] = useState(false);
-  const [certificateFolio, setCertificateFolio] = useState('');
+  const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
+  const [certificateData, setCertificateData] = useState({
+    folio: '',
+    clientName: '',
+    cip: '',
+    licenseType: '',
+  });
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastFolio, setLastFolio] = useState<string | null>(null);
 
@@ -79,18 +85,31 @@ export default function ContractDetailPage() {
   
   const canGenerateCertificate = contract && ['Curso Auto', 'Curso Moto', 'Curso Deluxe', 'Curso Mixto'].includes(contract.type);
 
-  const handleOpenFolioModal = () => {
+  const handleOpenCertificateModal = () => {
+    if (!contract) return;
+    
+    const details = contract.autoMotoDetails || contract.deluxeDetails;
     const suggestedFolio = getNextFolio(lastFolio);
-    setCertificateFolio(suggestedFolio);
-    setIsFolioModalOpen(true);
+
+    setCertificateData({
+      folio: suggestedFolio,
+      clientName: contract.clientName,
+      cip: details?.studentIdNumber || '',
+      licenseType: details?.licenseCategory || '',
+    });
+    setIsCertificateModalOpen(true);
   };
   
+  const handleCertDataChange = (field: keyof typeof certificateData, value: string) => {
+    setCertificateData(prev => ({ ...prev, [field]: value }));
+  };
+
   const handleProceedToPrint = async () => {
-    if (!certificateFolio || !db || !contractRef) {
+    if (!certificateData.folio || !db || !contractRef || !contract) {
         toast({
             variant: 'destructive',
-            title: 'Folio Inválido',
-            description: 'No se puede imprimir sin un número de folio válido.',
+            title: 'Datos Inválidos',
+            description: 'No se puede imprimir sin un número de folio o datos de contrato válidos.',
         });
         return;
     }
@@ -100,25 +119,34 @@ export default function ContractDetailPage() {
     try {
         const updateData = {
             certificateGeneratedAt: serverTimestamp(),
-            certificateFolio: certificateFolio,
+            certificateFolio: certificateData.folio,
         };
         await updateDoc(contractRef, updateData);
 
         // Store the new folio in localStorage
-        localStorage.setItem('lastCertificateFolio', certificateFolio);
-        setLastFolio(certificateFolio);
+        localStorage.setItem('lastCertificateFolio', certificateData.folio);
+        setLastFolio(certificateData.folio);
+
+        const queryParams = new URLSearchParams({
+            folio: certificateData.folio,
+            clientName: certificateData.clientName,
+            cip: certificateData.cip,
+            licenseType: certificateData.licenseType,
+            courseName: contract.title || '',
+            issueDate: new Date().toISOString(),
+        });
 
         // Open print window
-        const printUrl = `/certificate-print/${contractId}?folio=${encodeURIComponent(certificateFolio)}`;
+        const printUrl = `/certificate-print/${contractId}?${queryParams.toString()}`;
         window.open(printUrl, '_blank');
-        setIsFolioModalOpen(false);
+        setIsCertificateModalOpen(false);
 
     } catch (serverError: any) {
         if (serverError instanceof Error && serverError.name === 'FirebaseError') {
              const permissionError = new FirestorePermissionError({
                 path: contractRef.path,
                 operation: 'update',
-                requestResourceData: { certificateGeneratedAt: 'serverTimestamp()', certificateFolio },
+                requestResourceData: { certificateGeneratedAt: 'serverTimestamp()', certificateFolio: certificateData.folio },
              });
              errorEmitter.emit('permission-error', permissionError);
         } else {
@@ -236,7 +264,7 @@ export default function ContractDetailPage() {
             </div>
             <div className="flex items-center gap-2">
               {canGenerateCertificate && role !== 'Ventas' && (
-                <Button onClick={handleOpenFolioModal}>
+                <Button onClick={handleOpenCertificateModal}>
                   <Award className="mr-2 h-4 w-4" />
                   Generar Certificado
                 </Button>
@@ -292,34 +320,43 @@ export default function ContractDetailPage() {
         </div>
       )}
 
-      {/* Modal para introducir el folio del certificado */}
-      <Dialog open={isFolioModalOpen} onOpenChange={setIsFolioModalOpen}>
-        <DialogContent className="print-hide">
+      {/* Modal para revisar y editar datos del certificado */}
+      <Dialog open={isCertificateModalOpen} onOpenChange={setIsCertificateModalOpen}>
+        <DialogContent className="print-hide sm:max-w-[600px]">
             <DialogHeader>
-                <DialogTitle>Generar Certificado</DialogTitle>
+                <DialogTitle>Revisar y Generar Certificado</DialogTitle>
                 <DialogDescription>
-                    Se usará el siguiente número de folio para el certificado. Puedes editarlo si es necesario.
+                    Verifica y edita los datos del estudiante antes de imprimir el certificado.
                 </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="certificate-folio" className="text-right">
-                        Folio
-                    </Label>
-                    <Input
-                        id="certificate-folio"
-                        value={certificateFolio}
-                        onChange={(e) => setCertificateFolio(e.target.value)}
-                        className="col-span-3"
-                        placeholder="2026 / 0001"
-                    />
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="cert-folio">Folio del Certificado</Label>
+                        <Input id="cert-folio" value={certificateData.folio} onChange={(e) => handleCertDataChange('folio', e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="cert-cip">Cédula / Pasaporte</Label>
+                        <Input id="cert-cip" value={certificateData.cip} onChange={(e) => handleCertDataChange('cip', e.target.value)} />
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="cert-name">Nombre Completo del Estudiante</Label>
+                    <Input id="cert-name" value={certificateData.clientName} onChange={(e) => handleCertDataChange('clientName', e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="cert-license">Categoría de Licencia</Label>
+                    <Input id="cert-license" value={certificateData.licenseType} onChange={(e) => handleCertDataChange('licenseType', e.target.value)} />
                 </div>
             </div>
             <DialogFooter>
                 <DialogClose asChild>
                     <Button variant="ghost">Cancelar</Button>
                 </DialogClose>
-                <Button onClick={handleProceedToPrint} disabled={isGenerating}>Continuar a Impresión</Button>
+                <Button onClick={handleProceedToPrint} disabled={isGenerating}>
+                    {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
+                    Imprimir Certificado
+                </Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>

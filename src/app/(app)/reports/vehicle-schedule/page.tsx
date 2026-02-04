@@ -208,7 +208,7 @@ export default function VehicleScheduleReportPage() {
                                         <p className="font-bold truncate">{assignment.studentName}</p>
                                         <div className="flex items-center gap-1 truncate opacity-90">
                                             <User className="h-3 w-3 shrink-0" />
-                                            <span>{assignment.instructor}</span>
+                                            <span>{assignment.instructor || 'Sin Instructor'}</span>
                                         </div>
                                         <p className="opacity-80 truncate">{assignment.vehicle}</p>
                                         <p className="font-semibold text-primary truncate pt-1 mt-1 border-t border-black/10">Clase #{assignment.classNumber} ({assignment.classType})</p>

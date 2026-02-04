@@ -1,7 +1,7 @@
 'use client';
 import { useParams, useSearchParams } from 'next/navigation';
 import { doc, Timestamp } from 'firebase/firestore';
-import type { Contract, Certificate } from '@/lib/types';
+import type { Certificate, Contract } from '@/lib/types';
 import { CertificateTemplate } from '@/components/certificate-template';
 import { useEffect, useState } from 'react';
 import { useDb } from '@/components/firebase-provider';
@@ -15,46 +15,57 @@ export default function CertificatePrintIdPage() {
   const { role: currentUserRole, isLoading: isRoleLoading } = useCurrentRole();
 
   const contractId = Array.isArray(id) ? id[0] : id;
-  const customFolio = searchParams.get('folio');
 
+  // We still need the original contract for the back of the certificate.
   const contractRef = useMemoDoc(() => {
     if (!db || !contractId) return null;
-    return doc(db, `contracts`, contractId);
+    return doc(db, 'contracts', contractId);
   }, [db, contractId]);
 
   const { data: contract, isLoading: isContractLoading, error } = useDoc<Contract>(contractRef);
+
   const [certificate, setCertificate] = useState<Certificate | null>(null);
 
   useEffect(() => {
-    if (contract && customFolio && !isContractLoading) {
+    // Data for the certificate now comes primarily from URL parameters to reflect edits.
+    // The contract from Firestore is used for data not passed in URL, like the back of the certificate.
+    if (contract && !isContractLoading) {
+      const folio = searchParams.get('folio');
+      const clientName = searchParams.get('clientName');
+      const cip = searchParams.get('cip');
+      const licenseType = searchParams.get('licenseType');
+      const courseName = searchParams.get('courseName');
+      const issueDateStr = searchParams.get('issueDate');
       
-      const details = contract.autoMotoDetails || contract.deluxeDetails;
+      if (!folio || !clientName || !cip || !licenseType || !courseName || !issueDateStr) {
+          return; // Wait for all params
+      }
 
       const certificateData: Certificate = {
         id: contract.id,
         contractId: contract.id,
         clientId: contract.clientId,
         userId: contract.userId,
-        folio: customFolio, // Usar el folio de la URL
-        clientName: `${contract.firstName || ''} ${contract.middleName || ''} ${contract.lastName || ''} ${contract.secondLastName || ''}`.trim() || contract.clientName,
-        courseName: contract.title,
-        issueDate: Timestamp.now(), // Siempre usar la fecha actual para la impresión
-        cip: details?.studentIdNumber || '',
-        licenseType: details?.licenseCategory || '',
-        contract: contract, // Adjuntar el contrato completo
+        folio: folio,
+        clientName: clientName,
+        courseName: courseName,
+        issueDate: Timestamp.fromDate(new Date(issueDateStr)),
+        cip: cip,
+        licenseType: licenseType,
+        contract: contract, // The original contract is still needed for the back of the certificate
       };
       setCertificate(certificateData);
 
-      // Activar automáticamente el diálogo de impresión
+      // Automatically trigger the print dialog
       const timer = setTimeout(() => {
         window.print();
-      }, 500); // Retraso para permitir que el contenido se renderice
+      }, 500); // Delay to allow content to render
       
       return () => {
         clearTimeout(timer);
       };
     }
-  }, [contract, customFolio, isContractLoading]);
+  }, [contract, isContractLoading, searchParams]);
 
   if (isContractLoading || isRoleLoading) {
     return (
@@ -97,7 +108,7 @@ export default function CertificatePrintIdPage() {
       )
   }
 
-  // La página solo contiene la plantilla del certificado para una impresión limpia.
+  // The page only contains the certificate template for a clean print.
   return (
     <div className="print:p-0 print:m-0 print:bg-white bg-gray-100">
         <style jsx global>{`

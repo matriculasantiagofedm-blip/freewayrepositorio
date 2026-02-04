@@ -8,12 +8,6 @@ export interface User {
   role: 'Ventas' | 'Ventas Externas' | 'Administrador';
 }
 
-export interface Deadline {
-  id: string;
-  description: string;
-  date: Date;
-}
-
 export interface ClassSchedule {
   date: Date;
   time: string;
@@ -111,11 +105,12 @@ export interface Contract {
   createdAt: Timestamp;
   createdBy?: string;
   deluxeDetails?: Partial<DeluxeContractDetails>;
-  autoMotoDetails?: Partial<AutoMotoContractDetails>;
+  autoMotoDetails?: Partial<AutoMotoDetails>;
   ampliacionesDetails?: Partial<AmpliacionesContractDetails>;
   certificateGeneratedAt?: Timestamp;
   certificateFolio?: string;
   studentIdNumber?: string;
+  clauses?: string;
 }
 
 export interface CertificateData {

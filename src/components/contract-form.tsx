@@ -592,8 +592,7 @@ export function ContractForm() {
           userId: user.uid,
           createdAt: serverTimestamp() as Timestamp,
           createdBy: currentUserRole,
-          content: '',
-          deadlines: [],
+          clauses: '',
         };
         
         if (values.contractType === 'Curso Deluxe') {

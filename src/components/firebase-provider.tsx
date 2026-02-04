@@ -1,11 +1,9 @@
-
 'use client';
 
 import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import { FirebaseApp, initializeApp, getApps, getApp } from 'firebase/app';
 import { Auth, getAuth, onAuthStateChanged, User } from 'firebase/auth';
 import { Firestore, getFirestore } from 'firebase/firestore';
-import { getFirebaseConfig } from '@/firebase/config';
 import { FirebaseErrorListener } from './FirebaseErrorListener';
 
 interface FirebaseContextValue {
@@ -23,15 +21,24 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const { app, auth, db } = useMemo(() => {
-    const firebaseConfig = getFirebaseConfig();
-    if (!firebaseConfig) {
-        console.error("Firebase config is not available.");
-        return {} as any;
+    const firebaseConfig = {
+      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+      measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+    };
+
+    if (Object.values(firebaseConfig).some(value => !value)) {
+      console.error("Firebase configuration is incomplete. Please check your environment variables.");
+      return { app: null, auth: null, db: null };
     }
+    
     const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
     const auth = getAuth(app);
-    // Explicitly connect to the '(default)' database to avoid ambiguity.
-    const db = getFirestore(app);
+    const db = getFirestore(app, '(default)');
     return { app, auth, db };
   }, []);
 
@@ -61,7 +68,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
             <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
                 <h3 className="text-lg font-semibold text-destructive">Error de Configuración</h3>
                 <p className="text-sm text-muted-foreground mt-2">
-                    La configuración de Firebase no está disponible. Asegúrate de que las variables de entorno estén configuradas correctamente en un archivo `.env`.
+                    La configuración de Firebase no está disponible. Asegúrate de que las variables de entorno estén configuradas correctamente.
                 </p>
             </div>
         </div>

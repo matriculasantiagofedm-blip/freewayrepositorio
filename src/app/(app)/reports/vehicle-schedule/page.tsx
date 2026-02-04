@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -91,7 +90,7 @@ export default function VehicleScheduleReportPage() {
 
   const { data: contracts, isLoading: isLoadingContracts } = useCollection<Contract>(contractsQuery);
 
-  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday
+  const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
   const days = Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
 
   useEffect(() => {
@@ -140,7 +139,7 @@ export default function VehicleScheduleReportPage() {
   const handlePrevWeek = () => {
     setCurrentDate(subDays(currentDate, 7));
   };
-
+  
   const handleNextWeek = () => {
     setCurrentDate(addDays(currentDate, 7));
   };

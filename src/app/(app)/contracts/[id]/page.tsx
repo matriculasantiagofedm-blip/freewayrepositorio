@@ -64,6 +64,9 @@ export default function ContractDetailPage() {
     clientName: '',
     cip: '',
     licenseType: '',
+    address: '',
+    phone1: '',
+    phone2: '',
   });
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -96,6 +99,9 @@ export default function ContractDetailPage() {
       clientName: contract.clientName,
       cip: details?.studentIdNumber || '',
       licenseType: details?.licenseCategory || '',
+      address: details?.studentAddress || '',
+      phone1: details?.studentPhone1 || '',
+      phone2: details?.studentPhone2 || '',
     });
     setIsCertificateModalOpen(true);
   };
@@ -343,6 +349,20 @@ export default function ContractDetailPage() {
                 <div className="space-y-2">
                     <Label htmlFor="cert-name">Nombre Completo del Estudiante</Label>
                     <Input id="cert-name" value={certificateData.clientName} onChange={(e) => handleCertDataChange('clientName', e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="cert-address">Dirección</Label>
+                    <Input id="cert-address" value={certificateData.address} onChange={(e) => handleCertDataChange('address', e.target.value)} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="cert-phone1">Teléfono 1</Label>
+                        <Input id="cert-phone1" value={certificateData.phone1} onChange={(e) => handleCertDataChange('phone1', e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="cert-phone2">Teléfono 2 (Opcional)</Label>
+                        <Input id="cert-phone2" value={certificateData.phone2 || ''} onChange={(e) => handleCertDataChange('phone2', e.target.value)} />
+                    </div>
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="cert-license">Categoría de Licencia</Label>

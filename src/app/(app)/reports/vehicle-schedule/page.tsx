@@ -104,7 +104,7 @@ export default function VehicleScheduleReportPage() {
         if (contract.status !== 'active') return;
 
         const details = contract.autoMotoDetails || contract.deluxeDetails;
-        const instructor: InstructorName | 'N/A' = details?.instructor || 'N/A';
+        const instructor: InstructorName | 'Sin Instructor' = details?.instructor || 'Sin Instructor';
 
         // Gather all possible schedules from the contract
         const autoSchedules = contract.autoMotoDetails?.practicalClassSchedules || [];

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -76,7 +75,7 @@ function toDate(date: any): Date {
       return new Date(parsed.getTime() + timezoneOffset);
     }
   }
-  return new Date(0);
+  return new Date(0); // Return invalid date
 }
 
 
@@ -110,12 +109,11 @@ export default function VehicleScheduleReportPage() {
         // Gather all possible schedules from the contract
         const autoSchedules = contract.autoMotoDetails?.practicalClassSchedules || [];
         const motoSchedules = contract.autoMotoDetails?.motoPracticalClassSchedules || [];
-        // Note: Deluxe practical classes are not saved in the DB, so this will be empty.
         const deluxeSchedules = contract.deluxeDetails?.classSchedules || [];
 
         const processSchedules = (schedulesToProcess: any[], classType: 'Auto' | 'Moto') => {
             schedulesToProcess.forEach((schedule, index) => {
-                if (!schedule.date || !schedule.time) return;
+                if (!schedule || !schedule.date || !schedule.time) return;
 
                 const classDate = toDate(schedule.date);
                 if (classDate.getFullYear() <= 1970 || !isWithinInterval(classDate, weekInterval)) {
@@ -156,6 +154,7 @@ export default function VehicleScheduleReportPage() {
     });
 
     setWeeklyAssignments(newWeeklyAssignments);
+
   }, [contracts, currentDate, weekStart]);
 
   const handlePrevWeek = () => {

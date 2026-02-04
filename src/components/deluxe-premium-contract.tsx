@@ -1,13 +1,9 @@
-
 'use client';
-import type { Contract, Client } from '@/lib/types';
-import { doc } from 'firebase/firestore';
+import type { Contract } from '@/lib/types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Card, CardContent } from './ui/card';
 import { cn } from '@/lib/utils';
-import { useDb } from './firebase-provider';
-import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
 
 const Line = ({ children, className }: { children?: React.ReactNode, className?: string }) => (
   <span className={cn("border-b border-dotted border-black flex-1 min-w-8 text-center font-semibold text-primary print:text-black", className)}>
@@ -201,5 +197,3 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
     </Card>
   );
 }
-
-    

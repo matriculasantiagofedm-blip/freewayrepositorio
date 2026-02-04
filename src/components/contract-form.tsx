@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -45,7 +44,6 @@ import { Timestamp, collection, query, where, getDocs, writeBatch, doc, serverTi
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import type { Contract, ContractType, Client, DeluxeContractDetails, InstructorName } from '@/lib/types';
-import { DeluxePremiumContractTemplatePreview } from './deluxe-premium-contract-preview';
 import { Checkbox } from './ui/checkbox';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { ContractView } from './contract-view';
@@ -1302,15 +1300,15 @@ export function ContractForm() {
                                                     {(contractType === 'Curso Auto' || (contractType === 'Curso Solo Practica' && coursePlan?.includes('(Auto)'))) && (
                                                         <>
                                                             <SelectItem value="Spark">Spark</SelectItem>
-                                                            <SelectItem value="Picanto Blanco">P. Blanco</SelectItem>
-                                                            <SelectItem value="Picanto Bronce">P. Bronce</SelectItem>
+                                                            <SelectItem value="Picanto Blanco">Picanto Blanco</SelectItem>
+                                                            <SelectItem value="Picanto Bronce">Picanto Bronce</SelectItem>
                                                         </>
                                                     )}
                                                     {contractType === 'Curso Mixto' && (
                                                         <>
                                                             <SelectItem value="Spark">Spark</SelectItem>
-                                                            <SelectItem value="Picanto Blanco">P. Blanco</SelectItem>
-                                                            <SelectItem value="Picanto Bronce">P. Bronce</SelectItem>
+                                                            <SelectItem value="Picanto Blanco">Picanto Blanco</SelectItem>
+                                                            <SelectItem value="Picanto Bronce">Picanto Bronce</SelectItem>
                                                             <SelectItem value="Moto Roja">Moto Roja</SelectItem>
                                                             <SelectItem value="Moto Negra">Moto Negra</SelectItem>
                                                         </>

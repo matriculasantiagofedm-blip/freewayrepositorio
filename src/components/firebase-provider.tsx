@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState, ReactNo
 import { FirebaseApp, initializeApp, getApps, getApp } from 'firebase/app';
 import { Auth, getAuth, onAuthStateChanged, User } from 'firebase/auth';
 import { Firestore, getFirestore } from 'firebase/firestore';
-import { firebaseConfig } from '@/firebase/config';
+import { getFirebaseConfig } from '@/firebase/config';
 import { FirebaseErrorListener } from './FirebaseErrorListener';
 
 interface FirebaseContextValue {
@@ -22,6 +22,14 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const { app, auth, db } = useMemo(() => {
+    const firebaseConfig = getFirebaseConfig();
+    if (!firebaseConfig) {
+        console.error("Firebase config is not available.");
+        // Return dummy objects or handle this scenario appropriately
+        // For now, this will cause an error downstream, which is intended
+        // if config is missing.
+        return {} as any;
+    }
     const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
     const auth = getAuth(app);
     const db = getFirestore(app);
@@ -29,6 +37,10 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (!auth) {
+        setIsLoading(false);
+        return;
+    }
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setIsLoading(false);
@@ -43,6 +55,19 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     user,
     isLoading,
   }), [app, auth, db, user, isLoading]);
+
+  if (!app) {
+    return (
+        <div className="flex h-screen items-center justify-center">
+            <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-destructive">Error de Configuración</h3>
+                <p className="text-sm text-muted-foreground mt-2">
+                    La configuración de Firebase no está disponible. Asegúrate de que las variables de entorno estén configuradas correctamente en un archivo `.env`.
+                </p>
+            </div>
+        </div>
+    );
+  }
 
   return (
     <FirebaseContext.Provider value={value}>

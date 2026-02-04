@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -247,8 +246,9 @@ export default function VehicleSchedulePage() {
 
                         const classOnDate = allClasses.find(c => {
                             if (!c.date) return false;
-                            const classDate = toDate(c.date);
-                            return format(classDate, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
+                            const classDateNormalized = startOfDay(toDate(c.date));
+                            const selectedDateNormalized = startOfDay(selectedDate);
+                            return classDateNormalized.getTime() === selectedDateNormalized.getTime();
                         });
                         
                         if (classOnDate) {
@@ -307,7 +307,7 @@ export default function VehicleSchedulePage() {
                 <div className="flex items-center gap-3">
                     <Clock className="h-8 w-8 text-primary" />
                     <div>
-                        <h1 className="font-headline text-3xl font-bold">Asignación de Horarios</h1>
+                        <h1 className="font-headline text-3xl font-bold">Planificador Diario de Horarios</h1>
                         <p className="text-muted-foreground">Planifica la jornada de instructores y vehículos.</p>
                     </div>
                 </div>

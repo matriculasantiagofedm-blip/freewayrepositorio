@@ -152,3 +152,5 @@ export function CertificateTemplate({ certificate }: { certificate: Certificate 
     </>
   );
 }
+
+    

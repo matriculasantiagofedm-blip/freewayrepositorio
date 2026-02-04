@@ -215,3 +215,5 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
     </Card>
   );
 }
+
+    

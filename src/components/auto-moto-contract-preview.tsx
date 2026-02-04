@@ -1,7 +1,7 @@
 
 'use client';
 import { Card, CardContent } from './ui/card';
-import { cn } from '@/lib/utils';
+import { cn, toDate } from '@/lib/utils';
 import type { AutoMotoContractDetails, ContractType } from '@/lib/types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -20,27 +20,6 @@ const Checkbox = ({ checked }: { checked: boolean }) => (
 );
 
 const LongLine = () => <span className="border-b border-dotted border-black flex-1 h-4 min-w-40" />;
-
-function toDate(date: any): Date {
-  if (!date) return new Date('invalid');
-  if (date instanceof Date) {
-    return date;
-  }
-  // Handle Firestore Timestamp
-  if (date && typeof date.toDate === 'function') {
-    return date.toDate();
-  }
-  // Handle ISO strings or other string formats
-  if (typeof date === 'string') {
-    // Attempt to parse, replacing hyphens for better cross-browser compatibility
-    const parsed = new Date(date.replace(/-/g, '/'));
-    if (!isNaN(parsed.getTime())) {
-      return parsed;
-    }
-  }
-  // Fallback for unexpected types
-  return new Date('invalid');
-}
 
 interface AutoMotoContractTemplatePreviewProps {
     clientName?: string;
@@ -149,7 +128,7 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, stude
                 <div className="pl-4 space-y-0.5">
                     {Array.from({ length: autoMotoDetails?.practicalClassSchedules?.length || 0 }).map((_, index) => (
                         <div key={index} className="flex items-center gap-2">
-                            ○ Clase {index + 1}: Fecha <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.date ? formatDate(autoMotoDetails?.practicalClassSchedules?.[index]?.date) : <>&nbsp;</>}</Line> Hora <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.time}</Line>
+                            ○ Clase {index + 1}: Fecha <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.date ? formatDate(autoMotoDetails?.practicalClassSchedules?.[index]?.date) : <>&nbsp;</>}</Line> Hora <Line><Value>{autoMotoDetails?.practicalClassSchedules?.[index]?.time}</Value></Line>
                         </div>
                     ))}
                 </div>
@@ -165,7 +144,7 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, stude
 
         <h3 className="font-bold">CLÁUSULA CUARTA - LUGAR DE INICIO Y TRASLADO</h3>
         <p className='text-[10px]'>Las clases prácticas iniciarán en la oficina de LA ESCUELA. Desde allí, EL ESTUDIANTE será trasladado al circuito de prácticas y posteriormente de regreso. Dicho traslado se encuentra incluido dentro del tiempo de las 2 horas de clase práctica.</p>
-
+        
         <h3 className="font-bold">CLÁUSULA QUINTA - PUNTUALIDAD</h3>
         <p className='text-[10px]'>En caso de que EL ESTUDIANTE llegue tarde a su clase, solo recibirá el tiempo restante de las 2 horas programadas, sin derecho a reposición.</p>
         

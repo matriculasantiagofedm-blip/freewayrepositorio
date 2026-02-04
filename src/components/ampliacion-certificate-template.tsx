@@ -140,3 +140,5 @@ export function AmpliacionCertificateTemplate({ certificate }: { certificate: Ce
     </>
   );
 }
+
+    

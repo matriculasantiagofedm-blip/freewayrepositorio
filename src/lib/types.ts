@@ -239,4 +239,3 @@ export interface VehicleSchedule {
   userId: string;
   assignments: VehicleAssignment[];
 }
-

@@ -48,7 +48,6 @@ function ReceiptContent() {
             `}</style>
             <Card className="shadow-none border">
                 <CardHeader className="text-center space-y-2">
-                    <h1 className="text-2xl font-bold font-headline">FREEWAY ESCUELA DE MANEJO, S.A.</h1>
                     <p className="text-sm">RUC: 155628022-2-2016 DV 2</p>
                     <p className="text-sm">La Chorrera, Vía Interamericana, Costa Verde, P.H. Green T, Plaza, Local #20</p>
                     <p className="text-sm">Tel: 345-6915 / Cel: 6741-5184</p>

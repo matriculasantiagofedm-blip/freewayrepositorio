@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { doc, Timestamp } from 'firebase/firestore';
 import type { Certificate, Contract } from '@/lib/types';
 import { CertificateTemplate } from '@/components/certificate-template';
+import { AmpliacionCertificateTemplate } from '@/components/ampliacion-certificate-template';
 import { useEffect, useState } from 'react';
 import { useDb } from '@/components/firebase-provider';
 import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
@@ -36,6 +37,10 @@ export default function CertificatePrintIdPage() {
       const licenseType = searchParams.get('licenseType');
       const courseName = searchParams.get('courseName');
       const issueDateStr = searchParams.get('issueDate');
+      const firstName = searchParams.get('firstName');
+      const middleName = searchParams.get('middleName');
+      const lastName = searchParams.get('lastName');
+      const secondLastName = searchParams.get('secondLastName');
       
       if (!folio || !clientName || !cip || !licenseType || !courseName || !issueDateStr) {
           return; // Wait for all params
@@ -53,6 +58,10 @@ export default function CertificatePrintIdPage() {
         cip: cip,
         licenseType: licenseType,
         contract: contract, // The original contract is still needed for the back of the certificate
+        firstName: firstName || undefined,
+        middleName: middleName || undefined,
+        lastName: lastName || undefined,
+        secondLastName: secondLastName || undefined,
       };
       setCertificate(certificateData);
 
@@ -123,7 +132,11 @@ export default function CertificatePrintIdPage() {
             }
           }
         `}</style>
-        <CertificateTemplate certificate={certificate} />
+        {certificate && certificate.contract?.type === 'Ampliaciones' ? (
+          <AmpliacionCertificateTemplate certificate={certificate} />
+        ) : (
+          <CertificateTemplate certificate={certificate} />
+        )}
     </div>
   );
 }

@@ -67,6 +67,10 @@ export default function ContractDetailPage() {
     address: '',
     phone1: '',
     phone2: '',
+    firstName: '',
+    middleName: '',
+    lastName: '',
+    secondLastName: '',
   });
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -86,22 +90,41 @@ export default function ContractDetailPage() {
 
   const { data: contract, isLoading, error } = useDoc<Contract>(contractRef);
   
-  const canGenerateCertificate = contract && ['Curso Auto', 'Curso Moto', 'Curso Deluxe', 'Curso Mixto'].includes(contract.type);
+  const canGenerateCertificate = contract && (['Curso Auto', 'Curso Moto', 'Curso Deluxe', 'Curso Mixto', 'Ampliaciones'].includes(contract.type));
 
   const handleOpenCertificateModal = () => {
     if (!contract) return;
     
-    const details = contract.autoMotoDetails || contract.deluxeDetails;
+    const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
     const suggestedFolio = getNextFolio(lastFolio);
+
+    const nameParts = contract.clientName.split(' ').filter(p => p);
+    let firstName = '', middleName = '', lastName = '', secondLastName = '';
+    if (nameParts.length > 0) firstName = nameParts[0];
+    if (nameParts.length === 2) lastName = nameParts[1];
+    if (nameParts.length === 3) {
+        middleName = nameParts[1];
+        lastName = nameParts[2];
+    }
+    if (nameParts.length >= 4) {
+        middleName = nameParts[1];
+        lastName = nameParts[2];
+        secondLastName = nameParts[3];
+    }
+
 
     setCertificateData({
       folio: suggestedFolio,
       clientName: contract.clientName,
       cip: details?.studentIdNumber || '',
-      licenseType: details?.licenseCategory || '',
+      licenseType: (details as any)?.licenseCategory || (contract.ampliacionesDetails?.selectedPlans?.map(p => p.name).join(', ') || ''),
       address: details?.studentAddress || '',
       phone1: details?.studentPhone1 || '',
       phone2: details?.studentPhone2 || '',
+      firstName,
+      middleName,
+      lastName,
+      secondLastName,
     });
     setIsCertificateModalOpen(true);
   };
@@ -140,6 +163,10 @@ export default function ContractDetailPage() {
             licenseType: certificateData.licenseType,
             courseName: contract.title || '',
             issueDate: new Date().toISOString(),
+            firstName: certificateData.firstName,
+            middleName: certificateData.middleName,
+            lastName: certificateData.lastName,
+            secondLastName: certificateData.secondLastName,
         });
 
         // Open print window
@@ -349,6 +376,26 @@ export default function ContractDetailPage() {
                 <div className="space-y-2">
                     <Label htmlFor="cert-name">Nombre Completo del Estudiante</Label>
                     <Input id="cert-name" value={certificateData.clientName} onChange={(e) => handleCertDataChange('clientName', e.target.value)} />
+                </div>
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="cert-firstName">Primer Nombre</Label>
+                        <Input id="cert-firstName" value={certificateData.firstName} onChange={(e) => handleCertDataChange('firstName', e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="cert-middleName">Segundo Nombre</Label>
+                        <Input id="cert-middleName" value={certificateData.middleName} onChange={(e) => handleCertDataChange('middleName', e.target.value)} />
+                    </div>
+                </div>
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="cert-lastName">Primer Apellido</Label>
+                        <Input id="cert-lastName" value={certificateData.lastName} onChange={(e) => handleCertDataChange('lastName', e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="cert-secondLastName">Segundo Apellido</Label>
+                        <Input id="cert-secondLastName" value={certificateData.secondLastName} onChange={(e) => handleCertDataChange('secondLastName', e.target.value)} />
+                    </div>
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="cert-address">Dirección</Label>

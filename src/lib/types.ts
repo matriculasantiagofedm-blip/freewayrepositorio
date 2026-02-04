@@ -105,10 +105,8 @@ export interface Contract {
   clientName: string;
   clientEmail: string;
   clientId: string;
-  content: string;
-  deadlines: Deadline[];
-  status: ContractStatus;
   type: ContractType;
+  status: ContractStatus;
   userId: string;
   createdAt: Timestamp;
   createdBy?: string;
@@ -127,6 +125,10 @@ export interface CertificateData {
   issueDate: Timestamp;
   cip: string;
   licenseType: string;
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  secondLastName?: string;
 }
 
 export interface Certificate {
@@ -141,6 +143,10 @@ export interface Certificate {
   cip: string;
   licenseType: string;
   contract?: Contract;
+  firstName?: string;
+  middleName?: string;
+  lastName?: string;
+  secondLastName?: string;
 }
 
 export interface Transaction {

@@ -245,11 +245,11 @@ export default function AllContractsPage() {
         
         const autoSchedules = (contract.autoMotoDetails?.practicalClassSchedules || [])
             .filter(s => s && s.date && s.time)
-            .map(s => ({ ...s, classType: 'Auto' }));
+            .map((s, index) => ({ ...s, classType: 'Auto' as const, classNumber: index + 1 }));
 
         const motoSchedules = (contract.autoMotoDetails?.motoPracticalClassSchedules || [])
             .filter(s => s && s.date && s.time)
-            .map(s => ({ ...s, classType: 'Moto' }));
+            .map((s, index) => ({ ...s, classType: 'Moto' as const, classNumber: index + 1 }));
 
         const allSchedules = [...autoSchedules, ...motoSchedules];
 
@@ -280,6 +280,7 @@ export default function AllContractsPage() {
                 classType: schedule.classType,
                 vehicle: preselectedVehicle,
                 instructor: assignedInstructor,
+                classNumber: schedule.classNumber,
             };
         }));
         
@@ -312,12 +313,12 @@ export default function AllContractsPage() {
         let allSavesSuccessful = true;
         let errors: string[] = [];
 
-        for (const [index, schedule] of schedulesToProcess.entries()) {
-            const { date, time, vehicle, instructor } = schedule;
+        for (const schedule of schedulesToProcess) {
+            const { date, time, vehicle, instructor, classType, classNumber } = schedule;
             
             const timeSlot = timeStringToTimeSlot(time);
             if (!timeSlot) {
-                errors.push(`Formato de hora "${time}" inválido para la clase ${index + 1}.`);
+                errors.push(`Formato de hora "${time}" inválido para la clase ${classNumber}.`);
                 continue;
             }
 
@@ -340,6 +341,9 @@ export default function AllContractsPage() {
                     const newAssignment: VehicleAssignment = {
                         vehicle, timeSlot, instructor,
                         studentName: selectedContract.clientName,
+                        contractId: selectedContract.id,
+                        classNumber: classNumber,
+                        classType: classType,
                     };
 
                     transaction.set(scheduleRef, { 
@@ -352,7 +356,7 @@ export default function AllContractsPage() {
 
             } catch (error: any) {
                 allSavesSuccessful = false;
-                errors.push(error.message || `Error al guardar la clase ${index + 1}.`);
+                errors.push(error.message || `Error al guardar la clase ${classNumber}.`);
                 
                 if (error.code === 'permission-denied') {
                     errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -511,7 +515,7 @@ export default function AllContractsPage() {
                 {schedulesToSync.length > 0 ? schedulesToSync.map((schedule, index) => (
                     <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end border-b pb-4">
                         <div className="space-y-1">
-                            <Label className="text-sm">Clase {index + 1} ({schedule.classType})</Label>
+                            <Label className="text-sm">Clase {schedule.classNumber} ({schedule.classType})</Label>
                             <p className="font-semibold text-base">{format(schedule.date, "PPP", { locale: es })}</p>
                             <p className="text-sm text-muted-foreground">{schedule.time}</p>
                         </div>

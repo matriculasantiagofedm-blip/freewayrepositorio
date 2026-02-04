@@ -228,6 +228,9 @@ export interface VehicleAssignment {
   timeSlot: TimeSlot;
   instructor: InstructorName;
   studentName: string;
+  contractId: string;
+  classNumber: number;
+  classType: 'Auto' | 'Moto';
 }
 
 export interface VehicleSchedule {

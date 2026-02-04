@@ -1,3 +1,4 @@
+
 'use client';
 import type { Certificate } from '@/lib/types';
 import { format, addDays } from 'date-fns';
@@ -5,16 +6,24 @@ import { es } from 'date-fns/locale';
 import Image from 'next/image';
 
 function toDate(date: any): Date {
-  if (date instanceof Date) return date;
-  if (date && date.toDate) return date.toDate();
+  if (!date) return new Date('invalid');
+  if (date instanceof Date) {
+    return date;
+  }
+  // Handle Firestore Timestamp
+  if (date && typeof date.toDate === 'function') {
+    return date.toDate();
+  }
+  // Handle ISO strings or other string formats
   if (typeof date === 'string') {
-    const parsed = new Date(date);
+    // Attempt to parse, replacing hyphens for better cross-browser compatibility
+    const parsed = new Date(date.replace(/-/g, '/'));
     if (!isNaN(parsed.getTime())) {
-      const timezoneOffset = parsed.getTimezoneOffset() * 60000;
-      return new Date(parsed.getTime() + timezoneOffset);
+      return parsed;
     }
   }
-  return new Date();
+  // Fallback for unexpected types
+  return new Date('invalid');
 }
 
 const getHighestLicenseType = (licenseTypes: string = ''): string => {
@@ -151,3 +160,5 @@ export function AmpliacionCertificateTemplate({ certificate }: { certificate: Ce
     </>
   );
 }
+
+    

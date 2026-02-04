@@ -1,3 +1,4 @@
+
 'use client';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -15,17 +16,24 @@ const LongLine = () => <span className="border-b border-dotted border-black flex
 const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary">{children}</span>;
 
 function toDate(date: any): Date {
-  if (date instanceof Date) return date;
-  if (date && date.toDate) return date.toDate();
+  if (!date) return new Date('invalid');
+  if (date instanceof Date) {
+    return date;
+  }
+  // Handle Firestore Timestamp
+  if (date && typeof date.toDate === 'function') {
+    return date.toDate();
+  }
+  // Handle ISO strings or other string formats
   if (typeof date === 'string') {
-    const parsed = new Date(date);
+    // Attempt to parse, replacing hyphens for better cross-browser compatibility
+    const parsed = new Date(date.replace(/-/g, '/'));
     if (!isNaN(parsed.getTime())) {
-      // Adjust for timezone offset if the string is just a date (YYYY-MM-DD)
-      const timezoneOffset = parsed.getTimezoneOffset() * 60000;
-      return new Date(parsed.getTime() + timezoneOffset);
+      return parsed;
     }
   }
-  return new Date();
+  // Fallback for unexpected types
+  return new Date('invalid');
 }
 
 interface DeluxePremiumContractTemplatePreviewProps {
@@ -57,10 +65,11 @@ export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, 
     </span>
 );
 
-  const formatInstallmentDate = (dateString?: string) => {
+  const formatInstallmentDate = (dateString?: string | Date) => {
     if (!dateString) return <Line className="min-w-20" />;
+    const date = toDate(dateString);
+    if (isNaN(date.getTime())) return <Line className="min-w-20" />;
     try {
-        const date = toDate(dateString);
         return <Value>{format(date, 'P', { locale: es })}</Value>;
     } catch {
         return <Line className="min-w-20" />;
@@ -195,3 +204,5 @@ export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, 
     </Card>
   );
 }
+
+    

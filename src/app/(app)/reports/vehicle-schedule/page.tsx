@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -39,11 +40,11 @@ const timeStringToTimeSlot = (timeString: string): TimeSlot | null => {
 }
 
 const vehicleColors: Record<string, string> = {
-    'Picanto Blanco': 'bg-blue-200 border-blue-400 text-blue-900 dark:bg-blue-800 dark:text-blue-100 dark:border-blue-600',
-    'Picanto Bronce': 'bg-yellow-200 border-yellow-400 text-yellow-900 dark:bg-yellow-800 dark:text-yellow-100 dark:border-yellow-600',
-    'Spark': 'bg-green-200 border-green-400 text-green-900 dark:bg-green-800 dark:text-green-100 dark:border-green-600',
-    'Moto Roja': 'bg-red-200 border-red-400 text-red-900 dark:bg-red-800 dark:text-red-100 dark:border-red-600',
-    'Moto Negra': 'bg-purple-200 border-purple-400 text-purple-900 dark:bg-purple-800 dark:text-purple-100 dark:border-purple-600',
+    'Picanto Blanco': 'bg-blue-500 border-blue-700 text-white dark:bg-blue-600 dark:border-blue-800',
+    'Picanto Bronce': 'bg-yellow-500 border-yellow-700 text-white dark:bg-yellow-600 dark:border-yellow-800',
+    'Spark': 'bg-green-500 border-green-700 text-white dark:bg-green-600 dark:border-green-800',
+    'Moto Roja': 'bg-red-500 border-red-700 text-white dark:bg-red-600 dark:border-red-800',
+    'Moto Negra': 'bg-purple-500 border-purple-700 text-white dark:bg-purple-600 dark:border-purple-800',
 };
 
 const vehicleNameMapping: { [key: string]: VehicleName } = {
@@ -65,17 +66,24 @@ interface LocalAssignment {
 }
 
 function toDate(date: any): Date {
-  if (!date) return new Date(0);
-  if (date instanceof Date) return date;
-  if (date && typeof date.toDate === 'function') return date.toDate();
+  if (!date) return new Date('invalid');
+  if (date instanceof Date) {
+    return date;
+  }
+  // Handle Firestore Timestamp
+  if (date && typeof date.toDate === 'function') {
+    return date.toDate();
+  }
+  // Handle ISO strings or other string formats
   if (typeof date === 'string') {
-    const parsed = new Date(date);
+    // Attempt to parse, replacing hyphens for better cross-browser compatibility
+    const parsed = new Date(date.replace(/-/g, '/'));
     if (!isNaN(parsed.getTime())) {
-      const timezoneOffset = parsed.getTimezoneOffset() * 60000;
-      return new Date(parsed.getTime() + timezoneOffset);
+      return parsed;
     }
   }
-  return new Date(0); // Return invalid date
+  // Fallback for unexpected types
+  return new Date('invalid');
 }
 
 
@@ -116,7 +124,7 @@ export default function VehicleScheduleReportPage() {
                 if (!schedule || !schedule.date || !schedule.time) return;
 
                 const classDate = toDate(schedule.date);
-                if (classDate.getFullYear() <= 1970 || !isWithinInterval(classDate, weekInterval)) {
+                if (isNaN(classDate.getTime()) || !isWithinInterval(classDate, weekInterval)) {
                     return;
                 }
 
@@ -249,3 +257,5 @@ export default function VehicleScheduleReportPage() {
     </div>
   );
 }
+
+    

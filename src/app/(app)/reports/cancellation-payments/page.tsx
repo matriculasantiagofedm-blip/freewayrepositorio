@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -25,14 +26,24 @@ import { cn } from '@/lib/utils';
 
 
 function toDate(date: any): Date {
-  if (!date) return new Date(0);
-  if (date instanceof Date) return date;
-  if (date && typeof date.toDate === 'function') return date.toDate();
-  if (typeof date === 'string') {
-    const parsed = new Date(date);
-    if (!isNaN(parsed.getTime())) return parsed;
+  if (!date) return new Date('invalid');
+  if (date instanceof Date) {
+    return date;
   }
-  return new Date(0);
+  // Handle Firestore Timestamp
+  if (date && typeof date.toDate === 'function') {
+    return date.toDate();
+  }
+  // Handle ISO strings or other string formats
+  if (typeof date === 'string') {
+    // Attempt to parse, replacing hyphens for better cross-browser compatibility
+    const parsed = new Date(date.replace(/-/g, '/'));
+    if (!isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+  // Fallback for unexpected types
+  return new Date('invalid');
 }
 
 export default function CancellationPaymentsPage() {
@@ -132,26 +143,29 @@ export default function CancellationPaymentsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredPayments.map((payment) => (
-              <TableRow key={payment.id}>
-                <TableCell className="font-medium text-primary">
-                    {String(payment.cancellationFolio).padStart(6, '0')}
-                </TableCell>
-                <TableCell>
-                    <Link href={`/contracts/${payment.contractId}`} className="hover:underline text-blue-600">
-                        {String(payment.contractFolio).padStart(6, '0')}
-                    </Link>
-                </TableCell>
-                <TableCell>{payment.clientName}</TableCell>
-                <TableCell>{payment.studentIdNumber}</TableCell>
-                <TableCell>
-                  {format(toDate(payment.paymentDate), 'dd/MM/yyyy HH:mm', { locale: es })}
-                </TableCell>
-                <TableCell className="text-right font-semibold">
-                  {payment.amount.toFixed(2)}
-                </TableCell>
-              </TableRow>
-            ))}
+            {filteredPayments.map((payment) => {
+              const paymentDate = toDate(payment.paymentDate);
+              return (
+                <TableRow key={payment.id}>
+                  <TableCell className="font-medium text-primary">
+                      {String(payment.cancellationFolio).padStart(6, '0')}
+                  </TableCell>
+                  <TableCell>
+                      <Link href={`/contracts/${payment.contractId}`} className="hover:underline text-blue-600">
+                          {String(payment.contractFolio).padStart(6, '0')}
+                      </Link>
+                  </TableCell>
+                  <TableCell>{payment.clientName}</TableCell>
+                  <TableCell>{payment.studentIdNumber}</TableCell>
+                  <TableCell>
+                    {!isNaN(paymentDate.getTime()) ? format(paymentDate, 'dd/MM/yyyy HH:mm', { locale: es }) : 'Fecha inválida'}
+                  </TableCell>
+                  <TableCell className="text-right font-semibold">
+                    {payment.amount.toFixed(2)}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
@@ -201,3 +215,5 @@ export default function CancellationPaymentsPage() {
     </div>
   );
 }
+
+    

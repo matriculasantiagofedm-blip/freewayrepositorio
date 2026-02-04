@@ -1,3 +1,4 @@
+
 'use client';
 import { useParams, useSearchParams } from 'next/navigation';
 import { doc, Timestamp } from 'firebase/firestore';
@@ -156,3 +157,5 @@ export default function CertificatePrintIdPage() {
     </div>
   );
 }
+
+    

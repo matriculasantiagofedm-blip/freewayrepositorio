@@ -7,17 +7,24 @@ import { AutoMotoContractTemplate } from './auto-moto-contract';
 import { AmpliacionesContractTemplate } from './ampliaciones-contract';
 
 function toDate(date: any): Date {
-  if (date instanceof Date) return date;
-  if (date && date.toDate) return date.toDate();
+  if (!date) return new Date('invalid');
+  if (date instanceof Date) {
+    return date;
+  }
+  // Handle Firestore Timestamp
+  if (date && typeof date.toDate === 'function') {
+    return date.toDate();
+  }
+  // Handle ISO strings or other string formats
   if (typeof date === 'string') {
-    const parsed = new Date(date);
+    // Attempt to parse, replacing hyphens for better cross-browser compatibility
+    const parsed = new Date(date.replace(/-/g, '/'));
     if (!isNaN(parsed.getTime())) {
-      // Adjust for timezone offset if the string is just a date (YYYY-MM-DD)
-      const timezoneOffset = parsed.getTimezoneOffset() * 60000;
-      return new Date(parsed.getTime() + timezoneOffset);
+      return parsed;
     }
   }
-  return new Date(0); // Return invalid date
+  // Fallback for unexpected types
+  return new Date('invalid');
 }
 
 
@@ -63,3 +70,5 @@ export function ContractView({ contract, type }: { contract: Contract, type?: Co
     </div>
   );
 }
+
+    

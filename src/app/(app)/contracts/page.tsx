@@ -25,7 +25,7 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 
 function toDate(date: any): Date {
-  if (!date) return new Date(0); // Return an invalid date if input is null/undefined
+  if (!date) return new Date('invalid');
   if (date instanceof Date) {
     return date;
   }
@@ -33,15 +33,16 @@ function toDate(date: any): Date {
   if (date && typeof date.toDate === 'function') {
     return date.toDate();
   }
-  // Handle ISO strings
+  // Handle ISO strings or other string formats
   if (typeof date === 'string') {
-    const parsed = new Date(date);
+    // Attempt to parse, replacing hyphens for better cross-browser compatibility
+    const parsed = new Date(date.replace(/-/g, '/'));
     if (!isNaN(parsed.getTime())) {
       return parsed;
     }
   }
   // Fallback for unexpected types
-  return new Date(0);
+  return new Date('invalid');
 }
 
 const getBalance = (contract: Contract): number => {
@@ -69,7 +70,7 @@ const isOverdue = (contract: Contract): boolean => {
 
     if (deadline) {
         const paymentDate = toDate(deadline);
-        if (paymentDate.getTime() > 0 && isPast(paymentDate)) {
+        if (!isNaN(paymentDate.getTime()) && isPast(paymentDate)) {
             return true;
         }
     }
@@ -90,7 +91,7 @@ const getDebtAgeInfo = (contract: Contract): { category: string; days: number } 
     if (!deadline) return null;
 
     const paymentDate = toDate(deadline);
-    if (paymentDate.getFullYear() <= 1970) return null;
+    if (isNaN(paymentDate.getTime())) return null;
     const daysOverdue = differenceInDays(new Date(), paymentDate);
 
     if (daysOverdue <= 30) {
@@ -162,7 +163,7 @@ export default function AllContractsPage() {
 
     if (deadline) {
         const paymentDate = toDate(deadline);
-        if (paymentDate.getFullYear() > 1970) {
+        if (!isNaN(paymentDate.getTime())) {
             return paymentDate;
         }
     }
@@ -232,6 +233,7 @@ export default function AllContractsPage() {
                                 const isAnnulled = contract.status === 'expired';
                                 const balance = getBalance(contract);
                                 const paymentDeadline = getPaymentDeadline(contract);
+                                const creationDate = toDate(contract.createdAt);
                                 
                                 return (
                                 <TableRow key={contract.id} className={cn(isAnnulled && 'bg-muted/50 hover:bg-muted/60')}>
@@ -259,7 +261,7 @@ export default function AllContractsPage() {
                                         )}
                                     </TableCell>
                                     <TableCell>
-                                        {format(toDate(contract.createdAt), 'dd/MM/yyyy', { locale: es })}
+                                        {!isNaN(creationDate.getTime()) ? format(creationDate, 'dd/MM/yyyy', { locale: es }) : 'Fecha inválida'}
                                     </TableCell>
                                     {filter === 'overdue' && (
                                         <TableCell className='text-muted-foreground'>
@@ -309,3 +311,5 @@ export default function AllContractsPage() {
     </div>
   );
 }
+
+    

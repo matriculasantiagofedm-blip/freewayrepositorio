@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 
 function toDate(date: any): Date {
-  if (!date) return new Date(0); // Return an invalid date if input is null/undefined
+  if (!date) return new Date('invalid');
   if (date instanceof Date) {
     return date;
   }
@@ -21,15 +22,16 @@ function toDate(date: any): Date {
   if (date && typeof date.toDate === 'function') {
     return date.toDate();
   }
-  // Handle ISO strings
+  // Handle ISO strings or other string formats
   if (typeof date === 'string') {
-    const parsed = new Date(date);
+    // Attempt to parse, replacing hyphens for better cross-browser compatibility
+    const parsed = new Date(date.replace(/-/g, '/'));
     if (!isNaN(parsed.getTime())) {
       return parsed;
     }
   }
   // Fallback for unexpected types
-  return new Date(0);
+  return new Date('invalid');
 }
 
 const getBalance = (contract: Contract): number => {
@@ -57,7 +59,7 @@ const isOverdue = (contract: Contract): boolean => {
 
     if (deadline) {
         const paymentDate = toDate(deadline);
-        if (paymentDate.getTime() > 0 && isPast(paymentDate)) {
+        if (!isNaN(paymentDate.getTime()) && isPast(paymentDate)) {
             return true;
         }
     }
@@ -212,3 +214,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

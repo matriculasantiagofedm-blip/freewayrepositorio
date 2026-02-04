@@ -1,3 +1,4 @@
+
 import type { Contract, Deadline } from '@/lib/types';
 import {
   Card,
@@ -14,13 +15,24 @@ import { CalendarClock } from 'lucide-react';
 import { es } from 'date-fns/locale';
 
 function toDate(date: any): Date {
+  if (!date) return new Date('invalid');
   if (date instanceof Date) {
     return date;
   }
-  if (date && date.toDate) {
+  // Handle Firestore Timestamp
+  if (date && typeof date.toDate === 'function') {
     return date.toDate();
   }
-  return new Date();
+  // Handle ISO strings or other string formats
+  if (typeof date === 'string') {
+    // Attempt to parse, replacing hyphens for better cross-browser compatibility
+    const parsed = new Date(date.replace(/-/g, '/'));
+    if (!isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+  // Fallback for unexpected types
+  return new Date('invalid');
 }
 
 
@@ -114,3 +126,5 @@ export function ContractCard({ contract }: { contract: Contract }) {
     </Card>
   );
 }
+
+    

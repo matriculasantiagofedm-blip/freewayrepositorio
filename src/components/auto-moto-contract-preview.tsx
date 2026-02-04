@@ -1,5 +1,4 @@
 
-
 'use client';
 import { Card, CardContent } from './ui/card';
 import { cn } from '@/lib/utils';
@@ -23,16 +22,24 @@ const Checkbox = ({ checked }: { checked: boolean }) => (
 const LongLine = () => <span className="border-b border-dotted border-black flex-1 h-4 min-w-40" />;
 
 function toDate(date: any): Date {
-  if (date instanceof Date) return date;
-  if (date && date.toDate) return date.toDate();
+  if (!date) return new Date('invalid');
+  if (date instanceof Date) {
+    return date;
+  }
+  // Handle Firestore Timestamp
+  if (date && typeof date.toDate === 'function') {
+    return date.toDate();
+  }
+  // Handle ISO strings or other string formats
   if (typeof date === 'string') {
-    const parsed = new Date(date);
+    // Attempt to parse, replacing hyphens for better cross-browser compatibility
+    const parsed = new Date(date.replace(/-/g, '/'));
     if (!isNaN(parsed.getTime())) {
-      const timezoneOffset = parsed.getTimezoneOffset() * 60000;
-      return new Date(parsed.getTime() + timezoneOffset);
+      return parsed;
     }
   }
-  return new Date();
+  // Fallback for unexpected types
+  return new Date('invalid');
 }
 
 interface AutoMotoContractTemplatePreviewProps {
@@ -57,8 +64,9 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, stude
 
   const formatDate = (dateString?: string | Date) => {
     if (!dateString) return <Line />;
+    const date = toDate(dateString);
+    if (isNaN(date.getTime())) return <Line />;
     try {
-        const date = toDate(dateString);
         return <Value>{format(date, 'P', { locale: es })}</Value>;
     } catch {
         return <Line />;
@@ -88,7 +96,7 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, stude
 
         <h3 className="font-bold">CLÁUSULA PRIMERA - VALOR Y FORMA DE PAGO</h3>
         <div className='space-y-1 text-[10px]'>
-            <p>"El estudiante ha efectuado un abono por la suma de B/. <Line>{(autoMotoDetails?.downPayment || 0).toFixed(2)}</Line>, quedando un saldo pendiente de B/. <Line>{balance > 0 ? balance.toFixed(2) : '0.00'}</Line>, el cual se compromete a cancelar en su totalidad el día <Line>{paymentDeadline ? format(paymentDeadline, 'P', { locale: es }) : ''}</Line>."</p>
+            <p>"El estudiante ha efectuado un abono por la suma de B/. <Line>{(autoMotoDetails?.downPayment || 0).toFixed(2)}</Line>, quedando un saldo pendiente de B/. <Line>{balance > 0 ? balance.toFixed(2) : '0.00'}</Line>, el cual se compromete a cancelar en su totalidad el día <Line>{paymentDeadline && !isNaN(paymentDeadline.getTime()) ? format(paymentDeadline, 'P', { locale: es }) : ''}</Line>."</p>
             <ul className="list-disc list-inside pl-2">
                 <li>El valor total del curso es de B/. <Line>{courseValue > 0 ? courseValue.toFixed(2) : '0.00'}</Line>.</li>
                 <li>Para la inscripción, EL ESTUDIANTE deberá abonar el 50% del valor total como reserva de su cupo y horario.</li>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -24,14 +25,24 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 
 
 function toDate(date: any): Date {
-  if (!date) return new Date(0);
-  if (date instanceof Date) return date;
-  if (date && typeof date.toDate === 'function') return date.toDate();
-  if (typeof date === 'string') {
-    const parsed = new Date(date);
-    if (!isNaN(parsed.getTime())) return parsed;
+  if (!date) return new Date('invalid');
+  if (date instanceof Date) {
+    return date;
   }
-  return new Date(0);
+  // Handle Firestore Timestamp
+  if (date && typeof date.toDate === 'function') {
+    return date.toDate();
+  }
+  // Handle ISO strings or other string formats
+  if (typeof date === 'string') {
+    // Attempt to parse, replacing hyphens for better cross-browser compatibility
+    const parsed = new Date(date.replace(/-/g, '/'));
+    if (!isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+  // Fallback for unexpected types
+  return new Date('invalid');
 }
 
 export default function MileageLogReportPage() {
@@ -91,57 +102,60 @@ export default function MileageLogReportPage() {
               <TableHead className="w-[100px]"></TableHead>
             </TableRow>
           </TableHeader>
-            {logs.map((log) => (
-              <Collapsible asChild key={log.id}>
-                <tbody>
-                <TableRow>
-                  <TableCell className="font-medium">
-                    {format(toDate(log.date), 'PPP', { locale: es })}
-                  </TableCell>
-                  <TableCell className="text-right font-semibold">
-                    {(log.totalDistance || 0).toFixed(1)} km
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                            Ver Detalle
-                            <ChevronsUpDown className="h-4 w-4 ml-2" />
-                        </Button>
-                    </CollapsibleTrigger>
-                  </TableCell>
-                </TableRow>
-                <CollapsibleContent asChild>
-                    <tr>
-                        <td colSpan={3} className="p-0">
-                            <div className="p-4 bg-muted/50">
-                                <h4 className="font-semibold mb-2">Detalle por Vehículo</h4>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Vehículo</TableHead>
-                                            <TableHead>Km. Inicial</TableHead>
-                                            <TableHead>Km. Final</TableHead>
-                                            <TableHead className="text-right">Recorrido</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {log.cars.map(car => (
-                                            <TableRow key={car.name}>
-                                                <TableCell>{car.name}</TableCell>
-                                                <TableCell>{car.initialMileage}</TableCell>
-                                                <TableCell>{car.finalMileage}</TableCell>
-                                                <TableCell className="text-right">{car.distance.toFixed(1)} km</TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </td>
-                    </tr>
-                </CollapsibleContent>
-                </tbody>
-              </Collapsible>
-            ))}
+            {logs.map((log) => {
+              const logDate = toDate(log.date);
+              return (
+                <Collapsible asChild key={log.id}>
+                  <tbody>
+                  <TableRow>
+                    <TableCell className="font-medium">
+                      {!isNaN(logDate.getTime()) ? format(logDate, 'PPP', { locale: es }) : 'Fecha inválida'}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">
+                      {(log.totalDistance || 0).toFixed(1)} km
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <CollapsibleTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                              Ver Detalle
+                              <ChevronsUpDown className="h-4 w-4 ml-2" />
+                          </Button>
+                      </CollapsibleTrigger>
+                    </TableCell>
+                  </TableRow>
+                  <CollapsibleContent asChild>
+                      <tr>
+                          <td colSpan={3} className="p-0">
+                              <div className="p-4 bg-muted/50">
+                                  <h4 className="font-semibold mb-2">Detalle por Vehículo</h4>
+                                  <Table>
+                                      <TableHeader>
+                                          <TableRow>
+                                              <TableHead>Vehículo</TableHead>
+                                              <TableHead>Km. Inicial</TableHead>
+                                              <TableHead>Km. Final</TableHead>
+                                              <TableHead className="text-right">Recorrido</TableHead>
+                                          </TableRow>
+                                      </TableHeader>
+                                      <TableBody>
+                                          {log.cars.map(car => (
+                                              <TableRow key={car.name}>
+                                                  <TableCell>{car.name}</TableCell>
+                                                  <TableCell>{car.initialMileage}</TableCell>
+                                                  <TableCell>{car.finalMileage}</TableCell>
+                                                  <TableCell className="text-right">{car.distance.toFixed(1)} km</TableCell>
+                                              </TableRow>
+                                          ))}
+                                      </TableBody>
+                                  </Table>
+                              </div>
+                          </td>
+                      </tr>
+                  </CollapsibleContent>
+                  </tbody>
+                </Collapsible>
+              );
+            })}
         </Table>
       </div>
     );
@@ -181,3 +195,5 @@ export default function MileageLogReportPage() {
     </div>
   );
 }
+
+    

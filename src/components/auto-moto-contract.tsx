@@ -4,7 +4,7 @@ import type { Contract } from '@/lib/types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Card, CardContent } from './ui/card';
-import { cn } from '@/lib/utils';
+import { cn, toDate } from '@/lib/utils';
 
 const Line = ({ children, className }: { children?: React.ReactNode, className?: string }) => (
   <span className={cn("border-b border-dotted border-black flex-1 min-w-8 text-center font-semibold text-primary print:text-black", className)}>
@@ -20,27 +20,6 @@ const Checkbox = ({ checked }: { checked: boolean }) => (
 );
 
 const LongLine = () => <span className="border-b border-dotted border-black flex-1 h-4 min-w-40" />;
-
-function toDate(date: any): Date {
-  if (!date) return new Date('invalid');
-  if (date instanceof Date) {
-    return date;
-  }
-  // Handle Firestore Timestamp
-  if (date && typeof date.toDate === 'function') {
-    return date.toDate();
-  }
-  // Handle ISO strings or other string formats
-  if (typeof date === 'string') {
-    // Attempt to parse, replacing hyphens for better cross-browser compatibility
-    const parsed = new Date(date.replace(/-/g, '/'));
-    if (!isNaN(parsed.getTime())) {
-      return parsed;
-    }
-  }
-  // Fallback for unexpected types
-  return new Date('invalid');
-}
 
 export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
   const autoMotoDetails = contract.autoMotoDetails;
@@ -210,7 +189,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
 
             <h3 className="font-bold">CLÁUSULA DÉCIMA SEGUNDA - ACEPTACIÓN</h3>
             <p className="text-center text-[10px]">
-                En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los <Value>{format(creationDate, 'd', { locale: es })}</Value> días del mes de <Value>{format(creationDate, 'LLLL', { locale: es })}</Value>, de <Value>{format(creationDate, 'yyyy', { locale: es })}</Value>, a las <Value>{format(creationDate, 'p', { locale: es })}</Value>.
+                En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los <Value>{!isNaN(creationDate.getTime()) ? format(creationDate, 'd', { locale: es }) : ''}</Value> días del mes de <Value>{!isNaN(creationDate.getTime()) ? format(creationDate, 'LLLL', { locale: es }) : ''}</Value>, de <Value>{!isNaN(creationDate.getTime()) ? format(creationDate, 'yyyy', { locale: es }) : ''}</Value>, a las <Value>{!isNaN(creationDate.getTime()) ? format(creationDate, 'p', { locale: es }) : ''}</Value>.
             </p>
         </div>
 
@@ -236,5 +215,3 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
     </Card>
   );
 }
-
-    

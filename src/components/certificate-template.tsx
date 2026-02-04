@@ -7,9 +7,9 @@ import { toDate } from '@/lib/utils';
 
 function CertificateFront({ certificate }: { certificate: Certificate }) {
     const issueDate = toDate(certificate.issueDate);
-    const formattedDay = format(issueDate, 'dd', { locale: es });
-    const formattedMonth = format(issueDate, 'MMMM', { locale: es });
-    const formattedYear = format(issueDate, 'yyyy', { locale: es });
+    const formattedDay = !isNaN(issueDate.getTime()) ? format(issueDate, 'dd', { locale: es }) : '';
+    const formattedMonth = !isNaN(issueDate.getTime()) ? format(issueDate, 'MMMM', { locale: es }) : '';
+    const formattedYear = !isNaN(issueDate.getTime()) ? format(issueDate, 'yyyy', { locale: es }) : '';
     
     const getCourseHours = (courseName?: string) => {
         if (!courseName) return '36';
@@ -113,6 +113,8 @@ function CertificateBack({ certificate }: { certificate: Certificate }) {
     if (!contract) return null;
 
     const details = contract.autoMotoDetails || contract.deluxeDetails;
+    const issueDate = toDate(certificate.issueDate);
+    const validityDate = !isNaN(issueDate.getTime()) ? addDays(issueDate, 1) : null;
     
     return (
         <div className="w-[11in] h-[8.5in] p-8 bg-white flex flex-col text-black font-serif justify-start break-before-page">
@@ -122,7 +124,7 @@ function CertificateBack({ certificate }: { certificate: Certificate }) {
                 <p>Hago constar que resido en: <span className="font-semibold">{details?.studentAddress}</span></p>
                 <p>con teléfono residencial: <span className="font-semibold">{details?.studentPhone1}</span> teléfono celular: <span className="font-semibold">{details?.studentPhone2}</span></p>
                 <p className="font-bold">TIPO DE LICENCIAS: <span className="font-semibold">{getLicenseTypeText(details?.licenseCategory)}</span></p>
-                <p>Este certificado tiene validez de 364 días a partir de <span className="font-semibold">{format(addDays(toDate(certificate.issueDate), 1), 'dd-MM-yyyy')}</span></p>
+                {validityDate && <p>Este certificado tiene validez de 364 días a partir de <span className="font-semibold">{format(validityDate, 'dd-MM-yyyy')}</span></p>}
             </div>
         </div>
     );
@@ -150,5 +152,3 @@ export function CertificateTemplate({ certificate }: { certificate: Certificate 
     </>
   );
 }
-
-    

@@ -31,9 +31,9 @@ const getFolioParts = (folio?: string) => {
 
 function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate }) {
     const issueDate = toDate(certificate.issueDate);
-    const formattedDay = format(issueDate, 'dd', { locale: es });
-    const formattedMonth = format(issueDate, 'MMMM', { locale: es });
-    const formattedYear = format(issueDate, 'yyyy', { locale: es });
+    const formattedDay = !isNaN(issueDate.getTime()) ? format(issueDate, 'dd', { locale: es }) : '';
+    const formattedMonth = !isNaN(issueDate.getTime()) ? format(issueDate, 'MMMM', { locale: es }) : '';
+    const formattedYear = !isNaN(issueDate.getTime()) ? format(issueDate, 'yyyy', { locale: es }) : '';
     const { num: folioNum, year: folioYear } = getFolioParts(certificate.folio);
     
     return (
@@ -101,7 +101,7 @@ function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate 
 
 function CertificateBackAmpliacion({ certificate }: { certificate: Certificate }) {
     const issueDate = toDate(certificate.issueDate);
-    const validityDate = addDays(issueDate, 364);
+    const validityDate = !isNaN(issueDate.getTime()) ? addDays(issueDate, 364) : null;
 
     return (
         <div className="w-[11in] h-[8.5in] p-8 bg-white flex flex-col text-black font-serif justify-start break-before-page">
@@ -114,7 +114,7 @@ function CertificateBackAmpliacion({ certificate }: { certificate: Certificate }
                     teléfono celular: <span className="font-semibold">{certificate.contract?.ampliacionesDetails?.studentPhone2 || 'N/A'}</span>
                 </p>
                 <p className="font-bold">TIPO DE LICENCIAS: <span className="font-semibold">{certificate.licenseType}</span></p>
-                <p>Este certificado tiene validez de 364 días a partir de <span className="font-semibold">{format(validityDate, 'dd-MM-yyyy')}</span></p>
+                {validityDate && <p>Este certificado tiene validez de 364 días a partir de <span className="font-semibold">{format(validityDate, 'dd-MM-yyyy')}</span></p>}
                 <div className='pt-4'>
                     <p>Primer Nombre: <span className="font-semibold">{certificate.firstName || ''}</span>, Segundo Nombre: <span className="font-semibold">{certificate.middleName || ''}</span></p>
                     <p>Primer Apellido: <span className="font-semibold">{certificate.lastName || ''}</span>, Segundo Apellido: <span className="font-semibold">{certificate.secondLastName || ''}</span></p>
@@ -140,5 +140,3 @@ export function AmpliacionCertificateTemplate({ certificate }: { certificate: Ce
     </>
   );
 }
-
-    

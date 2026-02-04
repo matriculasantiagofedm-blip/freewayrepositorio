@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Card, CardContent } from './ui/card';
 import { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
+import { cn, toDate } from '@/lib/utils';
 import type { DeluxeContractDetails } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
 
@@ -15,27 +15,6 @@ const Line = ({ children, className }: { children?: React.ReactNode, className?:
 );
 const LongLine = () => <span className="border-b border-dotted border-black flex-1 h-4 min-w-40" />;
 const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary print:text-black">{children}</span>;
-
-function toDate(date: any): Date {
-  if (!date) return new Date('invalid');
-  if (date instanceof Date) {
-    return date;
-  }
-  // Handle Firestore Timestamp
-  if (date && typeof date.toDate === 'function') {
-    return date.toDate();
-  }
-  // Handle ISO strings or other string formats
-  if (typeof date === 'string') {
-    // Attempt to parse, replacing hyphens for better cross-browser compatibility
-    const parsed = new Date(date.replace(/-/g, '/'));
-    if (!isNaN(parsed.getTime())) {
-      return parsed;
-    }
-  }
-  // Fallback for unexpected types
-  return new Date('invalid');
-}
 
 interface DeluxePremiumContractPreviewProps {
     clientName?: string;
@@ -217,5 +196,3 @@ export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, 
     </Card>
   );
 }
-
-    

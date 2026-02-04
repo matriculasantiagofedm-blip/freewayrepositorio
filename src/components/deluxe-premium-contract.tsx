@@ -1,3 +1,4 @@
+
 'use client';
 import type { Contract } from '@/lib/types';
 import { format } from 'date-fns';
@@ -42,6 +43,8 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
     : deluxeDetails?.paymentDetails === 'Deluxe B/ 270.00'
     ? 'El estudiante pagará B/. 270.00 en 6 cuotas quincenales de B/.45.00.'
     : deluxeDetails?.paymentDetails || '';
+
+  const creationDate = toDate(contract.createdAt);
 
   return (
     <Card className="p-6 print:shadow-none print:border-none print:p-0 font-serif text-xs">
@@ -148,7 +151,7 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
 
             <h3 className="font-bold">CLÁUSULA DÉCIMA QUINTA- ACEPTACIÓN</h3>
             <p className="text-center !mt-4">
-                En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los <Value>{format(toDate(contract.createdAt), 'd', { locale: es })}</Value> días del mes de <Value>{format(toDate(contract.createdAt), 'LLLL', { locale: es })}</Value>, de <Value>{format(toDate(contract.createdAt), 'yyyy', { locale: es })}</Value>, a las <Value>{format(toDate(contract.createdAt), 'p', { locale: es })}</Value>.
+                En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los <Value>{!isNaN(creationDate.getTime()) ? format(creationDate, 'd', { locale: es }) : ''}</Value> días del mes de <Value>{!isNaN(creationDate.getTime()) ? format(creationDate, 'LLLL', { locale: es }) : ''}</Value>, de <Value>{!isNaN(creationDate.getTime()) ? format(creationDate, 'yyyy', { locale: es }) : ''}</Value>, a las <Value>{!isNaN(creationDate.getTime()) ? format(creationDate, 'p', { locale: es }) : ''}</Value>.
             </p>
         </div>
 

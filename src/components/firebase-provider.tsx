@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
@@ -25,15 +26,12 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     const firebaseConfig = getFirebaseConfig();
     if (!firebaseConfig) {
         console.error("Firebase config is not available.");
-        // Return dummy objects or handle this scenario appropriately
-        // For now, this will cause an error downstream, which is intended
-        // if config is missing.
         return {} as any;
     }
     const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
     const auth = getAuth(app);
     // Explicitly connect to the '(default)' database to avoid ambiguity.
-    const db = getFirestore(app, '(default)');
+    const db = getFirestore(app);
     return { app, auth, db };
   }, []);
 

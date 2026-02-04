@@ -4,7 +4,7 @@ import type { Contract } from '@/lib/types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Card, CardContent } from './ui/card';
-import { cn } from '@/lib/utils';
+import { cn, toDate } from '@/lib/utils';
 
 const Line = ({ children, className }: { children?: React.ReactNode, className?: string }) => (
   <span className={cn("border-b border-dotted border-black flex-1 min-w-8 text-center font-semibold text-primary print:text-black", className)}>
@@ -14,27 +14,6 @@ const Line = ({ children, className }: { children?: React.ReactNode, className?:
 const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary print:text-blue-600">{children}</span>;
 
 const LongLine = () => <span className="border-b border-dotted border-black flex-1 h-4 min-w-40" />;
-
-function toDate(date: any): Date {
-  if (!date) return new Date('invalid');
-  if (date instanceof Date) {
-    return date;
-  }
-  // Handle Firestore Timestamp
-  if (date && typeof date.toDate === 'function') {
-    return date.toDate();
-  }
-  // Handle ISO strings or other string formats
-  if (typeof date === 'string') {
-    // Attempt to parse, replacing hyphens for better cross-browser compatibility
-    const parsed = new Date(date.replace(/-/g, '/'));
-    if (!isNaN(parsed.getTime())) {
-      return parsed;
-    }
-  }
-  // Fallback for unexpected types
-  return new Date('invalid');
-}
 
 export function AmpliacionesContractTemplate({ contract }: { contract: Contract }) {
   const ampliacionesDetails = contract.ampliacionesDetails;
@@ -90,7 +69,7 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
             <div className='space-y-1 text-[10px]'>
                 <p>El valor total del servicio es de B/. <Line><Value>{ampliacionesDetails?.courseValue?.toFixed(2)}</Value></Line>.</p>
                 <p>El estudiante ha efectuado un abono de B/. <Line><Value>{ampliacionesDetails?.downPayment?.toFixed(2)}</Value></Line>, quedando un saldo de B/. <Line><Value>{balance > 0 ? balance.toFixed(2) : '0.00'}</Value></Line>.</p>
-                {balance > 0 && paymentDeadline && (
+                {balance > 0 && !isNaN(paymentDeadline.getTime()) && (
                     <p>El saldo pendiente se cancelará a más tardar el día {formatDate(paymentDeadline)}.</p>
                 )}
                 <p>Si el monto total es de B/.100.00 o menos, debe ser cancelado en su totalidad al momento de la inscripción. Para montos superiores, se requiere un abono del 25%.</p>
@@ -141,5 +120,3 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
     </Card>
   );
 }
-
-    

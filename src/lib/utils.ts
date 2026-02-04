@@ -23,6 +23,13 @@ export function toDate(date: any): Date {
       return parsed;
     }
   }
+   // Handle number (milliseconds)
+  if (typeof date === 'number') {
+    const parsed = new Date(date);
+    if (!isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
   // Fallback for unexpected types
   return new Date('invalid');
 }

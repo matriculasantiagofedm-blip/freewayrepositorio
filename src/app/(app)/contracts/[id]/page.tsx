@@ -355,66 +355,66 @@ export default function ContractDetailPage() {
 
       {/* Modal para revisar y editar datos del certificado */}
       <Dialog open={isCertificateModalOpen} onOpenChange={setIsCertificateModalOpen}>
-        <DialogContent className="print-hide sm:max-w-[600px]">
+        <DialogContent className="print-hide sm:max-w-4xl">
             <DialogHeader>
                 <DialogTitle>Revisar y Generar Certificado</DialogTitle>
                 <DialogDescription>
                     Verifica y edita los datos del estudiante antes de imprimir el certificado.
                 </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="cert-folio">Folio del Certificado</Label>
-                        <Input id="cert-folio" value={certificateData.folio} onChange={(e) => handleCertDataChange('folio', e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="cert-cip">Cédula / Pasaporte</Label>
-                        <Input id="cert-cip" value={certificateData.cip} onChange={(e) => handleCertDataChange('cip', e.target.value)} />
-                    </div>
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="cert-name">Nombre Completo del Estudiante</Label>
-                    <Input id="cert-name" value={certificateData.clientName} onChange={(e) => handleCertDataChange('clientName', e.target.value)} />
-                </div>
-                 <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="cert-firstName">Primer Nombre</Label>
-                        <Input id="cert-firstName" value={certificateData.firstName} onChange={(e) => handleCertDataChange('firstName', e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="cert-middleName">Segundo Nombre</Label>
-                        <Input id="cert-middleName" value={certificateData.middleName} onChange={(e) => handleCertDataChange('middleName', e.target.value)} />
-                    </div>
-                </div>
-                 <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="cert-lastName">Primer Apellido</Label>
-                        <Input id="cert-lastName" value={certificateData.lastName} onChange={(e) => handleCertDataChange('lastName', e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="cert-secondLastName">Segundo Apellido</Label>
-                        <Input id="cert-secondLastName" value={certificateData.secondLastName} onChange={(e) => handleCertDataChange('secondLastName', e.target.value)} />
-                    </div>
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="cert-address">Dirección</Label>
-                    <Input id="cert-address" value={certificateData.address} onChange={(e) => handleCertDataChange('address', e.target.value)} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="cert-phone1">Teléfono 1</Label>
-                        <Input id="cert-phone1" value={certificateData.phone1} onChange={(e) => handleCertDataChange('phone1', e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="cert-phone2">Teléfono 2 (Opcional)</Label>
-                        <Input id="cert-phone2" value={certificateData.phone2 || ''} onChange={(e) => handleCertDataChange('phone2', e.target.value)} />
-                    </div>
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="cert-license">Categoría de Licencia</Label>
-                    <Input id="cert-license" value={certificateData.licenseType} onChange={(e) => handleCertDataChange('licenseType', e.target.value)} />
-                </div>
+            <div className="max-h-[70vh] overflow-y-auto pr-4">
+              <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                          <Label htmlFor="cert-folio">Folio del Certificado</Label>
+                          <Input id="cert-folio" value={certificateData.folio} onChange={(e) => handleCertDataChange('folio', e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="cert-cip">Cédula / Pasaporte</Label>
+                          <Input id="cert-cip" value={certificateData.cip} onChange={(e) => handleCertDataChange('cip', e.target.value)} />
+                      </div>
+                  </div>
+                  <div className="space-y-2">
+                      <Label htmlFor="cert-name">Nombre Completo del Estudiante</Label>
+                      <Input id="cert-name" value={certificateData.clientName} onChange={(e) => handleCertDataChange('clientName', e.target.value)} />
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="space-y-2">
+                          <Label htmlFor="cert-firstName">Primer Nombre</Label>
+                          <Input id="cert-firstName" value={certificateData.firstName} onChange={(e) => handleCertDataChange('firstName', e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="cert-middleName">Segundo Nombre</Label>
+                          <Input id="cert-middleName" value={certificateData.middleName} onChange={(e) => handleCertDataChange('middleName', e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="cert-lastName">Primer Apellido</Label>
+                          <Input id="cert-lastName" value={certificateData.lastName} onChange={(e) => handleCertDataChange('lastName', e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="cert-secondLastName">Segundo Apellido</Label>
+                          <Input id="cert-secondLastName" value={certificateData.secondLastName} onChange={(e) => handleCertDataChange('secondLastName', e.target.value)} />
+                      </div>
+                  </div>
+                  <div className="space-y-2">
+                      <Label htmlFor="cert-address">Dirección</Label>
+                      <Input id="cert-address" value={certificateData.address} onChange={(e) => handleCertDataChange('address', e.target.value)} />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                          <Label htmlFor="cert-phone1">Teléfono 1</Label>
+                          <Input id="cert-phone1" value={certificateData.phone1} onChange={(e) => handleCertDataChange('phone1', e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="cert-phone2">Teléfono 2 (Opcional)</Label>
+                          <Input id="cert-phone2" value={certificateData.phone2 || ''} onChange={(e) => handleCertDataChange('phone2', e.target.value)} />
+                      </div>
+                  </div>
+                  <div className="space-y-2">
+                      <Label htmlFor="cert-license">Categoría de Licencia</Label>
+                      <Input id="cert-license" value={certificateData.licenseType} onChange={(e) => handleCertDataChange('licenseType', e.target.value)} />
+                  </div>
+              </div>
             </div>
             <DialogFooter>
                 <DialogClose asChild>

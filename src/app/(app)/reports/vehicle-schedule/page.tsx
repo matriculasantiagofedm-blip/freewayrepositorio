@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { useDb, useUser } from '@/components/firebase-provider';
-import type { Contract, VehicleName, TimeSlot, AutoMotoContractDetails, DeluxeContractDetails } from '@/lib/types';
+import type { Contract, VehicleName, TimeSlot, AutoMotoContractDetails, DeluxeContractDetails, InstructorName } from '@/lib/types';
 import {
   Table,
   TableBody,
@@ -100,49 +101,59 @@ export default function VehicleScheduleReportPage() {
     const newWeeklyAssignments = new Map<string, LocalAssignment[]>();
 
     contracts.forEach(contract => {
-        const details = contract.autoMotoDetails || contract.deluxeDetails;
-        if (!details) return;
+        if (contract.status !== 'active') return;
 
-        // Note: Deluxe contracts practical classes are not stored in DB as per form logic.
-        // This will primarily work for auto/moto/mixto.
-        const practicalSchedules = contract.autoMotoDetails?.practicalClassSchedules || [];
+        const instructor: InstructorName | 'N/A' = contract.autoMotoDetails?.instructor || contract.deluxeDetails?.instructor || 'N/A';
+
+        // Gather all possible schedules from the contract
+        const autoSchedules = contract.autoMotoDetails?.practicalClassSchedules || [];
         const motoSchedules = contract.autoMotoDetails?.motoPracticalClassSchedules || [];
+        // Note: Deluxe practical classes are not saved in the DB, so this will be empty.
+        const deluxeSchedules = contract.deluxeDetails?.classSchedules || [];
 
-        const processSchedules = (schedules: any[], classType: 'Auto' | 'Moto') => {
-            schedules.forEach((schedule, index) => {
+        const processSchedules = (schedulesToProcess: any[], classType: 'Auto' | 'Moto') => {
+            schedulesToProcess.forEach((schedule, index) => {
+                if (!schedule.date || !schedule.time) return;
+
                 const classDate = toDate(schedule.date);
-                if (classDate.getFullYear() > 1970 && isWithinInterval(classDate, weekInterval)) {
-                    const dateKey = format(classDate, 'yyyy-MM-dd');
-                    const timeSlot = timeStringToTimeSlot(schedule.time);
-                    
-                    let vehicle: VehicleName = 'Spark'; // Default
-                    if (contract.autoMotoDetails?.vehicle) {
-                        vehicle = vehicleNameMapping[contract.autoMotoDetails.vehicle] || 'Spark';
-                    }
-
-                    if (timeSlot) {
-                        const assignment: LocalAssignment = {
-                            studentName: contract.clientName,
-                            instructor: details.instructor || 'N/A',
-                            vehicle: vehicle,
-                            timeSlot: timeSlot,
-                            classNumber: index + 1,
-                            classType: classType,
-                        };
-                        const dayAssignments = newWeeklyAssignments.get(dateKey) || [];
-                        dayAssignments.push(assignment);
-                        newWeeklyAssignments.set(dateKey, dayAssignments);
-                    }
+                if (classDate.getFullYear() <= 1970 || !isWithinInterval(classDate, weekInterval)) {
+                    return;
                 }
+
+                const dateKey = format(classDate, 'yyyy-MM-dd');
+                const timeSlot = timeStringToTimeSlot(schedule.time);
+                if (!timeSlot) return;
+
+                let vehicle: VehicleName = 'Spark'; // Default
+                 if (classType === 'Moto') {
+                    vehicle = 'Moto Roja';
+                } else if (contract.autoMotoDetails?.vehicle) {
+                    vehicle = vehicleNameMapping[contract.autoMotoDetails.vehicle] || 'Spark';
+                } else if (contract.deluxeDetails) {
+                    vehicle = contract.deluxeDetails.vehicleTransmission === 'Manual' ? 'Spark' : 'Picanto Blanco';
+                }
+
+                const assignment: LocalAssignment = {
+                    studentName: contract.clientName,
+                    instructor: instructor,
+                    vehicle: vehicle,
+                    timeSlot: timeSlot,
+                    classNumber: index + 1,
+                    classType: classType,
+                };
+
+                const dayAssignments = newWeeklyAssignments.get(dateKey) || [];
+                dayAssignments.push(assignment);
+                newWeeklyAssignments.set(dateKey, dayAssignments);
             });
         };
 
-        processSchedules(practicalSchedules, 'Auto');
+        processSchedules(autoSchedules, 'Auto');
         processSchedules(motoSchedules, 'Moto');
+        processSchedules(deluxeSchedules, 'Auto');
     });
 
     setWeeklyAssignments(newWeeklyAssignments);
-
   }, [contracts, currentDate, weekStart]);
 
   const handlePrevWeek = () => {

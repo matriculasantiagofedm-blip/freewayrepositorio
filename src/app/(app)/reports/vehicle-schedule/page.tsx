@@ -45,14 +45,15 @@ const vehicleColors: Record<string, string> = {
     'Spark': 'bg-green-100 border-green-300 text-green-800 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
     'Moto Roja': 'bg-red-100 border-red-300 text-red-800 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700',
     'Moto Negra': 'bg-purple-100 border-purple-300 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700',
-    'Motocicleta': 'bg-red-100 border-red-300 text-red-800 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700',
 };
 
 const vehicleNameMapping: { [key: string]: VehicleName } = {
     'P. Blanco': 'Picanto Blanco',
     'P. Bronce': 'Picanto Bronce',
     'Spark': 'Spark',
-    'Motocicleta': 'Moto Roja' // Default Moto
+    'Motocicleta': 'Moto Roja',
+    'Moto Roja': 'Moto Roja',
+    'Moto Negra': 'Moto Negra'
 };
 
 interface LocalAssignment {
@@ -103,7 +104,8 @@ export default function VehicleScheduleReportPage() {
     contracts.forEach(contract => {
         if (contract.status !== 'active') return;
 
-        const instructor: InstructorName | 'N/A' = contract.autoMotoDetails?.instructor || contract.deluxeDetails?.instructor || 'N/A';
+        const details = contract.autoMotoDetails || contract.deluxeDetails;
+        const instructor: InstructorName | 'N/A' = details?.instructor || 'N/A';
 
         // Gather all possible schedules from the contract
         const autoSchedules = contract.autoMotoDetails?.practicalClassSchedules || [];
@@ -125,8 +127,8 @@ export default function VehicleScheduleReportPage() {
                 if (!timeSlot) return;
 
                 let vehicle: VehicleName = 'Spark'; // Default
-                 if (classType === 'Moto') {
-                    vehicle = 'Moto Roja';
+                 if (classType === 'Moto' && contract.autoMotoDetails?.vehicle) {
+                    vehicle = vehicleNameMapping[contract.autoMotoDetails.vehicle] || 'Moto Roja';
                 } else if (contract.autoMotoDetails?.vehicle) {
                     vehicle = vehicleNameMapping[contract.autoMotoDetails.vehicle] || 'Spark';
                 } else if (contract.deluxeDetails) {

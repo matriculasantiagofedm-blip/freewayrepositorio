@@ -330,6 +330,8 @@ export function ContractForm() {
       }
     },
   });
+  
+  const coursePlan = form.watch('autoMotoDetails.coursePlan');
 
   const { fields: practicalClassFields, replace: replacePracticalClasses } = useFieldArray({
     control: form.control,
@@ -483,7 +485,7 @@ export function ContractForm() {
       },
       autoMotoDetails: {
         ...form.formState.defaultValues.autoMotoDetails,
-        vehicle: contractType === 'Curso Moto' ? 'Moto' : undefined,
+        vehicle: contractType === 'Curso Moto' ? undefined : existingValues.autoMotoDetails.vehicle,
       },
        ampliacionesDetails: {
         ...form.formState.defaultValues.ampliacionesDetails,
@@ -1288,13 +1290,31 @@ export function ContractForm() {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Vehículo</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <Select onValueChange={field.onChange} value={field.value}>
                                                 <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl>
                                                 <SelectContent>
-                                                    <SelectItem value="Spark">Spark</SelectItem>
-                                                    <SelectItem value="P. Blanco">P. Blanco</SelectItem>
-                                                    <SelectItem value="P. Bronce">P. Bronce</SelectItem>
-                                                    <SelectItem value="Motocicleta">Motocicleta</SelectItem>
+                                                    {(contractType === 'Curso Moto' || (contractType === 'Curso Solo Practica' && coursePlan?.includes('(Moto)'))) && (
+                                                        <>
+                                                            <SelectItem value="Moto Roja">Moto Roja</SelectItem>
+                                                            <SelectItem value="Moto Negra">Moto Negra</SelectItem>
+                                                        </>
+                                                    )}
+                                                    {(contractType === 'Curso Auto' || (contractType === 'Curso Solo Practica' && coursePlan?.includes('(Auto)'))) && (
+                                                        <>
+                                                            <SelectItem value="Spark">Spark</SelectItem>
+                                                            <SelectItem value="P. Blanco">P. Blanco</SelectItem>
+                                                            <SelectItem value="P. Bronce">P. Bronce</SelectItem>
+                                                        </>
+                                                    )}
+                                                    {contractType === 'Curso Mixto' && (
+                                                        <>
+                                                            <SelectItem value="Spark">Spark</SelectItem>
+                                                            <SelectItem value="P. Blanco">P. Blanco</SelectItem>
+                                                            <SelectItem value="P. Bronce">P. Bronce</SelectItem>
+                                                            <SelectItem value="Moto Roja">Moto Roja</SelectItem>
+                                                            <SelectItem value="Moto Negra">Moto Negra</SelectItem>
+                                                        </>
+                                                    )}
                                                 </SelectContent>
                                             </Select>
                                         </FormItem>

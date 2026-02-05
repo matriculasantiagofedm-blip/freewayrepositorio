@@ -10,6 +10,12 @@ import { signInAnonymously, type User } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useUser, useFirebase } from '@/components/firebase-provider';
 
+const roleMapping: { [key: string]: string } = {
+  'ventas123': 'Ventas',
+  'ventasext123': 'Ventas Externas',
+  'Ayax/2022': 'Administrador',
+};
+
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -28,8 +34,9 @@ export default function LoginPage() {
         return;
     }
 
-    if (!roleInput) {
-      setError('Por favor, escribe un perfil para continuar.');
+    const assignedRole = roleMapping[roleInput];
+    if (!assignedRole) {
+      setError('El perfil introducido no es válido.');
       return;
     }
 
@@ -38,17 +45,16 @@ export default function LoginPage() {
 
     try {
       await signInAnonymously(auth);
-
       setRole(roleInput);
       
       toast({
         title: 'Inicio de Sesión Exitoso',
-        description: `Bienvenido.`,
+        description: `Bienvenido, ${assignedRole}.`,
       });
       router.push('/dashboard');
 
     } catch (e: any) {
-        if (e.code === 'auth/api-key-not-valid') {
+        if (e.code === 'auth/api-key-not-valid' || e.code === 'auth/network-request-failed') {
             console.warn("DEV MODE: Firebase Auth failed. Creating a mock user session.");
             
             const mockUser = { uid: 'dev-user-uid', email: ``, isAnonymous: true, getIdToken: async () => 'mock-token' } as unknown as User;
@@ -57,13 +63,13 @@ export default function LoginPage() {
             
             toast({
               title: 'Inicio de Sesión (Simulado)',
-              description: `Bienvenido.`,
+              description: `Bienvenido, ${assignedRole}.`,
             });
             router.push('/dashboard');
 
         } else {
             console.error("Error de inicio de sesión:", e);
-            const description = 'No se pudo iniciar la sesión o el perfil no es válido.';
+            const description = 'No se pudo iniciar la sesión anónima. Revisa tu conexión a internet y la configuración de Firebase.';
             setError(description);
             toast({
                 variant: 'destructive',

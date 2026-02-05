@@ -43,7 +43,11 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     const assignedRole = roleMapping[roleKey] || null;
     setRoleState(assignedRole);
     if (typeof window !== 'undefined') {
-        sessionStorage.setItem('userRoleKey', roleKey);
+        if (assignedRole) {
+            sessionStorage.setItem('userRoleKey', roleKey);
+        } else {
+            sessionStorage.removeItem('userRoleKey');
+        }
     }
   };
 
@@ -54,23 +58,21 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     if (typeof window !== 'undefined') {
         sessionStorage.removeItem('userRoleKey');
     }
-    // No need to manually reload, let the effect handle it.
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      if (user) {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
           if (typeof window !== 'undefined') {
               const storedRoleKey = sessionStorage.getItem('userRoleKey');
-              if (storedRoleKey) {
-                  setRoleState(roleMapping[storedRoleKey] || null);
+              if (storedRoleKey && roleMapping[storedRoleKey]) {
+                  setRoleState(roleMapping[storedRoleKey]);
               } else {
-                setRoleState(null); // Explicitly clear role if not in session
+                setRoleState(null); 
               }
           }
       } else {
-          // If no Firebase user, ensure local role state is also cleared.
           setRoleState(null);
           if (typeof window !== 'undefined') {
             sessionStorage.removeItem('userRoleKey');

@@ -94,9 +94,9 @@ export default function BookSalesPage() {
       toast({ title: 'Venta Registrada', description: `El pago de B/.${selectedBook.price.toFixed(2)} ha sido guardado.` });
       setPaymentSaved(true);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving book sale:", error);
-      toast({ variant: 'destructive', title: 'Error al Guardar', description: 'No se pudo registrar la venta. Inténtalo de nuevo.' });
+      toast({ variant: 'destructive', title: 'Error al Guardar', description: error.message || 'No se pudo registrar la venta. Inténtalo de nuevo.' });
     } finally {
       setIsSaving(false);
     }

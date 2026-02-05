@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
@@ -36,9 +35,11 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true);
     
-    const storedRoleKey = typeof window !== 'undefined' ? window.sessionStorage.getItem('userRoleKey') : null;
-    if (storedRoleKey && roleMapping[storedRoleKey]) {
-      setRoleState(roleMapping[storedRoleKey]);
+    if (typeof window !== 'undefined') {
+      const storedRoleKey = window.sessionStorage.getItem('userRoleKey');
+      if (storedRoleKey && roleMapping[storedRoleKey]) {
+        setRoleState(roleMapping[storedRoleKey]);
+      }
     }
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {

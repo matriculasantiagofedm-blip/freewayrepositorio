@@ -5,7 +5,6 @@ import { FirebaseApp, initializeApp, getApps, getApp } from 'firebase/app';
 import { Auth, getAuth, onAuthStateChanged, User } from 'firebase/auth';
 import { Firestore, getFirestore } from 'firebase/firestore';
 import { FirebaseErrorListener } from './FirebaseErrorListener';
-import { firebaseConfig } from '@/firebase/config';
 
 interface FirebaseContextValue {
   app: FirebaseApp;
@@ -22,11 +21,17 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const { app, auth, db } = useMemo(() => {
-    const requiredKeys: (keyof typeof firebaseConfig)[] = ['apiKey', 'authDomain', 'projectId'];
-    if (!firebaseConfig || requiredKeys.some(key => !firebaseConfig[key])) {
-      console.error("Firebase configuration is incomplete. Please check your config file.");
-      return { app: null, auth: null, db: null };
-    }
+    // Hardcoding the config here is the most robust way to ensure it's available
+    // on the client side, bypassing any potential issues with environment variables
+    // or file loading order in Next.js.
+    const firebaseConfig = {
+      "projectId": "contracttime2-17074294-10501",
+      "appId": "1:476712003174:web:03e38926e2fa2a86552fa7",
+      "apiKey": "AIzaSyAj3J74A5AJ-tZYyJMncrszV6I5yF_0ohQ",
+      "authDomain": "contracttime2-17074294-10501.firebaseapp.com",
+      "storageBucket": "contracttime2-17074294-10501.appspot.com",
+      "messagingSenderId": "476712003174"
+    };
     
     const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
     const auth = getAuth(app);
@@ -55,12 +60,14 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   }), [app, auth, db, user, isLoading]);
 
   if (!app) {
+    // This case should ideally not be hit with the hardcoded config,
+    // but it's good practice to keep it as a fallback.
     return (
         <div className="flex h-screen items-center justify-center">
             <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
                 <h3 className="text-lg font-semibold text-destructive">Error de Configuración</h3>
                 <p className="text-sm text-muted-foreground mt-2">
-                    La configuración de Firebase no está disponible. Asegúrate de que las variables de entorno estén configuradas correctamente.
+                    La configuración de Firebase no se pudo cargar.
                 </p>
             </div>
         </div>

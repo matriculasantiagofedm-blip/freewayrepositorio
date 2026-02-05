@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview Flow para el análisis inteligente de contratos mediante Genkit.
+ * @fileOverview Flow para el análisis inteligente de contratos mediante Genkit v1.x.
  */
 
 import { ai } from './genkit';
@@ -11,24 +11,25 @@ const AnalyzeContractInputSchema = z.object({
 });
 
 const AnalyzeContractOutputSchema = z.object({
-  summary: z.string().describe('Resumen ejecutivo.'),
-  risks: z.array(z.string()).describe('Lista de riesgos detectados.'),
-  expirationDate: z.string().optional().describe('Fecha de vencimiento si existe.'),
+  summary: z.string().describe('Un resumen ejecutivo del contrato.'),
+  risks: z.array(z.string()).describe('Lista de cláusulas de riesgo detectadas.'),
+  expirationDate: z.string().optional().describe('La fecha de vencimiento si se identifica.'),
 });
 
+/**
+ * Analiza un contrato utilizando IA para extraer información clave.
+ */
 export async function analyzeContract(input: z.infer<typeof AnalyzeContractInputSchema>) {
   const { output } = await ai.generate({
-    prompt: `Eres un experto legal. Analiza este contrato y devuelve un JSON con:
-             1. summary: Un resumen breve.
-             2. risks: Un array de strings con cláusulas de riesgo.
-             3. expirationDate: La fecha de terminación si se menciona.
-             
-             Texto del contrato: ${input.text}`,
+    prompt: `Eres un experto legal analizando documentos. Por favor analiza el siguiente texto de contrato y devuelve un JSON estructurado con un resumen, los riesgos principales detectados y la fecha de expiración si la encuentras.
+    
+    TEXTO DEL CONTRATO:
+    ${input.text}`,
     output: {
       schema: AnalyzeContractOutputSchema
     }
   });
 
-  if (!output) throw new Error('No se pudo procesar el análisis.');
+  if (!output) throw new Error('No se pudo procesar el análisis del contrato.');
   return output;
 }

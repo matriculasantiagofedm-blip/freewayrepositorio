@@ -52,6 +52,13 @@ export default function ReportsPage() {
       icon: Gauge,
       roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     },
+    {
+      title: 'Reporte de Asignación de Horarios',
+      description: 'Visualiza la agenda semanal de clases prácticas por vehículo.',
+      href: '/reports/vehicle-schedule',
+      icon: CalendarClock,
+      roles: ['Administrador'],
+    },
   ];
 
   if (!role) {

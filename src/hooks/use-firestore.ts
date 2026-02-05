@@ -13,8 +13,6 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { useDb } from '@/components/firebase-provider';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 // Type to add an 'id' to a document's data
 export type WithId<T> = T & { id: string };
@@ -47,13 +45,9 @@ export function useDoc<T>(ref: DocumentReference<DocumentData> | null | undefine
         setIsLoading(false);
         setError(null);
       },
-      async (err) => {
-        const permissionError = new FirestorePermissionError({
-          path: ref.path,
-          operation: 'get',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        setError(permissionError);
+      (err) => {
+        console.error(`Error fetching document at ${ref.path}:`, err);
+        setError(err);
         setIsLoading(false);
       }
     );
@@ -103,15 +97,10 @@ export function useCollection<T>(q: Query<DocumentData> | CollectionReference<Do
             path = (q as any)._query.path.segments.join('/');
           }
         } catch (e) {
-          console.warn("Could not determine query path for permission error reporting.", e);
+          console.warn("Could not determine query path for error reporting.", e);
         }
-
-        const permissionError = new FirestorePermissionError({
-          path: path,
-          operation: 'list',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        setError(permissionError);
+        console.error(`Error fetching collection at ${path}:`, err);
+        setError(err);
         setIsLoading(false);
       }
     );

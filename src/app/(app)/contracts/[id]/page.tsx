@@ -33,8 +33,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { errorEmitter } from '@/firebase/error-emitter';
 
 // Helper to get the next folio number
 const getNextFolio = (lastFolio: string | null): string => {
@@ -174,22 +172,13 @@ export default function ContractDetailPage() {
         window.open(printUrl, '_blank');
         setIsCertificateModalOpen(false);
 
-    } catch (serverError: any) {
-        if (serverError instanceof Error && serverError.name === 'FirebaseError') {
-             const permissionError = new FirestorePermissionError({
-                path: contractRef.path,
-                operation: 'update',
-                requestResourceData: { certificateGeneratedAt: 'serverTimestamp()', certificateFolio: certificateData.folio },
-             });
-             errorEmitter.emit('permission-error', permissionError);
-        } else {
-            console.error("Error updating certificate folio:", serverError);
-            toast({
-                variant: 'destructive',
-                title: 'Error al Guardar',
-                description: 'No se pudo guardar el folio del certificado en la base de datos.',
-            });
-        }
+    } catch (error) {
+        console.error("Error updating certificate folio:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Error al Guardar',
+            description: 'No se pudo guardar el folio del certificado. Por favor, revisa tus permisos e inténtalo de nuevo.',
+        });
     } finally {
         setIsGenerating(false);
     }
@@ -223,22 +212,13 @@ export default function ContractDetailPage() {
   
       router.refresh();
   
-    } catch (serverError: any) {
-      if (serverError instanceof Error && serverError.name === 'FirebaseError') {
-        const permissionError = new FirestorePermissionError({
-          path: contractRef.path,
-          operation: 'update',
-          requestResourceData: { status: 'expired' },
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      } else {
-        console.error("Error al anular contrato:", serverError);
-        toast({
-          variant: 'destructive',
-          title: 'Error al anular',
-          description: 'No se pudo anular el contrato. Revisa los permisos o contacta al administrador.',
-        });
-      }
+    } catch (error) {
+      console.error("Error al anular contrato:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Error al anular',
+        description: 'No se pudo anular el contrato. Revisa los permisos o contacta al administrador.',
+      });
     } finally {
       setIsGenerating(false);
     }
@@ -262,22 +242,13 @@ export default function ContractDetailPage() {
         description: `El contrato con folio ${contract.folioNumber} ha sido reactivado.`,
       });
       router.refresh();
-    } catch (serverError: any) {
-        if (serverError instanceof Error && serverError.name === 'FirebaseError') {
-            const permissionError = new FirestorePermissionError({
-                path: contractRef.path,
-                operation: 'update',
-                requestResourceData: { status: 'active' },
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        } else {
-            console.error("Error al reactivar contrato:", serverError);
-            toast({
-                variant: 'destructive',
-                title: 'Error al Reactivar',
-                description: 'No se pudo reactivar el contrato. Revisa los permisos.',
-            });
-        }
+    } catch (error) {
+        console.error("Error al reactivar contrato:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Error al Reactivar',
+            description: 'No se pudo reactivar el contrato. Revisa los permisos.',
+        });
     } finally {
         setIsGenerating(false);
     }

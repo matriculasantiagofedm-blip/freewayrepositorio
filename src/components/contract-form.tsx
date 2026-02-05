@@ -48,8 +48,6 @@ import { Checkbox } from './ui/checkbox';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { ContractView } from './contract-view';
 import { useDb, useUser } from './firebase-provider';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { errorEmitter } from '@/firebase/error-emitter';
 
 // --- Esquemas de Validación con Zod (para referencia interna y validación manual) ---
 const baseClientSchema = z.object({
@@ -543,7 +541,6 @@ export function ContractForm() {
     }
 
     setIsSubmitting(true);
-    let contractData: Partial<Contract> = {};
 
     try {
       const clientsRef = collection(db, 'clients');
@@ -569,7 +566,7 @@ export function ContractForm() {
             name: values.clientName,
             email: values.clientEmail,
             idNumber: studentIdNumber,
-            userId: user.uid, // The UID of the currently signed-in user
+            userId: user.uid,
             createdAt: serverTimestamp() as Timestamp,
             phone: details.studentPhone1,
           };
@@ -580,7 +577,7 @@ export function ContractForm() {
 
         const newContractRef = doc(collection(db, 'contracts'));
         
-        contractData = {
+        let contractData: Partial<Contract> = {
           id: newContractRef.id,
           folioNumber: newFolioNumber,
           title: values.contractType,
@@ -618,20 +615,11 @@ export function ContractForm() {
       }
     } catch (e: any) {
       console.error('Error al crear contrato: ', e);
-      if (e.code === 'permission-denied') {
-        const permissionError = new FirestorePermissionError({
-          path: 'contracts',
-          operation: 'create',
-          requestResourceData: contractData,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Error al Guardar',
-          description: e.message || 'No se pudo crear el contrato. Revisa la consola para más detalles.',
-        });
-      }
+      toast({
+        variant: 'destructive',
+        title: 'Error al Guardar',
+        description: e.message || 'No se pudo crear el contrato. Revisa tus permisos e inténtalo de nuevo.',
+      });
     } finally {
       setIsSubmitting(false);
     }

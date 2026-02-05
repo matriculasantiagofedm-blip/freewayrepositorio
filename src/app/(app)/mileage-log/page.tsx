@@ -13,8 +13,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Printer, Gauge, PlusCircle } from 'lucide-react';
 import { format, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 type VehicleMileageState = {
     name: VehicleName;
@@ -86,21 +84,13 @@ export default function MileageLogPage() {
 
                     setCars(newCarsState);
                 }
-            } catch (serverError: any) {
-                if (serverError.code === 'permission-denied') {
-                     const permissionError = new FirestorePermissionError({
-                        path: 'mileage_logs',
-                        operation: 'list',
-                     });
-                     errorEmitter.emit('permission-error', permissionError);
-                } else {
-                    console.error("Error fetching last mileage log:", serverError);
-                    toast({
-                        variant: 'destructive',
-                        title: 'Error al cargar datos previos',
-                        description: 'No se pudo cargar el kilometraje del día anterior.',
-                    });
-                }
+            } catch (error) {
+                console.error("Error fetching last mileage log:", error);
+                toast({
+                    variant: 'destructive',
+                    title: 'Error al cargar datos previos',
+                    description: 'No se pudo cargar el kilometraje del día anterior. Revisa tus permisos.',
+                });
             }
         };
 
@@ -127,7 +117,7 @@ export default function MileageLogPage() {
 
     const totalDistance = cars.reduce((acc, car) => acc + car.distance, 0);
 
-    const handleSaveLog = () => {
+    const handleSaveLog = async () => {
         if (!db || !user) {
             toast({ variant: 'destructive', title: 'Error', description: 'No estás autenticado.' });
             return;
@@ -143,37 +133,36 @@ export default function MileageLogPage() {
         }
 
         setIsSaving(true);
-        const logData = {
-            userId: user.uid,
-            date: serverTimestamp(),
-            cars: cars.map(car => ({
-                name: car.name,
-                initialMileage: parseFloat(car.initialMileage),
-                finalMileage: parseFloat(car.finalMileage),
-                distance: car.distance,
-            })),
-            totalDistance: totalDistance,
-        };
+        try {
+            const logData = {
+                userId: user.uid,
+                date: serverTimestamp(),
+                cars: cars.map(car => ({
+                    name: car.name,
+                    initialMileage: parseFloat(car.initialMileage),
+                    finalMileage: parseFloat(car.finalMileage),
+                    distance: car.distance,
+                })),
+                totalDistance: totalDistance,
+            };
 
-        const mileageLogsCollection = collection(db, 'mileage_logs');
+            const mileageLogsCollection = collection(db, 'mileage_logs');
+            await addDoc(mileageLogsCollection, logData);
 
-        addDoc(mileageLogsCollection, logData)
-            .then(() => {
-                setLogDate(new Date());
-                setLogSaved(true);
-                toast({ title: 'Registro Guardado', description: 'El control de kilometraje ha sido guardado exitosamente.' });
-            })
-            .catch(async (serverError) => {
-                const permissionError = new FirestorePermissionError({
-                    path: mileageLogsCollection.path,
-                    operation: 'create',
-                    requestResourceData: logData,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            })
-            .finally(() => {
-                setIsSaving(false);
+            setLogDate(new Date());
+            setLogSaved(true);
+            toast({ title: 'Registro Guardado', description: 'El control de kilometraje ha sido guardado exitosamente.' });
+
+        } catch (error) {
+             console.error("Error saving mileage log:", error);
+             toast({
+                variant: 'destructive',
+                title: 'Error al Guardar',
+                description: 'No se pudo guardar el registro. Por favor, revisa tus permisos e inténtalo de nuevo.',
             });
+        } finally {
+            setIsSaving(false);
+        }
     };
     
     const handlePrint = () => {

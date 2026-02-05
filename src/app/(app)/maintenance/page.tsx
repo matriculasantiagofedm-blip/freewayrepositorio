@@ -26,8 +26,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Wrench, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { cn, toDate } from '@/lib/utils';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -70,7 +68,7 @@ export default function MaintenancePage() {
 
     const { data: logs, isLoading: isLoadingLogs } = useCollection<MaintenanceLog>(maintenanceLogsQuery);
 
-    const onSubmit = (data: MaintenanceFormValues) => {
+    const onSubmit = async (data: MaintenanceFormValues) => {
         if (!db || !user) {
             toast({ variant: 'destructive', title: 'Error', description: 'No estás autenticado.' });
             return;
@@ -78,34 +76,33 @@ export default function MaintenancePage() {
 
         setIsSaving(true);
         
-        const { nextServiceDate, ...restOfData } = data;
-        const logData: any = {
-            ...restOfData,
-            userId: user.uid,
-            date: Timestamp.fromDate(data.date),
-        };
-        
-        if (nextServiceDate) {
-            logData.nextServiceDate = Timestamp.fromDate(nextServiceDate);
-        }
+        try {
+            const { nextServiceDate, ...restOfData } = data;
+            const logData: any = {
+                ...restOfData,
+                userId: user.uid,
+                date: Timestamp.fromDate(data.date),
+            };
+            
+            if (nextServiceDate) {
+                logData.nextServiceDate = Timestamp.fromDate(nextServiceDate);
+            }
 
-        const maintenanceLogsCollection = collection(db, 'maintenance_logs');
-        addDoc(maintenanceLogsCollection, logData)
-            .then(() => {
-                toast({ title: 'Registro Guardado', description: 'El mantenimiento ha sido guardado exitosamente.' });
-                form.reset();
-            })
-            .catch(async (serverError) => {
-                 const permissionError = new FirestorePermissionError({
-                    path: maintenanceLogsCollection.path,
-                    operation: 'create',
-                    requestResourceData: logData,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            })
-            .finally(() => {
-                setIsSaving(false);
+            const maintenanceLogsCollection = collection(db, 'maintenance_logs');
+            await addDoc(maintenanceLogsCollection, logData);
+
+            toast({ title: 'Registro Guardado', description: 'El mantenimiento ha sido guardado exitosamente.' });
+            form.reset();
+        } catch (error) {
+            console.error("Error saving maintenance log:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Error al Guardar',
+                description: 'No se pudo guardar el registro. Por favor, revisa tus permisos e inténtalo de nuevo.',
             });
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (

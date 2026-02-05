@@ -12,7 +12,7 @@ service cloud.firestore {
 
     match /contracts/{contractId} {
       allow read, list, create, update: if isSignedIn();
-      allow delete: if false; // Solo anulación lógica permitida
+      allow delete: if false; 
     }
 
     match /clients/{clientId} {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
 import { type FirebaseApp } from 'firebase/app';
 import { type Auth, onAuthStateChanged, type User } from 'firebase/auth';
 import { type Firestore } from 'firebase/firestore';
@@ -34,12 +34,11 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
-    // Recuperar el rol de forma segura tras la hidratación
-    if (typeof window !== 'undefined') {
-      const storedRoleKey = sessionStorage.getItem('userRoleKey');
-      if (storedRoleKey && roleMapping[storedRoleKey]) {
-        setRoleState(roleMapping[storedRoleKey]);
-      }
+    
+    // Recuperar rol de la sesión
+    const storedRoleKey = typeof window !== 'undefined' ? sessionStorage.getItem('userRoleKey') : null;
+    if (storedRoleKey && roleMapping[storedRoleKey]) {
+      setRoleState(roleMapping[storedRoleKey]);
     }
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -80,12 +79,16 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const value = React.useMemo(() => ({
+  const value = useMemo(() => ({
     app, auth, db, user, isLoading: !mounted || isLoading, setDevUser, role, setRole, logout
   }), [user, isLoading, role, mounted]);
 
   if (!mounted) {
-    return <div className="min-h-screen flex items-center justify-center bg-background">Iniciando ContractTime...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-primary font-headline font-bold text-xl">
+        Iniciando ContractTime...
+      </div>
+    );
   }
 
   return (

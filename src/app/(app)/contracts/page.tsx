@@ -1,3 +1,4 @@
+
 'use client';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';

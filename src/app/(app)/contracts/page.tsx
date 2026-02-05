@@ -18,6 +18,7 @@ import { format, isPast, differenceInDays, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
 import { Eye, Search, CheckCircle, XCircle, Ban } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useDb, useUser } from '@/components/firebase-provider';

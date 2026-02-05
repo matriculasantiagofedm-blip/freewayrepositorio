@@ -1,10 +1,7 @@
-/** @type {import('postcss-load-config').Config} */
-const config = {
+module.exports = {
   plugins: {
-    'tailwindcss/nesting': {}, // Permite anidar CSS como en SASS
+    'tailwindcss/nesting': {},
     tailwindcss: {},
-    autoprefixer: {}, // Fundamental para compatibilidad entre navegadores
+    autoprefixer: {},
   },
 };
-
-export default config;

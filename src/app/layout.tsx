@@ -4,14 +4,12 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseProvider } from "@/components/firebase-provider";
 
-// Configuración de Poppins para títulos (headline)
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["400", "600", "700"],
   variable: "--font-poppins",
 });
 
-// Configuración de PT Sans para el cuerpo (body)
 const ptSans = PT_Sans({
   subsets: ["latin"],
   weight: ["400", "700"],

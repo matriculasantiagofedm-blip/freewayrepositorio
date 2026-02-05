@@ -35,6 +35,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true);
     
+    // Solo accedemos a sessionStorage en el cliente una vez montado
     if (typeof window !== 'undefined') {
       const storedRoleKey = sessionStorage.getItem('userRoleKey');
       if (storedRoleKey && roleMapping[storedRoleKey]) {
@@ -84,6 +85,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     app, auth, db, user, isLoading: !mounted || isLoading, setDevUser, role, setRole, logout
   }), [user, isLoading, role, mounted]);
 
+  // Evitar parpadeos de hidratación
   if (!mounted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background text-primary font-headline font-bold text-xl">

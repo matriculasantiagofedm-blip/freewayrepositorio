@@ -16,25 +16,17 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Skeleton } from './ui/skeleton';
-import { useAuth, useUser } from './firebase-provider';
+import { useUser, useFirebase } from './firebase-provider';
 
 export function UserNav() {
-  const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const { role: currentUser } = useCurrentRole();
+  const { logout } = useFirebase();
   const router = useRouter();
 
 
   const handleLogout = async () => {
-    if (auth) {
-        await auth.signOut();
-    }
-    // Limpiar el rol guardado en la sesión al cerrar sesión
-    sessionStorage.removeItem('anonymousUserRole');
-    (window as any).selectedRoleForAnonymousSession = undefined;
-
-    // Forzar la redirección a la página de inicio y recargar la ventana.
-    // Esto asegura que todos los estados de sesión se limpien por completo.
+    await logout();
     window.location.href = '/';
   }
 

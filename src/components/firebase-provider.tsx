@@ -4,8 +4,15 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { type FirebaseApp } from 'firebase/app';
 import { type Auth, onAuthStateChanged, type User } from 'firebase/auth';
 import { type Firestore } from 'firebase/firestore';
-import { app, auth, db } from '@/firebase/client'; // Import the initialized instances
-import { FirebaseErrorListener } from './FirebaseErrorListener';
+import { app, auth, db } from '@/firebase/client';
+
+// Define the role mapping here, making it the single source of truth
+const roleMapping: { [key: string]: string } = {
+  'ventas123': 'Ventas',
+  'ventasext123': 'Ventas Externas',
+  'Ayax/2022': 'Administrador',
+};
+
 
 interface FirebaseContextValue {
   app: FirebaseApp;
@@ -14,6 +21,9 @@ interface FirebaseContextValue {
   user: User | null;
   isLoading: boolean;
   setDevUser: (user: User) => void;
+  role: string | null;
+  setRole: (roleName: string) => void;
+  logout: () => Promise<void>;
 }
 
 const FirebaseContext = createContext<FirebaseContextValue | undefined>(undefined);
@@ -21,6 +31,7 @@ const FirebaseContext = createContext<FirebaseContextValue | undefined>(undefine
 export function FirebaseProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [role, setRoleState] = useState<string | null>(null);
 
   const setDevUser = (devUser: User) => {
     console.log("DEV MODE: Manually setting mock user for development.");
@@ -28,9 +39,36 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }
 
+  const setRole = (roleKey: string) => {
+    const assignedRole = roleMapping[roleKey] || null;
+    setRoleState(assignedRole);
+    if (typeof window !== 'undefined') {
+        sessionStorage.setItem('userRoleKey', roleKey);
+    }
+  };
+
+  const logout = async () => {
+    await auth.signOut();
+    setUser(null);
+    setRoleState(null);
+    if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('userRoleKey');
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
+      if (user) {
+          if (typeof window !== 'undefined') {
+              const storedRoleKey = sessionStorage.getItem('userRoleKey');
+              if (storedRoleKey) {
+                  setRoleState(roleMapping[storedRoleKey] || null);
+              }
+          }
+      } else {
+          setRoleState(null);
+      }
       setIsLoading(false);
     });
 
@@ -44,7 +82,10 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     user,
     isLoading,
     setDevUser,
-  }), [user, isLoading]);
+    role,
+    setRole,
+    logout
+  }), [user, isLoading, role]);
 
   return (
     <FirebaseContext.Provider value={value}>

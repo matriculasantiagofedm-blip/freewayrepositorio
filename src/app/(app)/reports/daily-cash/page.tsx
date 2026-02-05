@@ -34,8 +34,7 @@ import {
 import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, Timestamp, type DocumentData } from 'firebase/firestore';
 import type { Contract, Payment, Transaction, BookSalePayment } from '@/lib/types';
-import { FirestorePermissionError } from '@/firebase/errors';
-import { errorEmitter } from '@/firebase/error-emitter';
+import { useToast } from '@/hooks/use-toast';
 
 const initialBillQuantities: { [key: string]: number } = {
   '100.00': 0,
@@ -74,6 +73,7 @@ export default function DailyCashReportPage() {
   const { role, isLoading: isRoleLoading } = useCurrentRole();
   const db = useDb();
   const { user, isUserLoading } = useUser();
+  const { toast } = useToast();
   
   const [reportDate, setReportDate] = useState<Date>(new Date());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -230,21 +230,19 @@ export default function DailyCashReportPage() {
         setIsDataLoaded(true);
 
       } catch (error: any) {
-        if (error.code === 'permission-denied') {
-             errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: 'contracts, cancellation_payments, update_payments, or book_sale_payments',
-                operation: 'list'
-             }));
-        } else {
-            console.error("Error fetching data for report:", error);
-        }
+        console.error("Error fetching data for report:", error);
+        toast({
+          variant: "destructive",
+          title: "Error al Cargar Datos",
+          description: "No se pudieron obtener los datos para el reporte. Revisa la consola para más detalles.",
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchDailyData();
-  }, [db, reportDate, user, role]);
+  }, [db, reportDate, user, role, toast]);
 
   const filteredTransactions = useMemo(() => {
     if (role !== 'Administrador' || sellerFilter === 'all') {
@@ -611,5 +609,3 @@ export default function DailyCashReportPage() {
     </div>
   );
 }
-
-    

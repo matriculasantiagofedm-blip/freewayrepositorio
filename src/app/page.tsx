@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -9,16 +8,14 @@ import { GanttChartSquare, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { signInAnonymously, type User } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useUser } from '@/components/firebase-provider';
-
-// Los roles válidos ahora se usan para validación interna
-const validRoles = ['Ayax/2022', 'ventas123', 'ventasext123'];
+import { useAuth, useUser, useFirebase } from '@/components/firebase-provider';
 
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const auth = useAuth();
   const { setDevUser } = useUser();
+  const { setRole } = useFirebase();
 
   const [roleInput, setRoleInput] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -35,12 +32,6 @@ export default function LoginPage() {
       setError('Por favor, escribe un perfil para continuar.');
       return;
     }
-    
-    // Validar si el rol escrito es uno de los permitidos
-    if (!validRoles.includes(roleInput)) {
-        setError('El perfil ingresado no es válido.');
-        return;
-    }
 
     setIsLoggingIn(true);
     setError('');
@@ -48,10 +39,7 @@ export default function LoginPage() {
     try {
       await signInAnonymously(auth);
 
-      // This code will run if signInAnonymously succeeds
-      const selectedRole = { name: roleInput };
-      (window as any).selectedRoleForAnonymousSession = selectedRole;
-      sessionStorage.setItem('anonymousUserRole', roleInput);
+      setRole(roleInput);
       
       toast({
         title: 'Inicio de Sesión Exitoso',
@@ -60,19 +48,12 @@ export default function LoginPage() {
       router.push('/dashboard');
 
     } catch (e: any) {
-        // This is the workaround for the unauthorized domain issue in the dev environment.
-        // It's safer to check for the specific error code.
         if (e.code === 'auth/api-key-not-valid') {
-            console.warn("DEV MODE: Firebase Auth failed, likely due to domain restrictions. Creating a mock user session.");
+            console.warn("DEV MODE: Firebase Auth failed. Creating a mock user session.");
             
-            // Create a mock user and set it in the provider
             const mockUser = { uid: 'dev-user-uid', email: ``, isAnonymous: true, getIdToken: async () => 'mock-token' } as unknown as User;
             setDevUser(mockUser);
-
-            // Set role and redirect, same as in the successful case
-            const selectedRole = { name: roleInput };
-            (window as any).selectedRoleForAnonymousSession = selectedRole;
-            sessionStorage.setItem('anonymousUserRole', roleInput);
+            setRole(roleInput);
             
             toast({
               title: 'Inicio de Sesión (Simulado)',
@@ -81,9 +62,8 @@ export default function LoginPage() {
             router.push('/dashboard');
 
         } else {
-            // Handle other, real errors
             console.error("Error de inicio de sesión:", e);
-            const description = 'No se pudo iniciar la sesión. Por favor, intenta de nuevo.';
+            const description = 'No se pudo iniciar la sesión o el perfil no es válido.';
             setError(description);
             toast({
                 variant: 'destructive',

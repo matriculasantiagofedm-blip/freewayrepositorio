@@ -6,37 +6,29 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow list: if false;
+      allow get, create, update: if isSignedIn() && request.auth.uid == userId;
     }
 
     match /contracts/{contractId} {
       allow read, list, create, update: if isSignedIn();
-      allow delete: if isSignedIn(); // Permitir anulación lógica vía update o física si es necesario
+      allow delete: if false; // Solo anulación lógica permitida
     }
 
     match /clients/{clientId} {
       allow read, list, create, update: if isSignedIn();
-      allow delete: if false;
     }
 
     match /cancellation_payments/{paymentId} {
-      allow create, read: if isSignedIn();
+      allow read, list, create: if isSignedIn();
     }
 
     match /update_payments/{paymentId} {
-      allow create, read: if isSignedIn();
+      allow read, list, create: if isSignedIn();
     }
 
     match /book_sale_payments/{paymentId} {
-      allow create, read: if isSignedIn();
+      allow read, list, create: if isSignedIn();
     }
     
     match /mileage_logs/{logId} {

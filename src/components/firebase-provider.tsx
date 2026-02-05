@@ -34,9 +34,12 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
-    const storedRoleKey = sessionStorage.getItem('userRoleKey');
-    if (storedRoleKey && roleMapping[storedRoleKey]) {
-      setRoleState(roleMapping[storedRoleKey]);
+    // Recuperar el rol de forma segura tras la hidratación
+    if (typeof window !== 'undefined') {
+      const storedRoleKey = sessionStorage.getItem('userRoleKey');
+      if (storedRoleKey && roleMapping[storedRoleKey]) {
+        setRoleState(roleMapping[storedRoleKey]);
+      }
     }
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -82,7 +85,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   }), [user, isLoading, role, mounted]);
 
   if (!mounted) {
-    return <div className="min-h-screen flex items-center justify-center bg-background">Cargando sistema...</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-background">Iniciando ContractTime...</div>;
   }
 
   return (

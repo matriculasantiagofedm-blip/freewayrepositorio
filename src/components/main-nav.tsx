@@ -151,10 +151,10 @@ function HoverDropdownMenu({ link, visibleChildren, pathname, linkClass }: any) 
   const handleClose = () => {
     timerRef.current = setTimeout(() => {
       setOpen(false);
-    }, 100); // 100ms delay to allow moving cursor to content
+    }, 100); 
   };
 
-  const isChildActive = visibleChildren.some((child: any) => pathname.startsWith(child.href!));
+  const isChildActive = visibleChildren.some((child: any) => child.href && pathname.startsWith(child.href!));
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>

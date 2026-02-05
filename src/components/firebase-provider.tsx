@@ -49,7 +49,11 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    await auth.signOut();
+    try {
+      await auth.signOut();
+    } catch (error) {
+      console.error("Error during sign out:", error);
+    }
     setUser(null);
     setRoleState(null);
     if (typeof window !== 'undefined') {
@@ -60,6 +64,8 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      
+      // Attempt to restore role from session storage safely after mount
       if (currentUser && typeof window !== 'undefined') {
           const storedRoleKey = sessionStorage.getItem('userRoleKey');
           if (storedRoleKey && roleMapping[storedRoleKey]) {

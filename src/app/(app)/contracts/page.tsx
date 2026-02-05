@@ -60,19 +60,21 @@ export default function AllContractsPage() {
 
   const { data: allContracts, isLoading } = useCollection<Contract>(contractsQuery);
 
-  const ageCategoryColors: { [key: string]: string } = {
-    '0-30 días': 'bg-yellow-100 text-yellow-800 border-yellow-300',
-    '31-60 días': 'bg-orange-100 text-orange-800 border-orange-300',
-    '61-90 días': 'bg-red-100 text-red-800 border-red-300',
-    '90+ días': 'bg-red-200 text-red-900 border-red-400 font-bold',
-  };
-
   const filteredContracts = allContracts?.filter((contract) => {
       const folio = String(contract.folioNumber || '').padStart(6, '0');
       const client = contract.clientName.toLowerCase();
+      const idNumber = contract.autoMotoDetails?.studentIdNumber || contract.deluxeDetails?.studentIdNumber || contract.ampliacionesDetails?.studentIdNumber || '';
+      const type = contract.type.toLowerCase();
       const search = searchTerm.toLowerCase();
+      
       if (filter === 'overdue' && !isOverdue(contract)) return false;
-      if (searchTerm) return folio.includes(search) || client.includes(search);
+      
+      if (searchTerm) {
+          return folio.includes(search) || 
+                 client.includes(search) || 
+                 idNumber.includes(search) || 
+                 type.includes(search);
+      }
       return true;
     }) || [];
 
@@ -84,7 +86,7 @@ export default function AllContractsPage() {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Buscar por folio o cliente..."
+            placeholder="Buscar por folio, cliente, tipo, cédula..."
             className="pl-8 sm:w-[300px]"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}

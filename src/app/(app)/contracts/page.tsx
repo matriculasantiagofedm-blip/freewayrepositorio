@@ -93,7 +93,11 @@ function AllContractsContent() {
           />
         </div>
       </div>
-      {isLoading ? <p>Cargando contratos...</p> : (
+      {isLoading ? (
+        <div className="flex items-center justify-center p-8">
+          <p className="text-muted-foreground">Cargando contratos...</p>
+        </div>
+      ) : (
         <div className="rounded-lg border">
           <Table>
             <TableHeader>
@@ -127,6 +131,13 @@ function AllContractsContent() {
                   </TableCell>
                 </TableRow>
               ))}
+              {filteredContracts.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={filter === 'overdue' ? 7 : 6} className="text-center py-10 text-muted-foreground">
+                    No se encontraron contratos.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>

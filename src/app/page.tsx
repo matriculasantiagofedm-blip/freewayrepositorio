@@ -54,28 +54,14 @@ export default function LoginPage() {
       router.push('/dashboard');
 
     } catch (e: any) {
+        // Modo de desarrollo o fallos de red manejados
         if (e.code === 'auth/api-key-not-valid' || e.code === 'auth/network-request-failed') {
-            console.warn("DEV MODE: Firebase Auth failed. Creating a mock user session.");
-            
-            const mockUser = { uid: 'dev-user-uid', email: ``, isAnonymous: true, getIdToken: async () => 'mock-token' } as unknown as User;
+            const mockUser = { uid: 'dev-user-uid', isAnonymous: true } as unknown as User;
             setDevUser(mockUser);
             setRole(roleInput);
-            
-            toast({
-              title: 'Inicio de Sesión (Simulado)',
-              description: `Bienvenido, ${assignedRole}.`,
-            });
             router.push('/dashboard');
-
         } else {
-            console.error("Error de inicio de sesión:", e);
-            const description = 'No se pudo iniciar la sesión anónima. Revisa tu conexión a internet y la configuración de Firebase.';
-            setError(description);
-            toast({
-                variant: 'destructive',
-                title: 'Error de Inicio de Sesión',
-                description: description,
-            });
+            setError('Error al iniciar sesión. Inténtalo de nuevo.');
         }
     } finally {
       setIsLoggingIn(false);
@@ -119,9 +105,6 @@ export default function LoginPage() {
           </CardContent>
         </Card>
       </div>
-      <footer className="absolute bottom-4 text-center text-sm text-muted-foreground">
-        <p>Creado para profesionales que valoran su tiempo.</p>
-      </footer>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import type { Timestamp } from 'firebase/firestore';
+import { Timestamp, FieldValue } from 'firebase/firestore';
 
 export interface User {
   uid: string;
@@ -13,7 +13,7 @@ export interface Client {
   idNumber?: string;
   phone?: string;
   userId: string;
-  createdAt: Timestamp;
+  createdAt: Timestamp | FieldValue;
 }
 
 export type ContractStatus = 'draft' | 'active' | 'completed' | 'expired';
@@ -89,12 +89,12 @@ export interface Contract {
   type: ContractType;
   status: ContractStatus;
   userId: string;
-  createdAt: Timestamp;
+  createdAt: Timestamp | FieldValue;
   createdBy?: string;
   deluxeDetails?: Partial<DeluxeContractDetails>;
   autoMotoDetails?: Partial<AutoMotoContractDetails>;
   ampliacionesDetails?: Partial<AmpliacionesContractDetails>;
-  certificateGeneratedAt?: Timestamp;
+  certificateGeneratedAt?: Timestamp | FieldValue;
   certificateFolio?: string;
   studentIdNumber?: string;
   clauses?: string;
@@ -109,7 +109,7 @@ export interface Certificate {
   folio: string;
   clientName: string;
   courseName: string;
-  issueDate: Timestamp;
+  issueDate: Timestamp | FieldValue;
   cip: string;
   licenseType: string;
   contract?: Contract;
@@ -140,7 +140,7 @@ export interface Transaction {
 export interface Payment {
   id: string;
   amount: number;
-  paymentDate: Timestamp;
+  paymentDate: Timestamp | FieldValue;
   contractId: string;
   contractFolio: number;
   cancellationFolio?: number;
@@ -157,7 +157,7 @@ export interface Payment {
 export interface BookSalePayment {
   id: string;
   amount: number;
-  paymentDate: Timestamp;
+  paymentDate: Timestamp | FieldValue;
   bookSaleFolio: number;
   bookTitle: string;
   clientName: string;
@@ -175,7 +175,7 @@ export interface VehicleMileage {
 
 export interface MileageLog {
   id: string;
-  date: Timestamp;
+  date: Timestamp | FieldValue;
   userId: string;
   cars: VehicleMileage[];
   totalDistance?: number;
@@ -183,14 +183,14 @@ export interface MileageLog {
 
 export type MaintenanceLog = {
   id: string;
-  date: Timestamp;
+  date: Timestamp | FieldValue;
   userId: string;
   vehicle: VehicleName;
   mileage: number;
   type: MaintenanceType;
   description: string;
   cost: number;
-  nextServiceDate?: Timestamp;
+  nextServiceDate?: Timestamp | FieldValue;
 };
 
 export type VehicleName = 'Picanto Blanco' | 'Picanto Bronce' | 'Spark' | 'Moto Roja' | 'Moto Negra';

@@ -7,6 +7,18 @@ import { type Firestore } from 'firebase/firestore';
 import { app, auth, db } from '@/firebase/client'; // Import the initialized instances
 import { FirebaseErrorListener } from './FirebaseErrorListener';
 
+// --- A flag to enable the mock user. IMPORTANT: This should be false in production.
+const USE_MOCK_USER_IN_DEV = true;
+
+// A mock user for development when Firebase Auth is blocked by the environment
+const mockUser: User = {
+  uid: 'dev-user-uid',
+  email: 'dev-user@example.com',
+  isAnonymous: true,
+  // Cast to User to satisfy the type, as we don't need to mock all methods
+} as User;
+
+
 interface FirebaseContextValue {
   app: FirebaseApp;
   auth: Auth;
@@ -23,6 +35,15 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
 
   // Effect for handling authentication state changes
   useEffect(() => {
+    // If we are in a development environment and the mock flag is enabled,
+    // bypass real authentication and use the mock user.
+    if (process.env.NODE_ENV === 'development' && USE_MOCK_USER_IN_DEV) {
+      setUser(mockUser);
+      setIsLoading(false);
+      return; // Skip the real Firebase auth listener
+    }
+
+    // For production or when the mock flag is disabled, use the real auth listener.
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setIsLoading(false); // Auth state is determined, app is ready
@@ -58,14 +79,10 @@ export function useFirebase() {
 }
 
 export function useAuth() {
-  // Returns the auth instance, which may be null during initial render.
-  // Components using this should handle the null case.
   return useFirebase().auth;
 }
 
 export function useDb() {
-  // Returns the Firestore instance, which may be null during initial render.
-  // Components using this should handle the null case.
   return useFirebase().db;
 }
 

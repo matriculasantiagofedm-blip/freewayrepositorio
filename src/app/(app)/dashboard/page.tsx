@@ -1,9 +1,8 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { FileText, CalendarClock, Users, Car, Bike, Combine, Crown, Plus, CarFront, RefreshCw, HandCoins, Award, BookMarked, Gauge, Wrench } from 'lucide-react';
+import { FileText, CalendarClock, Users, Car, Bike, Combine, Crown, Plus, CarFront, RefreshCw, HandCoins, Award, BookMarked, Gauge, Wrench, GanttChart } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { isPast } from 'date-fns';
 import { collection, query, where }from 'firebase/firestore';

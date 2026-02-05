@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import * as React from 'react';
-import { GanttChartSquare, Users, ClipboardPenLine, RefreshCw, HandCoins, Gauge, Wrench, Car, BookMarked, CalendarClock, FileText, Banknote, ListChecks, Award } from 'lucide-react';
+import { GanttChart, Users, ClipboardPenLine, RefreshCw, HandCoins, Gauge, Wrench, Car, BookMarked, CalendarClock, FileText, Banknote, ListChecks, Award } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,7 @@ const navLinks = [
   {
     href: '/dashboard',
     label: 'Panel de Control',
-    icon: GanttChartSquare,
+    icon: GanttChart,
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
   },
   {

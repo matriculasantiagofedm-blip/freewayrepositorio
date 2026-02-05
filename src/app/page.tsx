@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { GanttChartSquare, Loader2 } from 'lucide-react';
+import { GanttChart, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { signInAnonymously, type User } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -86,7 +86,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center text-center">
-          <GanttChartSquare className="h-16 w-16 text-primary" />
+          <GanttChart className="h-16 w-16 text-primary" />
           <h1 className="font-headline text-5xl font-bold tracking-tight text-foreground sm:text-6xl mt-4">
             ContractTime
           </h1>

@@ -1,5 +1,5 @@
 'use client';
-import { GanttChartSquare, Menu } from 'lucide-react';
+import { GanttChart, Menu } from 'lucide-react';
 import Link from 'next/link';
 import { UserNav } from '@/components/user-nav';
 import { MainNav } from '@/components/main-nav';
@@ -14,7 +14,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             href="/dashboard"
             className="flex items-center gap-2 font-semibold"
           >
-            <GanttChartSquare className="h-6 w-6 text-primary" />
+            <GanttChart className="h-6 w-6 text-primary" />
             <span className="font-headline">ContractTime</span>
         </Link>
         <nav className="hidden md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6 ml-6">
@@ -41,7 +41,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   href="/dashboard"
                   className="flex items-center gap-2 text-lg font-semibold"
                 >
-                  <GanttChartSquare className="h-6 w-6 text-primary" />
+                  <GanttChart className="h-6 w-6 text-primary" />
                   <span className="font-headline">ContractTime</span>
                 </Link>
                 <MainNav isMobile={true} />

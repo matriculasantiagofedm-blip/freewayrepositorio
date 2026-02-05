@@ -1,6 +1,6 @@
 'use client';
 
-import { analyzeContract } from '@/ai/flows/analyze-contract';
+import { analyzeContract } from '@/lib/contracts-flow';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';

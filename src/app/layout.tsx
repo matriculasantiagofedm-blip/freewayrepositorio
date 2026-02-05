@@ -17,7 +17,7 @@ const ptSans = PT_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Contract Time - Freeway Escuela de Manejo",
+  title: "ContractTime - Freeway Escuela de Manejo",
   description: "Gestión inteligente de contratos y servicios viales",
 };
 

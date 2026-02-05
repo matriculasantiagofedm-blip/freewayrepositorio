@@ -32,12 +32,12 @@ export interface DeluxeContractDetails {
   studentPhone2?: string;
   paymentDetails?: string;
   paymentAmount?: number;
-  paymentInstallments?: (Date | undefined)[];
+  paymentInstallments?: (Date | Timestamp | FieldValue | undefined)[];
   vehicleTransmission?: 'Automático' | 'Manual';
   licenseCategory?: 'A, C' | 'A, C, D';
   theoreticalClassSchedule?: string;
-  theoreticalClasses?: (Date | undefined)[];
-  classSchedules?: { date?: Date; time?: string }[];
+  theoreticalClasses?: (Date | Timestamp | FieldValue | undefined)[];
+  classSchedules?: { date?: Date | Timestamp | FieldValue; time?: string }[];
   paymentType?: string;
   instructor?: InstructorName;
 }
@@ -51,14 +51,14 @@ export interface AutoMotoContractDetails {
   courseValue?: number;
   downPayment?: number;
   balance?: number;
-  paymentDeadline?: Date | null;
+  paymentDeadline?: Date | Timestamp | FieldValue | null;
   vehicle?: VehicleName;
   vehicleTransmission?: 'Automático' | 'Manual' | 'Moto';
   licenseCategory?: 'A, C' | 'A, C, D' | 'A, B';
   theoreticalClassSchedule?: string;
-  theoreticalClassDates?: (Date | undefined)[];
-  practicalClassSchedules?: { date?: Date; time?: string }[];
-  motoPracticalClassSchedules?: { date?: Date; time?: string }[];
+  theoreticalClassDates?: (Date | Timestamp | FieldValue | undefined)[];
+  practicalClassSchedules?: { date?: Date | Timestamp | FieldValue; time?: string }[];
+  motoPracticalClassSchedules?: { date?: Date | Timestamp | FieldValue; time?: string }[];
   paidInFull?: boolean;
   paymentType?: string;
   instructor?: InstructorName;
@@ -72,9 +72,9 @@ export interface AmpliacionesContractDetails {
     courseValue?: number;
     downPayment?: number;
     balance?: number;
-    paymentDeadline?: Date | null;
+    paymentDeadline?: Date | Timestamp | FieldValue | null;
     selectedPlans?: { name: string; price: number }[];
-    theoreticalClassDate?: Date;
+    theoreticalClassDate?: Date | Timestamp | FieldValue;
     theoreticalClassTime?: string;
     paymentType?: string;
 }

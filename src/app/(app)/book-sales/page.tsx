@@ -43,6 +43,7 @@ export default function BookSalesPage() {
     setSelectedBook(null);
     setPaymentSaved(false);
     setSavedPaymentData(null);
+    setIsSaving(false);
   };
 
   const handleSaveSale = async () => {

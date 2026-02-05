@@ -81,7 +81,7 @@ export default function ClientDetailPage() {
                         No hay contratos para este cliente
                     </h3>
                     <p className="mt-2 text-sm text-muted-foreground">
-                        No se han creado contratos para este cliente todavía.
+                        Cuando se cree el primer contrato, el cliente aparecerá aquí.
                     </p>
                 </div>
              )

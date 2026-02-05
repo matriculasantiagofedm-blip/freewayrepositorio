@@ -54,6 +54,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     if (typeof window !== 'undefined') {
         sessionStorage.removeItem('userRoleKey');
     }
+    // No need to manually reload, let the effect handle it.
   };
 
   useEffect(() => {
@@ -64,10 +65,16 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
               const storedRoleKey = sessionStorage.getItem('userRoleKey');
               if (storedRoleKey) {
                   setRoleState(roleMapping[storedRoleKey] || null);
+              } else {
+                setRoleState(null); // Explicitly clear role if not in session
               }
           }
       } else {
+          // If no Firebase user, ensure local role state is also cleared.
           setRoleState(null);
+          if (typeof window !== 'undefined') {
+            sessionStorage.removeItem('userRoleKey');
+          }
       }
       setIsLoading(false);
     });

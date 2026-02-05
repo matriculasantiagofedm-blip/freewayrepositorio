@@ -27,7 +27,7 @@ export function UserNav() {
 
   const handleLogout = async () => {
     await logout();
-    window.location.href = '/';
+    router.push('/');
   }
 
   const getInitials = (role: string | null): string => {

@@ -19,7 +19,6 @@ import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
 import { Eye, Search, CheckCircle, XCircle, Ban } from 'lucide-react';
 import { useState, useMemo } from 'react';
-import { Input } from '@/components/ui/input';
 import { useSearchParams } from 'next/navigation';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';

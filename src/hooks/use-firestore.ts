@@ -13,6 +13,7 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { useDb } from '@/components/firebase-provider';
+import { useToast } from './use-toast';
 
 // Type to add an 'id' to a document's data
 export type WithId<T> = T & { id: string };
@@ -22,6 +23,7 @@ export type WithId<T> = T & { id: string };
  * @param ref The DocumentReference to the document.
  */
 export function useDoc<T>(ref: DocumentReference<DocumentData> | null | undefined) {
+  const { toast } = useToast();
   const [data, setData] = useState<WithId<T> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -49,11 +51,16 @@ export function useDoc<T>(ref: DocumentReference<DocumentData> | null | undefine
         console.error(`Error fetching document at ${ref.path}:`, err);
         setError(err);
         setIsLoading(false);
+        toast({
+          variant: "destructive",
+          title: "Error de Carga",
+          description: `No se pudo cargar el documento: ${err.message}`,
+        });
       }
     );
 
     return () => unsubscribe();
-  }, [ref]);
+  }, [ref, toast]);
 
   return { data, isLoading, error };
 }
@@ -64,6 +71,7 @@ export function useDoc<T>(ref: DocumentReference<DocumentData> | null | undefine
  * @param q The Query or CollectionReference to the collection.
  */
 export function useCollection<T>(q: Query<DocumentData> | CollectionReference<DocumentData> | null | undefined) {
+  const { toast } = useToast();
   const [data, setData] = useState<WithId<T>[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -102,11 +110,16 @@ export function useCollection<T>(q: Query<DocumentData> | CollectionReference<Do
         console.error(`Error fetching collection at ${path}:`, err);
         setError(err);
         setIsLoading(false);
+        toast({
+          variant: "destructive",
+          title: "Error de Carga",
+          description: `No se pudo cargar la colección: ${err.message}`,
+        });
       }
     );
 
     return () => unsubscribe();
-  }, [q]);
+  }, [q, toast]);
 
   return { data, isLoading, error };
 }

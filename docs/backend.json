@@ -1,203 +1,97 @@
-
 {
   "entities": {
     "Contract": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Contract",
       "type": "object",
-      "description": "Represents a contract between a user and a client.",
+      "description": "Represents a contract for driving school services.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Contract entity."
-        },
-        "folioNumber": {
-            "type": "number",
-            "description": "Sequential contract number for tracking and auditing."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to the User who created the contract. (Relationship: User 1:N Contract)"
-        },
-        "clientId": {
-          "type": "string",
-          "description": "Reference to the Client who is party to the contract. (Relationship: Client 1:N Contract)"
-        },
-        "clauses": {
-          "type": "string",
-          "description": "The clauses and terms of the contract."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "The date and time the contract was created.",
-          "format": "date-time"
-        },
-        "deadline": {
-          "type": "string",
-          "description": "The deadline for the contract.",
-          "format": "date-time"
-        },
-        "meetingDateTime": {
-          "type": "string",
-          "description": "The date and time for a meeting related to the contract.",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "folioNumber": { "type": "number" },
+        "title": { "type": "string" },
+        "clientName": { "type": "string" },
+        "clientEmail": { "type": "string", "format": "email" },
+        "clientId": { "type": "string" },
+        "type": { "type": "string", "enum": ["Curso Auto", "Curso Moto", "Curso Mixto", "Curso Deluxe", "Ampliaciones", "Curso Solo Practica"] },
+        "status": { "type": "string", "enum": ["draft", "active", "completed", "expired"] },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "createdBy": { "type": "string" },
+        "clauses": { "type": "string" },
+        "studentIdNumber": { "type": "string" },
+        "certificateGeneratedAt": { "type": "string", "format": "date-time" },
+        "certificateFolio": { "type": "string" },
+        "autoMotoDetails": { "$ref": "#/entities/AutoMotoContractDetails" },
+        "deluxeDetails": { "$ref": "#/entities/DeluxeContractDetails" },
+        "ampliacionesDetails": { "$ref": "#/entities/AmpliacionesContractDetails" }
       },
-      "required": [
-        "id",
-        "folioNumber",
-        "userId",
-        "clientId",
-        "clauses",
-        "createdAt"
-      ]
+      "required": ["id", "folioNumber", "title", "clientName", "clientId", "type", "status", "userId", "createdAt"]
     },
     "User": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "User",
       "type": "object",
       "description": "Represents a user of the application.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the User entity."
-        },
-        "email": {
-          "type": "string",
-          "description": "The user's email address.",
-          "format": "email"
-        },
-        "name": {
-          "type": "string",
-          "description": "The user's name."
-        }
+        "id": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "name": { "type": "string" }
       },
-      "required": [
-        "id",
-        "email",
-        "name"
-      ]
+      "required": ["id", "email"]
     },
     "Client": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Client",
       "type": "object",
       "description": "Represents a client associated with a contract.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Client entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The client's name."
-        },
-        "email": {
-          "type": "string",
-          "description": "The client's email address.",
-          "format": "email"
-        },
-        "phone": {
-          "type": "string",
-          "description": "The client's phone number."
-        }
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "idNumber": { "type": "string" },
+        "phone": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "name"
-      ]
+      "required": ["id", "name", "userId"]
     },
     "Payment": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Payment",
       "type": "object",
-      "description": "Represents a financial transaction, such as a down payment or cancellation payment.",
+      "description": "Represents a financial transaction.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Payment entity."
-        },
-        "amount": {
-          "type": "number",
-          "description": "The amount of the payment."
-        },
-        "paymentDate": {
-          "type": "string",
-          "format": "date-time",
-          "description": "The date and time the payment was made."
-        },
-        "contractId": {
-          "type": "string",
-          "description": "Reference to the associated contract."
-        },
-        "cancellationFolio": {
-          "type": "number",
-          "description": "Sequential folio number specifically for cancellation payments."
-        },
-        "updateFolio": {
-          "type": "number",
-          "description": "Sequential folio number for certificate update payments."
-        },
-        "clientId": {
-          "type": "string",
-          "description": "Reference to the client who made the payment."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to the user who recorded the payment."
-        },
-        "type": {
-          "type": "string",
-          "enum": ["abono", "cancelacion", "actualizacion"],
-          "description": "The type of payment (e.g., down payment, cancellation, update)."
-        }
+        "id": { "type": "string" },
+        "amount": { "type": "number" },
+        "paymentDate": { "type": "string", "format": "date-time" },
+        "contractId": { "type": "string" },
+        "contractFolio": { "type": "number" },
+        "cancellationFolio": { "type": "number" },
+        "updateFolio": { "type": "number" },
+        "clientId": { "type": "string" },
+        "clientName": { "type": "string" },
+        "clientAddress": { "type": "string" },
+        "studentIdNumber": { "type": "string" },
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["abono", "cancelacion", "actualizacion"] },
+        "createdBy": { "type": "string" }
       },
       "required": ["id", "amount", "paymentDate", "contractId", "clientId", "userId", "type"]
     },
     "BookSalePayment": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Book Sale Payment",
       "type": "object",
       "description": "Represents a payment for a book sale.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the BookSalePayment entity."
-        },
-        "amount": {
-          "type": "number",
-          "description": "The amount of the payment."
-        },
-        "paymentDate": {
-          "type": "string",
-          "format": "date-time",
-          "description": "The date and time the payment was made."
-        },
-        "bookSaleFolio": {
-          "type": "number",
-          "description": "Sequential folio number for book sale payments."
-        },
-        "bookTitle": {
-          "type": "string",
-          "description": "The title of the book sold."
-        },
-        "clientName": {
-            "type": "string",
-            "description": "Name of the person who bought the book."
-        },
-        "studentIdNumber": {
-            "type": "string",
-            "description": "ID number of the person who bought the book."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to the user who recorded the payment."
-        }
+        "id": { "type": "string" },
+        "amount": { "type": "number" },
+        "paymentDate": { "type": "string", "format": "date-time" },
+        "bookSaleFolio": { "type": "number" },
+        "bookTitle": { "type": "string" },
+        "clientName": { "type": "string" },
+        "studentIdNumber": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdBy": { "type": "string" }
       },
       "required": ["id", "amount", "paymentDate", "bookSaleFolio", "bookTitle", "clientName", "userId"]
     },
     "MileageLog": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Mileage Log",
       "type": "object",
       "description": "Represents a daily mileage log for company vehicles.",
@@ -217,12 +111,12 @@
             },
             "required": ["name", "initialMileage", "finalMileage", "distance"]
           }
-        }
+        },
+        "totalDistance": { "type": "number" }
       },
       "required": ["id", "date", "userId", "cars"]
     },
     "MaintenanceLog": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Maintenance Log",
       "type": "object",
       "description": "Represents a maintenance log for a company vehicle.",
@@ -239,16 +133,75 @@
       },
       "required": ["id", "date", "userId", "vehicle", "mileage", "type", "description", "cost"]
     },
+    "AutoMotoContractDetails": {
+        "title": "Auto/Moto Contract Details",
+        "type": "object",
+        "properties": {
+            "studentIdNumber": { "type": "string" },
+            "studentAddress": { "type": "string" },
+            "studentPhone1": { "type": "string" },
+            "studentPhone2": { "type": "string" },
+            "coursePlan": { "type": "string" },
+            "courseValue": { "type": "number" },
+            "downPayment": { "type": "number" },
+            "balance": { "type": "number" },
+            "paymentDeadline": { "type": "string", "format": "date-time" },
+            "vehicle": { "type": "string" },
+            "vehicleTransmission": { "type": "string" },
+            "licenseCategory": { "type": "string" },
+            "theoreticalClassSchedule": { "type": "string" },
+            "theoreticalClassDates": { "type": "array", "items": { "type": "string", "format": "date-time" } },
+            "practicalClassSchedules": { "type": "array", "items": { "type": "object", "properties": { "date": { "type": "string", "format": "date-time" }, "time": { "type": "string" } } } },
+            "motoPracticalClassSchedules": { "type": "array", "items": { "type": "object", "properties": { "date": { "type": "string", "format": "date-time" }, "time": { "type": "string" } } } },
+            "paidInFull": { "type": "boolean" },
+            "paymentType": { "type": "string" },
+            "instructor": { "type": "string" }
+        }
+    },
+    "DeluxeContractDetails": {
+        "title": "Deluxe Contract Details",
+        "type": "object",
+        "properties": {
+            "studentIdNumber": { "type": "string" },
+            "studentAddress": { "type": "string" },
+            "studentPhone1": { "type": "string" },
+            "studentPhone2": { "type": "string" },
+            "paymentDetails": { "type": "string" },
+            "paymentAmount": { "type": "number" },
+            "paymentInstallments": { "type": "array", "items": { "type": "string", "format": "date-time" } },
+            "vehicleTransmission": { "type": "string" },
+            "licenseCategory": { "type": "string" },
+            "theoreticalClassSchedule": { "type": "string" },
+            "theoreticalClasses": { "type": "array", "items": { "type": "string", "format": "date-time" } },
+            "classSchedules": { "type": "array", "items": { "type": "object", "properties": { "date": { "type": "string", "format": "date-time" }, "time": { "type": "string" } } } },
+            "paymentType": { "type": "string" },
+            "instructor": { "type": "string" }
+        }
+    },
+    "AmpliacionesContractDetails": {
+        "title": "Ampliaciones Contract Details",
+        "type": "object",
+        "properties": {
+            "studentIdNumber": { "type": "string" },
+            "studentAddress": { "type": "string" },
+            "studentPhone1": { "type": "string" },
+            "studentPhone2": { "type": "string" },
+            "courseValue": { "type": "number" },
+            "downPayment": { "type": "number" },
+            "balance": { "type": "number" },
+            "paymentDeadline": { "type": "string", "format": "date-time" },
+            "selectedPlans": { "type": "array", "items": { "type": "object", "properties": { "name": { "type": "string" }, "price": { "type": "number" } } } },
+            "theoreticalClassDate": { "type": "string", "format": "date-time" },
+            "theoreticalClassTime": { "type": "string" },
+            "paymentType": { "type": "string" }
+        }
+    },
     "Counter": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Counter",
       "type": "object",
       "description": "A generic counter document for sequential IDs.",
       "properties": {
-        "count": {
-          "type": "number",
-          "description": "The current count."
-        }
+        "count": { "type": "number" }
       },
       "required": ["count"]
     }
@@ -264,148 +217,66 @@
       {
         "path": "/users/{userId}",
         "definition": {
-          "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Stores user data. Path-based ownership for user-owned data.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the user."
-            }
-          ]
+          "schema": { "$ref": "#/entities/User" },
+          "description": "Stores user profile information."
         }
       },
       {
         "path": "/clients/{clientId}",
         "definition": {
-          "entityName": "Client",
-          "schema": {
-            "$ref": "#/backend/entities/Client"
-          },
-          "description": "Stores client data.",
-          "params": [
-            {
-              "name": "clientId",
-              "description": "The unique identifier for the client."
-            }
-          ]
+          "schema": { "$ref": "#/entities/Client" },
+          "description": "Stores individual client data."
         }
       },
       {
         "path": "/contracts/{contractId}",
         "definition": {
-          "entityName": "Contract",
-          "schema": {
-            "$ref": "#/backend/entities/Contract"
-          },
-          "description": "Stores all contracts in a centralized collection. Includes denormalized 'userId' and 'clientId' for authorization independence.",
-          "params": [
-            {
-              "name": "contractId",
-              "description": "The unique identifier for the contract."
-            }
-          ]
+          "schema": { "$ref": "#/entities/Contract" },
+          "description": "Stores all contracts in a single collection for easy querying."
         }
       },
       {
         "path": "/cancellation_payments/{paymentId}",
         "definition": {
-          "entityName": "Payment",
-          "schema": {
-            "$ref": "#/backend/entities/Payment"
-          },
-          "description": "Stores cancellation payment transactions for reporting and auditing.",
-          "params": [
-            {
-              "name": "paymentId",
-              "description": "The unique identifier for the cancellation payment."
-            }
-          ]
+          "schema": { "$ref": "#/entities/Payment" },
+          "description": "Stores cancellation payment transactions."
         }
       },
       {
         "path": "/update_payments/{paymentId}",
         "definition": {
-          "entityName": "Payment",
-          "schema": {
-            "$ref": "#/backend/entities/Payment"
-          },
-          "description": "Stores certificate update payment transactions for reporting and auditing.",
-          "params": [
-            {
-              "name": "paymentId",
-              "description": "The unique identifier for the update payment."
-            }
-          ]
+          "schema": { "$ref": "#/entities/Payment" },
+          "description": "Stores certificate update payment transactions."
         }
       },
       {
         "path": "/book_sale_payments/{paymentId}",
         "definition": {
-          "entityName": "BookSalePayment",
-          "schema": {
-            "$ref": "#/backend/entities/BookSalePayment"
-          },
-          "description": "Stores book sale payment transactions for reporting and auditing.",
-          "params": [
-            {
-              "name": "paymentId",
-              "description": "The unique identifier for the book sale payment."
-            }
-          ]
+          "schema": { "$ref": "#/entities/BookSalePayment" },
+          "description": "Stores book sale payment transactions."
         }
       },
        {
         "path": "/mileage_logs/{logId}",
         "definition": {
-          "entityName": "MileageLog",
-          "schema": {
-            "$ref": "#/backend/entities/MileageLog"
-          },
-          "description": "Stores daily mileage logs for vehicles.",
-          "params": [
-            {
-              "name": "logId",
-              "description": "The unique identifier for the mileage log, typically the date."
-            }
-          ]
+          "schema": { "$ref": "#/entities/MileageLog" },
+          "description": "Stores daily mileage logs for vehicles."
         }
       },
       {
         "path": "/maintenance_logs/{logId}",
         "definition": {
-          "entityName": "MaintenanceLog",
-          "schema": {
-            "$ref": "#/backend/entities/MaintenanceLog"
-          },
-          "description": "Stores maintenance logs for vehicles.",
-          "params": [
-            {
-              "name": "logId",
-              "description": "The unique identifier for the maintenance log."
-            }
-          ]
+          "schema": { "$ref": "#/entities/MaintenanceLog" },
+          "description": "Stores maintenance logs for vehicles."
         }
       },
       {
         "path": "/counters/{counterId}",
         "definition": {
-          "entityName": "Counter",
-          "schema": {
-            "$ref": "#/backend/entities/Counter"
-          },
-          "description": "Stores distributed counters. Used for generating sequential folio numbers for contracts, cancellations, updates, and book sales.",
-          "params": [
-            {
-              "name": "counterId",
-              "description": "The unique identifier for the counter (e.g., 'contract_folio', 'cancellation_folio', 'update_folio', 'book_sale_folio')."
-            }
-          ]
+          "schema": { "$ref": "#/entities/Counter" },
+          "description": "Stores distributed counters for generating sequential folio numbers."
         }
       }
-    ],
-    "reasoning": "The Firestore data structure has been updated to separate payment types into distinct collections: `cancellation_payments`, `update_payments`, and now `book_sale_payments`. This simplifies security rules and improves query performance for reports. By not having a single large `payments` collection, rules no longer need complex conditions to check the payment `type`, which was causing permission errors. Each new collection has simple, direct security rules, making the system more robust and easier to debug. A new 'daily_reports' collection has been added to persist the state of the daily cash report, allowing users to save their work and continue later. A `mileage_logs` collection is added to store vehicle mileage records. A `maintenance_logs` collection is added to store vehicle maintenance records. The `vehicle_schedules` collection has been removed as horarios are now read directly from contracts."
+    ]
   }
 }

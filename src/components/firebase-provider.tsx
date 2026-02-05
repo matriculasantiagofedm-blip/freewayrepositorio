@@ -13,6 +13,7 @@ interface FirebaseContextValue {
   db: Firestore;
   user: User | null;
   isLoading: boolean;
+  setDevUser: (user: User) => void;
 }
 
 const FirebaseContext = createContext<FirebaseContextValue | undefined>(undefined);
@@ -20,6 +21,12 @@ const FirebaseContext = createContext<FirebaseContextValue | undefined>(undefine
 export function FirebaseProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const setDevUser = (devUser: User) => {
+    console.log("DEV MODE: Manually setting mock user for development.");
+    setUser(devUser);
+    setIsLoading(false);
+  }
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -36,6 +43,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     db,
     user,
     isLoading,
+    setDevUser,
   }), [user, isLoading]);
 
   return (
@@ -65,6 +73,6 @@ export function useDb() {
 }
 
 export function useUser() {
-  const { user, isLoading } = useFirebase();
-  return { user, isUserLoading: isLoading };
+  const { user, isLoading, setDevUser } = useFirebase();
+  return { user, isUserLoading: isLoading, setDevUser };
 }

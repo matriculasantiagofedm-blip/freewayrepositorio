@@ -6,9 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { GanttChartSquare, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { signInAnonymously } from 'firebase/auth';
+import { signInAnonymously, type User } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/components/firebase-provider';
+import { useAuth, useUser } from '@/components/firebase-provider';
 
 // Los roles válidos ahora se usan para validación interna
 const validRoles = ['Ayax/2022', 'ventas123', 'ventasext123'];
@@ -17,6 +17,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const auth = useAuth();
+  const { setDevUser } = useUser();
 
   const [roleInput, setRoleInput] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -44,11 +45,9 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // Iniciar sesión de forma anónima
       await signInAnonymously(auth);
 
-      // Guardar el rol seleccionado en una variable global para esta sesión
-      // Y también en sessionStorage para persistencia en recargas de página
+      // This code will run if signInAnonymously succeeds
       const selectedRole = { name: roleInput };
       (window as any).selectedRoleForAnonymousSession = selectedRole;
       sessionStorage.setItem('anonymousUserRole', roleInput);
@@ -58,15 +57,41 @@ export default function LoginPage() {
         description: `Bienvenido.`,
       });
       router.push('/dashboard');
-    } catch (e: any)      {
-        console.error("Error de inicio de sesión anónimo:", e);
-        const description = 'No se pudo iniciar la sesión. Por favor, intenta de nuevo.';
-        setError(description);
-        toast({
-            variant: 'destructive',
-            title: 'Error de Inicio de Sesión',
-            description: description,
-        });
+
+    } catch (e: any) {
+        const isDevEnvironment = process.env.NODE_ENV === 'development';
+        const isCloudWorkstation = window.location.hostname.includes('cloudworkstations.dev');
+        
+        // This is the workaround for the unauthorized domain issue in the dev environment
+        if (isDevEnvironment && isCloudWorkstation && e.code === 'auth/api-key-not-valid') {
+            console.warn("DEV MODE: Firebase Auth failed due to domain restrictions. Creating a mock user session.");
+            
+            // Create a mock user and set it in the provider
+            const mockUser = { uid: 'dev-user-uid', email: ``, isAnonymous: true, getIdToken: async () => 'mock-token' } as unknown as User;
+            setDevUser(mockUser);
+
+            // Set role and redirect, same as in the successful case
+            const selectedRole = { name: roleInput };
+            (window as any).selectedRoleForAnonymousSession = selectedRole;
+            sessionStorage.setItem('anonymousUserRole', roleInput);
+            
+            toast({
+              title: 'Inicio de Sesión (Simulado)',
+              description: `Bienvenido.`,
+            });
+            router.push('/dashboard');
+
+        } else {
+            // Handle other, real errors
+            console.error("Error de inicio de sesión:", e);
+            const description = 'No se pudo iniciar la sesión. Por favor, intenta de nuevo.';
+            setError(description);
+            toast({
+                variant: 'destructive',
+                title: 'Error de Inicio de Sesión',
+                description: description,
+            });
+        }
     } finally {
       setIsLoggingIn(false);
     }

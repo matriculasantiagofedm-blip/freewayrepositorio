@@ -35,10 +35,12 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true);
     
-    // Recuperar rol de la sesión
-    const storedRoleKey = typeof window !== 'undefined' ? sessionStorage.getItem('userRoleKey') : null;
-    if (storedRoleKey && roleMapping[storedRoleKey]) {
-      setRoleState(roleMapping[storedRoleKey]);
+    // Recuperar rol de la sesión de forma segura en el cliente
+    if (typeof window !== 'undefined') {
+      const storedRoleKey = sessionStorage.getItem('userRoleKey');
+      if (storedRoleKey && roleMapping[storedRoleKey]) {
+        setRoleState(roleMapping[storedRoleKey]);
+      }
     }
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {

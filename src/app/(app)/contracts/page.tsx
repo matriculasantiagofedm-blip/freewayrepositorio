@@ -86,7 +86,7 @@ function AllContractsContent() {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Buscar por folio, cliente, tipo, cédula..."
+            placeholder="Buscar por folio, cliente..."
             className="pl-8 sm:w-[300px]"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}

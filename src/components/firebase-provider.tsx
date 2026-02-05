@@ -35,10 +35,12 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true);
     
-    // Acceso seguro a sessionStorage solo en el cliente
-    const storedRoleKey = window.sessionStorage.getItem('userRoleKey');
-    if (storedRoleKey && roleMapping[storedRoleKey]) {
-      setRoleState(roleMapping[storedRoleKey]);
+    // Acceso seguro a sessionStorage solo en el cliente tras el montaje
+    if (typeof window !== 'undefined') {
+      const storedRoleKey = window.sessionStorage.getItem('userRoleKey');
+      if (storedRoleKey && roleMapping[storedRoleKey]) {
+        setRoleState(roleMapping[storedRoleKey]);
+      }
     }
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -57,10 +59,8 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   const setRole = (roleKey: string) => {
     const assignedRole = roleMapping[roleKey] || null;
     setRoleState(assignedRole);
-    if (assignedRole) {
+    if (assignedRole && typeof window !== 'undefined') {
       window.sessionStorage.setItem('userRoleKey', roleKey);
-    } else {
-      window.sessionStorage.removeItem('userRoleKey');
     }
   };
 
@@ -72,13 +72,16 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     }
     setUser(null);
     setRoleState(null);
-    window.sessionStorage.removeItem('userRoleKey');
+    if (typeof window !== 'undefined') {
+      window.sessionStorage.removeItem('userRoleKey');
+    }
   };
 
   const value = useMemo(() => ({
     app, auth, db, user, isLoading: !mounted || isLoading, setDevUser, role, setRole, logout
   }), [user, isLoading, role, mounted]);
 
+  // Evita errores de hidratación esperando al montaje del cliente
   if (!mounted) {
     return <div className="min-h-screen bg-background" />;
   }
@@ -92,7 +95,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
 
 export function useFirebase() {
   const context = useContext(FirebaseContext);
-  if (context === undefined) throw new Error('useFirebase must be used within a FirebaseProvider');
+  if (context === undefined) throw new Error('useFirebase debe usarse dentro de un FirebaseProvider');
   return context;
 }
 

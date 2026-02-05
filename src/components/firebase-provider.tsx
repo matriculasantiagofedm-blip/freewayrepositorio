@@ -48,7 +48,6 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
 
   return (
     <FirebaseContext.Provider value={value}>
-      <FirebaseErrorListener />
       {children}
     </FirebaseContext.Provider>
   );

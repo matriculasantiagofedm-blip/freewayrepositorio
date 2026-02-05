@@ -39,7 +39,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { CalendarIcon, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, toDate } from '@/lib/utils';
 import { Timestamp, collection, query, where, getDocs, writeBatch, doc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -241,6 +241,7 @@ const ampliacionesPlans = [
 const specialCombinations = [
   { combo: ['D', 'E1', 'E2', 'E3', 'F'].sort(), price: 150.00 },
   { combo: ['B', 'E1', 'E2', 'E3', 'F'].sort(), price: 150.00 },
+  { combo: ['B', 'E1', 'E2', 'E3'].sort(), price: 95.00 },
   { combo: ['D', 'E1'].sort(), price: 85.00 },
   { combo: ['E1', 'E2'].sort(), price: 75.00 },
   { combo: ['E1', 'E2', 'E3'].sort(), price: 85.00 },

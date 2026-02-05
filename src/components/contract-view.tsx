@@ -49,5 +49,3 @@ export function ContractView({ contract, type }: { contract: Contract, type?: Co
     </div>
   );
 }
-
-    

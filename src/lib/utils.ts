@@ -45,5 +45,3 @@ export function toDate(date: any): Date {
   // Fallback for unexpected types or unparseable strings
   return new Date('invalid');
 }
-
-    

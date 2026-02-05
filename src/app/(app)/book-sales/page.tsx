@@ -80,7 +80,7 @@ export default function BookSalesPage() {
           bookTitle: selectedBook.title,
           clientName: clientName,
           studentIdNumber: studentIdNumber,
-          paymentDate: serverTimestamp(),
+          paymentDate: serverTimestamp() as any,
           userId: user.uid,
           createdBy: role || undefined,
         };

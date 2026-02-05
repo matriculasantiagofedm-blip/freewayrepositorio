@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -136,7 +135,7 @@ export default function MileageLogPage() {
         try {
             const logData = {
                 userId: user.uid,
-                date: serverTimestamp(),
+                date: serverTimestamp() as any,
                 cars: cars.map(car => ({
                     name: car.name,
                     initialMileage: parseFloat(car.initialMileage),
@@ -287,5 +286,3 @@ export default function MileageLogPage() {
         </div>
     );
 }
-
-    

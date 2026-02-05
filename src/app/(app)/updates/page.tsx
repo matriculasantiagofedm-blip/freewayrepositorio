@@ -142,7 +142,7 @@ export default function UpdatesPage() {
           clientName: foundContract?.clientName || manualName,
           clientAddress: foundContract ? (foundContract.autoMotoDetails?.studentAddress || foundContract.ampliacionesDetails?.studentAddress || foundContract.deluxeDetails?.studentAddress) : manualAddress,
           studentIdNumber: studentIdNumber,
-          paymentDate: serverTimestamp(),
+          paymentDate: serverTimestamp() as any,
           userId: user.uid,
           type: 'actualizacion',
           createdBy: role || undefined,

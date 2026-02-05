@@ -567,7 +567,7 @@ export function ContractForm() {
             email: values.clientEmail,
             idNumber: studentIdNumber,
             userId: user.uid,
-            createdAt: serverTimestamp() as Timestamp,
+            createdAt: serverTimestamp() as any,
             phone: details.studentPhone1,
           };
           transaction.set(newClientRef, clientData);
@@ -587,7 +587,7 @@ export function ContractForm() {
           type: values.contractType,
           status: 'active',
           userId: user.uid,
-          createdAt: serverTimestamp() as Timestamp,
+          createdAt: serverTimestamp() as any,
           createdBy: currentUserRole,
           clauses: '',
         };

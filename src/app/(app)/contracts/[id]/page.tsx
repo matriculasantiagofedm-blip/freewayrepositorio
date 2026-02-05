@@ -145,7 +145,7 @@ export default function ContractDetailPage() {
 
     try {
         const updateData = {
-            certificateGeneratedAt: serverTimestamp(),
+            certificateGeneratedAt: serverTimestamp() as any,
             certificateFolio: certificateData.folio,
         };
         await updateDoc(contractRef, updateData);

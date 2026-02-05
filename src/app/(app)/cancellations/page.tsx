@@ -155,7 +155,7 @@ export default function CancellationsPage() {
               clientId: contract?.clientId || 'MANUAL',
               clientName: contract?.clientName || manualName,
               studentIdNumber: studentIdNumber,
-              paymentDate: serverTimestamp(),
+              paymentDate: serverTimestamp() as any,
               userId: user.uid,
               type: 'cancelacion',
               clientAddress: contract ? (contract.autoMotoDetails?.studentAddress || contract.ampliacionesDetails?.studentAddress || contract.deluxeDetails?.studentAddress || '') : manualAddress,

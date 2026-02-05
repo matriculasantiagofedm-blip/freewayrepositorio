@@ -17,8 +17,8 @@ const ptSans = PT_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Contract Time",
-  description: "Gestión inteligente de contratos",
+  title: "Contract Time - Freeway Escuela de Manejo",
+  description: "Gestión inteligente de contratos y servicios viales",
 };
 
 export default function RootLayout({

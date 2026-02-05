@@ -1,110 +1,100 @@
 'use client';
 
+import { analyzeContract } from '@/lib/contracts-flow';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { GanttChart, Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { signInAnonymously, type User } from 'firebase/auth';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth, useUser, useFirebase } from '@/components/firebase-provider';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, FileText, ShieldAlert, Calendar } from 'lucide-react';
 
-const roleMapping: { [key: string]: string } = {
-  'ventas123': 'Ventas',
-  'ventasext123': 'Ventas Externas',
-  'Ayax/2022': 'Administrador',
-};
+export default function Home() {
+  const [result, setResult] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-export default function LoginPage() {
-  const router = useRouter();
-  const { toast } = useToast();
-  const auth = useAuth();
-  const { setDevUser } = useUser();
-  const { setRole } = useFirebase();
-
-  const [roleInput, setRoleInput] = useState('');
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!auth) {
-        setError('Servicio de autenticación no disponible.');
-        return;
-    }
-
-    const assignedRole = roleMapping[roleInput];
-    if (!assignedRole) {
-      setError('El perfil introducido no es válido.');
-      return;
-    }
-
-    setIsLoggingIn(true);
-    setError('');
-
+  async function handleAction() {
+    setIsLoading(true);
     try {
-      await signInAnonymously(auth);
-      setRole(roleInput);
-      
-      toast({
-        title: 'Inicio de Sesión Exitoso',
-        description: `Bienvenido, ${assignedRole}.`,
+      const response = await analyzeContract({ 
+        text: "Contrato de servicios profesionales entre Freeway Escuela de Manejo y el Consultor Externo. El contrato tiene una duración de 12 meses a partir del 1 de enero de 2024. El consultor se compromete a no divulgar información confidencial bajo penalización de B/. 5,000.00. El pago se realizará en cuotas mensuales vencidas." 
       });
-      router.push('/dashboard');
-
-    } catch (e: any) {
-        // Modo de desarrollo o fallos de red manejados
-        if (e.code === 'auth/api-key-not-valid' || e.code === 'auth/network-request-failed') {
-            const mockUser = { uid: 'dev-user-uid', isAnonymous: true } as unknown as User;
-            setDevUser(mockUser);
-            setRole(roleInput);
-            router.push('/dashboard');
-        } else {
-            setError('Error al iniciar sesión. Inténtalo de nuevo.');
-        }
+      setResult(response);
+    } catch (error) {
+      console.error(error);
     } finally {
-      setIsLoggingIn(false);
+      setIsLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-8">
-        <div className="flex flex-col items-center text-center">
-          <GanttChart className="h-16 w-16 text-primary" />
-          <h1 className="font-headline text-5xl font-bold tracking-tight text-foreground sm:text-6xl mt-4">
-            ContractTime
-          </h1>
-          <p className="text-xl font-medium text-foreground">Freeway Escuela de Manejo, S.A.</p>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Ingresa tu Perfil</CardTitle>
-            <CardDescription>Escribe tu perfil de empleado para acceder al panel.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-6">
-              <div className="space-y-2">
-                 <Input 
-                    type="password"
-                    placeholder="Escribe tu perfil aquí"
-                    value={roleInput}
-                    onChange={(e) => setRoleInput(e.target.value)}
-                  />
-              </div>
-              
-              {error && <p className="text-sm text-destructive">{error}</p>}
-              
-              <Button type="submit" className="w-full" disabled={isLoggingIn || !roleInput}>
-                {isLoggingIn ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {isLoggingIn ? 'Entrando...' : 'Entrar'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+    <main className="min-h-screen p-6 md:p-24 bg-background flex flex-col items-center gap-8">
+      <div className="max-w-2xl w-full text-center space-y-4">
+        <h1 className="font-headline text-4xl font-bold tracking-tight">Analizador de Contratos</h1>
+        <p className="text-muted-foreground">Utiliza Inteligencia Artificial para extraer información clave de tus documentos legales.</p>
       </div>
-    </div>
+
+      <div className="w-full max-w-2xl flex flex-col gap-6">
+        <Button 
+          onClick={handleAction} 
+          disabled={isLoading}
+          size="lg"
+          className="w-full font-semibold shadow-md"
+        >
+          {isLoading ? (
+            <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Analizando contrato...</>
+          ) : (
+            'Analizar Contrato de Prueba'
+          )}
+        </Button>
+
+        {result && (
+          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <Card className="border-primary/20 shadow-lg">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-primary">
+                  <FileText className="h-5 w-5" />
+                  Resumen Ejecutivo
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm leading-relaxed">{result.summary}</p>
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="border-destructive/20 shadow-md">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-destructive text-base">
+                    <ShieldAlert className="h-4 w-4" />
+                    Riesgos Detectados
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="list-disc list-inside text-sm space-y-1">
+                    {result.risks.map((risk: string, i: number) => (
+                      <li key={i}>{risk}</li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card className="border-accent/20 shadow-md">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-accent-foreground text-base">
+                    <Calendar className="h-4 w-4" />
+                    Vencimiento
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm font-semibold">{result.expirationDate || 'No identificada'}</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <pre className="p-4 bg-muted rounded-lg text-[10px] overflow-auto max-h-40 border border-border">
+              {JSON.stringify(result, null, 2)}
+            </pre>
+          </div>
+        )}
+      </div>
+    </main>
   );
 }

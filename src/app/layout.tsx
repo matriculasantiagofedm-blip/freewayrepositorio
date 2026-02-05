@@ -4,14 +4,12 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseProvider } from "@/components/firebase-provider";
 
-// Configuración de Poppins para títulos (headline)
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["400", "600", "700"],
   variable: "--font-poppins",
 });
 
-// Configuración de PT Sans para el cuerpo (body)
 const ptSans = PT_Sans({
   subsets: ["latin"],
   weight: ["400", "700"],
@@ -20,7 +18,7 @@ const ptSans = PT_Sans({
 
 export const metadata: Metadata = {
   title: "Contract Time",
-  description: "Gestión inteligente de contratos",
+  description: "Gestión inteligente de contratos con IA",
 };
 
 export default function RootLayout({
@@ -31,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body
-        className={`${poppins.variable} ${ptSans.variable} font-body antialiased`}
+        className={`${poppins.variable} ${ptSans.variable} font-body antialiased bg-background text-foreground`}
       >
         <FirebaseProvider>
           {children}

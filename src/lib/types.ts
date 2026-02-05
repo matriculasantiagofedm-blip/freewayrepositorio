@@ -1,16 +1,9 @@
-
-
 import type { Timestamp } from 'firebase/firestore';
 
 export interface User {
   uid: string;
   email: string;
   role: 'Ventas' | 'Ventas Externas' | 'Administrador';
-}
-
-export interface ClassSchedule {
-  date: Date;
-  time: string;
 }
 
 export interface Client {
@@ -37,12 +30,12 @@ export interface DeluxeContractDetails {
   studentAddress: string;
   studentPhone1: string;
   studentPhone2?: string;
-  paymentDetails?: 'Premium B/ 201.00' | 'Deluxe B/ 270.00';
+  paymentDetails?: string;
   paymentAmount?: number;
   paymentInstallments?: (Date | undefined)[];
   vehicleTransmission?: 'Automático' | 'Manual';
   licenseCategory?: 'A, C' | 'A, C, D';
-  theoreticalClassSchedule?: 'Lunes' | 'Miércoles';
+  theoreticalClassSchedule?: string;
   theoreticalClasses?: (Date | undefined)[];
   classSchedules?: { date?: Date; time?: string }[];
   paymentType?: string;
@@ -71,7 +64,6 @@ export interface AutoMotoContractDetails {
   instructor?: InstructorName;
 }
 
-
 export interface AmpliacionesContractDetails {
     studentIdNumber?: string;
     studentAddress?: string;
@@ -91,11 +83,6 @@ export interface Contract {
   id: string;
   folioNumber: number;
   title: string;
-  firstName?: string;
-  middleName?: string;
-  lastName?: string;
-  secondLastName?: string;
-  client?: Client;
   clientName: string;
   clientEmail: string;
   clientId: string;
@@ -111,19 +98,7 @@ export interface Contract {
   certificateFolio?: string;
   studentIdNumber?: string;
   clauses?: string;
-}
-
-export interface CertificateData {
-  folio: string;
-  clientName: string;
-  courseName: string;
-  issueDate: Timestamp;
-  cip: string;
-  licenseType: string;
-  firstName?: string;
-  middleName?: string;
-  lastName?: string;
-  secondLastName?: string;
+  content?: string;
 }
 
 export interface Certificate {
@@ -206,9 +181,7 @@ export interface MileageLog {
   totalDistance?: number;
 }
 
-export type MaintenanceType = 'Cambio de Aceite' | 'Revisión de Frenos' | 'Rotación de Llantas' | 'Mantenimiento General' | 'Otro';
-
-export interface MaintenanceLog {
+export type MaintenanceLog = {
   id: string;
   date: Timestamp;
   userId: string;
@@ -218,18 +191,9 @@ export interface MaintenanceLog {
   description: string;
   cost: number;
   nextServiceDate?: Timestamp;
-}
+};
 
 export type VehicleName = 'Picanto Blanco' | 'Picanto Bronce' | 'Spark' | 'Moto Roja' | 'Moto Negra';
 export type TimeSlot = '8am-10am' | '10am-12pm' | '1pm-3pm' | '3pm-5pm';
 export type InstructorName = 'Julisse Alonso' | 'Emmanuel Camargo' | 'Adrian Gordon' | '';
-
-export interface VehicleAssignment {
-  vehicle: VehicleName;
-  timeSlot: TimeSlot;
-  instructor: InstructorName;
-  studentName: string;
-  contractId?: string;
-  classNumber?: number;
-  classType?: 'Auto' | 'Moto';
-}
+export type MaintenanceType = 'Cambio de Aceite' | 'Revisión de Frenos' | 'Rotación de Llantas' | 'Mantenimiento General' | 'Otro';

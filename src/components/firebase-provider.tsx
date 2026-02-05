@@ -22,7 +22,8 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const { app, auth, db } = useMemo(() => {
-    if (Object.values(firebaseConfig).some(value => !value)) {
+    const requiredKeys: (keyof typeof firebaseConfig)[] = ['apiKey', 'authDomain', 'projectId'];
+    if (!firebaseConfig || requiredKeys.some(key => !firebaseConfig[key])) {
       console.error("Firebase configuration is incomplete. Please check your config file.");
       return { app: null, auth: null, db: null };
     }

@@ -24,7 +24,7 @@ const robotoMono = Roboto_Mono({
 
 export const metadata: Metadata = {
   title: 'ContractTime',
-  description: 'Streamline Your Agreements',
+  description: 'Freeway Escuela de Manejo - Gestión de Contratos',
 };
 
 export default function RootLayout({

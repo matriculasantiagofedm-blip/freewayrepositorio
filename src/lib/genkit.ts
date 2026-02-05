@@ -1,0 +1,13 @@
+'use server';
+
+import { gemini15Flash, googleAI } from '@genkit-ai/google-genai';
+import { genkit } from 'genkit';
+
+export const ai = genkit({
+  plugins: [
+    googleAI({
+      apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY,
+    }),
+  ],
+  model: gemini15Flash,
+});

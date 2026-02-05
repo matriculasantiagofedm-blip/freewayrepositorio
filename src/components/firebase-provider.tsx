@@ -35,7 +35,6 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true);
     
-    // Recuperar rol únicamente en el cliente después de montar para evitar errores de hidratación
     if (typeof window !== 'undefined') {
       const storedRoleKey = sessionStorage.getItem('userRoleKey');
       if (storedRoleKey && roleMapping[storedRoleKey]) {

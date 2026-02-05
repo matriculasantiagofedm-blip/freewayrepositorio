@@ -148,7 +148,7 @@ function AllContractsContent() {
 
 export default function AllContractsPage() {
   return (
-    <Suspense fallback={<p>Cargando lista de contratos...</p>}>
+    <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Cargando lista de contratos...</div>}>
       <AllContractsContent />
     </Suspense>
   );

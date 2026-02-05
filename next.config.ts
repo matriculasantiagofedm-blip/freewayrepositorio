@@ -26,7 +26,6 @@ const nextConfig: NextConfig = {
     ],
     // Allow data URIs for image previews
     dangerouslyAllowSVG: true,
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     contentDispositionType: 'inline',
   },
 };

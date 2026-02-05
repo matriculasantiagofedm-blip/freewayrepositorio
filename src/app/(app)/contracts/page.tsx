@@ -18,7 +18,7 @@ import { format, isPast } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
 import { Eye, Search, CheckCircle, XCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
@@ -41,7 +41,7 @@ const isOverdue = (contract: Contract): boolean => {
     return false;
 }
 
-export default function AllContractsPage() {
+function AllContractsContent() {
   const db = useDb();
   const { user } = useUser();
   const { role } = useCurrentRole();
@@ -132,5 +132,13 @@ export default function AllContractsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AllContractsPage() {
+  return (
+    <Suspense fallback={<p>Cargando lista de contratos...</p>}>
+      <AllContractsContent />
+    </Suspense>
   );
 }

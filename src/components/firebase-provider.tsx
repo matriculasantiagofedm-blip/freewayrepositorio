@@ -100,6 +100,6 @@ export function useFirebase() {
 export function useAuth() { return useFirebase().auth; }
 export function useDb() { return useFirebase().db; }
 export function useUser() {
-  const { user, isUserLoading: isLoading, setDevUser } = useFirebase();
+  const { user, isLoading, setDevUser } = useFirebase();
   return { user, isUserLoading: isLoading, setDevUser };
 }

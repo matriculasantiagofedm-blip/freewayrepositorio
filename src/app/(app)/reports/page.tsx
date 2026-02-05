@@ -52,13 +52,6 @@ export default function ReportsPage() {
       icon: Gauge,
       roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     },
-    {
-      title: 'Reporte de Asignación de Horarios',
-      description: 'Ver el horario de vehículos e instructores por día.',
-      href: '/reports/vehicle-schedule',
-      icon: CalendarClock,
-      roles: ['Administrador'],
-    },
   ];
 
   if (!role) {

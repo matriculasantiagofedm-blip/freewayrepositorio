@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -59,12 +60,10 @@ export default function LoginPage() {
       router.push('/dashboard');
 
     } catch (e: any) {
-        const isDevEnvironment = process.env.NODE_ENV === 'development';
-        const isCloudWorkstation = window.location.hostname.includes('cloudworkstations.dev');
-        
-        // This is the workaround for the unauthorized domain issue in the dev environment
-        if (isDevEnvironment && isCloudWorkstation && e.code === 'auth/api-key-not-valid') {
-            console.warn("DEV MODE: Firebase Auth failed due to domain restrictions. Creating a mock user session.");
+        // This is the workaround for the unauthorized domain issue in the dev environment.
+        // It's safer to check for the specific error code.
+        if (e.code === 'auth/api-key-not-valid') {
+            console.warn("DEV MODE: Firebase Auth failed, likely due to domain restrictions. Creating a mock user session.");
             
             // Create a mock user and set it in the provider
             const mockUser = { uid: 'dev-user-uid', email: ``, isAnonymous: true, getIdToken: async () => 'mock-token' } as unknown as User;

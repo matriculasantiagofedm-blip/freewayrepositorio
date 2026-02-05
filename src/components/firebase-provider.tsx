@@ -30,21 +30,37 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [role, setRoleState] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const storedRoleKey = sessionStorage.getItem('userRoleKey');
+    if (storedRoleKey && roleMapping[storedRoleKey]) {
+      setRoleState(roleMapping[storedRoleKey]);
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const setDevUser = (devUser: User) => {
     setUser(devUser);
     setIsLoading(false);
-  }
+  };
 
   const setRole = (roleKey: string) => {
     const assignedRole = roleMapping[roleKey] || null;
     setRoleState(assignedRole);
     if (typeof window !== 'undefined') {
-        if (assignedRole) {
-            sessionStorage.setItem('userRoleKey', roleKey);
-        } else {
-            sessionStorage.removeItem('userRoleKey');
-        }
+      if (assignedRole) {
+        sessionStorage.setItem('userRoleKey', roleKey);
+      } else {
+        sessionStorage.removeItem('userRoleKey');
+      }
     }
   };
 
@@ -57,29 +73,17 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setRoleState(null);
     if (typeof window !== 'undefined') {
-        sessionStorage.removeItem('userRoleKey');
+      sessionStorage.removeItem('userRoleKey');
     }
   };
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      
-      if (currentUser && typeof window !== 'undefined') {
-          const storedRoleKey = sessionStorage.getItem('userRoleKey');
-          if (storedRoleKey && roleMapping[storedRoleKey]) {
-              setRoleState(roleMapping[storedRoleKey]);
-          }
-      }
-      setIsLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
   const value = React.useMemo(() => ({
-    app, auth, db, user, isLoading, setDevUser, role, setRole, logout
-  }), [user, isLoading, role]);
+    app, auth, db, user, isLoading: !mounted || isLoading, setDevUser, role, setRole, logout
+  }), [user, isLoading, role, mounted]);
+
+  if (!mounted) {
+    return <div className="min-h-screen flex items-center justify-center bg-background">Cargando sistema...</div>;
+  }
 
   return (
     <FirebaseContext.Provider value={value}>

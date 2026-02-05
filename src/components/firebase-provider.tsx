@@ -65,7 +65,6 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       
-      // Attempt to restore role from session storage safely after mount
       if (currentUser && typeof window !== 'undefined') {
           const storedRoleKey = sessionStorage.getItem('userRoleKey');
           if (storedRoleKey && roleMapping[storedRoleKey]) {

@@ -35,11 +35,10 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true);
     
-    if (typeof window !== 'undefined') {
-      const storedRoleKey = sessionStorage.getItem('userRoleKey');
-      if (storedRoleKey && roleMapping[storedRoleKey]) {
-        setRoleState(roleMapping[storedRoleKey]);
-      }
+    // Acceso seguro a sessionStorage solo en el cliente
+    const storedRoleKey = window.sessionStorage.getItem('userRoleKey');
+    if (storedRoleKey && roleMapping[storedRoleKey]) {
+      setRoleState(roleMapping[storedRoleKey]);
     }
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -58,12 +57,10 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   const setRole = (roleKey: string) => {
     const assignedRole = roleMapping[roleKey] || null;
     setRoleState(assignedRole);
-    if (typeof window !== 'undefined') {
-      if (assignedRole) {
-        sessionStorage.setItem('userRoleKey', roleKey);
-      } else {
-        sessionStorage.removeItem('userRoleKey');
-      }
+    if (assignedRole) {
+      window.sessionStorage.setItem('userRoleKey', roleKey);
+    } else {
+      window.sessionStorage.removeItem('userRoleKey');
     }
   };
 
@@ -71,13 +68,11 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     try {
       await auth.signOut();
     } catch (error) {
-      console.error("Error during sign out:", error);
+      console.error("Error signing out:", error);
     }
     setUser(null);
     setRoleState(null);
-    if (typeof window !== 'undefined') {
-      sessionStorage.removeItem('userRoleKey');
-    }
+    window.sessionStorage.removeItem('userRoleKey');
   };
 
   const value = useMemo(() => ({

@@ -1,16 +1,15 @@
-
 'use client';
 import { useParams, useSearchParams } from 'next/navigation';
 import { doc, Timestamp } from 'firebase/firestore';
 import type { Certificate, Contract } from '@/lib/types';
 import { CertificateTemplate } from '@/components/certificate-template';
 import { AmpliacionCertificateTemplate } from '@/components/ampliacion-certificate-template';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, Suspense } from 'react';
 import { useDb } from '@/components/firebase-provider';
 import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
 import { useCurrentRole } from '@/hooks/use-current-role';
 
-export default function CertificatePrintIdPage() {
+function CertificatePrintContent() {
   const { id } = useParams();
   const searchParams = useSearchParams();
   const db = useDb();
@@ -18,7 +17,6 @@ export default function CertificatePrintIdPage() {
 
   const contractId = Array.isArray(id) ? id[0] : id;
 
-  // We still need the original contract for the back of the certificate.
   const contractRef = useMemoDoc(() => {
     if (!db || !contractId) return null;
     return doc(db, 'contracts', contractId);
@@ -29,8 +27,6 @@ export default function CertificatePrintIdPage() {
   const [certificate, setCertificate] = useState<Certificate | null>(null);
 
   useEffect(() => {
-    // Data for the certificate now comes primarily from URL parameters to reflect edits.
-    // The contract from Firestore is used for data not passed in URL, like the back of the certificate.
     if (contract && !isContractLoading) {
       const folio = searchParams.get('folio');
       const clientName = searchParams.get('clientName');
@@ -44,7 +40,7 @@ export default function CertificatePrintIdPage() {
       const secondLastName = searchParams.get('secondLastName');
       
       if (!folio || !clientName || !cip || !licenseType || !courseName || !issueDateStr) {
-          return; // Wait for all params
+          return;
       }
 
       const certificateData: Certificate = {
@@ -58,7 +54,7 @@ export default function CertificatePrintIdPage() {
         issueDate: Timestamp.fromDate(new Date(issueDateStr)),
         cip: cip,
         licenseType: licenseType,
-        contract: contract, // The original contract is still needed for the back of the certificate
+        contract: contract,
         firstName: firstName || undefined,
         middleName: middleName || undefined,
         lastName: lastName || undefined,
@@ -66,87 +62,38 @@ export default function CertificatePrintIdPage() {
       };
       setCertificate(certificateData);
 
-      // Automatically trigger the print dialog
       const timer = setTimeout(() => {
         window.print();
-      }, 500); // Delay to allow content to render
+      }, 1000);
       
-      return () => {
-        clearTimeout(timer);
-      };
+      return () => clearTimeout(timer);
     }
   }, [contract, isContractLoading, searchParams]);
 
-  // Determine if the special "Ampliacion" template should be used.
   const shouldUseAmpliacionTemplate = useMemo(() => {
-    if (!certificate || !certificate.contract) {
-        return false;
-    }
-    // It must be an "Ampliaciones" contract...
-    if (certificate.contract.type !== 'Ampliaciones') {
-        return false;
-    }
-
-    // ...and it must be for licenses E1, E2, or E3.
-    const hasELicense = certificate.licenseType && ['E1', 'E2', 'E3'].some(l => certificate.licenseType.includes(l));
-    
-    return hasELicense;
+    if (!certificate || !certificate.contract) return false;
+    if (certificate.contract.type !== 'Ampliaciones') return false;
+    return certificate.licenseType && ['E1', 'E2', 'E3'].some(l => certificate.licenseType.includes(l));
   }, [certificate]);
 
   if (isContractLoading || isRoleLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p>Cargando certificado para imprimir...</p>
-      </div>
-    );
+    return <div className="flex items-center justify-center h-screen"><p>Cargando certificado...</p></div>;
   }
 
-  if (error) {
-    return (
-        <div className="flex items-center justify-center h-screen bg-muted">
-            <div className="p-8 bg-background rounded-lg shadow-md text-center">
-                <h1 className="text-2xl font-bold text-destructive mb-4">Error</h1>
-                <p className="text-muted-foreground">{error.message}</p>
-            </div>
-        </div>
-    );
-  }
+  if (error) return <div className="p-8 text-center"><h1 className="text-destructive font-bold">Error: {error.message}</h1></div>;
 
   if (currentUserRole === 'Ventas') {
-    return (
-        <div className="flex items-center justify-center h-screen bg-muted">
-            <div className="p-8 bg-background rounded-lg shadow-md text-center">
-                <h1 className="text-2xl font-bold text-destructive mb-4">Acceso Denegado</h1>
-                <p className="text-muted-foreground">No tienes permiso para imprimir certificados.</p>
-            </div>
-        </div>
-    );
-  }
-  
-  if (!contract && !isContractLoading) {
-      return (
-        <div className="flex items-center justify-center h-screen bg-muted">
-            <div className="p-8 bg-background rounded-lg shadow-md text-center">
-                <h1 className="text-2xl font-bold text-destructive mb-4">Contrato no encontrado</h1>
-                <p className="text-muted-foreground">No se pudo encontrar el contrato para generar el certificado.</p>
-            </div>
-        </div>
-      )
+    return <div className="p-8 text-center"><h1 className="text-destructive font-bold">Acceso Denegado</h1></div>;
   }
 
-  // The page only contains the certificate template for a clean print.
+  if (!contract && !isContractLoading) return <div className="p-8 text-center"><h1>Contrato no encontrado</h1></div>;
+
   return (
     <div className="print:p-0 print:m-0 print:bg-white bg-gray-100">
         <style jsx global>{`
           @media print {
-            @page { 
-                size: letter landscape;
-                margin: 0;
-            }
-            body {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
+            @page { size: letter landscape; margin: 0; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           }
         `}</style>
         {shouldUseAmpliacionTemplate ? (
@@ -155,5 +102,13 @@ export default function CertificatePrintIdPage() {
           <CertificateTemplate certificate={certificate} />
         )}
     </div>
+  );
+}
+
+export default function CertificatePrintIdPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center">Preparando impresión...</div>}>
+      <CertificatePrintContent />
+    </Suspense>
   );
 }

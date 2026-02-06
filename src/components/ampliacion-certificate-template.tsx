@@ -11,90 +11,95 @@ const getHighestLicenseType = (licenseTypes: string = ''): string => {
 };
 
 const getLicenseTypeText = (licenseType?: string) => {
-    if (!licenseType) return 'E1, E2';
+    if (!licenseType) return 'E1, E2, E3';
     return licenseType.split(',').map(l => l.trim()).join(', ');
 }
 
 const getFolioParts = (folio?: string) => {
     if (!folio || !folio.includes('/')) {
         const currentYear = new Date().getFullYear();
-        return { num: '0001', year: String(currentYear) };
+        return { num: '0000', year: String(currentYear) };
     }
     const parts = folio.split('/');
     return {
-        num: parts[1]?.trim().padStart(4, '0') || '0001',
+        num: parts[1]?.trim().padStart(4, '0') || '0000',
         year: parts[0]?.trim() || String(new Date().getFullYear()),
     }
 }
 
 function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate }) {
     const issueDate = toDate(certificate.issueDate);
-    const formattedDay = !isNaN(issueDate.getTime()) ? format(issueDate, 'dd', { locale: es }) : '';
-    const formattedMonth = !isNaN(issueDate.getTime()) ? format(issueDate, 'MMMM', { locale: es }) : '';
-    const formattedYear = !isNaN(issueDate.getTime()) ? format(issueDate, 'yyyy', { locale: es }) : '';
+    const formattedDay = !isNaN(issueDate.getTime()) ? format(issueDate, 'dd', { locale: es }) : '00';
+    const formattedMonth = !isNaN(issueDate.getTime()) ? format(issueDate, 'MMMM', { locale: es }) : '-------';
+    const formattedYear = !isNaN(issueDate.getTime()) ? format(issueDate, 'yyyy', { locale: es }) : '0000';
     const { num: folioNum, year: folioYear } = getFolioParts(certificate.folio);
     
     return (
-        <div className="w-[11in] h-[8.5in] p-8 bg-white text-black font-serif mx-auto">
-            <div className="w-full h-full border-2 border-black flex flex-col p-8 relative">
-                 {/* Barras decorativas Amarillas/Negras */}
-                <div className="absolute top-0 left-0 h-6 w-64 overflow-hidden">
-                    <div className="flex h-full w-full">
-                        <div className="w-1/4 h-full bg-yellow-400"></div>
-                        <div className="w-1/4 h-full bg-black"></div>
-                        <div className="w-1/4 h-full bg-yellow-400"></div>
-                        <div className="w-1/4 h-full bg-black"></div>
-                    </div>
+        <div className="w-[11in] h-[8.5in] p-8 bg-white text-black font-serif mx-auto print:m-0">
+            <div className="w-full h-full border-[3px] border-black flex flex-col p-8 relative overflow-hidden">
+                
+                {/* Franja Diagonal Amarilla y Negra Superior Izquierda */}
+                <div className="absolute top-[-10px] left-[-10px] w-72 h-8 z-10">
+                    <div className="w-full h-full bg-yellow-400" style={{
+                        backgroundImage: 'repeating-linear-gradient(45deg, #fbbf24, #fbbf24 15px, #000 15px, #000 30px)'
+                    }}></div>
                 </div>
 
-                <header className="flex w-full flex-col items-center justify-center mb-4 relative pt-12">
-                    <div className="text-center w-full">
-                        <h1 className="text-6xl font-extrabold tracking-widest">FREEWAY</h1>
-                        <p className="text-2xl tracking-[0.3em] font-semibold">ESCUELA DE MANEJO</p>
+                <header className="flex w-full flex-col items-center justify-center relative pt-2">
+                    <h2 className="text-xl font-bold tracking-tight mb-2">FREEWAY ESCUELA DE MANEJO S.A.</h2>
+                    
+                    <div className="text-center w-full my-2">
+                        <h1 className="text-7xl font-bold tracking-[0.2em] leading-none mb-1">FREEWAY</h1>
+                        <p className="text-2xl tracking-[0.5em] font-semibold">ESCUELA DE MANEJO</p>
                     </div>
-                    <div className="absolute top-0 right-0 text-center border-2 border-black p-2 min-w-[100px]">
-                         <p className="text-5xl font-bold">{getHighestLicenseType(certificate.licenseType)}</p>
-                         <p className="text-xs mt-1">{folioNum} / {folioYear}</p>
+
+                    <p className="text-2xl italic mt-2">Casa Matriz Chorrera</p>
+
+                    {/* Folio, Categoría y Foto Superior Derecha */}
+                    <div className="absolute top-0 right-0 flex flex-col items-center gap-2">
+                        <div className="text-center">
+                            <p className="text-5xl font-bold mb-1">{getHighestLicenseType(certificate.licenseType)}</p>
+                            <p className="text-lg font-medium">{folioNum} / {folioYear}</p>
+                        </div>
+                        <div className="w-32 h-40 border-2 border-gray-300 bg-gray-50 flex items-center justify-center text-xs text-gray-400 text-center p-2">
+                            FOTO DEL ESTUDIANTE
+                        </div>
                     </div>
                 </header>
 
-                <main className="flex-grow flex flex-col justify-center text-center px-12">
-                    <p className="text-xl italic mb-4">Casa Matriz Chorrera</p>
+                <main className="flex-grow flex flex-col items-center justify-center text-center px-8 mt-4">
                     <p className="text-lg uppercase tracking-widest mb-6">Otorga el presente Certificado a:</p>
 
-                    <div className="my-8">
-                        <p className="font-bold text-5xl tracking-tight border-b-2 border-black inline-block px-8 pb-2">
-                            {certificate.clientName.toUpperCase()}
+                    <div className="mb-6 w-full">
+                        <p className="font-bold text-5xl tracking-tight mb-2 uppercase">
+                            {certificate.clientName}
                         </p>
-                        <p className="font-bold text-2xl mt-4 tracking-widest">C.I.P. {certificate.cip}</p>
+                        <p className="font-bold text-3xl tracking-widest mt-2">C.I.P. &nbsp; {certificate.cip}</p>
                     </div>
 
-                    <div className="text-lg leading-relaxed max-w-4xl mx-auto border-y border-dashed border-gray-400 py-6 my-6">
+                    <div className="text-lg leading-relaxed max-w-5xl mx-auto py-6 px-8 border-[1.5px] border-dashed border-gray-400 rounded-lg">
                         <p>
                             Por haber aprobado el curso de capacitación <span className="font-bold underline">TEÓRICO Y PRÁCTICO</span>, para optar por la licencia de
-                            conducir tipo <span className="font-bold">{getLicenseTypeText(certificate.licenseType)}</span> con una duración de <span className="font-bold">80</span> horas, en cumplimiento de la Ley 146 del 15 de Abril
-                            de 2020, acápite a.
+                            conducir tipo <span className="font-bold underline">{getLicenseTypeText(certificate.licenseType)}</span> con una duración de <span className="font-bold underline">80</span> horas, en cumplimiento de la Ley 146 del 15 de Abril de 2020, acápite a.
                         </p>
                     </div>
 
-                    <div className="text-sm mx-auto mt-4 max-w-2xl text-gray-600 italic">
+                    <div className="text-sm mx-auto mt-6 max-w-3xl font-semibold">
                         <p>
                             Reconocida por la Autoridad del Tránsito y Transporte Terrestre, Resuelto N°380 (04 de diciembre de 2000) Resolución AL-325
                         </p>
                     </div>
-                    <div className="text-center mt-8 font-bold text-lg">
-                        <p>***Dado en la república de Panamá, a los {formattedDay} dias del mes de {formattedMonth} de {formattedYear}***</p>
+                    
+                    <div className="text-center mt-8 font-bold text-lg italic">
+                        <p>***Dado en la república de Panamá, a los {formattedDay} días del mes de {formattedMonth} de {formattedYear}***</p>
                     </div>
                 </main>
                 
-                <footer className="w-full flex-shrink-0 pt-12 pb-4">
-                    <div className="flex justify-center">
-                        <div className="text-center w-80">
-                            <div className="border-t-2 border-black pt-2">
-                                <p className="font-bold uppercase">CEO—Representante Legal</p>
-                                <p className="font-semibold text-xl">Lic. Ayax Ortega</p>
-                            </div>
-                        </div>
+                <footer className="w-full flex-shrink-0 flex justify-end pb-4 pr-12">
+                    <div className="text-center w-96 flex flex-col items-center">
+                        <div className="w-full border-t-2 border-black mb-2"></div>
+                        <p className="text-lg italic font-medium leading-none">CEO—Representante Legal</p>
+                        <p className='text-xl italic font-bold'>Lic. Ayax Ortega</p>
                     </div>
                 </footer>
             </div>
@@ -102,50 +107,36 @@ function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate 
     );
 }
 
-
 function CertificateBackAmpliacion({ certificate }: { certificate: Certificate }) {
+    const contract = certificate.contract;
+    const details = contract?.ampliacionesDetails;
     const issueDate = toDate(certificate.issueDate);
-    const validityDate = !isNaN(issueDate.getTime()) ? new Date(issueDate.getTime() + (364 * 24 * 60 * 60 * 1000)) : null;
-    const details = certificate.contract?.ampliacionesDetails;
-
+    const formattedIssueDate = !isNaN(issueDate.getTime()) ? format(issueDate, 'dd-MM-yyyy') : '00-00-0000';
+    
     return (
-        <div className="w-[11in] h-[8.5in] p-16 bg-white flex flex-col text-black font-serif justify-start break-before-page mx-auto border border-gray-200">
-            <div className="space-y-8 flex-grow flex flex-col justify-start text-xl pt-16 px-16 leading-loose">
+        <div className="w-[11in] h-[8.5in] p-16 bg-white text-black font-sans text-xl flex flex-col justify-start break-before-page mx-auto print:m-0 print:p-12">
+            <div className="space-y-6 pt-12">
                 <h2 className="text-3xl font-bold border-b-2 border-black pb-4 mb-8">CERTIFICACIÓN DE AMPLIACIÓN</h2>
-                
-                <p>Yo, <span className="font-bold border-b border-black px-2">{certificate.clientName.toUpperCase()}</span></p>
-                <p>Número de Documento: <span className="font-bold border-b border-black px-2">{certificate.cip}</span></p>
-                <p>Hago constar que resido en: <span className="font-bold border-b border-black px-2">{details?.studentAddress || 'No especificada'}</span></p>
+                <p>Yo, <span className="font-bold">{certificate.clientName.toUpperCase()}</span></p>
+                <p>Número de Documento: <span className="font-bold">{certificate.cip}</span></p>
+                <p>Hago constar que resido en: <span className="font-bold">{details?.studentAddress || '--------------------'}</span></p>
                 <p>
-                    con teléfono residencial: <span className="font-bold border-b border-black px-2">{details?.studentPhone1 || 'N/A'}</span>,
-                    y teléfono celular: <span className="font-bold border-b border-black px-2">{details?.studentPhone2 || 'N/A'}</span>
+                    con teléfono residencial: <span className="font-bold">{details?.studentPhone1 || '-----'}</span> &nbsp; &nbsp; 
+                    teléfono celular: <span className="font-bold">{details?.studentPhone2 || '-----'}</span>
                 </p>
-                <p className="font-bold pt-4 uppercase">AMPLIACIÓN A LICENCIAS: <span className="border-b-2 border-black px-4">{certificate.licenseType}</span></p>
+                <p><span className="font-bold uppercase">AMPLIACIÓN A LICENCIAS:</span> <span className="font-bold">{certificate.licenseType}</span></p>
+                <p>Este certificado tiene validez de 364 días a partir de <span className="font-bold">{formattedIssueDate}</span></p>
                 
-                {validityDate && (
-                    <div className="mt-12 p-6 border-2 border-dashed border-black bg-gray-50 text-center">
-                        <p className="font-bold">
-                            ESTE CERTIFICADO TIENE VALIDEZ DE 364 DÍAS A PARTIR DE:
-                            <br />
-                            <span className="text-3xl mt-2 block underline">{format(issueDate, 'dd-MM-yyyy')}</span>
-                        </p>
+                <div className="pt-12 space-y-8">
+                    <div className="grid grid-cols-2 gap-x-12">
+                        <p>Primer Nombre: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.firstName || ''}</span></p>
+                        <p>Segundo Nombre: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.middleName || ''}</span></p>
                     </div>
-                )}
-                
-                <div className='pt-8 grid grid-cols-2 gap-8 text-lg'>
-                    <div className="space-y-2">
-                        <p>Primer Nombre: <span className="font-semibold">{certificate.firstName || ''}</span></p>
-                        <p>Segundo Nombre: <span className="font-semibold">{certificate.middleName || ''}</span></p>
-                    </div>
-                    <div className="space-y-2">
-                        <p>Primer Apellido: <span className="font-semibold">{certificate.lastName || ''}</span></p>
-                        <p>Segundo Apellido: <span className="font-semibold">{certificate.secondLastName || ''}</span></p>
+                    <div className="grid grid-cols-2 gap-x-12">
+                        <p>Primer Apellido: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.lastName || ''}</span></p>
+                        <p>Segundo Apellido: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.secondLastName || ''}</span></p>
                     </div>
                 </div>
-            </div>
-            
-            <div className="mt-auto text-center text-sm text-gray-400">
-                <p>FREEWAY ESCUELA DE MANEJO S.A. - RUC 155628022-2-2016 DV 2</p>
             </div>
         </div>
     );

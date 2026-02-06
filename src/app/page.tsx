@@ -28,17 +28,14 @@ export default function Home() {
         await signInAnonymously(auth);
       }
 
-      // Claves de acceso para cada rol:
-      // Administrador: Ayax/2022
-      // Ventas: ventas123
-      // Ventas Externas: ventasext123
+      // Claves de acceso para cada rol
       const validKeys = ['ventas123', 'ventasext123', 'Ayax/2022'];
       
       if (validKeys.includes(accessKey)) {
         setRole(accessKey);
         router.push('/dashboard');
       } else {
-        setError('Clave de acceso inválida. Por favor verifica tus credenciales.');
+        setError('Contraseña incorrecta. Por favor verifica tus credenciales.');
       }
     } catch (err) {
       console.error(err);
@@ -71,9 +68,9 @@ export default function Home() {
               <div className="mx-auto bg-green-100 p-3 rounded-full w-fit mb-4">
                 <ShieldCheck className="h-8 w-8 text-green-600" />
               </div>
-              <CardTitle className="text-green-800">Acceso Autorizado</CardTitle>
+              <CardTitle className="text-green-800">Sesión Iniciada</CardTitle>
               <CardDescription>
-                Sesión activa como: <span className="font-bold text-slate-900">{role}</span>
+                Acceso como: <span className="font-bold text-slate-900">{role}</span>
               </CardDescription>
             </CardHeader>
             <CardFooter>
@@ -91,7 +88,7 @@ export default function Home() {
                 <LogIn className="h-5 w-5 text-primary" />
                 Ingreso al Sistema
               </CardTitle>
-              <CardDescription>Introduce tu clave de acceso autorizada.</CardDescription>
+              <CardDescription>Introduce tu contraseña de acceso por rol.</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleAccess} className="space-y-4">
@@ -119,26 +116,18 @@ export default function Home() {
                       Validando...
                     </>
                   ) : (
-                    'Entrar al Sistema'
+                    'Entrar'
                   )}
                 </Button>
               </form>
             </CardContent>
             <CardFooter className="flex flex-col gap-4 text-center">
               <p className="text-xs text-muted-foreground">
-                Cada rol (Admin, Ventas, Externas) tiene su propia clave asignada.
+                Sistema de gestión administrativa interno.
               </p>
             </CardFooter>
           </Card>
         )}
-
-        <div className="flex items-center justify-center gap-2 text-muted-foreground">
-          <div className="h-px bg-slate-200 flex-1"></div>
-          <p className="text-[10px] uppercase tracking-widest font-semibold px-4">
-            Gestión Administrativa v2.0
-          </p>
-          <div className="h-px bg-slate-200 flex-1"></div>
-        </div>
 
         <p className="text-center text-xs text-muted-foreground">
           © {new Date().getFullYear()} Freeway Escuela de Manejo, S.A.

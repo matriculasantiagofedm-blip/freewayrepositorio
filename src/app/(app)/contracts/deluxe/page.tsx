@@ -3,31 +3,22 @@ import { ContractCard } from '@/components/contract-card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
-import { useCurrentRole } from '@/hooks/use-current-role';
-import { useDb, useUser } from '@/components/firebase-provider';
+import { useDb } from '@/components/firebase-provider';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 
 export default function ContractsDeluxePage() {
   const db = useDb();
-  const { user } = useUser();
-  const { role } = useCurrentRole();
 
   const contractsQuery = useMemoQuery(() => {
-    if (!db || !user || !role) return null;
-
-    const baseQuery = query(
+    if (!db) return null;
+    return query(
       collection(db, 'contracts'),
-      where('type', '==', 'Curso Deluxe')
+      where('type', '==', 'Curso Deluxe'),
+      orderBy('folioNumber', 'desc')
     );
-
-    if (role === 'Administrador' || role === 'Ventas') {
-      return baseQuery;
-    }
-
-    return query(baseQuery, where('userId', '==', user.uid));
-  }, [db, user, role]);
+  }, [db]);
 
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
 

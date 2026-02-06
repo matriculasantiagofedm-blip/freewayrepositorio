@@ -7,16 +7,15 @@ import { AmpliacionCertificateTemplate } from '@/components/ampliacion-certifica
 import { useEffect, useState, useMemo, Suspense } from 'react';
 import { useDb } from '@/components/firebase-provider';
 import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
-import { useCurrentRole } from '@/hooks/use-current-role';
 
 function CertificatePrintContent() {
   const { id } = useParams();
   const searchParams = useSearchParams();
   const db = useDb();
-  const { role: currentUserRole, isLoading: isRoleLoading } = useCurrentRole();
 
   const contractId = Array.isArray(id) ? id[0] : id;
 
+  // Acceso directo al documento sin requerir objeto 'user' para evitar lags de Auth
   const contractRef = useMemoDoc(() => {
     if (!db || !contractId) return null;
     return doc(db, 'contracts', contractId);
@@ -39,9 +38,7 @@ function CertificatePrintContent() {
       const lastName = searchParams.get('lastName');
       const secondLastName = searchParams.get('secondLastName');
       
-      if (!folio || !clientName || !cip || !licenseType || !courseName || !issueDateStr) {
-          return;
-      }
+      if (!folio || !clientName || !cip || !licenseType || !courseName || !issueDateStr) return;
 
       const certificateData: Certificate = {
         id: contract.id,
@@ -62,10 +59,9 @@ function CertificatePrintContent() {
       };
       setCertificate(certificateData);
 
-      // Disparar diálogo de impresión automáticamente
       const timer = setTimeout(() => {
         window.print();
-      }, 1500);
+      }, 1000);
       
       return () => clearTimeout(timer);
     }
@@ -78,27 +74,20 @@ function CertificatePrintContent() {
   }, [certificate]);
 
   if (isContractLoading) {
-    return <div className="flex items-center justify-center h-screen bg-white"><p className="text-xl font-semibold text-primary animate-pulse">Cargando certificado desde la base de datos...</p></div>;
+    return <div className="flex items-center justify-center h-screen bg-white"><p className="text-xl font-semibold text-primary animate-pulse">Cargando certificado...</p></div>;
   }
 
   if (error) return (
     <div className="p-8 text-center bg-white min-h-screen flex flex-col items-center justify-center">
-        <h1 className="text-destructive font-bold text-3xl mb-4">Acceso Bloqueado</h1>
-        <div className="bg-red-50 p-6 rounded-lg border border-red-200 max-w-2xl text-left">
-            <p className="text-red-800 font-semibold mb-2">Detalle del Error:</p>
-            <p className="text-red-600 font-mono text-sm break-all">{error.message}</p>
-        </div>
-        <p className="mt-6 text-muted-foreground">
-            Se ha detectado un problema de permisos. Las reglas de seguridad han sido actualizadas. <br />
-            Por favor, refresca la página e inténtalo de nuevo.
-        </p>
+        <h1 className="text-destructive font-bold text-3xl mb-4">Error de Base de Datos</h1>
+        <p className="text-red-600 font-mono text-sm">{error.message}</p>
     </div>
   );
 
   if (!contract && !isContractLoading) return (
     <div className="p-8 text-center bg-white min-h-screen flex flex-col items-center justify-center">
         <h1 className="text-2xl font-bold mb-4">Contrato No Encontrado</h1>
-        <p className="text-muted-foreground">El contrato con ID {contractId} no pudo ser localizado en la base de datos.</p>
+        <p className="text-muted-foreground">El contrato con ID {contractId} no existe en el sistema.</p>
     </div>
   );
 
@@ -122,7 +111,7 @@ function CertificatePrintContent() {
 
 export default function CertificatePrintIdPage() {
   return (
-    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-white">Preparando motor de impresión...</div>}>
+    <Suspense fallback={<div className="flex h-screen items-center justify-center bg-white">Iniciando motor de impresión...</div>}>
       <CertificatePrintContent />
     </Suspense>
   );

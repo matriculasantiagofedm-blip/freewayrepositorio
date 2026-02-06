@@ -3,31 +3,23 @@ import { ContractCard } from '@/components/contract-card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
-import { useCurrentRole } from '@/hooks/use-current-role';
-import { useDb, useUser } from '@/components/firebase-provider';
+import { useDb } from '@/components/firebase-provider';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 
 export default function ContractsAutoPage() {
   const db = useDb();
-  const { user } = useUser();
-  const { role } = useCurrentRole();
 
   const contractsQuery = useMemoQuery(() => {
-    if (!db || !user || !role) return null;
-
-    const baseQuery = query(
+    if (!db) return null;
+    // Desbloqueo total: Se eliminan filtros de usuario para ver todos los contratos de este tipo
+    return query(
       collection(db, 'contracts'),
-      where('type', '==', 'Curso Auto')
+      where('type', '==', 'Curso Auto'),
+      orderBy('folioNumber', 'desc')
     );
-
-    if (role === 'Administrador' || role === 'Ventas') {
-      return baseQuery;
-    }
-    
-    return query(baseQuery, where('userId', '==', user.uid));
-  }, [db, user, role]);
+  }, [db]);
 
   const { data: autoContracts, isLoading } = useCollection<Contract>(contractsQuery);
 

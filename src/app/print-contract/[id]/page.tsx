@@ -2,14 +2,17 @@
 
 import { useParams } from 'next/navigation';
 import { doc } from 'firebase/firestore';
-import { useEffect } from 'react';
-
+import { useEffect, Suspense } from 'react';
 import { ContractView } from '@/components/contract-view';
 import type { Contract } from '@/lib/types';
 import { useDb } from '@/components/firebase-provider';
 import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
 
-export default function PrintContractPage() {
+/**
+ * Página de impresión de contrato.
+ * DESBLOQUEADA: Sin dependencias de rol para carga instantánea.
+ */
+function PrintContractContent() {
   const { id } = useParams();
   const db = useDb();
 
@@ -17,7 +20,6 @@ export default function PrintContractPage() {
 
   const contractRef = useMemoDoc(() => {
     if (!db || !contractId) return null;
-    // Desbloqueo: Se elimina la dependencia de 'user' para permitir la carga inmediata en la pestaña de impresión
     return doc(db, `contracts`, contractId);
   }, [db, contractId]);
 
@@ -33,7 +35,7 @@ export default function PrintContractPage() {
   }, [contract, isLoading]);
 
   if (isLoading) {
-    return <div className="flex h-screen items-center justify-center bg-white"><p className="text-lg animate-pulse">Cargando documento para impresión...</p></div>;
+    return <div className="flex h-screen items-center justify-center bg-white"><p className="text-lg animate-pulse">Cargando documento...</p></div>;
   }
 
   if (error) {
@@ -49,7 +51,6 @@ export default function PrintContractPage() {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-white p-8 text-center">
         <h1 className="text-2xl font-bold mb-2">Documento No Encontrado</h1>
-        <p className="text-muted-foreground">El contrato solicitado no existe en la base de datos o el acceso fue denegado.</p>
       </div>
     );
   }
@@ -75,4 +76,12 @@ export default function PrintContractPage() {
       <ContractView contract={contract} />
     </div>
   );
+}
+
+export default function PrintContractPage() {
+    return (
+        <Suspense fallback={<div className="h-screen flex items-center justify-center">Preparando impresión...</div>}>
+            <PrintContractContent />
+        </Suspense>
+    );
 }

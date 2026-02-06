@@ -3,12 +3,10 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * FIREBASE SECURITY RULES - ACCESO TOTAL (PROTOTIPO)
+     * ACCESO TOTAL - DESBLOQUEO DE PROTOTIPO
      * 
-     * Se ha configurado acceso universal de lectura y escritura para permitir que 
-     * todos los roles (Administrador, Ventas, Ventas Externas) colaboren sobre 
-     * la misma base de datos sin restricciones de propiedad de documento.
-     * Esto soluciona los errores de 'Missing or insufficient permissions'.
+     * Se permite acceso universal de lectura y escritura para que todos los roles 
+     * (Administrador, Ventas, Ventas Externas) operen sobre la misma base de datos.
      */
 
     match /{document=**} {

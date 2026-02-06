@@ -124,7 +124,7 @@ function CertificateBack({ certificate }: { certificate: Certificate }) {
             <div className="space-y-6 pt-12">
                 <p>Yo, <span className="font-bold">{certificate.clientName.toUpperCase()}</span></p>
                 <p>Número de Documento: <span className="font-bold">{certificate.cip}</span></p>
-                <p>Hago constar que resido en: <span className="font-bold">{details?.studentAddress || '--------------------'}</span></p>
+                <p>Hago constar que resido en: <span className="font-bold">{details?.studentAddress?.toUpperCase() || '--------------------'}</span></p>
                 <p>
                     con teléfono residencial: <span className="font-bold">{details?.studentPhone1 || '-----'}</span> &nbsp; &nbsp; 
                     teléfono celular: <span className="font-bold">{details?.studentPhone2 || '-----'}</span>
@@ -134,12 +134,12 @@ function CertificateBack({ certificate }: { certificate: Certificate }) {
                 
                 <div className="pt-12 space-y-8">
                     <div className="grid grid-cols-2 gap-x-12">
-                        <div className="flex items-center gap-2">Primer Nombre: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.firstName || ''}</span></div>
-                        <div className="flex items-center gap-2">Segundo Nombre: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.middleName || ''}</span></div>
+                        <div className="flex items-center gap-2">Primer Nombre: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.firstName?.toUpperCase() || ''}</span></div>
+                        <div className="flex items-center gap-2">Segundo Nombre: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.middleName?.toUpperCase() || ''}</span></div>
                     </div>
                     <div className="grid grid-cols-2 gap-x-12">
-                        <div className="flex items-center gap-2">Primer Apellido: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.lastName || ''}</span></div>
-                        <div className="flex items-center gap-2">Segundo Apellido: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.secondLastName || ''}</span></div>
+                        <div className="flex items-center gap-2">Primer Apellido: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.lastName?.toUpperCase() || ''}</span></div>
+                        <div className="flex items-center gap-2">Segundo Apellido: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.secondLastName?.toUpperCase() || ''}</span></div>
                     </div>
                 </div>
             </div>
@@ -150,8 +150,8 @@ function CertificateBack({ certificate }: { certificate: Certificate }) {
 export function CertificateTemplate({ certificate }: { certificate: Certificate | null }) {
   if (!certificate) {
     return (
-      <div className="w-full h-full p-8 flex items-center justify-center">
-        <p>Cargando certificado...</p>
+      <div className="w-full h-full p-8 flex items-center justify-center bg-white">
+        <p>Cargando certificado estándar...</p>
       </div>
     );
   }

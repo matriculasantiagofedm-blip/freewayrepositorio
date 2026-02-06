@@ -137,7 +137,6 @@ function CertificateBackAmpliacion({ certificate }: { certificate: Certificate }
                     </div>
                 </div>
 
-                {/* Área para las imágenes de los documentos (Licencia y Cédula) */}
                 <div className="mt-8 border-2 border-dashed border-gray-200 rounded-xl p-8 flex flex-col items-center justify-center min-h-[300px] bg-gray-50/30">
                     <div className="grid grid-cols-1 gap-8 opacity-40">
                         <div className="flex flex-col items-center gap-2">
@@ -161,7 +160,7 @@ function CertificateBackAmpliacion({ certificate }: { certificate: Certificate }
 export function AmpliacionCertificateTemplate({ certificate }: { certificate: Certificate | null }) {
   if (!certificate) {
     return (
-      <div className="w-full h-full p-8 flex items-center justify-center">
+      <div className="w-full h-full p-8 flex items-center justify-center bg-white">
         <p>Cargando certificado de ampliación...</p>
       </div>
     );

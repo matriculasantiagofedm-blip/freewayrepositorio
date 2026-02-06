@@ -35,7 +35,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true);
     
-    // Persistencia crítica: Recuperar rol de localStorage para que persista al abrir pestañas de impresión
+    // Persistencia crítica en localStorage para que el rol no se pierda al abrir pestañas de impresión
     if (typeof window !== 'undefined') {
       const storedRoleKey = window.localStorage.getItem('userRoleKey');
       if (storedRoleKey && roleMapping[storedRoleKey]) {

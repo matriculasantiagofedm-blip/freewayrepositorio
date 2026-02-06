@@ -2,11 +2,11 @@
 const nextConfig = {
   reactStrictMode: true,
   typescript: {
-    // IGNORAR ERRORES DE TYPESCRIPT DURANTE EL BUILD (Solución Maestra)
+    // Ignorar errores de tipos para asegurar que el build pase en el servidor
     ignoreBuildErrors: true,
   },
   eslint: {
-    // IGNORAR ERRORES DE ESLINT DURANTE EL BUILD
+    // Ignorar errores de linting durante el build
     ignoreDuringBuilds: true,
   },
   images: {

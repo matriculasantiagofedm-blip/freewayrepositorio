@@ -13,7 +13,7 @@ export interface Client {
   idNumber?: string;
   phone?: string;
   userId: string;
-  createdAt: Timestamp | FieldValue | Date | any;
+  createdAt: any;
 }
 
 export type ContractStatus = 'draft' | 'active' | 'completed' | 'expired';
@@ -32,12 +32,12 @@ export interface DeluxeContractDetails {
   studentPhone2?: string;
   paymentDetails?: string;
   paymentAmount?: number;
-  paymentInstallments?: (Date | Timestamp | FieldValue | any)[];
+  paymentInstallments?: any[];
   vehicleTransmission?: 'Automático' | 'Manual';
   licenseCategory?: 'A, C' | 'A, C, D';
   theoreticalClassSchedule?: string;
-  theoreticalClasses?: (Date | Timestamp | FieldValue | any)[];
-  classSchedules?: { date?: Date | Timestamp | FieldValue | any; time?: string }[];
+  theoreticalClasses?: any[];
+  classSchedules?: { date?: any; time?: string }[];
   paymentType?: string;
   instructor?: InstructorName;
 }
@@ -51,14 +51,14 @@ export interface AutoMotoContractDetails {
   courseValue?: number;
   downPayment?: number;
   balance?: number;
-  paymentDeadline?: Date | Timestamp | FieldValue | any;
+  paymentDeadline?: any;
   vehicle?: VehicleName;
   vehicleTransmission?: 'Automático' | 'Manual' | 'Moto';
   licenseCategory?: 'A, C' | 'A, C, D' | 'A, B';
   theoreticalClassSchedule?: string;
-  theoreticalClassDates?: (Date | Timestamp | FieldValue | any)[];
-  practicalClassSchedules?: { date?: Date | Timestamp | FieldValue | any; time?: string }[];
-  motoPracticalClassSchedules?: { date?: Date | Timestamp | FieldValue | any; time?: string }[];
+  theoreticalClassDates?: any[];
+  practicalClassSchedules?: { date?: any; time?: string }[];
+  motoPracticalClassSchedules?: { date?: any; time?: string }[];
   paidInFull?: boolean;
   paymentType?: string;
   instructor?: InstructorName;
@@ -72,9 +72,9 @@ export interface AmpliacionesContractDetails {
     courseValue?: number;
     downPayment?: number;
     balance?: number;
-    paymentDeadline?: Date | Timestamp | FieldValue | any;
+    paymentDeadline?: any;
     selectedPlans?: { name: string; price: number }[];
-    theoreticalClassDate?: Date | Timestamp | FieldValue | any;
+    theoreticalClassDate?: any;
     theoreticalClassTime?: string;
     paymentType?: string;
 }
@@ -89,12 +89,12 @@ export interface Contract {
   type: ContractType;
   status: ContractStatus;
   userId: string;
-  createdAt: Timestamp | FieldValue | Date | any;
+  createdAt: any;
   createdBy?: string;
   deluxeDetails?: Partial<DeluxeContractDetails>;
   autoMotoDetails?: Partial<AutoMotoContractDetails>;
   ampliacionesDetails?: Partial<AmpliacionesContractDetails>;
-  certificateGeneratedAt?: Timestamp | FieldValue | Date | any;
+  certificateGeneratedAt?: any;
   certificateFolio?: string;
   studentIdNumber?: string;
   clauses?: string;
@@ -122,7 +122,7 @@ export interface Transaction {
 export interface Payment {
   id: string;
   amount: number;
-  paymentDate: Timestamp | FieldValue | Date | any;
+  paymentDate: any;
   contractId: string;
   contractFolio: number;
   cancellationFolio?: number;
@@ -139,7 +139,7 @@ export interface Payment {
 export interface BookSalePayment {
   id: string;
   amount: number;
-  paymentDate: Timestamp | FieldValue | Date | any;
+  paymentDate: any;
   bookSaleFolio: number;
   bookTitle: string;
   clientName: string;
@@ -150,7 +150,7 @@ export interface BookSalePayment {
 
 export interface MileageLog {
   id: string;
-  date: Timestamp | FieldValue | Date | any;
+  date: any;
   userId: string;
   cars: VehicleMileage[];
   totalDistance?: number;
@@ -165,14 +165,14 @@ export interface VehicleMileage {
 
 export type MaintenanceLog = {
   id: string;
-  date: Timestamp | FieldValue | Date | any;
+  date: any;
   userId: string;
   vehicle: VehicleName;
   mileage: number;
   type: MaintenanceType;
   description: string;
   cost: number;
-  nextServiceDate?: Timestamp | FieldValue | Date | any;
+  nextServiceDate?: any;
 };
 
 export type VehicleName = 'Picanto Blanco' | 'Picanto Bronce' | 'Spark' | 'Moto Roja' | 'Moto Negra';

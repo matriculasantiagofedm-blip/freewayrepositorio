@@ -15,9 +15,9 @@ function CertificatePrintContent() {
 
   const contractId = Array.isArray(id) ? id[0] : id;
 
+  // Carga inmediata del contrato sin dependencia de 'user'
   const contractRef = useMemoDoc(() => {
     if (!db || !contractId) return null;
-    // Desbloqueo: Se elimina la dependencia de 'user' para evitar fallos de hidratación de sesión en la nueva pestaña
     return doc(db, 'contracts', contractId);
   }, [db, contractId]);
 
@@ -59,9 +59,10 @@ function CertificatePrintContent() {
       };
       setCertificate(certificateData);
 
+      // Disparo automático de la impresión tras renderizado
       const timer = setTimeout(() => {
         window.print();
-      }, 1200);
+      }, 1000);
       
       return () => clearTimeout(timer);
     }
@@ -87,7 +88,7 @@ function CertificatePrintContent() {
   if (!contract && !isContractLoading) return (
     <div className="p-8 text-center bg-white min-h-screen flex flex-col items-center justify-center">
         <h1 className="text-2xl font-bold mb-4">Contrato No Encontrado</h1>
-        <p className="text-muted-foreground">El documento no existe en la base de datos o ha sido movido.</p>
+        <p className="text-muted-foreground">El documento solicitado no existe en la base de datos.</p>
     </div>
   );
 

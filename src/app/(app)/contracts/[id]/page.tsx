@@ -81,7 +81,7 @@ export default function ContractDetailPage() {
 
   const contractRef = useMemoDoc(() => {
     if (!db || !contractId) return null;
-    // Desbloqueo: No dependemos de 'user' para visualización global, permitiendo carga inmediata
+    // Desbloqueo: Carga global sin dependencia de 'user' para visualización y gestión corporativa
     return doc(db, `contracts`, contractId);
   }, [db, contractId]);
 
@@ -231,6 +231,7 @@ export default function ContractDetailPage() {
                 </Button>
             </div>
             <div className="flex items-center gap-2">
+              {/* DESBLOQUEO: Ventas y Ventas Externas ahora pueden generar certificados */}
               {canGenerateCertificate && (role === 'Administrador' || role === 'Ventas' || role === 'Ventas Externas') && (
                 <Button onClick={handleOpenCertificateModal}>
                   <Award className="mr-2 h-4 w-4" />

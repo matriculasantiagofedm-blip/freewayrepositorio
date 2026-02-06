@@ -74,7 +74,7 @@ export default function BookSalesPage() {
         }
 
         const paymentRef = doc(collection(db, 'book_sale_payments'));
-        const paymentData: Partial<BookSalePayment> = {
+        const paymentData = {
           amount: selectedBook.price,
           bookSaleFolio: newBookSaleFolio,
           bookTitle: selectedBook.title,

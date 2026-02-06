@@ -12,11 +12,11 @@
         },
         "userId": {
           "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N Contract). The user creating the contract."
+          "description": "Reference to User."
         },
         "clientId": {
           "type": "string",
-          "description": "Reference to Client. (Relationship: Client 1:N Contract). The client associated with the contract."
+          "description": "Reference to Client."
         },
         "clauses": {
           "type": "string",
@@ -45,9 +45,7 @@
         "id",
         "userId",
         "clientId",
-        "clauses",
-        "deadline",
-        "meetingTime"
+        "clauses"
       ]
     },
     "Client": {
@@ -72,37 +70,13 @@
         "phone": {
           "type": "string",
           "description": "The phone number of the client."
+        },
+        "idNumber": {
+          "type": "string"
         }
       },
       "required": [
         "id",
-        "name",
-        "email"
-      ]
-    },
-    "User": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "User",
-      "type": "object",
-      "description": "Represents a user of the application.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the User entity."
-        },
-        "email": {
-          "type": "string",
-          "description": "The email address of the user.",
-          "format": "email"
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the user."
-        }
-      },
-      "required": [
-        "id",
-        "email",
         "name"
       ]
     }
@@ -116,39 +90,13 @@
   "firestore": {
     "structure": [
       {
-        "path": "/users/{userId}/contracts/{contractId}",
+        "path": "/contracts/{contractId}",
         "definition": {
           "entityName": "Contract",
           "schema": {
             "$ref": "#/backend/entities/Contract"
           },
-          "description": "Stores contract documents owned by a specific user. The path enforces ownership and simplifies security rules.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The ID of the user who owns the contract."
-            },
-            {
-              "name": "contractId",
-              "description": "The ID of the contract document."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Stores user profile data.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The ID of the user."
-            }
-          ]
+          "description": "Colección raíz unificada para todos los contratos de la empresa."
         }
       },
       {
@@ -158,16 +106,10 @@
           "schema": {
             "$ref": "#/backend/entities/Client"
           },
-          "description": "Stores client data.",
-          "params": [
-            {
-              "name": "clientId",
-              "description": "The ID of the client."
-            }
-          ]
+          "description": "Stores client data."
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to provide a secure and scalable solution for managing contracts and clients. It leverages path-based ownership and denormalization to ensure authorization independence. The `/users/{userId}/contracts/{contractId}` path establishes clear ownership. The `contracts` collection is nested under the `users` collection, ensuring that each contract is associated with a specific user, thus satisfying the user's request. The security rules in the request only permit reading contracts based on the UID, so the data structure is created to be like that.\n\nThis structure inherently supports QAPs by segregating contracts based on user ownership. Listing contracts is secure because the list operation is always scoped to a specific user, and only that user can access their contracts."
+    "reasoning": "Se utiliza una estructura de colección raíz para /contracts para permitir el acceso compartido entre todos los roles operativos de la empresa, facilitando la gestión unificada y reportes globales."
   }
 }

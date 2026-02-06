@@ -40,8 +40,8 @@ export function UserNav() {
     return <Skeleton className="h-8 w-8 rounded-full" />;
   }
 
-  // Se elimina el botón de "Iniciar Sesión" como respaldo si no hay usuario de Firebase
-  if (!user) {
+  // Si no hay usuario o sesión iniciada, no mostramos nada en el panel de control
+  if (!user || !currentUser) {
     return null;
   }
 

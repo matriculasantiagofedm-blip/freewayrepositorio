@@ -62,9 +62,10 @@ function CertificatePrintContent() {
       };
       setCertificate(certificateData);
 
+      // Pequeño retardo para asegurar que el DOM esté listo antes de abrir el diálogo de impresión
       const timer = setTimeout(() => {
         window.print();
-      }, 1000);
+      }, 1500);
       
       return () => clearTimeout(timer);
     }
@@ -72,28 +73,39 @@ function CertificatePrintContent() {
 
   const shouldUseAmpliacionTemplate = useMemo(() => {
     if (!certificate || !certificate.contract) return false;
-    if (certificate.contract.type !== 'Ampliaciones') return false;
+    // Si el contrato es de tipo Ampliaciones o la licencia contiene E1, E2, E3
+    if (certificate.contract.type === 'Ampliaciones') return true;
     return certificate.licenseType && ['E1', 'E2', 'E3'].some(l => certificate.licenseType.includes(l));
   }, [certificate]);
 
   if (isContractLoading || isRoleLoading) {
-    return <div className="flex items-center justify-center h-screen"><p>Cargando certificado...</p></div>;
+    return <div className="flex items-center justify-center h-screen"><p className="text-xl font-semibold">Generando vista de impresión...</p></div>;
   }
 
-  if (error) return <div className="p-8 text-center"><h1 className="text-destructive font-bold">Error: {error.message}</h1></div>;
+  if (error) return <div className="p-8 text-center"><h1 className="text-destructive font-bold text-2xl">Error: {error.message}</h1></div>;
 
   if (currentUserRole === 'Ventas') {
-    return <div className="p-8 text-center"><h1 className="text-destructive font-bold">Acceso Denegado</h1></div>;
+    return <div className="p-8 text-center"><h1 className="text-destructive font-bold text-2xl">Acceso Denegado: Solo administradores pueden imprimir certificados.</h1></div>;
   }
 
-  if (!contract && !isContractLoading) return <div className="p-8 text-center"><h1>Contrato no encontrado</h1></div>;
+  if (!contract && !isContractLoading) return <div className="p-8 text-center"><h1 className="text-2xl font-bold">Contrato no encontrado</h1></div>;
 
   return (
-    <div className="print:p-0 print:m-0 print:bg-white bg-gray-100">
+    <div className="print:p-0 print:m-0 print:bg-white bg-gray-100 min-h-screen">
         <style jsx global>{`
           @media print {
-            @page { size: letter landscape; margin: 0; }
-            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            @page { 
+              size: letter landscape; 
+              margin: 0; 
+            }
+            body { 
+              -webkit-print-color-adjust: exact !important; 
+              print-color-adjust: exact !important;
+              background-color: white !important;
+            }
+            .print-hidden {
+              display: none !important;
+            }
           }
         `}</style>
         {shouldUseAmpliacionTemplate ? (
@@ -107,7 +119,7 @@ function CertificatePrintContent() {
 
 export default function CertificatePrintIdPage() {
   return (
-    <Suspense fallback={<div className="flex h-screen items-center justify-center">Preparando impresión...</div>}>
+    <Suspense fallback={<div className="flex h-screen items-center justify-center">Preparando motor de impresión...</div>}>
       <CertificatePrintContent />
     </Suspense>
   );

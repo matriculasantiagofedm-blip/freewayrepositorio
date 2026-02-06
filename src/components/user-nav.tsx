@@ -40,10 +40,9 @@ export function UserNav() {
     return <Skeleton className="h-8 w-8 rounded-full" />;
   }
 
+  // Se elimina el botón de "Iniciar Sesión" como respaldo si no hay usuario de Firebase
   if (!user) {
-    return (
-      <Button onClick={() => router.push('/')}>Iniciar Sesión</Button>
-    );
+    return null;
   }
 
   return (

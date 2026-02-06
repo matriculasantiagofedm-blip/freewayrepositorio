@@ -7,16 +7,12 @@ import {
   DocumentData,
   CollectionReference,
 } from 'firebase/firestore';
-import { useToast } from './use-toast';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
-// Type to add an 'id' to a document's data
 export type WithId<T> = T & { id: string };
 
-/**
- * Hook to fetch a single document from Firestore in real-time.
- */
 export function useDoc<T>(ref: DocumentReference<DocumentData> | null | undefined) {
-  const { toast } = useToast();
   const [data, setData] = useState<WithId<T> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -41,35 +37,27 @@ export function useDoc<T>(ref: DocumentReference<DocumentData> | null | undefine
         setError(null);
       },
       (err) => {
-        // Solo mostrar error si no es una cancelación normal
-        if (err.code !== 'cancelled' && err.code !== 'permission-denied') {
-          console.error(`Error fetching document:`, err);
-          setError(err);
-          setIsLoading(false);
-          toast({
-            variant: "destructive",
-            title: "Error de Carga",
-            description: `No se pudo cargar el documento. Verifica los permisos.`,
+        if (err.code === 'permission-denied') {
+          const permissionError = new FirestorePermissionError({
+            path: ref.path,
+            operation: 'get',
           });
-        } else if (err.code === 'permission-denied') {
-            setIsLoading(false);
-            setError(err);
+          errorEmitter.emit('permission-error', permissionError);
+          setError(permissionError);
+        } else if (err.code !== 'cancelled') {
+          setError(err);
         }
+        setIsLoading(false);
       }
     );
 
     return () => unsubscribe();
-  }, [ref, toast]);
+  }, [ref]);
 
   return { data, isLoading, error };
 }
 
-
-/**
- * Hook to fetch a collection of documents from Firestore in real-time.
- */
 export function useCollection<T>(q: Query<DocumentData> | CollectionReference<DocumentData> | null | undefined) {
-  const { toast } = useToast();
   const [data, setData] = useState<WithId<T>[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -94,30 +82,27 @@ export function useCollection<T>(q: Query<DocumentData> | CollectionReference<Do
         setError(null);
       },
       (err) => {
-        if (err.code !== 'cancelled' && err.code !== 'permission-denied') {
-          console.error("Error fetching collection:", err);
-          setError(err);
-          setIsLoading(false);
-          toast({
-            variant: "destructive",
-            title: "Error de Carga",
-            description: `No se pudo cargar la colección.`,
+        if (err.code === 'permission-denied') {
+          const permissionError = new FirestorePermissionError({
+            path: (q as any).path || 'collection',
+            operation: 'list',
           });
-        } else if (err.code === 'permission-denied') {
-            setIsLoading(false);
-            setError(err);
+          errorEmitter.emit('permission-error', permissionError);
+          setError(permissionError);
+        } else if (err.code !== 'cancelled') {
+          setError(err);
         }
+        setIsLoading(false);
       }
     );
 
     return () => unsubscribe();
-  }, [q, toast]);
+  }, [q]);
 
   return { data, isLoading, error };
 }
 
 export function useMemoQuery(factory: () => any, deps: any[]) {
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     const [q, setQ] = useState<any>(null);
     useEffect(() => {
         setQ(factory());
@@ -126,7 +111,6 @@ export function useMemoQuery(factory: () => any, deps: any[]) {
 }
 
 export function useMemoDoc(factory: () => any, deps: any[]) {
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     const [d, setD] = useState<any>(null);
     useEffect(() => {
         setD(factory());

@@ -5,6 +5,7 @@ import { type FirebaseApp } from 'firebase/app';
 import { type Auth, onAuthStateChanged, type User } from 'firebase/auth';
 import { type Firestore } from 'firebase/firestore';
 import { app, auth, db } from '@/firebase/client';
+import { FirebaseErrorListener } from './FirebaseErrorListener';
 
 const roleMapping: { [key: string]: string } = {
   'ventas123': 'Ventas',
@@ -18,7 +19,6 @@ interface FirebaseContextValue {
   db: Firestore;
   user: User | null;
   isLoading: boolean;
-  setDevUser: (user: User) => void;
   role: string | null;
   setRole: (roleKey: string) => void;
   logout: () => Promise<void>;
@@ -35,7 +35,6 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true);
     
-    // Recuperar rol guardado de localStorage para que persista entre pestañas (importante para impresión)
     if (typeof window !== 'undefined') {
       const storedRoleKey = window.localStorage.getItem('userRoleKey');
       if (storedRoleKey && roleMapping[storedRoleKey]) {
@@ -50,11 +49,6 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
 
     return () => unsubscribe();
   }, []);
-
-  const setDevUser = (devUser: User) => {
-    setUser(devUser);
-    setIsLoading(false);
-  };
 
   const setRole = (roleKey: string) => {
     const assignedRole = roleMapping[roleKey] || null;
@@ -78,15 +72,16 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   };
 
   const value = useMemo(() => ({
-    app, auth, db, user, isLoading: !mounted || isLoading, setDevUser, role, setRole, logout
+    app, auth, db, user, isLoading: !mounted || isLoading, role, setRole, logout
   }), [user, isLoading, role, mounted]);
 
   if (!mounted) {
-    return <div className="min-h-screen bg-background" />;
+    return null;
   }
 
   return (
     <FirebaseContext.Provider value={value}>
+      <FirebaseErrorListener />
       {children}
     </FirebaseContext.Provider>
   );
@@ -101,6 +96,6 @@ export function useFirebase() {
 export function useAuth() { return useFirebase().auth; }
 export function useDb() { return useFirebase().db; }
 export function useUser() {
-  const { user, isLoading, setDevUser } = useFirebase();
-  return { user, isUserLoading: isLoading, setDevUser };
+  const { user, isLoading } = useFirebase();
+  return { user, isUserLoading: isLoading };
 }

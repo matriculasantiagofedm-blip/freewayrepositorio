@@ -9,6 +9,8 @@ import { ChevronLeft, Award, Printer, ShieldX, Undo, Loader2 } from 'lucide-reac
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentRole } from '@/hooks/use-current-role';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,7 +36,6 @@ import { Label } from '@/components/ui/label';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
 
-// Helper to get the next folio number
 const getNextFolio = (lastFolio: string | null): string => {
     const year = new Date().getFullYear();
     if (!lastFolio || !lastFolio.includes('/')) {
@@ -46,7 +47,6 @@ const getNextFolio = (lastFolio: string | null): string => {
     const paddedNextNum = String(nextNum).padStart(4, '0');
     return `${year} / ${paddedNextNum}`;
 };
-
 
 export default function ContractDetailPage() {
   const { id } = useParams();
@@ -81,9 +81,9 @@ export default function ContractDetailPage() {
   const contractId = Array.isArray(id) ? id[0] : id;
 
   const contractRef = useMemoDoc(() => {
-    if (!db || !user || !contractId) return null;
+    if (!db || !contractId) return null;
     return doc(db, `contracts`, contractId);
-  }, [db, user, contractId]);
+  }, [db, contractId]);
 
   const { data: contract, isLoading, error } = useDoc<Contract>(contractRef);
   
@@ -109,7 +109,6 @@ export default function ContractDetailPage() {
         secondLastName = nameParts[3];
     }
 
-
     setCertificateData({
       folio: suggestedFolio,
       clientName: contract.clientName,
@@ -130,28 +129,25 @@ export default function ContractDetailPage() {
     setCertificateData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleProceedToPrint = async () => {
+  const handleProceedToPrint = () => {
     if (!certificateData.folio || !db || !contractRef || !contract || !user) {
         toast({
             variant: 'destructive',
-            title: 'Operación no permitida',
-            description: 'No se han podido cargar los datos necesarios o no tienes una sesión activa.',
+            title: 'Datos Incompletos',
+            description: 'No se han podido cargar los datos necesarios.',
         });
         return;
     }
 
     setIsGenerating(true);
 
-    try {
-        const updateData = {
-            certificateGeneratedAt: serverTimestamp() as any,
-            certificateFolio: certificateData.folio,
-        };
-        
-        // Actualizar el documento en Firestore
-        await updateDoc(contractRef, updateData);
-
-        // Guardar el último folio usado localmente
+    const updateData = {
+        certificateGeneratedAt: serverTimestamp() as any,
+        certificateFolio: certificateData.folio,
+    };
+    
+    updateDoc(contractRef, updateData)
+      .then(() => {
         localStorage.setItem('lastCertificateFolio', certificateData.folio);
         setLastFolio(certificateData.folio);
 
@@ -168,92 +164,41 @@ export default function ContractDetailPage() {
             secondLastName: certificateData.secondLastName,
         });
 
-        const printUrl = `/certificate-print/${contractId}?${queryParams.toString()}`;
-        window.open(printUrl, '_blank');
+        window.open(`/certificate-print/${contractId}?${queryParams.toString()}`, '_blank');
         setIsCertificateModalOpen(false);
         toast({ title: 'Certificado Generado', description: 'El documento se ha guardado y está listo para imprimir.' });
-
-    } catch (error: any) {
-        console.error("Error updating certificate folio:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Error de Permisos',
-            description: 'No tienes permisos suficientes para actualizar este contrato o la sesión ha expirado.',
+      })
+      .catch((err) => {
+        const permissionError = new FirestorePermissionError({
+          path: contractRef.path,
+          operation: 'update',
+          requestResourceData: updateData,
         });
-    } finally {
+        errorEmitter.emit('permission-error', permissionError);
+      })
+      .finally(() => {
         setIsGenerating(false);
-    }
+      });
   };
   
   const handlePrintContract = () => {
-    const printUrl = `/print-contract/${contractId}`;
-    window.open(printUrl, '_blank');
+    window.open(`/print-contract/${contractId}`, '_blank');
   };
 
-  const handleAnnulContract = async () => {
-    if (!contractRef || !contract) {
-      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo encontrar el contrato para anular.' });
-      return;
-    }
-  
+  const handleAnnulContract = () => {
+    if (!contractRef || !contract) return;
     setIsGenerating(true);
-  
-    try {
-      const updateData = {
-        status: 'expired' as const,
-      };
-  
-      await updateDoc(contractRef, updateData);
-  
-      toast({
-        title: 'Contrato Anulado',
-        description: `El contrato con folio ${contract.folioNumber} ha sido marcado como anulado.`,
-      });
-  
-      router.refresh();
-  
-    } catch (error) {
-      console.error("Error al anular contrato:", error);
-      toast({
-        variant: 'destructive',
-        title: 'Error al anular',
-        description: 'No se pudo anular el contrato. Revisa los permisos o contacta al administrador.',
-      });
-    } finally {
-      setIsGenerating(false);
-    }
+    const updateData = { status: 'expired' as const };
+    updateDoc(contractRef, updateData)
+      .then(() => {
+        toast({ title: 'Contrato Anulado', description: `El folio ${contract.folioNumber} ha sido anulado.` });
+        router.refresh();
+      })
+      .catch((err) => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: contractRef.path, operation: 'update', requestResourceData: updateData }));
+      })
+      .finally(() => setIsGenerating(false));
   };
-
-  const handleReactivateContract = async () => {
-    if (!contractRef || !contract) {
-      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo encontrar el contrato para reactivar.' });
-      return;
-    }
-
-    setIsGenerating(true);
-
-    try {
-      const updateData = {
-        status: 'active' as const,
-      };
-      await updateDoc(contractRef, updateData);
-      toast({
-        title: 'Contrato Reactivado',
-        description: `El contrato con folio ${contract.folioNumber} ha sido reactivado.`,
-      });
-      router.refresh();
-    } catch (error) {
-        console.error("Error al reactivar contrato:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Error al Reactivar',
-            description: 'No se pudo reactivar el contrato. Revisa los permisos.',
-        });
-    } finally {
-        setIsGenerating(false);
-    }
-  };
-
 
   return (
     <div className="flex flex-col gap-8 print-container">
@@ -289,7 +234,7 @@ export default function ContractDetailPage() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Esta acción marcará el contrato como ANULADO, pero no eliminará ningún dato. Podrás reactivarlo más tarde si es necesario. El folio <span className="font-bold">{contract.folioNumber}</span> será afectado.
+                        Esta acción marcará el contrato como ANULADO. El folio <span className="font-bold">{contract.folioNumber}</span> será afectado.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -301,37 +246,18 @@ export default function ContractDetailPage() {
                   </AlertDialogContent>
                 </AlertDialog>
               )}
-               {role === 'Administrador' && contract && contract.status === 'expired' && (
-                <Button variant="secondary" onClick={handleReactivateContract}>
-                    <Undo className="mr-2 h-4 w-4" />
-                    Reactivar Contrato
-                </Button>
-               )}
             </div>
       </div>
       
       {isLoading && <p className="print-hide">Cargando contrato...</p>}
       {error && <p className="text-destructive print-hide">Error: {error.message}</p>}
       {contract && <ContractView contract={contract} />}
-      {!isLoading && !contract && (
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center print-hide">
-            <h3 className="mt-4 text-lg font-semibold text-foreground">
-                Contrato no encontrado
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-                El contrato que estás buscando no existe o no tienes permiso para verlo.
-            </p>
-        </div>
-      )}
 
-      {/* Modal para revisar y editar datos del certificado */}
       <Dialog open={isCertificateModalOpen} onOpenChange={setIsCertificateModalOpen}>
         <DialogContent className="print-hide sm:max-w-4xl">
             <DialogHeader>
                 <DialogTitle>Revisar y Generar Certificado</DialogTitle>
-                <DialogDescription>
-                    Verifica y edita los datos del estudiante antes de imprimir el certificado.
-                </DialogDescription>
+                <DialogDescription>Verifica los datos del estudiante antes de imprimir.</DialogDescription>
             </DialogHeader>
             <div className="max-h-[70vh] overflow-y-auto pr-4">
               <div className="grid gap-4 py-4">
@@ -346,51 +272,25 @@ export default function ContractDetailPage() {
                       </div>
                   </div>
                   <div className="space-y-2">
-                      <Label htmlFor="cert-name">Nombre Completo del Estudiante</Label>
+                      <Label htmlFor="cert-name">Nombre Completo</Label>
                       <Input id="cert-name" value={certificateData.clientName} onChange={(e) => handleCertDataChange('clientName', e.target.value)} />
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="space-y-2">
-                          <Label htmlFor="cert-firstName">Primer Nombre</Label>
-                          <Input id="cert-firstName" value={certificateData.firstName} onChange={(e) => handleCertDataChange('firstName', e.target.value)} />
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="cert-middleName">Segundo Nombre</Label>
-                          <Input id="cert-middleName" value={certificateData.middleName} onChange={(e) => handleCertDataChange('middleName', e.target.value)} />
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="cert-lastName">Primer Apellido</Label>
-                          <Input id="cert-lastName" value={certificateData.lastName} onChange={(e) => handleCertDataChange('lastName', e.target.value)} />
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="cert-secondLastName">Segundo Apellido</Label>
-                          <Input id="cert-secondLastName" value={certificateData.secondLastName} onChange={(e) => handleCertDataChange('secondLastName', e.target.value)} />
-                      </div>
+                      <div className="space-y-2"><Label>1er Nombre</Label><Input value={certificateData.firstName} onChange={(e) => handleCertDataChange('firstName', e.target.value)} /></div>
+                      <div className="space-y-2"><Label>2do Nombre</Label><Input value={certificateData.middleName} onChange={(e) => handleCertDataChange('middleName', e.target.value)} /></div>
+                      <div className="space-y-2"><Label>1er Apellido</Label><Input value={certificateData.lastName} onChange={(e) => handleCertDataChange('lastName', e.target.value)} /></div>
+                      <div className="space-y-2"><Label>2do Apellido</Label><Input value={certificateData.secondLastName} onChange={(e) => handleCertDataChange('secondLastName', e.target.value)} /></div>
                   </div>
-                  <div className="space-y-2">
-                      <Label htmlFor="cert-address">Dirección</Label>
-                      <Input id="cert-address" value={certificateData.address} onChange={(e) => handleCertDataChange('address', e.target.value)} />
-                  </div>
+                  <div className="space-y-2"><Label>Dirección</Label><Input value={certificateData.address} onChange={(e) => handleCertDataChange('address', e.target.value)} /></div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                          <Label htmlFor="cert-phone1">Teléfono 1</Label>
-                          <Input id="cert-phone1" value={certificateData.phone1} onChange={(e) => handleCertDataChange('phone1', e.target.value)} />
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="cert-phone2">Teléfono 2 (Opcional)</Label>
-                          <Input id="cert-phone2" value={certificateData.phone2 || ''} onChange={(e) => handleCertDataChange('phone2', e.target.value)} />
-                      </div>
+                      <div className="space-y-2"><Label>Teléfono 1</Label><Input value={certificateData.phone1} onChange={(e) => handleCertDataChange('phone1', e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Teléfono 2</Label><Input value={certificateData.phone2} onChange={(e) => handleCertDataChange('phone2', e.target.value)} /></div>
                   </div>
-                  <div className="space-y-2">
-                      <Label htmlFor="cert-license">Categoría de Licencia</Label>
-                      <Input id="cert-license" value={certificateData.licenseType} onChange={(e) => handleCertDataChange('licenseType', e.target.value)} />
-                  </div>
+                  <div className="space-y-2"><Label>Licencia</Label><Input value={certificateData.licenseType} onChange={(e) => handleCertDataChange('licenseType', e.target.value)} /></div>
               </div>
             </div>
             <DialogFooter>
-                <DialogClose asChild>
-                    <Button variant="ghost">Cancelar</Button>
-                </DialogClose>
+                <DialogClose asChild><Button variant="ghost">Cancelar</Button></DialogClose>
                 <Button onClick={handleProceedToPrint} disabled={isGenerating}>
                     {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
                     Imprimir Certificado

@@ -1,10 +1,97 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      // DESBLOQUEO TOTAL: Permite acceso de lectura y escritura a todos los roles operativos.
-      // Esto soluciona los errores de permisos en impresión y gestión multi-usuario.
-      allow read, write: if true;
+
+    /**
+     * FIREBASE SECURITY RULES DOCUMENTATION
+     * 
+     * Core Philosophy:
+     * This ruleset implements a strict path-based ownership model optimized for a contract management 
+     * application. Security is enforced primarily through the document path, ensuring that users 
+     * can only access data nested within their own unique identifier tree.
+     * 
+     * Data Structure:
+     * - /users/{userId}: Private user profile data.
+     * - /users/{userId}/contracts/{contractId}: Contracts owned by the specific user.
+     * - /clients/{clientId}: Global client registry (Read-only for authenticated users).
+     * 
+     * Key Security Decisions:
+     * 1. Path-Based Authorization: Contracts are nested under users (/users/{userId}/contracts/...) 
+     *    to provide a natural security boundary that aligns with Firestore's query-based access control.
+     * 2. Prototyping Flexibility: While authorization (who can access) is strictly enforced, 
+     *    data validation (the shape of the data) is kept minimal to allow for rapid UI iteration.
+     * 3. Resource-Specific Ownership: Writes to user-owned documents require the internal 
+     *    document IDs and ownership fields to match the authentication state and path parameters.
+     * 4. Safe State Transitions: All update and delete operations explicitly verify the 
+     *    existence of the document before proceeding to prevent orphaned requests.
+     */
+
+    // --- GLOBAL HELPER FUNCTIONS ---
+
+    /** Checks if the request is from an authenticated user. */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** Checks if the authenticated user's UID matches the provided userId. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /** Checks if the document exists and the current user is the owner. */
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    // --- COLLECTION RULES ---
+
+    /**
+     * @description Rules for the User profile documents. Only the user themselves can manage their profile.
+     * @path /users/{userId}
+     * @allow (get) If the authenticated UID matches the document ID.
+     * @deny (list) Attempts to list all users are blocked to protect user privacy.
+     * @principle Enforces self-creation and individual data ownership.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false; // Disallow user listing for privacy
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+
+      /**
+       * @description Rules for Contracts owned by a specific user.
+       * @path /users/{userId}/contracts/{contractId}
+       * @allow (create) If the user is authenticated and the path matches their UID.
+       * @deny (update) If a user attempts to change the owner of a contract.
+       * @principle Uses path-based segregation to ensure users only interact with their own data.
+       */
+      match /contracts/{contractId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
+    }
+
+    /**
+     * @description Rules for the Client registry.
+     * @path /clients/{clientId}
+     * @allow (get) If the user is authenticated.
+     * @deny (write) Currently blocked because the Client entity lacks an ownership field for secure validation.
+     * @principle Fallback to secure-by-default for missing schema metadata.
+     */
+    match /clients/{clientId} {
+      allow get, list: if isSignedIn();
+      
+      // CRITICAL: Cannot implement owner-only writes. The 'Client' entity is missing an 'ownerId' or 'userId' field.
+      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+    }
+
+    // --- DEFAULT DENY ---
+    // All paths not explicitly matched above are denied.
+    match /{path=**} {
+      allow read, write: if false;
     }
   }
 }

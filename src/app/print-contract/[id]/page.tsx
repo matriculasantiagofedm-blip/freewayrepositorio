@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -5,16 +6,19 @@ import { doc } from 'firebase/firestore';
 import { useEffect, Suspense } from 'react';
 import { ContractView } from '@/components/contract-view';
 import type { Contract } from '@/lib/types';
-import { useDb } from '@/components/firebase-provider';
+import { useDb, useFirebase } from '@/components/firebase-provider';
 import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
+import { signInAnonymously } from 'firebase/auth';
 
 /**
  * Página de impresión de contrato.
- * DESBLOQUEADA: Sin dependencias de rol para carga instantánea.
+ * DESBLOQUEADA: Acceso universal.
+ * Asegura sesión anónima para evitar errores de permisos en Firestore.
  */
 function PrintContractContent() {
   const { id } = useParams();
   const db = useDb();
+  const { auth } = useFirebase();
 
   const contractId = Array.isArray(id) ? id[0] : id;
 
@@ -26,10 +30,16 @@ function PrintContractContent() {
   const { data: contract, isLoading, error } = useDoc<Contract>(contractRef);
 
   useEffect(() => {
+    if (auth && !auth.currentUser) {
+      signInAnonymously(auth).catch(console.error);
+    }
+  }, [auth]);
+
+  useEffect(() => {
     if (contract && !isLoading) {
       const timer = setTimeout(() => {
         window.print();
-      }, 1000);
+      }, 1200);
       return () => clearTimeout(timer);
     }
   }, [contract, isLoading]);

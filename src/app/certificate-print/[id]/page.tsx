@@ -1,3 +1,4 @@
+
 'use client';
 import { useParams, useSearchParams } from 'next/navigation';
 import { doc } from 'firebase/firestore';
@@ -5,18 +6,21 @@ import type { Certificate, Contract } from '@/lib/types';
 import { CertificateTemplate } from '@/components/certificate-template';
 import { AmpliacionCertificateTemplate } from '@/components/ampliacion-certificate-template';
 import { useEffect, useState, useMemo, Suspense } from 'react';
-import { useDb } from '@/components/firebase-provider';
+import { useDb, useFirebase } from '@/components/firebase-provider';
 import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
 import { Timestamp } from 'firebase/firestore';
+import { signInAnonymously } from 'firebase/auth';
 
 /**
  * Motor de impresión de certificados.
- * DESBLOQUEADO: Sin dependencias de rol o sesión para carga instantánea.
+ * DESBLOQUEADO: Acceso universal para todos los roles operativos.
+ * Asegura sesión anónima inmediata para evitar errores de permisos en nuevas pestañas.
  */
 function CertificatePrintContent() {
   const { id } = useParams();
   const searchParams = useSearchParams();
   const db = useDb();
+  const { auth } = useFirebase();
 
   const contractId = Array.isArray(id) ? id[0] : id;
 
@@ -28,6 +32,13 @@ function CertificatePrintContent() {
   const { data: contract, isLoading: isContractLoading, error } = useDoc<Contract>(contractRef);
 
   const [certificate, setCertificate] = useState<Certificate | null>(null);
+
+  useEffect(() => {
+    // Asegurar que exista una sesión para evitar bloqueos de red
+    if (auth && !auth.currentUser) {
+      signInAnonymously(auth).catch(console.error);
+    }
+  }, [auth]);
 
   useEffect(() => {
     if (contract && !isContractLoading) {
@@ -65,7 +76,7 @@ function CertificatePrintContent() {
 
       const timer = setTimeout(() => {
         window.print();
-      }, 800);
+      }, 1000);
       
       return () => clearTimeout(timer);
     }

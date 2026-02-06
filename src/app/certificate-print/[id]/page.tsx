@@ -17,7 +17,7 @@ function CertificatePrintContent() {
 
   const contractRef = useMemoDoc(() => {
     if (!db || !contractId) return null;
-    // Desbloqueo: No dependemos de 'user' para evitar fallos de permisos al abrir pestaña
+    // Desbloqueo total: Acceso inmediato al documento sin depender del estado del usuario
     return doc(db, 'contracts', contractId);
   }, [db, contractId]);
 
@@ -87,7 +87,7 @@ function CertificatePrintContent() {
   if (!contract && !isContractLoading) return (
     <div className="p-8 text-center bg-white min-h-screen flex flex-col items-center justify-center">
         <h1 className="text-2xl font-bold mb-4">Contrato No Encontrado</h1>
-        <p className="text-muted-foreground">El documento no existe en la base de datos.</p>
+        <p className="text-muted-foreground">El documento no existe en la base de datos o ha sido movido.</p>
     </div>
   );
 

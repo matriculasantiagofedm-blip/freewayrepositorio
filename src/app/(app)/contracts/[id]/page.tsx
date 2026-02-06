@@ -81,6 +81,7 @@ export default function ContractDetailPage() {
 
   const contractRef = useMemoDoc(() => {
     if (!db || !contractId) return null;
+    // Desbloqueo: No dependemos de 'user' para visualización global
     return doc(db, `contracts`, contractId);
   }, [db, contractId]);
 

@@ -17,6 +17,7 @@ export default function PrintContractPage() {
 
   const contractRef = useMemoDoc(() => {
     if (!db || !contractId) return null;
+    // Desbloqueo: No dependemos de 'user' para evitar fallos de permisos al abrir pestaña
     return doc(db, `contracts`, contractId);
   }, [db, contractId]);
 
@@ -48,7 +49,7 @@ export default function PrintContractPage() {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-white p-8 text-center">
         <h1 className="text-2xl font-bold mb-2">Documento No Encontrado</h1>
-        <p className="text-muted-foreground">El contrato solicitado no existe.</p>
+        <p className="text-muted-foreground">El contrato solicitado no existe en la base de datos.</p>
       </div>
     );
   }

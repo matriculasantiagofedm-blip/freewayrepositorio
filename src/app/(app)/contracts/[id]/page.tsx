@@ -81,7 +81,7 @@ export default function ContractDetailPage() {
 
   const contractRef = useMemoDoc(() => {
     if (!db || !contractId) return null;
-    // Desbloqueo: Carga global sin dependencia de 'user' para visualización y gestión corporativa
+    // Desbloqueo total: Carga sin dependencia de sesión de usuario para máxima velocidad
     return doc(db, `contracts`, contractId);
   }, [db, contractId]);
 
@@ -147,7 +147,7 @@ export default function ContractDetailPage() {
   
   const handleProceedToPrint = async () => {
     if (!certificateData.folio || !db || !contractRef || !contract) {
-        toast({ variant: 'destructive', title: 'Datos Inválidos', description: 'No se puede imprimir sin datos válidos.' });
+        toast({ variant: 'destructive', title: 'Datos Inválidos', description: 'Faltan datos para imprimir.' });
         return;
     }
     if (contract.type === 'Ampliaciones' && selectedLicenses.length === 0) {
@@ -181,7 +181,7 @@ export default function ContractDetailPage() {
         window.open(`/certificate-print/${contractId}?${queryParams.toString()}`, '_blank');
         setIsCertificateModalOpen(false);
     } catch (error) {
-        toast({ variant: 'destructive', title: 'Error al Guardar', description: 'No se pudo guardar el folio.' });
+        toast({ variant: 'destructive', title: 'Error al Guardar', description: 'No se pudo actualizar el folio.' });
     } finally {
         setIsGenerating(false);
     }
@@ -199,7 +199,7 @@ export default function ContractDetailPage() {
       toast({ title: 'Contrato Anulado', description: `Folio ${contract.folioNumber} anulado.` });
       router.refresh();
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Error al anular', description: 'Fallo al anular contrato.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'Fallo al anular.' });
     } finally {
       setIsGenerating(false);
     }
@@ -213,7 +213,7 @@ export default function ContractDetailPage() {
       toast({ title: 'Contrato Reactivado', description: `Folio ${contract.folioNumber} reactivado.` });
       router.refresh();
     } catch (error) {
-        toast({ variant: 'destructive', title: 'Error al Reactivar', description: 'No se pudo reactivar.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo reactivar.' });
     } finally {
         setIsGenerating(false);
     }
@@ -231,7 +231,7 @@ export default function ContractDetailPage() {
                 </Button>
             </div>
             <div className="flex items-center gap-2">
-              {/* DESBLOQUEO: Ventas y Ventas Externas ahora pueden generar certificados */}
+              {/* DESBLOQUEO: Todos los roles operativos pueden generar certificados ahora */}
               {canGenerateCertificate && (role === 'Administrador' || role === 'Ventas' || role === 'Ventas Externas') && (
                 <Button onClick={handleOpenCertificateModal}>
                   <Award className="mr-2 h-4 w-4" />
@@ -283,7 +283,7 @@ export default function ContractDetailPage() {
         <DialogContent className="print-hide sm:max-w-4xl">
             <DialogHeader>
                 <DialogTitle>Generar Certificado</DialogTitle>
-                <DialogDescription>Verifica los datos antes de imprimir.</DialogDescription>
+                <DialogDescription>Verifica los datos del estudiante.</DialogDescription>
             </DialogHeader>
             <div className="max-h-[70vh] overflow-y-auto pr-4">
               <div className="grid gap-4 py-4">
@@ -315,8 +315,8 @@ export default function ContractDetailPage() {
                         <div className="grid grid-cols-3 gap-2 rounded-md border p-4">
                             {contract.ampliacionesDetails.selectedPlans.map((plan) => (
                                 <div key={plan.name} className="flex items-center space-x-2">
-                                    <Checkbox id={`check-${plan.name}`} checked={selectedLicenses.includes(plan.name)} onCheckedChange={(c) => setSelectedLicenses(prev => c ? [...prev, plan.name] : prev.filter(n => n !== plan.name))} />
-                                    <label htmlFor={`check-${plan.name}`} className="text-sm">{plan.name}</label>
+                                    <Checkbox id={`chk-${plan.name}`} checked={selectedLicenses.includes(plan.name)} onCheckedChange={(c) => setSelectedLicenses(prev => c ? [...prev, plan.name] : prev.filter(n => n !== plan.name))} />
+                                    <label htmlFor={`chk-${plan.name}`} className="text-sm">{plan.name}</label>
                                 </div>
                             ))}
                         </div>

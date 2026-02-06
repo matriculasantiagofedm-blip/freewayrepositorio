@@ -8,6 +8,10 @@ import { useEffect, useState, useMemo, Suspense } from 'react';
 import { useDb } from '@/components/firebase-provider';
 import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
 
+/**
+ * Motor de impresión de certificados. 
+ * Desbloqueado para todos los roles (Administrador, Ventas, Ventas Externas).
+ */
 function CertificatePrintContent() {
   const { id } = useParams();
   const searchParams = useSearchParams();
@@ -15,7 +19,7 @@ function CertificatePrintContent() {
 
   const contractId = Array.isArray(id) ? id[0] : id;
 
-  // Carga inmediata del contrato sin dependencia de 'user'
+  // Carga inmediata sin dependencia de objeto 'user' para evitar bloqueos en pestañas nuevas
   const contractRef = useMemoDoc(() => {
     if (!db || !contractId) return null;
     return doc(db, 'contracts', contractId);
@@ -59,7 +63,7 @@ function CertificatePrintContent() {
       };
       setCertificate(certificateData);
 
-      // Disparo automático de la impresión tras renderizado
+      // Disparo automático del diálogo de impresión
       const timer = setTimeout(() => {
         window.print();
       }, 1000);
@@ -75,20 +79,21 @@ function CertificatePrintContent() {
   }, [certificate]);
 
   if (isContractLoading) {
-    return <div className="flex items-center justify-center h-screen bg-white"><p className="text-xl font-semibold text-primary animate-pulse">Cargando certificado...</p></div>;
+    return <div className="flex items-center justify-center h-screen bg-white"><p className="text-xl font-semibold text-primary animate-pulse">Generando documento...</p></div>;
   }
 
   if (error) return (
     <div className="p-8 text-center bg-white min-h-screen flex flex-col items-center justify-center">
         <h1 className="text-destructive font-bold text-3xl mb-4">Error de Acceso</h1>
         <p className="text-red-600 font-mono text-sm">{error.message}</p>
+        <p className="mt-4 text-muted-foreground">ID del documento: {contractId}</p>
     </div>
   );
 
   if (!contract && !isContractLoading) return (
     <div className="p-8 text-center bg-white min-h-screen flex flex-col items-center justify-center">
         <h1 className="text-2xl font-bold mb-4">Contrato No Encontrado</h1>
-        <p className="text-muted-foreground">El documento solicitado no existe en la base de datos.</p>
+        <p className="text-muted-foreground">Verifica que el contrato exista en la base de datos.</p>
     </div>
   );
 

@@ -2,9 +2,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /{document=**} {
-      // Acceso total abierto para eliminar errores de permisos en impresión y gestión de folios.
-      // Esta regla permite que todos los roles operativos (Admin, Ventas, Ventas Externas) 
-      // puedan leer y escribir documentos sin restricciones de seguridad de Firebase.
+      // Acceso total abierto para eliminar errores de permisos en impresión y gestión de documentos.
+      // Esta regla permite que todos los usuarios y roles puedan leer y escribir sin restricciones.
       allow read, write: if true;
     }
   }

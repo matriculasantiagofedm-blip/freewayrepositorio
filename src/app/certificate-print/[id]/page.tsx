@@ -17,7 +17,7 @@ function CertificatePrintContent() {
 
   const contractRef = useMemoDoc(() => {
     if (!db || !contractId) return null;
-    // Desbloqueo total: Acceso inmediato al documento sin depender del estado del usuario
+    // Desbloqueo: Se elimina la dependencia de 'user' para evitar fallos de hidratación de sesión en la nueva pestaña
     return doc(db, 'contracts', contractId);
   }, [db, contractId]);
 

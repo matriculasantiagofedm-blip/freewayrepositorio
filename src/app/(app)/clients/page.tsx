@@ -23,7 +23,7 @@ export default function ClientsPage() {
   const { role } = useCurrentRole();
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Desbloqueo total: Todos los roles operativos (Admin, Ventas, Ventas Externas) pueden ver la lista de clientes.
+  // DESBLOQUEO TOTAL: Todos los roles operativos ven el listado completo de clientes
   const clientsQuery = useMemoQuery(() => {
     if (!db || !role || (role !== 'Administrador' && role !== 'Ventas' && role !== 'Ventas Externas')) return null;
     return collection(db, 'clients');
@@ -36,31 +36,20 @@ export default function ClientsPage() {
       const name = client.name.toLowerCase();
       const idNumber = client.idNumber?.toLowerCase() || '';
       const search = searchTerm.toLowerCase();
-
       return name.includes(search) || idNumber.includes(search);
     }) || [];
 
   const renderContent = () => {
-    // Si no tiene un rol válido, acceso restringido.
     if (role && (role !== 'Administrador' && role !== 'Ventas' && role !== 'Ventas Externas')) {
       return (
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
-          <h3 className="mt-4 text-lg font-semibold text-foreground">
-            Acceso Restringido
-          </h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            No tienes permiso para ver esta sección.
-          </p>
-          <Button asChild className="mt-4">
-            <Link href="/dashboard">Volver al Panel</Link>
-          </Button>
+        <div className="p-12 text-center border-2 border-dashed rounded-lg">
+          <h3 className="text-lg font-semibold">Acceso Restringido</h3>
+          <Button asChild className="mt-4"><Link href="/dashboard">Volver al Panel</Link></Button>
         </div>
       );
     }
     
-    if (isLoading) {
-      return <p>Cargando clientes...</p>;
-    }
+    if (isLoading) return <p>Cargando clientes...</p>;
 
     if (filteredClients.length > 0) {
       return (
@@ -82,10 +71,7 @@ export default function ClientsPage() {
                   <TableCell>{client.idNumber || 'No disponible'}</TableCell>
                   <TableCell className="text-right">
                     <Button asChild variant="ghost" size="icon">
-                      <Link href={`/clients/${client.id}`}>
-                        <Eye className="h-4 w-4" />
-                        <span className="sr-only">Ver Cliente</span>
-                      </Link>
+                      <Link href={`/clients/${client.id}`}><Eye className="h-4 w-4" /></Link>
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -96,27 +82,9 @@ export default function ClientsPage() {
       );
     }
 
-    if (searchTerm) {
-      return (
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
-          <h3 className="mt-4 text-lg font-semibold text-foreground">
-            No se encontraron clientes
-          </h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Intenta con otro término de búsqueda.
-          </p>
-        </div>
-      );
-    }
-
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
-        <h3 className="mt-4 text-lg font-semibold text-foreground">
-          No hay clientes para mostrar
-        </h3>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Cuando se cree el primer contrato, el cliente aparecerá aquí.
-        </p>
+      <div className="p-12 text-center border-2 border-dashed rounded-lg">
+        <h3 className="text-lg font-semibold">{searchTerm ? 'No se encontraron resultados' : 'No hay clientes registrados'}</h3>
       </div>
     );
   };
@@ -127,13 +95,7 @@ export default function ClientsPage() {
         <h1 className="font-headline text-3xl font-bold">Clientes</h1>
         <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar por nombre o cédula..."
-            className="pl-8 sm:w-[300px]"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          <Input type="search" placeholder="Nombre o cédula..." className="pl-8 sm:w-[300px]" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
       </div>
       {renderContent()}

@@ -2,8 +2,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /{document=**} {
-      // Reglas totalmente abiertas para garantizar que la impresión y actualización de folios funcione sin bloqueos.
-      // Esto elimina el error "Missing or insufficient permissions" de forma global.
+      // Acceso total abierto para eliminar errores de permisos en impresión y gestión de folios.
+      // Esta regla permite que todos los roles operativos (Admin, Ventas, Ventas Externas) 
+      // puedan leer y escribir documentos sin restricciones de seguridad de Firebase.
       allow read, write: if true;
     }
   }

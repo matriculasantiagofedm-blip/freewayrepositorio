@@ -212,7 +212,8 @@ export default function ContractDetailPage() {
                 </Button>
             </div>
             <div className="flex items-center gap-2">
-              {canGenerateCertificate && role !== 'Ventas' && (
+              {/* Conceder permiso de impresión a todos los roles operativos: Admin, Ventas y Ventas Ext */}
+              {canGenerateCertificate && (role === 'Administrador' || role === 'Ventas' || role === 'Ventas Externas') && (
                 <Button onClick={handleOpenCertificateModal}>
                   <Award className="mr-2 h-4 w-4" />
                   Generar Certificado

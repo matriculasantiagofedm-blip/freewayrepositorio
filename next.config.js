@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   typescript: {
-    // Ignorar errores de tipos para asegurar que el build pase en el servidor
+    // Ignorar errores de tipos para asegurar que el build pase en el servidor de Firebase
     ignoreBuildErrors: true,
   },
   eslint: {

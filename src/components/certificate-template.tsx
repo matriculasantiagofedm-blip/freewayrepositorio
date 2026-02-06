@@ -1,6 +1,5 @@
-
 'use client';
-import type { Certificate, Contract } from '@/lib/types';
+import type { Certificate } from '@/lib/types';
 import { format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toDate } from '@/lib/utils';
@@ -114,27 +113,21 @@ function CertificateBack({ certificate }: { certificate: Certificate }) {
 
     const details = contract.autoMotoDetails || contract.deluxeDetails;
     const issueDate = toDate(certificate.issueDate);
-    const validityDate = !isNaN(issueDate.getTime()) ? addDays(issueDate, 1) : null;
+    const validityDate = !isNaN(issueDate.getTime()) ? addDays(issueDate, 364) : null;
     
     return (
         <div className="w-[11in] h-[8.5in] p-8 bg-white flex flex-col text-black font-serif justify-start break-before-page">
             <div className="space-y-6 flex-grow flex flex-col justify-start text-sm pt-8">
-                <p>Yo, <span className="font-semibold">{contract.clientName}</span></p>
-                <p>Número de Documento: <span className="font-semibold">{details?.studentIdNumber}</span></p>
-                <p>Hago constar que resido en: <span className="font-semibold">{details?.studentAddress}</span></p>
-                <p>con teléfono residencial: <span className="font-semibold">{details?.studentPhone1}</span> teléfono celular: <span className="font-semibold">{details?.studentPhone2}</span></p>
-                <p className="font-bold">TIPO DE LICENCIAS: <span className="font-semibold">{getLicenseTypeText(details?.licenseCategory)}</span></p>
-                {validityDate && <p>Este certificado tiene validez de 364 días a partir de <span className="font-semibold">{format(validityDate, 'dd-MM-yyyy')}</span></p>}
+                <p>Yo, <span className="font-semibold">{certificate.clientName}</span></p>
+                <p>Número de Documento: <span className="font-semibold">{certificate.cip}</span></p>
+                <p>Hago constar que resido en: <span className="font-semibold">{details?.studentAddress || 'No especificada'}</span></p>
+                <p>con teléfono residencial: <span className="font-semibold">{details?.studentPhone1 || 'N/A'}</span> teléfono celular: <span className="font-semibold">{details?.studentPhone2 || 'N/A'}</span></p>
+                <p className="font-bold">TIPO DE LICENCIAS: <span className="font-semibold">{certificate.licenseType}</span></p>
+                {validityDate && <p>Este certificado tiene validez de 364 días a partir de <span className="font-semibold">{format(issueDate, 'dd-MM-yyyy')}</span></p>}
             </div>
         </div>
     );
 }
-
-const getLicenseTypeText = (licenseType?: string) => {
-    if (!licenseType) return '';
-    return licenseType.split(',').map(l => l.trim()).join(', ');
-}
-
 
 export function CertificateTemplate({ certificate }: { certificate: Certificate | null }) {
   if (!certificate) {

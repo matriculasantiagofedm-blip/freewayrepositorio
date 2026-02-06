@@ -49,10 +49,10 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
         <div className="w-[11in] h-[8.5in] p-8 bg-white text-black font-serif mx-auto print:m-0">
             <div className="w-full h-full border-[3px] border-black flex flex-col p-8 relative overflow-hidden">
                 
-                {/* Franja Amarilla y Negra Superior Izquierda (Estilo Imagen) */}
-                <div className="absolute top-[-5px] left-[-5px] w-64 h-6 z-10">
+                {/* Franja Diagonal Amarilla y Negra Superior Izquierda */}
+                <div className="absolute top-[-10px] left-[-10px] w-72 h-8 z-10">
                     <div className="w-full h-full bg-yellow-400" style={{
-                        backgroundImage: 'repeating-linear-gradient(45deg, #fbbf24, #fbbf24 10px, #000 10px, #000 20px)'
+                        backgroundImage: 'repeating-linear-gradient(45deg, #fbbf24, #fbbf24 15px, #000 15px, #000 30px)'
                     }}></div>
                 </div>
 
@@ -103,7 +103,7 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                 
                 <footer className="w-full flex-shrink-0 flex justify-end pb-4 pr-12">
                     <div className="text-center w-96 flex flex-col items-center">
-                        <div className="w-full border-t border-black mb-2"></div>
+                        <div className="w-full border-t-2 border-black mb-2"></div>
                         <p className="text-lg italic font-medium leading-none">CEO—Representante Legal</p>
                         <p className='text-xl italic font-bold'>Lic. Ayax Ortega</p>
                     </div>
@@ -119,39 +119,31 @@ function CertificateBack({ certificate }: { certificate: Certificate }) {
 
     const details = contract.autoMotoDetails || contract.deluxeDetails;
     const issueDate = toDate(certificate.issueDate);
-    const validityDate = !isNaN(issueDate.getTime()) ? new Date(issueDate.getTime() + (364 * 24 * 60 * 60 * 1000)) : null;
+    const formattedIssueDate = !isNaN(issueDate.getTime()) ? format(issueDate, 'dd-MM-yyyy') : '00-00-0000';
     
     return (
-        <div className="w-[11in] h-[8.5in] p-16 bg-white flex flex-col text-black font-serif justify-start break-before-page mx-auto border border-gray-200 print:border-none">
-            <div className="space-y-8 flex-grow flex flex-col justify-start text-xl pt-16 px-16 leading-loose">
-                <h2 className="text-3xl font-bold border-b-2 border-black pb-4 mb-8">DATOS DEL ESTUDIANTE</h2>
-                
-                <p>Yo, <span className="font-bold border-b border-black px-2">{certificate.clientName.toUpperCase()}</span></p>
-                
-                <p>Número de Documento: <span className="font-bold border-b border-black px-2">{certificate.cip}</span></p>
-                
-                <p>Hago constar que resido en: <span className="font-bold border-b border-black px-2">{details?.studentAddress || 'La Chorrera, Panamá'}</span></p>
-                
+        <div className="w-[11in] h-[8.5in] p-16 bg-white text-black font-sans text-xl flex flex-col justify-start break-before-page mx-auto print:m-0 print:p-12">
+            <div className="space-y-6 pt-12">
+                <p>Yo, <span className="font-bold">{certificate.clientName.toUpperCase()}</span></p>
+                <p>Número de Documento: <span className="font-bold">{certificate.cip}</span></p>
+                <p>Hago constar que resido en: <span className="font-bold">{details?.studentAddress || '--------------------'}</span></p>
                 <p>
-                    con teléfono residencial: <span className="font-bold border-b border-black px-2">{details?.studentPhone1 || 'N/A'}</span> 
-                    y teléfono celular: <span className="font-bold border-b border-black px-2">{details?.studentPhone2 || 'N/A'}</span>
+                    con teléfono residencial: <span className="font-bold">{details?.studentPhone1 || '-----'}</span> &nbsp; &nbsp; 
+                    teléfono celular: <span className="font-bold">{details?.studentPhone2 || '-----'}</span>
                 </p>
+                <p><span className="font-bold uppercase">TIPO DE LICENCIAS:</span> {certificate.licenseType}</p>
+                <p>Este certificado tiene validez de 364 días a partir de <span className="font-bold">{formattedIssueDate}</span></p>
                 
-                <p className="font-bold pt-4 uppercase">TIPO DE LICENCIAS SOLICITADAS: <span className="border-b-2 border-black px-4">{certificate.licenseType}</span></p>
-                
-                {validityDate && (
-                    <div className="mt-12 p-6 border-2 border-dashed border-black bg-gray-50">
-                        <p className="text-center font-bold">
-                            ESTE CERTIFICADO TIENE UNA VALIDEZ DE 364 DÍAS A PARTIR DEL: 
-                            <br />
-                            <span className="text-3xl mt-2 block underline">{format(issueDate, 'dd-MM-yyyy')}</span>
-                        </p>
+                <div className="pt-4 space-y-4">
+                    <div className="grid grid-cols-2 gap-x-12">
+                        <p>Primer Nombre: <span className="font-bold">{certificate.firstName || '--------'}</span></p>
+                        <p>Segundo Nombre: <span className="font-bold">{certificate.middleName || '--------'}</span></p>
                     </div>
-                )}
-            </div>
-            
-            <div className="mt-auto text-center text-sm text-gray-400">
-                <p>FREEWAY ESCUELA DE MANEJO S.A. - RUC 155628022-2-2016 DV 2</p>
+                    <div className="grid grid-cols-2 gap-x-12">
+                        <p>Primer Apellido: <span className="font-bold">{certificate.lastName || '--------'}</span></p>
+                        <p>Segundo Apellido: <span className="font-bold">{certificate.secondLastName || '--------'}</span></p>
+                    </div>
+                </div>
             </div>
         </div>
     );

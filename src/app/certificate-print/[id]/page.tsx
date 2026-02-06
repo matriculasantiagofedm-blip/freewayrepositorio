@@ -1,16 +1,17 @@
 'use client';
 import { useParams, useSearchParams } from 'next/navigation';
-import { doc, Timestamp } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import type { Certificate, Contract } from '@/lib/types';
 import { CertificateTemplate } from '@/components/certificate-template';
 import { AmpliacionCertificateTemplate } from '@/components/ampliacion-certificate-template';
 import { useEffect, useState, useMemo, Suspense } from 'react';
 import { useDb } from '@/components/firebase-provider';
 import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
+import { Timestamp } from 'firebase/firestore';
 
 /**
- * Motor de impresión de certificados. 
- * DESBLOQUEADO: Carga inmediata sin dependencia de sesión de usuario para evitar bloqueos.
+ * Motor de impresión de certificados.
+ * DESBLOQUEADO: Sin dependencias de rol o sesión para carga instantánea.
  */
 function CertificatePrintContent() {
   const { id } = useParams();
@@ -19,7 +20,6 @@ function CertificatePrintContent() {
 
   const contractId = Array.isArray(id) ? id[0] : id;
 
-  // Carga inmediata del documento desde Firestore sin esperar a request.auth
   const contractRef = useMemoDoc(() => {
     if (!db || !contractId) return null;
     return doc(db, 'contracts', contractId);
@@ -63,7 +63,6 @@ function CertificatePrintContent() {
       };
       setCertificate(certificateData);
 
-      // Disparo automático de impresión
       const timer = setTimeout(() => {
         window.print();
       }, 800);
@@ -86,6 +85,7 @@ function CertificatePrintContent() {
     <div className="p-8 text-center bg-white min-h-screen flex flex-col items-center justify-center">
         <h1 className="text-destructive font-bold text-3xl mb-4">Error de Acceso</h1>
         <p className="text-muted-foreground">{error.message}</p>
+        <p className="text-xs mt-4 text-gray-400">ID del documento: {contractId}</p>
     </div>
   );
 

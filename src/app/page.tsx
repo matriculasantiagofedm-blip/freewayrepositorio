@@ -27,7 +27,6 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      {/* Hero Section */}
       <section className="bg-white dark:bg-slate-900 border-b shadow-sm py-16 px-6">
         <div className="max-w-4xl mx-auto text-center space-y-6">
           <div className="flex justify-center mb-4">
@@ -55,7 +54,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* AI Section */}
       <section id="ai-section" className="py-20 px-6 max-w-4xl mx-auto flex flex-col items-center gap-8">
         <div className="text-center space-y-2">
           <h2 className="font-headline text-3xl font-bold">Analizador de Contratos</h2>
@@ -63,62 +61,18 @@ export default function Home() {
         </div>
 
         <div className="w-full flex flex-col gap-6">
-          <Button 
-            onClick={handleAction} 
-            disabled={isLoading}
-            size="lg"
-            className="w-full font-semibold shadow-md"
-          >
-            {isLoading ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Procesando con IA...</>
-            ) : (
-              'Analizar Contrato de Prueba'
-            )}
+          <Button onClick={handleAction} disabled={isLoading} size="lg" className="w-full font-semibold shadow-md">
+            {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Procesando...</> : 'Analizar Contrato de Prueba'}
           </Button>
 
           {result && (
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <Card className="border-primary/20 shadow-lg bg-white dark:bg-slate-900">
                 <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-primary font-headline">
-                    <FileText className="h-5 w-5" />
-                    Resumen Ejecutivo
-                  </CardTitle>
+                  <CardTitle className="flex items-center gap-2 text-primary font-headline"><FileText className="h-5 w-5" /> Resumen Ejecutivo</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-sm leading-relaxed font-body">{result.summary}</p>
-                </CardContent>
+                <CardContent><p className="text-sm leading-relaxed font-body">{result.summary}</p></CardContent>
               </Card>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="border-destructive/20 shadow-md bg-white dark:bg-slate-900">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="flex items-center gap-2 text-destructive text-base font-headline">
-                      <ShieldAlert className="h-4 w-4" />
-                      Riesgos Detectados
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="list-disc list-inside text-sm space-y-1 font-body">
-                      {result.risks.map((risk: string, i: number) => (
-                        <li key={i}>{risk}</li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-
-                <Card className="border-blue-200 shadow-md bg-white dark:bg-slate-900">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="flex items-center gap-2 text-blue-600 text-base font-headline">
-                      <Calendar className="h-4 w-4" />
-                      Vencimiento Estimado
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm font-semibold font-body">{result.expirationDate || 'No identificada'}</p>
-                  </CardContent>
-                </Card>
-              </div>
             </div>
           )}
         </div>

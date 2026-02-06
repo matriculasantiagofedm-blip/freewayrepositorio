@@ -156,6 +156,13 @@ export interface MileageLog {
   totalDistance?: number;
 }
 
+export interface VehicleMileage {
+  name: VehicleName;
+  initialMileage: number;
+  finalMileage: number;
+  distance: number;
+}
+
 export type MaintenanceLog = {
   id: string;
   date: Timestamp | FieldValue;

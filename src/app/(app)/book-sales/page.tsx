@@ -86,7 +86,6 @@ export default function BookSalesPage() {
         };
         transaction.set(paymentRef, paymentData);
 
-        // Store data for printing
         Object.assign(paymentDataToSave, { ...paymentData, id: paymentRef.id, paymentDate: new Date() as any });
       });
 
@@ -110,7 +109,7 @@ export default function BookSalesPage() {
         date: format(new Date(), 'PPP', { locale: es }),
         name: savedPaymentData.clientName || '',
         idNumber: savedPaymentData.studentIdNumber || '',
-        address: '-', // Address is not collected for book sales
+        address: '-',
         concept: `Venta de libro: ${selectedBook.title}`,
         amount: String(selectedBook.price.toFixed(2)),
     });

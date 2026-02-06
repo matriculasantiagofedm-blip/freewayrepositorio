@@ -51,11 +51,9 @@ function AllContractsContent() {
 
   const contractsQuery = useMemoQuery(() => {
     if (!db || !user || !role) return null;
-    let q = query(collection(db, 'contracts'), orderBy('folioNumber', 'desc'));
-    if (role !== 'Administrador' && role !== 'Ventas') {
-      q = query(q, where('userId', '==', user.uid));
-    }
-    return q;
+    
+    // Desbloqueo total: Todos los roles operativos ven todos los contratos ordenados por folio
+    return query(collection(db, 'contracts'), orderBy('folioNumber', 'desc'));
   }, [db, user, role]);
 
   const { data: allContracts, isLoading } = useCollection<Contract>(contractsQuery);

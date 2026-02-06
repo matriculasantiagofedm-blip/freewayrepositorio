@@ -3,7 +3,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /{document=**} {
       // ACCESO TOTAL GARANTIZADO: Esta regla elimina cualquier error de "Missing or insufficient permissions"
-      // permitiendo que todos los roles operativos puedan imprimir y gestionar contratos sin bloqueos.
+      // permitiendo que todos los roles operativos (Admin, Ventas, Ventas Externas) puedan gestionar la base de datos.
       allow read, write: if true;
     }
   }

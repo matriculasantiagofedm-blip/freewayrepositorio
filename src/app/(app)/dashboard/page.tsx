@@ -54,15 +54,8 @@ export default function DashboardPage() {
   const contractsQuery = useMemoQuery(() => {
     if (!db || !user || !role) return null;
     
-    const contractsCollection = collection(db, 'contracts');
-
-    // Admin and Ventas can see all contracts from the root collection
-    if (role === 'Administrador' || role === 'Ventas') {
-        return query(contractsCollection);
-    }
-
-    // Fallback for any other user to see only their contracts
-    return query(contractsCollection, where('userId', '==', user.uid));
+    // Desbloqueo total: Todos los roles operativos pueden ver todos los contratos
+    return query(collection(db, 'contracts'));
   }, [db, user, role]);
 
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
@@ -75,13 +68,12 @@ export default function DashboardPage() {
   
   const totalClients = contracts ? new Set(contracts.map((c) => c.clientId)).size : 0;
 
-  const allStats = [
+  const stats = [
     {
       title: 'Contratos Activos',
       value: isLoading ? '...' : activeContracts,
       icon: FileText,
       href: '/contracts',
-      roles: ['Administrador'],
     },
     {
       title: 'Contratos por Cobrar',
@@ -89,18 +81,14 @@ export default function DashboardPage() {
       secondaryValue: isLoading ? '...' : `B/. ${overdueTotalAmount.toFixed(2)}`,
       icon: CalendarClock,
       href: '/contracts?filter=overdue',
-      roles: ['Administrador'],
     },
     {
       title: 'Clientes',
       value: isLoading ? '...' : totalClients,
       icon: Users,
       href: '/clients',
-       roles: ['Administrador'],
     },
   ];
-
-  const stats = allStats.filter(stat => stat.roles.includes(role || ''));
 
   const contractTypes = [
       { name: 'Curso Auto', icon: Car, href: '/contracts/new?type=Curso%20Auto', bgColor: 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40', textColor: 'text-blue-600 dark:text-blue-300'},

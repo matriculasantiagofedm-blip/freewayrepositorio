@@ -27,7 +27,7 @@ const navLinks = [
     href: '/clients',
     label: 'Clientes',
     icon: Users,
-    roles: ['Administrador'],
+    roles: ['Administrador', 'Ventas', 'Ventas Externas'],
   },
   {
     label: 'Pagos',
@@ -86,7 +86,7 @@ const navLinks = [
           href: '/contracts',
           label: 'Todos los Contratos',
           icon: FileText,
-          roles: ['Administrador'],
+          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
       {
           href: '/reports/cancellation-payments',

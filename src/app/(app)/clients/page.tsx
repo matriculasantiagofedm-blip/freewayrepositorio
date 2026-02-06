@@ -1,6 +1,5 @@
-
 'use client';
-import { collection, query } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import type { Client } from '@/lib/types';
 import Link from 'next/link';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -24,9 +23,9 @@ export default function ClientsPage() {
   const { role } = useCurrentRole();
   const [searchTerm, setSearchTerm] = useState('');
 
-  // 'Administrador' puede ver todos los clientes directamente.
+  // Desbloqueo total: Todos los roles operativos (Admin, Ventas, Ventas Externas) pueden ver la lista de clientes.
   const clientsQuery = useMemoQuery(() => {
-    if (!db || !role || role !== 'Administrador') return null;
+    if (!db || !role || (role !== 'Administrador' && role !== 'Ventas' && role !== 'Ventas Externas')) return null;
     return collection(db, 'clients');
   }, [db, role]);
 
@@ -42,8 +41,8 @@ export default function ClientsPage() {
     }) || [];
 
   const renderContent = () => {
-    // Si no es un administrador, mostrar acceso restringido de inmediato.
-    if (role && role !== 'Administrador') {
+    // Si no tiene un rol válido, acceso restringido.
+    if (role && (role !== 'Administrador' && role !== 'Ventas' && role !== 'Ventas Externas')) {
       return (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
           <h3 className="mt-4 text-lg font-semibold text-foreground">

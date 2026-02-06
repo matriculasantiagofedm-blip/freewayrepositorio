@@ -75,7 +75,6 @@ export default function ContractDetailPage() {
   const [lastFolio, setLastFolio] = useState<string | null>(null);
 
   useEffect(() => {
-    // This effect runs on the client side only
     setLastFolio(localStorage.getItem('lastCertificateFolio'));
   }, []);
 
@@ -132,11 +131,11 @@ export default function ContractDetailPage() {
   };
 
   const handleProceedToPrint = async () => {
-    if (!certificateData.folio || !db || !contractRef || !contract) {
+    if (!certificateData.folio || !db || !contractRef || !contract || !user) {
         toast({
             variant: 'destructive',
-            title: 'Datos Inválidos',
-            description: 'No se puede imprimir sin un número de folio o datos de contrato válidos.',
+            title: 'Operación no permitida',
+            description: 'No se han podido cargar los datos necesarios o no tienes una sesión activa.',
         });
         return;
     }
@@ -148,9 +147,11 @@ export default function ContractDetailPage() {
             certificateGeneratedAt: serverTimestamp() as any,
             certificateFolio: certificateData.folio,
         };
+        
+        // Actualizar el documento en Firestore
         await updateDoc(contractRef, updateData);
 
-        // Store the new folio in localStorage
+        // Guardar el último folio usado localmente
         localStorage.setItem('lastCertificateFolio', certificateData.folio);
         setLastFolio(certificateData.folio);
 
@@ -167,17 +168,17 @@ export default function ContractDetailPage() {
             secondLastName: certificateData.secondLastName,
         });
 
-        // Open print window
         const printUrl = `/certificate-print/${contractId}?${queryParams.toString()}`;
         window.open(printUrl, '_blank');
         setIsCertificateModalOpen(false);
+        toast({ title: 'Certificado Generado', description: 'El documento se ha guardado y está listo para imprimir.' });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error updating certificate folio:", error);
         toast({
             variant: 'destructive',
-            title: 'Error al Guardar',
-            description: 'No se pudo guardar el folio del certificado. Por favor, revisa tus permisos e inténtalo de nuevo.',
+            title: 'Error de Permisos',
+            description: 'No tienes permisos suficientes para actualizar este contrato o la sesión ha expirado.',
         });
     } finally {
         setIsGenerating(false);
@@ -198,7 +199,6 @@ export default function ContractDetailPage() {
     setIsGenerating(true);
   
     try {
-      // NON-DESTRUCTIVE: Only change the status
       const updateData = {
         status: 'expired' as const,
       };

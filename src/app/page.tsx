@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, GanttChart, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { LayoutDashboard, GanttChart, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Home() {
@@ -26,7 +26,7 @@ export default function Home() {
               </p>
               <p className="text-xl text-muted-foreground font-body max-w-2xl mx-auto leading-relaxed">
                 Gestión integral de contratos, pagos y control de flota. 
-                Todo lo que tu escuela necesita en una plataforma moderna y segura.
+                Plataforma administrativa para el control de servicios viales.
               </p>
             </div>
 
@@ -40,15 +40,9 @@ export default function Home() {
             </div>
           </div>
         </div>
-        
-        {/* Background Decorative Elements */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-0 opacity-10 pointer-events-none">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary rounded-full blur-[120px]" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary rounded-full blur-[120px]" />
-        </div>
       </section>
 
-      {/* Features Simple Grid */}
+      {/* Features Section */}
       <section className="py-20 bg-slate-50 border-y border-slate-200">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-5xl mx-auto">
@@ -57,21 +51,21 @@ export default function Home() {
                 <CheckCircle2 className="h-6 w-6 text-primary" />
               </div>
               <h3 className="text-xl font-bold font-headline">Contratos Digitales</h3>
-              <p className="text-muted-foreground font-body">Generación y firma de contratos para cursos de auto, moto, mixto y ampliaciones.</p>
+              <p className="text-muted-foreground font-body">Gestión de contratos para cursos de auto, moto y ampliaciones.</p>
             </div>
             <div className="space-y-4">
               <div className="h-12 w-12 rounded-lg bg-white shadow-sm flex items-center justify-center border border-slate-100">
                 <CheckCircle2 className="h-6 w-6 text-primary" />
               </div>
               <h3 className="text-xl font-bold font-headline">Control de Pagos</h3>
-              <p className="text-muted-foreground font-body">Gestión de saldos, abonos, cancelaciones y reportes de caja diario detallados.</p>
+              <p className="text-muted-foreground font-body">Registro de abonos, cancelaciones y reportes de caja diario.</p>
             </div>
             <div className="space-y-4">
               <div className="h-12 w-12 rounded-lg bg-white shadow-sm flex items-center justify-center border border-slate-100">
                 <CheckCircle2 className="h-6 w-6 text-primary" />
               </div>
               <h3 className="text-xl font-bold font-headline">Gestión de Flota</h3>
-              <p className="text-muted-foreground font-body">Control estricto de kilometraje diario y registros de mantenimiento de vehículos.</p>
+              <p className="text-muted-foreground font-body">Control de kilometraje diario y bitácora de mantenimiento.</p>
             </div>
           </div>
         </div>
@@ -80,7 +74,7 @@ export default function Home() {
       <footer className="py-12 text-center border-t border-slate-100">
         <div className="container mx-auto px-6">
           <p className="text-muted-foreground font-body">
-            © {new Date().getFullYear()} Freeway Escuela de Manejo, S.A. | Vía Interamericana, Costa Verde.
+            © {new Date().getFullYear()} Freeway Escuela de Manejo, S.A.
           </p>
         </div>
       </footer>

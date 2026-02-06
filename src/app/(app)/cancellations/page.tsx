@@ -132,7 +132,7 @@ export default function CancellationsPage() {
     setIsSaving(true);
     
     try {
-      const savedPaymentData = await runTransaction(db, async (transaction) => {
+      const savedPaymentDataResult = await runTransaction(db, async (transaction) => {
           const counterRef = doc(db, 'counters', 'cancellation_folio');
           const counterDoc = await transaction.get(counterRef);
           
@@ -185,10 +185,10 @@ export default function CancellationsPage() {
       });
       
       if (isManual) {
-          setManualSavedPaymentData(savedPaymentData);
+          setManualSavedPaymentData(savedPaymentDataResult);
           setManualPaymentSaved(true);
       } else if (contract) {
-          setSavedPayments(prev => ({ ...prev, [contract.id]: savedPaymentData }));
+          setSavedPayments(prev => ({ ...prev, [contract.id]: savedPaymentDataResult }));
       }
       toast({ title: 'Pago Registrado', description: 'El pago ha sido guardado exitosamente.' });
 

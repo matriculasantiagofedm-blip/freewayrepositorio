@@ -101,24 +101,6 @@ export interface Contract {
   content?: string;
 }
 
-export interface Certificate {
-  id: string;
-  contractId: string;
-  clientId: string;
-  userId: string;
-  folio: string;
-  clientName: string;
-  courseName: string;
-  issueDate: Timestamp | FieldValue;
-  cip: string;
-  licenseType: string;
-  contract?: Contract;
-  firstName?: string;
-  middleName?: string;
-  lastName?: string;
-  secondLastName?: string;
-}
-
 export interface Transaction {
   id: string;
   contrato: string;
@@ -164,13 +146,6 @@ export interface BookSalePayment {
   studentIdNumber: string;
   userId: string;
   createdBy?: string;
-}
-
-export interface VehicleMileage {
-  name: VehicleName;
-  initialMileage: number;
-  finalMileage: number;
-  distance: number;
 }
 
 export interface MileageLog {

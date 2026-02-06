@@ -15,7 +15,6 @@ export default function PrintContractPage() {
 
   const contractId = Array.isArray(id) ? id[0] : id;
 
-  // Se elimina la dependencia de 'user' para permitir la carga inmediata en nuevas pestañas
   const contractRef = useMemoDoc(() => {
     if (!db || !contractId) return null;
     return doc(db, `contracts`, contractId);
@@ -27,7 +26,7 @@ export default function PrintContractPage() {
     if (contract && !isLoading) {
       const timer = setTimeout(() => {
         window.print();
-      }, 800);
+      }, 1000);
       return () => clearTimeout(timer);
     }
   }, [contract, isLoading]);
@@ -49,7 +48,7 @@ export default function PrintContractPage() {
     return (
       <div className="flex h-screen flex-col items-center justify-center bg-white p-8 text-center">
         <h1 className="text-2xl font-bold mb-2">Documento No Encontrado</h1>
-        <p className="text-muted-foreground">El contrato solicitado no existe en la base de datos.</p>
+        <p className="text-muted-foreground">El contrato solicitado no existe.</p>
       </div>
     );
   }

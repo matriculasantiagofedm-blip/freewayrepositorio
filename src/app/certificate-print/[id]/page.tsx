@@ -15,7 +15,6 @@ function CertificatePrintContent() {
 
   const contractId = Array.isArray(id) ? id[0] : id;
 
-  // Acceso directo al documento sin requerir objeto 'user' para evitar lags de Auth
   const contractRef = useMemoDoc(() => {
     if (!db || !contractId) return null;
     return doc(db, 'contracts', contractId);
@@ -61,7 +60,7 @@ function CertificatePrintContent() {
 
       const timer = setTimeout(() => {
         window.print();
-      }, 1000);
+      }, 1200);
       
       return () => clearTimeout(timer);
     }
@@ -79,7 +78,7 @@ function CertificatePrintContent() {
 
   if (error) return (
     <div className="p-8 text-center bg-white min-h-screen flex flex-col items-center justify-center">
-        <h1 className="text-destructive font-bold text-3xl mb-4">Error de Base de Datos</h1>
+        <h1 className="text-destructive font-bold text-3xl mb-4">Error de Permisos</h1>
         <p className="text-red-600 font-mono text-sm">{error.message}</p>
     </div>
   );
@@ -87,7 +86,7 @@ function CertificatePrintContent() {
   if (!contract && !isContractLoading) return (
     <div className="p-8 text-center bg-white min-h-screen flex flex-col items-center justify-center">
         <h1 className="text-2xl font-bold mb-4">Contrato No Encontrado</h1>
-        <p className="text-muted-foreground">El contrato con ID {contractId} no existe en el sistema.</p>
+        <p className="text-muted-foreground">El documento no existe.</p>
     </div>
   );
 
@@ -97,7 +96,6 @@ function CertificatePrintContent() {
           @media print {
             @page { size: letter landscape; margin: 0; }
             body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; background-color: white !important; }
-            .print-hidden { display: none !important; }
           }
         `}</style>
         {shouldUseAmpliacionTemplate ? (

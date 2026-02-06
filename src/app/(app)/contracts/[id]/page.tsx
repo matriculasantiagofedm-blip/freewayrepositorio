@@ -9,8 +9,6 @@ import { ChevronLeft, Award, Printer, ShieldX, Undo, Loader2 } from 'lucide-reac
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentRole } from '@/hooks/use-current-role';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,8 +31,9 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useDb, useUser } from '@/components/firebase-provider';
+import { useDb } from '@/components/firebase-provider';
 import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const getNextFolio = (lastFolio: string | null): string => {
     const year = new Date().getFullYear();
@@ -51,7 +50,6 @@ const getNextFolio = (lastFolio: string | null): string => {
 export default function ContractDetailPage() {
   const { id } = useParams();
   const db = useDb();
-  const { user } = useUser();
   const router = useRouter();
   const { toast } = useToast();
   const { role } = useCurrentRole();
@@ -73,6 +71,7 @@ export default function ContractDetailPage() {
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastFolio, setLastFolio] = useState<string | null>(null);
+  const [selectedLicenses, setSelectedLicenses] = useState<string[]>([]);
 
   useEffect(() => {
     setLastFolio(localStorage.getItem('lastCertificateFolio'));
@@ -86,6 +85,16 @@ export default function ContractDetailPage() {
   }, [db, contractId]);
 
   const { data: contract, isLoading, error } = useDoc<Contract>(contractRef);
+
+  const handleCertDataChange = (field: keyof typeof certificateData, value: string) => {
+    setCertificateData(prev => ({ ...prev, [field]: value }));
+  };
+  
+  useEffect(() => {
+    if (contract?.type === 'Ampliaciones') {
+      handleCertDataChange('licenseType', selectedLicenses.join(', '));
+    }
+  }, [selectedLicenses, contract?.type]);
   
   const canGenerateCertificate = contract && (['Curso Auto', 'Curso Moto', 'Curso Deluxe', 'Curso Mixto', 'Ampliaciones'].includes(contract.type));
 
@@ -109,11 +118,21 @@ export default function ContractDetailPage() {
         secondLastName = nameParts[3];
     }
 
+    let initialLicenseType = '';
+    if (contract.type === 'Ampliaciones' && contract.ampliacionesDetails?.selectedPlans) {
+        const initialLicenses = contract.ampliacionesDetails.selectedPlans.map(p => p.name);
+        setSelectedLicenses(initialLicenses);
+        initialLicenseType = initialLicenses.join(', ');
+    } else {
+        initialLicenseType = (details as any)?.licenseCategory || '';
+        setSelectedLicenses([]);
+    }
+
     setCertificateData({
       folio: suggestedFolio,
       clientName: contract.clientName,
       cip: details?.studentIdNumber || '',
-      licenseType: (details as any)?.licenseCategory || (contract.ampliacionesDetails?.selectedPlans?.map(p => p.name).join(', ') || ''),
+      licenseType: initialLicenseType,
       address: details?.studentAddress || '',
       phone1: details?.studentPhone1 || '',
       phone2: details?.studentPhone2 || '',
@@ -125,29 +144,23 @@ export default function ContractDetailPage() {
     setIsCertificateModalOpen(true);
   };
   
-  const handleCertDataChange = (field: keyof typeof certificateData, value: string) => {
-    setCertificateData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleProceedToPrint = () => {
-    if (!certificateData.folio || !db || !contractRef || !contract || !user) {
-        toast({
-            variant: 'destructive',
-            title: 'Datos Incompletos',
-            description: 'No se han podido cargar los datos necesarios.',
-        });
+  const handleProceedToPrint = async () => {
+    if (!certificateData.folio || !db || !contractRef || !contract) {
+        toast({ variant: 'destructive', title: 'Datos Inválidos', description: 'No se puede imprimir sin datos válidos.' });
+        return;
+    }
+    if (contract.type === 'Ampliaciones' && selectedLicenses.length === 0) {
+        toast({ variant: 'destructive', title: 'Selección Requerida', description: 'Selecciona al menos una licencia.' });
         return;
     }
 
     setIsGenerating(true);
-
-    const updateData = {
-        certificateGeneratedAt: serverTimestamp() as any,
-        certificateFolio: certificateData.folio,
-    };
-    
-    updateDoc(contractRef, updateData)
-      .then(() => {
+    try {
+        const updateData = {
+            certificateGeneratedAt: serverTimestamp(),
+            certificateFolio: certificateData.folio,
+        };
+        await updateDoc(contractRef, updateData);
         localStorage.setItem('lastCertificateFolio', certificateData.folio);
         setLastFolio(certificateData.folio);
 
@@ -166,38 +179,43 @@ export default function ContractDetailPage() {
 
         window.open(`/certificate-print/${contractId}?${queryParams.toString()}`, '_blank');
         setIsCertificateModalOpen(false);
-        toast({ title: 'Certificado Generado', description: 'El documento se ha guardado y está listo para imprimir.' });
-      })
-      .catch((err) => {
-        const permissionError = new FirestorePermissionError({
-          path: contractRef.path,
-          operation: 'update',
-          requestResourceData: updateData,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      })
-      .finally(() => {
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Error al Guardar', description: 'No se pudo guardar el folio.' });
+    } finally {
         setIsGenerating(false);
-      });
+    }
   };
   
   const handlePrintContract = () => {
     window.open(`/print-contract/${contractId}`, '_blank');
   };
 
-  const handleAnnulContract = () => {
+  const handleAnnulContract = async () => {
     if (!contractRef || !contract) return;
     setIsGenerating(true);
-    const updateData = { status: 'expired' as const };
-    updateDoc(contractRef, updateData)
-      .then(() => {
-        toast({ title: 'Contrato Anulado', description: `El folio ${contract.folioNumber} ha sido anulado.` });
-        router.refresh();
-      })
-      .catch((err) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: contractRef.path, operation: 'update', requestResourceData: updateData }));
-      })
-      .finally(() => setIsGenerating(false));
+    try {
+      await updateDoc(contractRef, { status: 'expired' });
+      toast({ title: 'Contrato Anulado', description: `Folio ${contract.folioNumber} anulado.` });
+      router.refresh();
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error al anular', description: 'Fallo al anular contrato.' });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleReactivateContract = async () => {
+    if (!contractRef || !contract) return;
+    setIsGenerating(true);
+    try {
+      await updateDoc(contractRef, { status: 'active' });
+      toast({ title: 'Contrato Reactivado', description: `Folio ${contract.folioNumber} reactivado.` });
+      router.refresh();
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Error al Reactivar', description: 'No se pudo reactivar.' });
+    } finally {
+        setIsGenerating(false);
+    }
   };
 
   return (
@@ -212,7 +230,6 @@ export default function ContractDetailPage() {
                 </Button>
             </div>
             <div className="flex items-center gap-2">
-              {/* Conceder permiso de impresión a todos los roles operativos: Admin, Ventas y Ventas Ext */}
               {canGenerateCertificate && (role === 'Administrador' || role === 'Ventas' || role === 'Ventas Externas') && (
                 <Button onClick={handleOpenCertificateModal}>
                   <Award className="mr-2 h-4 w-4" />
@@ -235,7 +252,7 @@ export default function ContractDetailPage() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Esta acción marcará el contrato como ANULADO. El folio <span className="font-bold">{contract.folioNumber}</span> será afectado.
+                        Esta acción marcará el contrato como ANULADO. Folio <span className="font-bold">{contract.folioNumber}</span>.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -247,6 +264,12 @@ export default function ContractDetailPage() {
                   </AlertDialogContent>
                 </AlertDialog>
               )}
+               {role === 'Administrador' && contract && contract.status === 'expired' && (
+                <Button variant="secondary" onClick={handleReactivateContract}>
+                    <Undo className="mr-2 h-4 w-4" />
+                    Reactivar Contrato
+                </Button>
+               )}
             </div>
       </div>
       
@@ -257,24 +280,24 @@ export default function ContractDetailPage() {
       <Dialog open={isCertificateModalOpen} onOpenChange={setIsCertificateModalOpen}>
         <DialogContent className="print-hide sm:max-w-4xl">
             <DialogHeader>
-                <DialogTitle>Revisar y Generar Certificado</DialogTitle>
-                <DialogDescription>Verifica los datos del estudiante antes de imprimir.</DialogDescription>
+                <DialogTitle>Generar Certificado</DialogTitle>
+                <DialogDescription>Verifica los datos antes de imprimir.</DialogDescription>
             </DialogHeader>
             <div className="max-h-[70vh] overflow-y-auto pr-4">
               <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                          <Label htmlFor="cert-folio">Folio del Certificado</Label>
-                          <Input id="cert-folio" value={certificateData.folio} onChange={(e) => handleCertDataChange('folio', e.target.value)} />
+                          <Label>Folio</Label>
+                          <Input value={certificateData.folio} onChange={(e) => handleCertDataChange('folio', e.target.value)} />
                       </div>
                       <div className="space-y-2">
-                          <Label htmlFor="cert-cip">Cédula / Pasaporte</Label>
-                          <Input id="cert-cip" value={certificateData.cip} onChange={(e) => handleCertDataChange('cip', e.target.value)} />
+                          <Label>Cédula</Label>
+                          <Input value={certificateData.cip} onChange={(e) => handleCertDataChange('cip', e.target.value)} />
                       </div>
                   </div>
                   <div className="space-y-2">
-                      <Label htmlFor="cert-name">Nombre Completo</Label>
-                      <Input id="cert-name" value={certificateData.clientName} onChange={(e) => handleCertDataChange('clientName', e.target.value)} />
+                      <Label>Nombre Completo</Label>
+                      <Input value={certificateData.clientName} onChange={(e) => handleCertDataChange('clientName', e.target.value)} />
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="space-y-2"><Label>1er Nombre</Label><Input value={certificateData.firstName} onChange={(e) => handleCertDataChange('firstName', e.target.value)} /></div>
@@ -283,11 +306,25 @@ export default function ContractDetailPage() {
                       <div className="space-y-2"><Label>2do Apellido</Label><Input value={certificateData.secondLastName} onChange={(e) => handleCertDataChange('secondLastName', e.target.value)} /></div>
                   </div>
                   <div className="space-y-2"><Label>Dirección</Label><Input value={certificateData.address} onChange={(e) => handleCertDataChange('address', e.target.value)} /></div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2"><Label>Teléfono 1</Label><Input value={certificateData.phone1} onChange={(e) => handleCertDataChange('phone1', e.target.value)} /></div>
-                      <div className="space-y-2"><Label>Teléfono 2</Label><Input value={certificateData.phone2} onChange={(e) => handleCertDataChange('phone2', e.target.value)} /></div>
+                  
+                  {contract?.type === 'Ampliaciones' && contract.ampliacionesDetails?.selectedPlans && (
+                    <div className="space-y-2">
+                        <Label>Licencias a Incluir</Label>
+                        <div className="grid grid-cols-3 gap-2 rounded-md border p-4">
+                            {contract.ampliacionesDetails.selectedPlans.map((plan) => (
+                                <div key={plan.name} className="flex items-center space-x-2">
+                                    <Checkbox id={`check-${plan.name}`} checked={selectedLicenses.includes(plan.name)} onCheckedChange={(c) => setSelectedLicenses(prev => c ? [...prev, plan.name] : prev.filter(n => n !== plan.name))} />
+                                    <label htmlFor={`check-${plan.name}`} className="text-sm">{plan.name}</label>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                      <Label>Categoría de Licencia</Label>
+                      <Input value={certificateData.licenseType} onChange={(e) => contract?.type !== 'Ampliaciones' && handleCertDataChange('licenseType', e.target.value)} readOnly={contract?.type === 'Ampliaciones'} />
                   </div>
-                  <div className="space-y-2"><Label>Licencia</Label><Input value={certificateData.licenseType} onChange={(e) => handleCertDataChange('licenseType', e.target.value)} /></div>
               </div>
             </div>
             <DialogFooter>

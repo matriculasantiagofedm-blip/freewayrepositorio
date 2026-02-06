@@ -1,5 +1,5 @@
 'use client';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import {
@@ -10,7 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
@@ -20,7 +19,7 @@ import { cn, toDate } from '@/lib/utils';
 import { Eye, Search, CheckCircle, XCircle } from 'lucide-react';
 import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useDb, useUser } from '@/components/firebase-provider';
+import { useDb } from '@/components/firebase-provider';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 
 const getBalance = (contract: Contract): number => {
@@ -43,35 +42,28 @@ const isOverdue = (contract: Contract): boolean => {
 
 function AllContractsContent() {
   const db = useDb();
-  const { user } = useUser();
   const { role } = useCurrentRole();
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const filter = searchParams.get('filter');
 
   const contractsQuery = useMemoQuery(() => {
-    if (!db || !user || !role) return null;
-    
-    // Desbloqueo total: Todos los roles operativos ven todos los contratos ordenados por folio
+    if (!db || !role) return null;
+    // Desbloqueo total: Acceso global a todos los contratos ordenados por folio
     return query(collection(db, 'contracts'), orderBy('folioNumber', 'desc'));
-  }, [db, user, role]);
+  }, [db, role]);
 
   const { data: allContracts, isLoading } = useCollection<Contract>(contractsQuery);
 
   const filteredContracts = allContracts?.filter((contract) => {
       const folio = String(contract.folioNumber || '').padStart(6, '0');
       const client = contract.clientName.toLowerCase();
-      const idNumber = contract.autoMotoDetails?.studentIdNumber || contract.deluxeDetails?.studentIdNumber || contract.ampliacionesDetails?.studentIdNumber || '';
       const type = contract.type.toLowerCase();
       const search = searchTerm.toLowerCase();
       
       if (filter === 'overdue' && !isOverdue(contract)) return false;
-      
       if (searchTerm) {
-          return folio.includes(search) || 
-                 client.includes(search) || 
-                 idNumber.includes(search) || 
-                 type.includes(search);
+          return folio.includes(search) || client.includes(search) || type.includes(search);
       }
       return true;
     }) || [];
@@ -92,9 +84,7 @@ function AllContractsContent() {
         </div>
       </div>
       {isLoading ? (
-        <div className="flex items-center justify-center p-8">
-          <p className="text-muted-foreground">Cargando contratos...</p>
-        </div>
+        <div className="flex items-center justify-center p-8"><p>Cargando contratos...</p></div>
       ) : (
         <div className="rounded-lg border">
           <Table>
@@ -105,7 +95,7 @@ function AllContractsContent() {
                 <TableHead>Tipo</TableHead>
                 <TableHead>Certificado</TableHead>
                 <TableHead>Fecha</TableHead>
-                {filter === 'overdue' && <TableHead className="text-right">Monto Adeudado</TableHead>}
+                {filter === 'overdue' && <TableHead className="text-right">Adeudado</TableHead>}
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -119,23 +109,12 @@ function AllContractsContent() {
                     {contract.certificateGeneratedAt ? <CheckCircle className="h-4 w-4 text-green-600" /> : <XCircle className="h-4 w-4 text-muted-foreground" />}
                   </TableCell>
                   <TableCell>{format(toDate(contract.createdAt), 'dd/MM/yyyy', { locale: es })}</TableCell>
-                  {filter === 'overdue' && (
-                    <TableCell className="text-right font-semibold text-destructive">B/. {getBalance(contract).toFixed(2)}</TableCell>
-                  )}
+                  {filter === 'overdue' && <TableCell className="text-right font-semibold text-destructive">B/. {getBalance(contract).toFixed(2)}</TableCell>}
                   <TableCell className="text-right">
-                    <Button asChild variant="ghost" size="icon">
-                      <Link href={`/contracts/${contract.id}`}><Eye className="h-4 w-4" /></Link>
-                    </Button>
+                    <Button asChild variant="ghost" size="icon"><Link href={`/contracts/${contract.id}`}><Eye className="h-4 w-4" /></Link></Button>
                   </TableCell>
                 </TableRow>
               ))}
-              {filteredContracts.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={filter === 'overdue' ? 7 : 6} className="text-center py-10 text-muted-foreground">
-                    No se encontraron contratos.
-                  </TableCell>
-                </TableRow>
-              )}
             </TableBody>
           </Table>
         </div>
@@ -146,7 +125,7 @@ function AllContractsContent() {
 
 export default function AllContractsPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Cargando lista de contratos...</div>}>
+    <Suspense fallback={<div className="p-8 text-center">Cargando lista...</div>}>
       <AllContractsContent />
     </Suspense>
   );

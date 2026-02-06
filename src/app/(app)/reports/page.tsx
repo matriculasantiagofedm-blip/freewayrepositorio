@@ -1,4 +1,3 @@
-
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ClipboardPenLine, ListChecks, Award, Gauge, FileText, Banknote, CalendarClock } from 'lucide-react';
@@ -57,7 +56,7 @@ export default function ReportsPage() {
       description: 'Visualiza la agenda semanal de clases prácticas por vehículo.',
       href: '/reports/vehicle-schedule',
       icon: CalendarClock,
-      roles: ['Administrador'],
+      roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     },
   ];
 

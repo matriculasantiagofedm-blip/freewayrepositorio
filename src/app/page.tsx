@@ -24,11 +24,16 @@ export default function Home() {
     setError('');
 
     try {
+      // Intentar firmar anónimamente para tener un UID de Firebase
       if (!auth.currentUser) {
         await signInAnonymously(auth);
       }
 
-      // Claves de acceso para cada rol
+      // Claves de acceso mapeadas a los roles en FirebaseProvider
+      // Administrador: Ayax/2022
+      // Ventas: ventas123
+      // Ventas Externas: ventasext123
+      
       const validKeys = ['ventas123', 'ventasext123', 'Ayax/2022'];
       
       if (validKeys.includes(accessKey)) {

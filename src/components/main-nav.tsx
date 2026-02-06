@@ -118,7 +118,7 @@ const navLinks = [
       },
        {
           separator: true,
-          roles: ['Administrador'],
+          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
       {
           href: '/reports/mileage-log',
@@ -130,7 +130,7 @@ const navLinks = [
           href: '/reports/vehicle-schedule',
           label: 'Horarios',
           icon: CalendarClock,
-          roles: ['Administrador'],
+          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
     ]
   },

@@ -8,6 +8,7 @@ service cloud.firestore {
      * Se ha configurado acceso universal de lectura y escritura para permitir que 
      * todos los roles (Administrador, Ventas, Ventas Externas) colaboren sobre 
      * la misma base de datos sin restricciones de propiedad de documento.
+     * Esto soluciona los errores de 'Missing or insufficient permissions'.
      */
 
     match /{document=**} {

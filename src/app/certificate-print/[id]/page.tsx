@@ -73,20 +73,21 @@ function CertificatePrintContent() {
 
   const shouldUseAmpliacionTemplate = useMemo(() => {
     if (!certificate || !certificate.contract) return false;
-    // Si el contrato es de tipo Ampliaciones o la licencia contiene E1, E2, E3
     if (certificate.contract.type === 'Ampliaciones') return true;
     return certificate.licenseType && ['E1', 'E2', 'E3'].some(l => certificate.licenseType.includes(l));
   }, [certificate]);
 
   if (isContractLoading || isRoleLoading) {
-    return <div className="flex items-center justify-center h-screen"><p className="text-xl font-semibold">Generando vista de impresión...</p></div>;
+    return <div className="flex items-center justify-center h-screen"><p className="text-xl font-semibold text-primary animate-pulse">Generando vista de impresión...</p></div>;
   }
 
-  if (error) return <div className="p-8 text-center"><h1 className="text-destructive font-bold text-2xl">Error: {error.message}</h1></div>;
-
-  if (currentUserRole === 'Ventas') {
-    return <div className="p-8 text-center"><h1 className="text-destructive font-bold text-2xl">Acceso Denegado: Solo administradores pueden imprimir certificados.</h1></div>;
-  }
+  if (error) return (
+    <div className="p-8 text-center">
+        <h1 className="text-destructive font-bold text-2xl">Error de Conexión</h1>
+        <p className="mt-4">{error.message}</p>
+        <p className="text-sm text-muted-foreground mt-2">Verifica que tengas conexión a internet y que el contrato exista.</p>
+    </div>
+  );
 
   if (!contract && !isContractLoading) return <div className="p-8 text-center"><h1 className="text-2xl font-bold">Contrato no encontrado</h1></div>;
 

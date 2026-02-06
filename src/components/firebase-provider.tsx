@@ -35,16 +35,15 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true);
     
-    // Recuperar rol guardado
+    // Recuperar rol guardado de localStorage para que persista entre pestañas (importante para impresión)
     if (typeof window !== 'undefined') {
-      const storedRoleKey = window.sessionStorage.getItem('userRoleKey');
+      const storedRoleKey = window.localStorage.getItem('userRoleKey');
       if (storedRoleKey && roleMapping[storedRoleKey]) {
         setRoleState(roleMapping[storedRoleKey]);
       }
     }
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      console.log("Auth State Changed:", currentUser?.uid);
       setUser(currentUser);
       setIsLoading(false);
     });
@@ -61,7 +60,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     const assignedRole = roleMapping[roleKey] || null;
     setRoleState(assignedRole);
     if (assignedRole && typeof window !== 'undefined') {
-      window.sessionStorage.setItem('userRoleKey', roleKey);
+      window.localStorage.setItem('userRoleKey', roleKey);
     }
   };
 
@@ -74,7 +73,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setRoleState(null);
     if (typeof window !== 'undefined') {
-      window.sessionStorage.removeItem('userRoleKey');
+      window.localStorage.removeItem('userRoleKey');
     }
   };
 

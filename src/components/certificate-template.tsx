@@ -115,9 +115,7 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
 
 function CertificateBack({ certificate }: { certificate: Certificate }) {
     const contract = certificate.contract;
-    if (!contract) return null;
-
-    const details = contract.autoMotoDetails || contract.deluxeDetails;
+    const details = contract?.autoMotoDetails || contract?.deluxeDetails;
     const issueDate = toDate(certificate.issueDate);
     const formattedIssueDate = !isNaN(issueDate.getTime()) ? format(issueDate, 'dd-MM-yyyy') : '00-00-0000';
     
@@ -131,17 +129,17 @@ function CertificateBack({ certificate }: { certificate: Certificate }) {
                     con teléfono residencial: <span className="font-bold">{details?.studentPhone1 || '-----'}</span> &nbsp; &nbsp; 
                     teléfono celular: <span className="font-bold">{details?.studentPhone2 || '-----'}</span>
                 </p>
-                <p><span className="font-bold uppercase">TIPO DE LICENCIAS:</span> {certificate.licenseType}</p>
+                <p><span className="font-bold uppercase">TIPO DE LICENCIAS:</span> <span className="font-bold">{certificate.licenseType}</span></p>
                 <p>Este certificado tiene validez de 364 días a partir de <span className="font-bold">{formattedIssueDate}</span></p>
                 
-                <div className="pt-4 space-y-4">
+                <div className="pt-12 space-y-8">
                     <div className="grid grid-cols-2 gap-x-12">
-                        <p>Primer Nombre: <span className="font-bold">{certificate.firstName || '--------'}</span></p>
-                        <p>Segundo Nombre: <span className="font-bold">{certificate.middleName || '--------'}</span></p>
+                        <p>Primer Nombre: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.firstName || ''}</span></p>
+                        <p>Segundo Nombre: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.middleName || ''}</span></p>
                     </div>
                     <div className="grid grid-cols-2 gap-x-12">
-                        <p>Primer Apellido: <span className="font-bold">{certificate.lastName || '--------'}</span></p>
-                        <p>Segundo Apellido: <span className="font-bold">{certificate.secondLastName || '--------'}</span></p>
+                        <p>Primer Apellido: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.lastName || ''}</span></p>
+                        <p>Segundo Apellido: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.secondLastName || ''}</span></p>
                     </div>
                 </div>
             </div>

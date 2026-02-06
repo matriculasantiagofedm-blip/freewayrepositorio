@@ -2,8 +2,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /{document=**} {
-      // Acceso total abierto para eliminar errores de permisos en impresión y gestión de documentos.
-      // Esta regla permite que todos los usuarios y roles puedan leer y escribir sin restricciones.
+      // REGLA MAESTRA: Acceso total garantizado para todos los documentos.
+      // Esta regla elimina cualquier error de "Missing or insufficient permissions"
+      // permitiendo que la impresión y gestión de contratos funcione sin bloqueos.
       allow read, write: if true;
     }
   }

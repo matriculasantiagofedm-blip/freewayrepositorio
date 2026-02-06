@@ -82,10 +82,16 @@ function CertificatePrintContent() {
   }
 
   if (error) return (
-    <div className="p-8 text-center">
-        <h1 className="text-destructive font-bold text-2xl">Error de Conexión</h1>
-        <p className="mt-4">{error.message}</p>
-        <p className="text-sm text-muted-foreground mt-2">Verifica que tengas conexión a internet y que el contrato exista.</p>
+    <div className="p-8 text-center bg-white min-h-screen flex flex-col items-center justify-center">
+        <h1 className="text-destructive font-bold text-3xl mb-4">Acceso Bloqueado</h1>
+        <div className="bg-red-50 p-6 rounded-lg border border-red-200 max-w-2xl">
+            <p className="text-red-800 font-semibold mb-2">Error de Base de Datos:</p>
+            <p className="text-red-600 font-mono text-sm break-all">{error.message}</p>
+        </div>
+        <p className="mt-6 text-muted-foreground">
+            Se ha detectado un problema de permisos en Firestore. <br />
+            Por favor, asegúrate de haber guardado los cambios y vuelve a intentarlo.
+        </p>
     </div>
   );
 

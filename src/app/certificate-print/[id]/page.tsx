@@ -19,7 +19,7 @@ function CertificatePrintContent() {
 
   const contractId = Array.isArray(id) ? id[0] : id;
 
-  // Carga inmediata del documento desde Firestore
+  // Carga inmediata del documento desde Firestore sin esperar a request.auth
   const contractRef = useMemoDoc(() => {
     if (!db || !contractId) return null;
     return doc(db, 'contracts', contractId);

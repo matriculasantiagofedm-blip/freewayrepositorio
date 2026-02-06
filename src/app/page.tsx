@@ -1,85 +1,88 @@
 'use client';
 
-import { analyzeContract } from '@/lib/contracts-flow';
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, FileText, ShieldAlert, Calendar, LayoutDashboard, GanttChart } from 'lucide-react';
+import { LayoutDashboard, GanttChart, ChevronRight, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Home() {
-  const [result, setResult] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  async function handleAction() {
-    setIsLoading(true);
-    try {
-      const response = await analyzeContract({ 
-        text: "Contrato de servicios en Freeway Escuela de Manejo. El curso de manejo incluye 20 horas teóricas y 12 prácticas. Vigencia de 3 meses. Penalización por inasistencia de B/. 20.00." 
-      });
-      setResult(response);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
   return (
-    <main className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      <section className="bg-white dark:bg-slate-900 border-b shadow-sm py-16 px-6">
-        <div className="max-w-4xl mx-auto text-center space-y-6">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 bg-primary/10 rounded-full">
-              <GanttChart className="h-12 w-12 text-primary" />
+    <main className="min-h-screen bg-white">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden pt-16 pb-20 lg:pt-32 lg:pb-28">
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="max-w-4xl mx-auto text-center space-y-8">
+            <div className="flex justify-center">
+              <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10">
+                <GanttChart className="h-16 w-16 text-primary" />
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <h1 className="font-headline text-5xl lg:text-7xl font-bold tracking-tight text-slate-900">
+                Contract<span className="text-primary">Time</span>
+              </h1>
+              <p className="text-2xl font-medium text-slate-600">
+                Freeway Escuela de Manejo, S.A.
+              </p>
+              <p className="text-xl text-muted-foreground font-body max-w-2xl mx-auto leading-relaxed">
+                Gestión integral de contratos, pagos y control de flota. 
+                Todo lo que tu escuela necesita en una plataforma moderna y segura.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row justify-center gap-4 pt-6">
+              <Button asChild size="lg" className="h-14 px-10 text-lg font-semibold shadow-xl shadow-primary/20 hover:shadow-2xl transition-all">
+                <Link href="/dashboard">
+                  <LayoutDashboard className="mr-2 h-6 w-6" />
+                  Ingresar al Sistema
+                </Link>
+              </Button>
             </div>
           </div>
-          <h1 className="font-headline text-5xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Contract<span className="text-primary">Time</span>
-          </h1>
-          <p className="text-xl text-muted-foreground font-body max-w-2xl mx-auto">
-            Plataforma integral para Freeway Escuela de Manejo. Gestiona contratos, pagos y análisis inteligente en un solo lugar.
+        </div>
+        
+        {/* Background Decorative Elements */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-0 opacity-10 pointer-events-none">
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary rounded-full blur-[120px]" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary rounded-full blur-[120px]" />
+        </div>
+      </section>
+
+      {/* Features Simple Grid */}
+      <section className="py-20 bg-slate-50 border-y border-slate-200">
+        <div className="container mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-5xl mx-auto">
+            <div className="space-y-4">
+              <div className="h-12 w-12 rounded-lg bg-white shadow-sm flex items-center justify-center border border-slate-100">
+                <CheckCircle2 className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold font-headline">Contratos Digitales</h3>
+              <p className="text-muted-foreground font-body">Generación y firma de contratos para cursos de auto, moto, mixto y ampliaciones.</p>
+            </div>
+            <div className="space-y-4">
+              <div className="h-12 w-12 rounded-lg bg-white shadow-sm flex items-center justify-center border border-slate-100">
+                <CheckCircle2 className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold font-headline">Control de Pagos</h3>
+              <p className="text-muted-foreground font-body">Gestión de saldos, abonos, cancelaciones y reportes de caja diario detallados.</p>
+            </div>
+            <div className="space-y-4">
+              <div className="h-12 w-12 rounded-lg bg-white shadow-sm flex items-center justify-center border border-slate-100">
+                <CheckCircle2 className="h-6 w-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold font-headline">Gestión de Flota</h3>
+              <p className="text-muted-foreground font-body">Control estricto de kilometraje diario y registros de mantenimiento de vehículos.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer className="py-12 text-center border-t border-slate-100">
+        <div className="container mx-auto px-6">
+          <p className="text-muted-foreground font-body">
+            © {new Date().getFullYear()} Freeway Escuela de Manejo, S.A. | Vía Interamericana, Costa Verde.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
-            <Button asChild size="lg" className="font-semibold text-lg px-8">
-              <Link href="/dashboard">
-                <LayoutDashboard className="mr-2 h-5 w-5" />
-                Ingresar al Sistema
-              </Link>
-            </Button>
-            <Button variant="outline" size="lg" className="font-semibold text-lg px-8" onClick={() => document.getElementById('ai-section')?.scrollIntoView({ behavior: 'smooth' })}>
-              Probar Analizador IA
-            </Button>
-          </div>
         </div>
-      </section>
-
-      <section id="ai-section" className="py-20 px-6 max-w-4xl mx-auto flex flex-col items-center gap-8">
-        <div className="text-center space-y-2">
-          <h2 className="font-headline text-3xl font-bold">Analizador de Contratos</h2>
-          <p className="text-muted-foreground">Extrae información clave de documentos legales con Gemini 1.5 Flash.</p>
-        </div>
-
-        <div className="w-full flex flex-col gap-6">
-          <Button onClick={handleAction} disabled={isLoading} size="lg" className="w-full font-semibold shadow-md">
-            {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Procesando...</> : 'Analizar Contrato de Prueba'}
-          </Button>
-
-          {result && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <Card className="border-primary/20 shadow-lg bg-white dark:bg-slate-900">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center gap-2 text-primary font-headline"><FileText className="h-5 w-5" /> Resumen Ejecutivo</CardTitle>
-                </CardHeader>
-                <CardContent><p className="text-sm leading-relaxed font-body">{result.summary}</p></CardContent>
-              </Card>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <footer className="py-12 border-t text-center text-muted-foreground text-sm">
-        <p>© 2024 Freeway Escuela de Manejo, S.A. Todos los derechos reservados.</p>
       </footer>
     </main>
   );

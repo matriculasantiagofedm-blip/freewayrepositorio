@@ -8,7 +8,8 @@ service cloud.firestore {
      * 
      * Se permite acceso universal de lectura y escritura para que todos los roles 
      * (Administrador, Ventas, Ventas Externas) operen sobre la misma base de datos.
-     * Se asegura acceso incluso para peticiones sin token inmediato en nuevas pestañas.
+     * Esto asegura que el personal de Ventas pueda ver contratos creados por otros
+     * y que las pestañas de impresión no fallen por falta de sesión inmediata.
      */
 
     match /{document=**} {

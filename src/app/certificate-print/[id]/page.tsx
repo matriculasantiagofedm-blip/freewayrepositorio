@@ -17,6 +17,7 @@ function CertificatePrintContent() {
 
   const contractRef = useMemoDoc(() => {
     if (!db || !contractId) return null;
+    // Desbloqueo: No dependemos de 'user' para evitar fallos de permisos al abrir pestaña
     return doc(db, 'contracts', contractId);
   }, [db, contractId]);
 
@@ -78,7 +79,7 @@ function CertificatePrintContent() {
 
   if (error) return (
     <div className="p-8 text-center bg-white min-h-screen flex flex-col items-center justify-center">
-        <h1 className="text-destructive font-bold text-3xl mb-4">Error de Permisos</h1>
+        <h1 className="text-destructive font-bold text-3xl mb-4">Error de Acceso</h1>
         <p className="text-red-600 font-mono text-sm">{error.message}</p>
     </div>
   );
@@ -86,7 +87,7 @@ function CertificatePrintContent() {
   if (!contract && !isContractLoading) return (
     <div className="p-8 text-center bg-white min-h-screen flex flex-col items-center justify-center">
         <h1 className="text-2xl font-bold mb-4">Contrato No Encontrado</h1>
-        <p className="text-muted-foreground">El documento no existe.</p>
+        <p className="text-muted-foreground">El documento no existe en la base de datos.</p>
     </div>
   );
 

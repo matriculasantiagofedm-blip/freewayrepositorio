@@ -51,7 +51,7 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                 
                 {/* Barra Diagonal Amarilla y Negra */}
                 <div className="absolute top-[-10px] left-[-10px] w-72 h-8 z-10">
-                    <div className="w-full h-full bg-yellow-400" style={{
+                    <div className="w-full h-full bg-yellow-400 print:[-webkit-print-color-adjust:exact] print:[color-adjust:exact]" style={{
                         backgroundImage: 'repeating-linear-gradient(45deg, #fbbf24, #fbbf24 15px, #000 15px, #000 30px)'
                     }}></div>
                 </div>

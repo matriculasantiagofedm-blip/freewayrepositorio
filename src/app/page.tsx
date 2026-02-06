@@ -28,7 +28,12 @@ export default function Home() {
         await signInAnonymously(auth);
       }
 
+      // Claves de acceso para cada rol:
+      // Administrador: Ayax/2022
+      // Ventas: ventas123
+      // Ventas Externas: ventasext123
       const validKeys = ['ventas123', 'ventasext123', 'Ayax/2022'];
+      
       if (validKeys.includes(accessKey)) {
         setRole(accessKey);
         router.push('/dashboard');
@@ -37,7 +42,7 @@ export default function Home() {
       }
     } catch (err) {
       console.error(err);
-      setError('Error de conexión. Inténtalo de nuevo.');
+      setError('Error de conexión con el sistema. Inténtalo de nuevo.');
     } finally {
       setIsLoading(false);
     }
@@ -86,12 +91,12 @@ export default function Home() {
                 <LogIn className="h-5 w-5 text-primary" />
                 Ingreso al Sistema
               </CardTitle>
-              <CardDescription>Introduce tu clave de acceso asignada para continuar.</CardDescription>
+              <CardDescription>Introduce tu clave de acceso autorizada.</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleAccess} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="key" className="text-slate-700">Clave de Acceso</Label>
+                  <Label htmlFor="key" className="text-slate-700">Contraseña de Acceso</Label>
                   <Input 
                     id="key" 
                     type="password" 
@@ -114,14 +119,14 @@ export default function Home() {
                       Validando...
                     </>
                   ) : (
-                    'Entrar'
+                    'Entrar al Sistema'
                   )}
                 </Button>
               </form>
             </CardContent>
             <CardFooter className="flex flex-col gap-4 text-center">
               <p className="text-xs text-muted-foreground">
-                Si no tienes una clave, contacta al administrador del sistema.
+                Cada rol (Admin, Ventas, Externas) tiene su propia clave asignada.
               </p>
             </CardFooter>
           </Card>
@@ -130,7 +135,7 @@ export default function Home() {
         <div className="flex items-center justify-center gap-2 text-muted-foreground">
           <div className="h-px bg-slate-200 flex-1"></div>
           <p className="text-[10px] uppercase tracking-widest font-semibold px-4">
-            Gestión Administrativa
+            Gestión Administrativa v2.0
           </p>
           <div className="h-px bg-slate-200 flex-1"></div>
         </div>

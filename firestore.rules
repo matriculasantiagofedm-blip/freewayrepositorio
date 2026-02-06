@@ -1,53 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Función auxiliar para verificar si el usuario está autenticado
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    // Reglas para perfiles de usuario
-    match /users/{userId} {
-      allow get, create, update: if isSignedIn() && request.auth.uid == userId;
-    }
-
-    // Reglas para contratos: Permite lectura y escritura a personal autorizado
-    match /contracts/{contractId} {
-      allow get, list, create, update: if isSignedIn();
-      allow delete: if false; 
-    }
-
-    // Reglas para clientes
-    match /clients/{clientId} {
-      allow get, list, create, update: if isSignedIn();
-    }
-
-    // Reglas para transacciones de pagos
-    match /cancellation_payments/{paymentId} {
-      allow get, list, create: if isSignedIn();
-    }
-
-    match /update_payments/{paymentId} {
-      allow get, list, create: if isSignedIn();
-    }
-
-    match /book_sale_payments/{paymentId} {
-      allow get, list, create: if isSignedIn();
-    }
-    
-    // Reglas para logística de vehículos
-    match /mileage_logs/{logId} {
-      allow get, list, create, update: if isSignedIn();
-    }
-
-    match /maintenance_logs/{logId} {
-      allow get, list, create, update: if isSignedIn();
-    }
-
-    // Reglas para contadores secuenciales (Folios)
-    match /counters/{counterId} {
-      allow read, write: if isSignedIn();
+    // Permitir lectura y escritura a cualquier usuario autenticado
+    // Esto incluye a los usuarios que entran con las claves de Ventas y Administrador (Auth Anónimo)
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
   }
 }

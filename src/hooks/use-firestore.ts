@@ -9,10 +9,7 @@ import {
   DocumentReference,
   DocumentData,
   CollectionReference,
-  getDoc,
-  getDocs,
 } from 'firebase/firestore';
-import { useDb } from '@/components/firebase-provider';
 import { useToast } from './use-toast';
 
 // Type to add an 'id' to a document's data
@@ -20,7 +17,6 @@ export type WithId<T> = T & { id: string };
 
 /**
  * Hook to fetch a single document from Firestore in real-time.
- * @param ref The DocumentReference to the document.
  */
 export function useDoc<T>(ref: DocumentReference<DocumentData> | null | undefined) {
   const { toast } = useToast();
@@ -48,14 +44,17 @@ export function useDoc<T>(ref: DocumentReference<DocumentData> | null | undefine
         setError(null);
       },
       (err) => {
-        console.error(`Error fetching document at ${ref.path}:`, err);
-        setError(err);
-        setIsLoading(false);
-        toast({
-          variant: "destructive",
-          title: "Error de Carga",
-          description: `No se pudo cargar el documento: ${err.message}`,
-        });
+        // Solo mostrar error si no es una cancelación normal
+        if (err.code !== 'cancelled') {
+          console.error(`Error fetching document at ${ref.path}:`, err);
+          setError(err);
+          setIsLoading(false);
+          toast({
+            variant: "destructive",
+            title: "Error de Carga",
+            description: `No se pudo cargar el documento: ${err.message}`,
+          });
+        }
       }
     );
 
@@ -68,7 +67,6 @@ export function useDoc<T>(ref: DocumentReference<DocumentData> | null | undefine
 
 /**
  * Hook to fetch a collection of documents from Firestore in real-time.
- * @param q The Query or CollectionReference to the collection.
  */
 export function useCollection<T>(q: Query<DocumentData> | CollectionReference<DocumentData> | null | undefined) {
   const { toast } = useToast();
@@ -96,25 +94,16 @@ export function useCollection<T>(q: Query<DocumentData> | CollectionReference<Do
         setError(null);
       },
       (err) => {
-        let path = 'unknown path';
-        try {
-          if (q instanceof CollectionReference) {
-            path = q.path;
-          } else if (q instanceof Query) {
-            // This is a private property but often the only way to get path from a query
-            path = (q as any)._query.path.segments.join('/');
-          }
-        } catch (e) {
-          console.warn("Could not determine query path for error reporting.", e);
+        if (err.code !== 'cancelled') {
+          console.error("Error fetching collection:", err);
+          setError(err);
+          setIsLoading(false);
+          toast({
+            variant: "destructive",
+            title: "Error de Carga",
+            description: `No se pudo cargar la colección: ${err.message}`,
+          });
         }
-        console.error(`Error fetching collection at ${path}:`, err);
-        setError(err);
-        setIsLoading(false);
-        toast({
-          variant: "destructive",
-          title: "Error de Carga",
-          description: `No se pudo cargar la colección: ${err.message}`,
-        });
       }
     );
 

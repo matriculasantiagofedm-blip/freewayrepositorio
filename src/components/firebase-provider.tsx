@@ -35,6 +35,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true);
     
+    // Recuperar rol guardado
     if (typeof window !== 'undefined') {
       const storedRoleKey = window.sessionStorage.getItem('userRoleKey');
       if (storedRoleKey && roleMapping[storedRoleKey]) {
@@ -43,6 +44,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
     }
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      console.log("Auth State Changed:", currentUser?.uid);
       setUser(currentUser);
       setIsLoading(false);
     });

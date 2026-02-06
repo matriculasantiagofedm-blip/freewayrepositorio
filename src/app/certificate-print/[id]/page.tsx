@@ -62,6 +62,7 @@ function CertificatePrintContent() {
       };
       setCertificate(certificateData);
 
+      // Disparar diálogo de impresión automáticamente
       const timer = setTimeout(() => {
         window.print();
       }, 1500);
@@ -76,7 +77,7 @@ function CertificatePrintContent() {
     return certificate.licenseType && ['E1', 'E2', 'E3'].some(l => certificate.licenseType.includes(l));
   }, [certificate]);
 
-  if (isContractLoading || isRoleLoading) {
+  if (isContractLoading) {
     return <div className="flex items-center justify-center h-screen bg-white"><p className="text-xl font-semibold text-primary animate-pulse">Cargando certificado desde la base de datos...</p></div>;
   }
 
@@ -84,20 +85,20 @@ function CertificatePrintContent() {
     <div className="p-8 text-center bg-white min-h-screen flex flex-col items-center justify-center">
         <h1 className="text-destructive font-bold text-3xl mb-4">Acceso Bloqueado</h1>
         <div className="bg-red-50 p-6 rounded-lg border border-red-200 max-w-2xl text-left">
-            <p className="text-red-800 font-semibold mb-2">Error de Base de Datos:</p>
+            <p className="text-red-800 font-semibold mb-2">Detalle del Error:</p>
             <p className="text-red-600 font-mono text-sm break-all">{error.message}</p>
         </div>
         <p className="mt-6 text-muted-foreground">
-            Se ha detectado un problema de permisos en Firestore. <br />
-            Las reglas de seguridad han sido actualizadas. Por favor, refresca la página e inténtalo de nuevo.
+            Se ha detectado un problema de permisos. Las reglas de seguridad han sido actualizadas. <br />
+            Por favor, refresca la página e inténtalo de nuevo.
         </p>
     </div>
   );
 
   if (!contract && !isContractLoading) return (
     <div className="p-8 text-center bg-white min-h-screen flex flex-col items-center justify-center">
-        <h1 className="text-2xl font-bold mb-4">Certificado No Encontrado</h1>
-        <p className="text-muted-foreground">El contrato con ID {contractId} no pudo ser localizado.</p>
+        <h1 className="text-2xl font-bold mb-4">Contrato No Encontrado</h1>
+        <p className="text-muted-foreground">El contrato con ID {contractId} no pudo ser localizado en la base de datos.</p>
     </div>
   );
 

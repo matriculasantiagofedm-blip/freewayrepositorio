@@ -49,7 +49,7 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
         <div className="w-[11in] h-[8.5in] p-8 bg-white text-black font-serif mx-auto print:m-0">
             <div className="w-full h-full border-[3px] border-black flex flex-col p-8 relative overflow-hidden">
                 
-                {/* Franja Diagonal Amarilla y Negra Superior Izquierda */}
+                {/* Barra Diagonal Amarilla y Negra */}
                 <div className="absolute top-[-10px] left-[-10px] w-72 h-8 z-10">
                     <div className="w-full h-full bg-yellow-400" style={{
                         backgroundImage: 'repeating-linear-gradient(45deg, #fbbf24, #fbbf24 15px, #000 15px, #000 30px)'
@@ -58,15 +58,11 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
 
                 <header className="flex w-full flex-col items-center justify-center relative pt-4">
                     <h2 className="text-xl font-bold tracking-tight mb-2">FREEWAY ESCUELA DE MANEJO S.A.</h2>
-                    
-                    <div className="text-center w-full my-2">
-                        <h1 className="text-7xl font-bold tracking-[0.2em] leading-none mb-1 text-black">FREEWAY</h1>
-                        <p className="text-2xl tracking-[0.5em] font-semibold text-black">ESCUELA DE MANEJO</p>
-                    </div>
-
+                    <h1 className="text-7xl font-bold tracking-[0.2em] leading-none mb-1 text-black">FREEWAY</h1>
+                    <p className="text-2xl tracking-[0.5em] font-semibold text-black uppercase">Escuela de Manejo</p>
                     <p className="text-2xl italic mt-2">Casa Matriz Chorrera</p>
 
-                    {/* Folio y Categoría Superior Derecha */}
+                    {/* Folio y Categoría */}
                     <div className="absolute top-0 right-0 text-center">
                         <p className="text-5xl font-bold mb-1">{getHighestLicenseType(certificate.licenseType)}</p>
                         <p className="text-lg font-medium">{folioNum} / {folioYear}</p>
@@ -114,8 +110,7 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
 }
 
 function CertificateBack({ certificate }: { certificate: Certificate }) {
-    const contract = certificate.contract;
-    const details = contract?.autoMotoDetails || contract?.deluxeDetails;
+    const details = certificate.contract?.autoMotoDetails || certificate.contract?.deluxeDetails;
     const issueDate = toDate(certificate.issueDate);
     const formattedIssueDate = !isNaN(issueDate.getTime()) ? format(issueDate, 'dd-MM-yyyy') : '00-00-0000';
     
@@ -148,14 +143,7 @@ function CertificateBack({ certificate }: { certificate: Certificate }) {
 }
 
 export function CertificateTemplate({ certificate }: { certificate: Certificate | null }) {
-  if (!certificate) {
-    return (
-      <div className="w-full h-full p-8 flex items-center justify-center bg-white">
-        <p>Cargando certificado estándar...</p>
-      </div>
-    );
-  }
-
+  if (!certificate) return null;
   return (
     <div className="bg-gray-100 min-h-screen py-8 print:p-0 print:bg-white">
       <CertificateFront certificate={certificate} />

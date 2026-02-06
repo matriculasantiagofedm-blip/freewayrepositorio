@@ -38,7 +38,7 @@ function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate 
         <div className="w-[11in] h-[8.5in] p-8 bg-white text-black font-serif mx-auto print:m-0">
             <div className="w-full h-full border-[3px] border-black flex flex-col p-8 relative overflow-hidden">
                 
-                {/* Franja Diagonal Amarilla y Negra Superior Izquierda */}
+                {/* Barra Diagonal Amarilla y Negra */}
                 <div className="absolute top-[-10px] left-[-10px] w-72 h-8 z-10">
                     <div className="w-full h-full bg-yellow-400" style={{
                         backgroundImage: 'repeating-linear-gradient(45deg, #fbbf24, #fbbf24 15px, #000 15px, #000 30px)'
@@ -47,15 +47,11 @@ function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate 
 
                 <header className="flex w-full flex-col items-center justify-center relative pt-2">
                     <h2 className="text-xl font-bold tracking-tight mb-2">FREEWAY ESCUELA DE MANEJO S.A.</h2>
-                    
-                    <div className="text-center w-full my-2">
-                        <h1 className="text-7xl font-bold tracking-[0.2em] leading-none mb-1 text-black">FREEWAY</h1>
-                        <p className="text-2xl tracking-[0.5em] font-semibold text-black">ESCUELA DE MANEJO</p>
-                    </div>
-
+                    <h1 className="text-7xl font-bold tracking-[0.2em] leading-none mb-1 text-black">FREEWAY</h1>
+                    <p className="text-2xl tracking-[0.5em] font-semibold text-black uppercase">Escuela de Manejo</p>
                     <p className="text-2xl italic mt-2">Casa Matriz Chorrera</p>
 
-                    {/* Folio, Categoría y Foto Superior Derecha */}
+                    {/* Folio, Categoría y Foto */}
                     <div className="absolute top-0 right-0 flex flex-col items-center gap-2">
                         <div className="text-center">
                             <p className="text-5xl font-bold mb-1">{getHighestLicenseType(certificate.licenseType)}</p>
@@ -108,8 +104,7 @@ function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate 
 }
 
 function CertificateBackAmpliacion({ certificate }: { certificate: Certificate }) {
-    const contract = certificate.contract;
-    const details = contract?.ampliacionesDetails;
+    const details = certificate.contract?.ampliacionesDetails;
     const issueDate = toDate(certificate.issueDate);
     const formattedIssueDate = !isNaN(issueDate.getTime()) ? format(issueDate, 'dd-MM-yyyy') : '00-00-0000';
     
@@ -137,17 +132,11 @@ function CertificateBackAmpliacion({ certificate }: { certificate: Certificate }
                     </div>
                 </div>
 
+                {/* Espacio para documentos */}
                 <div className="mt-8 border-2 border-dashed border-gray-200 rounded-xl p-8 flex flex-col items-center justify-center min-h-[300px] bg-gray-50/30">
                     <div className="grid grid-cols-1 gap-8 opacity-40">
-                        <div className="flex flex-col items-center gap-2">
-                            <div className="w-80 h-48 border-2 border-gray-400 bg-white rounded-lg flex items-center justify-center text-center p-4">
-                                <p className="text-sm font-semibold">ESCANEO DE LICENCIA<br/>(FRONTAL)</p>
-                            </div>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <div className="w-80 h-48 border-2 border-gray-400 bg-white rounded-lg flex items-center justify-center text-center p-4">
-                                <p className="text-sm font-semibold">ESCANEO DE CÉDULA<br/>(FRONTAL)</p>
-                            </div>
+                        <div className="w-80 h-48 border-2 border-gray-400 bg-white rounded-lg flex items-center justify-center text-center p-4">
+                            <p className="text-sm font-semibold">ESCANEO DE LICENCIA / CÉDULA</p>
                         </div>
                     </div>
                     <p className="mt-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Espacio reservado para documentos de identidad</p>
@@ -158,14 +147,7 @@ function CertificateBackAmpliacion({ certificate }: { certificate: Certificate }
 }
 
 export function AmpliacionCertificateTemplate({ certificate }: { certificate: Certificate | null }) {
-  if (!certificate) {
-    return (
-      <div className="w-full h-full p-8 flex items-center justify-center bg-white">
-        <p>Cargando certificado de ampliación...</p>
-      </div>
-    );
-  }
-
+  if (!certificate) return null;
   return (
     <div className="bg-gray-100 min-h-screen py-8 print:p-0 print:bg-white">
       <CertificateFrontAmpliacion certificate={certificate} />

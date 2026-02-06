@@ -47,9 +47,9 @@ function AllContractsContent() {
   const [searchTerm, setSearchTerm] = useState('');
   const filter = searchParams.get('filter');
 
+  // DESBLOQUEO TOTAL: Acceso global a todos los contratos ordenados por folio
   const contractsQuery = useMemoQuery(() => {
     if (!db || !role) return null;
-    // Desbloqueo total: Acceso global a todos los contratos ordenados por folio
     return query(collection(db, 'contracts'), orderBy('folioNumber', 'desc'));
   }, [db, role]);
 

@@ -34,9 +34,9 @@ export default function DashboardPage() {
   const db = useDb();
   const { role } = useCurrentRole();
 
+  // DESBLOQUEO TOTAL: Todos los roles operativos ven todos los contratos de la empresa
   const contractsQuery = useMemoQuery(() => {
     if (!db || !role) return null;
-    // DESBLOQUEO TOTAL: Todos los roles operativos ven todos los contratos de la empresa
     return query(collection(db, 'contracts'));
   }, [db, role]);
 

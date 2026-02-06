@@ -62,10 +62,15 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                     <p className="text-2xl tracking-[0.5em] font-semibold text-black uppercase">Escuela de Manejo</p>
                     <p className="text-2xl italic mt-2">Casa Matriz Chorrera</p>
 
-                    {/* Folio y Categoría */}
-                    <div className="absolute top-0 right-0 text-center">
-                        <p className="text-5xl font-bold mb-1">{getHighestLicenseType(certificate.licenseType)}</p>
-                        <p className="text-lg font-medium">{folioNum} / {folioYear}</p>
+                    {/* Folio, Categoría y Foto */}
+                    <div className="absolute top-0 right-0 flex flex-col items-center gap-2">
+                        <div className="text-center">
+                            <p className="text-5xl font-bold mb-1">{getHighestLicenseType(certificate.licenseType)}</p>
+                            <p className="text-lg font-medium">{folioNum} / {folioYear}</p>
+                        </div>
+                        <div className="w-32 h-40 border-2 border-gray-300 bg-gray-50 flex items-center justify-center text-xs text-gray-400 text-center p-2">
+                            FOTO DEL ESTUDIANTE
+                        </div>
                     </div>
                 </header>
 
@@ -121,21 +126,31 @@ function CertificateBack({ certificate }: { certificate: Certificate }) {
                 <p>Número de Documento: <span className="font-bold">{certificate.cip}</span></p>
                 <p>Hago constar que resido en: <span className="font-bold">{details?.studentAddress?.toUpperCase() || '--------------------'}</span></p>
                 <p>
-                    con teléfono residencial: <span className="font-bold">{details?.studentPhone1 || '-----'}</span> &nbsp; &nbsp; 
-                    teléfono celular: <span className="font-bold">{details?.studentPhone2 || '-----'}</span>
+                    con teléfono residencial: <span className="font-bold">{details?.studentPhone1 || 'XXXXX'}</span> &nbsp; &nbsp; 
+                    teléfono celular: <span className="font-bold">{details?.studentPhone2 || 'XXXXX'}</span>
                 </p>
                 <p><span className="font-bold uppercase">TIPO DE LICENCIAS:</span> <span className="font-bold">{certificate.licenseType}</span></p>
                 <p>Este certificado tiene validez de 364 días a partir de <span className="font-bold">{formattedIssueDate}</span></p>
                 
                 <div className="pt-12 space-y-8">
-                    <div className="grid grid-cols-2 gap-x-12">
+                    <div className="flex gap-x-12">
                         <div className="flex items-center gap-2">Primer Nombre: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.firstName?.toUpperCase() || ''}</span></div>
                         <div className="flex items-center gap-2">Segundo Nombre: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.middleName?.toUpperCase() || ''}</span></div>
                     </div>
-                    <div className="grid grid-cols-2 gap-x-12">
+                    <div className="flex gap-x-12">
                         <div className="flex items-center gap-2">Primer Apellido: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.lastName?.toUpperCase() || ''}</span></div>
                         <div className="flex items-center gap-2">Segundo Apellido: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.secondLastName?.toUpperCase() || ''}</span></div>
                     </div>
+                </div>
+
+                {/* Espacio para documentos */}
+                <div className="mt-12 border-2 border-dashed border-gray-200 rounded-xl p-12 flex flex-col items-center justify-center min-h-[350px] bg-gray-50/30">
+                    <div className="grid grid-cols-1 gap-12 opacity-40">
+                        <div className="w-96 h-56 border-2 border-gray-400 bg-white rounded-lg flex items-center justify-center text-center p-4">
+                            <p className="text-base font-semibold">ESCANEO DE LICENCIA / CÉDULA</p>
+                        </div>
+                    </div>
+                    <p className="mt-8 text-sm font-bold text-gray-400 uppercase tracking-widest">Espacio reservado para documentos de identidad</p>
                 </div>
             </div>
         </div>

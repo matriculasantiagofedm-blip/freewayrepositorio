@@ -1,5 +1,5 @@
 'use client';
-import { useParams, useRouter } from { 'next/navigation' };
+import { useParams, useRouter } from 'next/navigation';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { ContractView } from '@/components/contract-view';

@@ -10,7 +10,7 @@ import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
 
 /**
  * Motor de impresión de certificados. 
- * Desbloqueado para todos los roles (Administrador, Ventas, Ventas Externas).
+ * DESBLOQUEADO: Carga inmediata sin dependencia de sesión de usuario para evitar bloqueos en pestañas nuevas.
  */
 function CertificatePrintContent() {
   const { id } = useParams();
@@ -19,7 +19,7 @@ function CertificatePrintContent() {
 
   const contractId = Array.isArray(id) ? id[0] : id;
 
-  // Carga inmediata sin dependencia de objeto 'user' para evitar bloqueos en pestañas nuevas
+  // Carga inmediata: Se elimina la dependencia de 'user' para que cargue al abrir la pestaña
   const contractRef = useMemoDoc(() => {
     if (!db || !contractId) return null;
     return doc(db, 'contracts', contractId);

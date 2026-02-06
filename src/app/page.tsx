@@ -70,7 +70,7 @@ export default function Home() {
             className="w-full font-semibold shadow-md"
           >
             {isLoading ? (
-              <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Procesando con IA...</>
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Procesando con IA...</>
             ) : (
               'Analizar Contrato de Prueba'
             )}

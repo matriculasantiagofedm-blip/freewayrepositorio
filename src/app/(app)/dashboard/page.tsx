@@ -2,10 +2,10 @@
 
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { FileText, CalendarClock, Users, Car, Bike, Combine, Crown, Plus, CarFront, Award, BookMarked, Gauge, Wrench, GanttChart, HandCoins } from 'lucide-react';
+import { FileText, CalendarClock, Users, Car, Bike, Combine, Crown, Plus, CarFront, HandCoins, BookMarked, Gauge, Wrench, Award } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { isPast } from 'date-fns';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { cn, toDate } from '@/lib/utils';
@@ -35,10 +35,10 @@ export default function DashboardPage() {
   const db = useDb();
   const { role } = useCurrentRole();
 
-  // DESBLOQUEO TOTAL: Todos los roles operativos ven todos los contratos de la empresa
+  // DESBLOQUEO TOTAL: Se eliminan todos los filtros de userId para ver la base de datos completa de la empresa.
   const contractsQuery = useMemo(() => {
     if (!db) return null;
-    return query(collection(db, 'contracts'));
+    return query(collection(db, 'contracts'), orderBy('createdAt', 'desc'));
   }, [db]);
 
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
@@ -78,7 +78,7 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-8">
       <div className="flex flex-col">
         <h1 className="font-headline text-3xl font-bold">Panel de Control</h1>
-        <p className="text-muted-foreground">Gestión global de Freeway Escuela de Manejo</p>
+        <p className="text-muted-foreground">Gestión unificada de Freeway Escuela de Manejo</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">

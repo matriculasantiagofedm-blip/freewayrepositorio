@@ -42,12 +42,11 @@ const isOverdue = (contract: Contract): boolean => {
 
 function AllContractsContent() {
   const db = useDb();
-  const { role } = useCurrentRole();
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const filter = searchParams.get('filter');
 
-  // DESBLOQUEO TOTAL: Acceso global a todos los contratos ordenados por folio
+  // DESBLOQUEO TOTAL: Acceso global a todos los contratos de la empresa ordenados por folio
   const contractsQuery = useMemo(() => {
     if (!db) return null;
     return query(collection(db, 'contracts'), orderBy('folioNumber', 'desc'));
@@ -59,8 +58,8 @@ function AllContractsContent() {
     if (!allContracts) return [];
     return allContracts.filter((contract) => {
       const folio = String(contract.folioNumber || '').padStart(6, '0');
-      const client = contract.clientName.toLowerCase();
-      const type = contract.type.toLowerCase();
+      const client = contract.clientName?.toLowerCase() || '';
+      const type = contract.type?.toLowerCase() || '';
       const search = searchTerm.toLowerCase();
       
       if (filter === 'overdue' && !isOverdue(contract)) return false;
@@ -74,7 +73,7 @@ function AllContractsContent() {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <h1 className="font-headline text-3xl font-bold">{filter === 'overdue' ? 'Contratos por Cobrar' : 'Todos los Contratos'}</h1>
+        <h1 className="font-headline text-3xl font-bold">{filter === 'overdue' ? 'Contratos por Cobrar' : 'Listado Global de Contratos'}</h1>
          <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -88,7 +87,7 @@ function AllContractsContent() {
       </div>
       {isLoading ? (
         <div className="flex items-center justify-center p-12">
-            <p className="animate-pulse font-medium">Cargando contratos del sistema...</p>
+            <p className="animate-pulse font-medium">Cargando base de datos unificada...</p>
         </div>
       ) : (
         <div className="rounded-lg border bg-card">

@@ -1,10 +1,7 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import {
-  doc,
-  collection,
   onSnapshot,
-  query,
   Query,
   DocumentReference,
   DocumentData,
@@ -45,15 +42,18 @@ export function useDoc<T>(ref: DocumentReference<DocumentData> | null | undefine
       },
       (err) => {
         // Solo mostrar error si no es una cancelación normal
-        if (err.code !== 'cancelled') {
-          console.error(`Error fetching document at ${ref.path}:`, err);
+        if (err.code !== 'cancelled' && err.code !== 'permission-denied') {
+          console.error(`Error fetching document:`, err);
           setError(err);
           setIsLoading(false);
           toast({
             variant: "destructive",
             title: "Error de Carga",
-            description: `No se pudo cargar el documento: ${err.message}`,
+            description: `No se pudo cargar el documento. Verifica los permisos.`,
           });
+        } else if (err.code === 'permission-denied') {
+            setIsLoading(false);
+            setError(err);
         }
       }
     );
@@ -94,15 +94,18 @@ export function useCollection<T>(q: Query<DocumentData> | CollectionReference<Do
         setError(null);
       },
       (err) => {
-        if (err.code !== 'cancelled') {
+        if (err.code !== 'cancelled' && err.code !== 'permission-denied') {
           console.error("Error fetching collection:", err);
           setError(err);
           setIsLoading(false);
           toast({
             variant: "destructive",
             title: "Error de Carga",
-            description: `No se pudo cargar la colección: ${err.message}`,
+            description: `No se pudo cargar la colección.`,
           });
+        } else if (err.code === 'permission-denied') {
+            setIsLoading(false);
+            setError(err);
         }
       }
     );
@@ -113,13 +116,20 @@ export function useCollection<T>(q: Query<DocumentData> | CollectionReference<Do
   return { data, isLoading, error };
 }
 
-
-export function useMemoQuery(factory: () => Query<DocumentData> | CollectionReference<DocumentData> | null | undefined, deps: any[]) {
+export function useMemoQuery(factory: () => any, deps: any[]) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    return useMemo(factory, deps);
+    const [q, setQ] = useState<any>(null);
+    useEffect(() => {
+        setQ(factory());
+    }, deps);
+    return q;
 }
 
-export function useMemoDoc(factory: () => DocumentReference<DocumentData> | null | undefined, deps: any[]) {
+export function useMemoDoc(factory: () => any, deps: any[]) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    return useMemo(factory, deps);
+    const [d, setD] = useState<any>(null);
+    useEffect(() => {
+        setD(factory());
+    }, deps);
+    return d;
 }

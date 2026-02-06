@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // Permitir lectura y escritura a cualquier usuario autenticado
-    // Esto incluye a los usuarios que entran con las claves de Ventas y Administrador (Auth Anónimo)
+    // Esto es necesario para los roles de Ventas, Administrador y Ventas Externas (Auth Anónimo)
     match /{document=**} {
       allow read, write: if request.auth != null;
     }

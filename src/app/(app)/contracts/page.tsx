@@ -17,10 +17,10 @@ import { format, isPast } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
 import { Eye, Search, CheckCircle, XCircle } from 'lucide-react';
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useDb } from '@/components/firebase-provider';
-import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
+import { useCollection } from '@/hooks/use-firestore';
 
 const getBalance = (contract: Contract): number => {
     if (contract.autoMotoDetails) return contract.autoMotoDetails.balance || 0;
@@ -48,14 +48,16 @@ function AllContractsContent() {
   const filter = searchParams.get('filter');
 
   // DESBLOQUEO TOTAL: Acceso global a todos los contratos ordenados por folio
-  const contractsQuery = useMemoQuery(() => {
-    if (!db || !role) return null;
+  const contractsQuery = useMemo(() => {
+    if (!db) return null;
     return query(collection(db, 'contracts'), orderBy('folioNumber', 'desc'));
-  }, [db, role]);
+  }, [db]);
 
   const { data: allContracts, isLoading } = useCollection<Contract>(contractsQuery);
 
-  const filteredContracts = allContracts?.filter((contract) => {
+  const filteredContracts = useMemo(() => {
+    if (!allContracts) return [];
+    return allContracts.filter((contract) => {
       const folio = String(contract.folioNumber || '').padStart(6, '0');
       const client = contract.clientName.toLowerCase();
       const type = contract.type.toLowerCase();
@@ -66,7 +68,8 @@ function AllContractsContent() {
           return folio.includes(search) || client.includes(search) || type.includes(search);
       }
       return true;
-    }) || [];
+    });
+  }, [allContracts, searchTerm, filter]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -84,9 +87,11 @@ function AllContractsContent() {
         </div>
       </div>
       {isLoading ? (
-        <div className="flex items-center justify-center p-8"><p>Cargando contratos...</p></div>
+        <div className="flex items-center justify-center p-12">
+            <p className="animate-pulse font-medium">Cargando contratos del sistema...</p>
+        </div>
       ) : (
-        <div className="rounded-lg border">
+        <div className="rounded-lg border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
@@ -100,21 +105,40 @@ function AllContractsContent() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredContracts.map((contract) => (
-                <TableRow key={contract.id} className={cn(contract.status === 'expired' && 'bg-muted/50')}>
-                  <TableCell className="font-medium text-primary">{String(contract.folioNumber || '').padStart(6, '0')}</TableCell>
-                  <TableCell>{contract.clientName}</TableCell>
-                  <TableCell>{contract.type}</TableCell>
-                  <TableCell>
-                    {contract.certificateGeneratedAt ? <CheckCircle className="h-4 w-4 text-green-600" /> : <XCircle className="h-4 w-4 text-muted-foreground" />}
-                  </TableCell>
-                  <TableCell>{format(toDate(contract.createdAt), 'dd/MM/yyyy', { locale: es })}</TableCell>
-                  {filter === 'overdue' && <TableCell className="text-right font-semibold text-destructive">B/. {getBalance(contract).toFixed(2)}</TableCell>}
-                  <TableCell className="text-right">
-                    <Button asChild variant="ghost" size="icon"><Link href={`/contracts/${contract.id}`}><Eye className="h-4 w-4" /></Link></Button>
+              {filteredContracts.length > 0 ? (
+                filteredContracts.map((contract) => (
+                  <TableRow key={contract.id} className={cn(contract.status === 'expired' && 'bg-muted/50')}>
+                    <TableCell className="font-medium text-primary">
+                        {String(contract.folioNumber || '').padStart(6, '0')}
+                    </TableCell>
+                    <TableCell className="font-semibold">{contract.clientName}</TableCell>
+                    <TableCell>{contract.type}</TableCell>
+                    <TableCell>
+                      {contract.certificateGeneratedAt ? (
+                        <div className="flex items-center gap-1 text-green-600">
+                            <CheckCircle className="h-4 w-4" />
+                            <span className="text-[10px] font-bold">EMITIDO</span>
+                        </div>
+                      ) : (
+                        <XCircle className="h-4 w-4 text-muted-foreground opacity-50" />
+                      )}
+                    </TableCell>
+                    <TableCell>{format(toDate(contract.createdAt), 'dd/MM/yyyy', { locale: es })}</TableCell>
+                    {filter === 'overdue' && <TableCell className="text-right font-bold text-destructive">B/. {getBalance(contract).toFixed(2)}</TableCell>}
+                    <TableCell className="text-right">
+                      <Button asChild variant="ghost" size="icon">
+                        <Link href={`/contracts/${contract.id}`}><Eye className="h-4 w-4" /></Link>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={filter === 'overdue' ? 7 : 6} className="h-32 text-center text-muted-foreground">
+                    {searchTerm ? "No se encontraron contratos con ese criterio." : "No hay contratos registrados en el sistema."}
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </div>
@@ -125,7 +149,7 @@ function AllContractsContent() {
 
 export default function AllContractsPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center">Cargando lista...</div>}>
+    <Suspense fallback={<div className="p-8 text-center">Iniciando listado global...</div>}>
       <AllContractsContent />
     </Suspense>
   );

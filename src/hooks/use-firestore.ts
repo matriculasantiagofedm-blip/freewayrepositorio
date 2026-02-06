@@ -82,9 +82,10 @@ export function useCollection<T>(q: Query<DocumentData> | CollectionReference<Do
         setError(null);
       },
       (err) => {
+        console.error("Firestore useCollection Error:", err);
         if (err.code === 'permission-denied') {
           const permissionError = new FirestorePermissionError({
-            path: (q as any).path || 'collection',
+            path: 'collection_query',
             operation: 'list',
           });
           errorEmitter.emit('permission-error', permissionError);

@@ -10,7 +10,8 @@ import type { Contract } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { cn, toDate } from '@/lib/utils';
 import { useDb } from '@/components/firebase-provider';
-import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
+import { useCollection } from '@/hooks/use-firestore';
+import { useMemo } from 'react';
 
 const getBalance = (contract: Contract): number => {
     if (contract.autoMotoDetails) return contract.autoMotoDetails.balance || 0;
@@ -35,10 +36,10 @@ export default function DashboardPage() {
   const { role } = useCurrentRole();
 
   // DESBLOQUEO TOTAL: Todos los roles operativos ven todos los contratos de la empresa
-  const contractsQuery = useMemoQuery(() => {
-    if (!db || !role) return null;
+  const contractsQuery = useMemo(() => {
+    if (!db) return null;
     return query(collection(db, 'contracts'));
-  }, [db, role]);
+  }, [db]);
 
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
 
@@ -75,11 +76,15 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <h1 className="font-headline text-3xl font-bold">Panel de Control</h1>
+      <div className="flex flex-col">
+        <h1 className="font-headline text-3xl font-bold">Panel de Control</h1>
+        <p className="text-muted-foreground">Gestión global de Freeway Escuela de Manejo</p>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-3">
         {stats.map((stat) => (
             <Link key={stat.title} href={stat.href} className="no-underline">
-                <Card className="hover:shadow-lg transition-shadow">
+                <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
                         <stat.icon className="h-4 w-4 text-muted-foreground" />
@@ -94,6 +99,7 @@ export default function DashboardPage() {
             </Link>
         ))}
       </div>
+
       <div>
         <h2 className="text-2xl font-bold font-headline mb-4">Nuevo Contrato</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -110,6 +116,7 @@ export default function DashboardPage() {
           ))}
         </div>
       </div>
+
       {visibleOtherActions.length > 0 && (
         <div>
           <h2 className="text-2xl font-bold font-headline mb-4">Operaciones</h2>
@@ -121,7 +128,7 @@ export default function DashboardPage() {
                               <div className={cn("p-2 rounded-lg", action.bgColor)}><action.icon className={cn("h-6 w-6", action.textColor)} /></div>
                               <span className="font-semibold">{action.name}</span>
                           </div>
-                          <Button asChild size="sm"><Link href={action.href}>Ir</Link></Button>
+                          <Button asChild size="sm" variant="outline"><Link href={action.href}>Ir</Link></Button>
                       </CardContent>
                   </Card>
               ))}

@@ -1,5 +1,5 @@
 'use client';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter } from { 'next/navigation' };
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { ContractView } from '@/components/contract-view';
@@ -81,7 +81,7 @@ export default function ContractDetailPage() {
 
   const contractRef = useMemoDoc(() => {
     if (!db || !contractId) return null;
-    // Desbloqueo total: Carga sin dependencia de sesión de usuario para máxima velocidad
+    // DESBLOQUEO TOTAL: Carga inmediata sin dependencia de sesión de usuario para máxima velocidad
     return doc(db, `contracts`, contractId);
   }, [db, contractId]);
 

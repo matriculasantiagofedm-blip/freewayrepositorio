@@ -60,8 +60,8 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                     <h2 className="text-xl font-bold tracking-tight mb-2">FREEWAY ESCUELA DE MANEJO S.A.</h2>
                     
                     <div className="text-center w-full my-2">
-                        <h1 className="text-7xl font-bold tracking-[0.2em] leading-none mb-1">FREEWAY</h1>
-                        <p className="text-2xl tracking-[0.5em] font-semibold">ESCUELA DE MANEJO</p>
+                        <h1 className="text-7xl font-bold tracking-[0.2em] leading-none mb-1 text-black">FREEWAY</h1>
+                        <p className="text-2xl tracking-[0.5em] font-semibold text-black">ESCUELA DE MANEJO</p>
                     </div>
 
                     <p className="text-2xl italic mt-2">Casa Matriz Chorrera</p>
@@ -96,7 +96,7 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                         </p>
                     </div>
                     
-                    <div className="text-center mt-10 font-bold text-xl">
+                    <div className="text-center mt-10 font-bold text-xl italic">
                         <p>***Dado en la república de Panamá, a los {formattedDay} días del mes de {formattedMonth} de {formattedYear}***</p>
                     </div>
                 </main>
@@ -120,7 +120,7 @@ function CertificateBack({ certificate }: { certificate: Certificate }) {
     const formattedIssueDate = !isNaN(issueDate.getTime()) ? format(issueDate, 'dd-MM-yyyy') : '00-00-0000';
     
     return (
-        <div className="w-[11in] h-[8.5in] p-16 bg-white text-black font-sans text-xl flex flex-col justify-start break-before-page mx-auto print:m-0 print:p-12">
+        <div className="w-[11in] h-[8.5in] p-16 bg-white text-black font-sans text-xl flex flex-col justify-start break-before-page mx-auto print:m-0 print:p-16">
             <div className="space-y-6 pt-12">
                 <p>Yo, <span className="font-bold">{certificate.clientName.toUpperCase()}</span></p>
                 <p>Número de Documento: <span className="font-bold">{certificate.cip}</span></p>
@@ -134,12 +134,12 @@ function CertificateBack({ certificate }: { certificate: Certificate }) {
                 
                 <div className="pt-12 space-y-8">
                     <div className="grid grid-cols-2 gap-x-12">
-                        <p>Primer Nombre: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.firstName || ''}</span></p>
-                        <p>Segundo Nombre: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.middleName || ''}</span></p>
+                        <div className="flex items-center gap-2">Primer Nombre: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.firstName || ''}</span></div>
+                        <div className="flex items-center gap-2">Segundo Nombre: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.middleName || ''}</span></div>
                     </div>
                     <div className="grid grid-cols-2 gap-x-12">
-                        <p>Primer Apellido: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.lastName || ''}</span></p>
-                        <p>Segundo Apellido: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.secondLastName || ''}</span></p>
+                        <div className="flex items-center gap-2">Primer Apellido: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.lastName || ''}</span></div>
+                        <div className="flex items-center gap-2">Segundo Apellido: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.secondLastName || ''}</span></div>
                     </div>
                 </div>
             </div>

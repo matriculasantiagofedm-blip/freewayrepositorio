@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /{document=**} {
-      // DESBLOQUEO DEFINITIVO: Permite acceso total a todos los roles operativos.
+      // DESBLOQUEO TOTAL: Permite acceso de lectura y escritura a todos los roles operativos.
       // Esto soluciona los errores de permisos en impresión y gestión multi-usuario.
       allow read, write: if true;
     }

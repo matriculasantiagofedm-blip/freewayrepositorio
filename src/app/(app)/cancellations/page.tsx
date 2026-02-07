@@ -9,7 +9,7 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import type { Contract, Payment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Printer, Save, PlusCircle } from 'lucide-react';
+import { Loader2, Search, Printer, Save, PlusCircle, UserPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -66,16 +66,17 @@ export default function CancellationsPage() {
       return;
     }
 
+    const currentId = studentIdNumber;
     resetForm();
     setIsLoading(true);
     setSearched(true);
-    setStudentIdNumber(studentIdNumber);
+    setStudentIdNumber(currentId);
 
     try {
       const contractsRef = collection(db, 'contracts');
-      const q1 = query(contractsRef, where('autoMotoDetails.studentIdNumber', '==', studentIdNumber));
-      const q2 = query(contractsRef, where('ampliacionesDetails.studentIdNumber', '==', studentIdNumber));
-      const q3 = query(contractsRef, where('deluxeDetails.studentIdNumber', '==', studentIdNumber));
+      const q1 = query(contractsRef, where('autoMotoDetails.studentIdNumber', '==', currentId));
+      const q2 = query(contractsRef, where('ampliacionesDetails.studentIdNumber', '==', currentId));
+      const q3 = query(contractsRef, where('deluxeDetails.studentIdNumber', '==', currentId));
 
       const [snapshot1, snapshot2, snapshot3] = await Promise.all([getDocs(q1), getDocs(q2), getDocs(q3)]);
       const contractsMap = new Map<string, Contract>();
@@ -241,6 +242,7 @@ export default function CancellationsPage() {
 
         {isLoading && <div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}
 
+        {/* Caso: Contratos Encontrados */}
         {searched && !isLoading && foundContracts && (
           <Card className='print:border-none print:shadow-none'>
               <CardHeader className='print:p-2'>
@@ -276,6 +278,91 @@ export default function CancellationsPage() {
                   ))}
               </CardContent>
           </Card>
+        )}
+
+        {/* Caso: Sin Contratos (Pago Manual) */}
+        {searched && !isLoading && !foundContracts && (
+            <Card className="animate-in fade-in-50 max-w-2xl mx-auto w-full">
+                <CardHeader>
+                    <div className='flex items-center gap-2 text-amber-600 mb-2'>
+                        <UserPlus className="h-5 w-5" />
+                        <h2 className="text-lg font-bold">Estudiante no encontrado</h2>
+                    </div>
+                    <CardDescription>
+                        No se encontraron contratos activos para la cédula <strong>{studentIdNumber}</strong>. 
+                        Puedes registrar un abono o cancelación manual a continuación.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    {!manualPaymentSaved ? (
+                        <div className='grid grid-cols-1 gap-4'>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="manual-name">Nombre Completo del Cliente</Label>
+                                    <Input 
+                                        id="manual-name"
+                                        placeholder="Introducir nombre" 
+                                        value={manualName} 
+                                        onChange={(e) => setManualName(e.target.value)} 
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="manual-address">Dirección de Residencia</Label>
+                                    <Input 
+                                        id="manual-address"
+                                        placeholder="Ciudad, Calle, Casa..." 
+                                        value={manualAddress} 
+                                        onChange={(e) => setManualAddress(e.target.value)} 
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-2 max-w-xs">
+                                <Label htmlFor="manual-amount">Monto a Pagar (B/.)</Label>
+                                <Input 
+                                    id="manual-amount"
+                                    type="number" 
+                                    placeholder="0.00" 
+                                    value={manualPayment || ''} 
+                                    onChange={(e) => setManualPayment(parseFloat(e.target.value) || 0)} 
+                                />
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="p-6 bg-green-50 border border-green-200 rounded-lg flex flex-col items-center gap-2 text-center">
+                            <div className="bg-green-100 p-2 rounded-full">
+                                <Save className="h-6 w-6 text-green-600" />
+                            </div>
+                            <div>
+                                <p className="font-bold text-green-800">Pago Manual Registrado</p>
+                                <p className="text-sm text-green-700">Se ha generado el folio de pago N° {String(manualSavedPaymentData?.cancellationFolio).padStart(6, '0')}</p>
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
+                <CardFooter>
+                    {!manualPaymentSaved ? (
+                        <Button 
+                            onClick={() => handleSavePayment(null)} 
+                            disabled={isSaving || !manualName || !manualAddress || manualPayment <= 0}
+                            className="w-full sm:w-auto"
+                        >
+                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                            Registrar Pago Manual
+                        </Button>
+                    ) : (
+                        <div className='flex gap-2 w-full sm:w-auto'>
+                            <Button variant="outline" onClick={() => handlePrint('MANUAL')}>
+                                <Printer className="mr-2 h-4 w-4" />
+                                Imprimir Recibo
+                            </Button>
+                            <Button onClick={resetForm}>
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Nueva Búsqueda
+                            </Button>
+                        </div>
+                    )}
+                </CardFooter>
+            </Card>
         )}
       </div>
     </div>

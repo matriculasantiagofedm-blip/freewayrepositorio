@@ -31,6 +31,8 @@ export default function ClientsPage() {
 
   const { data: clients, isLoading } = useCollection<Client>(clientsQuery);
 
+  const isAdmin = role === 'Administrador';
+
   const filteredClients =
     clients?.filter((client) => {
       const name = client.name.toLowerCase();
@@ -60,7 +62,7 @@ export default function ClientsPage() {
                 <TableHead>Nombre</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Cédula / Pasaporte</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
+                {isAdmin && <TableHead className="text-right">Acciones</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -69,11 +71,13 @@ export default function ClientsPage() {
                   <TableCell className="font-medium">{client.name}</TableCell>
                   <TableCell>{client.email}</TableCell>
                   <TableCell>{client.idNumber || 'No disponible'}</TableCell>
-                  <TableCell className="text-right">
-                    <Button asChild variant="ghost" size="icon">
-                      <Link href={`/clients/${client.id}`}><Eye className="h-4 w-4" /></Link>
-                    </Button>
-                  </TableCell>
+                  {isAdmin && (
+                    <TableCell className="text-right">
+                      <Button asChild variant="ghost" size="icon">
+                        <Link href={`/clients/${client.id}`}><Eye className="h-4 w-4" /></Link>
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>

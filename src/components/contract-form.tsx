@@ -244,7 +244,7 @@ export function ContractForm() {
     
     if (pkg) {
         form.setValue('courseValue', pkg.price);
-        if (pkg.hours) {
+        if (pkg.hours || pkg.id === 'mixto-10h') {
             const totalSlots = Math.ceil(pkg.hours / 2);
             
             const isMotoPlan = contractType === 'Curso Moto' || (contractType === 'Curso Solo Practica' && pkg.vehicleType === 'Moto');
@@ -265,6 +265,10 @@ export function ContractForm() {
                 if (pkg.id === 'mixto-reforzamiento') {
                     autoCount = 1;
                     motoCount = 0;
+                } else if (pkg.id === 'mixto-10h') {
+                    // Specific case for Auto + Moto 10Hrs (5 each)
+                    autoCount = 5;
+                    motoCount = 5;
                 } else if (pkg.hours === 8) {
                     autoCount = 2;
                     motoCount = 2;
@@ -272,7 +276,7 @@ export function ContractForm() {
                     autoCount = 3;
                     motoCount = 3;
                 } else if (pkg.hours === 10) {
-                    if (pkg.id.includes('-am') || pkg.id === 'mixto-10h') {
+                    if (pkg.id.includes('-am')) {
                         autoCount = 3;
                         motoCount = 2;
                     } else {

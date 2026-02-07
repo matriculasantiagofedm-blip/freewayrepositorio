@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useDb } from '@/components/firebase-provider';
+import { useDb, useUser } from '@/components/firebase-provider';
 import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -50,6 +50,7 @@ const getNextFolio = (lastFolio: string | null): string => {
 export default function ContractDetailPage() {
   const { id } = useParams();
   const db = useDb();
+  const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
   const { role } = useCurrentRole();
@@ -80,9 +81,9 @@ export default function ContractDetailPage() {
   const contractId = Array.isArray(id) ? id[0] : id;
 
   const contractRef = useMemoDoc(() => {
-    if (!db || !contractId) return null;
+    if (!db || !contractId || isUserLoading || !user) return null;
     return doc(db, `contracts`, contractId);
-  }, [db, contractId]);
+  }, [db, contractId, user, isUserLoading]);
 
   const { data: contract, isLoading, error } = useDoc<Contract>(contractRef);
 
@@ -273,7 +274,7 @@ export default function ContractDetailPage() {
             </div>
       </div>
       
-      {isLoading && <p className="print-hide">Cargando contrato...</p>}
+      {(isLoading || isUserLoading) && <p className="print-hide">Cargando contrato...</p>}
       {error && <p className="text-destructive print-hide">Error: {error.message}</p>}
       {contract && <ContractView contract={contract} />}
 

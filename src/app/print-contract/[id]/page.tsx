@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -6,7 +5,7 @@ import { doc } from 'firebase/firestore';
 import { useEffect, Suspense } from 'react';
 import { ContractView } from '@/components/contract-view';
 import type { Contract } from '@/lib/types';
-import { useDb, useFirebase } from '@/components/firebase-provider';
+import { useDb, useFirebase, useUser } from '@/components/firebase-provider';
 import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
 import { signInAnonymously } from 'firebase/auth';
 
@@ -19,21 +18,22 @@ function PrintContractContent() {
   const { id } = useParams();
   const db = useDb();
   const { auth } = useFirebase();
+  const { user, isUserLoading } = useUser();
 
   const contractId = Array.isArray(id) ? id[0] : id;
-
-  const contractRef = useMemoDoc(() => {
-    if (!db || !contractId) return null;
-    return doc(db, `contracts`, contractId);
-  }, [db, contractId]);
-
-  const { data: contract, isLoading, error } = useDoc<Contract>(contractRef);
 
   useEffect(() => {
     if (auth && !auth.currentUser) {
       signInAnonymously(auth).catch(console.error);
     }
   }, [auth]);
+
+  const contractRef = useMemoDoc(() => {
+    if (!db || !contractId || !user || isUserLoading) return null;
+    return doc(db, `contracts`, contractId);
+  }, [db, contractId, user, isUserLoading]);
+
+  const { data: contract, isLoading, error } = useDoc<Contract>(contractRef);
 
   useEffect(() => {
     if (contract && !isLoading) {
@@ -44,7 +44,7 @@ function PrintContractContent() {
     }
   }, [contract, isLoading]);
 
-  if (isLoading) {
+  if (isLoading || isUserLoading) {
     return <div className="flex h-screen items-center justify-center bg-white"><p className="text-lg animate-pulse">Cargando documento...</p></div>;
   }
 

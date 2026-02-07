@@ -6,9 +6,8 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useCollection } from '@/hooks/use-firestore';
 import { cn, toDate } from '@/lib/utils';
-import { isPast } from 'date-fns';
 import { collection, orderBy, query } from 'firebase/firestore';
-import { Award, Bike, BookMarked, CalendarClock, Car, CarFront, Combine, Crown, FileText, Gauge, HandCoins, Plus, Users, Wrench } from 'lucide-react';
+import { Award, Bike, BookMarked, CalendarClock, Car, CarFront, Combine, Crown, FileText, Gauge, HandCoins, Plus, Users, Wrench, GraduationCap } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import type { Contract } from '@/lib/types';
@@ -77,6 +76,7 @@ export default function DashboardPage() {
   ];
 
   const otherActions = [
+      { name: 'Certificados', icon: GraduationCap, href: '/certificates', bgColor: 'bg-amber-50', textColor: 'text-amber-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { name: 'Actualizaciones', icon: Award, href: '/updates', bgColor: 'bg-green-50', textColor: 'text-green-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { name: 'Pago de Saldos', icon: HandCoins, href: '/cancellations', bgColor: 'bg-blue-50', textColor: 'text-blue-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { name: 'Venta de Libros', icon: BookMarked, href: '/book-sales', bgColor: 'bg-indigo-50', textColor: 'text-indigo-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },

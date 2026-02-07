@@ -27,9 +27,14 @@ const navLinks = [
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
   },
   {
-    label: 'Pagos',
+    label: 'Operaciones',
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     children: [
+        {
+            href: '/certificates',
+            label: 'Certificados',
+            roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+        },
         {
             href: '/updates',
             label: 'Actualizaciones',

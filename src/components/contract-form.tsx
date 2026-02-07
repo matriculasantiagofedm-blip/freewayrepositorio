@@ -47,9 +47,9 @@ const practicalTimes = [
 ];
 
 const autoPackages = [
-    { id: 'basico', label: 'Curso Auto Básico', price: 133.00 },
-    { id: 'plus', label: 'Curso Auto Plus', price: 155.00 },
-    { id: 'premium', label: 'Curso Auto Premium', price: 180.00 },
+    { id: 'basico', label: 'Curso Auto Básico (8hrz)', price: 133.00 },
+    { id: 'plus', label: 'Curso Auto Plus (10hrz)', price: 155.00 },
+    { id: 'premium', label: 'Curso Auto Premium (12hrz)', price: 180.00 },
 ];
 
 const motoPackages = [

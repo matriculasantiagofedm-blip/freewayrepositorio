@@ -14,21 +14,27 @@ import { useCollection } from '@/hooks/use-firestore';
 import { useMemo } from 'react';
 
 const getBalance = (contract: Contract): number => {
-    if (contract.autoMotoDetails) return contract.autoMotoDetails.balance || 0;
-    if (contract.ampliacionesDetails) return contract.ampliacionesDetails.balance || 0;
-    return 0;
+    const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
+    return details?.balance || 0;
 }
 
 const isOverdue = (contract: Contract): boolean => {
     if (contract.status !== 'active') return false;
     const balance = getBalance(contract);
     if (balance <= 0) return false;
-    let deadline = contract.autoMotoDetails?.paymentDeadline || contract.ampliacionesDetails?.paymentDeadline;
+    
+    // Si tiene balance y es activo, técnicamente está "por cobrar"
+    // Verificamos si además la fecha límite ya pasó
+    const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
+    let deadline = details?.paymentDeadline;
+    
     if (deadline) {
         const paymentDate = toDate(deadline);
         return !isNaN(paymentDate.getTime()) && isPast(paymentDate);
     }
-    return false;
+    
+    // Si no hay fecha límite pero hay balance, lo contamos como "por cobrar"
+    return true;
 }
 
 export default function DashboardPage() {
@@ -36,7 +42,6 @@ export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const { role } = useCurrentRole();
 
-  // DESBLOQUEO TOTAL: Solo iniciamos la consulta si el usuario está autenticado
   const contractsQuery = useMemo(() => {
     if (!db || !user) return null;
     return query(collection(db, 'contracts'), orderBy('createdAt', 'desc'));
@@ -52,7 +57,7 @@ export default function DashboardPage() {
 
   const stats = [
     { title: 'Contratos Activos', value: isLoading || isUserLoading ? '...' : activeContracts, icon: FileText, href: '/contracts' },
-    { title: 'Contratos por Cobrar', value: isLoading || isUserLoading ? '...' : overdueCount, secondaryValue: isLoading || isUserLoading ? '...' : `B/. ${overdueTotalAmount.toFixed(2)}`, icon: CalendarClock, href: '/contracts?filter=overdue' },
+    { title: 'Contratos por Cobrar', value: isLoading || isUserLoading ? '...' : overdueCount, secondaryValue: isLoading || isUserLoading ? '...' : `B/. ${overdueTotalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, icon: CalendarClock, href: '/contracts?filter=overdue' },
     { title: 'Clientes', value: isLoading || isUserLoading ? '...' : totalClients, icon: Users, href: '/clients' },
   ];
 

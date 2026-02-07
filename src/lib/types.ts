@@ -34,12 +34,17 @@ export interface DeluxeContractDetails {
   paymentAmount?: number;
   paymentInstallments?: any[];
   vehicleTransmission?: 'Automático' | 'Manual';
-  licenseCategory?: 'A, C' | 'A, C, D';
+  licenseCategory?: string;
   theoreticalClassSchedule?: string;
   theoreticalClasses?: any[];
   classSchedules?: { date?: any; time?: string; vehicle?: VehicleName; instructor?: InstructorName; }[];
   paymentType?: string;
   instructor?: InstructorName;
+  // Campos financieros consistentes
+  courseValue?: number;
+  downPayment?: number;
+  balance?: number;
+  paymentDeadline?: any;
 }
 
 export interface AutoMotoContractDetails {
@@ -54,7 +59,7 @@ export interface AutoMotoContractDetails {
   paymentDeadline?: any;
   vehicle?: VehicleName;
   vehicleTransmission?: 'Automático' | 'Manual' | 'Moto';
-  licenseCategory?: 'A, C' | 'A, C, D' | 'A, B';
+  licenseCategory?: string;
   theoreticalClassSchedule?: string;
   theoreticalClassDates?: any[];
   practicalClassSchedules?: { date?: any; time?: string; vehicle?: VehicleName; instructor?: InstructorName; }[];

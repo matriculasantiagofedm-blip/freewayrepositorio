@@ -23,21 +23,23 @@ import { useDb } from '@/components/firebase-provider';
 import { useCollection } from '@/hooks/use-firestore';
 
 const getBalance = (contract: Contract): number => {
-    if (contract.autoMotoDetails) return contract.autoMotoDetails.balance || 0;
-    if (contract.ampliacionesDetails) return contract.ampliacionesDetails.balance || 0;
-    return 0;
+    const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
+    return details?.balance || 0;
 }
 
 const isOverdue = (contract: Contract): boolean => {
     if (contract.status !== 'active') return false;
     const balance = getBalance(contract);
     if (balance <= 0) return false;
-    let deadline = contract.autoMotoDetails?.paymentDeadline || contract.ampliacionesDetails?.paymentDeadline;
+    
+    const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
+    let deadline = details?.paymentDeadline;
+    
     if (deadline) {
         const paymentDate = toDate(deadline);
         return !isNaN(paymentDate.getTime()) && isPast(paymentDate);
     }
-    return false;
+    return true; // Si hay balance sin fecha específica, se considera "por cobrar"
 }
 
 function AllContractsContent() {
@@ -46,7 +48,6 @@ function AllContractsContent() {
   const [searchTerm, setSearchTerm] = useState('');
   const filter = searchParams.get('filter');
 
-  // DESBLOQUEO TOTAL: Acceso global a todos los contratos de la empresa ordenados por folio
   const contractsQuery = useMemo(() => {
     if (!db) return null;
     return query(collection(db, 'contracts'), orderBy('folioNumber', 'desc'));
@@ -87,7 +88,7 @@ function AllContractsContent() {
       </div>
       {isLoading ? (
         <div className="flex items-center justify-center p-12">
-            <p className="animate-pulse font-medium">Cargando base de datos unificada...</p>
+            <p className="animate-pulse font-medium">Cargando base de datos...</p>
         </div>
       ) : (
         <div className="rounded-lg border bg-card">
@@ -123,7 +124,7 @@ function AllContractsContent() {
                       )}
                     </TableCell>
                     <TableCell>{format(toDate(contract.createdAt), 'dd/MM/yyyy', { locale: es })}</TableCell>
-                    {filter === 'overdue' && <TableCell className="text-right font-bold text-destructive">B/. {getBalance(contract).toFixed(2)}</TableCell>}
+                    {filter === 'overdue' && <TableCell className="text-right font-bold text-destructive">B/. {getBalance(contract).toLocaleString('en-US', { minimumFractionDigits: 2 })}</TableCell>}
                     <TableCell className="text-right">
                       <Button asChild variant="ghost" size="icon">
                         <Link href={`/contracts/${contract.id}`}><Eye className="h-4 w-4" /></Link>
@@ -134,7 +135,7 @@ function AllContractsContent() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={filter === 'overdue' ? 7 : 6} className="h-32 text-center text-muted-foreground">
-                    {searchTerm ? "No se encontraron contratos con ese criterio." : "No hay contratos registrados en el sistema."}
+                    {searchTerm ? "No se encontraron contratos con ese criterio." : "No hay contratos por cobrar registrados."}
                   </TableCell>
                 </TableRow>
               )}
@@ -148,7 +149,7 @@ function AllContractsContent() {
 
 export default function AllContractsPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center">Iniciando listado global...</div>}>
+    <Suspense fallback={<div className="p-8 text-center">Cargando listado...</div>}>
       <AllContractsContent />
     </Suspense>
   );

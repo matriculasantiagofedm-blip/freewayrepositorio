@@ -50,9 +50,8 @@ export default function CancellationsPage() {
   };
 
   const getBalance = (contract: Contract): number => {
-    if (contract.autoMotoDetails) return contract.autoMotoDetails.balance || 0;
-    if (contract.ampliacionesDetails) return contract.ampliacionesDetails.balance || 0;
-    return 0;
+    const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
+    return details?.balance || 0;
   }
 
   const handlePaymentChange = (contractId: string, amount: string) => {
@@ -147,16 +146,20 @@ export default function CancellationsPage() {
           
           if (contract) {
               const contractRef = doc(db, 'contracts', contract.id);
-              const newBalance = getBalance(contract) - paymentAmount;
+              const currentBalance = getBalance(contract);
+              const newBalance = Math.max(0, currentBalance - paymentAmount);
               const contractUpdateForTransaction: any = {};
               if (newBalance <= 0) contractUpdateForTransaction.status = 'completed';
               
               if (contract.autoMotoDetails) {
-                  contractUpdateForTransaction['autoMotoDetails.balance'] = newBalance > 0 ? newBalance : 0;
+                  contractUpdateForTransaction['autoMotoDetails.balance'] = newBalance;
                   contractUpdateForTransaction['autoMotoDetails.downPayment'] = (contract.autoMotoDetails.downPayment || 0) + paymentAmount;
               } else if (contract.ampliacionesDetails) {
-                  contractUpdateForTransaction['ampliacionesDetails.balance'] = newBalance > 0 ? newBalance : 0;
+                  contractUpdateForTransaction['ampliacionesDetails.balance'] = newBalance;
                   contractUpdateForTransaction['ampliacionesDetails.downPayment'] = (contract.ampliacionesDetails.downPayment || 0) + paymentAmount;
+              } else if (contract.deluxeDetails) {
+                  contractUpdateForTransaction['deluxeDetails.balance'] = newBalance;
+                  contractUpdateForTransaction['deluxeDetails.downPayment'] = (contract.deluxeDetails.downPayment || 0) + paymentAmount;
               }
               transaction.update(contractRef, contractUpdateForTransaction);
           }

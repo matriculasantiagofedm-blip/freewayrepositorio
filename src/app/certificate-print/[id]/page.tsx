@@ -1,4 +1,3 @@
-
 'use client';
 import { useParams, useSearchParams } from 'next/navigation';
 import { doc } from 'firebase/firestore';
@@ -14,9 +13,9 @@ import { signInAnonymously } from 'firebase/auth';
 /**
  * Motor de impresión de certificados.
  * DESBLOQUEADO: Acceso universal para todos los roles operativos.
- * Gestiona la selección de plantilla según la lógica de agrupaciones:
- * - Tipo F -> Certificado Estándar (36h)
- * - Otros Ampliaciones/E -> Certificado Ampliación (80h)
+ * Gestiona la selección de plantilla según la lógica de agrupaciones y normativas:
+ * - B, C, D, F -> Formato Estándar (36h) - Decreto 640
+ * - A, Grupo E -> Formato Ampliación (80h) - Ley 146
  */
 function CertificatePrintContent() {
   const { id } = useParams();
@@ -86,15 +85,24 @@ function CertificatePrintContent() {
   const shouldUseAmpliacionTemplate = useMemo(() => {
     if (!certificate || !certificate.licenseType) return false;
     
-    // REGLA: Tipo F siempre utiliza el certificado ESTÁNDAR (Decreto 640 - 36h)
-    if (certificate.licenseType === 'F' || certificate.licenseType.trim() === 'F') return false;
+    const type = certificate.licenseType.trim();
 
-    // REGLA: Contratos de Ampliaciones utilizan el formato AMPLIACIÓN (Ley 146 - 80h) para A, B, C, D y Grupo E
-    if (certificate.contract?.type === 'Ampliaciones') return true;
+    // REGLA 1: Las tipo E siempre utilizan el formato AMPLIACIÓN (80h)
+    if (['E1', 'E2', 'E3'].some(l => type.includes(l))) return true;
+
+    // REGLA 2: Si el contrato es de "Ampliaciones"
+    if (certificate.contract?.type === 'Ampliaciones') {
+        // Las letras B, C, D y F en ampliación usan el formato ESTÁNDAR (36h)
+        if (['B', 'C', 'D', 'F'].includes(type)) return false;
+        
+        // La letra A en ampliación utiliza el formato AMPLIACIÓN (80h)
+        if (type === 'A') return true;
+
+        // Por defecto para ampliaciones desconocidas, usamos 80h
+        return true;
+    }
     
-    // REGLA: Si contiene tipos E, también usa formato AMPLIACIÓN
-    if (['E1', 'E2', 'E3'].some(l => certificate.licenseType.includes(l))) return true;
-
+    // REGLA 3: Cursos regulares (Auto, Moto, Deluxe, Mixto) siempre usan ESTÁNDAR (36h)
     return false;
   }, [certificate]);
 

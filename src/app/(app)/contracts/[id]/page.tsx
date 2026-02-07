@@ -273,7 +273,7 @@ export default function ContractDetailPage() {
         <DialogContent className="print-hide sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
             <DialogHeader>
                 <DialogTitle>Generar Certificado</DialogTitle>
-                <DialogDescription>Verifica los datos del estudiante y selecciona el grupo o letra a imprimir.</DialogDescription>
+                <DialogDescription>Verifica los datos del estudiante y selecciona la categoría a imprimir.</DialogDescription>
             </DialogHeader>
             
             <div className="flex-1 overflow-y-auto pr-4 py-4 space-y-6">
@@ -304,7 +304,7 @@ export default function ContractDetailPage() {
 
                 {contract?.type === 'Ampliaciones' && groupedLicenses && (
                     <div className="space-y-4">
-                        <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Grupos e Impresiones Individuales</h3>
+                        <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Opciones de Impresión (Certificados Individuales)</h3>
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                             {groupedLicenses.E.length > 0 && (
@@ -323,19 +323,19 @@ export default function ContractDetailPage() {
                             )}
 
                             {groupedLicenses.individuals.map(license => {
-                                const isTypeF = license === 'F';
-                                const bgColor = isTypeF ? 'bg-green-50/50' : 'bg-amber-50/50';
-                                const textColor = isTypeF ? 'text-green-700' : 'text-amber-700';
-                                const btnColor = isTypeF ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-600 hover:bg-amber-700';
+                                const isStandard = ['B', 'C', 'D', 'F'].includes(license);
+                                const bgColor = isStandard ? 'bg-green-50/50' : 'bg-amber-50/50';
+                                const textColor = isStandard ? 'text-green-700' : 'text-amber-700';
+                                const btnColor = isStandard ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-600 hover:bg-amber-700';
                                 
                                 return (
                                     <div key={license} className={cn("p-4 border rounded-lg flex flex-col justify-between", bgColor)}>
                                         <div>
                                             <p className={cn("font-bold", textColor)}>Tipo {license} Individual</p>
                                             <p className="text-xs text-muted-foreground mb-3 italic">
-                                                {isTypeF ? 'Formato Estándar (36h)' : 'Formato Ampliación (80h)'}
+                                                {isStandard ? 'Formato Estándar (36h)' : 'Formato Ampliación (80h)'}
                                             </p>
-                                            <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded", isTypeF ? 'bg-green-200 text-green-800' : 'bg-amber-200 text-amber-800')}>
+                                            <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded", isStandard ? 'bg-green-200 text-green-800' : 'bg-amber-200 text-amber-800')}>
                                                 {license}
                                             </span>
                                         </div>

@@ -128,7 +128,7 @@ export function ContractForm() {
       clientName: '', clientEmail: '', contractType: contractType, studentIdNumber: '',
       studentAddress: '', studentPhone1: '', studentPhone2: '', courseValue: 0, downPayment: 0, balance: 0,
       paymentType: 'cash', coursePlan: '', vehicle: '', vehicleTransmission: contractType === 'Curso Moto' ? 'Moto' : 'Manual',
-      licenseCategory: contractType === 'Curso Moto' ? 'A, B' : 'A, C',
+      licenseCategory: 'A, C',
       theoreticalClassSchedule: '',
       theoreticalClassDates: [],
       practicalClassSchedules: contractType === 'Ampliaciones' ? [] : [{ date: new Date(), time: '8:00am a 10:00am' }],
@@ -352,7 +352,7 @@ export function ContractForm() {
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3">
                 <FormField control={form.control} name="licenseCategory" render={({ field }) => (
-                    <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Categoría de Licencia</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A, C">Tipo C (Auto)</SelectItem><SelectItem value="A, C, D">Tipo D (Camioneta)</SelectItem><SelectItem value="A, B">Tipo B (Moto)</SelectItem><SelectItem value="E1, E2, E3">Profesional (E)</SelectItem></SelectContent></Select></FormItem>
+                    <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Categoría de Licencia</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A, C">A, C</SelectItem><SelectItem value="A, C, D">A, C, D</SelectItem></SelectContent></Select></FormItem>
                 )} />
                 <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
                     <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Transmisión</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Manual">Manual</SelectItem><SelectItem value="Automático">Automático</SelectItem><SelectItem value="Moto">Moto</SelectItem></SelectContent></Select></FormItem>

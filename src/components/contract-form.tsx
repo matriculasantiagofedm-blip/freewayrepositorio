@@ -40,6 +40,7 @@ const instructors: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Ad
 const carVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
 const motoVehicles: VehicleName[] = ['Moto Roja', 'Moto Negra'];
 const practicalTimes = ['8:00am a 10:00am', '10:00am a 12:pm', '1:00pm a 3:00pm', '3:00pm a 5:00pm'];
+const ampliacionTheoreticalTimes = ['8:00 am a 12:00 pm', '3:00 pm a 5:00 pm'];
 const theoreticalSchedules = [
     'Clase Semanal',
     'Clase Sabatina'
@@ -83,7 +84,6 @@ const ampliacionOptions = [
   { id: 'F', label: 'F', price: 80.00 },
 ];
 
-// Lógica de cálculo de precios para Ampliaciones
 const calculateAmpliacionPrice = (selected: string[]) => {
   if (selected.length === 0) return 0;
   
@@ -107,7 +107,6 @@ const calculateAmpliacionPrice = (selected: string[]) => {
 
   if (rules[sortedKey]) return rules[sortedKey];
 
-  // Si no hay combinación exacta, sumamos los precios base individuales
   return selected.reduce((acc, cat) => {
     const base = ampliacionOptions.find(o => o.id === cat)?.price || 0;
     return acc + base;
@@ -557,7 +556,6 @@ export function ContractForm() {
                                             }
                                             form.setValue('selectedPlans', newPlans);
                                             
-                                            // Aplicar nueva lógica de precios combinados
                                             const selectedIds = newPlans.map(p => p.name);
                                             const total = calculateAmpliacionPrice(selectedIds);
                                             form.setValue('courseValue', total);
@@ -628,7 +626,11 @@ export function ContractForm() {
                                     <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Horario Teórico</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value}>
                                         <FormControl><SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl>
-                                        <SelectContent>{practicalTimes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                                        <SelectContent>
+                                            {ampliacionTheoreticalTimes.map(t => (
+                                                <SelectItem key={t} value={t}>{t}</SelectItem>
+                                            ))}
+                                        </SelectContent>
                                     </Select>
                                 </FormItem>
                             )} />
@@ -668,10 +670,7 @@ export function ContractForm() {
         {/* 5. Programación de Clases Prácticas (Generadas automáticamente) */}
         {contractType !== 'Ampliaciones' && (
             <div className="space-y-4">
-                {/* Clases de Auto */}
                 {renderClassSlots(practicalFields, "practicalClassSchedules", carVehicles, "5. Programación Clases Prácticas (Auto)", Car)}
-                
-                {/* Clases de Moto */}
                 {renderClassSlots(motoFields, "motoPracticalClassSchedules", motoVehicles, "5. Programación Clases Prácticas (Moto)", Bike)}
             </div>
         )}

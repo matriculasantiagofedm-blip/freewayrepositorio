@@ -1,4 +1,3 @@
-
 'use client';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -10,6 +9,7 @@ import { ChevronLeft, Award, Printer, ShieldX, Undo, Loader2, CheckCircle2 } fro
 import { useState, useEffect, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentRole } from '@/hooks/use-current-role';
+import { cn } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -277,7 +277,6 @@ export default function ContractDetailPage() {
             </DialogHeader>
             
             <div className="flex-1 overflow-y-auto pr-4 py-4 space-y-6">
-                {/* Datos Generales */}
                 <div className="grid gap-4 p-4 border rounded-lg bg-muted/30">
                     <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> Información del Documento</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -303,13 +302,11 @@ export default function ContractDetailPage() {
                     <div className="space-y-2"><Label>Dirección Residencial</Label><Input value={certificateData.address} onChange={(e) => handleCertDataChange('address', e.target.value)} /></div>
                 </div>
 
-                {/* Selección Dinámica (Solo para Ampliaciones) */}
                 {contract?.type === 'Ampliaciones' && groupedLicenses && (
                     <div className="space-y-4">
                         <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Grupos e Impresiones Individuales</h3>
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                            {/* Grupo E (Siempre juntos) */}
                             {groupedLicenses.E.length > 0 && (
                                 <div className="p-4 border rounded-lg bg-blue-50/50 flex flex-col justify-between">
                                     <div>
@@ -325,7 +322,6 @@ export default function ContractDetailPage() {
                                 </div>
                             )}
 
-                            {/* Impresiones Individuales (A, B, C, D, F) */}
                             {groupedLicenses.individuals.map(license => {
                                 const isTypeF = license === 'F';
                                 const bgColor = isTypeF ? 'bg-green-50/50' : 'bg-amber-50/50';
@@ -353,7 +349,6 @@ export default function ContractDetailPage() {
                     </div>
                 )}
 
-                {/* Selector único para Cursos Normales */}
                 {contract?.type !== 'Ampliaciones' && (
                     <div className="space-y-4">
                         <Separator />

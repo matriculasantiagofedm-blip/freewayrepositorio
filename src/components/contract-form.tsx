@@ -28,7 +28,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Loader2, Plus, Trash2, Calculator, UserCircle, Settings2, Clock } from 'lucide-react';
+import { CalendarIcon, Loader2, Calculator, UserCircle, Settings2, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Timestamp, collection, query, where, getDocs, doc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -125,8 +125,7 @@ export function ContractForm() {
     },
   });
 
-  const { fields: practicalFields, append: appendPractical, remove: removePractical, replace: replacePractical } = useFieldArray({ control: form.control, name: "practicalClassSchedules" });
-  const { fields: motoFields, append: appendMoto, remove: removeMoto } = useFieldArray({ control: form.control, name: "motoPracticalClassSchedules" });
+  const { fields: practicalFields, replace: replacePractical } = useFieldArray({ control: form.control, name: "practicalClassSchedules" });
 
   const courseValue = form.watch('courseValue');
   const downPayment = form.watch('downPayment');
@@ -352,13 +351,10 @@ export function ContractForm() {
         {/* 4. Programación de Clases Prácticas */}
         {contractType !== 'Ampliaciones' && (
             <Card className="shadow-sm">
-                <CardHeader className="py-2 px-4 border-b flex flex-row items-center justify-between">
+                <CardHeader className="py-2 px-4 border-b">
                     <CardTitle className="text-sm flex items-center gap-2 text-primary font-bold">
                         <Clock className="h-4 w-4" /> 4. Programación de Clases Prácticas
                     </CardTitle>
-                    <Button type="button" variant="outline" size="sm" className="h-7 text-xs font-bold" onClick={() => appendPractical({ date: addDays(new Date(), practicalFields.length + 1), time: '8:00am a 10:00am' })}>
-                        <Plus className="h-3 w-3 mr-1" /> Añadir Clase
-                    </Button>
                 </CardHeader>
                 <CardContent className="p-3 space-y-2">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -383,9 +379,6 @@ export function ContractForm() {
                                         </Select>
                                     </FormItem>
                                 )} />
-                                <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => removePractical(index)} disabled={practicalFields.length <= 1}>
-                                    <Trash2 className="h-3 w-3" />
-                                </Button>
                             </div>
                         ))}
                     </div>

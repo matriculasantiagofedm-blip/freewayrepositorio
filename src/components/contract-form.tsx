@@ -75,6 +75,15 @@ const deluxePackages = [
     { id: 'deluxe-full', label: 'Plan Deluxe Full', price: 270.00, hours: 16 },
 ];
 
+const soloPracticaPackages = [
+    { id: 'solo-basico-auto', label: 'Paquete Básico 8hrs (Auto)', price: 125.00, hours: 8, vehicleType: 'Auto' },
+    { id: 'solo-plus-auto', label: 'Paquete Plus 10hrs (Auto)', price: 135.00, hours: 10, vehicleType: 'Auto' },
+    { id: 'solo-premium-auto', label: 'Paquete Premium 12hrs (Auto)', price: 155.00, hours: 12, vehicleType: 'Auto' },
+    { id: 'solo-basico-moto', label: 'Paquete Básico 8hrs (Moto)', price: 103.00, hours: 8, vehicleType: 'Moto' },
+    { id: 'solo-plus-moto', label: 'Paquete Plus 10hrs (Moto)', price: 117.00, hours: 10, vehicleType: 'Moto' },
+    { id: 'solo-premium-moto', label: 'Paquete Premium 12hrs (Moto)', price: 130.00, hours: 12, vehicleType: 'Moto' },
+];
+
 const ampliacionOptions = [
   { id: 'B', label: 'B', price: 57.00 },
   { id: 'C', label: 'C', price: 57.00 },
@@ -226,18 +235,21 @@ export function ContractForm() {
   
   useEffect(() => {
     if (!selectedPlanId || contractType === 'Ampliaciones') return;
-    let pkg;
+    let pkg: any;
     if (contractType === 'Curso Auto') pkg = autoPackages.find(p => p.id === selectedPlanId);
     else if (contractType === 'Curso Moto') pkg = motoPackages.find(p => p.id === selectedPlanId);
     else if (contractType === 'Curso Mixto') pkg = mixtoPackages.find(p => p.id === selectedPlanId);
     else if (contractType === 'Curso Deluxe') pkg = deluxePackages.find(p => p.id === selectedPlanId);
+    else if (contractType === 'Curso Solo Practica') pkg = soloPracticaPackages.find(p => p.id === selectedPlanId);
     
     if (pkg) {
         form.setValue('courseValue', pkg.price);
         if (pkg.hours) {
             const totalSlots = Math.ceil(pkg.hours / 2);
             
-            if (contractType === 'Curso Moto') {
+            const isMotoPlan = contractType === 'Curso Moto' || (contractType === 'Curso Solo Practica' && pkg.vehicleType === 'Moto');
+
+            if (isMotoPlan) {
                 const newSlots = Array.from({ length: totalSlots }).map((_, i) => ({
                     date: addDays(new Date(), i + 1),
                     time: '8:00am a 10:00am',
@@ -285,6 +297,7 @@ export function ContractForm() {
                 replacePractical(autoSlots);
                 replaceMoto(motoSlots);
             } else {
+                // Auto or Solo Practica Auto
                 const newSlots = Array.from({ length: totalSlots }).map((_, i) => ({
                     date: addDays(new Date(), i + 1),
                     time: '8:00am a 10:00am',
@@ -374,6 +387,7 @@ export function ContractForm() {
     if (contractType === 'Curso Moto') return motoPackages;
     if (contractType === 'Curso Mixto') return mixtoPackages;
     if (contractType === 'Curso Deluxe') return deluxePackages;
+    if (contractType === 'Curso Solo Practica') return soloPracticaPackages;
     return null;
   }, [contractType]);
 

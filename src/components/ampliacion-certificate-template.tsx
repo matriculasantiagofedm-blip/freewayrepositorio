@@ -51,14 +51,11 @@ function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate 
                     <p className="text-2xl tracking-[0.5em] font-semibold text-black uppercase">Escuela de Manejo</p>
                     <p className="text-2xl italic mt-2">Casa Matriz Chorrera</p>
 
-                    {/* Folio, Categoría y Foto */}
+                    {/* Folio y Categoría */}
                     <div className="absolute top-0 right-0 flex flex-col items-center gap-2">
                         <div className="text-center">
                             <p className="text-5xl font-bold mb-1">{getHighestLicenseType(certificate.licenseType)}</p>
                             <p className="text-lg font-medium">{folioNum} / {folioYear}</p>
-                        </div>
-                        <div className="w-32 h-40 border-2 border-gray-300 bg-gray-50 flex items-center justify-center text-xs text-gray-400 text-center p-2">
-                            FOTO DEL ESTUDIANTE
                         </div>
                     </div>
                 </header>
@@ -130,16 +127,6 @@ function CertificateBackAmpliacion({ certificate }: { certificate: Certificate }
                         <div className="flex items-center gap-2">Primer Apellido: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.lastName?.toUpperCase() || ''}</span></div>
                         <div className="flex items-center gap-2">Segundo Apellido: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.secondLastName?.toUpperCase() || ''}</span></div>
                     </div>
-                </div>
-
-                {/* Espacio para documentos */}
-                <div className="mt-8 border-2 border-dashed border-gray-200 rounded-xl p-8 flex flex-col items-center justify-center min-h-[300px] bg-gray-50/30">
-                    <div className="grid grid-cols-1 gap-8 opacity-40">
-                        <div className="w-80 h-48 border-2 border-gray-400 bg-white rounded-lg flex items-center justify-center text-center p-4">
-                            <p className="text-sm font-semibold">ESCANEO DE LICENCIA / CÉDULA</p>
-                        </div>
-                    </div>
-                    <p className="mt-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Espacio reservado para documentos de identidad</p>
                 </div>
             </div>
         </div>

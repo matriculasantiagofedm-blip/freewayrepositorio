@@ -60,30 +60,30 @@ function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate 
                     </div>
                 </header>
 
-                <main className="flex-grow flex flex-col items-center justify-center text-center px-8 mt-4">
-                    <p className="text-lg uppercase tracking-widest mb-6">Otorga el presente Certificado a:</p>
+                <main className="flex-grow flex flex-col items-center justify-center text-center px-8 mt-2">
+                    <p className="text-lg uppercase tracking-widest mb-4">Otorga el presente Certificado a:</p>
 
-                    <div className="mb-6 w-full">
+                    <div className="mb-4 w-full">
                         <p className="font-bold text-5xl tracking-tight mb-2 uppercase">
                             {certificate.clientName}
                         </p>
                         <p className="font-bold text-3xl tracking-widest mt-2">C.I.P. &nbsp; {certificate.cip}</p>
                     </div>
 
-                    <div className="text-lg leading-relaxed max-w-5xl mx-auto py-6 px-8 border-[1.5px] border-dashed border-gray-400 rounded-lg">
+                    <div className="text-lg leading-relaxed max-w-5xl mx-auto py-4 px-8 border-[1.5px] border-dashed border-gray-400 rounded-lg">
                         <p>
                             Por haber aprobado el curso de capacitación <span className="font-bold underline">TEÓRICO Y PRÁCTICO</span>, para optar por la licencia de
                             conducir tipo <span className="font-bold underline">{getLicenseTypeText(certificate.licenseType)}</span> con una duración de <span className="font-bold underline">80</span> horas, en cumplimiento de la Ley 146 del 15 de Abril de 2020, acápite a.
                         </p>
                     </div>
 
-                    <div className="text-sm mx-auto mt-6 max-w-3xl font-semibold">
+                    <div className="text-sm mx-auto mt-4 max-w-3xl font-semibold">
                         <p>
                             Reconocida por la Autoridad del Tránsito y Transporte Terrestre, Resuelto N°380 (04 de diciembre de 2000) Resolución AL-325
                         </p>
                     </div>
                     
-                    <div className="text-center mt-4 font-bold text-base italic">
+                    <div className="text-center mt-2 font-bold text-sm italic">
                         <p>***Dado en la república de Panamá, a los {formattedDay} días del mes de {formattedMonth} de {formattedYear}***</p>
                     </div>
                 </main>

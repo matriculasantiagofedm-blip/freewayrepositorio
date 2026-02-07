@@ -243,7 +243,7 @@ export function ContractForm() {
     
     if (pkg) {
         form.setValue('courseValue', pkg.price);
-        if (pkg.hours || pkg.id === 'mixto-10h') {
+        if (pkg.hours || pkg.id === 'mixto-10h' || pkg.id === 'mixto-reforzamiento') {
             const totalSlots = Math.ceil(pkg.hours / 2);
             
             const isMotoPlan = contractType === 'Curso Moto' || (contractType === 'Curso Solo Practica' && pkg.vehicleType === 'Moto');
@@ -262,8 +262,9 @@ export function ContractForm() {
                 let motoCount = 0;
 
                 if (pkg.id === 'mixto-reforzamiento') {
+                    // Reforzamiento Mixto 2Hrs: 1 clase auto, 1 clase moto
                     autoCount = 1;
-                    motoCount = 0;
+                    motoCount = 1;
                 } else if (pkg.id === 'mixto-10h') {
                     // Plan Auto + Moto 10Hrs 290.00: 5 clases auto, 5 clases moto
                     autoCount = 5;
@@ -280,20 +281,18 @@ export function ContractForm() {
                     // Plan Premium Auto + Moto 195.00: 6 clases de auto, 0 de moto
                     autoCount = 6;
                     motoCount = 0;
-                } else if (pkg.hours === 8) {
-                    autoCount = 2;
-                    motoCount = 2;
-                } else if (pkg.hours === 12) {
-                    autoCount = 3;
-                    motoCount = 3;
-                } else if (pkg.hours === 10) {
-                    if (pkg.id.includes('-am')) {
-                        autoCount = 3;
-                        motoCount = 2;
-                    } else {
-                        autoCount = 2;
-                        motoCount = 3;
-                    }
+                } else if (pkg.id === 'mixto-basico-ma') {
+                    // Plan Básico Moto + Auto 135.00: 4 clases de moto, 0 de auto
+                    autoCount = 0;
+                    motoCount = 4;
+                } else if (pkg.id === 'mixto-plus-ma') {
+                    // Plan Plus Moto + Auto 155.00: 5 clases de moto, 0 de auto
+                    autoCount = 0;
+                    motoCount = 5;
+                } else if (pkg.id === 'mixto-premium-ma') {
+                    // Plan Premium Moto + Auto 175.00: 6 clases de moto, 0 de auto
+                    autoCount = 0;
+                    motoCount = 6;
                 }
 
                 const autoSlots = Array.from({ length: autoCount }).map((_, i) => ({

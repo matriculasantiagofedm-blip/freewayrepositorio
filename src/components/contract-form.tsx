@@ -28,7 +28,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Loader2, Calculator, UserCircle, Settings2, Clock } from 'lucide-react';
+import { CalendarIcon, Loader2, Calculator, UserCircle, Settings2, Clock, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Timestamp, collection, query, where, getDocs, doc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -39,6 +39,12 @@ import { useDb, useUser } from './firebase-provider';
 const instructors: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', ''];
 const carVehicles = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
 const practicalTimes = ['8:00am a 10:00am', '10:00am a 12:pm', '1:00pm a 3:00pm', '3:00pm a 5:00pm'];
+const theoreticalSchedules = [
+    'Sábados de 8:00am a 12:00pm',
+    'Sábados de 1:00pm a 5:00pm',
+    'Miércoles de 6:00pm a 10:00pm',
+    'Intensivo (Lunes a Viernes)'
+];
 
 const autoPackages = [
     { id: 'basico', label: 'Curso Auto Básico (8hrz)', price: 133.00, hours: 8 },
@@ -71,6 +77,8 @@ const contractSchema = z.object({
   vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).optional(),
   licenseCategory: z.string().optional(),
   instructor: z.string().optional(),
+  theoreticalClassSchedule: z.string().optional(),
+  theoreticalClassDates: z.array(z.date()).optional(),
   practicalClassSchedules: z.array(z.object({
     date: z.date().optional(),
     time: z.string().optional()
@@ -87,6 +95,9 @@ const convertDatesToTimestamps = (data: any) => {
     const result = { ...data };
     const toTs = (d: any) => (d instanceof Date) ? Timestamp.fromDate(d) : d;
     if (result.paymentDeadline) result.paymentDeadline = toTs(result.paymentDeadline);
+    if (result.theoreticalClassDates) {
+        result.theoreticalClassDates = result.theoreticalClassDates.map((d: any) => toTs(d));
+    }
     if (result.practicalClassSchedules) {
         result.practicalClassSchedules = result.practicalClassSchedules.map((s: any) => ({
             ...s,
@@ -120,6 +131,8 @@ export function ContractForm() {
       studentAddress: '', studentPhone1: '', studentPhone2: '', courseValue: 0, downPayment: 0, balance: 0,
       paymentType: 'cash', coursePlan: '', vehicle: '', vehicleTransmission: contractType === 'Curso Moto' ? 'Moto' : 'Manual',
       licenseCategory: contractType === 'Curso Moto' ? 'A, B' : 'A, C',
+      theoreticalClassSchedule: '',
+      theoreticalClassDates: [new Date(), addDays(new Date(), 7)],
       practicalClassSchedules: contractType === 'Ampliaciones' ? [] : [{ date: new Date(), time: '8:00am a 10:00am' }],
       motoPracticalClassSchedules: contractType === 'Curso Mixto' ? [{ date: new Date(), time: '8:00am a 10:00am' }] : [],
     },
@@ -141,7 +154,6 @@ export function ContractForm() {
     
     if (pkg) {
         form.setValue('courseValue', pkg.price);
-        // Automate practical class slots (assuming 2 hours per slot)
         if (pkg.hours && contractType !== 'Ampliaciones') {
             const numSlots = Math.ceil(pkg.hours / 2);
             const newSlots = Array.from({ length: numSlots }).map((_, i) => ({
@@ -348,12 +360,51 @@ export function ContractForm() {
             </CardContent>
         </Card>
 
-        {/* 4. Programación de Clases Prácticas */}
+        {/* 4. Clases Teóricas */}
+        {contractType !== 'Ampliaciones' && contractType !== 'Curso Solo Practica' && (
+            <Card className="shadow-sm">
+                <CardHeader className="py-2 px-4 border-b">
+                    <CardTitle className="text-sm flex items-center gap-2 text-primary font-bold">
+                        <BookOpen className="h-4 w-4" /> 4. Programación de Clases Teóricas
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 space-y-2">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <FormField control={form.control} name="theoreticalClassSchedule" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Horario Teórico</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                    <FormControl><SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Seleccionar horario..." /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        {theoreticalSchedules.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </FormItem>
+                        )} />
+                        {[0, 1].map((idx) => (
+                            <FormField key={idx} control={form.control} name={`theoreticalClassDates.${idx}`} render={({ field }) => (
+                                <FormItem className="flex flex-col">
+                                    <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Fecha Clase {idx + 1}</FormLabel>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <FormControl><Button variant="outline" className={cn("h-8 text-sm pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-3 w-3" />{field.value ? format(field.value, "dd/MM/yy") : <span>Seleccionar</span>}</Button></FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                                    </Popover>
+                                </FormItem>
+                            )} />
+                        ))}
+                    </div>
+                </CardContent>
+            </Card>
+        )}
+
+        {/* 5. Programación de Clases Prácticas */}
         {contractType !== 'Ampliaciones' && (
             <Card className="shadow-sm">
                 <CardHeader className="py-2 px-4 border-b">
                     <CardTitle className="text-sm flex items-center gap-2 text-primary font-bold">
-                        <Clock className="h-4 w-4" /> 4. Programación de Clases Prácticas
+                        <Clock className="h-4 w-4" /> 5. Programación de Clases Prácticas
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-3 space-y-2">

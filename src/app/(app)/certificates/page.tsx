@@ -400,6 +400,16 @@ function CertificatesContent() {
                             <div className="space-y-2"><Label className="text-[10px] uppercase font-bold text-slate-400">2do Apellido</Label><Input value={certificateData.secondLastName} onChange={(e) => handleCertDataChange('secondLastName', e.target.value)} className="bg-white text-xs" /></div>
                         </div>
                         <div className="space-y-2"><Label className="text-xs uppercase font-bold text-muted-foreground">Dirección Residencial</Label><Input value={certificateData.address} onChange={(e) => handleCertDataChange('address', e.target.value)} className="bg-white" /></div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label className="text-xs uppercase font-bold text-muted-foreground">Teléfono Residencial</Label>
+                                <Input value={certificateData.phone1} onChange={(e) => handleCertDataChange('phone1', e.target.value)} className="bg-white" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs uppercase font-bold text-muted-foreground">Teléfono Celular</Label>
+                                <Input value={certificateData.phone2} onChange={(e) => handleCertDataChange('phone2', e.target.value)} className="bg-white" />
+                            </div>
+                        </div>
                     </div>
 
                     <div className="space-y-4">

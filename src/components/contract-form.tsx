@@ -211,7 +211,7 @@ export function ContractForm() {
       clientName: '', clientEmail: '', contractType: contractType, studentIdNumber: '',
       studentAddress: '', studentPhone1: '', studentPhone2: '', courseValue: 0, downPayment: 0, balance: 0,
       paymentType: 'cash', coursePlan: '', vehicleTransmission: contractType === 'Curso Moto' ? 'Moto' : 'Manual',
-      licenseCategory: contractType === 'Curso Moto' ? 'A, B' : 'A, C',
+      licenseCategory: contractType === 'Curso Moto' ? 'A, B' : 'A, C, B',
       theoreticalClassSchedule: '',
       theoreticalClassDates: [],
       theoreticalClassDate: undefined,
@@ -244,11 +244,10 @@ export function ContractForm() {
     if (pkg) {
         form.setValue('courseValue', pkg.price);
         if (pkg.hours || pkg.id === 'mixto-10h' || pkg.id === 'mixto-reforzamiento') {
-            const totalSlots = Math.ceil(pkg.hours / 2);
-            
             const isMotoPlan = contractType === 'Curso Moto' || (contractType === 'Curso Solo Practica' && pkg.vehicleType === 'Moto');
 
             if (isMotoPlan) {
+                const totalSlots = Math.ceil(pkg.hours / 2);
                 const newSlots = Array.from({ length: totalSlots }).map((_, i) => ({
                     date: addDays(new Date(), i + 1),
                     time: '8:00am a 10:00am',
@@ -262,35 +261,27 @@ export function ContractForm() {
                 let motoCount = 0;
 
                 if (pkg.id === 'mixto-reforzamiento') {
-                    // Reforzamiento Mixto 2Hrs: 1 clase auto, 1 clase moto
                     autoCount = 1;
                     motoCount = 1;
                 } else if (pkg.id === 'mixto-10h') {
-                    // Plan Auto + Moto 10Hrs 290.00: 5 clases auto, 5 clases moto
                     autoCount = 5;
                     motoCount = 5;
                 } else if (pkg.id === 'mixto-basico-am') {
-                    // Plan Básico Auto + Moto 153.00: 4 clases de auto, 0 de moto
                     autoCount = 4;
                     motoCount = 0;
                 } else if (pkg.id === 'mixto-plus-am') {
-                    // Plan Plus Auto + Moto 170.00: 5 clases de auto, 0 de moto
                     autoCount = 5;
                     motoCount = 0;
                 } else if (pkg.id === 'mixto-premium-am') {
-                    // Plan Premium Auto + Moto 195.00: 6 clases de auto, 0 de moto
                     autoCount = 6;
                     motoCount = 0;
                 } else if (pkg.id === 'mixto-basico-ma') {
-                    // Plan Básico Moto + Auto 135.00: 4 clases de moto, 0 de auto
                     autoCount = 0;
                     motoCount = 4;
                 } else if (pkg.id === 'mixto-plus-ma') {
-                    // Plan Plus Moto + Auto 155.00: 5 clases de moto, 0 de auto
                     autoCount = 0;
                     motoCount = 5;
                 } else if (pkg.id === 'mixto-premium-ma') {
-                    // Plan Premium Moto + Auto 175.00: 6 clases de moto, 0 de auto
                     autoCount = 0;
                     motoCount = 6;
                 }
@@ -311,6 +302,7 @@ export function ContractForm() {
                 replacePractical(autoSlots);
                 replaceMoto(motoSlots);
             } else {
+                const totalSlots = Math.ceil(pkg.hours / 2);
                 const newSlots = Array.from({ length: totalSlots }).map((_, i) => ({
                     date: addDays(new Date(), i + 1),
                     time: '8:00am a 10:00am',
@@ -618,9 +610,7 @@ export function ContractForm() {
                                         <SelectItem value="A, B">A, B (Moto)</SelectItem>
                                     ) : (
                                         <>
-                                            <SelectItem value="A, C">A, C</SelectItem>
                                             <SelectItem value="A, C, B">A, C, B</SelectItem>
-                                            <SelectItem value="A, C, D">A, C, D</SelectItem>
                                             <SelectItem value="A, B, C, D">A, B, C, D</SelectItem>
                                         </>
                                     )}

@@ -82,15 +82,16 @@ export function useCollection<T>(q: Query<DocumentData> | CollectionReference<Do
         setError(null);
       },
       (err) => {
-        console.error("Firestore useCollection Error:", err);
+        // Reportar error solo si no es una cancelación normal
         if (err.code === 'permission-denied') {
           const permissionError = new FirestorePermissionError({
-            path: 'collection_query',
+            path: 'contracts_collection',
             operation: 'list',
           });
           errorEmitter.emit('permission-error', permissionError);
           setError(permissionError);
         } else if (err.code !== 'cancelled') {
+          console.error("Firestore useCollection Error:", err);
           setError(err);
         }
         setIsLoading(false);

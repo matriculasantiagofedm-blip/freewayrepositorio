@@ -5,11 +5,11 @@ import Link from 'next/link';
 import { FileText, CalendarClock, Users, Car, Bike, Combine, Crown, Plus, CarFront, HandCoins, BookMarked, Gauge, Wrench, Award } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { isPast } from 'date-fns';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { cn, toDate } from '@/lib/utils';
-import { useDb } from '@/components/firebase-provider';
+import { useDb, useUser } from '@/components/firebase-provider';
 import { useCollection } from '@/hooks/use-firestore';
 import { useMemo } from 'react';
 
@@ -33,13 +33,14 @@ const isOverdue = (contract: Contract): boolean => {
 
 export default function DashboardPage() {
   const db = useDb();
+  const { user, isUserLoading } = useUser();
   const { role } = useCurrentRole();
 
-  // DESBLOQUEO TOTAL: Se eliminan todos los filtros de userId para ver la base de datos completa de la empresa.
+  // DESBLOQUEO TOTAL: Solo iniciamos la consulta si el usuario está autenticado
   const contractsQuery = useMemo(() => {
-    if (!db) return null;
+    if (!db || !user) return null;
     return query(collection(db, 'contracts'), orderBy('createdAt', 'desc'));
-  }, [db]);
+  }, [db, user]);
 
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
 
@@ -50,9 +51,9 @@ export default function DashboardPage() {
   const totalClients = contracts ? new Set(contracts.map((c) => c.clientId)).size : 0;
 
   const stats = [
-    { title: 'Contratos Activos', value: isLoading ? '...' : activeContracts, icon: FileText, href: '/contracts' },
-    { title: 'Contratos por Cobrar', value: isLoading ? '...' : overdueCount, secondaryValue: isLoading ? '...' : `B/. ${overdueTotalAmount.toFixed(2)}`, icon: CalendarClock, href: '/contracts?filter=overdue' },
-    { title: 'Clientes', value: isLoading ? '...' : totalClients, icon: Users, href: '/clients' },
+    { title: 'Contratos Activos', value: isLoading || isUserLoading ? '...' : activeContracts, icon: FileText, href: '/contracts' },
+    { title: 'Contratos por Cobrar', value: isLoading || isUserLoading ? '...' : overdueCount, secondaryValue: isLoading || isUserLoading ? '...' : `B/. ${overdueTotalAmount.toFixed(2)}`, icon: CalendarClock, href: '/contracts?filter=overdue' },
+    { title: 'Clientes', value: isLoading || isUserLoading ? '...' : totalClients, icon: Users, href: '/clients' },
   ];
 
   const contractTypes = [

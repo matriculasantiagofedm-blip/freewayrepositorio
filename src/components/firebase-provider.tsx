@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
 import { type FirebaseApp } from 'firebase/app';
-import { type Auth, onAuthStateChanged, type User } from 'firebase/auth';
+import { type Auth, onAuthStateChanged, type User, signInAnonymously } from 'firebase/auth';
 import { type Firestore } from 'firebase/firestore';
 import { app, auth, db } from '@/firebase/client';
 import { FirebaseErrorListener } from './FirebaseErrorListener';
@@ -35,11 +35,16 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true);
     
-    // Persistencia crítica en localStorage para que el rol no se pierda al abrir pestañas de impresión
+    // Persistencia del rol para mantener acceso tras recargar o abrir pestañas
     if (typeof window !== 'undefined') {
       const storedRoleKey = window.localStorage.getItem('userRoleKey');
       if (storedRoleKey && roleMapping[storedRoleKey]) {
         setRoleState(roleMapping[storedRoleKey]);
+        
+        // Asegurar que exista una sesión anónima si hay un rol pero no hay usuario
+        if (!auth.currentUser) {
+          signInAnonymously(auth).catch(err => console.error("Error en auto-login:", err));
+        }
       }
     }
 

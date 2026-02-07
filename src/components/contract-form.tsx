@@ -328,11 +328,11 @@ export function ContractForm() {
                 </CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 pt-0">
-                <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
-                    <FormItem><FormLabel className="text-xs">Transmisión</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Manual">Manual</SelectItem><SelectItem value="Automático">Automático</SelectItem><SelectItem value="Moto">Moto</SelectItem></SelectContent></Select></FormItem>
-                )} />
                 <FormField control={form.control} name="licenseCategory" render={({ field }) => (
                     <FormItem><FormLabel className="text-xs">Categoría</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A, C">Tipo C (Auto)</SelectItem><SelectItem value="A, C, D">Tipo D (Camioneta)</SelectItem><SelectItem value="A, B">Tipo B (Moto)</SelectItem><SelectItem value="E1, E2, E3">Profesional (E)</SelectItem></SelectContent></Select></FormItem>
+                )} />
+                <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
+                    <FormItem><FormLabel className="text-xs">Transmisión</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Manual">Manual</SelectItem><SelectItem value="Automático">Automático</SelectItem><SelectItem value="Moto">Moto</SelectItem></SelectContent></Select></FormItem>
                 )} />
                 <FormField control={form.control} name="vehicle" render={({ field }) => (
                     <FormItem>

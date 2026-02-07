@@ -85,14 +85,14 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, stude
         
         <h3 className="font-bold">CLÁUSULA SEGUNDA - DETALLES DEL CURSO</h3>
         <div className='space-y-1 text-[10px] pl-4'>
-            <p>1. Transmisión del vehículo: Automático <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Automático'} /> / Manual <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Manual'} /> {type === 'Curso Moto' && <> / Moto <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Moto'} /></>}</p>
-            
             {isSoloPractica ? (
-                <p>2. Categoría de licencia a aplicar: <Value>No Aplica</Value></p>
+                <p>1. Categoría de licencia a aplicar: <Value>No Aplica</Value></p>
             ) : (
-                <p>2. Categoría de licencia a aplicar: A, C <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C'} /> / A, C, D <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C, D'} /> {type === 'Curso Moto' && <> / A, B <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, B'} /></>}</p>
+                <p>1. Categoría de licencia a aplicar: A, C <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C'} /> / A, C, D <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C, D'} /> {type === 'Curso Moto' && <> / A, B <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, B'} /></>}</p>
             )}
 
+            <p>2. Transmisión del vehículo: Automático <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Automático'} /> / Manual <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Manual'} /> {type === 'Curso Moto' && <> / Moto <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Moto'} /></>}</p>
+            
             <p>3. Vehículo Asignado: <Line>{autoMotoDetails?.vehicle || '________________'}</Line></p>
             <p>4. Instructor Asignado: <Line>{autoMotoDetails?.instructor || '________________'}</Line></p>
 

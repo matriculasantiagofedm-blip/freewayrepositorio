@@ -73,25 +73,10 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
             
             <h3 className="font-bold">CLÁUSULA SEGUNDA - DETALLES DEL CURSO</h3>
             <div className='space-y-1 text-[10px] pl-4'>
-                <p>1. Transmisión del vehículo: 
-                    {(contract.type === 'Curso Auto' || contract.type === 'Curso Mixto' || contract.type === 'Curso Solo Practica') && (
-                        <>
-                            Automático <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Automático'} /> / 
-                            Manual <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Manual'} />
-                        </>
-                    )}
-                    {(contract.type === 'Curso Moto' || contract.type === 'Curso Mixto' || contract.type === 'Curso Solo Practica') && (
-                        <>
-                            {contract.type !== 'Curso Moto' && ' / '}
-                            Moto <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Moto'} />
-                        </>
-                    )}
-                </p>
-                
                 {isSoloPractica ? (
-                     <p>2. Categoría de licencia a aplicar: <Value>No Aplica</Value></p>
+                     <p>1. Categoría de licencia a aplicar: <Value>No Aplica</Value></p>
                 ) : (
-                    <p>2. Categoría de licencia a aplicar: 
+                    <p>1. Categoría de licencia a aplicar: 
                         {(contract.type === 'Curso Auto' || contract.type === 'Curso Mixto') && (
                             <>
                                 A, C <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C'} /> / 
@@ -106,6 +91,21 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                         )}
                     </p>
                 )}
+
+                <p>2. Transmisión del vehículo: 
+                    {(contract.type === 'Curso Auto' || contract.type === 'Curso Mixto' || contract.type === 'Curso Solo Practica') && (
+                        <>
+                            Automático <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Automático'} /> / 
+                            Manual <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Manual'} />
+                        </>
+                    )}
+                    {(contract.type === 'Curso Moto' || contract.type === 'Curso Mixto' || contract.type === 'Curso Solo Practica') && (
+                        <>
+                            {contract.type !== 'Curso Moto' && ' / '}
+                            Moto <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Moto'} />
+                        </>
+                    )}
+                </p>
                 
                 <p>3. Vehículo Asignado: <Line><Value>{autoMotoDetails?.vehicle || 'No asignado'}</Value></Line></p>
                 <p>4. Instructor Asignado: <Line><Value>{autoMotoDetails?.instructor || 'No asignado'}</Value></Line></p>

@@ -12,8 +12,9 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { format, isPast } from 'date-fns';
+import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
 import { Eye, Search, CheckCircle, XCircle } from 'lucide-react';
@@ -102,6 +103,7 @@ function AllContractsContent() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[100px]">Folio</TableHead>
+                <TableHead>Estado</TableHead>
                 <TableHead>Cliente</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Certificado</TableHead>
@@ -116,6 +118,15 @@ function AllContractsContent() {
                   <TableRow key={contract.id} className={cn(contract.status === 'expired' && 'bg-muted/50')}>
                     <TableCell className="font-medium text-primary">
                         {String(contract.folioNumber || '').padStart(6, '0')}
+                    </TableCell>
+                    <TableCell>
+                      {contract.status === 'expired' ? (
+                        <Badge variant="destructive" className="text-[10px] font-bold">ANULADO</Badge>
+                      ) : contract.status === 'completed' ? (
+                        <Badge variant="outline" className="text-[10px] font-bold bg-blue-50 text-blue-700 border-blue-200">COMPLETADO</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px] font-bold bg-green-50 text-green-700 border-green-200">ACTIVO</Badge>
+                      )}
                     </TableCell>
                     <TableCell className="font-semibold">{contract.clientName}</TableCell>
                     <TableCell>{contract.type}</TableCell>
@@ -144,7 +155,7 @@ function AllContractsContent() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 7 : 6} className="h-32 text-center text-muted-foreground">
+                  <TableCell colSpan={isAdmin ? 8 : 7} className="h-32 text-center text-muted-foreground">
                     {searchTerm ? "No se encontraron contratos con ese criterio." : "No hay contratos registrados."}
                   </TableCell>
                 </TableRow>

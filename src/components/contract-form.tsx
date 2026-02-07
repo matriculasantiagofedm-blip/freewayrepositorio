@@ -2,15 +2,17 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -24,43 +26,96 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
+import { CalendarIcon, Loader2, Plus, Trash2, Calculator, Info } from 'lucide-react';
+import { cn, toDate } from '@/lib/utils';
 import { Timestamp, collection, query, where, getDocs, doc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import type { Contract, ContractType } from '@/lib/types';
+import type { Contract, ContractType, VehicleName, InstructorName } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
-import { ContractView } from './contract-view';
 import { useDb, useUser } from './firebase-provider';
 
-const baseClientSchema = z.object({
+const vehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Moto Roja', 'Moto Negra'];
+const instructors: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', ''];
+
+const practicalTimes = [
+    '8:00am a 10:00am',
+    '10:00am a 12:pm',
+    '1:00pm a 3:00pm',
+    '3:00pm a 5:00pm',
+];
+
+const contractSchema = z.object({
   clientName: z.string().min(1, 'El nombre completo es requerido.'),
   clientEmail: z.string().email('Debe ser un correo electrónico válido.'),
+  contractType: z.enum(['Curso Auto', 'Curso Moto', 'Curso Mixto', 'Curso Deluxe', 'Ampliaciones', 'Curso Solo Practica']),
+  
+  // Detalle común para casi todos
+  studentIdNumber: z.string().min(1, 'La cédula es requerida.'),
+  studentAddress: z.string().min(1, 'La dirección es requerida.'),
+  studentPhone1: z.string().min(1, 'El teléfono es requerido.'),
+  studentPhone2: z.string().optional(),
+  
+  // Financiero
+  courseValue: z.coerce.number().min(0),
+  downPayment: z.coerce.number().min(0),
+  balance: z.coerce.number().min(0),
+  paymentDeadline: z.date().optional(),
+  paymentType: z.string().default('cash'),
+
+  // Configuración de vehículo/licencia
+  vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).optional(),
+  licenseCategory: z.string().optional(),
+  instructor: z.string().optional(),
+  vehicle: z.string().optional(),
+
+  // Clases
+  theoreticalClassSchedule: z.string().optional(),
+  theoreticalClassDates: z.array(z.date()).optional(),
+  practicalClassSchedules: z.array(z.object({
+    date: z.date().optional(),
+    time: z.string().optional()
+  })).optional(),
+  motoPracticalClassSchedules: z.array(z.object({
+    date: z.date().optional(),
+    time: z.string().optional()
+  })).optional(),
+
+  // Para Ampliaciones
+  selectedPlans: z.array(z.object({
+      name: z.string(),
+      price: z.number()
+  })).optional(),
+  theoreticalClassDate: z.date().optional(),
+  theoreticalClassTime: z.string().optional(),
 });
 
-type FormValues = {
-  clientName: string;
-  clientEmail: string;
-  contractType: ContractType;
-  deluxeDetails: any;
-  autoMotoDetails: any;
-  ampliacionesDetails: any;
-};
+type FormValues = z.infer<typeof contractSchema>;
 
-const convertDetailsDatesToTimestamps = (details: any) => {
-    if (!details) return {};
-    const newDetails = { ...details };
-    const toTimestamp = (date: any) => (date instanceof Date && !isNaN(date.getTime())) ? Timestamp.fromDate(date) : null;
-    
-    if (newDetails.paymentInstallments) newDetails.paymentInstallments = newDetails.paymentInstallments.map(toTimestamp).filter(Boolean);
-    if (newDetails.theoreticalClasses) newDetails.theoreticalClasses = newDetails.theoreticalClasses.map(toTimestamp).filter(Boolean);
-    if (newDetails.classSchedules) newDetails.classSchedules = newDetails.classSchedules.map((s: any) => ({ ...s, date: toTimestamp(s.date) })).filter((s: any) => s.date);
-    if (newDetails.paymentDeadline) newDetails.paymentDeadline = toTimestamp(newDetails.paymentDeadline);
-    if (newDetails.theoreticalClassDates) newDetails.theoreticalClassDates = newDetails.theoreticalClassDates.map(toTimestamp).filter(Boolean);
-    if (newDetails.practicalClassSchedules) newDetails.practicalClassSchedules = newDetails.practicalClassSchedules.map((s: any) => ({ ...s, date: toTimestamp(s.date) })).filter((s: any) => s.date);
-    if (newDetails.theoreticalClassDate) newDetails.theoreticalClassDate = toTimestamp(newDetails.theoreticalClassDate);
+const convertDatesToTimestamps = (data: any) => {
+    const result = { ...data };
+    const toTs = (d: any) => (d instanceof Date) ? Timestamp.fromDate(d) : d;
 
-    return newDetails;
+    if (result.paymentDeadline) result.paymentDeadline = toTs(result.paymentDeadline);
+    if (result.theoreticalClassDate) result.theoreticalClassDate = toTs(result.theoreticalClassDate);
+    if (result.theoreticalClassDates) result.theoreticalClassDates = result.theoreticalClassDates.map(toTs);
+    if (result.practicalClassSchedules) {
+        result.practicalClassSchedules = result.practicalClassSchedules.map((s: any) => ({
+            ...s,
+            date: s.date ? toTs(s.date) : null
+        }));
+    }
+    if (result.motoPracticalClassSchedules) {
+        result.motoPracticalClassSchedules = result.motoPracticalClassSchedules.map((s: any) => ({
+            ...s,
+            date: s.date ? toTs(s.date) : null
+        }));
+    }
+    return result;
 };
 
 export function ContractForm() {
@@ -73,29 +128,57 @@ export function ContractForm() {
   const contractTypeParam = searchParams.get('type') as ContractType | null;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
   
   const contractType: ContractType = useMemo(() => contractTypeParam || 'Curso Auto', [contractTypeParam]);
 
   const form = useForm<FormValues>({
+    resolver: zodResolver(contractSchema),
     defaultValues: {
       clientName: '',
       clientEmail: '',
       contractType: contractType,
-      deluxeDetails: { studentIdNumber: '', studentAddress: '', studentPhone1: '' },
-      autoMotoDetails: { studentIdNumber: '', studentAddress: '', studentPhone1: '', courseValue: 0, downPayment: 0, balance: 0 },
-      ampliacionesDetails: { studentIdNumber: '', studentAddress: '', studentPhone1: '', courseValue: 0, downPayment: 0, balance: 0 }
+      studentIdNumber: '',
+      studentAddress: '',
+      studentPhone1: '',
+      courseValue: 0,
+      downPayment: 0,
+      balance: 0,
+      paymentType: 'cash',
+      vehicleTransmission: contractType === 'Curso Moto' ? 'Moto' : 'Manual',
+      licenseCategory: contractType === 'Curso Moto' ? 'A, B' : 'A, C',
+      practicalClassSchedules: contractType === 'Ampliaciones' ? [] : [{ date: new Date(), time: '8:00am a 10:00am' }],
+      motoPracticalClassSchedules: contractType === 'Curso Mixto' ? [{ date: new Date(), time: '8:00am a 10:00am' }] : [],
+      theoreticalClassDates: [],
+      selectedPlans: [],
     },
   });
+
+  const { fields: practicalFields, append: appendPractical, remove: removePractical } = useFieldArray({
+    control: form.control,
+    name: "practicalClassSchedules"
+  });
+
+  const { fields: motoFields, append: appendMoto, remove: removeMoto } = useFieldArray({
+    control: form.control,
+    name: "motoPracticalClassSchedules"
+  });
+
+  // Cálculo automático del saldo
+  const courseValue = form.watch('courseValue');
+  const downPayment = form.watch('downPayment');
+  
+  useEffect(() => {
+    const val = Number(courseValue) || 0;
+    const pay = Number(downPayment) || 0;
+    form.setValue('balance', Math.max(0, val - pay));
+  }, [courseValue, downPayment, form]);
 
   async function onSubmit(values: FormValues) {
     if (!db || !user) return;
     setIsSubmitting(true);
     try {
       const clientsRef = collection(db, 'clients');
-      const studentId = values.contractType === 'Curso Deluxe' ? values.deluxeDetails.studentIdNumber : (values.contractType === 'Ampliaciones' ? values.ampliacionesDetails.studentIdNumber : values.autoMotoDetails.studentIdNumber);
-      
-      const q = query(clientsRef, where('idNumber', '==', studentId));
+      const q = query(clientsRef, where('idNumber', '==', values.studentIdNumber));
       const clientSnapshot = await getDocs(q);
       const existingClientDoc = clientSnapshot.docs[0];
 
@@ -109,25 +192,48 @@ export function ContractForm() {
           const newClientRef = doc(collection(db, 'clients'));
           clientId = newClientRef.id;
           transaction.set(newClientRef, {
-            id: clientId, name: values.clientName, email: values.clientEmail, idNumber: studentId, userId: user.uid, createdAt: serverTimestamp() as any
+            id: clientId, 
+            name: values.clientName, 
+            email: values.clientEmail, 
+            idNumber: values.studentIdNumber, 
+            phone: values.studentPhone1,
+            userId: user.uid, 
+            createdAt: serverTimestamp() as any
           });
         }
 
         const newContractRef = doc(collection(db, 'contracts'));
-        const contractData: any = {
-          id: newContractRef.id, folioNumber: newFolioNumber, title: values.contractType, clientName: values.clientName, clientEmail: values.clientEmail, clientId: clientId,
-          type: values.contractType, status: 'active', userId: user.uid, createdAt: serverTimestamp() as any, createdBy: currentUserRole || undefined
-        };
+        const cleanedData = convertDatesToTimestamps(values);
         
-        if (values.contractType === 'Curso Deluxe') contractData.deluxeDetails = convertDetailsDatesToTimestamps(values.deluxeDetails);
-        else if (values.contractType === 'Ampliaciones') contractData.ampliacionesDetails = convertDetailsDatesToTimestamps(values.ampliacionesDetails);
-        else contractData.autoMotoDetails = convertDetailsDatesToTimestamps(values.autoMotoDetails);
+        // Separar detalles según el tipo
+        const contractData: any = {
+          id: newContractRef.id,
+          folioNumber: newFolioNumber,
+          title: values.contractType,
+          clientName: values.clientName,
+          clientEmail: values.clientEmail,
+          clientId: clientId,
+          type: values.contractType,
+          status: 'active',
+          userId: user.uid,
+          createdAt: serverTimestamp() as any,
+          createdBy: currentUserRole || undefined
+        };
+
+        if (values.contractType === 'Curso Deluxe') {
+            contractData.deluxeDetails = cleanedData;
+        } else if (values.contractType === 'Ampliaciones') {
+            contractData.ampliacionesDetails = cleanedData;
+        } else {
+            contractData.autoMotoDetails = cleanedData;
+        }
 
         transaction.set(newContractRef, contractData);
         transaction.set(counterRef, { count: newFolioNumber }, { merge: true });
         return newContractRef.id;
       });
 
+      toast({ title: 'Contrato Generado', description: 'El documento ha sido guardado exitosamente.' });
       router.push(`/contracts/${newContractId}`);
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Error al Guardar', description: e.message });
@@ -137,22 +243,227 @@ export function ContractForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        {/* SECCIÓN 1: DATOS PERSONALES */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2"><Info className="h-5 w-5 text-primary" /> Datos del Estudiante</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <FormField control={form.control} name="clientName" render={({ field }) => (
+                        <FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input placeholder="Juan Pérez" {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
+                            <FormItem><FormLabel>Cédula / Pasaporte</FormLabel><FormControl><Input placeholder="8-000-000" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="clientEmail" render={({ field }) => (
+                            <FormItem><FormLabel>Email</FormLabel><FormControl><Input placeholder="correo@ejemplo.com" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                    </div>
+                    <FormField control={form.control} name="studentAddress" render={({ field }) => (
+                        <FormItem><FormLabel>Dirección de Domicilio</FormLabel><FormControl><Input placeholder="Calle, Edificio, Casa..." {...field} /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="studentPhone1" render={({ field }) => (
+                            <FormItem><FormLabel>Teléfono Principal</FormLabel><FormControl><Input placeholder="6000-0000" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="studentPhone2" render={({ field }) => (
+                            <FormItem><FormLabel>Teléfono Alternativo</FormLabel><FormControl><Input placeholder="255-0000" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* SECCIÓN 2: DATOS FINANCIEROS */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2"><Calculator className="h-5 w-5 text-primary" /> Valor y Forma de Pago</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="courseValue" render={({ field }) => (
+                            <FormItem><FormLabel>Valor Total (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                        <FormField control={form.control} name="downPayment" render={({ field }) => (
+                            <FormItem><FormLabel>Abono Inicial (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="balance" render={({ field }) => (
+                            <FormItem><FormLabel>Saldo Pendiente</FormLabel><FormControl><Input type="number" readOnly className="bg-muted font-bold text-destructive" {...field} /></FormControl></FormItem>
+                        )} />
+                        <FormField control={form.control} name="paymentType" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Tipo de Pago</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="cash">Efectivo</SelectItem>
+                                        <SelectItem value="debit">Tarjeta Débito</SelectItem>
+                                        <SelectItem value="credit">Tarjeta Crédito</SelectItem>
+                                        <SelectItem value="global">Global</SelectItem>
+                                        <SelectItem value="bac">BAC</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </FormItem>
+                        )} />
+                    </div>
+                    <FormField control={form.control} name="paymentDeadline" render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                            <FormLabel>Fecha Límite de Saldo</FormLabel>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <FormControl><Button variant="outline" className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}</Button></FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                </CardContent>
+            </Card>
+        </div>
+
+        {/* SECCIÓN 3: CONFIGURACIÓN DEL CURSO */}
         <Card>
-            <CardHeader><CardTitle>Datos del Cliente</CardTitle></CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={form.control} name="clientName" render={({ field }) => (
-                    <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+            <CardHeader><CardTitle className="text-lg">Detalles del Curso</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Transmisión</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                            <SelectContent>
+                                <SelectItem value="Manual">Manual</SelectItem>
+                                <SelectItem value="Automático">Automático</SelectItem>
+                                <SelectItem value="Moto">Moto</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </FormItem>
                 )} />
-                <FormField control={form.control} name="clientEmail" render={({ field }) => (
-                    <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                <FormField control={form.control} name="licenseCategory" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Categoría de Licencia</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                            <SelectContent>
+                                <SelectItem value="A, C">Tipo C (Auto)</SelectItem>
+                                <SelectItem value="A, C, D">Tipo D (Camioneta)</SelectItem>
+                                <SelectItem value="A, B">Tipo B (Moto)</SelectItem>
+                                <SelectItem value="E1, E2, E3">Profesional (E)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </FormItem>
+                )} />
+                <FormField control={form.control} name="instructor" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Instructor Asignado</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl>
+                            <SelectContent>
+                                {instructors.map(i => i && <SelectItem key={i} value={i}>{i}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </FormItem>
                 )} />
             </CardContent>
         </Card>
-        <div className="flex justify-between">
-            <Button type="button" variant="outline" onClick={() => setShowPreview(!showPreview)}>Vista Previa</Button>
-            <Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 animate-spin" />} Guardar</Button>
+
+        {/* SECCIÓN 4: HORARIOS DE CLASES PRÁCTICAS */}
+        {contractType !== 'Ampliaciones' && (
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle className="text-lg">Programación de Clases Prácticas</CardTitle>
+                        <CardDescription>Añade los días y turnos para el entrenamiento.</CardDescription>
+                    </div>
+                    <Button type="button" variant="outline" size="sm" onClick={() => appendPractical({ date: addDays(new Date(), practicalFields.length + 1), time: '8:00am a 10:00am' })}>
+                        <Plus className="h-4 w-4 mr-2" /> Añadir Clase
+                    </Button>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {practicalFields.map((field, index) => (
+                        <div key={field.id} className="flex items-end gap-4 p-4 border rounded-lg bg-slate-50/50">
+                            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField control={form.control} name={`practicalClassSchedules.${index}.date`} render={({ field }) => (
+                                    <FormItem className="flex flex-col">
+                                        <FormLabel>Fecha Clase #{index + 1}</FormLabel>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <FormControl><Button variant="outline" className={cn("text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: es }) : "Seleccionar"}</Button></FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                                        </Popover>
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name={`practicalClassSchedules.${index}.time`} render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Horario / Turno</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                            <SelectContent>{practicalTimes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                                        </Select>
+                                    </FormItem>
+                                )} />
+                            </div>
+                            <Button type="button" variant="ghost" size="icon" className="text-destructive" onClick={() => removePractical(index)} disabled={practicalFields.length <= 1}>
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
+        )}
+
+        {/* CURSOS MIXTOS: SECCIÓN ADICIONAL PARA MOTO */}
+        {contractType === 'Curso Mixto' && (
+             <Card className="border-orange-200">
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle className="text-lg text-orange-700">Clases Prácticas de Motocicleta</CardTitle>
+                    </div>
+                    <Button type="button" variant="outline" size="sm" onClick={() => appendMoto({ date: new Date(), time: '8:00am a 10:00am' })}>
+                        <Plus className="h-4 w-4 mr-2" /> Añadir Clase Moto
+                    </Button>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {motoFields.map((field, index) => (
+                        <div key={field.id} className="flex items-end gap-4 p-4 border rounded-lg bg-orange-50/30">
+                            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.date`} render={({ field }) => (
+                                    <FormItem className="flex flex-col">
+                                        <FormLabel>Fecha Moto #{index + 1}</FormLabel>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <FormControl><Button variant="outline" className={cn("text-left font-normal", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{field.value ? format(field.value, "PPP", { locale: es }) : "Seleccionar"}</Button></FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                                        </Popover>
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.time`} render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Horario Moto</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                            <SelectContent>{practicalTimes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                                        </Select>
+                                    </FormItem>
+                                )} />
+                            </div>
+                            <Button type="button" variant="ghost" size="icon" onClick={() => removeMoto(index)}><Trash2 className="h-4 w-4" /></Button>
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
+        )}
+
+        <div className="flex justify-end pt-6 border-t">
+            <Button type="submit" size="lg" className="w-full md:w-auto px-12" disabled={isSubmitting}>
+                {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Procesando Contrato...</> : 'Generar y Guardar Contrato'}
+            </Button>
         </div>
-        {showPreview && <ContractView contract={form.getValues() as any} />}
       </form>
     </Form>
   );

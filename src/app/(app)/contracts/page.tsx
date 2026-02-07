@@ -30,16 +30,7 @@ const getBalance = (contract: Contract): number => {
 const isOverdue = (contract: Contract): boolean => {
     if (contract.status !== 'active') return false;
     const balance = getBalance(contract);
-    if (balance <= 0) return false;
-    
-    const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
-    let deadline = details?.paymentDeadline;
-    
-    if (deadline) {
-        const paymentDate = toDate(deadline);
-        return !isNaN(paymentDate.getTime()) && isPast(paymentDate);
-    }
-    return true; // Si hay balance sin fecha específica, se considera "por cobrar"
+    return balance > 0;
 }
 
 function AllContractsContent() {
@@ -63,7 +54,9 @@ function AllContractsContent() {
       const type = contract.type?.toLowerCase() || '';
       const search = searchTerm.toLowerCase();
       
+      // Aplicar filtro de saldo si se solicita desde el Dashboard
       if (filter === 'overdue' && !isOverdue(contract)) return false;
+      
       if (searchTerm) {
           return folio.includes(search) || client.includes(search) || type.includes(search);
       }
@@ -100,7 +93,7 @@ function AllContractsContent() {
                 <TableHead>Tipo</TableHead>
                 <TableHead>Certificado</TableHead>
                 <TableHead>Fecha</TableHead>
-                {filter === 'overdue' && <TableHead className="text-right">Adeudado</TableHead>}
+                {(filter === 'overdue' || true) && <TableHead className="text-right">Saldo (B/.)</TableHead>}
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -124,7 +117,9 @@ function AllContractsContent() {
                       )}
                     </TableCell>
                     <TableCell>{format(toDate(contract.createdAt), 'dd/MM/yyyy', { locale: es })}</TableCell>
-                    {filter === 'overdue' && <TableCell className="text-right font-bold text-destructive">B/. {getBalance(contract).toLocaleString('en-US', { minimumFractionDigits: 2 })}</TableCell>}
+                    <TableCell className={cn("text-right font-bold", getBalance(contract) > 0 ? "text-destructive" : "text-green-600")}>
+                        {getBalance(contract).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </TableCell>
                     <TableCell className="text-right">
                       <Button asChild variant="ghost" size="icon">
                         <Link href={`/contracts/${contract.id}`}><Eye className="h-4 w-4" /></Link>
@@ -134,8 +129,8 @@ function AllContractsContent() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={filter === 'overdue' ? 7 : 6} className="h-32 text-center text-muted-foreground">
-                    {searchTerm ? "No se encontraron contratos con ese criterio." : "No hay contratos por cobrar registrados."}
+                  <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                    {searchTerm ? "No se encontraron contratos con ese criterio." : "No hay contratos registrados."}
                   </TableCell>
                 </TableRow>
               )}

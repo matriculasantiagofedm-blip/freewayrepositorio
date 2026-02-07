@@ -1,39 +1,33 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { FileText, CalendarClock, Users, Car, Bike, Combine, Crown, Plus, CarFront, HandCoins, BookMarked, Gauge, Wrench, Award } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { isPast } from 'date-fns';
-import { collection, query, orderBy } from 'firebase/firestore';
-import type { Contract } from '@/lib/types';
-import { useCurrentRole } from '@/hooks/use-current-role';
-import { cn, toDate } from '@/lib/utils';
 import { useDb, useUser } from '@/components/firebase-provider';
+import { useCurrentRole } from '@/hooks/use-current-role';
 import { useCollection } from '@/hooks/use-firestore';
+import { cn, toDate } from '@/lib/utils';
+import { isPast } from 'date-fns';
+import { collection, orderBy, query } from 'firebase/firestore';
+import { Award, Bike, BookMarked, CalendarClock, Car, CarFront, Combine, Crown, FileText, Gauge, HandCoins, Plus, Users, Wrench } from 'lucide-react';
+import Link from 'next/link';
 import { useMemo } from 'react';
+import type { Contract } from '@/lib/types';
 
+// Función centralizada para obtener el saldo de cualquier tipo de contrato
 const getBalance = (contract: Contract): number => {
     const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
     return details?.balance || 0;
 }
 
+// Lógica para determinar si un contrato debe aparecer en "Por Cobrar"
 const isOverdue = (contract: Contract): boolean => {
     if (contract.status !== 'active') return false;
     const balance = getBalance(contract);
+    
+    // Si no tiene saldo, no está por cobrar
     if (balance <= 0) return false;
     
-    // Si tiene balance y es activo, técnicamente está "por cobrar"
-    // Verificamos si además la fecha límite ya pasó
-    const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
-    let deadline = details?.paymentDeadline;
-    
-    if (deadline) {
-        const paymentDate = toDate(deadline);
-        return !isNaN(paymentDate.getTime()) && isPast(paymentDate);
-    }
-    
-    // Si no hay fecha límite pero hay balance, lo contamos como "por cobrar"
+    // Un contrato con saldo > 0 y estado activo SIEMPRE está "por cobrar"
     return true;
 }
 
@@ -49,6 +43,7 @@ export default function DashboardPage() {
 
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
 
+  // Cálculos de estadísticas basados en la data real de Firestore
   const activeContracts = contracts?.filter((c) => c.status === 'active').length || 0;
   const overdueContracts = contracts?.filter(isOverdue) || [];
   const overdueCount = overdueContracts.length;
@@ -57,7 +52,13 @@ export default function DashboardPage() {
 
   const stats = [
     { title: 'Contratos Activos', value: isLoading || isUserLoading ? '...' : activeContracts, icon: FileText, href: '/contracts' },
-    { title: 'Contratos por Cobrar', value: isLoading || isUserLoading ? '...' : overdueCount, secondaryValue: isLoading || isUserLoading ? '...' : `B/. ${overdueTotalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, icon: CalendarClock, href: '/contracts?filter=overdue' },
+    { 
+        title: 'Contratos por Cobrar', 
+        value: isLoading || isUserLoading ? '...' : overdueCount, 
+        secondaryValue: isLoading || isUserLoading ? '...' : `B/. ${overdueTotalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 
+        icon: CalendarClock, 
+        href: '/contracts?filter=overdue' 
+    },
     { title: 'Clientes', value: isLoading || isUserLoading ? '...' : totalClients, icon: Users, href: '/clients' },
   ];
 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -65,7 +64,6 @@ export default function VehicleScheduleReportPage() {
 
   const contractsQuery = useMemoQuery(() => {
     if (!db) return null;
-    // Solo traemos contratos activos para la agenda semanal
     return query(collection(db, 'contracts'), where('status', '==', 'active'));
   }, [db]);
 
@@ -82,21 +80,20 @@ export default function VehicleScheduleReportPage() {
 
     contracts.forEach(contract => {
         const details = contract.autoMotoDetails || contract.deluxeDetails;
-        const instructor: InstructorName | 'Sin Instructor' = details?.instructor || 'Sin Instructor';
 
         // Función auxiliar para añadir asignaciones
-        const addAssignment = (date: any, timeSlot: TimeSlot | null, type: 'Práctica' | 'Teórica', index: number, vehicleLabel: string) => {
+        const addAssignment = (date: any, timeSlot: TimeSlot | null, type: 'Práctica' | 'Teórica', index: number, vehicleLabel?: string, instructorLabel?: string) => {
             if (!date) return;
             const classDate = toDate(date);
             if (isNaN(classDate.getTime()) || !isWithinInterval(classDate, weekInterval)) return;
 
             const dateKey = format(classDate, 'yyyy-MM-dd');
-            const slot = timeSlot || '8am-10am'; // Turno por defecto si no se especifica
+            const slot = timeSlot || '8am-10am';
 
             const assignment: LocalAssignment = {
                 studentName: contract.clientName,
-                instructor: instructor,
-                vehicle: vehicleLabel,
+                instructor: instructorLabel || 'Sin Instructor',
+                vehicle: vehicleLabel || 'Sin Vehículo',
                 timeSlot: slot,
                 classNumber: index + 1,
                 classType: type,
@@ -107,18 +104,18 @@ export default function VehicleScheduleReportPage() {
             newWeeklyAssignments.set(dateKey, dayAssignments);
         };
 
-        // 1. Clases Prácticas
+        // 1. Clases Prácticas (Ahora con vehículo e instructor específico por clase)
         const autoSchedules = contract.autoMotoDetails?.practicalClassSchedules || [];
         const motoSchedules = contract.autoMotoDetails?.motoPracticalClassSchedules || [];
         const deluxeSchedules = contract.deluxeDetails?.classSchedules || [];
 
-        autoSchedules.forEach((s, i) => addAssignment(s.date, timeStringToTimeSlot(s.time || ''), 'Práctica', i, contract.autoMotoDetails?.vehicle || 'Auto'));
-        motoSchedules.forEach((s, i) => addAssignment(s.date, timeStringToTimeSlot(s.time || ''), 'Práctica', i, contract.autoMotoDetails?.vehicle || 'Moto'));
-        deluxeSchedules.forEach((s, i) => addAssignment(s.date, timeStringToTimeSlot(s.time || ''), 'Práctica', i, contract.deluxeDetails?.vehicleTransmission || 'Deluxe'));
+        autoSchedules.forEach((s, i) => addAssignment(s.date, timeStringToTimeSlot(s.time || ''), 'Práctica', i, s.vehicle, s.instructor));
+        motoSchedules.forEach((s, i) => addAssignment(s.date, timeStringToTimeSlot(s.time || ''), 'Práctica', i, s.vehicle, s.instructor));
+        deluxeSchedules.forEach((s, i) => addAssignment(s.date, timeStringToTimeSlot(s.time || ''), 'Práctica', i, s.vehicle, s.instructor));
 
         // 2. Clases Teóricas
         const theoreticalDates = contract.autoMotoDetails?.theoreticalClassDates || contract.deluxeDetails?.theoreticalClasses || [];
-        theoreticalDates.forEach((d, i) => addAssignment(d, '8am-10am', 'Teórica', i, 'Teórica'));
+        theoreticalDates.forEach((d, i) => addAssignment(d, '8am-10am', 'Teórica', i, 'Teórica', 'Sede Central'));
     });
 
     setWeeklyAssignments(newWeeklyAssignments);

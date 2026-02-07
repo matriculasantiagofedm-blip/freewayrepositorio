@@ -32,13 +32,13 @@ import { CalendarIcon, Loader2, Calculator, UserCircle, Settings2, Clock, BookOp
 import { cn } from '@/lib/utils';
 import { Timestamp, collection, query, where, getDocs, doc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import type { ContractType, InstructorName } from '@/lib/types';
+import type { ContractType, InstructorName, VehicleName } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useDb, useUser } from './firebase-provider';
 
 const instructors: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', ''];
-const carVehicles = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
-const motoVehicles = ['Moto Roja', 'Moto Negra'];
+const carVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
+const motoVehicles: VehicleName[] = ['Moto Roja', 'Moto Negra'];
 const practicalTimes = ['8:00am a 10:00am', '10:00am a 12:pm', '1:00pm a 3:00pm', '3:00pm a 5:00pm'];
 const theoreticalSchedules = [
     'Clase Semanal',
@@ -77,19 +77,21 @@ const contractSchema = z.object({
   balance: z.coerce.number().min(0),
   paymentDeadline: z.date().optional(),
   paymentType: z.string().default('cash'),
-  vehicle: z.string().optional(),
   vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).optional(),
   licenseCategory: z.string().optional(),
-  instructor: z.string().optional(),
   theoreticalClassSchedule: z.string().optional(),
   theoreticalClassDates: z.array(z.date()).optional(),
   practicalClassSchedules: z.array(z.object({
     date: z.date().optional(),
-    time: z.string().optional()
+    time: z.string().optional(),
+    vehicle: z.string().optional(),
+    instructor: z.string().optional()
   })).optional(),
   motoPracticalClassSchedules: z.array(z.object({
     date: z.date().optional(),
-    time: z.string().optional()
+    time: z.string().optional(),
+    vehicle: z.string().optional(),
+    instructor: z.string().optional()
   })).optional(),
 });
 
@@ -133,16 +135,17 @@ export function ContractForm() {
     defaultValues: {
       clientName: '', clientEmail: '', contractType: contractType, studentIdNumber: '',
       studentAddress: '', studentPhone1: '', studentPhone2: '', courseValue: 0, downPayment: 0, balance: 0,
-      paymentType: 'cash', coursePlan: '', vehicle: '', vehicleTransmission: contractType === 'Curso Moto' ? 'Moto' : 'Manual',
+      paymentType: 'cash', coursePlan: '', vehicleTransmission: contractType === 'Curso Moto' ? 'Moto' : 'Manual',
       licenseCategory: contractType === 'Curso Moto' ? 'A, B' : 'A, C',
       theoreticalClassSchedule: '',
       theoreticalClassDates: [],
-      practicalClassSchedules: contractType === 'Ampliaciones' ? [] : [{ date: new Date(), time: '8:00am a 10:00am' }],
-      motoPracticalClassSchedules: (contractType === 'Curso Mixto' || contractType === 'Curso Moto') ? [{ date: new Date(), time: '8:00am a 10:00am' }] : [],
+      practicalClassSchedules: contractType === 'Ampliaciones' ? [] : [{ date: new Date(), time: '8:00am a 10:00am', vehicle: '', instructor: '' }],
+      motoPracticalClassSchedules: (contractType === 'Curso Mixto' || contractType === 'Curso Moto') ? [{ date: new Date(), time: '8:00am a 10:00am', vehicle: '', instructor: '' }] : [],
     },
   });
 
   const { fields: practicalFields, replace: replacePractical } = useFieldArray({ control: form.control, name: "practicalClassSchedules" });
+  const { fields: motoFields, replace: replaceMoto } = useFieldArray({ control: form.control, name: "motoPracticalClassSchedules" });
 
   const courseValue = form.watch('courseValue');
   const downPayment = form.watch('downPayment');
@@ -164,12 +167,19 @@ export function ContractForm() {
             const numSlots = Math.ceil(pkg.hours / 2);
             const newSlots = Array.from({ length: numSlots }).map((_, i) => ({
                 date: addDays(new Date(), i + 1),
-                time: '8:00am a 10:00am'
+                time: '8:00am a 10:00am',
+                vehicle: '',
+                instructor: ''
             }));
-            replacePractical(newSlots);
+            
+            if (contractType === 'Curso Moto') {
+                replaceMoto(newSlots);
+            } else {
+                replacePractical(newSlots);
+            }
         }
     }
-  }, [selectedPlanId, contractType, form, replacePractical]);
+  }, [selectedPlanId, contractType, form, replacePractical, replaceMoto]);
 
   useEffect(() => {
     if (selectedTheoreticalSchedule === 'Clase Semanal') {
@@ -381,24 +391,6 @@ export function ContractForm() {
                         )}
                     </SelectContent></Select></FormItem>
                 )} />
-                <FormField control={form.control} name="vehicle" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Vehículo Asignado</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl><SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl>
-                            <SelectContent>
-                                {contractType === 'Curso Moto' ? (
-                                    motoVehicles.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)
-                                ) : (
-                                    carVehicles.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)
-                                )}
-                            </SelectContent>
-                        </Select>
-                    </FormItem>
-                )} />
-                <FormField control={form.control} name="instructor" render={({ field }) => (
-                    <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Instructor</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl><SelectContent>{instructors.map(i => i && <SelectItem key={i} value={i}>{i}</SelectItem>)}</SelectContent></Select></FormItem>
-                )} />
             </CardContent>
         </Card>
 
@@ -450,28 +442,52 @@ export function ContractForm() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-3 space-y-2">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 gap-3">
                         {practicalFields.map((field, index) => (
-                            <div key={field.id} className="flex items-center gap-2 p-2 border rounded-md bg-muted/10">
-                                <span className="text-[10px] font-bold w-5 bg-primary text-white rounded-full h-5 flex items-center justify-center shrink-0">#{index + 1}</span>
-                                <FormField control={form.control} name={`practicalClassSchedules.${index}.date`} render={({ field }) => (
-                                    <FormItem className="flex-1">
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <FormControl><Button variant="outline" className={cn("h-7 text-xs w-full text-left font-normal px-2", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-1 h-3 w-3" />{field.value ? format(field.value, "dd/MM") : "Fecha"}</Button></FormControl>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
-                                        </Popover>
-                                    </FormItem>
-                                )} />
-                                <FormField control={form.control} name={`practicalClassSchedules.${index}.time`} render={({ field }) => (
-                                    <FormItem className="flex-1">
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl><SelectTrigger className="h-7 text-xs px-2"><SelectValue /></SelectTrigger></FormControl>
-                                            <SelectContent>{practicalTimes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                                        </Select>
-                                    </FormItem>
-                                )} />
+                            <div key={field.id} className="p-3 border rounded-md bg-muted/5 space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-bold w-5 bg-primary text-white rounded-full h-5 flex items-center justify-center shrink-0">#{index + 1}</span>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 flex-1">
+                                        <FormField control={form.control} name={`practicalClassSchedules.${index}.date`} render={({ field }) => (
+                                            <FormItem>
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <FormControl><Button variant="outline" className={cn("h-8 text-xs w-full text-left font-normal px-2", !field.value && "text-muted-foreground")}><CalendarIcon className="mr-1 h-3 w-3" />{field.value ? format(field.value, "dd/MM") : "Fecha"}</Button></FormControl>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                                                </Popover>
+                                            </FormItem>
+                                        )} />
+                                        <FormField control={form.control} name={`practicalClassSchedules.${index}.time`} render={({ field }) => (
+                                            <FormItem>
+                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                    <FormControl><SelectTrigger className="h-8 text-xs px-2"><SelectValue placeholder="Hora" /></SelectTrigger></FormControl>
+                                                    <SelectContent>{practicalTimes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                                                </Select>
+                                            </FormItem>
+                                        )} />
+                                        <FormField control={form.control} name={`practicalClassSchedules.${index}.vehicle`} render={({ field }) => (
+                                            <FormItem>
+                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                    <FormControl><SelectTrigger className="h-8 text-xs px-2"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
+                                                    <SelectContent>
+                                                        {(contractType === 'Curso Moto' ? motoVehicles : carVehicles).map(v => (
+                                                            <SelectItem key={v} value={v}>{v}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </FormItem>
+                                        )} />
+                                        <FormField control={form.control} name={`practicalClassSchedules.${index}.instructor`} render={({ field }) => (
+                                            <FormItem>
+                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                    <FormControl><SelectTrigger className="h-8 text-xs px-2"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
+                                                    <SelectContent>{instructors.map(i => i && <SelectItem key={i} value={i}>{i}</SelectItem>)}</SelectContent>
+                                                </Select>
+                                            </FormItem>
+                                        )} />
+                                    </div>
+                                </div>
                             </div>
                         ))}
                     </div>

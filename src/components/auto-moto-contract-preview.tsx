@@ -93,12 +93,9 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, stude
 
             <p>2. Transmisión del vehículo: Automático <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Automático'} /> / Manual <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Manual'} /> {type === 'Curso Moto' && <> / Moto <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Moto'} /></>}</p>
             
-            <p>3. Vehículo Asignado: <Line>{autoMotoDetails?.vehicle || '________________'}</Line></p>
-            <p>4. Instructor Asignado: <Line>{autoMotoDetails?.instructor || '________________'}</Line></p>
-
             {!isSoloPractica && (
                 <>
-                    <div className="flex items-center gap-2">5. Horario para clases teóricas: <Line>{autoMotoDetails?.theoreticalClassSchedule}</Line></div>
+                    <div className="flex items-center gap-2">3. Horario para clases teóricas: <Line>{autoMotoDetails?.theoreticalClassSchedule}</Line></div>
                     <div className="pl-4">
                         {autoMotoDetails?.theoreticalClassDates?.map((date, index) => (
                             <span key={index} className="mr-4">Clase {index + 1}: {formatDate(date)}</span>
@@ -106,31 +103,31 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, stude
                     </div>
                 </>
             )}
-            <p>6. Horario para clases practicas:</p>
+            <p>4. Horario para clases practicas (Fecha, Hora, Vehículo e Instructor):</p>
             {type === 'Curso Mixto' ? (
                 <>
                     <p className="font-semibold">Clases de Auto:</p>
                     <div className="pl-4 space-y-0.5">
-                        {Array.from({ length: autoMotoDetails?.practicalClassSchedules?.length || 0 }).map((_, index) => (
-                            <div key={index} className="flex items-center gap-2">
-                                ○ Clase {index + 1}: Fecha <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.date ? formatDate(autoMotoDetails?.practicalClassSchedules?.[index]?.date) : <>&nbsp;</>}</Line> Hora <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.time}</Line>
+                        {(autoMotoDetails?.practicalClassSchedules || []).map((s, index) => (
+                            <div key={index} className="flex flex-wrap items-center gap-x-2 text-[9px]">
+                                ○ Clase {index + 1}: <Line>{s.date ? formatDate(s.date) : ''}</Line> Hora: <Line>{s.time}</Line> Vehículo: <Line>{s.vehicle}</Line> Instructor: <Line>{s.instructor}</Line>
                             </div>
                         ))}
                     </div>
                     <p className="font-semibold pt-2">Clases de Moto:</p>
                      <div className="pl-4 space-y-0.5">
-                        {Array.from({ length: autoMotoDetails?.motoPracticalClassSchedules?.length || 0 }).map((_, index) => (
-                            <div key={index} className="flex items-center gap-2">
-                                ○ Clase {index + 1}: Fecha <Line>{autoMotoDetails?.motoPracticalClassSchedules?.[index]?.date ? formatDate(autoMotoDetails?.motoPracticalClassSchedules?.[index]?.date) : <>&nbsp;</>}</Line> Hora <Line>{autoMotoDetails?.motoPracticalClassSchedules?.[index]?.time}</Line>
+                        {(autoMotoDetails?.motoPracticalClassSchedules || []).map((s, index) => (
+                            <div key={index} className="flex flex-wrap items-center gap-x-2 text-[9px]">
+                                ○ Clase {index + 1}: <Line>{s.date ? formatDate(s.date) : ''}</Line> Hora: <Line>{s.time}</Line> Vehículo: <Line>{s.vehicle}</Line> Instructor: <Line>{s.instructor}</Line>
                             </div>
                         ))}
                     </div>
                 </>
             ) : (
                 <div className="pl-4 space-y-0.5">
-                    {Array.from({ length: autoMotoDetails?.practicalClassSchedules?.length || 0 }).map((_, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                            ○ Clase {index + 1}: Fecha <Line>{autoMotoDetails?.practicalClassSchedules?.[index]?.date ? formatDate(autoMotoDetails?.practicalClassSchedules?.[index]?.date) : <>&nbsp;</>}</Line> Hora <Line><Value>{autoMotoDetails?.practicalClassSchedules?.[index]?.time}</Value></Line>
+                    {(autoMotoDetails?.practicalClassSchedules || []).map((s, index) => (
+                        <div key={index} className="flex flex-wrap items-center gap-x-2 text-[9px]">
+                            ○ Clase {index + 1}: <Line>{s.date ? formatDate(s.date) : ''}</Line> Hora: <Line>{s.time}</Line> Vehículo: <Line>{s.vehicle}</Line> Instructor: <Line>{s.instructor}</Line>
                         </div>
                     ))}
                 </div>

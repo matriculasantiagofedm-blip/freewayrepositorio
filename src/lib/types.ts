@@ -37,7 +37,7 @@ export interface DeluxeContractDetails {
   licenseCategory?: 'A, C' | 'A, C, D';
   theoreticalClassSchedule?: string;
   theoreticalClasses?: any[];
-  classSchedules?: { date?: any; time?: string }[];
+  classSchedules?: { date?: any; time?: string; vehicle?: VehicleName; instructor?: InstructorName; }[];
   paymentType?: string;
   instructor?: InstructorName;
 }
@@ -57,8 +57,8 @@ export interface AutoMotoContractDetails {
   licenseCategory?: 'A, C' | 'A, C, D' | 'A, B';
   theoreticalClassSchedule?: string;
   theoreticalClassDates?: any[];
-  practicalClassSchedules?: { date?: any; time?: string }[];
-  motoPracticalClassSchedules?: { date?: any; time?: string }[];
+  practicalClassSchedules?: { date?: any; time?: string; vehicle?: VehicleName; instructor?: InstructorName; }[];
+  motoPracticalClassSchedules?: { date?: any; time?: string; vehicle?: VehicleName; instructor?: InstructorName; }[];
   paidInFull?: boolean;
   paymentType?: string;
   instructor?: InstructorName;

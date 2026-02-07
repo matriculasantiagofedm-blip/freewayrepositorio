@@ -1,3 +1,4 @@
+
 'use client';
 import { useParams, useSearchParams } from 'next/navigation';
 import { doc } from 'firebase/firestore';
@@ -53,6 +54,7 @@ function CertificatePrintContent() {
       const address = searchParams.get('address');
       const phone1 = searchParams.get('phone1');
       const phone2 = searchParams.get('phone2');
+      const manualType = searchParams.get('manualType');
       
       if (!folio || !clientName || !cip || !licenseType || !courseName || !issueDateStr) return;
 
@@ -61,7 +63,7 @@ function CertificatePrintContent() {
           id: 'manual',
           clientId: 'manual',
           userId: 'manual',
-          type: licenseType.includes('E') ? 'Ampliaciones' : 'Manual',
+          type: manualType === 'ampliaciones' ? 'Ampliaciones' : 'Manual',
           clientName,
           clientEmail: '-',
           ampliacionesDetails: {
@@ -107,25 +109,29 @@ function CertificatePrintContent() {
     if (!certificate || !certificate.licenseType) return false;
     
     const type = certificate.licenseType.trim();
+    const manualType = searchParams.get('manualType');
+
+    // REGLA 0: Si es trámite manual de "Primera Vez", siempre usamos Estándar (36h)
+    if (isManual && manualType === 'primera-vez') return false;
 
     // REGLA 1: Las tipo E siempre utilizan el formato AMPLIACIÓN (80h)
     if (['E1', 'E2', 'E3'].some(l => type.includes(l))) return true;
 
-    // REGLA 2: Si el contrato es de "Ampliaciones" o Manual
-    if (certificate.contract?.type === 'Ampliaciones' || isManual) {
+    // REGLA 2: Si el contrato es de "Ampliaciones" o Trámite Manual de Ampliaciones
+    if (certificate.contract?.type === 'Ampliaciones' || (isManual && manualType === 'ampliaciones')) {
         // Las letras B, C, D y F en ampliación usan el formato ESTÁNDAR (36h)
         if (['B', 'C', 'D', 'F'].includes(type)) return false;
         
         // La letra A en ampliación utiliza el formato AMPLIACIÓN (80h)
         if (type === 'A') return true;
 
-        // Por defecto para ampliaciones desconocidas, usamos 80h
+        // Por defecto para ampliaciones desconocidas con más de una letra, usamos 80h
         return true;
     }
     
     // REGLA 3: Cursos regulares (Auto, Moto, Deluxe, Mixto) siempre usan ESTÁNDAR (36h)
     return false;
-  }, [certificate, isManual]);
+  }, [certificate, isManual, searchParams]);
 
   if (!isManual && isContractLoading) {
     return <div className="flex items-center justify-center h-screen bg-white"><p className="text-xl font-semibold animate-pulse">Generando documento...</p></div>;

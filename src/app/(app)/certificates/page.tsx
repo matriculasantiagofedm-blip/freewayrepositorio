@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
@@ -10,7 +11,7 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Printer, CheckCircle2, PlusCircle } from 'lucide-react';
+import { Loader2, Search, Printer, CheckCircle2, PlusCircle, FileText, Repeat } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import {
   Dialog,
@@ -23,6 +24,7 @@ import {
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const getNextFolio = (lastFolio: string | null): string => {
     const year = new Date().getFullYear();
@@ -51,6 +53,8 @@ function CertificatesContent() {
   // Estados del Modal
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
+  const [manualType, setManualType] = useState<'primera-vez' | 'ampliaciones'>('primera-vez');
+  
   const [certificateData, setCertificateData] = useState({
     folio: '',
     clientName: '',
@@ -123,6 +127,7 @@ function CertificatesContent() {
 
   const handleOpenCertificateModal = (contract: Contract) => {
     setSelectedContract(contract);
+    setManualType(contract.type === 'Ampliaciones' ? 'ampliaciones' : 'primera-vez');
     
     const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
     const suggestedFolio = getNextFolio(lastFolio);
@@ -159,6 +164,7 @@ function CertificatesContent() {
 
   const handleOpenManualModal = () => {
     setSelectedContract(null); // Indica modo manual
+    setManualType('primera-vez');
     const suggestedFolio = getNextFolio(lastFolio);
     setCertificateData({
       folio: suggestedFolio,
@@ -207,7 +213,7 @@ function CertificatesContent() {
             clientName: certificateData.clientName,
             cip: certificateData.cip,
             licenseType: finalLicenseType,
-            courseName: selectedContract?.title || 'Generación Manual',
+            courseName: selectedContract?.title || (manualType === 'ampliaciones' ? 'Ampliación Manual' : 'Primera Vez Manual'),
             issueDate: new Date().toISOString(),
             firstName: certificateData.firstName,
             middleName: certificateData.middleName,
@@ -216,6 +222,7 @@ function CertificatesContent() {
             address: certificateData.address,
             phone1: certificateData.phone1,
             phone2: certificateData.phone2,
+            manualType: manualType, // Pasar el tipo de trámite
         });
 
         const printId = selectedContract?.id || 'manual';
@@ -229,9 +236,12 @@ function CertificatesContent() {
   };
 
   const groupedLicenses = useMemo(() => {
+    // Si no es ampliación, no agrupamos individualmente aquí
+    if (manualType !== 'ampliaciones' && (!selectedContract || selectedContract.type !== 'Ampliaciones')) {
+        return null;
+    }
+
     if (!selectedContract) {
-        // En modo manual, asumimos que puede ser cualquier categoría. 
-        // Si el usuario escribe algo con E, mostramos grupo E.
         const type = certificateData.licenseType.toUpperCase();
         const hasE = ['E1', 'E2', 'E3'].some(l => type.includes(l));
         const individualLetters = ['A', 'B', 'C', 'D', 'F'].filter(l => type.includes(l));
@@ -248,7 +258,7 @@ function CertificatesContent() {
         E: plans.filter(p => ['E1', 'E2', 'E3'].includes(p)),
         individuals: plans.filter(p => ['A', 'B', 'C', 'D', 'F'].includes(p)),
     };
-  }, [selectedContract, certificateData.licenseType]);
+  }, [selectedContract, certificateData.licenseType, manualType]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -317,6 +327,19 @@ function CertificatesContent() {
                 </DialogHeader>
                 
                 <div className="flex-1 overflow-y-auto pr-4 py-4 space-y-6">
+                    {/* Selector Manual de Tipo de Trámite */}
+                    {!selectedContract && (
+                        <div className="space-y-3 bg-slate-100 p-4 rounded-xl border">
+                            <Label className="text-xs font-bold uppercase tracking-wider text-slate-600">Tipo de Trámite Manual</Label>
+                            <Tabs value={manualType} onValueChange={(v: any) => setManualType(v)} className="w-full">
+                                <TabsList className="grid w-full grid-cols-2 h-12">
+                                    <TabsTrigger value="primera-vez" className="gap-2"><FileText className="h-4 w-4" /> Primera Vez</TabsTrigger>
+                                    <TabsTrigger value="ampliaciones" className="gap-2"><Repeat className="h-4 w-4" /> Ampliaciones</TabsTrigger>
+                                </TabsList>
+                            </Tabs>
+                        </div>
+                    )}
+
                     <div className="grid gap-4 p-5 border rounded-xl bg-slate-50/50">
                         <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500 flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-green-600" /> Información del Documento</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -342,20 +365,21 @@ function CertificatesContent() {
                         <div className="space-y-2"><Label className="text-xs uppercase font-bold text-muted-foreground">Dirección Residencial</Label><Input value={certificateData.address} onChange={(e) => handleCertDataChange('address', e.target.value)} className="bg-white" /></div>
                     </div>
 
-                    {((selectedContract?.type === 'Ampliaciones') || !selectedContract) && groupedLicenses && (
+                    {/* Caso Ampliaciones (Manual o Contrato) */}
+                    {(manualType === 'ampliaciones' || (selectedContract && selectedContract.type === 'Ampliaciones')) && groupedLicenses && (
                         <div className="space-y-4">
                             <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500">Opciones de Impresión (Certificados Individuales)</h3>
                             
                             {!selectedContract && (
                                 <div className="space-y-2 bg-amber-50 p-3 rounded-lg border border-amber-100 mb-4">
-                                    <Label className="text-xs font-bold text-amber-800">CATEGORÍA(S) A EMITIR (MANUAL)</Label>
+                                    <Label className="text-xs font-bold text-amber-800 uppercase">Categoría(s) de Ampliación</Label>
                                     <Input 
                                         placeholder="Ej: A, B, E1, F" 
                                         value={certificateData.licenseType} 
                                         onChange={(e) => handleCertDataChange('licenseType', e.target.value.toUpperCase())}
                                         className="bg-white"
                                     />
-                                    <p className="text-[9px] text-amber-600 italic">Escribe las letras separadas por comas. El sistema habilitará los botones abajo.</p>
+                                    <p className="text-[9px] text-amber-600 italic">Escribe las letras separadas por comas para habilitar los botones abajo.</p>
                                 </div>
                             )}
 
@@ -376,7 +400,9 @@ function CertificatesContent() {
                                 )}
 
                                 {groupedLicenses.individuals.map(license => {
+                                    const is80h = ['A'].includes(license); // A es 80h en ampliación
                                     const isStandard = ['B', 'C', 'D', 'F'].includes(license);
+                                    
                                     const bgColor = isStandard ? 'bg-green-50 border-green-100' : 'bg-amber-50 border-amber-100';
                                     const textColor = isStandard ? 'text-green-800' : 'text-amber-800';
                                     const btnColor = isStandard ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-600 hover:bg-amber-700';
@@ -402,16 +428,22 @@ function CertificatesContent() {
                         </div>
                     )}
 
-                    {selectedContract && selectedContract.type !== 'Ampliaciones' && (
+                    {/* Caso Primera Vez / Cursos Regulares */}
+                    {(manualType === 'primera-vez' || (selectedContract && selectedContract.type !== 'Ampliaciones')) && (
                         <div className="space-y-4">
                             <Separator />
                             <div className="space-y-2">
-                                <Label className="text-xs uppercase font-bold text-muted-foreground">Categoría de Licencia a Emitir</Label>
-                                <Input value={certificateData.licenseType} onChange={(e) => handleCertDataChange('licenseType', e.target.value)} placeholder="Ej: A, C, B" />
+                                <Label className="text-xs uppercase font-bold text-muted-foreground">Categoría de Licencia a Emitir (36h)</Label>
+                                <Input 
+                                    value={certificateData.licenseType} 
+                                    onChange={(e) => handleCertDataChange('licenseType', e.target.value.toUpperCase())} 
+                                    placeholder="Ej: A, C, B" 
+                                />
+                                <p className="text-[10px] text-muted-foreground italic">El formato utilizado será el Estándar de 36 horas (Decreto 640).</p>
                             </div>
                             <Button onClick={() => handleProceedToPrint()} className="w-full h-12 text-lg font-bold shadow-lg" disabled={isGenerating}>
                                 {isGenerating ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Printer className="mr-2 h-5 w-5" />}
-                                Imprimir Certificado Único
+                                Imprimir Certificado (36h)
                             </Button>
                         </div>
                     )}

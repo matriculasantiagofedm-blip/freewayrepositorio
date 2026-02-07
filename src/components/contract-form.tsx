@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format, addDays } from 'date-fns';
@@ -29,17 +29,14 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Separator } from '@/components/ui/separator';
-import { Checkbox } from '@/components/ui/checkbox';
-import { CalendarIcon, Loader2, Plus, Trash2, Calculator, Info } from 'lucide-react';
+import { CalendarIcon, Loader2, Plus, Trash2, Calculator, Info, Package } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { Timestamp, collection, query, where, getDocs, doc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import type { Contract, ContractType, VehicleName, InstructorName } from '@/lib/types';
+import type { ContractType, VehicleName, InstructorName } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useDb, useUser } from './firebase-provider';
 
-const vehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Moto Roja', 'Moto Negra'];
 const instructors: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', ''];
 
 const practicalTimes = [
@@ -49,31 +46,35 @@ const practicalTimes = [
     '3:00pm a 5:00pm',
 ];
 
+const autoPackages = [
+    { id: 'basico', label: 'Básico (12 Horas)', price: 150.00 },
+    { id: 'plus', label: 'Plus (15 Horas)', price: 185.00 },
+    { id: 'premium', label: 'Premium (18 Horas)', price: 225.00 },
+    { id: 'personalizado', label: 'Personalizado / Otro', price: 0 },
+];
+
 const contractSchema = z.object({
   clientName: z.string().min(1, 'El nombre completo es requerido.'),
   clientEmail: z.string().email('Debe ser un correo electrónico válido.'),
   contractType: z.enum(['Curso Auto', 'Curso Moto', 'Curso Mixto', 'Curso Deluxe', 'Ampliaciones', 'Curso Solo Practica']),
   
-  // Detalle común para casi todos
   studentIdNumber: z.string().min(1, 'La cédula es requerida.'),
   studentAddress: z.string().min(1, 'La dirección es requerida.'),
   studentPhone1: z.string().min(1, 'El teléfono es requerido.'),
   studentPhone2: z.string().optional(),
   
-  // Financiero
+  coursePlan: z.string().optional(),
   courseValue: z.coerce.number().min(0),
   downPayment: z.coerce.number().min(0),
   balance: z.coerce.number().min(0),
   paymentDeadline: z.date().optional(),
   paymentType: z.string().default('cash'),
 
-  // Configuración de vehículo/licencia
   vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).optional(),
   licenseCategory: z.string().optional(),
   instructor: z.string().optional(),
   vehicle: z.string().optional(),
 
-  // Clases
   theoreticalClassSchedule: z.string().optional(),
   theoreticalClassDates: z.array(z.date()).optional(),
   practicalClassSchedules: z.array(z.object({
@@ -85,7 +86,6 @@ const contractSchema = z.object({
     time: z.string().optional()
   })).optional(),
 
-  // Para Ampliaciones
   selectedPlans: z.array(z.object({
       name: z.string(),
       price: z.number()
@@ -144,6 +144,7 @@ export function ContractForm() {
       downPayment: 0,
       balance: 0,
       paymentType: 'cash',
+      coursePlan: '',
       vehicleTransmission: contractType === 'Curso Moto' ? 'Moto' : 'Manual',
       licenseCategory: contractType === 'Curso Moto' ? 'A, B' : 'A, C',
       practicalClassSchedules: contractType === 'Ampliaciones' ? [] : [{ date: new Date(), time: '8:00am a 10:00am' }],
@@ -163,10 +164,22 @@ export function ContractForm() {
     name: "motoPracticalClassSchedules"
   });
 
-  // Cálculo automático del saldo
+  // Observadores para cálculos automáticos
   const courseValue = form.watch('courseValue');
   const downPayment = form.watch('downPayment');
+  const selectedPlanId = form.watch('coursePlan');
   
+  // Actualizar precio basado en paquete
+  useEffect(() => {
+    if (contractType === 'Curso Auto' && selectedPlanId) {
+        const pkg = autoPackages.find(p => p.id === selectedPlanId);
+        if (pkg && pkg.id !== 'personalizado') {
+            form.setValue('courseValue', pkg.price);
+        }
+    }
+  }, [selectedPlanId, contractType, form]);
+
+  // Cálculo de saldo
   useEffect(() => {
     const val = Number(courseValue) || 0;
     const pay = Number(downPayment) || 0;
@@ -205,7 +218,6 @@ export function ContractForm() {
         const newContractRef = doc(collection(db, 'contracts'));
         const cleanedData = convertDatesToTimestamps(values);
         
-        // Separar detalles según el tipo
         const contractData: any = {
           id: newContractRef.id,
           folioNumber: newFolioNumber,
@@ -243,7 +255,6 @@ export function ContractForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        {/* SECCIÓN 1: DATOS PERSONALES */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
                 <CardHeader>
@@ -275,12 +286,30 @@ export function ContractForm() {
                 </CardContent>
             </Card>
 
-            {/* SECCIÓN 2: DATOS FINANCIEROS */}
             <Card>
                 <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2"><Calculator className="h-5 w-5 text-primary" /> Valor y Forma de Pago</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                    {contractType === 'Curso Auto' && (
+                        <FormField control={form.control} name="coursePlan" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="flex items-center gap-2"><Package className="h-4 w-4" /> Plan / Paquete</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar paquete..." /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        {autoPackages.map(pkg => (
+                                            <SelectItem key={pkg.id} value={pkg.id}>
+                                                {pkg.label} {pkg.price > 0 ? `- B/. ${pkg.price.toFixed(2)}` : ''}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormDescription>Selecciona un plan para auto-completar el precio.</FormDescription>
+                            </FormItem>
+                        )} />
+                    )}
+
                     <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="courseValue" render={({ field }) => (
                             <FormItem><FormLabel>Valor Total (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
@@ -325,7 +354,6 @@ export function ContractForm() {
             </Card>
         </div>
 
-        {/* SECCIÓN 3: CONFIGURACIÓN DEL CURSO */}
         <Card>
             <CardHeader><CardTitle className="text-lg">Detalles del Curso</CardTitle></CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -370,7 +398,6 @@ export function ContractForm() {
             </CardContent>
         </Card>
 
-        {/* SECCIÓN 4: HORARIOS DE CLASES PRÁCTICAS */}
         {contractType !== 'Ampliaciones' && (
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
@@ -416,7 +443,6 @@ export function ContractForm() {
             </Card>
         )}
 
-        {/* CURSOS MIXTOS: SECCIÓN ADICIONAL PARA MOTO */}
         {contractType === 'Curso Mixto' && (
              <Card className="border-orange-200">
                 <CardHeader className="flex flex-row items-center justify-between">

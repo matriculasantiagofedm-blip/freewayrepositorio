@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -266,9 +265,12 @@ export function ContractForm() {
                     autoCount = 1;
                     motoCount = 0;
                 } else if (pkg.id === 'mixto-10h') {
-                    // Specific case for Auto + Moto 10Hrs (5 each)
                     autoCount = 5;
                     motoCount = 5;
+                } else if (pkg.id === 'mixto-basico-am') {
+                    // Plan Básico Auto + Moto 153.00: 4 clases de auto, 0 de moto (8 horas totales)
+                    autoCount = 4;
+                    motoCount = 0;
                 } else if (pkg.hours === 8) {
                     autoCount = 2;
                     motoCount = 2;
@@ -301,7 +303,6 @@ export function ContractForm() {
                 replacePractical(autoSlots);
                 replaceMoto(motoSlots);
             } else {
-                // Auto or Solo Practica Auto
                 const newSlots = Array.from({ length: totalSlots }).map((_, i) => ({
                     date: addDays(new Date(), i + 1),
                     time: '8:00am a 10:00am',

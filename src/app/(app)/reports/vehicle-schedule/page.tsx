@@ -40,11 +40,11 @@ const timeStringToTimeSlot = (timeString: string): TimeSlot | null => {
 }
 
 const vehicleColors: Record<string, string> = {
-    'Picanto Blanco': 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300',
-    'Picanto Bronce': 'bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-900/20 dark:border-orange-800 dark:text-orange-300',
-    'Spark': 'bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300',
-    'Moto Roja': 'bg-red-50 border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300',
-    'Moto Negra': 'bg-purple-50 border-purple-200 text-purple-700 dark:bg-purple-900/20 dark:border-purple-800 dark:text-purple-300',
+    'Picanto Blanco': 'bg-blue-50 border-blue-300 text-blue-800 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-300',
+    'Picanto Bronce': 'bg-amber-50 border-amber-400 text-amber-900 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-300',
+    'Spark': 'bg-green-50 border-green-300 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300',
+    'Moto Roja': 'bg-red-50 border-red-300 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300',
+    'Moto Negra': 'bg-[#efebe9] border-[#a1887f] text-[#4e342e] dark:bg-stone-900/40 dark:border-stone-800 dark:text-stone-300', // Chocolate/Marrón
     'Teórica': 'bg-slate-100 border-slate-300 text-slate-800 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200',
 };
 
@@ -104,7 +104,7 @@ export default function VehicleScheduleReportPage() {
             newWeeklyAssignments.set(dateKey, dayAssignments);
         };
 
-        // 1. Clases Prácticas (Ahora con vehículo e instructor específico por clase)
+        // 1. Clases Prácticas
         const autoSchedules = contract.autoMotoDetails?.practicalClassSchedules || [];
         const motoSchedules = contract.autoMotoDetails?.motoPracticalClassSchedules || [];
         const deluxeSchedules = contract.deluxeDetails?.classSchedules || [];
@@ -166,7 +166,7 @@ export default function VehicleScheduleReportPage() {
                                 <div className="flex flex-col gap-1.5 h-full">
                                     {assignments.map((assignment, index) => (
                                     <div key={index} className={cn(
-                                        "p-2 rounded border text-[10px] shadow-sm leading-tight relative overflow-hidden",
+                                        "p-2 rounded border text-[10px] shadow-sm leading-tight relative overflow-hidden transition-all hover:scale-[1.02]",
                                         vehicleColors[assignment.vehicle] || 'bg-gray-100 border-gray-300'
                                     )}>
                                         <div className="flex justify-between items-start mb-1">

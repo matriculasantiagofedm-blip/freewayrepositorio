@@ -57,7 +57,17 @@ const motoPackages = [
     { id: 'moto-premium', label: 'Curso Moto Premium (12hrz)', price: 155.00, hours: 12 },
 ];
 
-const mixtoPackages = [{ id: 'mixto-estandar', label: 'Curso Mixto (Auto/Moto)', price: 250.00, hours: 12 }];
+const mixtoPackages = [
+    { id: 'mixto-10h', label: 'Auto + Moto 10Hrs', price: 290.00, hours: 10 },
+    { id: 'mixto-basico-am', label: 'Básico Auto + Moto', price: 153.00, hours: 8 },
+    { id: 'mixto-plus-am', label: 'Plus Auto + Moto', price: 170.00, hours: 10 },
+    { id: 'mixto-premium-am', label: 'Premium Auto + Moto', price: 195.00, hours: 12 },
+    { id: 'mixto-basico-ma', label: 'Básico Moto + Auto', price: 135.00, hours: 8 },
+    { id: 'mixto-plus-ma', label: 'Plus Moto + Auto', price: 155.00, hours: 10 },
+    { id: 'mixto-premium-ma', label: 'Premium Moto + Auto', price: 175.00, hours: 12 },
+    { id: 'mixto-reforzamiento', label: 'Reforzamiento Mixto 2Hrs', price: 100.00, hours: 2 },
+];
+
 const deluxePackages = [
     { id: 'deluxe-premium', label: 'Plan Premium (Deluxe)', price: 201.00, hours: 12 },
     { id: 'deluxe-full', label: 'Plan Deluxe Full', price: 270.00, hours: 16 },
@@ -165,36 +175,66 @@ export function ContractForm() {
     if (pkg) {
         form.setValue('courseValue', pkg.price);
         if (pkg.hours && contractType !== 'Ampliaciones') {
-            const numSlots = Math.ceil(pkg.hours / 2);
-            const newSlots = Array.from({ length: numSlots }).map((_, i) => ({
-                date: addDays(new Date(), i + 1),
-                time: '8:00am a 10:00am',
-                vehicle: '',
-                instructor: ''
-            }));
+            const totalSlots = Math.ceil(pkg.hours / 2);
             
             if (contractType === 'Curso Moto') {
-                replaceMoto(newSlots);
-                replacePractical([]); // Limpiar auto
-            } else if (contractType === 'Curso Mixto') {
-                // En mixto dividimos las 12 horas en 3 clases de auto y 3 de moto (2h c/u)
-                const autoSlots = Array.from({ length: 3 }).map((_, i) => ({
+                const newSlots = Array.from({ length: totalSlots }).map((_, i) => ({
                     date: addDays(new Date(), i + 1),
                     time: '8:00am a 10:00am',
                     vehicle: '',
                     instructor: ''
                 }));
-                const motoSlots = Array.from({ length: 3 }).map((_, i) => ({
-                    date: addDays(new Date(), i + 4),
+                replaceMoto(newSlots);
+                replacePractical([]);
+            } else if (contractType === 'Curso Mixto') {
+                // Lógica de división para planes Mixtos
+                let autoCount = 0;
+                let motoCount = 0;
+
+                if (pkg.id === 'mixto-reforzamiento') {
+                    autoCount = 1;
+                    motoCount = 0;
+                } else if (pkg.hours === 8) {
+                    autoCount = 2;
+                    motoCount = 2;
+                } else if (pkg.hours === 12) {
+                    autoCount = 3;
+                    motoCount = 3;
+                } else if (pkg.hours === 10) {
+                    // Si el plan es AM (Auto+Moto) damos 3 a auto, si es MA damos 3 a moto
+                    if (pkg.id.includes('-am') || pkg.id === 'mixto-10h') {
+                        autoCount = 3;
+                        motoCount = 2;
+                    } else {
+                        autoCount = 2;
+                        motoCount = 3;
+                    }
+                }
+
+                const autoSlots = Array.from({ length: autoCount }).map((_, i) => ({
+                    date: addDays(new Date(), i + 1),
                     time: '8:00am a 10:00am',
                     vehicle: '',
                     instructor: ''
                 }));
+                const motoSlots = Array.from({ length: motoCount }).map((_, i) => ({
+                    date: addDays(new Date(), i + autoCount + 1),
+                    time: '8:00am a 10:00am',
+                    vehicle: '',
+                    instructor: ''
+                }));
+                
                 replacePractical(autoSlots);
                 replaceMoto(motoSlots);
             } else {
+                const newSlots = Array.from({ length: totalSlots }).map((_, i) => ({
+                    date: addDays(new Date(), i + 1),
+                    time: '8:00am a 10:00am',
+                    vehicle: '',
+                    instructor: ''
+                }));
                 replacePractical(newSlots);
-                replaceMoto([]); // Limpiar moto
+                replaceMoto([]);
             }
         }
     }

@@ -1,3 +1,4 @@
+
 'use client';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -205,8 +206,7 @@ export default function ContractDetailPage() {
     const plans = contract.ampliacionesDetails.selectedPlans.map(p => p.name);
     return {
         E: plans.filter(p => ['E1', 'E2', 'E3'].includes(p)),
-        ACD: plans.filter(p => ['A', 'B', 'C', 'D'].includes(p)),
-        F: plans.filter(p => p === 'F'),
+        individuals: plans.filter(p => ['A', 'B', 'C', 'D', 'F'].includes(p)),
     };
   }, [contract]);
 
@@ -273,7 +273,7 @@ export default function ContractDetailPage() {
         <DialogContent className="print-hide sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
             <DialogHeader>
                 <DialogTitle>Generar Certificado</DialogTitle>
-                <DialogDescription>Verifica los datos del estudiante y selecciona el grupo a imprimir.</DialogDescription>
+                <DialogDescription>Verifica los datos del estudiante y selecciona el grupo o letra a imprimir.</DialogDescription>
             </DialogHeader>
             
             <div className="flex-1 overflow-y-auto pr-4 py-4 space-y-6">
@@ -303,18 +303,18 @@ export default function ContractDetailPage() {
                     <div className="space-y-2"><Label>Dirección Residencial</Label><Input value={certificateData.address} onChange={(e) => handleCertDataChange('address', e.target.value)} /></div>
                 </div>
 
-                {/* Selección por Grupos (Solo para Ampliaciones) */}
+                {/* Selección Dinámica (Solo para Ampliaciones) */}
                 {contract?.type === 'Ampliaciones' && groupedLicenses && (
                     <div className="space-y-4">
-                        <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Grupos de Impresión Disponibles</h3>
+                        <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Grupos e Impresiones Individuales</h3>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {/* Grupo E */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                            {/* Grupo E (Siempre juntos) */}
                             {groupedLicenses.E.length > 0 && (
                                 <div className="p-4 border rounded-lg bg-blue-50/50 flex flex-col justify-between">
                                     <div>
                                         <p className="font-bold text-blue-700">Grupo E (Ampliación)</p>
-                                        <p className="text-xs text-muted-foreground mb-3 italic">E1, E2, E3 juntas en un certificado.</p>
+                                        <p className="text-xs text-muted-foreground mb-3 italic">E1, E2, E3 juntas en un certificado (80h).</p>
                                         <div className="flex flex-wrap gap-1">
                                             {groupedLicenses.E.map(l => <span key={l} className="bg-blue-200 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">{l}</span>)}
                                         </div>
@@ -325,37 +325,30 @@ export default function ContractDetailPage() {
                                 </div>
                             )}
 
-                            {/* Grupo ABCD */}
-                            {groupedLicenses.ACD.length > 0 && (
-                                <div className="p-4 border rounded-lg bg-amber-50/50 flex flex-col justify-between">
-                                    <div>
-                                        <p className="font-bold text-amber-700">Grupo A,B,C,D (Ampliación)</p>
-                                        <p className="text-xs text-muted-foreground mb-3 italic">A, B, C, D juntas en un certificado.</p>
-                                        <div className="flex flex-wrap gap-1">
-                                            {groupedLicenses.ACD.map(l => <span key={l} className="bg-amber-200 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">{l}</span>)}
+                            {/* Impresiones Individuales (A, B, C, D, F) */}
+                            {groupedLicenses.individuals.map(license => {
+                                const isTypeF = license === 'F';
+                                const bgColor = isTypeF ? 'bg-green-50/50' : 'bg-amber-50/50';
+                                const textColor = isTypeF ? 'text-green-700' : 'text-amber-700';
+                                const btnColor = isTypeF ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-600 hover:bg-amber-700';
+                                
+                                return (
+                                    <div key={license} className={cn("p-4 border rounded-lg flex flex-col justify-between", bgColor)}>
+                                        <div>
+                                            <p className={cn("font-bold", textColor)}>Tipo {license} Individual</p>
+                                            <p className="text-xs text-muted-foreground mb-3 italic">
+                                                {isTypeF ? 'Formato Estándar (36h)' : 'Formato Ampliación (80h)'}
+                                            </p>
+                                            <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded", isTypeF ? 'bg-green-200 text-green-800' : 'bg-amber-200 text-amber-800')}>
+                                                {license}
+                                            </span>
                                         </div>
+                                        <Button onClick={() => handleProceedToPrint(license)} size="sm" className={cn("mt-4", btnColor)}>
+                                            <Printer className="mr-2 h-4 w-4" /> Imprimir {license}
+                                        </Button>
                                     </div>
-                                    <Button onClick={() => handleProceedToPrint(groupedLicenses.ACD.join(', '))} size="sm" className="mt-4 bg-amber-600 hover:bg-amber-700">
-                                        <Printer className="mr-2 h-4 w-4" /> Imprimir Grupo A,B,C,D
-                                    </Button>
-                                </div>
-                            )}
-
-                            {/* Grupo F */}
-                            {groupedLicenses.F.length > 0 && (
-                                <div className="p-4 border rounded-lg bg-green-50/50 flex flex-col justify-between">
-                                    <div>
-                                        <p className="font-bold text-green-700">Tipo F (Individual)</p>
-                                        <p className="text-xs text-muted-foreground mb-3 italic">Utiliza formato estándar (36h).</p>
-                                        <div className="flex flex-wrap gap-1">
-                                            <span className="bg-green-200 text-green-800 text-[10px] font-bold px-2 py-0.5 rounded">F</span>
-                                        </div>
-                                    </div>
-                                    <Button onClick={() => handleProceedToPrint('F')} size="sm" className="mt-4 bg-green-600 hover:bg-green-700">
-                                        <Printer className="mr-2 h-4 w-4" /> Imprimir Tipo F
-                                    </Button>
-                                </div>
-                            )}
+                                );
+                            })}
                         </div>
                     </div>
                 )}

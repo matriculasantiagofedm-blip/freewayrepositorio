@@ -1,3 +1,4 @@
+
 'use client';
 import { useParams, useSearchParams } from 'next/navigation';
 import { doc } from 'firebase/firestore';
@@ -86,9 +87,9 @@ function CertificatePrintContent() {
     if (!certificate || !certificate.licenseType) return false;
     
     // REGLA: Tipo F siempre utiliza el certificado ESTÁNDAR (Decreto 640 - 36h)
-    if (certificate.licenseType.includes('F')) return false;
+    if (certificate.licenseType === 'F' || certificate.licenseType.trim() === 'F') return false;
 
-    // REGLA: Grupos E y ACD en contratos de Ampliaciones utilizan el formato AMPLIACIÓN (Ley 146 - 80h)
+    // REGLA: Contratos de Ampliaciones utilizan el formato AMPLIACIÓN (Ley 146 - 80h) para A, B, C, D y Grupo E
     if (certificate.contract?.type === 'Ampliaciones') return true;
     
     // REGLA: Si contiene tipos E, también usa formato AMPLIACIÓN

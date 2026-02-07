@@ -83,6 +83,37 @@ const ampliacionOptions = [
   { id: 'F', label: 'F', price: 80.00 },
 ];
 
+// Lógica de cálculo de precios para Ampliaciones
+const calculateAmpliacionPrice = (selected: string[]) => {
+  if (selected.length === 0) return 0;
+  
+  const sortedKey = [...selected].sort().join(' + ');
+  
+  const rules: Record<string, number> = {
+    'B': 57, 'C': 57, 'D': 57, 'E1': 57, 'E2': 75, 'E3': 75, 'F': 80,
+    'E1 + E2': 75,
+    'E1 + E2 + E3': 85,
+    'D + E1': 85,
+    'B + D': 85,
+    'B + E1': 85,
+    'E2 + E3': 85,
+    'B + F': 85,
+    'B + E1 + E2 + E3': 95,
+    'D + E1 + E2 + E3': 95,
+    'E1 + E2 + E3 + F': 95,
+    'D + E1 + E2 + E3 + F': 150,
+    'B + E1 + E2 + E3 + F': 150,
+  };
+
+  if (rules[sortedKey]) return rules[sortedKey];
+
+  // Si no hay combinación exacta, sumamos los precios base individuales
+  return selected.reduce((acc, cat) => {
+    const base = ampliacionOptions.find(o => o.id === cat)?.price || 0;
+    return acc + base;
+  }, 0);
+};
+
 const contractSchema = z.object({
   clientName: z.string().min(1, 'Requerido'),
   clientEmail: z.string().email('Email inválido'),
@@ -525,7 +556,10 @@ export function ContractForm() {
                                                 newPlans.push({ name: opt.id, price: opt.price });
                                             }
                                             form.setValue('selectedPlans', newPlans);
-                                            const total = newPlans.reduce((sum, p) => sum + p.price, 0);
+                                            
+                                            // Aplicar nueva lógica de precios combinados
+                                            const selectedIds = newPlans.map(p => p.name);
+                                            const total = calculateAmpliacionPrice(selectedIds);
                                             form.setValue('courseValue', total);
                                         }}
                                     >

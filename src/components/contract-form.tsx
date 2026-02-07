@@ -47,9 +47,9 @@ const practicalTimes = [
 ];
 
 const autoPackages = [
-    { id: 'basico', label: 'Básico (12 Horas)', price: 150.00 },
-    { id: 'plus', label: 'Plus (15 Horas)', price: 185.00 },
-    { id: 'premium', label: 'Premium (18 Horas)', price: 225.00 },
+    { id: 'basico', label: 'Curso Auto Básico', price: 150.00 },
+    { id: 'plus', label: 'Curso Auto Plus', price: 185.00 },
+    { id: 'premium', label: 'Curso Auto Premium', price: 225.00 },
     { id: 'personalizado', label: 'Personalizado / Otro', price: 0 },
 ];
 

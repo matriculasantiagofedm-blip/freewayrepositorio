@@ -66,7 +66,6 @@ export default function DashboardPage() {
   ];
 
   const otherActions = [
-      { name: 'Impresión de Certificados', href: '/certificates', bgColor: 'bg-amber-100', textColor: 'text-amber-700', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { name: 'Generar Certificado Manual', href: '/certificates?mode=manual', bgColor: 'bg-amber-50', textColor: 'text-amber-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { name: 'Actualizaciones', href: '/updates', bgColor: 'bg-green-50', textColor: 'text-green-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { name: 'Pago de Saldos', href: '/cancellations', bgColor: 'bg-blue-50', textColor: 'text-blue-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },

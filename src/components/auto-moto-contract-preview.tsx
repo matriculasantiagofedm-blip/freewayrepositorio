@@ -1,4 +1,3 @@
-
 'use client';
 import { Card, CardContent } from './ui/card';
 import { cn, toDate } from '@/lib/utils';
@@ -94,9 +93,12 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, stude
                 <p>2. Categoría de licencia a aplicar: A, C <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C'} /> / A, C, D <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C, D'} /> {type === 'Curso Moto' && <> / A, B <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, B'} /></>}</p>
             )}
 
+            <p>3. Instructor Asignado: <Line>{autoMotoDetails?.instructor || '________________'}</Line></p>
+            <p>4. Vehículo Asignado: <Line>{autoMotoDetails?.vehicle || '________________'}</Line></p>
+
             {!isSoloPractica && (
                 <>
-                    <div className="flex items-center gap-2">3. Horario para clases teóricas: <Line>{autoMotoDetails?.theoreticalClassSchedule}</Line></div>
+                    <div className="flex items-center gap-2">5. Horario para clases teóricas: <Line>{autoMotoDetails?.theoreticalClassSchedule}</Line></div>
                     <div className="pl-4">
                         {autoMotoDetails?.theoreticalClassDates?.map((date, index) => (
                             <span key={index} className="mr-4">Clase {index + 1}: {formatDate(date)}</span>
@@ -104,7 +106,7 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, stude
                     </div>
                 </>
             )}
-            <p>5. Horario para clases practicas:</p>
+            <p>6. Horario para clases practicas:</p>
             {type === 'Curso Mixto' ? (
                 <>
                     <p className="font-semibold">Clases de Auto:</p>

@@ -1,4 +1,3 @@
-
 'use client';
 import type { Contract } from '@/lib/types';
 import { format } from 'date-fns';
@@ -109,10 +108,11 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                 )}
                 
                 <p>3. Instructor Asignado: <Line><Value>{autoMotoDetails?.instructor || 'No asignado'}</Value></Line></p>
+                <p>4. Vehículo Asignado: <Line><Value>{autoMotoDetails?.vehicle || 'No asignado'}</Value></Line></p>
 
                 {!isSoloPractica && (
                     <>
-                        <div className="flex items-center gap-2">4. Horario para clases teóricas: <Line><Value>{autoMotoDetails?.theoreticalClassSchedule}</Value></Line></div>
+                        <div className="flex items-center gap-2">5. Horario para clases teóricas: <Line><Value>{autoMotoDetails?.theoreticalClassSchedule}</Value></Line></div>
                         <div className="pl-4">
                             {(autoMotoDetails?.theoreticalClassDates || []).map((date, index) => (
                                 <span key={index} className="mr-4">Clase {index + 1}: {formatDate(toDate(date))}</span>
@@ -121,7 +121,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                     </>
                 )}
 
-                <p>5. Horario para clases practicas:</p>
+                <p>6. Horario para clases practicas:</p>
                 {contract.type === 'Curso Mixto' ? (
                     <>
                         <p className="font-semibold">Clases de Auto:</p>

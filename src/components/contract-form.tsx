@@ -39,6 +39,8 @@ import { useDb, useUser } from './firebase-provider';
 
 const instructors: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', ''];
 
+const carVehicles = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
+
 const practicalTimes = [
     '8:00am a 10:00am',
     '10:00am a 12:pm',
@@ -79,6 +81,7 @@ const contractSchema = z.object({
   balance: z.coerce.number().min(0),
   paymentDeadline: z.date().optional(),
   paymentType: z.string().default('cash'),
+  vehicle: z.string().optional(),
   vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).optional(),
   licenseCategory: z.string().optional(),
   instructor: z.string().optional(),
@@ -129,7 +132,7 @@ export function ContractForm() {
     defaultValues: {
       clientName: '', clientEmail: '', contractType: contractType, studentIdNumber: '',
       studentAddress: '', studentPhone1: '', studentPhone2: '', courseValue: 0, downPayment: 0, balance: 0,
-      paymentType: 'cash', coursePlan: '', vehicleTransmission: contractType === 'Curso Moto' ? 'Moto' : 'Manual',
+      paymentType: 'cash', coursePlan: '', vehicle: '', vehicleTransmission: contractType === 'Curso Moto' ? 'Moto' : 'Manual',
       licenseCategory: contractType === 'Curso Moto' ? 'A, B' : 'A, C',
       practicalClassSchedules: contractType === 'Ampliaciones' ? [] : [{ date: new Date(), time: '8:00am a 10:00am' }],
       motoPracticalClassSchedules: contractType === 'Curso Mixto' ? [{ date: new Date(), time: '8:00am a 10:00am' }] : [],
@@ -324,7 +327,18 @@ export function ContractForm() {
                     <Settings2 className="h-4 w-4" /> 3. Detalles del Curso
                 </CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 pt-0">
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 pt-0">
+                <FormField control={form.control} name="vehicle" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel className="text-xs">Vehículo</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl><SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Seleccionar vehículo..." /></SelectTrigger></FormControl>
+                            <SelectContent>
+                                {carVehicles.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </FormItem>
+                )} />
                 <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
                     <FormItem><FormLabel className="text-xs">Transmisión</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Manual">Manual</SelectItem><SelectItem value="Automático">Automático</SelectItem><SelectItem value="Moto">Moto</SelectItem></SelectContent></Select></FormItem>
                 )} />

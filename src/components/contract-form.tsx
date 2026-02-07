@@ -271,6 +271,10 @@ export function ContractForm() {
                     // Plan Básico Auto + Moto 153.00: 4 clases de auto, 0 de moto (8 horas totales)
                     autoCount = 4;
                     motoCount = 0;
+                } else if (pkg.id === 'mixto-plus-am') {
+                    // Plan Plus Auto + Moto 170.00: 5 clases de auto, 0 de moto (10 horas totales)
+                    autoCount = 5;
+                    motoCount = 0;
                 } else if (pkg.hours === 8) {
                     autoCount = 2;
                     motoCount = 2;

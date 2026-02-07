@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -103,6 +104,7 @@ const calculateAmpliacionPrice = (selected: string[]) => {
     'E1 + E2 + E3 + F': 95,
     'D + E1 + E2 + E3 + F': 150,
     'B + E1 + E2 + E3 + F': 150,
+    'B + D + E1 + E2 + E3 + F': 200,
   };
 
   if (rules[sortedKey]) return rules[sortedKey];

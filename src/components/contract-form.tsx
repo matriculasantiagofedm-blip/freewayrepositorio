@@ -598,18 +598,20 @@ export function ContractForm() {
                     </div>
                 ) : (
                     <>
-                        <FormField control={form.control} name="licenseCategory" render={({ field }) => (
-                            <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Categoría de Licencia</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger></FormControl><SelectContent>
-                                {contractType === 'Curso Moto' ? (
-                                    <SelectItem value="A, B">A, B (Moto)</SelectItem>
-                                ) : (
-                                    <>
-                                        <SelectItem value="A, C">A, C</SelectItem>
-                                        <SelectItem value="A, C, D">A, C, D</SelectItem>
-                                    </>
-                                )}
-                            </SelectContent></Select></FormItem>
-                        )} />
+                        {contractType !== 'Curso Solo Practica' && (
+                            <FormField control={form.control} name="licenseCategory" render={({ field }) => (
+                                <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Categoría de Licencia</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger></FormControl><SelectContent>
+                                    {contractType === 'Curso Moto' ? (
+                                        <SelectItem value="A, B">A, B (Moto)</SelectItem>
+                                    ) : (
+                                        <>
+                                            <SelectItem value="A, C">A, C</SelectItem>
+                                            <SelectItem value="A, C, D">A, C, D</SelectItem>
+                                        </>
+                                    )}
+                                </SelectContent></Select></FormItem>
+                            )} />
+                        )}
                         <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
                             <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Transmisión</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger></FormControl><SelectContent>
                                 {contractType === 'Curso Moto' ? (

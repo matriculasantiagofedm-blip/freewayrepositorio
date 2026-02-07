@@ -40,10 +40,8 @@ const instructors: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Ad
 const carVehicles = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
 const practicalTimes = ['8:00am a 10:00am', '10:00am a 12:pm', '1:00pm a 3:00pm', '3:00pm a 5:00pm'];
 const theoreticalSchedules = [
-    'Sábados de 8:00am a 12:00pm',
-    'Sábados de 1:00pm a 5:00pm',
-    'Miércoles de 6:00pm a 10:00pm',
-    'Intensivo (Lunes a Viernes)'
+    'Clase Semanal',
+    'Clase Sabatina'
 ];
 
 const autoPackages = [
@@ -132,7 +130,7 @@ export function ContractForm() {
       paymentType: 'cash', coursePlan: '', vehicle: '', vehicleTransmission: contractType === 'Curso Moto' ? 'Moto' : 'Manual',
       licenseCategory: contractType === 'Curso Moto' ? 'A, B' : 'A, C',
       theoreticalClassSchedule: '',
-      theoreticalClassDates: [new Date(), addDays(new Date(), 7)],
+      theoreticalClassDates: [],
       practicalClassSchedules: contractType === 'Ampliaciones' ? [] : [{ date: new Date(), time: '8:00am a 10:00am' }],
       motoPracticalClassSchedules: contractType === 'Curso Mixto' ? [{ date: new Date(), time: '8:00am a 10:00am' }] : [],
     },
@@ -143,6 +141,8 @@ export function ContractForm() {
   const courseValue = form.watch('courseValue');
   const downPayment = form.watch('downPayment');
   const selectedPlanId = form.watch('coursePlan');
+  const selectedTheoreticalSchedule = form.watch('theoreticalClassSchedule');
+  const theoreticalDates = form.watch('theoreticalClassDates') || [];
   
   useEffect(() => {
     if (!selectedPlanId) return;
@@ -164,6 +164,20 @@ export function ContractForm() {
         }
     }
   }, [selectedPlanId, contractType, form, replacePractical]);
+
+  useEffect(() => {
+    if (selectedTheoreticalSchedule === 'Clase Semanal') {
+      const currentDates = form.getValues('theoreticalClassDates') || [];
+      const newDates = Array.from({ length: 4 }).map((_, i) => currentDates[i] || addDays(new Date(), i + 1));
+      form.setValue('theoreticalClassDates', newDates);
+    } else if (selectedTheoreticalSchedule === 'Clase Sabatina') {
+      const currentDates = form.getValues('theoreticalClassDates') || [];
+      const newDates = Array.from({ length: 3 }).map((_, i) => currentDates[i] || addDays(new Date(), i + 1));
+      form.setValue('theoreticalClassDates', newDates);
+    } else {
+      form.setValue('theoreticalClassDates', []);
+    }
+  }, [selectedTheoreticalSchedule, form]);
 
   useEffect(() => {
     const val = Number(courseValue) || 0;
@@ -360,7 +374,7 @@ export function ContractForm() {
             </CardContent>
         </Card>
 
-        {/* 4. Clases Teóricas */}
+        {/* 4. Clases Teóricas Dinámicas */}
         {contractType !== 'Ampliaciones' && contractType !== 'Curso Solo Practica' && (
             <Card className="shadow-sm">
                 <CardHeader className="py-2 px-4 border-b">
@@ -381,7 +395,7 @@ export function ContractForm() {
                                 </Select>
                             </FormItem>
                         )} />
-                        {[0, 1].map((idx) => (
+                        {theoreticalDates.map((_, idx) => (
                             <FormField key={idx} control={form.control} name={`theoreticalClassDates.${idx}`} render={({ field }) => (
                                 <FormItem className="flex flex-col">
                                     <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Fecha Clase {idx + 1}</FormLabel>

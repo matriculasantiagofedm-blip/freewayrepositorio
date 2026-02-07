@@ -1,4 +1,3 @@
-
 'use client';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -36,6 +35,8 @@ import { Label } from '@/components/ui/label';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
 import { Separator } from '@/components/ui/separator';
+
+const ALL_CATEGORIES = ['A', 'B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];
 
 const getNextFolio = (lastFolio: string | null): string => {
     const year = new Date().getFullYear();
@@ -90,6 +91,17 @@ export default function ContractDetailPage() {
 
   const handleCertDataChange = (field: keyof typeof certificateData, value: string) => {
     setCertificateData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const toggleCategory = (cat: string) => {
+    const current = certificateData.licenseType.split(',').map(p => p.trim()).filter(p => p);
+    let newVal = '';
+    if (current.includes(cat)) {
+        newVal = current.filter(p => p !== cat).join(', ');
+    } else {
+        newVal = [...current, cat].sort().join(', ');
+    }
+    handleCertDataChange('licenseType', newVal);
   };
   
   const canGenerateCertificate = contract && (['Curso Auto', 'Curso Moto', 'Curso Deluxe', 'Curso Mixto', 'Ampliaciones'].includes(contract.type));
@@ -206,13 +218,38 @@ export default function ContractDetailPage() {
   };
 
   const groupedLicenses = useMemo(() => {
-    if (contract?.type !== 'Ampliaciones' || !contract.ampliacionesDetails?.selectedPlans) return null;
-    const plans = contract.ampliacionesDetails.selectedPlans.map(p => p.name);
+    const type = certificateData.licenseType.toUpperCase();
+    if (!type) return null;
+
+    const parts = type.split(',').map(p => p.trim()).filter(p => p);
+    
+    const eGroup = parts.filter(p => ['E1', 'E2', 'E3'].includes(p));
+    const individuals = parts.filter(p => ['A', 'B', 'C', 'D', 'F'].includes(p));
+
     return {
-        E: plans.filter(p => ['E1', 'E2', 'E3'].includes(p)),
-        individuals: plans.filter(p => ['A', 'B', 'C', 'D', 'F'].includes(p)),
+        E: eGroup,
+        individuals: individuals,
     };
-  }, [contract]);
+  }, [certificateData.licenseType]);
+
+  const CategoryGrid = () => (
+    <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+        {ALL_CATEGORIES.map(cat => {
+            const isSelected = certificateData.licenseType.includes(cat);
+            return (
+                <Button 
+                    key={cat} 
+                    type="button"
+                    variant={isSelected ? "default" : "outline"}
+                    className={cn("h-10 font-bold", isSelected && "bg-primary text-white border-primary")}
+                    onClick={() => toggleCategory(cat)}
+                >
+                    {cat}
+                </Button>
+            );
+        })}
+    </div>
+  );
 
   return (
     <div className="flex flex-col gap-8 print-container">
@@ -302,9 +339,15 @@ export default function ContractDetailPage() {
                     <div className="space-y-2"><Label className="text-xs uppercase font-bold text-muted-foreground">Dirección Residencial</Label><Input value={certificateData.address} onChange={(e) => handleCertDataChange('address', e.target.value)} /></div>
                 </div>
 
+                <div className="space-y-4">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Categorías de Licencia</Label>
+                    <CategoryGrid />
+                </div>
+
                 {contract?.type === 'Ampliaciones' && groupedLicenses && (
                     <div className="space-y-4">
-                        <h3 className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Opciones de Impresión (Separadas)</h3>
+                        <Separator />
+                        <h3 className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Opciones de Impresión (Certificados Individuales)</h3>
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                             {groupedLicenses.E.length > 0 && (
@@ -323,20 +366,20 @@ export default function ContractDetailPage() {
                             )}
 
                             {groupedLicenses.individuals.map(license => {
-                                const isStandard = ['B', 'C', 'D', 'F'].includes(license);
-                                const bgColor = isStandard ? 'bg-green-50 border-green-100' : 'bg-amber-50 border-amber-100';
-                                const textColor = isStandard ? 'text-green-800' : 'text-amber-800';
-                                const btnColor = isStandard ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-600 hover:bg-amber-700';
-                                const labelHours = isStandard ? '36h' : '80h';
+                                const isAmpliacionFormat = ['A'].includes(license); // Solo la A es 80h en ampliacion
+                                const bgColor = !isAmpliacionFormat ? 'bg-green-50 border-green-100' : 'bg-amber-50 border-amber-100';
+                                const textColor = !isAmpliacionFormat ? 'text-green-800' : 'text-amber-800';
+                                const btnColor = !isAmpliacionFormat ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-600 hover:bg-amber-700';
+                                const labelHours = !isAmpliacionFormat ? '36h' : '80h';
                                 
                                 return (
                                     <div key={license} className={cn("p-4 border rounded-xl flex flex-col justify-between shadow-sm", bgColor)}>
                                         <div>
                                             <p className={cn("font-bold", textColor)}>Tipo {license} Individual</p>
                                             <p className="text-[10px] opacity-80 mb-3 font-medium">
-                                                Formato {isStandard ? 'Estándar' : 'Ampliación'} ({labelHours})
+                                                Formato {!isAmpliacionFormat ? 'Estándar' : 'Ampliación'} ({labelHours})
                                             </p>
-                                            <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded", isStandard ? 'bg-green-200/50 text-green-800' : 'bg-amber-200/50 text-amber-800')}>
+                                            <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded", !isAmpliacionFormat ? 'bg-green-200/50 text-green-800' : 'bg-amber-200/50 text-amber-800')}>
                                                 {license}
                                             </span>
                                         </div>
@@ -354,15 +397,12 @@ export default function ContractDetailPage() {
                     <div className="space-y-4">
                         <Separator />
                         <div className="space-y-2">
-                            <Label className="text-xs uppercase font-bold text-muted-foreground">Categoría de Licencia a Emitir (36h)</Label>
-                            <Input 
-                                value={certificateData.licenseType} 
-                                onChange={(e) => handleCertDataChange('licenseType', e.target.value.toUpperCase())} 
-                                placeholder="Ej: A, C, B" 
-                            />
-                            <p className="text-[10px] text-muted-foreground italic">Se utilizará el formato Estándar de 36 horas (Decreto 640).</p>
+                            <Label className="text-xs uppercase font-bold text-muted-foreground">Formato de Impresión Único (36h)</Label>
+                            <div className="p-4 bg-green-50 border border-green-100 rounded-lg">
+                                <p className="text-sm text-green-800 font-medium">Se generará un certificado único de 36 horas para las categorías seleccionadas: <span className="font-bold">{certificateData.licenseType || '(Ninguna)'}</span></p>
+                            </div>
                         </div>
-                        <Button onClick={() => handleProceedToPrint()} className="w-full h-12 text-lg font-bold shadow-lg" disabled={isGenerating}>
+                        <Button onClick={() => handleProceedToPrint()} className="w-full h-12 text-lg font-bold shadow-lg" disabled={isGenerating || !certificateData.licenseType}>
                             {isGenerating ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Printer className="mr-2 h-5 w-5" />}
                             Imprimir Certificado Único (36h)
                         </Button>

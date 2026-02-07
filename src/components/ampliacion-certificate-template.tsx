@@ -83,7 +83,7 @@ function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate 
                         </p>
                     </div>
                     
-                    {/* Espacio optimizado para firma: texto pequeño y subido */}
+                    {/* Espacio optimizado para firma: texto extra pequeño y subido */}
                     <div className="text-center mt-0 font-bold text-xs italic">
                         <p>***Dado en la república de Panamá, a los {formattedDay} días del mes de {formattedMonth} de {formattedYear}***</p>
                     </div>
@@ -104,7 +104,7 @@ function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate 
 function CertificateBackAmpliacion({ certificate }: { certificate: Certificate }) {
     const details = certificate.contract?.ampliacionesDetails;
     const issueDate = toDate(certificate.issueDate);
-    const expiryDate = !isNaN(issueDate.getTime()) ? addDays(issueDate, 364) : null;
+    const expiryDate = !isNaN(issueDate.getTime()) ? addDays(issueDate, 365) : null;
     const formattedExpiryDate = expiryDate ? format(expiryDate, 'dd-MM-yyyy') : '00-00-0000';
     
     return (

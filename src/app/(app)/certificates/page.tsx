@@ -80,13 +80,13 @@ function CertificatesContent() {
     }
   }, []);
 
-  // Detectar modo manual desde el Dashboard
+  // Detectar modo manual desde el Dashboard (Solo Administrador)
   useEffect(() => {
     const mode = searchParams.get('mode');
-    if (mode === 'manual') {
+    if (mode === 'manual' && role === 'Administrador') {
         handleOpenManualModal();
     }
-  }, [searchParams]);
+  }, [searchParams, role]);
 
   // Limpiar categorías no válidas al cambiar de tipo de trámite
   useEffect(() => {
@@ -303,10 +303,12 @@ function CertificatesContent() {
     <div className="flex flex-col gap-8">
         <div className="flex justify-between items-center">
             <h1 className="font-headline text-3xl font-bold">Módulo de Impresión de Certificados</h1>
-            <Button onClick={handleOpenManualModal} variant="outline" className="border-primary text-primary hover:bg-primary/5">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Generación Manual (En Blanco)
-            </Button>
+            {role === 'Administrador' && (
+                <Button onClick={handleOpenManualModal} variant="outline" className="border-primary text-primary hover:bg-primary/5">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Generación Manual (En Blanco)
+                </Button>
+            )}
         </div>
         
         <Card className="max-w-2xl mx-auto w-full shadow-md border-slate-200">
@@ -353,7 +355,7 @@ function CertificatesContent() {
         {searched && !isLoading && !foundContracts && (
             <div className="text-center p-16 border-2 border-dashed rounded-xl max-w-2xl mx-auto w-full bg-slate-50">
                 <p className="text-slate-500 font-medium text-lg">No se encontraron contratos activos o completados para la cédula ingresada.</p>
-                <p className="text-slate-400 text-sm mt-2">Puedes usar el botón superior para una generación manual en blanco.</p>
+                {role === 'Administrador' && <p className="text-slate-400 text-sm mt-2">Puedes usar el botón superior para una generación manual en blanco.</p>}
             </div>
         )}
 

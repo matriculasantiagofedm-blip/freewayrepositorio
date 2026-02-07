@@ -36,11 +36,12 @@ export function UserNav() {
     return words.map(word => word[0]).join('').toUpperCase();
   };
 
-  if (isUserLoading || (user && !currentUser)) {
+  if (isUserLoading) {
     return <Skeleton className="h-8 w-8 rounded-full" />;
   }
 
-  // Si no hay usuario o sesión iniciada, no mostramos nada en el panel de control
+  // Si no hay usuario o rol cargado, no mostramos el menú de usuario.
+  // Esto elimina cualquier botón de "Login" que pudiera aparecer aquí.
   if (!user || !currentUser) {
     return null;
   }

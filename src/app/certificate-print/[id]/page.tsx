@@ -1,4 +1,3 @@
-
 'use client';
 import { useParams, useSearchParams } from 'next/navigation';
 import { doc } from 'firebase/firestore';
@@ -14,7 +13,9 @@ import { signInAnonymously } from 'firebase/auth';
 /**
  * Motor de impresión de certificados.
  * DESBLOQUEADO: Acceso universal para todos los roles operativos.
- * Asegura sesión anónima inmediata para evitar errores de permisos en nuevas pestañas.
+ * Gestiona la selección de plantilla según la lógica de agrupaciones:
+ * - Tipo F -> Certificado Estándar (36h)
+ * - Otros Ampliaciones/E -> Certificado Ampliación (80h)
  */
 function CertificatePrintContent() {
   const { id } = useParams();
@@ -34,7 +35,6 @@ function CertificatePrintContent() {
   const [certificate, setCertificate] = useState<Certificate | null>(null);
 
   useEffect(() => {
-    // Asegurar que exista una sesión para evitar bloqueos de red
     if (auth && !auth.currentUser) {
       signInAnonymously(auth).catch(console.error);
     }
@@ -76,16 +76,25 @@ function CertificatePrintContent() {
 
       const timer = setTimeout(() => {
         window.print();
-      }, 1000);
+      }, 1200);
       
       return () => clearTimeout(timer);
     }
   }, [contract, isContractLoading, searchParams]);
 
   const shouldUseAmpliacionTemplate = useMemo(() => {
-    if (!certificate || !certificate.contract) return false;
-    if (certificate.contract.type === 'Ampliaciones') return true;
-    return certificate.licenseType && ['E1', 'E2', 'E3'].some(l => certificate.licenseType.includes(l));
+    if (!certificate || !certificate.licenseType) return false;
+    
+    // REGLA: Tipo F siempre utiliza el certificado ESTÁNDAR (Decreto 640 - 36h)
+    if (certificate.licenseType.includes('F')) return false;
+
+    // REGLA: Grupos E y ACD en contratos de Ampliaciones utilizan el formato AMPLIACIÓN (Ley 146 - 80h)
+    if (certificate.contract?.type === 'Ampliaciones') return true;
+    
+    // REGLA: Si contiene tipos E, también usa formato AMPLIACIÓN
+    if (['E1', 'E2', 'E3'].some(l => certificate.licenseType.includes(l))) return true;
+
+    return false;
   }, [certificate]);
 
   if (isContractLoading) {

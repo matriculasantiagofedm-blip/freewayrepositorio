@@ -83,8 +83,8 @@ function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate 
                         </p>
                     </div>
                     
-                    {/* Espacio optimizado para firma: texto extra pequeño y subido */}
-                    <div className="text-center mt-0 font-bold text-xs italic">
+                    {/* Texto reducido y elevado para máximo espacio de firma */}
+                    <div className="text-center mt-0 font-bold text-[10px] italic leading-tight">
                         <p>***Dado en la república de Panamá, a los {formattedDay} días del mes de {formattedMonth} de {formattedYear}***</p>
                     </div>
                 </main>

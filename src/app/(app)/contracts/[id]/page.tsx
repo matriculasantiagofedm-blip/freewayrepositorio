@@ -5,8 +5,8 @@ import type { Contract } from '@/lib/types';
 import { ContractView } from '@/components/contract-view';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ChevronLeft, Award, Printer, ShieldX, Undo, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { ChevronLeft, Award, Printer, ShieldX, Undo, Loader2, CheckCircle2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import {
@@ -33,7 +33,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
 
 const getNextFolio = (lastFolio: string | null): string => {
     const year = new Date().getFullYear();
@@ -72,7 +72,6 @@ export default function ContractDetailPage() {
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastFolio, setLastFolio] = useState<string | null>(null);
-  const [selectedLicenses, setSelectedLicenses] = useState<string[]>([]);
 
   useEffect(() => {
     setLastFolio(localStorage.getItem('lastCertificateFolio'));
@@ -90,12 +89,6 @@ export default function ContractDetailPage() {
   const handleCertDataChange = (field: keyof typeof certificateData, value: string) => {
     setCertificateData(prev => ({ ...prev, [field]: value }));
   };
-  
-  useEffect(() => {
-    if (contract?.type === 'Ampliaciones') {
-      handleCertDataChange('licenseType', selectedLicenses.join(', '));
-    }
-  }, [selectedLicenses, contract?.type]);
   
   const canGenerateCertificate = contract && (['Curso Auto', 'Curso Moto', 'Curso Deluxe', 'Curso Mixto', 'Ampliaciones'].includes(contract.type));
 
@@ -119,21 +112,11 @@ export default function ContractDetailPage() {
         secondLastName = nameParts[3];
     }
 
-    let initialLicenseType = '';
-    if (contract.type === 'Ampliaciones' && contract.ampliacionesDetails?.selectedPlans) {
-        const initialLicenses = contract.ampliacionesDetails.selectedPlans.map(p => p.name);
-        setSelectedLicenses(initialLicenses);
-        initialLicenseType = initialLicenses.join(', ');
-    } else {
-        initialLicenseType = (details as any)?.licenseCategory || '';
-        setSelectedLicenses([]);
-    }
-
     setCertificateData({
       folio: suggestedFolio,
       clientName: contract.clientName,
       cip: details?.studentIdNumber || '',
-      licenseType: initialLicenseType,
+      licenseType: (details as any)?.licenseCategory || '',
       address: details?.studentAddress || '',
       phone1: details?.studentPhone1 || '',
       phone2: details?.studentPhone2 || '',
@@ -145,15 +128,13 @@ export default function ContractDetailPage() {
     setIsCertificateModalOpen(true);
   };
   
-  const handleProceedToPrint = async () => {
+  const handleProceedToPrint = async (customLicenseType?: string) => {
     if (!certificateData.folio || !db || !contractRef || !contract) {
         toast({ variant: 'destructive', title: 'Datos Inválidos', description: 'Faltan datos para imprimir.' });
         return;
     }
-    if (contract.type === 'Ampliaciones' && selectedLicenses.length === 0) {
-        toast({ variant: 'destructive', title: 'Selección Requerida', description: 'Selecciona al menos una licencia.' });
-        return;
-    }
+
+    const finalLicenseType = customLicenseType || certificateData.licenseType;
 
     setIsGenerating(true);
     try {
@@ -169,7 +150,7 @@ export default function ContractDetailPage() {
             folio: certificateData.folio,
             clientName: certificateData.clientName,
             cip: certificateData.cip,
-            licenseType: certificateData.licenseType,
+            licenseType: finalLicenseType,
             courseName: contract.title || '',
             issueDate: new Date().toISOString(),
             firstName: certificateData.firstName,
@@ -218,6 +199,16 @@ export default function ContractDetailPage() {
         setIsGenerating(false);
     }
   };
+
+  const groupedLicenses = useMemo(() => {
+    if (contract?.type !== 'Ampliaciones' || !contract.ampliacionesDetails?.selectedPlans) return null;
+    const plans = contract.ampliacionesDetails.selectedPlans.map(p => p.name);
+    return {
+        E: plans.filter(p => ['E1', 'E2', 'E3'].includes(p)),
+        ACD: plans.filter(p => ['A', 'B', 'C', 'D'].includes(p)),
+        F: plans.filter(p => p === 'F'),
+    };
+  }, [contract]);
 
   return (
     <div className="flex flex-col gap-8 print-container">
@@ -279,61 +270,114 @@ export default function ContractDetailPage() {
       {contract && <ContractView contract={contract} />}
 
       <Dialog open={isCertificateModalOpen} onOpenChange={setIsCertificateModalOpen}>
-        <DialogContent className="print-hide sm:max-w-4xl">
+        <DialogContent className="print-hide sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
             <DialogHeader>
                 <DialogTitle>Generar Certificado</DialogTitle>
-                <DialogDescription>Verifica los datos del estudiante.</DialogDescription>
+                <DialogDescription>Verifica los datos del estudiante y selecciona el grupo a imprimir.</DialogDescription>
             </DialogHeader>
-            <div className="max-h-[70vh] overflow-y-auto pr-4">
-              <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                          <Label>Folio</Label>
-                          <Input value={certificateData.folio} onChange={(e) => handleCertDataChange('folio', e.target.value)} />
-                      </div>
-                      <div className="space-y-2">
-                          <Label>Cédula</Label>
-                          <Input value={certificateData.cip} onChange={(e) => handleCertDataChange('cip', e.target.value)} />
-                      </div>
-                  </div>
-                  <div className="space-y-2">
-                      <Label>Nombre Completo</Label>
-                      <Input value={certificateData.clientName} onChange={(e) => handleCertDataChange('clientName', e.target.value)} />
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="space-y-2"><Label>1er Nombre</Label><Input value={certificateData.firstName} onChange={(e) => handleCertDataChange('firstName', e.target.value)} /></div>
-                      <div className="space-y-2"><Label>2do Nombre</Label><Input value={certificateData.middleName} onChange={(e) => handleCertDataChange('middleName', e.target.value)} /></div>
-                      <div className="space-y-2"><Label>1er Apellido</Label><Input value={certificateData.lastName} onChange={(e) => handleCertDataChange('lastName', e.target.value)} /></div>
-                      <div className="space-y-2"><Label>2do Apellido</Label><Input value={certificateData.secondLastName} onChange={(e) => handleCertDataChange('secondLastName', e.target.value)} /></div>
-                  </div>
-                  <div className="space-y-2"><Label>Dirección</Label><Input value={certificateData.address} onChange={(e) => handleCertDataChange('address', e.target.value)} /></div>
-                  
-                  {contract?.type === 'Ampliaciones' && contract.ampliacionesDetails?.selectedPlans && (
-                    <div className="space-y-2">
-                        <Label>Licencias a Incluir</Label>
-                        <div className="grid grid-cols-3 gap-2 rounded-md border p-4">
-                            {contract.ampliacionesDetails.selectedPlans.map((plan) => (
-                                <div key={plan.name} className="flex items-center space-x-2">
-                                    <Checkbox id={`chk-${plan.name}`} checked={selectedLicenses.includes(plan.name)} onCheckedChange={(c) => setSelectedLicenses(prev => c ? [...prev, plan.name] : prev.filter(n => n !== plan.name))} />
-                                    <label htmlFor={`chk-${plan.name}`} className="text-sm">{plan.name}</label>
-                                </div>
-                            ))}
+            
+            <div className="flex-1 overflow-y-auto pr-4 py-4 space-y-6">
+                {/* Datos Generales */}
+                <div className="grid gap-4 p-4 border rounded-lg bg-muted/30">
+                    <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> Información del Documento</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Folio de Certificado</Label>
+                            <Input value={certificateData.folio} onChange={(e) => handleCertDataChange('folio', e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Número de Cédula</Label>
+                            <Input value={certificateData.cip} onChange={(e) => handleCertDataChange('cip', e.target.value)} />
                         </div>
                     </div>
-                  )}
+                    <div className="space-y-2">
+                        <Label>Nombre Completo (Como aparecerá en el frente)</Label>
+                        <Input value={certificateData.clientName} onChange={(e) => handleCertDataChange('clientName', e.target.value)} />
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="space-y-2"><Label className="text-xs">1er Nombre</Label><Input value={certificateData.firstName} onChange={(e) => handleCertDataChange('firstName', e.target.value)} /></div>
+                        <div className="space-y-2"><Label className="text-xs">2do Nombre</Label><Input value={certificateData.middleName} onChange={(e) => handleCertDataChange('middleName', e.target.value)} /></div>
+                        <div className="space-y-2"><Label className="text-xs">1er Apellido</Label><Input value={certificateData.lastName} onChange={(e) => handleCertDataChange('lastName', e.target.value)} /></div>
+                        <div className="space-y-2"><Label className="text-xs">2do Apellido</Label><Input value={certificateData.secondLastName} onChange={(e) => handleCertDataChange('secondLastName', e.target.value)} /></div>
+                    </div>
+                    <div className="space-y-2"><Label>Dirección Residencial</Label><Input value={certificateData.address} onChange={(e) => handleCertDataChange('address', e.target.value)} /></div>
+                </div>
 
-                  <div className="space-y-2">
-                      <Label>Categoría de Licencia</Label>
-                      <Input value={certificateData.licenseType} onChange={(e) => contract?.type !== 'Ampliaciones' && handleCertDataChange('licenseType', e.target.value)} readOnly={contract?.type === 'Ampliaciones'} />
-                  </div>
-              </div>
+                {/* Selección por Grupos (Solo para Ampliaciones) */}
+                {contract?.type === 'Ampliaciones' && groupedLicenses && (
+                    <div className="space-y-4">
+                        <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Grupos de Impresión Disponibles</h3>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {/* Grupo E */}
+                            {groupedLicenses.E.length > 0 && (
+                                <div className="p-4 border rounded-lg bg-blue-50/50 flex flex-col justify-between">
+                                    <div>
+                                        <p className="font-bold text-blue-700">Grupo E (Ampliación)</p>
+                                        <p className="text-xs text-muted-foreground mb-3 italic">E1, E2, E3 juntas en un certificado.</p>
+                                        <div className="flex flex-wrap gap-1">
+                                            {groupedLicenses.E.map(l => <span key={l} className="bg-blue-200 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">{l}</span>)}
+                                        </div>
+                                    </div>
+                                    <Button onClick={() => handleProceedToPrint(groupedLicenses.E.join(', '))} size="sm" className="mt-4 bg-blue-600 hover:bg-blue-700">
+                                        <Printer className="mr-2 h-4 w-4" /> Imprimir Grupo E
+                                    </Button>
+                                </div>
+                            )}
+
+                            {/* Grupo ACD */}
+                            {groupedLicenses.ACD.length > 0 && (
+                                <div className="p-4 border rounded-lg bg-amber-50/50 flex flex-col justify-between">
+                                    <div>
+                                        <p className="font-bold text-amber-700">Grupo A,C,D (Ampliación)</p>
+                                        <p className="text-xs text-muted-foreground mb-3 italic">A, B, C, D juntas en un certificado.</p>
+                                        <div className="flex flex-wrap gap-1">
+                                            {groupedLicenses.ACD.map(l => <span key={l} className="bg-amber-200 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">{l}</span>)}
+                                        </div>
+                                    </div>
+                                    <Button onClick={() => handleProceedToPrint(groupedLicenses.ACD.join(', '))} size="sm" className="mt-4 bg-amber-600 hover:bg-amber-700">
+                                        <Printer className="mr-2 h-4 w-4" /> Imprimir Grupo ACD
+                                    </Button>
+                                </div>
+                            )}
+
+                            {/* Grupo F */}
+                            {groupedLicenses.F.length > 0 && (
+                                <div className="p-4 border rounded-lg bg-green-50/50 flex flex-col justify-between">
+                                    <div>
+                                        <p className="font-bold text-green-700">Tipo F (Individual)</p>
+                                        <p className="text-xs text-muted-foreground mb-3 italic">Utiliza formato estándar (36h).</p>
+                                        <div className="flex flex-wrap gap-1">
+                                            <span className="bg-green-200 text-green-800 text-[10px] font-bold px-2 py-0.5 rounded">F</span>
+                                        </div>
+                                    </div>
+                                    <Button onClick={() => handleProceedToPrint('F')} size="sm" className="mt-4 bg-green-600 hover:bg-green-700">
+                                        <Printer className="mr-2 h-4 w-4" /> Imprimir Tipo F
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* Selector único para Cursos Normales */}
+                {contract?.type !== 'Ampliaciones' && (
+                    <div className="space-y-4">
+                        <Separator />
+                        <div className="space-y-2">
+                            <Label>Categoría de Licencia a Emitir</Label>
+                            <Input value={certificateData.licenseType} onChange={(e) => handleCertDataChange('licenseType', e.target.value)} placeholder="Ej: A, C, B" />
+                        </div>
+                        <Button onClick={() => handleProceedToPrint()} className="w-full" disabled={isGenerating}>
+                            {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
+                            Imprimir Certificado Único
+                        </Button>
+                    </div>
+                )}
             </div>
-            <DialogFooter>
-                <DialogClose asChild><Button variant="ghost">Cancelar</Button></DialogClose>
-                <Button onClick={handleProceedToPrint} disabled={isGenerating}>
-                    {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
-                    Imprimir Certificado
-                </Button>
+
+            <DialogFooter className="border-t pt-4">
+                <DialogClose asChild><Button variant="ghost">Cerrar</Button></DialogClose>
             </DialogFooter>
         </DialogContent>
       </Dialog>

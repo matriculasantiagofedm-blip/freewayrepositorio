@@ -10,7 +10,10 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
     const formattedMonth = !isNaN(issueDate.getTime()) ? format(issueDate, 'MMMM', { locale: es }) : '-------';
     const formattedYear = !isNaN(issueDate.getTime()) ? format(issueDate, 'yyyy', { locale: es }) : '0000';
     
-    const getCourseHours = (courseName?: string) => {
+    const getCourseHours = (licenseType?: string, courseName?: string) => {
+        // La tipo F utiliza el certificado estándar y tiene 36 horas
+        if (licenseType?.includes('F')) return '36';
+        
         if (!courseName) return '36';
         if (courseName.includes('Deluxe 16 Hrs')) return '16';
         if (courseName.includes('Deluxe 12 Hrs')) return '12';
@@ -27,8 +30,10 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
 
     const getHighestLicenseType = (licenseType?: string): string => {
         if (!licenseType) return 'C';
-        const letters = licenseType.split(',').map(l => l.trim()).filter(l => l).sort();
-        return letters[letters.length - 1] || 'C';
+        const types = licenseType.split(',').map(l => l.trim()).filter(l => l);
+        if (types.includes('F')) return 'F';
+        const sorted = types.sort();
+        return sorted[sorted.length - 1] || 'C';
     };
 
     const getFolioParts = (folio?: string) => {
@@ -84,7 +89,7 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                     <div className="text-xl leading-relaxed max-w-5xl mx-auto py-2">
                         <p>
                             Por haber aprobado el curso de capacitación <span className="font-bold underline">TEÓRICO Y PRÁCTICO</span>, para optar por la licencia de
-                            conducir tipo <span className="font-bold underline">{getLicenseTypeText(certificate.licenseType)}</span> con una duración de <span className="font-bold underline">{getCourseHours(certificate.courseName)}</span> horas, en cumplimiento del Decreto Ejecutivo No. 640 del 27 de Diciembre de 2006, en su artículo 113, acápite a.
+                            conducir tipo <span className="font-bold underline">{getLicenseTypeText(certificate.licenseType)}</span> con una duración de <span className="font-bold underline">{getCourseHours(certificate.licenseType, certificate.courseName)}</span> horas, en cumplimiento del Decreto Ejecutivo No. 640 del 27 de Diciembre de 2006, en su artículo 113, acápite a.
                         </p>
                     </div>
 
@@ -94,8 +99,8 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                         </p>
                     </div>
                     
-                    {/* Espacio optimizado para firma: texto extra pequeño y subido */}
-                    <div className="text-center mt-0 font-bold text-xs italic">
+                    {/* Texto reducido y elevado para máximo espacio de firma */}
+                    <div className="text-center mt-0 font-bold text-[10px] italic leading-tight">
                         <p>***Dado en la república de Panamá, a los {formattedDay} días del mes de {formattedMonth} de {formattedYear}***</p>
                     </div>
                 </main>
@@ -113,9 +118,8 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
 }
 
 function CertificateBack({ certificate }: { certificate: Certificate }) {
-    const details = certificate.contract?.autoMotoDetails || certificate.contract?.deluxeDetails;
+    const details = certificate.contract?.autoMotoDetails || certificate.contract?.deluxeDetails || certificate.contract?.ampliacionesDetails;
     const issueDate = toDate(certificate.issueDate);
-    // Vigencia de un año (365 días aproximados para que cambie el año)
     const expiryDate = !isNaN(issueDate.getTime()) ? addDays(issueDate, 365) : null;
     const formattedExpiryDate = expiryDate ? format(expiryDate, 'dd-MM-yyyy') : '00-00-0000';
     

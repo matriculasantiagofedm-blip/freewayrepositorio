@@ -33,7 +33,7 @@ const navLinks = [
         {
             href: '/certificates',
             label: 'Impresión de Certificados',
-            roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+            roles: ['Administrador'],
         },
         {
             href: '/updates',

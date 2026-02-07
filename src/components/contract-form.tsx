@@ -47,26 +47,22 @@ const practicalTimes = [
 ];
 
 const autoPackages = [
-    { id: 'basico', label: 'Curso Auto Básico', price: 150.00 },
-    { id: 'plus', label: 'Curso Auto Plus', price: 185.00 },
-    { id: 'premium', label: 'Curso Auto Premium', price: 225.00 },
-    { id: 'personalizado', label: 'Personalizado / Otro', price: 0 },
+    { id: 'basico', label: 'Curso Auto Básico', price: 133.00 },
+    { id: 'plus', label: 'Curso Auto Plus', price: 155.00 },
+    { id: 'premium', label: 'Curso Auto Premium', price: 180.00 },
 ];
 
 const motoPackages = [
     { id: 'moto-estandar', label: 'Curso Moto Estándar', price: 100.00 },
-    { id: 'personalizado', label: 'Personalizado / Otro', price: 0 },
 ];
 
 const mixtoPackages = [
     { id: 'mixto-estandar', label: 'Curso Mixto (Auto/Moto)', price: 250.00 },
-    { id: 'personalizado', label: 'Personalizado / Otro', price: 0 },
 ];
 
 const deluxePackages = [
     { id: 'deluxe-premium', label: 'Plan Premium (Deluxe)', price: 201.00 },
     { id: 'deluxe-full', label: 'Plan Deluxe Full', price: 270.00 },
-    { id: 'personalizado', label: 'Personalizado / Otro', price: 0 },
 ];
 
 const contractSchema = z.object({
@@ -185,7 +181,7 @@ export function ContractForm() {
   const selectedPlanId = form.watch('coursePlan');
   
   useEffect(() => {
-    if (!selectedPlanId || selectedPlanId === 'personalizado') return;
+    if (!selectedPlanId) return;
 
     let pkg;
     if (contractType === 'Curso Auto') pkg = autoPackages.find(p => p.id === selectedPlanId);

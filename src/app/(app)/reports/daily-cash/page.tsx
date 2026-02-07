@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { PlusCircle, Trash2, Printer, CalendarIcon, Loader2 } from 'lucide-react';
+import { Trash2, Printer, CalendarIcon, Loader2 } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -32,7 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useDb, useUser } from '@/components/firebase-provider';
-import { collection, query, where, getDocs, Timestamp, type DocumentData } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import type { Contract, Payment, Transaction, BookSalePayment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -102,7 +102,6 @@ export default function DailyCashReportPage() {
       try {
         const isAdmin = role === 'Administrador';
 
-        // Simplified query creator - only filters by date range
         const createDateQuery = (collName: string) => {
             const baseRef = collection(db, collName);
             const dateField = (collName === 'contracts') ? 'createdAt' : 'paymentDate';
@@ -126,12 +125,11 @@ export default function DailyCashReportPage() {
             bookSaleSnapshot
         ] = await Promise.all([
             getDocs(contractsQuery),
-            getDocs(cancellationQuery),
-            getDocs(updateQuery),
-            getDocs(bookSaleQuery)
+            getDocs(cancellationSnapshot),
+            getDocs(updateSnapshot),
+            getDocs(bookSaleSnapshot)
         ]);
 
-        // Helper to filter docs by user role on the client
         const docsToProcess = (snapshot: any) => {
             if (isAdmin) return snapshot.docs;
             return snapshot.docs.filter((doc: any) => doc.data().createdBy === role);
@@ -146,7 +144,7 @@ export default function DailyCashReportPage() {
 
             if (contract.type === 'Curso Deluxe') {
                 paymentType = contract.deluxeDetails?.paymentType || 'cash';
-                amount = 15.00; // Matrícula for Deluxe
+                amount = 15.00;
                 studentIdNumber = contract.deluxeDetails?.studentIdNumber || studentIdNumber;
             } else if (contract.autoMotoDetails?.downPayment && contract.autoMotoDetails.downPayment > 0) {
                  paymentType = contract.autoMotoDetails?.paymentType || 'cash';
@@ -186,7 +184,7 @@ export default function DailyCashReportPage() {
                 clientName: payment.clientName || '',
                 service: 'Cancelación/Abono de Saldo',
                 amount: payment.amount || 0,
-                paymentType: 'cash', // Assuming cash, as it's not specified
+                paymentType: 'cash',
                 createdBy: payment.createdBy,
                 cash: payment.amount || 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
             });
@@ -201,7 +199,7 @@ export default function DailyCashReportPage() {
                 clientName: payment.clientName || '',
                 service: 'Actualización de Certificado',
                 amount: payment.amount || 0,
-                paymentType: 'cash', // Assuming cash
+                paymentType: 'cash',
                 createdBy: payment.createdBy,
                 cash: payment.amount || 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
             });
@@ -216,7 +214,7 @@ export default function DailyCashReportPage() {
                 clientName: payment.clientName || '',
                 service: `Venta de Libro: ${payment.bookTitle}`,
                 amount: payment.amount || 0,
-                paymentType: 'cash', // Assuming cash
+                paymentType: 'cash',
                 createdBy: payment.createdBy,
                 cash: payment.amount || 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
             });
@@ -234,7 +232,7 @@ export default function DailyCashReportPage() {
         toast({
           variant: "destructive",
           title: "Error al Cargar Datos",
-          description: "No se pudieron obtener los datos para el reporte. Revisa la consola para más detalles.",
+          description: "No se pudieron obtener los datos para el reporte.",
         });
       } finally {
         setIsLoading(false);
@@ -289,19 +287,10 @@ export default function DailyCashReportPage() {
 
     const updated = [...transactions];
     let newTransaction = { ...updated[originalIndex] };
-    const numericFields: (keyof Transaction)[] = ['amount', 'cash', 'debit', 'credit', 'global', 'bac', 'general', 'cheques'];
     
     if (field === 'amount') {
         newTransaction.amount = parseFloat(value) || 0;
-    } else if (field === 'paymentType') {
-        newTransaction.paymentType = value;
-    } else if (numericFields.includes(field)) {
-        (newTransaction[field] as number) = parseFloat(value) || 0;
-    } else {
-        (newTransaction[field] as string) = value;
-    }
-
-    if (field === 'paymentType' || field === 'amount') {
+        // Re-calculate the specific column based on paymentType
         newTransaction.cash = 0;
         newTransaction.debit = 0;
         newTransaction.credit = 0;
@@ -312,35 +301,14 @@ export default function DailyCashReportPage() {
         if (newTransaction.paymentType && (paymentTypes.some(pt => pt.value === newTransaction.paymentType))) {
             (newTransaction[newTransaction.paymentType as keyof Transaction] as number) = newTransaction.amount;
         }
+    } else {
+        (newTransaction[field] as string) = value;
     }
+
     updated[originalIndex] = newTransaction;
     setTransactions(updated);
-};
-
-
-  const addTransactionRow = () => {
-    setTransactions([
-      ...transactions,
-      {
-        id: `manual-${transactions.length + 1}`,
-        contrato: '',
-        cedula: '',
-        clientName: '',
-        service: '',
-        amount: 0,
-        paymentType: '',
-        createdBy: role || undefined,
-        cash: 0,
-        debit: 0,
-        credit: 0,
-        global: 0,
-        bac: 0,
-        general: 0,
-        cheques: 0,
-      },
-    ]);
   };
-  
+
   const handleCashChange = (type: 'bill' | 'coin', value: string, quantity: string) => {
     const qty = parseInt(quantity) || 0;
     if (type === 'bill') {
@@ -379,15 +347,8 @@ export default function DailyCashReportPage() {
   if (!role || (role !== 'Administrador' && role !== 'Ventas' && role !== 'Ventas Externas')) {
     return (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
-          <h3 className="mt-4 text-lg font-semibold text-foreground">
-            Acceso Restringido
-          </h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            No tienes permiso para ver esta sección.
-          </p>
-          <Button asChild className="mt-4">
-            <Link href="/dashboard">Volver al Panel</Link>
-          </Button>
+          <h3 className="mt-4 text-lg font-semibold text-foreground">Acceso Restringido</h3>
+          <Button asChild className="mt-4"><Link href="/dashboard">Volver al Panel</Link></Button>
         </div>
       );
   }
@@ -396,15 +357,8 @@ export default function DailyCashReportPage() {
     <div className="space-y-6 rounded-lg print:bg-white">
       <style jsx global>{`
         @media print {
-            @page {
-                size: landscape;
-                margin: 0.25in;
-            }
-            body {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                background-color: white !important;
-            }
+            @page { size: landscape; margin: 0.25in; }
+            body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; background-color: white !important; }
         }
       `}</style>
       <div className="flex justify-between items-center print-hide">
@@ -413,9 +367,7 @@ export default function DailyCashReportPage() {
             {role === 'Administrador' && (
               <>
                 <Select value={sellerFilter} onValueChange={setSellerFilter}>
-                    <SelectTrigger className="w-[200px]">
-                        <SelectValue placeholder="Filtrar por vendedor..." />
-                    </SelectTrigger>
+                    <SelectTrigger className="w-[200px]"><SelectValue placeholder="Filtrar por vendedor..." /></SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">Todos los Vendedores</SelectItem>
                         <SelectItem value="Administrador">Administrador</SelectItem>
@@ -425,24 +377,13 @@ export default function DailyCashReportPage() {
                 </Select>
                 <Popover>
                     <PopoverTrigger asChild>
-                    <Button
-                        variant={"outline"}
-                        className={cn(
-                        "w-[240px] justify-start text-left font-normal",
-                        !reportDate && "text-muted-foreground"
-                        )}
-                    >
+                    <Button variant={"outline"} className={cn("w-[240px] justify-start text-left font-normal", !reportDate && "text-muted-foreground")}>
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {reportDate ? format(reportDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
                     </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="end">
-                    <Calendar
-                        mode="single"
-                        selected={reportDate}
-                        onSelect={(date) => setReportDate(date || new Date())}
-                        initialFocus
-                    />
+                    <Calendar mode="single" selected={reportDate} onSelect={(date) => setReportDate(date || new Date())} initialFocus />
                     </PopoverContent>
                 </Popover>
               </>
@@ -464,75 +405,69 @@ export default function DailyCashReportPage() {
 
       {!isLoading && (
         <div className="space-y-4">
-            <div>
-                <div className="overflow-x-auto">
-                    <Table className="min-w-full text-xs border-collapse border border-black">
-                    <TableHeader>
-                        <TableRow>
-                          <TableHead className="border border-black p-1 text-center font-bold">#</TableHead>
-                          <TableHead className="border border-black p-1 text-center font-bold min-w-[80px]">Contrato</TableHead>
-                          <TableHead className="border border-black p-1 text-center font-bold min-w-[80px]">Cédula</TableHead>
-                          <TableHead className="border border-black p-1 text-center font-bold min-w-[120px]">Nombre del cliente</TableHead>
-                          <TableHead className="border border-black p-1 text-center font-bold min-w-[120px]">Servicio</TableHead>
-                          <TableHead className="border border-black p-1 text-center font-bold">Monto</TableHead>
-                          <TableHead className="border border-black p-1 text-center font-bold min-w-[80px]">Tipo de Pago</TableHead>
-                          <TableHead className="border border-black p-1 text-center font-bold">Efectivo</TableHead>
-                          <TableHead className="border border-black p-1 text-center font-bold">T.Débito</TableHead>
-                          <TableHead className="border border-black p-1 text-center font-bold">T.Crédito</TableHead>
-                          <TableHead className="border border-black p-1 text-center font-bold">GLOBAL</TableHead>
-                          <TableHead className="border border-black p-1 text-center font-bold">BAC</TableHead>
-                          <TableHead className="border border-black p-1 text-center font-bold">GENERAL</TableHead>
-                          <TableHead className="border border-black p-1 text-center font-bold">Cheques</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {filteredTransactions.map((transaction, index) => (
-                        <TableRow key={transaction.id}>
-                            <TableCell className="border border-black p-1 text-center">{index + 1}</TableCell>
-                            <TableCell className="border border-black p-0"><Input type="text" value={transaction.contrato} onChange={e => handleTransactionChange(index, 'contrato', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30" readOnly /></TableCell>
-                            <TableCell className="border border-black p-0"><Input type="text" value={transaction.cedula} onChange={e => handleTransactionChange(index, 'cedula', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30" readOnly /></TableCell>
-                            <TableCell className="border border-black p-0"><Input type="text" value={transaction.clientName} onChange={e => handleTransactionChange(index, 'clientName', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30" readOnly /></TableCell>
-                            <TableCell className="border border-black p-0"><Input type="text" value={transaction.service} onChange={e => handleTransactionChange(index, 'service', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30" readOnly /></TableCell>
-                            <TableCell className="border border-black p-0"><Input type="number" value={transaction.amount} onChange={e => handleTransactionChange(index, 'amount', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1" /></TableCell>
-                            <TableCell className="border border-black p-0">
-                                <Select value={transaction.paymentType} onValueChange={value => handleTransactionChange(index, 'paymentType', value)}>
-                                    <SelectTrigger className="w-full h-full border-none rounded-none text-xs p-1"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
-                                    <SelectContent>
-                                        {paymentTypes.map(pt => <SelectItem key={pt.value} value={pt.value}>{pt.label}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </TableCell>
-                            <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.cash} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
-                            <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.debit} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
-                            <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.credit} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
-                            <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.global} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
-                            <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.bac} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
-                            <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.general} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
-                            <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.cheques} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
-                        </TableRow>
-                        ))}
-                        {isDataLoaded && filteredTransactions.length === 0 && (
-                            <TableRow>
-                                <TableCell colSpan={14} className="text-center text-muted-foreground p-4 border border-black">
-                                    No se encontraron transacciones para la fecha seleccionada.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                        <TableRow className="font-bold">
-                            <TableCell colSpan={7} className="text-right p-1 border border-black">TOTAL</TableCell>
-                            <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.cash)}</TableCell>
-                            <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.debit)}</TableCell>
-                            <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.credit)}</TableCell>
-                            <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.global)}</TableCell>
-                            <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.bac)}</TableCell>
-                            <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.general)}</TableCell>
-                            <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.cheques)}</TableCell>
-                        </TableRow>
-                    </TableBody>
-                    </Table>
-                </div>
-                <Button size="sm" variant="outline" onClick={addTransactionRow} className="mt-2 print-hide"><PlusCircle className="mr-2 h-4 w-4" />Añadir Fila Manual</Button>
+            <div className="overflow-x-auto">
+                <Table className="min-w-full text-xs border-collapse border border-black">
+                <TableHeader>
+                    <TableRow>
+                      <TableHead className="border border-black p-1 text-center font-bold">#</TableHead>
+                      <TableHead className="border border-black p-1 text-center font-bold min-w-[80px]">Contrato</TableHead>
+                      <TableHead className="border border-black p-1 text-center font-bold min-w-[80px]">Cédula</TableHead>
+                      <TableHead className="border border-black p-1 text-center font-bold min-w-[120px]">Nombre del cliente</TableHead>
+                      <TableHead className="border border-black p-1 text-center font-bold min-w-[120px]">Servicio</TableHead>
+                      <TableHead className="border border-black p-1 text-center font-bold">Monto</TableHead>
+                      <TableHead className="border border-black p-1 text-center font-bold min-w-[80px]">Tipo de Pago</TableHead>
+                      <TableHead className="border border-black p-1 text-center font-bold">Efectivo</TableHead>
+                      <TableHead className="border border-black p-1 text-center font-bold">T.Débito</TableHead>
+                      <TableHead className="border border-black p-1 text-center font-bold">T.Crédito</TableHead>
+                      <TableHead className="border border-black p-1 text-center font-bold">GLOBAL</TableHead>
+                      <TableHead className="border border-black p-1 text-center font-bold">BAC</TableHead>
+                      <TableHead className="border border-black p-1 text-center font-bold">GENERAL</TableHead>
+                      <TableHead className="border border-black p-1 text-center font-bold">Cheques</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {filteredTransactions.map((transaction, index) => (
+                    <TableRow key={transaction.id}>
+                        <TableCell className="border border-black p-1 text-center">{index + 1}</TableCell>
+                        <TableCell className="border border-black p-0"><Input type="text" value={transaction.contrato} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30" readOnly /></TableCell>
+                        <TableCell className="border border-black p-0"><Input type="text" value={transaction.cedula} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30" readOnly /></TableCell>
+                        <TableCell className="border border-black p-0"><Input type="text" value={transaction.clientName} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30" readOnly /></TableCell>
+                        <TableCell className="border border-black p-0"><Input type="text" value={transaction.service} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/30" readOnly /></TableCell>
+                        <TableCell className="border border-black p-0"><Input type="number" value={transaction.amount} onChange={e => handleTransactionChange(index, 'amount', e.target.value)} className="w-full h-full border-none rounded-none text-xs p-1" /></TableCell>
+                        <TableCell className="border border-black p-0">
+                            <Select value={transaction.paymentType} disabled>
+                                <SelectTrigger className="w-full h-full border-none rounded-none text-xs p-1"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
+                                <SelectContent>
+                                    {paymentTypes.map(pt => <SelectItem key={pt.value} value={pt.value}>{pt.label}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </TableCell>
+                        <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.cash} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
+                        <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.debit} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
+                        <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.credit} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
+                        <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.global} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
+                        <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.bac} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
+                        <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.general} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
+                        <TableCell className="border border-black p-0"><Input type="number" readOnly value={transaction.cheques} className="w-full h-full border-none rounded-none text-xs p-1 bg-muted/50" /></TableCell>
+                    </TableRow>
+                    ))}
+                    {isDataLoaded && filteredTransactions.length === 0 && (
+                        <TableRow><TableCell colSpan={14} className="text-center text-muted-foreground p-4 border border-black">No se encontraron transacciones.</TableCell></TableRow>
+                    )}
+                    <TableRow className="font-bold">
+                        <TableCell colSpan={7} className="text-right p-1 border border-black">TOTAL</TableCell>
+                        <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.cash)}</TableCell>
+                        <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.debit)}</TableCell>
+                        <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.credit)}</TableCell>
+                        <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.global)}</TableCell>
+                        <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.bac)}</TableCell>
+                        <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.general)}</TableCell>
+                        <TableCell className="border border-black p-1">{currencyFormatter.format(transactionTotals.cheques)}</TableCell>
+                    </TableRow>
+                </TableBody>
+                </Table>
             </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
                 <div className="md:col-span-2 space-y-4">
                     <h3 className="font-bold text-center">DESGLOSE DE EFECTIVO</h3>
@@ -571,8 +506,8 @@ export default function DailyCashReportPage() {
                     <Table className="text-xs border-collapse border border-black">
                         <TableHeader><TableRow><TableHead colSpan={2} className="text-center font-bold p-1 border border-black">Totales</TableHead></TableRow></TableHeader>
                         <TableBody>
-                            <TableRow><TableCell className="border border-black p-1">Total tarjetas CRÉDITO</TableCell><TableCell className="border border-black p-1 text-right">{currencyFormatter.format(transactionTotals.credit)}</TableCell></TableRow>
-                            <TableRow><TableCell className="border border-black p-1">Total tarjetas DÉBITO</TableCell><TableCell className="border border-black p-1 text-right">{currencyFormatter.format(transactionTotals.debit)}</TableCell></TableRow>
+                            <TableRow><TableCell className="border border-black p-1">Total CRÉDITO</TableCell><TableCell className="border border-black p-1 text-right">{currencyFormatter.format(transactionTotals.credit)}</TableCell></TableRow>
+                            <TableRow><TableCell className="border border-black p-1">Total DÉBITO</TableCell><TableCell className="border border-black p-1 text-right">{currencyFormatter.format(transactionTotals.debit)}</TableCell></TableRow>
                             <TableRow><TableCell className="border border-black p-1">GLOBAL</TableCell><TableCell className="border border-black p-1 text-right">{currencyFormatter.format(transactionTotals.global)}</TableCell></TableRow>
                             <TableRow><TableCell className="border border-black p-1">BAC</TableCell><TableCell className="border border-black p-1 text-right">{currencyFormatter.format(transactionTotals.bac)}</TableCell></TableRow>
                             <TableRow><TableCell className="border border-black p-1">GENERAL</TableCell><TableCell className="border border-black p-1 text-right">{currencyFormatter.format(transactionTotals.general)}</TableCell></TableRow>
@@ -591,7 +526,7 @@ export default function DailyCashReportPage() {
                                     <TableCell className="p-0.5 border-black border w-8 text-center print-hide"><Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeExpenseRow(index)}><Trash2 className="h-3 w-3 text-destructive"/></Button></TableCell>
                                 </TableRow>
                             ))}
-                            <TableRow><TableCell colSpan={3} className="p-1 print-hide"><Button size="sm" variant="outline" onClick={addExpenseRow}><PlusCircle className="mr-2 h-4 w-4"/>Añadir Gasto</Button></TableCell></TableRow>
+                            <TableRow><TableCell colSpan={3} className="p-1 print-hide"><Button size="sm" variant="outline" onClick={addExpenseRow}>Añadir Gasto</Button></TableCell></TableRow>
                             <TableRow className="font-bold"><TableCell className="border border-black p-1">Total de Gastos</TableCell><TableCell colSpan={2} className="border border-black p-1 text-right">{currencyFormatter.format(totalExpenses)}</TableCell></TableRow>
                         </TableBody>
                     </Table>

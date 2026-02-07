@@ -35,6 +35,7 @@ const isOverdue = (contract: Contract): boolean => {
 
 function AllContractsContent() {
   const db = useDb();
+  const { role } = useCurrentRole();
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const filter = searchParams.get('filter');
@@ -64,6 +65,16 @@ function AllContractsContent() {
     });
   }, [allContracts, searchTerm, filter]);
 
+  if (role && role !== 'Administrador' && filter !== 'overdue') {
+    return (
+      <div className="p-12 text-center border-2 border-dashed rounded-lg">
+        <h3 className="text-lg font-semibold">Acceso Restringido</h3>
+        <p className="text-muted-foreground">No tienes permisos para ver el listado global de contratos.</p>
+        <Button asChild className="mt-4"><Link href="/dashboard">Volver al Panel</Link></Button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -72,7 +83,7 @@ function AllContractsContent() {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Buscar por folio, cliente..."
+            placeholder="Buscar por folio, client..."
             className="pl-8 sm:w-[300px]"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}

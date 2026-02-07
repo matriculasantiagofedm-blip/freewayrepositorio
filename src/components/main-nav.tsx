@@ -80,35 +80,35 @@ const navLinks = [
   {
     label: 'Reportes',
     icon: ClipboardPenLine,
-    roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+    roles: ['Administrador'], // Restringido solo a Administrador
     children: [
       {
           href: '/contracts',
           label: 'Todos los Contratos',
           icon: FileText,
-          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+          roles: ['Administrador'],
       },
       {
           href: '/reports/cancellation-payments',
           label: 'Cancelaciones',
           icon: ListChecks,
-          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+          roles: ['Administrador'],
       },
       {
           href: '/reports/update-payments',
           label: 'Actualizaciones',
           icon: Award,
-          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+          roles: ['Administrador'],
       },
       {
           separator: true,
-          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+          roles: ['Administrador'],
       },
       {
           href: '/reports/daily-cash',
           label: 'Caja Diario',
           icon: ClipboardPenLine,
-          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+          roles: ['Administrador'],
       },
       {
           href: '/reports/finance',
@@ -118,19 +118,19 @@ const navLinks = [
       },
        {
           separator: true,
-          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+          roles: ['Administrador'],
       },
       {
           href: '/reports/mileage-log',
           label: 'Kilometraje',
           icon: Gauge,
-          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+          roles: ['Administrador'],
       },
       {
           href: '/reports/vehicle-schedule',
           label: 'Horarios',
           icon: CalendarClock,
-          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+          roles: ['Administrador'],
       },
     ]
   },

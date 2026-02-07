@@ -21,7 +21,7 @@ export default function ReportsPage() {
       description: 'Genera el reporte de caja para el día actual.',
       href: '/reports/daily-cash',
       icon: ClipboardPenLine,
-      roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+      roles: ['Administrador'],
     },
     {
       title: 'Reporte Financiero',
@@ -35,30 +35,46 @@ export default function ReportsPage() {
       description: 'Ver y filtrar todos los pagos de cancelación registrados.',
       href: '/reports/cancellation-payments',
       icon: ListChecks,
-      roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+      roles: ['Administrador'],
     },
     {
       title: 'Listado de Pagos de Actualización',
       description: 'Ver y filtrar todos los pagos por actualización de certificados.',
       href: '/reports/update-payments',
       icon: Award,
-      roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+      roles: ['Administrador'],
     },
     {
       title: 'Reporte de Kilometraje',
       description: 'Ver y filtrar el historial de kilometraje diario de los vehículos.',
       href: '/reports/mileage-log',
       icon: Gauge,
-      roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+      roles: ['Administrador'],
     },
     {
       title: 'Reporte de Asignación de Horarios',
       description: 'Visualiza la agenda semanal de clases prácticas por vehículo.',
       href: '/reports/vehicle-schedule',
       icon: CalendarClock,
-      roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+      roles: ['Administrador'],
     },
   ];
+
+  if (role && role !== 'Administrador') {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
+          <h3 className="mt-4 text-lg font-semibold text-foreground">
+          Acceso Restringido
+          </h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+          No tienes permiso para ver esta sección.
+          </p>
+          <Button asChild className="mt-4">
+              <Link href="/dashboard">Volver al Panel</Link>
+          </Button>
+      </div>
+    );
+  }
 
   if (!role) {
     return (
@@ -74,22 +90,6 @@ export default function ReportsPage() {
   }
 
   const reports = allReports.filter(report => report.roles.includes(role));
-
-  if (reports.length === 0) {
-      return (
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
-            <h3 className="mt-4 text-lg font-semibold text-foreground">
-            Acceso Restringido
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-            No tienes permiso para ver esta sección.
-            </p>
-            <Button asChild className="mt-4">
-                <Link href="/dashboard">Volver al Panel</Link>
-            </Button>
-        </div>
-      )
-  }
 
   return (
     <div className="flex flex-col gap-8">

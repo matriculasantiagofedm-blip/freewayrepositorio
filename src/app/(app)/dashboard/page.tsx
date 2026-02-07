@@ -51,7 +51,7 @@ export default function DashboardPage() {
   const totalClients = contracts ? new Set(contracts.map((c) => c.clientId)).size : 0;
 
   const stats = [
-    { title: 'Contratos Activos', value: isLoading || isUserLoading ? '...' : activeContracts, icon: FileText, href: '/contracts' },
+    { title: 'Contratos Activos', value: isLoading || isUserLoading ? '...' : activeContracts, icon: FileText, href: '/contracts', adminOnly: true },
     { 
         title: 'Contratos por Cobrar', 
         value: isLoading || isUserLoading ? '...' : overdueCount, 
@@ -61,6 +61,11 @@ export default function DashboardPage() {
     },
     { title: 'Clientes', value: isLoading || isUserLoading ? '...' : totalClients, icon: Users, href: '/clients' },
   ];
+
+  const visibleStats = stats.filter(stat => {
+    if (stat.adminOnly && role !== 'Administrador') return false;
+    return true;
+  });
 
   const contractTypes = [
       { name: 'Curso Auto', icon: Car, href: '/contracts/new?type=Curso%20Auto', bgColor: 'bg-blue-50', textColor: 'text-blue-600'},
@@ -89,7 +94,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        {stats.map((stat) => (
+        {visibleStats.map((stat) => (
             <Link key={stat.title} href={stat.href} className="no-underline">
                 <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">

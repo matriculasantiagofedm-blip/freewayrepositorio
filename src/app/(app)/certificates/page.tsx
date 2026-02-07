@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,7 +10,7 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Printer, CheckCircle2 } from 'lucide-react';
+import { Loader2, Search, Printer, CheckCircle2, PlusCircle } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import {
   Dialog,
@@ -35,11 +36,12 @@ const getNextFolio = (lastFolio: string | null): string => {
     return `${year} / ${paddedNextNum}`;
 };
 
-export default function CertificatesGlobalSearchPage() {
+function CertificatesContent() {
   const db = useDb();
   const { user } = useUser();
   const { toast } = useToast();
   const { role } = useCurrentRole();
+  const searchParams = useSearchParams();
 
   const [studentIdNumber, setStudentIdNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -71,6 +73,14 @@ export default function CertificatesGlobalSearchPage() {
         setLastFolio(localStorage.getItem('lastCertificateFolio'));
     }
   }, []);
+
+  // Detectar modo manual desde el Dashboard
+  useEffect(() => {
+    const mode = searchParams.get('mode');
+    if (mode === 'manual') {
+        handleOpenManualModal();
+    }
+  }, [searchParams]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,7 +144,7 @@ export default function CertificatesGlobalSearchPage() {
     setCertificateData({
       folio: suggestedFolio,
       clientName: contract.clientName,
-      cip: studentIdNumber,
+      cip: studentIdNumber || details?.studentIdNumber || '',
       licenseType: (details as any)?.licenseCategory || '',
       address: details?.studentAddress || '',
       phone1: details?.studentPhone1 || '',
@@ -147,12 +157,31 @@ export default function CertificatesGlobalSearchPage() {
     setIsCertificateModalOpen(true);
   };
 
+  const handleOpenManualModal = () => {
+    setSelectedContract(null); // Indica modo manual
+    const suggestedFolio = getNextFolio(lastFolio);
+    setCertificateData({
+      folio: suggestedFolio,
+      clientName: '',
+      cip: '',
+      licenseType: '',
+      address: '',
+      phone1: '',
+      phone2: '',
+      firstName: '',
+      middleName: '',
+      lastName: '',
+      secondLastName: '',
+    });
+    setIsCertificateModalOpen(true);
+  };
+
   const handleCertDataChange = (field: keyof typeof certificateData, value: string) => {
     setCertificateData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleProceedToPrint = async (customLicenseType?: string) => {
-    if (!certificateData.folio || !db || !selectedContract) {
+    if (!certificateData.folio || !db) {
         toast({ variant: 'destructive', title: 'Datos Inválidos', description: 'Faltan datos para imprimir.' });
         return;
     }
@@ -161,12 +190,15 @@ export default function CertificatesGlobalSearchPage() {
 
     setIsGenerating(true);
     try {
-        const contractRef = doc(db, 'contracts', selectedContract.id);
-        const updateData = {
-            certificateGeneratedAt: serverTimestamp(),
-            certificateFolio: certificateData.folio,
-        };
-        await updateDoc(contractRef, updateData);
+        if (selectedContract) {
+            const contractRef = doc(db, 'contracts', selectedContract.id);
+            const updateData = {
+                certificateGeneratedAt: serverTimestamp(),
+                certificateFolio: certificateData.folio,
+            };
+            await updateDoc(contractRef, updateData);
+        }
+        
         localStorage.setItem('lastCertificateFolio', certificateData.folio);
         setLastFolio(certificateData.folio);
 
@@ -175,15 +207,19 @@ export default function CertificatesGlobalSearchPage() {
             clientName: certificateData.clientName,
             cip: certificateData.cip,
             licenseType: finalLicenseType,
-            courseName: selectedContract.title || '',
+            courseName: selectedContract?.title || 'Generación Manual',
             issueDate: new Date().toISOString(),
             firstName: certificateData.firstName,
             middleName: certificateData.middleName,
             lastName: certificateData.lastName,
             secondLastName: certificateData.secondLastName,
+            address: certificateData.address,
+            phone1: certificateData.phone1,
+            phone2: certificateData.phone2,
         });
 
-        window.open(`/certificate-print/${selectedContract.id}?${queryParams.toString()}`, '_blank');
+        const printId = selectedContract?.id || 'manual';
+        window.open(`/certificate-print/${printId}?${queryParams.toString()}`, '_blank');
         setIsCertificateModalOpen(false);
     } catch (error) {
         toast({ variant: 'destructive', title: 'Error al Guardar', description: 'No se pudo actualizar el folio.' });
@@ -193,17 +229,36 @@ export default function CertificatesGlobalSearchPage() {
   };
 
   const groupedLicenses = useMemo(() => {
-    if (!selectedContract || selectedContract.type !== 'Ampliaciones' || !selectedContract.ampliacionesDetails?.selectedPlans) return null;
+    if (!selectedContract) {
+        // En modo manual, asumimos que puede ser cualquier categoría. 
+        // Si el usuario escribe algo con E, mostramos grupo E.
+        const type = certificateData.licenseType.toUpperCase();
+        const hasE = ['E1', 'E2', 'E3'].some(l => type.includes(l));
+        const individualLetters = ['A', 'B', 'C', 'D', 'F'].filter(l => type.includes(l));
+        
+        return {
+            E: hasE ? ['E1', 'E2', 'E3'].filter(l => type.includes(l)) : [],
+            individuals: individualLetters,
+        };
+    }
+
+    if (selectedContract.type !== 'Ampliaciones' || !selectedContract.ampliacionesDetails?.selectedPlans) return null;
     const plans = selectedContract.ampliacionesDetails.selectedPlans.map(p => p.name);
     return {
         E: plans.filter(p => ['E1', 'E2', 'E3'].includes(p)),
         individuals: plans.filter(p => ['A', 'B', 'C', 'D', 'F'].includes(p)),
     };
-  }, [selectedContract]);
+  }, [selectedContract, certificateData.licenseType]);
 
   return (
     <div className="flex flex-col gap-8">
-        <h1 className="font-headline text-3xl font-bold">Módulo de Impresión de Certificados</h1>
+        <div className="flex justify-between items-center">
+            <h1 className="font-headline text-3xl font-bold">Módulo de Impresión de Certificados</h1>
+            <Button onClick={handleOpenManualModal} variant="outline" className="border-primary text-primary hover:bg-primary/5">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Generación Manual (En Blanco)
+            </Button>
+        </div>
         
         <Card className="max-w-2xl mx-auto w-full shadow-md border-slate-200">
             <CardHeader>
@@ -249,7 +304,7 @@ export default function CertificatesGlobalSearchPage() {
         {searched && !isLoading && !foundContracts && (
             <div className="text-center p-16 border-2 border-dashed rounded-xl max-w-2xl mx-auto w-full bg-slate-50">
                 <p className="text-slate-500 font-medium text-lg">No se encontraron contratos activos o completados para la cédula ingresada.</p>
-                <p className="text-slate-400 text-sm mt-2">Asegúrate de que el contrato no esté anulado o vencido.</p>
+                <p className="text-slate-400 text-sm mt-2">Puedes usar el botón superior para una generación manual en blanco.</p>
             </div>
         )}
 
@@ -287,10 +342,23 @@ export default function CertificatesGlobalSearchPage() {
                         <div className="space-y-2"><Label className="text-xs uppercase font-bold text-muted-foreground">Dirección Residencial</Label><Input value={certificateData.address} onChange={(e) => handleCertDataChange('address', e.target.value)} className="bg-white" /></div>
                     </div>
 
-                    {selectedContract?.type === 'Ampliaciones' && groupedLicenses && (
+                    {((selectedContract?.type === 'Ampliaciones') || !selectedContract) && groupedLicenses && (
                         <div className="space-y-4">
                             <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500">Opciones de Impresión (Certificados Individuales)</h3>
                             
+                            {!selectedContract && (
+                                <div className="space-y-2 bg-amber-50 p-3 rounded-lg border border-amber-100 mb-4">
+                                    <Label className="text-xs font-bold text-amber-800">CATEGORÍA(S) A EMITIR (MANUAL)</Label>
+                                    <Input 
+                                        placeholder="Ej: A, B, E1, F" 
+                                        value={certificateData.licenseType} 
+                                        onChange={(e) => handleCertDataChange('licenseType', e.target.value.toUpperCase())}
+                                        className="bg-white"
+                                    />
+                                    <p className="text-[9px] text-amber-600 italic">Escribe las letras separadas por comas. El sistema habilitará los botones abajo.</p>
+                                </div>
+                            )}
+
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                                 {groupedLicenses.E.length > 0 && (
                                     <div className="p-4 border rounded-xl bg-blue-50 flex flex-col justify-between shadow-sm border-blue-100">
@@ -334,7 +402,7 @@ export default function CertificatesGlobalSearchPage() {
                         </div>
                     )}
 
-                    {selectedContract?.type !== 'Ampliaciones' && (
+                    {selectedContract && selectedContract.type !== 'Ampliaciones' && (
                         <div className="space-y-4">
                             <Separator />
                             <div className="space-y-2">
@@ -356,4 +424,12 @@ export default function CertificatesGlobalSearchPage() {
         </Dialog>
     </div>
   );
+}
+
+export default function CertificatesGlobalSearchPage() {
+    return (
+        <Suspense fallback={<div className="p-12 text-center"><Loader2 className="animate-spin h-8 w-8 mx-auto" /></div>}>
+            <CertificatesContent />
+        </Suspense>
+    );
 }

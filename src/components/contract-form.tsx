@@ -265,15 +265,20 @@ export function ContractForm() {
                     autoCount = 1;
                     motoCount = 0;
                 } else if (pkg.id === 'mixto-10h') {
+                    // Plan Auto + Moto 10Hrs 290.00: 5 clases auto, 5 clases moto
                     autoCount = 5;
                     motoCount = 5;
                 } else if (pkg.id === 'mixto-basico-am') {
-                    // Plan Básico Auto + Moto 153.00: 4 clases de auto, 0 de moto (8 horas totales)
+                    // Plan Básico Auto + Moto 153.00: 4 clases de auto, 0 de moto
                     autoCount = 4;
                     motoCount = 0;
                 } else if (pkg.id === 'mixto-plus-am') {
-                    // Plan Plus Auto + Moto 170.00: 5 clases de auto, 0 de moto (10 horas totales)
+                    // Plan Plus Auto + Moto 170.00: 5 clases de auto, 0 de moto
                     autoCount = 5;
+                    motoCount = 0;
+                } else if (pkg.id === 'mixto-premium-am') {
+                    // Plan Premium Auto + Moto 195.00: 6 clases de auto, 0 de moto
+                    autoCount = 6;
                     motoCount = 0;
                 } else if (pkg.hours === 8) {
                     autoCount = 2;

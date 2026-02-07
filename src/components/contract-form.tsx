@@ -52,9 +52,9 @@ const autoPackages = [
 ];
 
 const motoPackages = [
-    { id: 'moto-basico', label: 'Curso Moto Básico (4hrz)', price: 115.00, hours: 4 },
-    { id: 'moto-plus', label: 'Curso Moto Plus (6hrz)', price: 135.00, hours: 6 },
-    { id: 'moto-premium', label: 'Curso Moto Premium (8hrz)', price: 155.00, hours: 8 },
+    { id: 'moto-basico', label: 'Curso Moto Básico (8hrz)', price: 115.00, hours: 8 },
+    { id: 'moto-plus', label: 'Curso Moto Plus (10hrz)', price: 135.00, hours: 10 },
+    { id: 'moto-premium', label: 'Curso Moto Premium (12hrz)', price: 155.00, hours: 12 },
 ];
 
 const mixtoPackages = [{ id: 'mixto-estandar', label: 'Curso Mixto (Auto/Moto)', price: 250.00, hours: 12 }];

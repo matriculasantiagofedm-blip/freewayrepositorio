@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, User } from 'lucide-react';
+import { User } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -40,8 +40,6 @@ export function UserNav() {
     return <Skeleton className="h-8 w-8 rounded-full" />;
   }
 
-  // Se eliminó cualquier botón de "Iniciar Sesión" redundante.
-  // El menú solo es visible si hay un usuario autenticado con un rol válido.
   if (!user || !currentUser) {
     return null;
   }
@@ -72,14 +70,12 @@ export function UserNav() {
         <DropdownMenuGroup>
            <DropdownMenuItem asChild>
             <Link href="/profile">
-              <User className="mr-2 h-4 w-4" />
               <span>Perfil</span>
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
-          <LogOut className="mr-2 h-4 w-4" />
           Cerrar sesión
         </DropdownMenuItem>
       </DropdownMenuContent>

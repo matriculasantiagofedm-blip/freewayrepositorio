@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import * as React from 'react';
-import { GanttChart, Users, ClipboardPenLine, RefreshCw, HandCoins, Gauge, Wrench, Car, BookMarked, CalendarClock, FileText, Banknote, ListChecks, Award } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Button } from '@/components/ui/button';
@@ -20,30 +19,25 @@ const navLinks = [
   {
     href: '/dashboard',
     label: 'Panel de Control',
-    icon: GanttChart,
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
   },
   {
     href: '/clients',
     label: 'Clientes',
-    icon: Users,
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
   },
   {
     label: 'Pagos',
-    icon: HandCoins,
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     children: [
         {
             href: '/updates',
             label: 'Actualizaciones',
-            icon: RefreshCw,
             roles: ['Administrador', 'Ventas', 'Ventas Externas'],
         },
         {
             href: '/cancellations',
             label: 'Gestionar Saldos',
-            icon: HandCoins,
             roles: ['Administrador', 'Ventas', 'Ventas Externas'],
         },
         {
@@ -53,51 +47,43 @@ const navLinks = [
         {
             href: '/book-sales',
             label: 'Venta de Libros',
-            icon: BookMarked,
             roles: ['Administrador', 'Ventas', 'Ventas Externas'],
         }
     ]
   },
   {
     label: 'Vehículos',
-    icon: Car,
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     children: [
         {
             href: '/mileage-log',
             label: 'Kilometraje',
-            icon: Gauge,
             roles: ['Administrador', 'Ventas', 'Ventas Externas'],
         },
         {
             href: '/maintenance',
             label: 'Mantenimiento',
-            icon: Wrench,
             roles: ['Administrador'],
         }
     ]
   },
   {
     label: 'Reportes',
-    icon: ClipboardPenLine,
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     children: [
       {
           href: '/contracts',
           label: 'Todos los Contratos',
-          icon: FileText,
           roles: ['Administrador'], // Solo Admin
       },
       {
           href: '/reports/cancellation-payments',
           label: 'Cancelaciones',
-          icon: ListChecks,
           roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
       {
           href: '/reports/update-payments',
           label: 'Actualizaciones',
-          icon: Award,
           roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
       {
@@ -107,13 +93,11 @@ const navLinks = [
       {
           href: '/reports/daily-cash',
           label: 'Caja Diario',
-          icon: ClipboardPenLine,
           roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
       {
           href: '/reports/finance',
           label: 'Financiero',
-          icon: Banknote,
           roles: ['Administrador'],
       },
        {
@@ -123,13 +107,11 @@ const navLinks = [
       {
           href: '/reports/mileage-log',
           label: 'Kilometraje',
-          icon: Gauge,
           roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
       {
           href: '/reports/vehicle-schedule',
           label: 'Horarios',
-          icon: CalendarClock,
           roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
     ]
@@ -166,7 +148,6 @@ function HoverDropdownMenu({ link, visibleChildren, pathname, linkClass }: any) 
           onMouseLeave={handleClose}
           aria-haspopup="true"
         >
-          <link.icon className="h-4 w-4 mr-2" />
           {link.label}
         </Button>
       </DropdownMenuTrigger>
@@ -185,7 +166,6 @@ function HoverDropdownMenu({ link, visibleChildren, pathname, linkClass }: any) 
                 href={child.href!}
                 className={cn('cursor-pointer', pathname.startsWith(child.href!) && 'font-semibold text-primary')}
                 >
-                {child.icon && <child.icon className="h-4 w-4 mr-2 opacity-70" />}
                 {child.label}
                 </Link>
             </DropdownMenuItem>
@@ -227,7 +207,6 @@ export function MainNav({ className, isMobile = false }: { className?: string, i
               return (
                 <React.Fragment key={link.label}>
                    <span className={cn(linkClass, 'font-semibold', isChildActive ? 'text-primary' : 'text-foreground' )}>
-                      <link.icon className="h-4 w-4" />
                       {link.label}
                   </span>
                   <div className="grid auto-rows-auto items-start pl-7 text-base">
@@ -241,7 +220,6 @@ export function MainNav({ className, isMobile = false }: { className?: string, i
                         href={child.href!}
                         className={cn("rounded-lg py-2 text-muted-foreground transition-all hover:text-primary flex items-center", child.href && pathname.startsWith(child.href!) && 'text-primary font-semibold')}
                       >
-                        {child.icon && <child.icon className="h-4 w-4 mr-2" />}
                         {child.label}
                       </Link>
                     )})}
@@ -261,7 +239,6 @@ export function MainNav({ className, isMobile = false }: { className?: string, i
               href={link.href!}
               className={cn(linkClass, (pathname === link.href || (link.href !== '/dashboard' && pathname.startsWith(link.href!))) && activeLinkClass)}
             >
-              <link.icon className="h-4 w-4 mr-2" />
               {link.label}
             </Link>
         );

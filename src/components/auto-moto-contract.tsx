@@ -107,8 +107,8 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                     </p>
                 )}
                 
-                <p>3. Instructor Asignado: <Line><Value>{autoMotoDetails?.instructor || 'No asignado'}</Value></Line></p>
-                <p>4. Vehículo Asignado: <Line><Value>{autoMotoDetails?.vehicle || 'No asignado'}</Value></Line></p>
+                <p>3. Vehículo Asignado: <Line><Value>{autoMotoDetails?.vehicle || 'No asignado'}</Value></Line></p>
+                <p>4. Instructor Asignado: <Line><Value>{autoMotoDetails?.instructor || 'No asignado'}</Value></Line></p>
 
                 {!isSoloPractica && (
                     <>

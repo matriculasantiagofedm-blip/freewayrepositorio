@@ -93,8 +93,8 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, stude
                 <p>2. Categoría de licencia a aplicar: A, C <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C'} /> / A, C, D <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, C, D'} /> {type === 'Curso Moto' && <> / A, B <Checkbox checked={autoMotoDetails?.licenseCategory === 'A, B'} /></>}</p>
             )}
 
-            <p>3. Instructor Asignado: <Line>{autoMotoDetails?.instructor || '________________'}</Line></p>
-            <p>4. Vehículo Asignado: <Line>{autoMotoDetails?.vehicle || '________________'}</Line></p>
+            <p>3. Vehículo Asignado: <Line>{autoMotoDetails?.vehicle || '________________'}</Line></p>
+            <p>4. Instructor Asignado: <Line>{autoMotoDetails?.instructor || '________________'}</Line></p>
 
             {!isSoloPractica && (
                 <>
@@ -140,7 +140,7 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, stude
         <h3 className="font-bold">CLÁUSULA TERCERA - INASISTENCIAS Y REPROGRAMACIONES</h3>
         <div className='text-[10px] space-y-0.5'>
             <p>EL ESTUDIANTE que no asista a una clase práctica en el horario establecido perderá automáticamente la clase práctica sin derecho a reposición ni reclamo.</p>
-            <p>Excepción: Si la falta es por motivo de salud, deberá presentar constancia médica válida y coordinar con la administración para una reprogramación, la cual dependerá de la disponibilidad de horarios.</p>
+            <p>Excepción: Si la falta es por motivo de salud, deberá presentar constancia médica válida y coordinar con la administración para una otorgación de una reprogramación, la cual dependerá de la disponibilidad de horarios.</p>
             <p>SI EL ESTUDIANTE falta a más de una clase práctica sin justificar médicamente, no tendrá derecho a certificado y deberá pagar un recargo de $20.00 por cada clase perdida para poder reprogramarla.</p>
         </div>
 

@@ -80,35 +80,35 @@ const navLinks = [
   {
     label: 'Reportes',
     icon: ClipboardPenLine,
-    roles: ['Administrador'], // Restringido solo a Administrador
+    roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     children: [
       {
           href: '/contracts',
           label: 'Todos los Contratos',
           icon: FileText,
-          roles: ['Administrador'],
+          roles: ['Administrador'], // Solo Admin
       },
       {
           href: '/reports/cancellation-payments',
           label: 'Cancelaciones',
           icon: ListChecks,
-          roles: ['Administrador'],
+          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
       {
           href: '/reports/update-payments',
           label: 'Actualizaciones',
           icon: Award,
-          roles: ['Administrador'],
+          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
       {
           separator: true,
-          roles: ['Administrador'],
+          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
       {
           href: '/reports/daily-cash',
           label: 'Caja Diario',
           icon: ClipboardPenLine,
-          roles: ['Administrador'],
+          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
       {
           href: '/reports/finance',
@@ -118,19 +118,19 @@ const navLinks = [
       },
        {
           separator: true,
-          roles: ['Administrador'],
+          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
       {
           href: '/reports/mileage-log',
           label: 'Kilometraje',
           icon: Gauge,
-          roles: ['Administrador'],
+          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
       {
           href: '/reports/vehicle-schedule',
           label: 'Horarios',
           icon: CalendarClock,
-          roles: ['Administrador'],
+          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
     ]
   },
@@ -166,6 +166,7 @@ function HoverDropdownMenu({ link, visibleChildren, pathname, linkClass }: any) 
           onMouseLeave={handleClose}
           aria-haspopup="true"
         >
+          <link.icon className="h-4 w-4 mr-2" />
           {link.label}
         </Button>
       </DropdownMenuTrigger>
@@ -184,6 +185,7 @@ function HoverDropdownMenu({ link, visibleChildren, pathname, linkClass }: any) 
                 href={child.href!}
                 className={cn('cursor-pointer', pathname.startsWith(child.href!) && 'font-semibold text-primary')}
                 >
+                {child.icon && <child.icon className="h-4 w-4 mr-2 opacity-70" />}
                 {child.label}
                 </Link>
             </DropdownMenuItem>
@@ -209,7 +211,7 @@ export function MainNav({ className, isMobile = false }: { className?: string, i
 
   const linkClass = isMobile
     ? "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-    : "text-muted-foreground transition-colors hover:text-foreground text-sm font-medium";
+    : "text-muted-foreground transition-colors hover:text-foreground text-sm font-medium flex items-center";
 
   const activeLinkClass = isMobile ? 'bg-muted text-primary' : 'text-foreground font-semibold';
 
@@ -237,8 +239,9 @@ export function MainNav({ className, isMobile = false }: { className?: string, i
                        <Link
                         key={child.href}
                         href={child.href!}
-                        className={cn("rounded-lg py-2 text-muted-foreground transition-all hover:text-primary", child.href && pathname.startsWith(child.href!) && 'text-primary font-semibold')}
+                        className={cn("rounded-lg py-2 text-muted-foreground transition-all hover:text-primary flex items-center", child.href && pathname.startsWith(child.href!) && 'text-primary font-semibold')}
                       >
+                        {child.icon && <child.icon className="h-4 w-4 mr-2" />}
                         {child.label}
                       </Link>
                     )})}
@@ -258,7 +261,7 @@ export function MainNav({ className, isMobile = false }: { className?: string, i
               href={link.href!}
               className={cn(linkClass, (pathname === link.href || (link.href !== '/dashboard' && pathname.startsWith(link.href!))) && activeLinkClass)}
             >
-              {isMobile && <link.icon className="h-4 w-4" />}
+              <link.icon className="h-4 w-4 mr-2" />
               {link.label}
             </Link>
         );

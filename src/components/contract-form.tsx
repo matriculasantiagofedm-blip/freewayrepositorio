@@ -53,6 +53,22 @@ const autoPackages = [
     { id: 'personalizado', label: 'Personalizado / Otro', price: 0 },
 ];
 
+const motoPackages = [
+    { id: 'moto-estandar', label: 'Curso Moto Estándar', price: 100.00 },
+    { id: 'personalizado', label: 'Personalizado / Otro', price: 0 },
+];
+
+const mixtoPackages = [
+    { id: 'mixto-estandar', label: 'Curso Mixto (Auto/Moto)', price: 250.00 },
+    { id: 'personalizado', label: 'Personalizado / Otro', price: 0 },
+];
+
+const deluxePackages = [
+    { id: 'deluxe-premium', label: 'Plan Premium (Deluxe)', price: 201.00 },
+    { id: 'deluxe-full', label: 'Plan Deluxe Full', price: 270.00 },
+    { id: 'personalizado', label: 'Personalizado / Otro', price: 0 },
+];
+
 const contractSchema = z.object({
   clientName: z.string().min(1, 'El nombre completo es requerido.'),
   clientEmail: z.string().email('Debe ser un correo electrónico válido.'),
@@ -169,17 +185,22 @@ export function ContractForm() {
   const downPayment = form.watch('downPayment');
   const selectedPlanId = form.watch('coursePlan');
   
-  // Actualizar precio basado en paquete
+  // Actualizar precio basado en paquete seleccionado
   useEffect(() => {
-    if (contractType === 'Curso Auto' && selectedPlanId) {
-        const pkg = autoPackages.find(p => p.id === selectedPlanId);
-        if (pkg && pkg.id !== 'personalizado') {
-            form.setValue('courseValue', pkg.price);
-        }
+    if (!selectedPlanId || selectedPlanId === 'personalizado') return;
+
+    let pkg;
+    if (contractType === 'Curso Auto') pkg = autoPackages.find(p => p.id === selectedPlanId);
+    if (contractType === 'Curso Moto') pkg = motoPackages.find(p => p.id === selectedPlanId);
+    if (contractType === 'Curso Mixto') pkg = mixtoPackages.find(p => p.id === selectedPlanId);
+    if (contractType === 'Curso Deluxe') pkg = deluxePackages.find(p => p.id === selectedPlanId);
+
+    if (pkg) {
+        form.setValue('courseValue', pkg.price);
     }
   }, [selectedPlanId, contractType, form]);
 
-  // Cálculo de saldo
+  // Cálculo de saldo pendiente
   useEffect(() => {
     const val = Number(courseValue) || 0;
     const pay = Number(downPayment) || 0;
@@ -252,6 +273,14 @@ export function ContractForm() {
     } finally { setIsSubmitting(false); }
   }
 
+  const currentPackages = useMemo(() => {
+    if (contractType === 'Curso Auto') return autoPackages;
+    if (contractType === 'Curso Moto') return motoPackages;
+    if (contractType === 'Curso Mixto') return mixtoPackages;
+    if (contractType === 'Curso Deluxe') return deluxePackages;
+    return null;
+  }, [contractType]);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -291,14 +320,14 @@ export function ContractForm() {
                     <CardTitle className="text-lg flex items-center gap-2"><Calculator className="h-5 w-5 text-primary" /> Valor y Forma de Pago</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {contractType === 'Curso Auto' && (
+                    {currentPackages && (
                         <FormField control={form.control} name="coursePlan" render={({ field }) => (
                             <FormItem>
                                 <FormLabel className="flex items-center gap-2"><Package className="h-4 w-4" /> Plan / Paquete</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar paquete..." /></SelectTrigger></FormControl>
                                     <SelectContent>
-                                        {autoPackages.map(pkg => (
+                                        {currentPackages.map(pkg => (
                                             <SelectItem key={pkg.id} value={pkg.id}>
                                                 {pkg.label} {pkg.price > 0 ? `- B/. ${pkg.price.toFixed(2)}` : ''}
                                             </SelectItem>

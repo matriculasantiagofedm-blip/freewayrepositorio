@@ -619,7 +619,9 @@ export function ContractForm() {
                                     ) : (
                                         <>
                                             <SelectItem value="A, C">A, C</SelectItem>
+                                            <SelectItem value="A, C, B">A, C, B</SelectItem>
                                             <SelectItem value="A, C, D">A, C, D</SelectItem>
+                                            <SelectItem value="A, B, C, D">A, B, C, D</SelectItem>
                                         </>
                                     )}
                                 </SelectContent></Select></FormItem>

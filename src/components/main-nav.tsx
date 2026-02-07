@@ -32,7 +32,7 @@ const navLinks = [
     children: [
         {
             href: '/certificates',
-            label: 'Certificados',
+            label: 'Impresión de Certificados',
             roles: ['Administrador', 'Ventas', 'Ventas Externas'],
         },
         {
@@ -79,7 +79,7 @@ const navLinks = [
       {
           href: '/contracts',
           label: 'Todos los Contratos',
-          roles: ['Administrador'], // Solo Admin
+          roles: ['Administrador'],
       },
       {
           href: '/reports/cancellation-payments',

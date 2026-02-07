@@ -4,14 +4,12 @@ import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Search, Printer, Award, CheckCircle2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import {
   Dialog,
@@ -205,22 +203,23 @@ export default function CertificatesGlobalSearchPage() {
 
   return (
     <div className="flex flex-col gap-8">
-        <h1 className="font-headline text-3xl font-bold">Emisión de Certificados</h1>
+        <h1 className="font-headline text-3xl font-bold">Módulo de Impresión de Certificados</h1>
         
-        <Card className="max-w-2xl mx-auto w-full">
+        <Card className="max-w-2xl mx-auto w-full shadow-md border-slate-200">
             <CardHeader>
                 <CardTitle>Búsqueda de Estudiante</CardTitle>
-                <CardDescription>Introduce la cédula o pasaporte para encontrar contratos elegibles.</CardDescription>
+                <CardDescription>Introduce la cédula o pasaporte para encontrar contratos activos y emitir su certificado.</CardDescription>
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleSearch} className="flex items-center gap-2">
                     <Input 
-                        placeholder="Ej: 8-000-000" 
+                        placeholder="Cédula (Ej: 8-000-000)" 
                         value={studentIdNumber} 
                         onChange={(e) => setStudentIdNumber(e.target.value)} 
+                        className="h-11"
                     />
-                    <Button type="submit" disabled={isLoading}>
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+                    <Button type="submit" disabled={isLoading} size="lg" className="px-8">
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                         Buscar
                     </Button>
                 </form>
@@ -229,17 +228,16 @@ export default function CertificatesGlobalSearchPage() {
 
         {searched && !isLoading && foundContracts && (
             <div className="grid gap-4 max-w-4xl mx-auto w-full">
-                <h2 className="text-xl font-bold">Contratos Disponibles</h2>
+                <h2 className="text-xl font-bold text-slate-800">Contratos Encontrados</h2>
                 {foundContracts.map(contract => (
-                    <Card key={contract.id} className="animate-in fade-in-50">
+                    <Card key={contract.id} className="animate-in fade-in-50 border-l-4 border-l-primary">
                         <CardContent className="p-6 flex flex-col md:flex-row justify-between items-center gap-4">
                             <div>
-                                <p className="font-bold text-primary">Contrato N° {String(contract.folioNumber).padStart(6, '0')}</p>
-                                <p className="text-lg font-semibold">{contract.clientName}</p>
-                                <p className="text-sm text-muted-foreground">{contract.type}</p>
+                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Contrato N° {String(contract.folioNumber).padStart(6, '0')}</p>
+                                <p className="text-xl font-bold text-slate-900">{contract.clientName}</p>
+                                <p className="text-sm text-muted-foreground font-medium">{contract.type}</p>
                             </div>
-                            <Button onClick={() => handleOpenCertificateModal(contract)}>
-                                <Printer className="mr-2 h-4 w-4" />
+                            <Button onClick={() => handleOpenCertificateModal(contract)} className="h-11 px-6">
                                 Preparar Certificado
                             </Button>
                         </CardContent>
@@ -249,84 +247,85 @@ export default function CertificatesGlobalSearchPage() {
         )}
 
         {searched && !isLoading && !foundContracts && (
-            <div className="text-center p-12 border-2 border-dashed rounded-lg max-w-2xl mx-auto w-full">
-                <p className="text-muted-foreground">No se encontraron contratos activos para la cédula ingresada.</p>
+            <div className="text-center p-16 border-2 border-dashed rounded-xl max-w-2xl mx-auto w-full bg-slate-50">
+                <p className="text-slate-500 font-medium text-lg">No se encontraron contratos activos o completados para la cédula ingresada.</p>
+                <p className="text-slate-400 text-sm mt-2">Asegúrate de que el contrato no esté anulado o vencido.</p>
             </div>
         )}
 
-        {/* Modal de Impresión (Reutilizado de contract/[id]/page.tsx) */}
+        {/* Ventana Modal de Impresión */}
         <Dialog open={isCertificateModalOpen} onOpenChange={setIsCertificateModalOpen}>
             <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
                 <DialogHeader>
-                    <DialogTitle>Generar Certificado</DialogTitle>
-                    <DialogDescription>Verifica los datos del estudiante y selecciona la categoría a imprimir.</DialogDescription>
+                    <DialogTitle className="text-2xl">Preparar Impresión de Certificado</DialogTitle>
+                    <DialogDescription>Verifica los datos y selecciona el formato legal correspondiente.</DialogDescription>
                 </DialogHeader>
                 
                 <div className="flex-1 overflow-y-auto pr-4 py-4 space-y-6">
-                    <div className="grid gap-4 p-4 border rounded-lg bg-muted/30">
-                        <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> Información del Documento</h3>
+                    <div className="grid gap-4 p-5 border rounded-xl bg-slate-50/50">
+                        <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500 flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-green-600" /> Información del Documento</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Folio de Certificado</Label>
-                                <Input value={certificateData.folio} onChange={(e) => handleCertDataChange('folio', e.target.value)} />
+                                <Label className="text-xs uppercase font-bold">Folio de Certificado</Label>
+                                <Input value={certificateData.folio} onChange={(e) => handleCertDataChange('folio', e.target.value)} className="bg-white" />
                             </div>
                             <div className="space-y-2">
-                                <Label>Número de Cédula</Label>
-                                <Input value={certificateData.cip} onChange={(e) => handleCertDataChange('cip', e.target.value)} />
+                                <Label className="text-xs uppercase font-bold">Número de Cédula</Label>
+                                <Input value={certificateData.cip} onChange={(e) => handleCertDataChange('cip', e.target.value)} className="bg-white" />
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <Label>Nombre Completo (Como aparecerá en el frente)</Label>
-                            <Input value={certificateData.clientName} onChange={(e) => handleCertDataChange('clientName', e.target.value)} />
+                            <Label className="text-xs uppercase font-bold">Nombre Completo (Frente del Certificado)</Label>
+                            <Input value={certificateData.clientName} onChange={(e) => handleCertDataChange('clientName', e.target.value)} className="bg-white font-bold" />
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="space-y-2"><Label className="text-xs">1er Nombre</Label><Input value={certificateData.firstName} onChange={(e) => handleCertDataChange('firstName', e.target.value)} /></div>
-                            <div className="space-y-2"><Label className="text-xs">2do Nombre</Label><Input value={certificateData.middleName} onChange={(e) => handleCertDataChange('middleName', e.target.value)} /></div>
-                            <div className="space-y-2"><Label className="text-xs">1er Apellido</Label><Input value={certificateData.lastName} onChange={(e) => handleCertDataChange('lastName', e.target.value)} /></div>
-                            <div className="space-y-2"><Label className="text-xs">2do Apellido</Label><Input value={certificateData.secondLastName} onChange={(e) => handleCertDataChange('secondLastName', e.target.value)} /></div>
+                            <div className="space-y-2"><Label className="text-[10px] uppercase font-bold text-slate-400">1er Nombre</Label><Input value={certificateData.firstName} onChange={(e) => handleCertDataChange('firstName', e.target.value)} className="bg-white text-xs" /></div>
+                            <div className="space-y-2"><Label className="text-[10px] uppercase font-bold text-slate-400">2do Nombre</Label><Input value={certificateData.middleName} onChange={(e) => handleCertDataChange('middleName', e.target.value)} className="bg-white text-xs" /></div>
+                            <div className="space-y-2"><Label className="text-[10px] uppercase font-bold text-slate-400">1er Apellido</Label><Input value={certificateData.lastName} onChange={(e) => handleCertDataChange('lastName', e.target.value)} className="bg-white text-xs" /></div>
+                            <div className="space-y-2"><Label className="text-[10px] uppercase font-bold text-slate-400">2do Apellido</Label><Input value={certificateData.secondLastName} onChange={(e) => handleCertDataChange('secondLastName', e.target.value)} className="bg-white text-xs" /></div>
                         </div>
-                        <div className="space-y-2"><Label>Dirección Residencial</Label><Input value={certificateData.address} onChange={(e) => handleCertDataChange('address', e.target.value)} /></div>
+                        <div className="space-y-2"><Label className="text-xs uppercase font-bold">Dirección Residencial (Reverso)</Label><Input value={certificateData.address} onChange={(e) => handleCertDataChange('address', e.target.value)} className="bg-white" /></div>
                     </div>
 
                     {selectedContract?.type === 'Ampliaciones' && groupedLicenses && (
                         <div className="space-y-4">
-                            <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Opciones de Impresión (Certificados Individuales)</h3>
+                            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500">Formatos Disponibles por Categoría</h3>
                             
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                                 {groupedLicenses.E.length > 0 && (
-                                    <div className="p-4 border rounded-lg bg-blue-50/50 flex flex-col justify-between">
+                                    <div className="p-4 border rounded-xl bg-blue-50 flex flex-col justify-between shadow-sm border-blue-100">
                                         <div>
-                                            <p className="font-bold text-blue-700">Grupo E (Ampliación)</p>
-                                            <p className="text-xs text-muted-foreground mb-3 italic">E1, E2, E3 juntas en un certificado (80h).</p>
+                                            <p className="font-bold text-blue-800">Grupo E (Ley 146)</p>
+                                            <p className="text-[10px] text-blue-600 mb-3 font-medium">E1, E2, E3 juntas en un certificado (80h).</p>
                                             <div className="flex flex-wrap gap-1">
-                                                {groupedLicenses.E.map(l => <span key={l} className="bg-blue-200 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">{l}</span>)}
+                                                {groupedLicenses.E.map(l => <span key={l} className="bg-blue-200/50 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">{l}</span>)}
                                             </div>
                                         </div>
                                         <Button onClick={() => handleProceedToPrint(groupedLicenses.E.join(', '))} size="sm" className="mt-4 bg-blue-600 hover:bg-blue-700">
-                                            <Printer className="mr-2 h-4 w-4" /> Imprimir Grupo E
+                                            Imprimir Grupo E
                                         </Button>
                                     </div>
                                 )}
 
                                 {groupedLicenses.individuals.map(license => {
                                     const isStandard = ['B', 'C', 'D', 'F'].includes(license);
-                                    const bgColor = isStandard ? 'bg-green-50/50' : 'bg-amber-50/50';
-                                    const textColor = isStandard ? 'text-green-700' : 'text-amber-700';
+                                    const bgColor = isStandard ? 'bg-green-50 border-green-100' : 'bg-amber-50 border-amber-100';
+                                    const textColor = isStandard ? 'text-green-800' : 'text-amber-800';
                                     const btnColor = isStandard ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-600 hover:bg-amber-700';
                                     
                                     return (
-                                        <div key={license} className={cn("p-4 border rounded-lg flex flex-col justify-between", bgColor)}>
+                                        <div key={license} className={cn("p-4 border rounded-xl flex flex-col justify-between shadow-sm", bgColor)}>
                                             <div>
-                                                <p className={cn("font-bold", textColor)}>Tipo {license} Individual</p>
-                                                <p className="text-xs text-muted-foreground mb-3 italic">
+                                                <p className={cn("font-bold", textColor)}>Tipo {license}</p>
+                                                <p className="text-[10px] opacity-80 mb-3 font-medium">
                                                     {isStandard ? 'Formato Estándar (36h)' : 'Formato Ampliación (80h)'}
                                                 </p>
-                                                <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded", isStandard ? 'bg-green-200 text-green-800' : 'bg-amber-200 text-amber-800')}>
+                                                <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded", isStandard ? 'bg-green-200/50 text-green-800' : 'bg-amber-200/50 text-amber-800')}>
                                                     {license}
                                                 </span>
                                             </div>
                                             <Button onClick={() => handleProceedToPrint(license)} size="sm" className={cn("mt-4", btnColor)}>
-                                                <Printer className="mr-2 h-4 w-4" /> Imprimir {license}
+                                                Imprimir {license}
                                             </Button>
                                         </div>
                                     );
@@ -339,11 +338,11 @@ export default function CertificatesGlobalSearchPage() {
                         <div className="space-y-4">
                             <Separator />
                             <div className="space-y-2">
-                                <Label>Categoría de Licencia a Emitir</Label>
+                                <Label className="text-xs uppercase font-bold">Categoría de Licencia a Emitir</Label>
                                 <Input value={certificateData.licenseType} onChange={(e) => handleCertDataChange('licenseType', e.target.value)} placeholder="Ej: A, C, B" />
                             </div>
-                            <Button onClick={() => handleProceedToPrint()} className="w-full" disabled={isGenerating}>
-                                {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
+                            <Button onClick={() => handleProceedToPrint()} className="w-full h-12 text-lg font-bold shadow-lg" disabled={isGenerating}>
+                                {isGenerating ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
                                 Imprimir Certificado Único
                             </Button>
                         </div>

@@ -7,27 +7,20 @@ import { useCurrentRole } from '@/hooks/use-current-role';
 import { useCollection } from '@/hooks/use-firestore';
 import { cn, toDate } from '@/lib/utils';
 import { collection, orderBy, query } from 'firebase/firestore';
-import { Award, Bike, BookMarked, CalendarClock, Car, CarFront, Combine, Crown, FileText, Gauge, HandCoins, Plus, Users, Wrench, GraduationCap } from 'lucide-react';
+import { FileText, Users, CalendarClock } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import type { Contract } from '@/lib/types';
 
-// Función centralizada para obtener el saldo de cualquier tipo de contrato
 const getBalance = (contract: Contract): number => {
     const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
     return details?.balance || 0;
 }
 
-// Lógica para determinar si un contrato debe aparecer en "Por Cobrar"
 const isOverdue = (contract: Contract): boolean => {
     if (contract.status !== 'active') return false;
     const balance = getBalance(contract);
-    
-    // Si no tiene saldo, no está por cobrar
-    if (balance <= 0) return false;
-    
-    // Un contrato con saldo > 0 y estado activo SIEMPRE está "por cobrar"
-    return true;
+    return balance > 0;
 }
 
 export default function DashboardPage() {
@@ -42,7 +35,6 @@ export default function DashboardPage() {
 
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
 
-  // Cálculos de estadísticas basados en la data real de Firestore
   const activeContracts = contracts?.filter((c) => c.status === 'active').length || 0;
   const overdueContracts = contracts?.filter(isOverdue) || [];
   const overdueCount = overdueContracts.length;
@@ -67,21 +59,21 @@ export default function DashboardPage() {
   });
 
   const contractTypes = [
-      { name: 'Curso Auto', icon: Car, href: '/contracts/new?type=Curso%20Auto', bgColor: 'bg-blue-50', textColor: 'text-blue-600'},
-      { name: 'Curso Moto', icon: Bike, href: '/contracts/new?type=Curso%20Moto', bgColor: 'bg-orange-50', textColor: 'text-orange-600'},
-      { name: 'Curso Mixto', icon: Combine, href: '/contracts/new?type=Curso%20Mixto', bgColor: 'bg-purple-50', textColor: 'text-purple-600'},
-      { name: 'Curso Deluxe', icon: Crown, href: '/contracts/new?type=Curso%20Deluxe', bgColor: 'bg-yellow-50', textColor: 'text-yellow-600'},
-      { name: 'Ampliaciones', icon: Plus, href: '/contracts/new?type=Ampliaciones', bgColor: 'bg-slate-50', textColor: 'text-slate-600'},
-      { name: 'Curso Solo Practica', icon: CarFront, href: '/contracts/new?type=Curso%20Solo%20Practica', bgColor: 'bg-teal-50', textColor: 'text-teal-600'},
+      { name: 'Curso Auto', href: '/contracts/new?type=Curso%20Auto', bgColor: 'bg-blue-50', textColor: 'text-blue-600'},
+      { name: 'Curso Moto', href: '/contracts/new?type=Curso%20Moto', bgColor: 'bg-orange-50', textColor: 'text-orange-600'},
+      { name: 'Curso Mixto', href: '/contracts/new?type=Curso%20Mixto', bgColor: 'bg-purple-50', textColor: 'text-purple-600'},
+      { name: 'Curso Deluxe', href: '/contracts/new?type=Curso%20Deluxe', bgColor: 'bg-yellow-50', textColor: 'text-yellow-600'},
+      { name: 'Ampliaciones', href: '/contracts/new?type=Ampliaciones', bgColor: 'bg-slate-50', textColor: 'text-slate-600'},
+      { name: 'Curso Solo Practica', href: '/contracts/new?type=Curso%20Solo%20Practica', bgColor: 'bg-teal-50', textColor: 'text-teal-600'},
   ];
 
   const otherActions = [
-      { name: 'Certificados', icon: GraduationCap, href: '/certificates', bgColor: 'bg-amber-50', textColor: 'text-amber-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-      { name: 'Actualizaciones', icon: Award, href: '/updates', bgColor: 'bg-green-50', textColor: 'text-green-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-      { name: 'Pago de Saldos', icon: HandCoins, href: '/cancellations', bgColor: 'bg-blue-50', textColor: 'text-blue-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-      { name: 'Venta de Libros', icon: BookMarked, href: '/book-sales', bgColor: 'bg-indigo-50', textColor: 'text-indigo-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-      { name: 'Kilometraje', icon: Gauge, href: '/mileage-log', bgColor: 'bg-gray-50', textColor: 'text-gray-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-      { name: 'Mantenimiento', icon: Wrench, href: '/maintenance', bgColor: 'bg-stone-50', textColor: 'text-stone-600', roles: ['Administrador'] },
+      { name: 'Impresión de Certificados', href: '/certificates', bgColor: 'bg-amber-100', textColor: 'text-amber-700', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+      { name: 'Actualizaciones', href: '/updates', bgColor: 'bg-green-50', textColor: 'text-green-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+      { name: 'Pago de Saldos', href: '/cancellations', bgColor: 'bg-blue-50', textColor: 'text-blue-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+      { name: 'Venta de Libros', href: '/book-sales', bgColor: 'bg-indigo-50', textColor: 'text-indigo-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+      { name: 'Kilometraje', href: '/mileage-log', bgColor: 'bg-gray-50', textColor: 'text-gray-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+      { name: 'Mantenimiento', href: '/maintenance', bgColor: 'bg-stone-50', textColor: 'text-stone-600', roles: ['Administrador'] },
   ];
   
   const visibleOtherActions = otherActions.filter(action => action.roles.includes(role || ''));
@@ -89,17 +81,16 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col">
-        <h1 className="font-headline text-3xl font-bold">Panel de Control</h1>
+        <h1 className="font-headline text-3xl font-bold text-slate-900">Panel de Control</h1>
         <p className="text-muted-foreground">Gestión unificada de Freeway Escuela de Manejo</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         {visibleStats.map((stat) => (
             <Link key={stat.title} href={stat.href} className="no-underline">
-                <Card className="hover:shadow-lg transition-all hover:-translate-y-1">
+                <Card className="hover:shadow-lg transition-all border-slate-200">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                        <stat.icon className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-500">{stat.title}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-baseline gap-2">
@@ -113,16 +104,15 @@ export default function DashboardPage() {
       </div>
 
       <div>
-        <h2 className="text-2xl font-bold font-headline mb-4">Nuevo Contrato</h2>
+        <h2 className="text-xl font-bold font-headline mb-4 text-slate-800">Nuevo Contrato</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {contractTypes.map((type) => (
-            <Card key={type.name} className="transition-all hover:shadow-lg">
+            <Card key={type.name} className="transition-all hover:shadow-md border-slate-200">
                 <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className={cn("p-2 rounded-lg", type.bgColor)}><type.icon className={cn("h-6 w-6", type.textColor)} /></div>
-                        <span className="font-semibold">{type.name}</span>
+                        <span className="font-semibold text-slate-700">{type.name}</span>
                     </div>
-                    <Button asChild size="sm"><Link href={type.href}>Crear</Link></Button>
+                    <Button asChild size="sm" variant="secondary"><Link href={type.href}>Crear</Link></Button>
                 </CardContent>
             </Card>
           ))}
@@ -131,16 +121,15 @@ export default function DashboardPage() {
 
       {visibleOtherActions.length > 0 && (
         <div>
-          <h2 className="text-2xl font-bold font-headline mb-4">Operaciones</h2>
+          <h2 className="text-xl font-bold font-headline mb-4 text-slate-800">Operaciones Rápidas</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {visibleOtherActions.map((action) => (
-                  <Card key={action.name} className="transition-all hover:shadow-lg">
+                  <Card key={action.name} className={cn("transition-all hover:shadow-md border-slate-200", action.bgColor)}>
                       <CardContent className="p-4 flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                              <div className={cn("p-2 rounded-lg", action.bgColor)}><action.icon className={cn("h-6 w-6", action.textColor)} /></div>
-                              <span className="font-semibold">{action.name}</span>
+                              <span className={cn("font-bold", action.textColor)}>{action.name}</span>
                           </div>
-                          <Button asChild size="sm" variant="outline"><Link href={action.href}>Ir</Link></Button>
+                          <Button asChild size="sm" variant="ghost" className="bg-white/50 hover:bg-white"><Link href={action.href}>Entrar</Link></Button>
                       </CardContent>
                   </Card>
               ))}

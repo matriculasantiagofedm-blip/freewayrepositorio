@@ -132,7 +132,7 @@ function CertificatesContent() {
     const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
     const suggestedFolio = getNextFolio(lastFolio);
 
-    const nameParts = contract.clientName.split(' ').filter(p => p);
+    const nameParts = (contract.clientName || '').split(' ').filter(p => p);
     let firstName = '', middleName = '', lastName = '', secondLastName = '';
     if (nameParts.length > 0) firstName = nameParts[0];
     if (nameParts.length === 2) lastName = nameParts[1];
@@ -148,7 +148,7 @@ function CertificatesContent() {
 
     setCertificateData({
       folio: suggestedFolio,
-      clientName: contract.clientName,
+      clientName: contract.clientName || '',
       cip: studentIdNumber || details?.studentIdNumber || '',
       licenseType: (details as any)?.licenseCategory || '',
       address: details?.studentAddress || '',
@@ -163,7 +163,7 @@ function CertificatesContent() {
   };
 
   const handleOpenManualModal = () => {
-    setSelectedContract(null); // Indica modo manual
+    setSelectedContract(null);
     setManualType('primera-vez');
     const suggestedFolio = getNextFolio(lastFolio);
     setCertificateData({
@@ -222,7 +222,7 @@ function CertificatesContent() {
             address: certificateData.address,
             phone1: certificateData.phone1,
             phone2: certificateData.phone2,
-            manualType: manualType, // Pasar el tipo de trámite
+            manualType: manualType,
         });
 
         const printId = selectedContract?.id || 'manual';
@@ -236,18 +236,24 @@ function CertificatesContent() {
   };
 
   const groupedLicenses = useMemo(() => {
-    // Si no es ampliación, no agrupamos individualmente aquí
-    if (manualType !== 'ampliaciones' && (!selectedContract || selectedContract.type !== 'Ampliaciones')) {
-        return null;
-    }
+    const isAmpliacionMode = manualType === 'ampliaciones' || (selectedContract && selectedContract.type === 'Ampliaciones');
+    if (!isAmpliacionMode) return null;
 
     if (!selectedContract) {
         const type = certificateData.licenseType.toUpperCase();
-        const hasE = ['E1', 'E2', 'E3'].some(l => type.includes(l));
+        const hasE1 = type.includes('E1');
+        const hasE2 = type.includes('E2');
+        const hasE3 = type.includes('E3');
+        
+        const eGroup = [];
+        if (hasE1) eGroup.push('E1');
+        if (hasE2) eGroup.push('E2');
+        if (hasE3) eGroup.push('E3');
+
         const individualLetters = ['A', 'B', 'C', 'D', 'F'].filter(l => type.includes(l));
         
         return {
-            E: hasE ? ['E1', 'E2', 'E3'].filter(l => type.includes(l)) : [],
+            E: eGroup,
             individuals: individualLetters,
         };
     }
@@ -318,7 +324,6 @@ function CertificatesContent() {
             </div>
         )}
 
-        {/* Ventana Modal de Impresión */}
         <Dialog open={isCertificateModalOpen} onOpenChange={setIsCertificateModalOpen}>
             <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
                 <DialogHeader>
@@ -327,7 +332,6 @@ function CertificatesContent() {
                 </DialogHeader>
                 
                 <div className="flex-1 overflow-y-auto pr-4 py-4 space-y-6">
-                    {/* Selector Manual de Tipo de Trámite */}
                     {!selectedContract && (
                         <div className="space-y-3 bg-slate-100 p-4 rounded-xl border">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-600">Tipo de Trámite Manual</Label>
@@ -353,7 +357,7 @@ function CertificatesContent() {
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-xs uppercase font-bold text-muted-foreground">Nombre Completo (Como aparecerá en el frente)</Label>
+                            <Label className="text-xs uppercase font-bold text-muted-foreground">Nombre Completo (Frente)</Label>
                             <Input value={certificateData.clientName} onChange={(e) => handleCertDataChange('clientName', e.target.value)} className="bg-white font-bold" />
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -365,70 +369,69 @@ function CertificatesContent() {
                         <div className="space-y-2"><Label className="text-xs uppercase font-bold text-muted-foreground">Dirección Residencial</Label><Input value={certificateData.address} onChange={(e) => handleCertDataChange('address', e.target.value)} className="bg-white" /></div>
                     </div>
 
-                    {/* Caso Ampliaciones (Manual o Contrato) */}
-                    {(manualType === 'ampliaciones' || (selectedContract && selectedContract.type === 'Ampliaciones')) && groupedLicenses && (
+                    {(manualType === 'ampliaciones' || (selectedContract && selectedContract.type === 'Ampliaciones')) && (
                         <div className="space-y-4">
-                            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500">Opciones de Impresión (Certificados Individuales)</h3>
+                            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500">Opciones de Impresión (Separadas)</h3>
                             
                             {!selectedContract && (
-                                <div className="space-y-2 bg-amber-50 p-3 rounded-lg border border-amber-100 mb-4">
-                                    <Label className="text-xs font-bold text-amber-800 uppercase">Categoría(s) de Ampliación</Label>
+                                <div className="space-y-2 bg-blue-50 p-3 rounded-lg border border-blue-100 mb-4">
+                                    <Label className="text-xs font-bold text-blue-800 uppercase">Categoría(s) para Ampliar</Label>
                                     <Input 
-                                        placeholder="Ej: A, B, E1, F" 
+                                        placeholder="Escribe las letras (Ej: A, B, E1, F)" 
                                         value={certificateData.licenseType} 
                                         onChange={(e) => handleCertDataChange('licenseType', e.target.value.toUpperCase())}
                                         className="bg-white"
                                     />
-                                    <p className="text-[9px] text-amber-600 italic">Escribe las letras separadas por comas para habilitar los botones abajo.</p>
+                                    <p className="text-[9px] text-blue-600 italic">El sistema separará automáticamente las letras en certificados individuales.</p>
                                 </div>
                             )}
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                                {groupedLicenses.E.length > 0 && (
-                                    <div className="p-4 border rounded-xl bg-blue-50 flex flex-col justify-between shadow-sm border-blue-100">
-                                        <div>
-                                            <p className="font-bold text-blue-800">Grupo E (Ampliación)</p>
-                                            <p className="text-[10px] text-blue-600 mb-3 font-medium">E1, E2, E3 juntas en un certificado (80h).</p>
-                                            <div className="flex flex-wrap gap-1">
-                                                {groupedLicenses.E.map(l => <span key={l} className="bg-blue-200/50 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">{l}</span>)}
-                                            </div>
-                                        </div>
-                                        <Button onClick={() => handleProceedToPrint(groupedLicenses.E.join(', '))} size="sm" className="mt-4 bg-blue-600 hover:bg-blue-700 text-xs font-bold">
-                                            Imprimir Grupo E
-                                        </Button>
-                                    </div>
-                                )}
-
-                                {groupedLicenses.individuals.map(license => {
-                                    const is80h = ['A'].includes(license); // A es 80h en ampliación
-                                    const isStandard = ['B', 'C', 'D', 'F'].includes(license);
-                                    
-                                    const bgColor = isStandard ? 'bg-green-50 border-green-100' : 'bg-amber-50 border-amber-100';
-                                    const textColor = isStandard ? 'text-green-800' : 'text-amber-800';
-                                    const btnColor = isStandard ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-600 hover:bg-amber-700';
-                                    
-                                    return (
-                                        <div key={license} className={cn("p-4 border rounded-xl flex flex-col justify-between shadow-sm", bgColor)}>
+                            {groupedLicenses && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                    {groupedLicenses.E.length > 0 && (
+                                        <div className="p-4 border rounded-xl bg-blue-50 flex flex-col justify-between shadow-sm border-blue-100">
                                             <div>
-                                                <p className={cn("font-bold", textColor)}>Tipo {license} Individual</p>
-                                                <p className="text-[10px] opacity-80 mb-3 font-medium">
-                                                    {isStandard ? 'Formato Estándar (36h)' : 'Formato Ampliación (80h)'}
-                                                </p>
-                                                <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded", isStandard ? 'bg-green-200/50 text-green-800' : 'bg-amber-200/50 text-amber-800')}>
-                                                    {license}
-                                                </span>
+                                                <p className="font-bold text-blue-800">Grupo E (Ampliación)</p>
+                                                <p className="text-[10px] text-blue-600 mb-3 font-medium">Formato Ampliación (80h)</p>
+                                                <div className="flex flex-wrap gap-1">
+                                                    {groupedLicenses.E.map(l => <span key={l} className="bg-blue-200/50 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">{l}</span>)}
+                                                </div>
                                             </div>
-                                            <Button onClick={() => handleProceedToPrint(license)} size="sm" className={cn("mt-4 text-xs font-bold", btnColor)}>
-                                                Imprimir {license}
+                                            <Button onClick={() => handleProceedToPrint(groupedLicenses.E.join(', '))} size="sm" className="mt-4 bg-blue-600 hover:bg-blue-700 text-xs font-bold">
+                                                Imprimir Grupo E (80h)
                                             </Button>
                                         </div>
-                                    );
-                                })}
-                            </div>
+                                    )}
+
+                                    {groupedLicenses.individuals.map(license => {
+                                        const isStandard = ['B', 'C', 'D', 'F'].includes(license);
+                                        const bgColor = isStandard ? 'bg-green-50 border-green-100' : 'bg-amber-50 border-amber-100';
+                                        const textColor = isStandard ? 'text-green-800' : 'text-amber-800';
+                                        const btnColor = isStandard ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-600 hover:bg-amber-700';
+                                        const labelHours = isStandard ? '36h' : '80h';
+                                        
+                                        return (
+                                            <div key={license} className={cn("p-4 border rounded-xl flex flex-col justify-between shadow-sm", bgColor)}>
+                                                <div>
+                                                    <p className={cn("font-bold", textColor)}>Tipo {license} Individual</p>
+                                                    <p className="text-[10px] opacity-80 mb-3 font-medium">
+                                                        Formato {isStandard ? 'Estándar' : 'Ampliación'} ({labelHours})
+                                                    </p>
+                                                    <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded", isStandard ? 'bg-green-200/50 text-green-800' : 'bg-amber-200/50 text-amber-800')}>
+                                                        {license}
+                                                    </span>
+                                                </div>
+                                                <Button onClick={() => handleProceedToPrint(license)} size="sm" className={cn("mt-4 text-xs font-bold", btnColor)}>
+                                                    Imprimir {license} ({labelHours})
+                                                </Button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                     )}
 
-                    {/* Caso Primera Vez / Cursos Regulares */}
                     {(manualType === 'primera-vez' || (selectedContract && selectedContract.type !== 'Ampliaciones')) && (
                         <div className="space-y-4">
                             <Separator />
@@ -439,11 +442,11 @@ function CertificatesContent() {
                                     onChange={(e) => handleCertDataChange('licenseType', e.target.value.toUpperCase())} 
                                     placeholder="Ej: A, C, B" 
                                 />
-                                <p className="text-[10px] text-muted-foreground italic">El formato utilizado será el Estándar de 36 horas (Decreto 640).</p>
+                                <p className="text-[10px] text-muted-foreground italic">Se utilizará el formato Estándar de 36 horas (Decreto 640).</p>
                             </div>
                             <Button onClick={() => handleProceedToPrint()} className="w-full h-12 text-lg font-bold shadow-lg" disabled={isGenerating}>
                                 {isGenerating ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Printer className="mr-2 h-5 w-5" />}
-                                Imprimir Certificado (36h)
+                                Imprimir Certificado Único (36h)
                             </Button>
                         </div>
                     )}

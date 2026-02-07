@@ -1,3 +1,4 @@
+
 'use client';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
@@ -99,7 +100,7 @@ export default function ContractDetailPage() {
     const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
     const suggestedFolio = getNextFolio(lastFolio);
 
-    const nameParts = contract.clientName.split(' ').filter(p => p);
+    const nameParts = (contract.clientName || '').split(' ').filter(p => p);
     let firstName = '', middleName = '', lastName = '', secondLastName = '';
     if (nameParts.length > 0) firstName = nameParts[0];
     if (nameParts.length === 2) lastName = nameParts[1];
@@ -115,7 +116,7 @@ export default function ContractDetailPage() {
 
     setCertificateData({
       folio: suggestedFolio,
-      clientName: contract.clientName,
+      clientName: contract.clientName || '',
       cip: details?.studentIdNumber || '',
       licenseType: (details as any)?.licenseCategory || '',
       address: details?.studentAddress || '',
@@ -158,6 +159,9 @@ export default function ContractDetailPage() {
             middleName: certificateData.middleName,
             lastName: certificateData.lastName,
             secondLastName: certificateData.secondLastName,
+            address: certificateData.address,
+            phone1: certificateData.phone1,
+            phone2: certificateData.phone2,
         });
 
         window.open(`/certificate-print/${contractId}?${queryParams.toString()}`, '_blank');
@@ -224,19 +228,16 @@ export default function ContractDetailPage() {
             <div className="flex items-center gap-2">
               {canGenerateCertificate && (role === 'Administrador' || role === 'Ventas' || role === 'Ventas Externas') && (
                 <Button onClick={handleOpenCertificateModal}>
-                  <Award className="mr-2 h-4 w-4" />
                   Generar Certificado
                 </Button>
               )}
                <Button variant="outline" onClick={handlePrintContract}>
-                <Printer className="mr-2 h-4 w-4" />
                 Imprimir Contrato
               </Button>
               {role === 'Administrador' && contract && contract.status === 'active' && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive">
-                      <ShieldX className="mr-2 h-4 w-4" />
                       Anular Contrato
                     </Button>
                   </AlertDialogTrigger>
@@ -258,7 +259,6 @@ export default function ContractDetailPage() {
               )}
                {role === 'Administrador' && contract && contract.status === 'expired' && (
                 <Button variant="secondary" onClick={handleReactivateContract}>
-                    <Undo className="mr-2 h-4 w-4" />
                     Reactivar Contrato
                 </Button>
                )}
@@ -278,69 +278,70 @@ export default function ContractDetailPage() {
             
             <div className="flex-1 overflow-y-auto pr-4 py-4 space-y-6">
                 <div className="grid gap-4 p-4 border rounded-lg bg-muted/30">
-                    <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> Información del Documento</h3>
+                    <h3 className="font-bold text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> Información del Documento</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>Folio de Certificado</Label>
+                            <Label className="text-xs uppercase font-bold text-muted-foreground">Folio de Certificado</Label>
                             <Input value={certificateData.folio} onChange={(e) => handleCertDataChange('folio', e.target.value)} />
                         </div>
                         <div className="space-y-2">
-                            <Label>Número de Cédula</Label>
+                            <Label className="text-xs uppercase font-bold text-muted-foreground">Número de Cédula</Label>
                             <Input value={certificateData.cip} onChange={(e) => handleCertDataChange('cip', e.target.value)} />
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <Label>Nombre Completo (Como aparecerá en el frente)</Label>
-                        <Input value={certificateData.clientName} onChange={(e) => handleCertDataChange('clientName', e.target.value)} />
+                        <Label className="text-xs uppercase font-bold text-muted-foreground">Nombre Completo (Frente)</Label>
+                        <Input value={certificateData.clientName} onChange={(e) => handleCertDataChange('clientName', e.target.value)} className="font-bold" />
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="space-y-2"><Label className="text-xs">1er Nombre</Label><Input value={certificateData.firstName} onChange={(e) => handleCertDataChange('firstName', e.target.value)} /></div>
-                        <div className="space-y-2"><Label className="text-xs">2do Nombre</Label><Input value={certificateData.middleName} onChange={(e) => handleCertDataChange('middleName', e.target.value)} /></div>
-                        <div className="space-y-2"><Label className="text-xs">1er Apellido</Label><Input value={certificateData.lastName} onChange={(e) => handleCertDataChange('lastName', e.target.value)} /></div>
-                        <div className="space-y-2"><Label className="text-xs">2do Apellido</Label><Input value={certificateData.secondLastName} onChange={(e) => handleCertDataChange('secondLastName', e.target.value)} /></div>
+                        <div className="space-y-2"><Label className="text-[10px] uppercase font-bold text-slate-400">1er Nombre</Label><Input value={certificateData.firstName} onChange={(e) => handleCertDataChange('firstName', e.target.value)} /></div>
+                        <div className="space-y-2"><Label className="text-[10px] uppercase font-bold text-slate-400">2do Nombre</Label><Input value={certificateData.middleName} onChange={(e) => handleCertDataChange('middleName', e.target.value)} /></div>
+                        <div className="space-y-2"><Label className="text-[10px] uppercase font-bold text-slate-400">1er Apellido</Label><Input value={certificateData.lastName} onChange={(e) => handleCertDataChange('lastName', e.target.value)} /></div>
+                        <div className="space-y-2"><Label className="text-[10px] uppercase font-bold text-slate-400">2do Apellido</Label><Input value={certificateData.secondLastName} onChange={(e) => handleCertDataChange('secondLastName', e.target.value)} /></div>
                     </div>
-                    <div className="space-y-2"><Label>Dirección Residencial</Label><Input value={certificateData.address} onChange={(e) => handleCertDataChange('address', e.target.value)} /></div>
+                    <div className="space-y-2"><Label className="text-xs uppercase font-bold text-muted-foreground">Dirección Residencial</Label><Input value={certificateData.address} onChange={(e) => handleCertDataChange('address', e.target.value)} /></div>
                 </div>
 
                 {contract?.type === 'Ampliaciones' && groupedLicenses && (
                     <div className="space-y-4">
-                        <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Opciones de Impresión (Certificados Individuales)</h3>
+                        <h3 className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Opciones de Impresión (Separadas)</h3>
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                             {groupedLicenses.E.length > 0 && (
-                                <div className="p-4 border rounded-lg bg-blue-50/50 flex flex-col justify-between">
+                                <div className="p-4 border rounded-xl bg-blue-50 flex flex-col justify-between shadow-sm border-blue-100">
                                     <div>
-                                        <p className="font-bold text-blue-700">Grupo E (Ampliación)</p>
-                                        <p className="text-xs text-muted-foreground mb-3 italic">E1, E2, E3 juntas en un certificado (80h).</p>
+                                        <p className="font-bold text-blue-800">Grupo E (Ampliación)</p>
+                                        <p className="text-[10px] text-blue-600 mb-3 font-medium">Formato Ampliación (80h)</p>
                                         <div className="flex flex-wrap gap-1">
-                                            {groupedLicenses.E.map(l => <span key={l} className="bg-blue-200 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">{l}</span>)}
+                                            {groupedLicenses.E.map(l => <span key={l} className="bg-blue-200/50 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">{l}</span>)}
                                         </div>
                                     </div>
-                                    <Button onClick={() => handleProceedToPrint(groupedLicenses.E.join(', '))} size="sm" className="mt-4 bg-blue-600 hover:bg-blue-700">
-                                        <Printer className="mr-2 h-4 w-4" /> Imprimir Grupo E
+                                    <Button onClick={() => handleProceedToPrint(groupedLicenses.E.join(', '))} size="sm" className="mt-4 bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white">
+                                        Imprimir Grupo E (80h)
                                     </Button>
                                 </div>
                             )}
 
                             {groupedLicenses.individuals.map(license => {
                                 const isStandard = ['B', 'C', 'D', 'F'].includes(license);
-                                const bgColor = isStandard ? 'bg-green-50/50' : 'bg-amber-50/50';
-                                const textColor = isStandard ? 'text-green-700' : 'text-amber-700';
+                                const bgColor = isStandard ? 'bg-green-50 border-green-100' : 'bg-amber-50 border-amber-100';
+                                const textColor = isStandard ? 'text-green-800' : 'text-amber-800';
                                 const btnColor = isStandard ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-600 hover:bg-amber-700';
+                                const labelHours = isStandard ? '36h' : '80h';
                                 
                                 return (
-                                    <div key={license} className={cn("p-4 border rounded-lg flex flex-col justify-between", bgColor)}>
+                                    <div key={license} className={cn("p-4 border rounded-xl flex flex-col justify-between shadow-sm", bgColor)}>
                                         <div>
                                             <p className={cn("font-bold", textColor)}>Tipo {license} Individual</p>
-                                            <p className="text-xs text-muted-foreground mb-3 italic">
-                                                {isStandard ? 'Formato Estándar (36h)' : 'Formato Ampliación (80h)'}
+                                            <p className="text-[10px] opacity-80 mb-3 font-medium">
+                                                Formato {isStandard ? 'Estándar' : 'Ampliación'} ({labelHours})
                                             </p>
-                                            <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded", isStandard ? 'bg-green-200 text-green-800' : 'bg-amber-200 text-amber-800')}>
+                                            <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded", isStandard ? 'bg-green-200/50 text-green-800' : 'bg-amber-200/50 text-amber-800')}>
                                                 {license}
                                             </span>
                                         </div>
-                                        <Button onClick={() => handleProceedToPrint(license)} size="sm" className={cn("mt-4", btnColor)}>
-                                            <Printer className="mr-2 h-4 w-4" /> Imprimir {license}
+                                        <Button onClick={() => handleProceedToPrint(license)} size="sm" className={cn("mt-4 text-xs font-bold text-white", btnColor)}>
+                                            Imprimir {license} ({labelHours})
                                         </Button>
                                     </div>
                                 );
@@ -353,12 +354,17 @@ export default function ContractDetailPage() {
                     <div className="space-y-4">
                         <Separator />
                         <div className="space-y-2">
-                            <Label>Categoría de Licencia a Emitir</Label>
-                            <Input value={certificateData.licenseType} onChange={(e) => handleCertDataChange('licenseType', e.target.value)} placeholder="Ej: A, C, B" />
+                            <Label className="text-xs uppercase font-bold text-muted-foreground">Categoría de Licencia a Emitir (36h)</Label>
+                            <Input 
+                                value={certificateData.licenseType} 
+                                onChange={(e) => handleCertDataChange('licenseType', e.target.value.toUpperCase())} 
+                                placeholder="Ej: A, C, B" 
+                            />
+                            <p className="text-[10px] text-muted-foreground italic">Se utilizará el formato Estándar de 36 horas (Decreto 640).</p>
                         </div>
-                        <Button onClick={() => handleProceedToPrint()} className="w-full" disabled={isGenerating}>
-                            {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
-                            Imprimir Certificado Único
+                        <Button onClick={() => handleProceedToPrint()} className="w-full h-12 text-lg font-bold shadow-lg" disabled={isGenerating}>
+                            {isGenerating ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Printer className="mr-2 h-5 w-5" />}
+                            Imprimir Certificado Único (36h)
                         </Button>
                     </div>
                 )}

@@ -86,7 +86,7 @@ function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate 
                         </p>
                     </div>
                     
-                    <div className="text-center mt-8 font-bold text-lg italic">
+                    <div className="text-center mt-4 font-bold text-base italic">
                         <p>***Dado en la república de Panamá, a los {formattedDay} días del mes de {formattedMonth} de {formattedYear}***</p>
                     </div>
                 </main>

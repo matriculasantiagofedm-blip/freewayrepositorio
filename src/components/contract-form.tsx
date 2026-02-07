@@ -38,6 +38,7 @@ import { useDb, useUser } from './firebase-provider';
 
 const instructors: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', ''];
 const carVehicles = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
+const motoVehicles = ['Moto Roja', 'Moto Negra'];
 const practicalTimes = ['8:00am a 10:00am', '10:00am a 12:pm', '1:00pm a 3:00pm', '3:00pm a 5:00pm'];
 const theoreticalSchedules = [
     'Clase Semanal',
@@ -50,7 +51,12 @@ const autoPackages = [
     { id: 'premium', label: 'Curso Auto Premium (12hrz)', price: 180.00, hours: 12 },
 ];
 
-const motoPackages = [{ id: 'moto-estandar', label: 'Curso Moto Estándar', price: 100.00, hours: 4 }];
+const motoPackages = [
+    { id: 'moto-basico', label: 'Curso Moto Básico (4hrz)', price: 115.00, hours: 4 },
+    { id: 'moto-plus', label: 'Curso Moto Plus (6hrz)', price: 135.00, hours: 6 },
+    { id: 'moto-premium', label: 'Curso Moto Premium (8hrz)', price: 155.00, hours: 8 },
+];
+
 const mixtoPackages = [{ id: 'mixto-estandar', label: 'Curso Mixto (Auto/Moto)', price: 250.00, hours: 12 }];
 const deluxePackages = [
     { id: 'deluxe-premium', label: 'Plan Premium (Deluxe)', price: 201.00, hours: 12 },
@@ -128,11 +134,11 @@ export function ContractForm() {
       clientName: '', clientEmail: '', contractType: contractType, studentIdNumber: '',
       studentAddress: '', studentPhone1: '', studentPhone2: '', courseValue: 0, downPayment: 0, balance: 0,
       paymentType: 'cash', coursePlan: '', vehicle: '', vehicleTransmission: contractType === 'Curso Moto' ? 'Moto' : 'Manual',
-      licenseCategory: 'A, C',
+      licenseCategory: contractType === 'Curso Moto' ? 'A, B' : 'A, C',
       theoreticalClassSchedule: '',
       theoreticalClassDates: [],
       practicalClassSchedules: contractType === 'Ampliaciones' ? [] : [{ date: new Date(), time: '8:00am a 10:00am' }],
-      motoPracticalClassSchedules: contractType === 'Curso Mixto' ? [{ date: new Date(), time: '8:00am a 10:00am' }] : [],
+      motoPracticalClassSchedules: (contractType === 'Curso Mixto' || contractType === 'Curso Moto') ? [{ date: new Date(), time: '8:00am a 10:00am' }] : [],
     },
   });
 
@@ -352,10 +358,28 @@ export function ContractForm() {
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3">
                 <FormField control={form.control} name="licenseCategory" render={({ field }) => (
-                    <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Categoría de Licencia</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="A, C">A, C</SelectItem><SelectItem value="A, C, D">A, C, D</SelectItem></SelectContent></Select></FormItem>
+                    <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Categoría de Licencia</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger></FormControl><SelectContent>
+                        {contractType === 'Curso Moto' ? (
+                            <SelectItem value="A, B">A, B (Moto)</SelectItem>
+                        ) : (
+                            <>
+                                <SelectItem value="A, C">A, C</SelectItem>
+                                <SelectItem value="A, C, D">A, C, D</SelectItem>
+                            </>
+                        )}
+                    </SelectContent></Select></FormItem>
                 )} />
                 <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
-                    <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Transmisión</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Manual">Manual</SelectItem><SelectItem value="Automático">Automático</SelectItem><SelectItem value="Moto">Moto</SelectItem></SelectContent></Select></FormItem>
+                    <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Transmisión</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger></FormControl><SelectContent>
+                        {contractType === 'Curso Moto' ? (
+                            <SelectItem value="Moto">Moto</SelectItem>
+                        ) : (
+                            <>
+                                <SelectItem value="Manual">Manual</SelectItem>
+                                <SelectItem value="Automático">Automático</SelectItem>
+                            </>
+                        )}
+                    </SelectContent></Select></FormItem>
                 )} />
                 <FormField control={form.control} name="vehicle" render={({ field }) => (
                     <FormItem>
@@ -363,7 +387,11 @@ export function ContractForm() {
                         <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl><SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl>
                             <SelectContent>
-                                {carVehicles.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                                {contractType === 'Curso Moto' ? (
+                                    motoVehicles.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)
+                                ) : (
+                                    carVehicles.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)
+                                )}
                             </SelectContent>
                         </Select>
                     </FormItem>

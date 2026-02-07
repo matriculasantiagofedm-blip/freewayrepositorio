@@ -5,9 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useCollection } from '@/hooks/use-firestore';
-import { cn, toDate } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { collection, orderBy, query } from 'firebase/firestore';
-import { FileText, Users, CalendarClock } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import type { Contract } from '@/lib/types';
@@ -42,15 +41,14 @@ export default function DashboardPage() {
   const totalClients = contracts ? new Set(contracts.map((c) => c.clientId)).size : 0;
 
   const stats = [
-    { title: 'Contratos Activos', value: isLoading || isUserLoading ? '...' : activeContracts, icon: FileText, href: '/contracts', adminOnly: true },
+    { title: 'Contratos Activos', value: isLoading || isUserLoading ? '...' : activeContracts, href: '/contracts', adminOnly: true },
     { 
         title: 'Contratos por Cobrar', 
         value: isLoading || isUserLoading ? '...' : overdueCount, 
         secondaryValue: isLoading || isUserLoading ? '...' : `B/. ${overdueTotalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 
-        icon: CalendarClock, 
         href: '/contracts?filter=overdue' 
     },
-    { title: 'Clientes', value: isLoading || isUserLoading ? '...' : totalClients, icon: Users, href: '/clients' },
+    { title: 'Clientes', value: isLoading || isUserLoading ? '...' : totalClients, href: '/clients' },
   ];
 
   const visibleStats = stats.filter(stat => {

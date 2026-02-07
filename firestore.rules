@@ -2,17 +2,98 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * ACCESO TOTAL - DESBLOQUEO DE PROTOTIPO
-     * 
-     * Se permite acceso universal de lectura y escritura para que todos los roles 
-     * (Administrador, Ventas, Ventas Externas) operen sobre la misma base de datos.
-     * Esto asegura que el personal de Ventas pueda ver contratos creados por otros
-     * y que las pestañas de impresión no fallen por falta de sesión inmediata.
-     */
+    // ----------------------------------------------------------------------
+    // Helper Functions
+    // ----------------------------------------------------------------------
 
-    match /{document=**} {
-      allow read, write: if true;
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    function isAdmin() {
+      return request.auth.token.role == 'Administrador';
+    }
+    
+    function isVentas() {
+        return request.auth.token.role == 'Ventas';
+    }
+
+    // ----------------------------------------------------------------------
+    // Collection Rules
+    // ----------------------------------------------------------------------
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    match /contracts/{contractId} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
+
+    match /clients/{clientId} {
+      allow get, list, create, update: if isSignedIn();
+      allow delete: if false;
+    }
+
+     match /cancellation_payments/{paymentId} {
+      allow create: if isSignedIn();
+      allow read: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+     match /update_payments/{paymentId} {
+      allow create: if isSignedIn();
+      allow read: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+     match /book_sale_payments/{paymentId} {
+      allow create: if isSignedIn();
+      allow read: if isSignedIn();
+      allow update, delete: if false;
+    }
+    
+    match /mileage_logs/{logId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    match /maintenance_logs/{logId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    match /counters/contract_folio {
+        allow read, write: if isSignedIn();
+    }
+
+    match /counters/cancellation_folio {
+        allow read, write: if isSignedIn();
+    }
+
+    match /counters/update_folio {
+        allow read, write: if isSignedIn();
+    }
+
+    match /counters/book_sale_folio {
+        allow read, write: if isSignedIn();
+    }
+    
+    match /counters/{counterId} {
+        allow read, write: if false;
     }
   }
 }

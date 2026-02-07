@@ -20,9 +20,9 @@
         "studentIdNumber": { "type": "string" },
         "certificateGeneratedAt": { "type": "string", "format": "date-time" },
         "certificateFolio": { "type": "string" },
-        "autoMotoDetails": { "$ref": "#/backend/entities/AutoMotoContractDetails" },
-        "deluxeDetails": { "$ref": "#/backend/entities/DeluxeContractDetails" },
-        "ampliacionesDetails": { "$ref": "#/backend/entities/AmpliacionesContractDetails" }
+        "autoMotoDetails": { "$ref": "#/entities/AutoMotoContractDetails" },
+        "deluxeDetails": { "$ref": "#/entities/DeluxeContractDetails" },
+        "ampliacionesDetails": { "$ref": "#/entities/AmpliacionesContractDetails" }
       },
       "required": ["id", "folioNumber", "title", "clientName", "clientId", "type", "status", "userId", "createdAt"]
     },
@@ -217,63 +217,63 @@
       {
         "path": "/users/{userId}",
         "definition": {
-          "schema": { "$ref": "#/backend/entities/User" },
+          "schema": { "$ref": "#/entities/User" },
           "description": "Stores user profile information."
         }
       },
       {
         "path": "/clients/{clientId}",
         "definition": {
-          "schema": { "$ref": "#/backend/entities/Client" },
+          "schema": { "$ref": "#/entities/Client" },
           "description": "Stores individual client data."
         }
       },
       {
         "path": "/contracts/{contractId}",
         "definition": {
-          "schema": { "$ref": "#/backend/entities/Contract" },
+          "schema": { "$ref": "#/entities/Contract" },
           "description": "Stores all contracts in a single collection for easy querying."
         }
       },
       {
         "path": "/cancellation_payments/{paymentId}",
         "definition": {
-          "schema": { "$ref": "#/backend/entities/Payment" },
+          "schema": { "$ref": "#/entities/Payment" },
           "description": "Stores cancellation payment transactions."
         }
       },
       {
         "path": "/update_payments/{paymentId}",
         "definition": {
-          "schema": { "$ref": "#/backend/entities/Payment" },
+          "schema": { "$ref": "#/entities/Payment" },
           "description": "Stores certificate update payment transactions."
         }
       },
       {
         "path": "/book_sale_payments/{paymentId}",
         "definition": {
-          "schema": { "$ref": "#/backend/entities/BookSalePayment" },
+          "schema": { "$ref": "#/entities/BookSalePayment" },
           "description": "Stores book sale payment transactions."
         }
       },
        {
         "path": "/mileage_logs/{logId}",
         "definition": {
-          "schema": { "$ref": "#/backend/entities/MileageLog" },
+          "schema": { "$ref": "#/entities/MileageLog" },
           "description": "Stores daily mileage logs for vehicles."
         }
       },
       {
         "path": "/maintenance_logs/{logId}",
         "definition": {
-          "schema": { "$ref": "#/backend/entities/MaintenanceLog" },
+          "schema": { "$ref": "#/entities/MaintenanceLog" },
           "description": "Stores maintenance logs for vehicles."
         }
       },
       {
         "path": "/counters/{counterId}",
         "definition": {
-          "schema": { "$ref": "#/backend/entities/Counter" },
+          "schema": { "$ref": "#/entities/Counter" },
           "description": "Stores distributed counters for generating sequential folio numbers."
         }
       }

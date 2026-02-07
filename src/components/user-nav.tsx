@@ -40,8 +40,8 @@ export function UserNav() {
     return <Skeleton className="h-8 w-8 rounded-full" />;
   }
 
-  // Si no hay usuario o rol cargado, no mostramos el menú de usuario.
-  // Esto elimina cualquier botón de "Login" que pudiera aparecer aquí.
+  // Se eliminó cualquier botón de "Iniciar Sesión" redundante.
+  // El menú solo es visible si hay un usuario autenticado con un rol válido.
   if (!user || !currentUser) {
     return null;
   }

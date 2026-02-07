@@ -1,6 +1,6 @@
 'use client';
 import type { Certificate } from '@/lib/types';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toDate } from '@/lib/utils';
 
@@ -104,7 +104,8 @@ function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate 
 function CertificateBackAmpliacion({ certificate }: { certificate: Certificate }) {
     const details = certificate.contract?.ampliacionesDetails;
     const issueDate = toDate(certificate.issueDate);
-    const formattedIssueDate = !isNaN(issueDate.getTime()) ? format(issueDate, 'dd-MM-yyyy') : '00-00-0000';
+    const expiryDate = !isNaN(issueDate.getTime()) ? addDays(issueDate, 364) : null;
+    const formattedExpiryDate = expiryDate ? format(expiryDate, 'dd-MM-yyyy') : '00-00-0000';
     
     return (
         <div className="w-[11in] h-[8.5in] p-12 bg-white text-black font-sans text-xl flex flex-col justify-start break-before-page mx-auto print:m-0 print:p-12">
@@ -117,7 +118,7 @@ function CertificateBackAmpliacion({ certificate }: { certificate: Certificate }
                     teléfono celular: <span className="font-bold">{details?.studentPhone2 || 'XXXXX'}</span>
                 </p>
                 <p><span className="font-bold uppercase">TIPO DE LICENCIAS:</span> <span className="font-bold">{certificate.licenseType}</span></p>
-                <p>Este certificado tiene validez de 364 días a partir de <span className="font-bold">{formattedIssueDate}</span></p>
+                <p>Este certificado tiene validez hasta el <span className="font-bold">{formattedExpiryDate}</span></p>
                 
                 <div className="pt-4 space-y-4">
                     <div className="flex gap-x-8">

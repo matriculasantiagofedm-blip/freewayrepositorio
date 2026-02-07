@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const ALL_CATEGORIES = ['A', 'B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];
+const FIRST_TIME_CATEGORIES = ['B', 'C', 'D'];
 
 const getNextFolio = (lastFolio: string | null): string => {
     const year = new Date().getFullYear();
@@ -87,6 +88,17 @@ function CertificatesContent() {
     }
   }, [searchParams]);
 
+  // Limpiar categorías no válidas al cambiar de tipo de trámite
+  useEffect(() => {
+    if (!selectedContract && manualType === 'primera-vez') {
+        const current = certificateData.licenseType.split(',').map(p => p.trim()).filter(p => p);
+        const filtered = current.filter(cat => FIRST_TIME_CATEGORIES.includes(cat));
+        if (filtered.length !== current.length) {
+            setCertificateData(prev => ({ ...prev, licenseType: filtered.join(', ') }));
+        }
+    }
+  }, [manualType, selectedContract, certificateData.licenseType]);
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!studentIdNumber.trim() || !db) {
@@ -128,7 +140,8 @@ function CertificatesContent() {
 
   const handleOpenCertificateModal = (contract: Contract) => {
     setSelectedContract(contract);
-    setManualType(contract.type === 'Ampliaciones' ? 'ampliaciones' : 'primera-vez');
+    const isAmpliacion = contract.type === 'Ampliaciones';
+    setManualType(isAmpliacion ? 'ampliaciones' : 'primera-vez');
     
     const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
     const suggestedFolio = getNextFolio(lastFolio);
@@ -262,24 +275,29 @@ function CertificatesContent() {
     };
   }, [certificateData.licenseType]);
 
-  const CategoryGrid = () => (
-    <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-        {ALL_CATEGORIES.map(cat => {
-            const isSelected = certificateData.licenseType.includes(cat);
-            return (
-                <Button 
-                    key={cat} 
-                    type="button"
-                    variant={isSelected ? "default" : "outline"}
-                    className={cn("h-10 font-bold", isSelected && "bg-primary text-white border-primary")}
-                    onClick={() => toggleCategory(cat)}
-                >
-                    {cat}
-                </Button>
-            );
-        })}
-    </div>
-  );
+  const CategoryGrid = () => {
+    const isAmpliacion = selectedContract ? selectedContract.type === 'Ampliaciones' : manualType === 'ampliaciones';
+    const categoriesToShow = isAmpliacion ? ALL_CATEGORIES : FIRST_TIME_CATEGORIES;
+
+    return (
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+            {categoriesToShow.map(cat => {
+                const isSelected = certificateData.licenseType.includes(cat);
+                return (
+                    <Button 
+                        key={cat} 
+                        type="button"
+                        variant={isSelected ? "default" : "outline"}
+                        className={cn("h-10 font-bold", isSelected && "bg-primary text-white border-primary")}
+                        onClick={() => toggleCategory(cat)}
+                    >
+                        {cat}
+                    </Button>
+                );
+            })}
+        </div>
+    );
+  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -405,14 +423,15 @@ function CertificatesContent() {
                                                     {groupedLicenses.E.map(l => <span key={l} className="bg-blue-200/50 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">{l}</span>)}
                                                 </div>
                                             </div>
-                                            <Button onClick={() => handleProceedToPrint(groupedLicenses.E.join(', '))} size="sm" className="mt-4 bg-blue-600 hover:bg-blue-700 text-xs font-bold">
+                                            <Button onClick={() => handleProceedToPrint(groupedLicenses.E.join(', '))} size="sm" className="mt-4 bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white">
                                                 Imprimir Grupo E (80h)
                                             </Button>
                                         </div>
                                     )}
 
                                     {groupedLicenses.individuals.map(license => {
-                                        const isAmpliacionFormat = ['A'].includes(license); // Solo la A es 80h en ampliacion
+                                        // La Tipo A siempre es 80h en ampliación. B,C,D,F son 36h.
+                                        const isAmpliacionFormat = ['A'].includes(license); 
                                         const bgColor = !isAmpliacionFormat ? 'bg-green-50 border-green-100' : 'bg-amber-50 border-amber-100';
                                         const textColor = !isAmpliacionFormat ? 'text-green-800' : 'text-amber-800';
                                         const btnColor = !isAmpliacionFormat ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-600 hover:bg-amber-700';
@@ -429,7 +448,7 @@ function CertificatesContent() {
                                                         {license}
                                                     </span>
                                                 </div>
-                                                <Button onClick={() => handleProceedToPrint(license)} size="sm" className={cn("mt-4 text-xs font-bold", btnColor)}>
+                                                <Button onClick={() => handleProceedToPrint(license)} size="sm" className={cn("mt-4 text-xs font-bold text-white", btnColor)}>
                                                     Imprimir {license} ({labelHours})
                                                 </Button>
                                             </div>

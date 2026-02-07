@@ -5,7 +5,7 @@ import type { Contract } from '@/lib/types';
 import { ContractView } from '@/components/contract-view';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ChevronLeft, Award, Printer, ShieldX, Undo, Loader2, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, Printer, Loader2, CheckCircle2 } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -37,6 +37,7 @@ import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
 import { Separator } from '@/components/ui/separator';
 
 const ALL_CATEGORIES = ['A', 'B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];
+const FIRST_TIME_CATEGORIES = ['B', 'C', 'D'];
 
 const getNextFolio = (lastFolio: string | null): string => {
     const year = new Date().getFullYear();
@@ -88,6 +89,17 @@ export default function ContractDetailPage() {
   }, [db, contractId, user, isUserLoading]);
 
   const { data: contract, isLoading, error } = useDoc<Contract>(contractRef);
+
+  // Limpiar categorías no válidas al abrir modal si no es ampliación
+  useEffect(() => {
+    if (contract && contract.type !== 'Ampliaciones' && isCertificateModalOpen) {
+        const current = certificateData.licenseType.split(',').map(p => p.trim()).filter(p => p);
+        const filtered = current.filter(cat => FIRST_TIME_CATEGORIES.includes(cat));
+        if (filtered.length !== current.length) {
+            setCertificateData(prev => ({ ...prev, licenseType: filtered.join(', ') }));
+        }
+    }
+  }, [isCertificateModalOpen, contract, certificateData.licenseType]);
 
   const handleCertDataChange = (field: keyof typeof certificateData, value: string) => {
     setCertificateData(prev => ({ ...prev, [field]: value }));
@@ -232,24 +244,29 @@ export default function ContractDetailPage() {
     };
   }, [certificateData.licenseType]);
 
-  const CategoryGrid = () => (
-    <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-        {ALL_CATEGORIES.map(cat => {
-            const isSelected = certificateData.licenseType.includes(cat);
-            return (
-                <Button 
-                    key={cat} 
-                    type="button"
-                    variant={isSelected ? "default" : "outline"}
-                    className={cn("h-10 font-bold", isSelected && "bg-primary text-white border-primary")}
-                    onClick={() => toggleCategory(cat)}
-                >
-                    {cat}
-                </Button>
-            );
-        })}
-    </div>
-  );
+  const CategoryGrid = () => {
+    const isAmpliacion = contract?.type === 'Ampliaciones';
+    const categoriesToShow = isAmpliacion ? ALL_CATEGORIES : FIRST_TIME_CATEGORIES;
+
+    return (
+        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+            {categoriesToShow.map(cat => {
+                const isSelected = certificateData.licenseType.includes(cat);
+                return (
+                    <Button 
+                        key={cat} 
+                        type="button"
+                        variant={isSelected ? "default" : "outline"}
+                        className={cn("h-10 font-bold", isSelected && "bg-primary text-white border-primary")}
+                        onClick={() => toggleCategory(cat)}
+                    >
+                        {cat}
+                    </Button>
+                );
+            })}
+        </div>
+    );
+  };
 
   return (
     <div className="flex flex-col gap-8 print-container">

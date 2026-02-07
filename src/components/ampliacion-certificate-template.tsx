@@ -83,7 +83,6 @@ function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate 
                         </p>
                     </div>
                     
-                    {/* Texto reducido y elevado para máximo espacio de firma */}
                     <div className="text-center mt-0 font-bold text-[10px] italic leading-tight">
                         <p>***Dado en la república de Panamá, a los {formattedDay} días del mes de {formattedMonth} de {formattedYear}***</p>
                     </div>
@@ -122,12 +121,12 @@ function CertificateBackAmpliacion({ certificate }: { certificate: Certificate }
                 
                 <div className="pt-4 space-y-4">
                     <div className="flex gap-x-8">
-                        <div className="flex items-center gap-2">Primer Nombre: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.firstName?.toUpperCase() || ''}</span></div>
-                        <div className="flex items-center gap-2">Segundo Nombre: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.middleName?.toUpperCase() || ''}</span></div>
+                        <div className="flex items-center gap-2">Primer Nombre: <span className="font-bold inline-block">{certificate.firstName?.toUpperCase() || ''}</span></div>
+                        <div className="flex items-center gap-2">Segundo Nombre: <span className="font-bold inline-block">{certificate.middleName?.toUpperCase() || ''}</span></div>
                     </div>
                     <div className="flex gap-x-8">
-                        <div className="flex items-center gap-2">Primer Apellido: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.lastName?.toUpperCase() || ''}</span></div>
-                        <div className="flex items-center gap-2">Segundo Apellido: <span className="font-bold border-b border-black min-w-[150px] inline-block">{certificate.secondLastName?.toUpperCase() || ''}</span></div>
+                        <div className="flex items-center gap-2">Primer Apellido: <span className="font-bold inline-block">{certificate.lastName?.toUpperCase() || ''}</span></div>
+                        <div className="flex items-center gap-2">Segundo Apellido: <span className="font-bold inline-block">{certificate.secondLastName?.toUpperCase() || ''}</span></div>
                     </div>
                 </div>
             </div>

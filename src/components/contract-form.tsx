@@ -153,12 +153,23 @@ const contractSchema = z.object({
 type FormValues = z.infer<typeof contractSchema>;
 
 const convertDatesToTimestamps = (data: any) => {
-    const result = { ...data };
+    const result: any = {};
+    
+    // Remove undefined values to avoid Firestore transaction errors
+    Object.keys(data).forEach(key => {
+        if (data[key] !== undefined) {
+            result[key] = data[key];
+        }
+    });
+
     const toTs = (d: any) => (d instanceof Date) ? Timestamp.fromDate(d) : d;
+    
     if (result.paymentDeadline) result.paymentDeadline = toTs(result.paymentDeadline);
     if (result.theoreticalClassDate) result.theoreticalClassDate = toTs(result.theoreticalClassDate);
     if (result.theoreticalClassDates) {
-        result.theoreticalClassDates = result.theoreticalClassDates.map((d: any) => toTs(d));
+        result.theoreticalClassDates = result.theoreticalClassDates
+            .filter((d: any) => d !== null && d !== undefined)
+            .map((d: any) => toTs(d));
     }
     if (result.practicalClassSchedules) {
         result.practicalClassSchedules = result.practicalClassSchedules.map((s: any) => ({
@@ -353,7 +364,8 @@ export function ContractForm() {
       toast({ title: 'Contrato Generado', description: 'Éxito.' });
       router.push(`/contracts/${newContractId}`);
     } catch (e: any) {
-      toast({ variant: 'destructive', title: 'Error', description: e.message });
+      console.error("Error saving contract:", e);
+      toast({ variant: 'destructive', title: 'Error al Guardar', description: e.message || 'Error desconocido' });
     } finally { setIsSubmitting(false); }
   }
 

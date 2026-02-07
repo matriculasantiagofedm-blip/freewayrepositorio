@@ -325,18 +325,18 @@ export default function ContractDetailPage() {
                                 </div>
                             )}
 
-                            {/* Grupo ACD */}
+                            {/* Grupo ABCD */}
                             {groupedLicenses.ACD.length > 0 && (
                                 <div className="p-4 border rounded-lg bg-amber-50/50 flex flex-col justify-between">
                                     <div>
-                                        <p className="font-bold text-amber-700">Grupo A,C,D (Ampliación)</p>
+                                        <p className="font-bold text-amber-700">Grupo A,B,C,D (Ampliación)</p>
                                         <p className="text-xs text-muted-foreground mb-3 italic">A, B, C, D juntas en un certificado.</p>
                                         <div className="flex flex-wrap gap-1">
                                             {groupedLicenses.ACD.map(l => <span key={l} className="bg-amber-200 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">{l}</span>)}
                                         </div>
                                     </div>
                                     <Button onClick={() => handleProceedToPrint(groupedLicenses.ACD.join(', '))} size="sm" className="mt-4 bg-amber-600 hover:bg-amber-700">
-                                        <Printer className="mr-2 h-4 w-4" /> Imprimir Grupo ACD
+                                        <Printer className="mr-2 h-4 w-4" /> Imprimir Grupo A,B,C,D
                                     </Button>
                                 </div>
                             )}

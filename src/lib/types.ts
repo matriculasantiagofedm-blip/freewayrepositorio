@@ -116,6 +116,7 @@ export interface Certificate {
   courseName: string;
   issueDate: any;
   cip: string;
+  idType?: string; // 'C.I.P.' o 'PASS'
   licenseType: string;
   contract?: Contract;
   firstName?: string;

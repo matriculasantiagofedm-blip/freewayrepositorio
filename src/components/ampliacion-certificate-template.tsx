@@ -67,7 +67,7 @@ function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate 
                         <p className="font-bold text-[32px] tracking-tighter leading-none mb-2 uppercase">
                             {certificate.clientName}
                         </p>
-                        <p className="font-bold text-3xl tracking-widest mt-2">C.I.P. &nbsp; {certificate.cip}</p>
+                        <p className="font-bold text-3xl tracking-widest mt-2">{certificate.idType || 'C.I.P.'} &nbsp; {certificate.cip}</p>
                     </div>
 
                     <div className="text-lg leading-relaxed max-w-5xl mx-auto py-4 px-8 border-[1.5px] border-dashed border-gray-400 rounded-lg">
@@ -110,7 +110,7 @@ function CertificateBackAmpliacion({ certificate }: { certificate: Certificate }
         <div className="w-[11in] h-[8.5in] p-12 bg-white text-black font-sans text-xl flex flex-col justify-start break-before-page mx-auto print:m-0 print:p-12">
             <div className="space-y-4 pt-8">
                 <p>Yo, <span className="font-bold">{certificate.clientName.toUpperCase()}</span></p>
-                <p>Número de Documento: <span className="font-bold">{certificate.cip}</span></p>
+                <p>Número de Documento ({certificate.idType || 'C.I.P.'}): <span className="font-bold">{certificate.cip}</span></p>
                 <p>Hago constar que resido en: <span className="font-bold">{details?.studentAddress?.toUpperCase() || '--------------------'}</span></p>
                 <p>
                     con teléfono residencial: <span className="font-bold">{details?.studentPhone1 || 'XXXXX'}</span> &nbsp; &nbsp; 

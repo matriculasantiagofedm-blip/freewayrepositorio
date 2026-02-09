@@ -1,4 +1,3 @@
-
 'use client';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
@@ -31,6 +30,13 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useDb, useUser } from '@/components/firebase-provider';
@@ -69,6 +75,7 @@ export default function ContractDetailPage() {
     folio: '',
     clientName: '',
     cip: '',
+    idType: 'C.I.P.',
     licenseType: '',
     address: '',
     phone1: '',
@@ -147,6 +154,7 @@ export default function ContractDetailPage() {
       folio: suggestedFolio,
       clientName: contract.clientName || '',
       cip: details?.studentIdNumber || '',
+      idType: 'C.I.P.',
       licenseType: (details as any)?.licenseCategory || '',
       address: details?.studentAddress || '',
       phone1: details?.studentPhone1 || '',
@@ -180,6 +188,7 @@ export default function ContractDetailPage() {
             certificateSecondLastName: certificateData.secondLastName,
             certificateLicenseType: finalLicenseType,
             certificateCip: certificateData.cip,
+            certificateIdType: certificateData.idType,
         };
         await updateDoc(contractRef, updateData);
         localStorage.setItem('lastCertificateFolio', certificateData.folio);
@@ -189,6 +198,7 @@ export default function ContractDetailPage() {
             folio: certificateData.folio,
             clientName: certificateData.clientName,
             cip: certificateData.cip,
+            idType: certificateData.idType,
             licenseType: finalLicenseType,
             courseName: contract.title || '',
             issueDate: certificateData.issueDate.toISOString(),
@@ -352,8 +362,27 @@ export default function ContractDetailPage() {
                             <Input value={certificateData.folio} onChange={(e) => handleCertDataChange('folio', e.target.value)} />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-xs uppercase font-bold text-muted-foreground">Número de Cédula</Label>
-                            <Input value={certificateData.cip} onChange={(e) => handleCertDataChange('cip', e.target.value)} />
+                            <Label className="text-xs uppercase font-bold text-muted-foreground">Identificación del Estudiante</Label>
+                            <div className="flex gap-2">
+                                <Select 
+                                    value={certificateData.idType} 
+                                    onValueChange={(v) => handleCertDataChange('idType', v)}
+                                >
+                                    <SelectTrigger className="w-[100px] h-10 bg-white">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="C.I.P.">C.I.P.</SelectItem>
+                                        <SelectItem value="PASS">PASS</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <Input 
+                                    value={certificateData.cip} 
+                                    onChange={(e) => handleCertDataChange('cip', e.target.value)} 
+                                    className="bg-white flex-1" 
+                                    placeholder="Número de documento"
+                                />
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <Label className="text-xs uppercase font-bold text-muted-foreground">Fecha de Emisión</Label>

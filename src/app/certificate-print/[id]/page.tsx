@@ -1,4 +1,3 @@
-
 'use client';
 import { useParams, useSearchParams } from 'next/navigation';
 import { doc } from 'firebase/firestore';
@@ -44,6 +43,7 @@ function CertificatePrintContent() {
       const folio = searchParams.get('folio');
       const clientName = searchParams.get('clientName');
       const cip = searchParams.get('cip');
+      const idType = searchParams.get('idType') || 'C.I.P.';
       const licenseType = searchParams.get('licenseType');
       const courseName = searchParams.get('courseName');
       const issueDateStr = searchParams.get('issueDate');
@@ -88,6 +88,7 @@ function CertificatePrintContent() {
         courseName: courseName,
         issueDate: Timestamp.fromDate(new Date(issueDateStr)),
         cip: cip,
+        idType: idType,
         licenseType: licenseType,
         contract: effectiveContract,
         firstName: firstName || undefined,

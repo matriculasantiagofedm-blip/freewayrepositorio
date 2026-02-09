@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
@@ -22,6 +21,13 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -67,6 +73,7 @@ function CertificatesContent() {
     folio: '',
     clientName: '',
     cip: '',
+    idType: 'C.I.P.',
     licenseType: '',
     address: '',
     phone1: '',
@@ -169,6 +176,7 @@ function CertificatesContent() {
       folio: suggestedFolio,
       clientName: contract.clientName || '',
       cip: studentIdNumber || details?.studentIdNumber || '',
+      idType: 'C.I.P.',
       licenseType: (details as any)?.licenseCategory || '',
       address: details?.studentAddress || '',
       phone1: details?.studentPhone1 || '',
@@ -192,6 +200,7 @@ function CertificatesContent() {
       folio: suggestedFolio,
       clientName: '',
       cip: '',
+      idType: 'C.I.P.',
       licenseType: '',
       address: '',
       phone1: '',
@@ -247,6 +256,7 @@ function CertificatesContent() {
             certificateSecondLastName: certificateData.secondLastName,
             certificateLicenseType: finalLicenseType,
             certificateCip: certificateData.cip,
+            certificateIdType: certificateData.idType,
         };
 
         if (selectedContract) {
@@ -275,6 +285,7 @@ function CertificatesContent() {
             folio: certificateData.folio,
             clientName: certificateData.clientName,
             cip: certificateData.cip,
+            idType: certificateData.idType,
             licenseType: finalLicenseType,
             courseName: selectedContract?.title || (manualType === 'ampliaciones' ? 'Ampliación Manual' : 'Primera Vez Manual'),
             issueDate: certificateData.issueDate.toISOString(),
@@ -426,8 +437,27 @@ function CertificatesContent() {
                                 <Input value={certificateData.folio} onChange={(e) => handleCertDataChange('folio', e.target.value)} className="bg-white" />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-xs uppercase font-bold text-muted-foreground">Número de Cédula</Label>
-                                <Input value={certificateData.cip} onChange={(e) => handleCertDataChange('cip', e.target.value)} className="bg-white" />
+                                <Label className="text-xs uppercase font-bold text-muted-foreground">Identificación del Estudiante</Label>
+                                <div className="flex gap-2">
+                                    <Select 
+                                        value={certificateData.idType} 
+                                        onValueChange={(v) => handleCertDataChange('idType', v)}
+                                    >
+                                        <SelectTrigger className="w-[100px] h-10 bg-white">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="C.I.P.">C.I.P.</SelectItem>
+                                            <SelectItem value="PASS">PASS</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <Input 
+                                        value={certificateData.cip} 
+                                        onChange={(e) => handleCertDataChange('cip', e.target.value)} 
+                                        className="bg-white flex-1" 
+                                        placeholder="Número de documento"
+                                    />
+                                </div>
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-xs uppercase font-bold text-muted-foreground">Fecha de Emisión</Label>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -26,6 +25,8 @@ interface DiplomaRow {
     category: string;
     type: 'contract' | 'update' | 'manual';
 }
+
+const EXCLUDED_FOLIOS = ['0004', '0044', '4', '44'];
 
 export default function CertificatesSummaryReportPage() {
   const db = useDb();
@@ -80,8 +81,15 @@ export default function CertificatesSummaryReportPage() {
 
       contractsSnap.forEach(doc => {
         const data = doc.data() as any;
-        const folio = data.certificateFolio || '';
-        if (!folio) return;
+        const rawFolio = data.certificateFolio || '';
+        if (!rawFolio) return;
+
+        // Limpiar el folio para comparación (extraer el número si viene en formato YYYY / NNNN)
+        const folioNumber = rawFolio.includes('/') ? rawFolio.split('/')[1].trim() : rawFolio.trim();
+        const paddedFolio = folioNumber.padStart(4, '0');
+
+        // EXCLUSIÓN DE PRUEBAS
+        if (EXCLUDED_FOLIOS.includes(paddedFolio) || EXCLUDED_FOLIOS.includes(folioNumber)) return;
 
         // Priorizar nombres guardados durante la impresión
         const fName = data.certificateFirstName || splitName(data.clientName).fName;
@@ -91,7 +99,7 @@ export default function CertificatesSummaryReportPage() {
         
         results.push({
           index: 0,
-          folio: folio,
+          folio: rawFolio,
           idNumber: data.certificateCip || data.autoMotoDetails?.studentIdNumber || data.deluxeDetails?.studentIdNumber || data.ampliacionesDetails?.studentIdNumber || '',
           firstName: fName,
           middleName: mName,
@@ -105,11 +113,17 @@ export default function CertificatesSummaryReportPage() {
 
       updatesSnap.forEach(doc => {
         const data = doc.data() as Payment;
+        const updateFolio = String(data.updateFolio || '');
+        const paddedUpdateFolio = updateFolio.padStart(4, '0');
+
+        // EXCLUSIÓN DE PRUEBAS
+        if (EXCLUDED_FOLIOS.includes(paddedUpdateFolio) || EXCLUDED_FOLIOS.includes(updateFolio)) return;
+
         const { fName, mName, lName, sLName } = splitName(data.clientName);
         
         results.push({
           index: 0,
-          folio: String(data.updateFolio || '').padStart(4, '0'),
+          folio: paddedUpdateFolio,
           idNumber: data.studentIdNumber || '',
           firstName: fName,
           middleName: mName,

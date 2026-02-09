@@ -29,11 +29,11 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
   const courseValue = autoMotoDetails?.courseValue ?? 0;
   
   const formatDateStr = (date: Date) => {
-    if (!date || isNaN(date.getTime())) return "";
+    if (!date || isNaN(date.getTime())) return "__________";
     try {
         return format(date, 'P', { locale: es });
     } catch {
-        return "";
+        return "__________";
     }
   };
 
@@ -109,7 +109,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                 
                 {!isSoloPractica && (
                     <>
-                        <div className="flex items-center gap-2">3. Horario para clases teóricas: <Line><Value>{autoMotoDetails?.theoreticalClassSchedule}</Value></Line></div>
+                        <div className="flex items-center gap-2">3. Horario para clases teóricas: <Line><Value>{autoMotoDetails?.theoreticalClassSchedule || '__________'}</Value></Line></div>
                         <div className="pl-4">
                             {(autoMotoDetails?.theoreticalClassDates || []).map((date, index) => (
                                 <span key={index} className="mr-4">Clase {index + 1}: <Value>{formatDateStr(toDate(date))}</Value></span>
@@ -125,7 +125,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                         <div className="pl-4 space-y-0.5">
                             {(autoMotoDetails?.practicalClassSchedules || []).map((s, index) => (
                                 <div key={index} className="flex flex-wrap items-center gap-x-2 text-[9px]">
-                                    ○ Clase {index + 1}: <Line><Value>{s.date ? formatDateStr(toDate(s.date)) : ''}</Value></Line> Hora: <Line><Value>{s.time}</Value></Line>
+                                    ○ Clase {index + 1}: <Line><Value>{s.date ? formatDateStr(toDate(s.date)) : '__________'}</Value></Line> Hora: <Line><Value>{s.time || '__________'}</Value></Line>
                                 </div>
                             ))}
                         </div>
@@ -133,7 +133,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                         <div className="pl-4 space-y-0.5">
                             {(autoMotoDetails?.motoPracticalClassSchedules || []).map((s, index) => (
                                 <div key={index} className="flex flex-wrap items-center gap-x-2 text-[9px]">
-                                    ○ Clase {index + 1}: <Line><Value>{s.date ? formatDateStr(toDate(s.date)) : ''}</Value></Line> Hora: <Line><Value>{s.time}</Value></Line>
+                                    ○ Clase {index + 1}: <Line><Value>{s.date ? formatDateStr(toDate(s.date)) : '__________'}</Value></Line> Hora: <Line><Value>{s.time || '__________'}</Value></Line>
                                 </div>
                             ))}
                         </div>
@@ -142,7 +142,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                     <div className="pl-4 space-y-0.5">
                         {( (autoMotoDetails?.practicalClassSchedules?.length ? autoMotoDetails.practicalClassSchedules : autoMotoDetails?.motoPracticalClassSchedules) || [] ).map((s, index) => (
                             <div key={index} className="flex flex-wrap items-center gap-x-2 text-[9px]">
-                                ○ Clase {index + 1}: <Line><Value>{s.date ? formatDateStr(toDate(s.date)) : ''}</Value></Line> Hora: <Line><Value>{s.time}</Value></Line>
+                                ○ Clase {index + 1}: <Line><Value>{s.date ? formatDateStr(toDate(s.date)) : '__________'}</Value></Line> Hora: <Line><Value>{s.time || '__________'}</Value></Line>
                             </div>
                         ))}
                     </div>

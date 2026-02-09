@@ -23,11 +23,11 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
   const deluxeDetails = contract.deluxeDetails;
 
   const formatDateStr = (date: Date) => {
-    if (!date || isNaN(date.getTime())) return "";
+    if (!date || isNaN(date.getTime())) return "__________";
     try {
         return format(date, 'P', { locale: es });
     } catch {
-        return "";
+        return "__________";
     }
   };
 
@@ -86,12 +86,12 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
             <p><Value>{paymentDetailsText}</Value></p>
             <p>El pago se realizará de la siguiente manera: 6 cuotas de B/.<Value>{paymentAmount.toFixed(2)}</Value> cada una, con fechas de pago establecidas cada dos semanas a partir del inicio del curso.</p>
             <div className="grid grid-cols-2 gap-x-6 gap-y-0 text-[10px]">
-              <span>CUOTA 1: <Value>{deluxeDetails?.paymentInstallments?.[0] ? formatDateStr(toDate(deluxeDetails.paymentInstallments[0])) : ''}</Value></span>
-              <span>CUOTA 4: <Value>{deluxeDetails?.paymentInstallments?.[3] ? formatDateStr(toDate(deluxeDetails.paymentInstallments[3])) : ''}</Value></span>
-              <span>CUOTA 2: <Value>{deluxeDetails?.paymentInstallments?.[1] ? formatDateStr(toDate(deluxeDetails.paymentInstallments[1])) : ''}</Value></span>
-              <span>CUOTA 5: <Value>{deluxeDetails?.paymentInstallments?.[4] ? formatDateStr(toDate(deluxeDetails.paymentInstallments[4])) : ''}</Value></span>
-              <span>CUOTA 3: <Value>{deluxeDetails?.paymentInstallments?.[2] ? formatDateStr(toDate(deluxeDetails.paymentInstallments[2])) : ''}</Value></span>
-              <span>CUOTA 6: <Value>{deluxeDetails?.paymentInstallments?.[5] ? formatDateStr(toDate(deluxeDetails.paymentInstallments[5])) : ''}</Value></span>
+              <span>CUOTA 1: <Value>{deluxeDetails?.paymentInstallments?.[0] ? formatDateStr(toDate(deluxeDetails.paymentInstallments[0])) : '__________'}</Value></span>
+              <span>CUOTA 4: <Value>{deluxeDetails?.paymentInstallments?.[3] ? formatDateStr(toDate(deluxeDetails.paymentInstallments[3])) : '__________'}</Value></span>
+              <span>CUOTA 2: <Value>{deluxeDetails?.paymentInstallments?.[1] ? formatDateStr(toDate(deluxeDetails.paymentInstallments[1])) : '__________'}</Value></span>
+              <span>CUOTA 5: <Value>{deluxeDetails?.paymentInstallments?.[4] ? formatDateStr(toDate(deluxeDetails.paymentInstallments[4])) : '__________'}</Value></span>
+              <span>CUOTA 3: <Value>{deluxeDetails?.paymentInstallments?.[2] ? formatDateStr(toDate(deluxeDetails.paymentInstallments[2])) : '__________'}</Value></span>
+              <span>CUOTA 6: <Value>{deluxeDetails?.paymentInstallments?.[5] ? formatDateStr(toDate(deluxeDetails.paymentInstallments[5])) : '__________'}</Value></span>
             </div>
             
             <h3 className="font-bold">CLÁLSULA TERCERA - DETALLES DEL CURSO</h3>
@@ -104,15 +104,15 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
             <p><Value>{theoreticalScheduleText}</Value></p>
             <div className="grid grid-cols-3 gap-x-4 gap-y-0 text-[10px]">
                 {Array.from({ length: 10 }).map((_, index) => (
-                    <span key={index}>Semana {index + 1}: <Value>{deluxeDetails?.theoreticalClasses?.[index] ? formatDateStr(toDate(deluxeDetails.theoreticalClasses[index])) : ''}</Value></span>
+                    <span key={index}>Semana {index + 1}: <Value>{deluxeDetails?.theoreticalClasses?.[index] ? formatDateStr(toDate(deluxeDetails.theoreticalClasses[index])) : '__________'}</Value></span>
                 ))}
             </div>
             <p>Clases prácticas: Se programarán a partir de la semana 8 de la capacitación teórica, en horario diurno o vespertino, de acuerdo con la disponibilidad de LA ESCUELA.</p>
             <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 pl-4 text-[10px]">
               {(deluxeDetails?.classSchedules || Array.from({ length: 6 })).map((s: any, index: number) => (
                 <div key={index} className="flex items-center gap-1">
-                    Clase {index + 1}: <Line><Value>{s?.date ? formatDateStr(toDate(s.date)) : ''}</Value></Line> 
-                    Hora <Line><Value>{s?.time || ''}</Value></Line>
+                    Clase {index + 1}: <Line><Value>{s?.date ? formatDateStr(toDate(s.date)) : '__________'}</Value></Line> 
+                    Hora <Line><Value>{s?.time || '__________'}</Value></Line>
                 </div>
               ))}
             </div>

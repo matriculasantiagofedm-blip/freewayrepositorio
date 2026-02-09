@@ -21,11 +21,11 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
   const balance = ampliacionesDetails?.balance || 0;
   
   const formatDateStr = (date: Date) => {
-    if (!date || isNaN(date.getTime())) return "";
+    if (!date || isNaN(date.getTime())) return "__________";
     try {
         return format(date, 'P', { locale: es });
     } catch {
-        return "";
+        return "__________";
     }
   };
 
@@ -78,10 +78,10 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
             <div className='text-[10px]'>
                 <p>La capacitación consiste en una única clase teórica.</p>
                 <div className='flex items-center gap-2'>
-                    Fecha de la clase: <Line><Value>{ampliacionesDetails?.theoreticalClassDate ? formatDateStr(toDate(ampliacionesDetails.theoreticalClassDate)) : ''}</Value></Line>
+                    Fecha de la clase: <Line><Value>{ampliacionesDetails?.theoreticalClassDate ? formatDateStr(toDate(ampliacionesDetails.theoreticalClassDate)) : '__________'}</Value></Line>
                 </div>
                 <div className='flex items-center gap-2'>
-                    Horario: <Line><Value>{ampliacionesDetails?.theoreticalClassTime}</Value></Line>
+                    Horario: <Line><Value>{ampliacionesDetails?.theoreticalClassTime || '__________'}</Value></Line>
                 </div>
             </div>
 

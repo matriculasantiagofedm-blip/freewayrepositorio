@@ -141,18 +141,18 @@ const contractSchema = z.object({
   vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).optional(),
   licenseCategory: z.string().optional(),
   theoreticalClassSchedule: z.string().optional(),
-  theoreticalClassDates: z.array(z.date()).optional(),
+  theoreticalClassDates: z.array(z.date().nullable()).optional(),
   theoreticalClassDate: z.date().optional(),
   theoreticalClassTime: z.string().optional(),
   selectedPlans: z.array(z.object({ name: z.string(), price: z.number() })).optional(),
   practicalClassSchedules: z.array(z.object({
-    date: z.date().optional(),
+    date: z.date().optional().nullable(),
     time: z.string().optional(),
     vehicle: z.string().optional(),
     instructor: z.string().optional()
   })).optional(),
   motoPracticalClassSchedules: z.array(z.object({
-    date: z.date().optional(),
+    date: z.date().optional().nullable(),
     time: z.string().optional(),
     vehicle: z.string().optional(),
     instructor: z.string().optional()
@@ -175,16 +175,20 @@ const convertDatesToTimestamps = (data: any) => {
         if (!d) return null;
         if (d instanceof Timestamp) return d.toDate();
         if (d instanceof Date) return d;
-        return new Date(d);
+        const parsed = new Date(d);
+        return isNaN(parsed.getTime()) ? null : parsed;
     }
     
     if (result.paymentDeadline) result.paymentDeadline = toTs(result.paymentDeadline);
     if (result.theoreticalClassDate) result.theoreticalClassDate = toTs(result.theoreticalClassDate);
+    
     if (result.theoreticalClassDates) {
-        result.theoreticalClassDates = result.theoreticalClassDates
-            .filter((d: any) => d !== null && d !== undefined)
-            .map((d: any) => toTs(toDateObj(d)));
+        result.theoreticalClassDates = result.theoreticalClassDates.map((d: any) => {
+            const obj = toDateObj(d);
+            return obj ? toTs(obj) : null;
+        });
     }
+    
     if (result.practicalClassSchedules) {
         result.practicalClassSchedules = result.practicalClassSchedules.map((s: any) => ({
             ...s,
@@ -306,8 +310,8 @@ export function ContractForm({ initialContract }: ContractFormProps) {
 
             if (isMotoPlan) {
                 const totalSlots = Math.ceil(pkg.hours / 2);
-                const newSlots = Array.from({ length: totalSlots }).map((_, i) => ({
-                    date: addDays(new Date(), i + 1),
+                const newSlots = Array.from({ length: totalSlots }).map(() => ({
+                    date: null, // Dejar vacío por defecto
                     time: '8:00am a 10:00am',
                     vehicle: '',
                     instructor: ''
@@ -319,39 +323,31 @@ export function ContractForm({ initialContract }: ContractFormProps) {
                 let motoCount = 0;
 
                 if (pkg.id === 'mixto-reforzamiento') {
-                    autoCount = 1;
-                    motoCount = 1;
+                    autoCount = 1; motoCount = 1;
                 } else if (pkg.id === 'mixto-10h') {
-                    autoCount = 5;
-                    motoCount = 5;
+                    autoCount = 5; motoCount = 5;
                 } else if (pkg.id === 'mixto-basico-am') {
-                    autoCount = 4;
-                    motoCount = 0;
+                    autoCount = 4; motoCount = 0;
                 } else if (pkg.id === 'mixto-plus-am') {
-                    autoCount = 5;
-                    motoCount = 0;
+                    autoCount = 5; motoCount = 0;
                 } else if (pkg.id === 'mixto-premium-am') {
-                    autoCount = 6;
-                    motoCount = 0;
+                    autoCount = 6; motoCount = 0;
                 } else if (pkg.id === 'mixto-basico-ma') {
-                    autoCount = 0;
-                    motoCount = 4;
+                    autoCount = 0; motoCount = 4;
                 } else if (pkg.id === 'mixto-plus-ma') {
-                    autoCount = 0;
-                    motoCount = 5;
+                    autoCount = 0; motoCount = 5;
                 } else if (pkg.id === 'mixto-premium-ma') {
-                    autoCount = 0;
-                    motoCount = 6;
+                    autoCount = 0; motoCount = 6;
                 }
 
-                const autoSlots = Array.from({ length: autoCount }).map((_, i) => ({
-                    date: addDays(new Date(), i + 1),
+                const autoSlots = Array.from({ length: autoCount }).map(() => ({
+                    date: null,
                     time: '8:00am a 10:00am',
                     vehicle: '',
                     instructor: ''
                 }));
-                const motoSlots = Array.from({ length: motoCount }).map((_, i) => ({
-                    date: addDays(new Date(), i + autoCount + 1),
+                const motoSlots = Array.from({ length: motoCount }).map(() => ({
+                    date: null,
                     time: '8:00am a 10:00am',
                     vehicle: '',
                     instructor: ''
@@ -361,8 +357,8 @@ export function ContractForm({ initialContract }: ContractFormProps) {
                 replaceMoto(motoSlots);
             } else {
                 const totalSlots = Math.ceil(pkg.hours / 2);
-                const newSlots = Array.from({ length: totalSlots }).map((_, i) => ({
-                    date: addDays(new Date(), i + 1),
+                const newSlots = Array.from({ length: totalSlots }).map(() => ({
+                    date: null,
                     time: '8:00am a 10:00am',
                     vehicle: '',
                     instructor: ''
@@ -380,11 +376,11 @@ export function ContractForm({ initialContract }: ContractFormProps) {
 
     if (selectedTheoreticalSchedule === 'Clase Semanal') {
       const currentDates = form.getValues('theoreticalClassDates') || [];
-      const newDates = Array.from({ length: 4 }).map((_, i) => currentDates[i] || addDays(new Date(), i + 1));
+      const newDates = Array.from({ length: 4 }).map((_, i) => currentDates[i] || null);
       form.setValue('theoreticalClassDates', newDates);
     } else if (selectedTheoreticalSchedule === 'Clase Sabatina') {
       const currentDates = form.getValues('theoreticalClassDates') || [];
-      const newDates = Array.from({ length: 3 }).map((_, i) => currentDates[i] || addDays(new Date(), i + 1));
+      const newDates = Array.from({ length: 3 }).map((_, i) => currentDates[i] || null);
       form.setValue('theoreticalClassDates', newDates);
     } else if (contractType !== 'Ampliaciones') {
       form.setValue('theoreticalClassDates', []);
@@ -404,7 +400,6 @@ export function ContractForm({ initialContract }: ContractFormProps) {
       const cleanedData = convertDatesToTimestamps(values);
 
       if (initialContract) {
-          // MODE: UPDATE
           const contractRef = doc(db, 'contracts', initialContract.id);
           const updateData: any = {
               clientName: values.clientName,
@@ -419,7 +414,6 @@ export function ContractForm({ initialContract }: ContractFormProps) {
           toast({ title: 'Contrato Actualizado', description: 'Los cambios han sido guardados.' });
           router.push(`/contracts/${initialContract.id}`);
       } else {
-          // MODE: CREATE
           const clientsRef = collection(db, 'clients');
           const q = query(clientsRef, where('idNumber', '==', values.studentIdNumber));
           const clientSnapshot = await getDocs(q);
@@ -544,7 +538,6 @@ export function ContractForm({ initialContract }: ContractFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         
-        {/* 1. Datos del Estudiante */}
         <Card className="shadow-sm">
             <CardHeader className="py-2 px-4 border-b">
                 <CardTitle className="text-sm flex items-center gap-2 text-primary font-bold">
@@ -595,7 +588,6 @@ export function ContractForm({ initialContract }: ContractFormProps) {
             </CardContent>
         </Card>
 
-        {/* 2. Valor o Forma de Pago */}
         <Card className="shadow-sm">
             <CardHeader className="py-2 px-4 border-b">
                 <CardTitle className="text-sm flex items-center gap-2 text-primary font-bold">
@@ -658,7 +650,6 @@ export function ContractForm({ initialContract }: ContractFormProps) {
             </CardContent>
         </Card>
 
-        {/* 3. Detalles del Curso */}
         <Card className="shadow-sm">
             <CardHeader className="py-2 px-4 border-b">
                 <CardTitle className="text-sm flex items-center gap-2 text-primary font-bold">
@@ -686,7 +677,6 @@ export function ContractForm({ initialContract }: ContractFormProps) {
                                                 newPlans.push({ name: opt.id, price: opt.price });
                                             }
                                             form.setValue('selectedPlans', newPlans);
-                                            
                                             const selectedIds = newPlans.map(p => p.name);
                                             const total = calculateAmpliacionPrice(selectedIds);
                                             form.setValue('courseValue', total);
@@ -732,7 +722,6 @@ export function ContractForm({ initialContract }: ContractFormProps) {
             </CardContent>
         </Card>
 
-        {/* 4. Clases Teóricas Dinámicas */}
         {contractType !== 'Curso Solo Practica' && (
             <Card className="shadow-sm">
                 <CardHeader className="py-2 px-4 border-b">
@@ -800,7 +789,6 @@ export function ContractForm({ initialContract }: ContractFormProps) {
             </Card>
         )}
 
-        {/* 5. Programación de Clases Prácticas */}
         {contractType !== 'Ampliaciones' && (
             <div className="space-y-4">
                 {renderClassSlots(practicalFields, "practicalClassSchedules", carVehicles, "5. Programación Clases Prácticas (Auto)", Car)}

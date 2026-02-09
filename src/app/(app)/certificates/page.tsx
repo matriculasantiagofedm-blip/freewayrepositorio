@@ -176,7 +176,7 @@ function CertificatesContent() {
       folio: suggestedFolio,
       clientName: contract.clientName || '',
       cip: studentIdNumber || details?.studentIdNumber || '',
-      idType: 'C.I.P.',
+      idType: details?.idType || 'C.I.P.',
       licenseType: (details as any)?.licenseCategory || '',
       address: details?.studentAddress || '',
       phone1: details?.studentPhone1 || '',
@@ -301,7 +301,11 @@ function CertificatesContent() {
 
         const printId = selectedContract?.id || 'manual';
         window.open(`/certificate-print/${printId}?${queryParams.toString()}`, '_blank');
-        handleCloseModal(false);
+        
+        // NO cerramos el modal automáticamente para permitir múltiples impresiones (Ampliaciones)
+        // handleCloseModal(false); 
+        
+        toast({ title: 'Impresión Iniciada', description: 'Se ha abierto la pestaña de impresión.' });
     } catch (error) {
         console.error("Error saving certificate print:", error);
         toast({ variant: 'destructive', title: 'Error al Guardar', description: 'No se pudo registrar la impresión.' });

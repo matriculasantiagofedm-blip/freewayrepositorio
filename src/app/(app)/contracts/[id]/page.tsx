@@ -154,7 +154,7 @@ export default function ContractDetailPage() {
       folio: suggestedFolio,
       clientName: contract.clientName || '',
       cip: details?.studentIdNumber || '',
-      idType: 'C.I.P.',
+      idType: details?.idType || 'C.I.P.',
       licenseType: (details as any)?.licenseCategory || '',
       address: details?.studentAddress || '',
       phone1: details?.studentPhone1 || '',
@@ -212,7 +212,11 @@ export default function ContractDetailPage() {
         });
 
         window.open(`/certificate-print/${contractId}?${queryParams.toString()}`, '_blank');
-        setIsCertificateModalOpen(false);
+        
+        // NO cerramos el modal automáticamente para permitir múltiples impresiones sucesivas
+        // setIsCertificateModalOpen(false);
+        
+        toast({ title: 'Impresión Iniciada', description: 'Se ha abierto la pestaña de impresión.' });
     } catch (error) {
         toast({ variant: 'destructive', title: 'Error al Guardar', description: 'No se pudo registrar la impresión.' });
     } finally {

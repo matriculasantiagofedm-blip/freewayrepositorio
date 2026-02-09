@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -29,22 +29,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useDb, useUser } from '@/components/firebase-provider';
-import { collection, addDoc, serverTimestamp, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
-import type { ManualSchedule, VehicleName, InstructorName, TimeSlot } from '@/lib/types';
+import { collection, addDoc, serverTimestamp, deleteDoc, doc, query, orderBy, Timestamp } from 'firebase/firestore';
+import type { ManualSchedule, VehicleName, InstructorName } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CalendarIcon, PlusCircle, Trash2, CalendarClock } from 'lucide-react';
+import { Loader2, CalendarIcon, PlusCircle, Trash2, CalendarClock, X } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
+const classEntrySchema = z.object({
+  date: z.date({ required_error: 'Fecha requerida' }),
+  timeSlot: z.enum(['8am-10am', '10am-12pm', '1pm-3pm', '3pm-5pm'], { required_error: "Turno requerido"}),
+  vehicle: z.string().min(1, 'Vehículo requerido'),
+  instructor: z.string().min(1, 'Instructor requerido'),
+  classNumber: z.coerce.number().min(1, 'Mínimo 1'),
+  classType: z.enum(['Práctica', 'Teórica']).default('Práctica'),
+});
+
 const manualScheduleSchema = z.object({
   studentName: z.string().min(1, 'El nombre del estudiante es requerido.'),
-  date: z.date({ required_error: 'La fecha es requerida.' }),
-  timeSlot: z.enum(['8am-10am', '10am-12pm', '1pm-3pm', '3pm-5pm'], { required_error: "Debe seleccionar un turno."}),
-  vehicle: z.string().min(1, 'Debe seleccionar un vehículo.'),
-  instructor: z.string().min(1, 'Debe seleccionar un instructor.'),
-  classNumber: z.coerce.number().min(1, 'Número de clase mínimo 1.'),
-  classType: z.enum(['Práctica', 'Teórica']).default('Práctica'),
+  classes: z.array(classEntrySchema).min(1, 'Añade al menos una clase.'),
 });
 
 type FormValues = z.infer<typeof manualScheduleSchema>;
@@ -68,13 +72,22 @@ export default function ManualSchedulePage() {
         resolver: zodResolver(manualScheduleSchema),
         defaultValues: {
             studentName: '',
-            date: new Date(),
-            timeSlot: '8am-10am',
-            vehicle: '',
-            instructor: '',
-            classNumber: 1,
-            classType: 'Práctica',
+            classes: [
+                {
+                    date: new Date(),
+                    timeSlot: '8am-10am',
+                    vehicle: '',
+                    instructor: '',
+                    classNumber: 1,
+                    classType: 'Práctica',
+                }
+            ],
         },
+    });
+
+    const { fields, append, remove } = useFieldArray({
+        control: form.control,
+        name: "classes"
     });
 
     const manualEntriesQuery = useMemoQuery(() => {
@@ -92,21 +105,26 @@ export default function ManualSchedulePage() {
 
         setIsSaving(true);
         try {
-            await addDoc(collection(db, 'manual_schedules'), {
-                ...values,
-                userId: user.uid,
-                createdAt: serverTimestamp(),
-            });
+            const promises = values.classes.map(classItem => 
+                addDoc(collection(db, 'manual_schedules'), {
+                    studentName: values.studentName,
+                    ...classItem,
+                    date: Timestamp.fromDate(classItem.date),
+                    userId: user.uid,
+                    createdAt: serverTimestamp(),
+                })
+            );
 
-            toast({ title: 'Asignación Guardada', description: 'La clase se ha añadido a la agenda.' });
+            await Promise.all(promises);
+
+            toast({ title: 'Asignaciones Guardadas', description: `${values.classes.length} clases añadidas a la agenda.` });
             form.reset({
-                ...form.getValues(),
                 studentName: '',
-                classNumber: (form.getValues('classNumber') || 0) + 1
+                classes: [{ date: new Date(), timeSlot: '8am-10am', vehicle: '', instructor: '', classNumber: 1, classType: 'Práctica' }]
             });
         } catch (error) {
-            console.error("Error saving manual entry:", error);
-            toast({ variant: 'destructive', title: 'Error al Guardar', description: 'No se pudo registrar la asignación.' });
+            console.error("Error saving manual entries:", error);
+            toast({ variant: 'destructive', title: 'Error al Guardar', description: 'No se pudieron registrar las asignaciones.' });
         } finally {
             setIsSaving(false);
         }
@@ -122,6 +140,18 @@ export default function ManualSchedulePage() {
         }
     };
 
+    const addNewClass = () => {
+        const lastClass = form.getValues(`classes.${fields.length - 1}`);
+        append({
+            date: lastClass?.date ? new Date(lastClass.date) : new Date(),
+            timeSlot: '8am-10am',
+            vehicle: lastClass?.vehicle || '',
+            instructor: lastClass?.instructor || '',
+            classNumber: (lastClass?.classNumber || 0) + 1,
+            classType: 'Práctica',
+        });
+    };
+
     return (
         <div className="flex flex-col gap-8">
             <div className="flex items-center gap-3">
@@ -134,99 +164,122 @@ export default function ManualSchedulePage() {
 
             <Card className="shadow-md">
                 <CardHeader>
-                    <CardTitle>Nueva Asignación de Turno</CardTitle>
-                    <CardDescription>Completa los datos para que aparezcan en el reporte de horarios.</CardDescription>
+                    <CardTitle>Nueva Asignación de Turnos</CardTitle>
+                    <CardDescription>Completa los datos del estudiante y añade las fechas de sus clases.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <FormField control={form.control} name="studentName" render={({ field }) => (
-                                    <FormItem className="lg:col-span-2">
-                                        <FormLabel>Nombre del Estudiante</FormLabel>
-                                        <FormControl><Input placeholder="Introducir nombre..." {...field} /></FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
-                                
-                                <FormField control={form.control} name="date" render={({ field }) => (
-                                    <FormItem className="flex flex-col">
-                                        <FormLabel className="mb-1">Fecha de la Clase</FormLabel>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <FormControl>
-                                                    <Button variant="outline" className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                                        {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
-                                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                    </Button>
-                                                </FormControl>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
-                                        </Popover>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
+                            <FormField control={form.control} name="studentName" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-xs font-bold uppercase text-muted-foreground">Nombre del Estudiante</FormLabel>
+                                    <FormControl><Input placeholder="Nombre completo..." {...field} className="h-11 text-lg font-semibold" /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
 
-                                <FormField control={form.control} name="timeSlot" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Turno / Horario</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar turno..." /></SelectTrigger></FormControl>
-                                            <SelectContent>{timeSlots.map(t => <SelectItem key={t.id} value={t.id}>{t.label}</SelectItem>)}</SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
+                            <div className="space-y-4">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground">Listado de Clases / Fechas</Label>
+                                {fields.map((field, index) => (
+                                    <div key={field.id} className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-7 gap-3 p-4 border rounded-xl bg-slate-50/50 items-end relative group">
+                                        {fields.length > 1 && (
+                                            <Button 
+                                                type="button" 
+                                                variant="ghost" 
+                                                size="icon" 
+                                                className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-white border shadow-sm text-destructive hover:bg-red-50"
+                                                onClick={() => remove(index)}
+                                            >
+                                                <X className="h-3 w-3" />
+                                            </Button>
+                                        )}
+                                        
+                                        <FormField control={form.control} name={`classes.${index}.date`} render={({ field }) => (
+                                            <FormItem className="md:col-span-1 lg:col-span-1">
+                                                <FormLabel className="text-[10px] uppercase font-bold">Fecha</FormLabel>
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <FormControl>
+                                                            <Button variant="outline" className={cn("w-full h-9 text-xs px-2 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                                {field.value ? format(field.value, "dd/MM/yy") : "Fecha"}
+                                                                <CalendarIcon className="ml-auto h-3 w-3 opacity-50" />
+                                                            </Button>
+                                                        </FormControl>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                                                </Popover>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
 
-                                <FormField control={form.control} name="vehicle" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Vehículo Asignado</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl>
-                                            <SelectContent>{vehicles.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
+                                        <FormField control={form.control} name={`classes.${index}.timeSlot`} render={({ field }) => (
+                                            <FormItem className="md:col-span-1 lg:col-span-1">
+                                                <FormLabel className="text-[10px] uppercase font-bold">Turno</FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                    <FormControl><SelectTrigger className="h-9 text-xs px-2"><SelectValue /></SelectTrigger></FormControl>
+                                                    <SelectContent>{timeSlots.map(t => <SelectItem key={t.id} value={t.id} className="text-xs">{t.label}</SelectItem>)}</SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
 
-                                <FormField control={form.control} name="instructor" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Instructor</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl>
-                                            <SelectContent>{instructors.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}</SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
+                                        <FormField control={form.control} name={`classes.${index}.vehicle`} render={({ field }) => (
+                                            <FormItem className="md:col-span-1 lg:col-span-1">
+                                                <FormLabel className="text-[10px] uppercase font-bold">Vehículo</FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                    <FormControl><SelectTrigger className="h-9 text-xs px-2"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
+                                                    <SelectContent>{vehicles.map(v => <SelectItem key={v} value={v} className="text-xs">{v}</SelectItem>)}</SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
 
-                                <FormField control={form.control} name="classNumber" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>N° de Clase</FormLabel>
-                                        <FormControl><Input type="number" {...field} /></FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
+                                        <FormField control={form.control} name={`classes.${index}.instructor`} render={({ field }) => (
+                                            <FormItem className="md:col-span-1 lg:col-span-1">
+                                                <FormLabel className="text-[10px] uppercase font-bold">Instructor</FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                    <FormControl><SelectTrigger className="h-9 text-xs px-2"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
+                                                    <SelectContent>{instructors.map(i => <SelectItem key={i} value={i} className="text-xs">{i}</SelectItem>)}</SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
 
-                                <FormField control={form.control} name="classType" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Tipo de Clase</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value}>
-                                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="Práctica">Práctica</SelectItem>
-                                                <SelectItem value="Teórica">Teórica</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
+                                        <FormField control={form.control} name={`classes.${index}.classNumber`} render={({ field }) => (
+                                            <FormItem className="md:col-span-1 lg:col-span-1">
+                                                <FormLabel className="text-[10px] uppercase font-bold">N° Clase</FormLabel>
+                                                <FormControl><Input type="number" {...field} className="h-9 text-xs" /></FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
+
+                                        <FormField control={form.control} name={`classes.${index}.classType`} render={({ field }) => (
+                                            <FormItem className="md:col-span-1 lg:col-span-1">
+                                                <FormLabel className="text-[10px] uppercase font-bold">Tipo</FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value}>
+                                                    <FormControl><SelectTrigger className="h-9 text-xs px-2"><SelectValue /></SelectTrigger></FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="Práctica" className="text-xs">Práctica</SelectItem>
+                                                        <SelectItem value="Teórica" className="text-xs">Teórica</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
+                                    </div>
+                                ))}
                             </div>
-                            
-                            <Button type="submit" disabled={isSaving} className="w-full md:w-auto h-11 px-8 font-bold">
-                                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                                Registrar en Agenda
-                            </Button>
+
+                            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                                <Button type="button" variant="outline" onClick={addNewClass} className="h-11 px-6 border-dashed border-2 hover:bg-slate-50">
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Añadir Clase (Fecha)
+                                </Button>
+                                <Button type="submit" disabled={isSaving} className="h-11 px-8 font-bold flex-1 sm:flex-none">
+                                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CalendarClock className="mr-2 h-4 w-4" />}
+                                    Guardar Todas las Asignaciones
+                                </Button>
+                            </div>
                         </form>
                     </Form>
                 </CardContent>

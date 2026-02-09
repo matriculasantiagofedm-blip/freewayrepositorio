@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -46,6 +46,7 @@ function CertificatesContent() {
   const { toast } = useToast();
   const { role } = useCurrentRole();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const [studentIdNumber, setStudentIdNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -196,6 +197,14 @@ function CertificatesContent() {
     setIsCertificateModalOpen(true);
   };
 
+  const handleCloseModal = (open: boolean) => {
+    setIsCertificateModalOpen(open);
+    // Si el modal se cierra y estamos en modo manual (vinimos del Dashboard), regresamos al Dashboard
+    if (!open && searchParams.get('mode') === 'manual') {
+        router.push('/dashboard');
+    }
+  };
+
   const handleCertDataChange = (field: keyof typeof certificateData, value: string) => {
     setCertificateData(prev => ({ ...prev, [field]: value }));
   };
@@ -252,7 +261,7 @@ function CertificatesContent() {
 
         const printId = selectedContract?.id || 'manual';
         window.open(`/certificate-print/${printId}?${queryParams.toString()}`, '_blank');
-        setIsCertificateModalOpen(false);
+        handleCloseModal(false);
     } catch (error) {
         toast({ variant: 'destructive', title: 'Error al Guardar', description: 'No se pudo actualizar el folio.' });
     } finally {
@@ -359,7 +368,7 @@ function CertificatesContent() {
             </div>
         )}
 
-        <Dialog open={isCertificateModalOpen} onOpenChange={setIsCertificateModalOpen}>
+        <Dialog open={isCertificateModalOpen} onOpenChange={handleCloseModal}>
             <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
                 <DialogHeader>
                     <DialogTitle className="text-2xl">Generar Certificado</DialogTitle>

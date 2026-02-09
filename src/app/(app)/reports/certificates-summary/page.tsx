@@ -76,7 +76,6 @@ export default function CertificatesSummaryReportPage() {
         getDocs(qUpdates)
       ]);
 
-      // Usamos un Map para de-duplicar por folio
       const resultsMap = new Map<string, DiplomaRow>();
 
       contractsSnap.forEach(doc => {
@@ -84,11 +83,9 @@ export default function CertificatesSummaryReportPage() {
         const rawFolio = data.certificateFolio || '';
         if (!rawFolio) return;
 
-        // Limpiar el folio para comparación
         const folioNumber = rawFolio.includes('/') ? rawFolio.split('/')[1].trim() : rawFolio.trim();
         const paddedFolio = folioNumber.padStart(4, '0');
 
-        // EXCLUSIÓN DE PRUEBAS 0004 y 0044
         if (EXCLUDED_FOLIOS.includes(paddedFolio) || EXCLUDED_FOLIOS.includes(folioNumber)) return;
 
         const fName = data.certificateFirstName || splitName(data.clientName).fName;
@@ -110,7 +107,6 @@ export default function CertificatesSummaryReportPage() {
           type: data.isManualPrint ? 'manual' : 'contract'
         };
 
-        // Solo agregamos si el folio no existe ya en el reporte actual
         if (!resultsMap.has(rawFolio)) {
             resultsMap.set(rawFolio, diploma);
         }
@@ -121,7 +117,6 @@ export default function CertificatesSummaryReportPage() {
         const updateFolio = String(data.updateFolio || '');
         const paddedUpdateFolio = updateFolio.padStart(4, '0');
 
-        // EXCLUSIÓN DE PRUEBAS 0004 y 0044
         if (EXCLUDED_FOLIOS.includes(paddedUpdateFolio) || EXCLUDED_FOLIOS.includes(updateFolio)) return;
 
         const { fName, mName, lName, sLName } = splitName(data.clientName);
@@ -139,7 +134,6 @@ export default function CertificatesSummaryReportPage() {
           type: 'update'
         };
 
-        // De-duplicación por folio para actualizaciones
         if (!resultsMap.has(paddedUpdateFolio)) {
             resultsMap.set(paddedUpdateFolio, diploma);
         }
@@ -173,7 +167,6 @@ export default function CertificatesSummaryReportPage() {
       const folioNumber = rawFolio.includes('/') ? rawFolio.split('/')[1].trim() : rawFolio.trim();
       const paddedFolio = folioNumber.padStart(4, '0');
 
-      // Si el folio está en la lista de correcciones, lo contamos ahí y no en su categoría original
       if (CORRECTION_FOLIOS.includes(folioNumber) || CORRECTION_FOLIOS.includes(paddedFolio)) {
         counts.corrections++;
       } else if (d.type === 'update') {
@@ -226,7 +219,7 @@ export default function CertificatesSummaryReportPage() {
       <div className="flex justify-between items-center print-hide">
         <div>
           <h1 className="text-2xl font-bold font-headline">Consolidado de Certificados</h1>
-          <p className="text-sm text-muted-foreground">Control semanal de diplomas emitidos (sin duplicados).</p>
+          <p className="text-sm text-muted-foreground">Control semanal de diplomas emitidos (con correcciones).</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 border p-1 rounded-md bg-white">
@@ -293,13 +286,17 @@ export default function CertificatesSummaryReportPage() {
                     const isE = d.category.toUpperCase().includes('E');
                     const isF = d.category.toUpperCase().includes('F');
                     const isUpdate = d.type === 'update';
+                    const folioNumber = d.folio.includes('/') ? d.folio.split('/')[1].trim() : d.folio.trim();
+                    const paddedFolio = folioNumber.padStart(4, '0');
+                    const isCorrection = CORRECTION_FOLIOS.includes(folioNumber) || CORRECTION_FOLIOS.includes(paddedFolio);
                     
                     return (
                       <TableRow key={`${d.type}-${d.folio}-${d.index}`} className={cn(
                         "h-7 hover:bg-transparent",
                         isE && "bg-yellow-400",
                         isF && "bg-blue-400",
-                        isUpdate && "bg-green-400"
+                        isUpdate && "bg-green-400",
+                        isCorrection && "bg-slate-100"
                       )}>
                         <TableCell className="border border-black p-1 text-center font-medium text-[9px]">{d.index}</TableCell>
                         <TableCell className="border border-black p-1 text-center font-bold text-[9px]">{d.folio}</TableCell>
@@ -340,7 +337,7 @@ export default function CertificatesSummaryReportPage() {
                             <tr className="bg-blue-400"><td className="border border-black p-1 font-bold">AMPLIACIÓN F-I</td><td className="border border-black p-1 text-center font-bold">{stats.f || ''}</td></tr>
                             <tr><td className="border border-black p-1">AMPLIACIÓN G-H</td><td className="border border-black p-1 text-center font-bold">{stats.gh || ''}</td></tr>
                             <tr className="bg-green-400"><td className="border border-black p-1 font-bold">ACTUALIZACIONES</td><td className="border border-black p-1 text-center font-bold">{stats.updates || ''}</td></tr>
-                            <tr><td className="border border-black p-1">CORRECCIONES / DUPLICADOS</td><td className="border border-black p-1 text-center font-bold">{stats.corrections || ''}</td></tr>
+                            <tr><td className="border border-black p-1 font-bold">CORRECCIONES / DUPLICADOS</td><td className="border border-black p-1 text-center font-bold">{stats.corrections || ''}</td></tr>
                             <tr className="bg-slate-100 font-bold"><td className="border border-black p-1 text-right pr-4 uppercase">TOTAL</td><td className="border border-black p-1 text-center">{stats.total}</td></tr>
                         </tbody>
                     </table>

@@ -155,6 +155,7 @@ export interface Payment {
   studentIdNumber: string;
   userId: string;
   type: 'abono' | 'cancelacion' | 'actualizacion';
+  paymentType?: string;
   createdBy?: string;
 }
 
@@ -167,6 +168,7 @@ export interface BookSalePayment {
   clientName: string;
   studentIdNumber: string;
   userId: string;
+  paymentType?: string;
   createdBy?: string;
 }
 

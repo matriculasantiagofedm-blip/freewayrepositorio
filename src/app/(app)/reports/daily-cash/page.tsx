@@ -172,46 +172,76 @@ export default function DailyCashReportPage() {
 
         filterByRole(cancellationSnapshot).forEach((doc: any) => {
             const payment = doc.data() as Payment;
+            const amount = payment.amount || 0;
+            const pType = payment.paymentType || 'cash';
+            
+            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
+            if (paymentColumns.hasOwnProperty(pType)) {
+                paymentColumns[pType] = amount;
+            } else {
+                paymentColumns['cash'] = amount;
+            }
+
             fetchedTransactions.push({
                 id: doc.id,
                 contrato: String(payment.cancellationFolio || '').padStart(6, '0'),
                 cedula: payment.studentIdNumber || '',
                 clientName: payment.clientName || '',
                 service: 'Abono/Cancelación de Saldo',
-                amount: payment.amount || 0,
-                paymentType: 'cash',
+                amount: amount,
+                paymentType: pType,
                 createdBy: payment.createdBy,
-                cash: payment.amount || 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0,
+                ...paymentColumns,
             });
         });
 
         filterByRole(updateSnapshot).forEach((doc: any) => {
             const payment = doc.data() as Payment;
+            const amount = payment.amount || 0;
+            const pType = payment.paymentType || 'cash';
+
+            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
+            if (paymentColumns.hasOwnProperty(pType)) {
+                paymentColumns[pType] = amount;
+            } else {
+                paymentColumns['cash'] = amount;
+            }
+
             fetchedTransactions.push({
                 id: doc.id,
                 contrato: String(payment.updateFolio || '').padStart(6, '0'),
                 cedula: payment.studentIdNumber || '',
                 clientName: payment.clientName || '',
                 service: 'Actualización de Certificado',
-                amount: payment.amount || 0,
-                paymentType: 'cash',
+                amount: amount,
+                paymentType: pType,
                 createdBy: payment.createdBy,
-                cash: payment.amount || 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0,
+                ...paymentColumns,
             });
         });
 
         filterByRole(bookSaleSnapshot).forEach((doc: any) => {
             const payment = doc.data() as BookSalePayment;
+            const amount = payment.amount || 0;
+            const pType = payment.paymentType || 'cash';
+
+            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
+            if (paymentColumns.hasOwnProperty(pType)) {
+                paymentColumns[pType] = amount;
+            } else {
+                paymentColumns['cash'] = amount;
+            }
+
             fetchedTransactions.push({
                 id: doc.id,
                 contrato: String(payment.bookSaleFolio || '').padStart(6, '0'),
                 cedula: payment.studentIdNumber || '',
                 clientName: payment.clientName || '',
                 service: `Libro: ${payment.bookTitle}`,
-                amount: payment.amount || 0,
-                paymentType: 'cash',
+                amount: amount,
+                paymentType: pType,
                 createdBy: payment.createdBy,
-                cash: payment.amount || 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0,
+                ...paymentColumns,
             });
         });
 

@@ -9,10 +9,26 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import type { Contract, Payment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Printer, Save, PlusCircle, UserPlus } from 'lucide-react';
+import { Loader2, Search, Printer, Save, PlusCircle, UserPlus, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useCurrentRole } from '@/hooks/use-current-role';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+const paymentMethodOptions = [
+    { value: 'cash', label: 'Efectivo' },
+    { value: 'debit', label: 'Tarjeta Débito' },
+    { value: 'credit', label: 'Tarjeta Crédito' },
+    { value: 'bac', label: 'BAC' },
+    { value: 'general', label: 'General' },
+    { value: 'cheques', label: 'Cheque' },
+];
 
 export default function CancellationsPage() {
   const db = useDb();
@@ -25,12 +41,17 @@ export default function CancellationsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [foundContracts, setFoundContracts] = useState<Contract[] | null>(null);
   const [searched, setSearched] = useState(false);
+  
+  // Estado para montos y métodos de pago por contrato
   const [payments, setPayments] = useState<{ [key: string]: number }>({});
+  const [paymentMethods, setPaymentMethods] = useState<{ [key: string]: string }>({});
+  
   const [savedPayments, setSavedPayments] = useState<{ [contractId: string]: Partial<Payment> }>({});
   
   const [manualName, setManualName] = useState('');
   const [manualAddress, setManualAddress] = useState('');
   const [manualPayment, setManualPayment] = useState(0);
+  const [manualPaymentMethod, setManualPaymentMethod] = useState('cash');
   const [manualPaymentSaved, setManualPaymentSaved] = useState(false);
   const [manualSavedPaymentData, setManualSavedPaymentData] = useState<Partial<Payment> | null>(null);
 
@@ -41,10 +62,12 @@ export default function CancellationsPage() {
     setFoundContracts(null);
     setSearched(false);
     setPayments({});
+    setPaymentMethods({});
     setSavedPayments({});
     setManualName('');
     setManualAddress('');
     setManualPayment(0);
+    setManualPaymentMethod('cash');
     setManualPaymentSaved(false);
     setManualSavedPaymentData(null);
   };
@@ -57,6 +80,10 @@ export default function CancellationsPage() {
   const handlePaymentChange = (contractId: string, amount: string) => {
     const numericAmount = parseFloat(amount) || 0;
     setPayments(prev => ({ ...prev, [contractId]: numericAmount }));
+  };
+
+  const handleMethodChange = (contractId: string, method: string) => {
+    setPaymentMethods(prev => ({ ...prev, [contractId]: method }));
   };
   
   const handleSearch = async (e: React.FormEvent) => {
@@ -108,6 +135,7 @@ export default function CancellationsPage() {
   const handleSavePayment = async (contract: Contract | null) => {
     const isManual = contract === null;
     const paymentAmount = isManual ? manualPayment : payments[contract!.id];
+    const paymentType = isManual ? manualPaymentMethod : (paymentMethods[contract!.id] || 'cash');
     
     if (!db || !user || !paymentAmount || paymentAmount <= 0) {
       toast({ variant: 'destructive', title: 'Monto Inválido', description: 'Introduce un monto a pagar válido para registrar.' });
@@ -139,6 +167,7 @@ export default function CancellationsPage() {
               paymentDate: serverTimestamp() as any,
               userId: user.uid,
               type: 'cancelacion',
+              paymentType: paymentType,
               clientAddress: contract ? (contract.autoMotoDetails?.studentAddress || contract.ampliacionesDetails?.studentAddress || contract.deluxeDetails?.studentAddress || '') : manualAddress,
               createdBy: role || undefined,
           };
@@ -250,19 +279,47 @@ export default function CancellationsPage() {
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {foundContracts.map(contract => (
-                      <div key={contract.id} className="animate-in fade-in-50 space-y-2 border p-4 rounded-lg">
-                          <p className="font-bold">Contrato N° {String(contract.folioNumber).padStart(6, '0')}</p>
-                          <p className="text-sm text-muted-foreground">{contract.type}</p>
-                          <div className="flex justify-between items-end">
-                              <div>
-                                  <p className="text-xs font-medium text-muted-foreground">Saldo Pendiente</p>
-                                  <p className="font-bold text-lg text-destructive">B/. {getBalance(contract).toFixed(2)}</p>
+                      <div key={contract.id} className="animate-in fade-in-50 space-y-4 border p-4 rounded-lg">
+                          <div className='flex flex-col gap-1'>
+                            <p className="font-bold">Contrato N° {String(contract.folioNumber).padStart(6, '0')}</p>
+                            <p className="text-xs text-muted-foreground">{contract.type}</p>
+                          </div>
+                          
+                          <div className="bg-muted/30 p-2 rounded-md">
+                              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Saldo Pendiente</p>
+                              <p className="font-bold text-xl text-destructive">B/. {getBalance(contract).toFixed(2)}</p>
+                          </div>
+
+                          <div className='space-y-3'>
+                              <div className='space-y-1.5'>
+                                  <Label className='text-[10px] uppercase font-bold text-muted-foreground'>Método de Pago</Label>
+                                  <Select 
+                                    onValueChange={(v) => handleMethodChange(contract.id, v)} 
+                                    defaultValue="cash"
+                                    disabled={!!savedPayments[contract.id]}
+                                  >
+                                      <SelectTrigger className="h-9 text-xs">
+                                          <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                          {paymentMethodOptions.map(opt => (
+                                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                          ))}
+                                      </SelectContent>
+                                  </Select>
                               </div>
-                              <div className='w-28'>
-                                  <Label className='text-xs'>Monto a Pagar</Label>
-                                  <Input type="number" placeholder="0.00" onChange={(e) => handlePaymentChange(contract.id, e.target.value)} disabled={!!savedPayments[contract.id]} />
+                              <div className='space-y-1.5'>
+                                  <Label className='text-[10px] uppercase font-bold text-muted-foreground'>Monto a Pagar (B/.)</Label>
+                                  <Input 
+                                    type="number" 
+                                    placeholder="0.00" 
+                                    onChange={(e) => handlePaymentChange(contract.id, e.target.value)} 
+                                    disabled={!!savedPayments[contract.id]} 
+                                    className="h-9 font-bold"
+                                  />
                               </div>
                           </div>
+
                           <CardFooter className="p-0 pt-2 print-hide">
                             {!savedPayments[contract.id] ? (
                                 <Button size="sm" onClick={() => handleSavePayment(contract)} disabled={isSaving || !(payments[contract.id] > 0)} className='w-full'>
@@ -295,10 +352,10 @@ export default function CancellationsPage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                     {!manualPaymentSaved ? (
-                        <div className='grid grid-cols-1 gap-4'>
+                        <div className='grid grid-cols-1 gap-6'>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="manual-name">Nombre Completo del Cliente</Label>
+                                    <Label htmlFor="manual-name" className="text-xs uppercase font-bold text-muted-foreground">Nombre Completo del Cliente</Label>
                                     <Input 
                                         id="manual-name"
                                         placeholder="Introducir nombre" 
@@ -307,7 +364,7 @@ export default function CancellationsPage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="manual-address">Dirección de Residencia</Label>
+                                    <Label htmlFor="manual-address" className="text-xs uppercase font-bold text-muted-foreground">Dirección de Residencia</Label>
                                     <Input 
                                         id="manual-address"
                                         placeholder="Ciudad, Calle, Casa..." 
@@ -316,15 +373,38 @@ export default function CancellationsPage() {
                                     />
                                 </div>
                             </div>
-                            <div className="space-y-2 max-w-xs">
-                                <Label htmlFor="manual-amount">Monto a Pagar (B/.)</Label>
-                                <Input 
-                                    id="manual-amount"
-                                    type="number" 
-                                    placeholder="0.00" 
-                                    value={manualPayment || ''} 
-                                    onChange={(e) => setManualPayment(parseFloat(e.target.value) || 0)} 
-                                />
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
+                                <div className="space-y-2">
+                                    <Label className="text-xs uppercase font-bold text-muted-foreground">Método de Pago</Label>
+                                    <Select 
+                                        onValueChange={setManualPaymentMethod} 
+                                        defaultValue="cash"
+                                    >
+                                        <SelectTrigger className="h-10">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {paymentMethodOptions.map(opt => (
+                                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="manual-amount" className="text-xs uppercase font-bold text-muted-foreground">Monto a Pagar (B/.)</Label>
+                                    <div className='relative'>
+                                        <span className='absolute left-3 top-1/2 -translate-y-1/2 font-bold text-muted-foreground'>B/.</span>
+                                        <Input 
+                                            id="manual-amount"
+                                            type="number" 
+                                            placeholder="0.00" 
+                                            value={manualPayment || ''} 
+                                            onChange={(e) => setManualPayment(parseFloat(e.target.value) || 0)} 
+                                            className="pl-10 font-bold text-lg"
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     ) : (
@@ -344,18 +424,18 @@ export default function CancellationsPage() {
                         <Button 
                             onClick={() => handleSavePayment(null)} 
                             disabled={isSaving || !manualName || !manualAddress || manualPayment <= 0}
-                            className="w-full sm:w-auto"
+                            className="w-full sm:w-auto h-11 px-8 font-bold"
                         >
                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             Registrar Pago Manual
                         </Button>
                     ) : (
                         <div className='flex gap-2 w-full sm:w-auto'>
-                            <Button variant="outline" onClick={() => handlePrint('MANUAL')}>
+                            <Button variant="outline" onClick={() => handlePrint('MANUAL')} className="h-11 px-6">
                                 <Printer className="mr-2 h-4 w-4" />
                                 Imprimir Recibo
                             </Button>
-                            <Button onClick={resetForm}>
+                            <Button onClick={resetForm} className="h-11 px-6">
                                 <PlusCircle className="mr-2 h-4 w-4" />
                                 Nueva Búsqueda
                             </Button>

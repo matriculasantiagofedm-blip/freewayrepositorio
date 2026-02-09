@@ -10,7 +10,7 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, setDoc, Timestamp } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Printer, CheckCircle2, PlusCircle, FileText, Repeat, CalendarIcon, Phone } from 'lucide-react';
+import { Loader2, Search, Printer, CheckCircle2, PlusCircle, FileText, Repeat, CalendarIcon, Phone, AlertCircle } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import {
   Dialog,
@@ -35,6 +35,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Switch } from '@/components/ui/switch';
 
 const ALL_CATEGORIES = ['A', 'B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];
 const FIRST_TIME_CATEGORIES = ['A', 'B', 'C', 'D'];
@@ -84,6 +85,7 @@ function CertificatesContent() {
     secondLastName: '',
     marriedLastName: '',
     issueDate: new Date(),
+    isCorrection: false,
   });
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -188,6 +190,7 @@ function CertificatesContent() {
       secondLastName,
       marriedLastName: '',
       issueDate: new Date(),
+      isCorrection: false,
     });
     setIsCertificateModalOpen(true);
   };
@@ -213,6 +216,7 @@ function CertificatesContent() {
       secondLastName: '',
       marriedLastName: '',
       issueDate: new Date(),
+      isCorrection: false,
     });
     setIsCertificateModalOpen(true);
   };
@@ -261,6 +265,7 @@ function CertificatesContent() {
             certificateLicenseType: finalLicenseType,
             certificateCip: certificateData.cip,
             certificateIdType: certificateData.idType,
+            isCorrection: certificateData.isCorrection,
         };
 
         if (selectedContract) {
@@ -436,7 +441,20 @@ function CertificatesContent() {
                     )}
 
                     <div className="grid gap-4 p-5 border rounded-xl bg-slate-50/50">
-                        <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500 flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-green-600" /> Información del Documento</h3>
+                        <div className="flex justify-between items-center">
+                            <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500 flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-green-600" /> Información del Documento</h3>
+                            <div className="flex items-center space-x-2 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg">
+                                <Switch 
+                                    id="manual-is-correction" 
+                                    checked={certificateData.isCorrection}
+                                    onCheckedChange={(checked) => handleCertDataChange('isCorrection', checked)}
+                                />
+                                <Label htmlFor="manual-is-correction" className="text-xs font-bold text-amber-800 cursor-pointer flex items-center gap-1.5">
+                                    <AlertCircle className="h-3.5 w-3.5" /> Es Corrección / Duplicado
+                                </Label>
+                            </div>
+                        </div>
+                        
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="space-y-2">
                                 <Label className="text-xs uppercase font-bold text-muted-foreground">Folio de Certificado</Label>

@@ -24,6 +24,7 @@ interface DiplomaRow {
     marriedLastName: string;
     category: string;
     type: 'contract' | 'update' | 'manual';
+    isCorrection: boolean;
 }
 
 const EXCLUDED_FOLIOS = ['0004', '0044', '4', '44'];
@@ -74,8 +75,7 @@ export default function CertificatesSummaryReportPage() {
         where('paymentDate', '<=', Timestamp.fromDate(end))
       );
 
-      // Consulta 3: Forzar la búsqueda de folios de corrección específicos por si están fuera de fecha
-      // pero el usuario los quiere ver en este reporte consolidado
+      // Consulta 3: Folios de corrección específicos
       const qSpecialCorrections = query(
         contractsRef,
         where('certificateFolio', 'in', CORRECTION_FOLIOS)
@@ -115,10 +115,10 @@ export default function CertificatesSummaryReportPage() {
           secondLastName: sLName,
           marriedLastName: mLastName,
           category: data.certificateLicenseType || (data.autoMotoDetails?.licenseCategory) || '',
-          type: data.isManualPrint ? 'manual' : 'contract'
+          type: data.isManualPrint ? 'manual' : 'contract',
+          isCorrection: data.isCorrection || CORRECTION_FOLIOS.includes(folioNumber) || CORRECTION_FOLIOS.includes(paddedFolio)
         };
 
-        // Solo agregar si no existe o si es de la lista de correcciones (para priorizar el registro más reciente)
         if (!resultsMap.has(rawFolio)) {
             resultsMap.set(rawFolio, diploma);
         }
@@ -146,7 +146,8 @@ export default function CertificatesSummaryReportPage() {
           secondLastName: sLName,
           marriedLastName: '',
           category: 'ACTUALIZACIÓN',
-          type: 'update'
+          type: 'update',
+          isCorrection: false
         };
 
         if (!resultsMap.has(paddedUpdateFolio)) {
@@ -178,12 +179,9 @@ export default function CertificatesSummaryReportPage() {
 
     diplomas.forEach(d => {
       const cat = d.category.toUpperCase();
-      const rawFolio = d.folio;
-      const folioNumber = rawFolio.includes('/') ? rawFolio.split('/')[1].trim() : rawFolio.trim();
-      const paddedFolio = folioNumber.padStart(4, '0');
-
-      // REGLA DE ORO: Las correcciones específicas SIEMPRE van a la línea de correcciones
-      if (CORRECTION_FOLIOS.includes(folioNumber) || CORRECTION_FOLIOS.includes(paddedFolio)) {
+      
+      // REGLA DE ORO: Las correcciones marcadas SIEMPRE van a la línea de correcciones
+      if (d.isCorrection) {
         counts.corrections++;
       } else if (d.type === 'update') {
         counts.updates++;
@@ -302,9 +300,7 @@ export default function CertificatesSummaryReportPage() {
                     const isE = d.category.toUpperCase().includes('E');
                     const isF = d.category.toUpperCase().includes('F');
                     const isUpdate = d.type === 'update';
-                    const folioNumber = d.folio.includes('/') ? d.folio.split('/')[1].trim() : d.folio.trim();
-                    const paddedFolio = folioNumber.padStart(4, '0');
-                    const isCorrection = CORRECTION_FOLIOS.includes(folioNumber) || CORRECTION_FOLIOS.includes(paddedFolio);
+                    const isCorrection = d.isCorrection;
                     
                     return (
                       <TableRow key={`${d.type}-${d.folio}-${d.index}`} className={cn(

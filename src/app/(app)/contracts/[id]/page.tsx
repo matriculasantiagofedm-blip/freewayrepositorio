@@ -5,7 +5,7 @@ import type { Contract } from '@/lib/types';
 import { ContractView } from '@/components/contract-view';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ChevronLeft, Printer, Loader2, CheckCircle2, CalendarIcon, Phone, Trash2 } from 'lucide-react';
+import { ChevronLeft, Printer, Loader2, CheckCircle2, CalendarIcon, Phone, Trash2, AlertCircle } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -46,6 +46,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Switch } from '@/components/ui/switch';
 
 const ALL_CATEGORIES = ['A', 'B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];
 const FIRST_TIME_CATEGORIES = ['A', 'B', 'C', 'D'];
@@ -86,6 +87,7 @@ export default function ContractDetailPage() {
     secondLastName: '',
     marriedLastName: '',
     issueDate: new Date(),
+    isCorrection: false,
   });
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -166,6 +168,7 @@ export default function ContractDetailPage() {
       secondLastName,
       marriedLastName: contract.marriedLastName || '',
       issueDate: new Date(),
+      isCorrection: false,
     });
     setIsCertificateModalOpen(true);
   };
@@ -192,6 +195,7 @@ export default function ContractDetailPage() {
             certificateLicenseType: finalLicenseType,
             certificateCip: certificateData.cip,
             certificateIdType: certificateData.idType,
+            isCorrection: certificateData.isCorrection,
         };
         await updateDoc(contractRef, updateData);
         localStorage.setItem('lastCertificateFolio', certificateData.folio);
@@ -370,8 +374,9 @@ export default function ContractDetailPage() {
                     <AlertDialogHeader>
                       <AlertDialogTitle className="text-destructive">¡ADVERTENCIA: ACCIÓN IRREVERSIBLE!</AlertDialogTitle>
                       <AlertDialogDescription>
-                        ¿Deseas eliminar definitivamente el Folio <span className="font-bold">{contract.folioNumber}</span>? 
-                        Esta acción borrará el registro de la base de datos y de todos los reportes. Úsalo solo para corregir duplicados.
+                        {contract ? (
+                            <>¿Deseas eliminar definitivamente el Folio <span className="font-bold">{contract.folioNumber}</span>? Esta acción borrará el registro de la base de datos y de todos los reportes. Úsalo solo para corregir duplicados.</>
+                        ) : 'Cargando...'}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -399,7 +404,20 @@ export default function ContractDetailPage() {
             
             <div className="flex-1 overflow-y-auto pr-4 py-4 space-y-6">
                 <div className="grid gap-4 p-4 border rounded-lg bg-muted/30">
-                    <h3 className="font-bold text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> Información del Documento</h3>
+                    <div className="flex justify-between items-center">
+                        <h3 className="font-bold text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> Información del Documento</h3>
+                        <div className="flex items-center space-x-2 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg">
+                            <Switch 
+                                id="cert-is-correction" 
+                                checked={certificateData.isCorrection}
+                                onCheckedChange={(checked) => handleCertDataChange('isCorrection', checked)}
+                            />
+                            <Label htmlFor="cert-is-correction" className="text-xs font-bold text-amber-800 cursor-pointer flex items-center gap-1.5">
+                                <AlertCircle className="h-3.5 w-3.5" /> Es Corrección / Duplicado
+                            </Label>
+                        </div>
+                    </div>
+                    
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2">
                             <Label className="text-xs uppercase font-bold text-muted-foreground">Folio de Certificado</Label>

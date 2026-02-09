@@ -17,12 +17,13 @@ const Value = ({ children }: { children: React.ReactNode }) => <span className="
 interface DeluxePremiumContractPreviewProps {
     clientName?: string;
     clientEmail?: string;
+    idType?: string;
     deluxeDetails?: Partial<DeluxeContractDetails>;
     createdBy?: string | null;
     folioNumber?: number;
 }
 
-export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, deluxeDetails, createdBy, folioNumber }: DeluxePremiumContractPreviewProps) {
+export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, idType, deluxeDetails, createdBy, folioNumber }: DeluxePremiumContractPreviewProps) {
   const [currentDate, setCurrentDate] = useState<Date | null>(null);
   
   useEffect(() => {
@@ -85,7 +86,7 @@ export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, 
         </p>
 
         <div className="space-y-0.5">
-            <p>Entre <Value>{clientName || '________________'}</Value>, con cédula <Value>{deluxeDetails?.studentIdNumber || '________________'}</Value>,</p>
+            <p>Entre <Value>{clientName || '________________'}</Value>, con <Value>{idType || 'cédula'}</Value> <Value>{deluxeDetails?.studentIdNumber || '________________'}</Value>,</p>
             <div className="flex items-center flex-wrap">
                 con domicilio en 
                 <Line><Value>{deluxeDetails?.studentAddress}</Value></Line>
@@ -99,10 +100,10 @@ export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, 
             </div>
         </div>
 
-        <h3 className="font-bold">CLÁUSULA PRIMERA - OBJETO DEL CONTRATO</h3>
+        <h3 className="font-bold">CLÁLSULA PRIMERA - OBJETO DEL CONTRATO</h3>
         <p>Ambas partes convienen celebrar este contrato en el cual la empresa se compromete a brindar al cliente, un servicio de capacitación y adiestramiento teórico y práctico relacionado con el aprendizaje de conducción de vehículos a motor. El mismo se regirá bajo los términos y condiciones que se detallan en las siguientes cláusulas.</p>
         
-        <h3 className="font-bold">CLÁUSULA SEGUNDA - VALOR, MATRÍCULA Y FORMA DE PAGO</h3>
+        <h3 className="font-bold">CLÁLSULA SEGUNDA - VALOR, MATRÍCULA Y FORMA DE PAGO</h3>
         <p>El costo de la matrícula es de B/. 15.00.</p>
         <p><Value>{paymentDetailsText}</Value></p>
         <p>El pago se realizará de la siguiente manera: 6 cuotas de B/.<Value>{paymentAmount.toFixed(2)}</Value> cada una, con fechas de pago establecidas cada dos semanas a partir del inicio del curso.</p>
@@ -115,13 +116,13 @@ export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, 
           <span>CUOTA 6: {formatDate(deluxeDetails?.paymentInstallments?.[5])}</span>
         </div>
 
-        <h3 className="font-bold">CLÁUSULA TERCERA - DETALLES DEL CURSO</h3>
+        <h3 className="font-bold">CLÁLSULA TERCERA - DETALLES DEL CURSO</h3>
         <div className="space-y-0.5 pl-4">
             <p>1. Transmisión del vehículo: Automático <Checkbox checked={deluxeDetails?.vehicleTransmission === 'Automático'} /> / Manual <Checkbox checked={deluxeDetails?.vehicleTransmission === 'Manual'} /></p>
             <p>2. Categoría de licencia a aplicar: A, C <Checkbox checked={deluxeDetails?.licenseCategory === 'A, C'} /> / A, C, D <Checkbox checked={deluxeDetails?.licenseCategory === 'A, C, D'} /></p>
         </div>
 
-        <h3 className="font-bold">CLÁUSULA CUARTA - HORARIO DE CAPACITACIÓN</h3>
+        <h3 className="font-bold">CLÁLSULA CUARTA - HORARIO DE CAPACITACIÓN</h3>
         <p><Value>{theoreticalScheduleText}</Value></p>
         <div className="grid grid-cols-3 gap-x-4 gap-y-0 text-[10px]">
             {Array.from({ length: 10 }).map((_, index) => (
@@ -138,37 +139,37 @@ export function DeluxePremiumContractTemplatePreview({ clientName, clientEmail, 
             ))}
         </div>
         
-        <h3 className="font-bold">CLÁUSULA QUINTA - POLÍTICA DE PAGOS Y MOROSIDAD</h3>
+        <h3 className="font-bold">CLÁLSULA QUINTA - POLÍTICA DE PAGOS Y MOROSIDAD</h3>
         <p>EL ESTUDIANTE deberá mantener sus pagos al día para poder asistir a sus clases. Si el estudiante no cancela su cuota correspondiente en la semana establecida, no podrá ingresar a sus clases teóricas ni prácticas hasta regularizar su situación. En caso de atraso, EL ESTUDIANTE tiene dos opciones: Opción 1: Cancelar las dos cuotas pendientes (la atrasada y la vigente) para reincorporarse a sus clases. Opción 2: Cancelar una sola cuota, quedando pendiente de ser notificado sobre la próxima clase disponible, la cual deberá ser pagada antes de su inicio.</p>
 
-        <h3 className="font-bold">CLÁUSULA SEXTA- INASISTENCIAS E REPROGRAMACIONES</h3>
+        <h3 className="font-bold">CLÁLSULA SEXTA- INASISTENCIAS E REPROGRAMACIONES</h3>
         <p>EL ESTUDIANTE que no asista a una clase práctica en el horario establecido perderá automáticamente la clase práctica sin derecho a reposición ni reclamo. Excepción: Si la falta es por motivo de salud, deberá presentar constancia médica válida y coordinar con la administración para una reprogramación, la cual dependerá de la disponibilidad de horarios. Si EL ESTUDIANTE falta a más de una clase práctica sin justificar médicamente, no tendrá derecho a certificado y deberá pagar un recargo de $20.00 por cada clase perdida para poder reprogramarla.</p>
 
-        <h3 className="font-bold">CLÁUSULA SEPTIMA - PUNTUALIDAD</h3>
+        <h3 className="font-bold">CLÁLSULA SEPTIMA - PUNTUALIDAD</h3>
         <p>En caso de que EL ESTUDIANTE llegue tarde a su clase, solo recibirá el tiempo restante de las 2 horas programadas, sin derecho a reposición.</p>
 
-        <h3 className="font-bold">CLÁUSULA OCTAVA- LUGAR DE INICIO E TRASLADO</h3>
+        <h3 className="font-bold">CLÁLSULA OCTAVA- LUGAR DE INICIO E TRASLADO</h3>
         <p>Las clases prácticas iniciarán en la oficina de LA ESCUELA. Desde allí, EL ESTUDIANTE será trasladado al circuito de prácticas y posteriormente de regreso. Dicho traslado se encuentra incluido dentro del tiempo de las 2 horas de clase práctica.</p>
 
-        <h3 className="font-bold">CLÁUSULA NOVENA - NORMAS DE COMPORTAMIENTO E VESTIMENTA</h3>
+        <h3 className="font-bold">CLÁLSULA NOVENA - NORMAS DE COMPORTAMIENTO E VESTIMENTA</h3>
         <p>EL ESTUDIANTE se compromete a: Seguir las instrucciones del instructor, mantener una actitud respetuosa y adecuada durante las clases y asistir en estado óptimo de salud física, mental y emocional. Para las clases prácticas y teóricas, EL ESTUDIANTE deberá asistir con ropa adecuada. Se prohíbe presentarse con: Escotes pronunciados, minifaldas, camisetas sin mangas, pantalones cortos, leggins, chancletas o sandalias. El incumplimiento de esta norma implica la pérdida automática de la clase, sin derecho a reposición.</p>
 
-        <h3 className="font-bold">CLÁUSULA DÉCIMA- ACOMPAñANTES Y ACCESO</h3>
+        <h3 className="font-bold">CLÁLSULA DÉCIMA- ACOMPAñANTES Y ACCESO</h3>
         <p>Durante las clases teóricas y prácticas no se permite la presencia de acompañantes, niños, mascotas o terceras personas ajenas al proceso de enseñanza.</p>
         
-        <h3 className="font-bold">CLÁUSULA DÉCIMA PRIMERA- CONDICiones DE APTITUD</h3>
+        <h3 className="font-bold">CLÁLSULA DÉCIMA PRIMERA- CONDICiones DE APTITUD</h3>
         <p>EL ESTUDIANTE declara estar en pleno uso de sus facultades físicas, mentales y emocionales, siendo responsable de informar a LA ESCUELA sobre cualquier condición médica que limite su desempeño.</p>
 
-        <h3 className="font-bold">CLÁUSULA DÉCIMA SEGUNDA - CANCELACIÓN DEL CONTRATO</h3>
+        <h3 className="font-bold">CLÁLSULA DÉCIMA SEGUNDA - CANCELACIÓN DEL CONTRATO</h3>
         <p>En caso de que EL ESTUDIANTE decida cancelar el curso o el contrato, no habrá devolución de dinero bajo ninguna circunstancia.</p>
 
-        <h3 className="font-bold">CLÁUSULA DÉCIMA TERCERA - CERTIFICACIÓN</h3>
+        <h3 className="font-bold">CLÁLSULA DÉCIMA TERCERA - CERTIFICACIÓN</h3>
         <p>El certificado de aprobación del curso será entregado únicamente si EL ESTUDIANTE: Está paz y salvo en sus pagos y ha completado la totalidad del curso teórico y práctico.</p>
 
-        <h3 className="font-bold">CLÁUSULA DÉCIMA CUARTA- VIGENCIA DEL CURSO</h3>
+        <h3 className="font-bold">CLÁLSULA DÉCIMA CUARTA- VIGENCIA DEL CURSO</h3>
         <p>Si EL ESTUDIANTE no establece contacto para finalizar su curso en un plazo de tres (3) meses desde la fecha de inicio, se entenderá que renuncia a continuar, sin derecho a devolución del dinero ni a reclamos posteriores.</p>
 
-        <h3 className="font-bold">CLÁUSULA DÉCIMA QUINTA- ACEPTACIÓN</h3>
+        <h3 className="font-bold">CLÁLSULA DÉCIMA QUINTA- ACEPTACIÓN</h3>
         <p className="text-center !mt-4">
             En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los <Value>{format(currentDate, 'd')}</Value> días del mes de <Value>{format(currentDate, 'LLLL', { locale: es })}</Value>, de <Value>{format(currentDate, 'yyyy')}</Value>, a las <Value>{format(currentDate, 'p', { locale: es })}</Value>.
         </p>

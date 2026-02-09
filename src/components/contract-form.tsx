@@ -127,6 +127,7 @@ const contractSchema = z.object({
   clientName: z.string().min(1, 'Requerido'),
   clientEmail: z.string().email('Email inválido'),
   contractType: z.enum(['Curso Auto', 'Curso Moto', 'Curso Mixto', 'Curso Deluxe', 'Ampliaciones', 'Curso Solo Practica']),
+  idType: z.string().default('C.I.P.'),
   studentIdNumber: z.string().min(1, 'Requerido'),
   studentAddress: z.string().min(1, 'Requerido'),
   studentPhone1: z.string().min(1, 'Requerido'),
@@ -208,7 +209,7 @@ export function ContractForm() {
   const form = useForm<FormValues>({
     resolver: zodResolver(contractSchema),
     defaultValues: {
-      clientName: '', clientEmail: '', contractType: contractType, studentIdNumber: '',
+      clientName: '', clientEmail: '', contractType: contractType, studentIdNumber: '', idType: 'C.I.P.',
       studentAddress: '', studentPhone1: '', studentPhone2: '', courseValue: 0, downPayment: 0, balance: 0,
       paymentType: 'cash', coursePlan: '', vehicleTransmission: contractType === 'Curso Moto' ? 'Moto' : 'Manual',
       licenseCategory: contractType === 'Curso Moto' ? 'A, B' : 'A, C',
@@ -476,9 +477,27 @@ export function ContractForm() {
                     <FormField control={form.control} name="clientName" render={({ field }) => (
                         <FormItem className="md:col-span-2"><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Nombre Completo</FormLabel><FormControl><Input className="h-8 text-sm" placeholder="Juan Pérez" {...field} /></FormControl><FormMessage /></FormItem>
                     )} />
-                    <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
-                        <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Cédula / Pasaporte</FormLabel><FormControl><Input className="h-8 text-sm" placeholder="8-000-000" {...field} /></FormControl><FormMessage /></FormItem>
-                    )} />
+                    <div className="flex gap-2 items-end">
+                        <FormField control={form.control} name="idType" render={({ field }) => (
+                            <FormItem className="w-[100px]">
+                                <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Tipo</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="C.I.P.">C.I.P.</SelectItem>
+                                        <SelectItem value="PASS">PASS</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
+                            <FormItem className="flex-1">
+                                <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">N° Identificación</FormLabel>
+                                <FormControl><Input className="h-8 text-sm" placeholder="8-000-000" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                    </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <FormField control={form.control} name="clientEmail" render={({ field }) => (

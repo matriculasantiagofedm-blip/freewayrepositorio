@@ -42,11 +42,11 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
         </div>
         
         <p className='text-[10px] leading-tight'>
-            La empresa FREEWAY ESCUELA DE MANEJO S.A., con RUC 155628022-2-2016 DV 2, en adelante LA EMPRESA, y <Line><Value>{contract.clientName}</Value></Line>, con cédula/pasaporte <Line><Value>{ampliacionesDetails?.studentIdNumber}</Value></Line>, domicilio en <Line><Value>{ampliacionesDetails?.studentAddress}</Value></Line>, teléfonos <Line><Value>{ampliacionesDetails?.studentPhone1}</Value></Line>/<Line><Value>{ampliacionesDetails?.studentPhone2}</Value></Line>, correo electrónico <Line><Value>{contract.clientEmail}</Value></Line>, en adelante EL ESTUDIANTE, convienen en celebrar el siguiente contrato de servicio.
+            La empresa FREEWAY ESCUELA DE MANEJO S.A., con RUC 155628022-2-2016 DV 2, en adelante LA EMPRESA, y <Line><Value>{contract.clientName}</Value></Line>, con <Value>{ampliacionesDetails?.idType || 'cédula/pasaporte'}</Value> <Line><Value>{ampliacionesDetails?.studentIdNumber}</Value></Line>, domicilio en <Line><Value>{ampliacionesDetails?.studentAddress}</Value></Line>, teléfonos <Line><Value>{ampliacionesDetails?.studentPhone1}</Value></Line>/<Line><Value>{ampliacionesDetails?.studentPhone2}</Value></Line>, correo electrónico <Line><Value>{contract.clientEmail}</Value></Line>, en adelante EL ESTUDIANTE, convienen en celebrar el siguiente contrato de servicio.
         </p>
 
         <div className="bg-slate-50 p-4 rounded-md print:bg-transparent print:p-0 space-y-1">
-            <h3 className="font-bold text-center pt-1">CLÁUSULA PESPECÍFICA</h3>
+            <h3 className="font-bold text-center pt-1">CLÁLSULA PESPECÍFICA</h3>
             
             <h3 className="font-bold">PRIMERA: OBJETO DEL CONTRATO</h3>
             <p className='text-[10px]'>LA EMPRESA se compromete a brindar a EL ESTUDIANTE el servicio de capacitación teórica para la ampliación de su licencia de conducir, según los planes seleccionados.</p>

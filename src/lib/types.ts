@@ -26,6 +26,7 @@ export type ContractType =
   | 'Curso Solo Practica';
 
 export interface DeluxeContractDetails {
+  idType?: string;
   studentIdNumber: string;
   studentAddress: string;
   studentPhone1: string;
@@ -48,6 +49,7 @@ export interface DeluxeContractDetails {
 }
 
 export interface AutoMotoContractDetails {
+  idType?: string;
   studentIdNumber?: string;
   studentAddress?: string;
   studentPhone1?: string;
@@ -70,6 +72,7 @@ export interface AutoMotoContractDetails {
 }
 
 export interface AmpliacionesContractDetails {
+    idType?: string;
     studentIdNumber?: string;
     studentAddress?: string;
     studentPhone1?: string;

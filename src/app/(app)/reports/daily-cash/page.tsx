@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -64,9 +63,8 @@ const paymentTypes = [
     { value: 'cash', label: 'Efectivo' },
     { value: 'debit', label: 'T.Débito' },
     { value: 'credit', label: 'T.Crédito' },
-    { value: 'global', label: 'GLOBAL' },
     { value: 'bac', label: 'BAC' },
-    { value: 'general', label: 'GENERAL' },
+    { value: 'general', label: 'General' },
     { value: 'cheques', label: 'Cheques' },
 ];
 
@@ -138,7 +136,7 @@ export default function DailyCashReportPage() {
 
             let paymentType: string = 'cash';
             let amount: number = 0;
-            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 };
+            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
             
             let studentId = contract.autoMotoDetails?.studentIdNumber || contract.deluxeDetails?.studentIdNumber || contract.ampliacionesDetails?.studentIdNumber || '';
 
@@ -183,7 +181,7 @@ export default function DailyCashReportPage() {
                 amount: payment.amount || 0,
                 paymentType: 'cash',
                 createdBy: payment.createdBy,
-                cash: payment.amount || 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
+                cash: payment.amount || 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0,
             });
         });
 
@@ -198,7 +196,7 @@ export default function DailyCashReportPage() {
                 amount: payment.amount || 0,
                 paymentType: 'cash',
                 createdBy: payment.createdBy,
-                cash: payment.amount || 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
+                cash: payment.amount || 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0,
             });
         });
 
@@ -213,7 +211,7 @@ export default function DailyCashReportPage() {
                 amount: payment.amount || 0,
                 paymentType: 'cash',
                 createdBy: payment.createdBy,
-                cash: payment.amount || 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0,
+                cash: payment.amount || 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0,
             });
         });
 
@@ -244,12 +242,11 @@ export default function DailyCashReportPage() {
         cash: acc.cash + (curr.cash || 0),
         debit: acc.debit + (curr.debit || 0),
         credit: acc.credit + (curr.credit || 0),
-        global: acc.global + (curr.global || 0),
         bac: acc.bac + (curr.bac || 0),
         general: acc.general + (curr.general || 0),
         cheques: acc.cheques + (curr.cheques || 0),
       }),
-      { cash: 0, debit: 0, credit: 0, global: 0, bac: 0, general: 0, cheques: 0 }
+      { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 }
     );
   }, [filteredTransactions]);
 
@@ -280,7 +277,7 @@ export default function DailyCashReportPage() {
     if (field === 'amount') {
         newTransaction.amount = parseFloat(value) || 0;
         newTransaction.cash = 0; newTransaction.debit = 0; newTransaction.credit = 0;
-        newTransaction.global = 0; newTransaction.bac = 0; newTransaction.general = 0; newTransaction.cheques = 0;
+        newTransaction.bac = 0; newTransaction.general = 0; newTransaction.cheques = 0;
         
         const pType = newTransaction.paymentType;
         if (pType && newTransaction.hasOwnProperty(pType)) {
@@ -459,9 +456,8 @@ export default function DailyCashReportPage() {
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black">Efectivo</TableHead>
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black">T.Débito</TableHead>
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black">T.Crédito</TableHead>
-                        <TableHead className="border-r border-black p-1 text-center font-bold text-black">GLOBAL</TableHead>
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black">BAC</TableHead>
-                        <TableHead className="border-r border-black p-1 text-center font-bold text-black">GENERAL</TableHead>
+                        <TableHead className="border-r border-black p-1 text-center font-bold text-black">General</TableHead>
                         <TableHead className="p-1 text-center font-bold text-black">Cheques</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -487,21 +483,19 @@ export default function DailyCashReportPage() {
                             <TableCell className="border-r border-black p-1 text-right bg-muted/20">{transaction.cash > 0 ? transaction.cash.toFixed(2) : '-'}</TableCell>
                             <TableCell className="border-r border-black p-1 text-right bg-muted/20">{transaction.debit > 0 ? transaction.debit.toFixed(2) : '-'}</TableCell>
                             <TableCell className="border-r border-black p-1 text-right bg-muted/20">{transaction.credit > 0 ? transaction.credit.toFixed(2) : '-'}</TableCell>
-                            <TableCell className="border-r border-black p-1 text-right bg-muted/20">{transaction.global > 0 ? transaction.global.toFixed(2) : '-'}</TableCell>
                             <TableCell className="border-r border-black p-1 text-right bg-muted/20">{transaction.bac > 0 ? transaction.bac.toFixed(2) : '-'}</TableCell>
                             <TableCell className="border-r border-black p-1 text-right bg-muted/20">{transaction.general > 0 ? transaction.general.toFixed(2) : '-'}</TableCell>
                             <TableCell className="p-1 text-right bg-muted/20">{transaction.cheques > 0 ? transaction.cheques.toFixed(2) : '-'}</TableCell>
                         </TableRow>
                         ))}
                         {isDataLoaded && filteredTransactions.length === 0 && (
-                            <TableRow><TableCell colSpan={14} className="text-center text-muted-foreground p-8 italic">No hay movimientos registrados para este día.</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={13} className="text-center text-muted-foreground p-8 italic">No hay movimientos registrados para este día.</TableCell></TableRow>
                         )}
                         <TableRow className="font-bold bg-slate-100 hover:bg-slate-100 border-t border-black">
                             <TableCell colSpan={7} className="text-right p-1 pr-4 border-r border-black uppercase font-bold">TOTALES POR CATEGORÍA:</TableCell>
                             <TableCell className="border-r border-black p-1 text-right">{transactionTotals.cash.toFixed(2)}</TableCell>
                             <TableCell className="border-r border-black p-1 text-right">{transactionTotals.debit.toFixed(2)}</TableCell>
                             <TableCell className="border-r border-black p-1 text-right">{transactionTotals.credit.toFixed(2)}</TableCell>
-                            <TableCell className="border-r border-black p-1 text-right">{transactionTotals.global.toFixed(2)}</TableCell>
                             <TableCell className="border-r border-black p-1 text-right">{transactionTotals.bac.toFixed(2)}</TableCell>
                             <TableCell className="border-r border-black p-1 text-right">{transactionTotals.general.toFixed(2)}</TableCell>
                             <TableCell className="p-1 text-right">{transactionTotals.cheques.toFixed(2)}</TableCell>
@@ -550,7 +544,6 @@ export default function DailyCashReportPage() {
                             <TableBody>
                                 <TableRow className="hover:bg-transparent"><TableCell className="border-r border-black p-1">TOTAL CRÉDITO</TableCell><TableCell className="p-1 text-right">{currencyFormatter.format(transactionTotals.credit)}</TableCell></TableRow>
                                 <TableRow className="hover:bg-transparent"><TableCell className="border-r border-black p-1">TOTAL DÉBITO</TableCell><TableCell className="p-1 text-right">{currencyFormatter.format(transactionTotals.debit)}</TableCell></TableRow>
-                                <TableRow className="hover:bg-transparent"><TableCell className="border-r border-black p-1 font-bold">GLOBAL</TableCell><TableCell className="p-1 text-right">{currencyFormatter.format(transactionTotals.global)}</TableCell></TableRow>
                                 <TableRow className="hover:bg-transparent"><TableCell className="border-r border-black p-1 font-bold">BAC</TableCell><TableCell className="p-1 text-right">{currencyFormatter.format(transactionTotals.bac)}</TableCell></TableRow>
                                 <TableRow className="hover:bg-transparent"><TableCell className="border-r border-black p-1 font-bold">GENERAL</TableCell><TableCell className="p-1 text-right">{currencyFormatter.format(transactionTotals.general)}</TableCell></TableRow>
                                 <TableRow className="hover:bg-transparent"><TableCell className="border-r border-black p-1 font-bold">CHEQUES</TableCell><TableCell className="p-1 text-right">{currencyFormatter.format(transactionTotals.cheques)}</TableCell></TableRow>

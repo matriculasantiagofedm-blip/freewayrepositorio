@@ -46,9 +46,8 @@ const paymentTypeLabels: { [key: string]: string } = {
     cash: 'Efectivo',
     debit: 'T.Débito',
     credit: 'T.Crédito',
-    global: 'GLOBAL',
     bac: 'BAC',
-    general: 'GENERAL',
+    general: 'General',
     cheques: 'Cheques',
     desconocido: 'Desconocido'
 };

@@ -135,7 +135,6 @@ export interface Transaction {
   cash: number;
   debit: number;
   credit: number;
-  global: number;
   bac: number;
   general: number;
   cheques: number;

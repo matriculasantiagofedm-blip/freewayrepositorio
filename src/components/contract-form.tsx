@@ -528,7 +528,7 @@ export function ContractForm() {
                                     <SelectItem value="cash">Efectivo</SelectItem>
                                     <SelectItem value="debit">Tarjeta Débito</SelectItem>
                                     <SelectItem value="credit">Tarjeta Crédito</SelectItem>
-                                    <SelectItem value="global">Global</SelectItem>
+                                    <SelectItem value="general">General</SelectItem>
                                     <SelectItem value="bac">BAC</SelectItem>
                                 </SelectContent>
                             </Select>

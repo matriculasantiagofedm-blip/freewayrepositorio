@@ -27,6 +27,7 @@ interface DiplomaRow {
 }
 
 const EXCLUDED_FOLIOS = ['0004', '0044', '4', '44'];
+const CORRECTION_FOLIOS = ['0001', '0067', '0061', '0103', '0085', '1', '67', '61', '103', '85'];
 
 export default function CertificatesSummaryReportPage() {
   const db = useDb();
@@ -168,14 +169,30 @@ export default function CertificatesSummaryReportPage() {
 
     diplomas.forEach(d => {
       const cat = d.category.toUpperCase();
-      if (d.type === 'update') counts.updates++;
-      else if (cat.includes('E')) counts.e++;
-      else if (cat.includes('F')) counts.f++;
-      else if (cat.includes('A') && cat.includes('B') && cat.includes('C') && cat.includes('D')) counts.abcd++;
-      else if (cat.includes('A') && cat.includes('C') && cat.includes('D')) counts.acd++;
-      else if (cat.includes('A') && cat.includes('C')) counts.ac++;
-      else if (cat.includes('A') && cat.includes('B')) counts.ab++;
-      else if (cat.includes('B') && cat.includes('D')) counts.bd++;
+      const rawFolio = d.folio;
+      const folioNumber = rawFolio.includes('/') ? rawFolio.split('/')[1].trim() : rawFolio.trim();
+      const paddedFolio = folioNumber.padStart(4, '0');
+
+      // Si el folio está en la lista de correcciones, lo contamos ahí y no en su categoría original
+      if (CORRECTION_FOLIOS.includes(folioNumber) || CORRECTION_FOLIOS.includes(paddedFolio)) {
+        counts.corrections++;
+      } else if (d.type === 'update') {
+        counts.updates++;
+      } else if (cat.includes('E')) {
+        counts.e++;
+      } else if (cat.includes('F')) {
+        counts.f++;
+      } else if (cat.includes('A') && cat.includes('B') && cat.includes('C') && cat.includes('D')) {
+        counts.abcd++;
+      } else if (cat.includes('A') && cat.includes('C') && cat.includes('D')) {
+        counts.acd++;
+      } else if (cat.includes('A') && cat.includes('C')) {
+        counts.ac++;
+      } else if (cat.includes('A') && cat.includes('B')) {
+        counts.ab++;
+      } else if (cat.includes('B') && cat.includes('D')) {
+        counts.bd++;
+      }
     });
 
     const uniquePersons = new Set(diplomas.map(d => d.idNumber)).size;
@@ -323,7 +340,7 @@ export default function CertificatesSummaryReportPage() {
                             <tr className="bg-blue-400"><td className="border border-black p-1 font-bold">AMPLIACIÓN F-I</td><td className="border border-black p-1 text-center font-bold">{stats.f || ''}</td></tr>
                             <tr><td className="border border-black p-1">AMPLIACIÓN G-H</td><td className="border border-black p-1 text-center font-bold">{stats.gh || ''}</td></tr>
                             <tr className="bg-green-400"><td className="border border-black p-1 font-bold">ACTUALIZACIONES</td><td className="border border-black p-1 text-center font-bold">{stats.updates || ''}</td></tr>
-                            <tr><td className="border border-black p-1">CORRECCIONES / DUPLICADOS</td><td className="border border-black p-1 text-center font-bold"></td></tr>
+                            <tr><td className="border border-black p-1">CORRECCIONES / DUPLICADOS</td><td className="border border-black p-1 text-center font-bold">{stats.corrections || ''}</td></tr>
                             <tr className="bg-slate-100 font-bold"><td className="border border-black p-1 text-right pr-4 uppercase">TOTAL</td><td className="border border-black p-1 text-center">{stats.total}</td></tr>
                         </tbody>
                     </table>

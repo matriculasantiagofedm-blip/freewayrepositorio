@@ -5,7 +5,7 @@ import type { Contract } from '@/lib/types';
 import { ContractView } from '@/components/contract-view';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ChevronLeft, Printer, Loader2, CheckCircle2, CalendarIcon, Phone, Trash2, AlertCircle } from 'lucide-react';
+import { ChevronLeft, Printer, Loader2, CheckCircle2, CalendarIcon, Phone, Trash2, AlertCircle, Edit } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -326,6 +326,14 @@ export default function ContractDetailPage() {
                 </Button>
             </div>
             <div className="flex items-center gap-2">
+              {(role === 'Administrador' || role === 'Ventas' || role === 'Ventas Externas') && (
+                <Button variant="outline" asChild>
+                    <Link href={`/contracts/${contractId}/edit`}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Editar Contrato
+                    </Link>
+                </Button>
+              )}
               {canGenerateCertificate && (role === 'Administrador' || role === 'Ventas' || role === 'Ventas Externas') && (
                 <Button onClick={handleOpenCertificateModal}>
                   Generar Certificado

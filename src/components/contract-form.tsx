@@ -28,11 +28,11 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Loader2, Calculator, UserCircle, Settings2, Clock, BookOpen, Car, Bike } from 'lucide-react';
+import { CalendarIcon, Loader2, Calculator, UserCircle, Settings2, Clock, BookOpen, Car, Bike, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Timestamp, collection, query, where, getDocs, doc, serverTimestamp, runTransaction } from 'firebase/firestore';
+import { Timestamp, collection, query, where, getDocs, doc, serverTimestamp, runTransaction, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import type { ContractType, InstructorName, VehicleName } from '@/lib/types';
+import type { Contract, ContractType, InstructorName, VehicleName } from '@/lib/types';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useDb, useUser } from './firebase-provider';
 
@@ -164,7 +164,6 @@ type FormValues = z.infer<typeof contractSchema>;
 const convertDatesToTimestamps = (data: any) => {
     const result: any = {};
     
-    // Remove undefined values to avoid Firestore transaction errors
     Object.keys(data).forEach(key => {
         if (data[key] !== undefined) {
             result[key] = data[key];
@@ -172,39 +171,52 @@ const convertDatesToTimestamps = (data: any) => {
     });
 
     const toTs = (d: any) => (d instanceof Date) ? Timestamp.fromDate(d) : d;
+    const toDateObj = (d: any) => {
+        if (!d) return null;
+        if (d instanceof Timestamp) return d.toDate();
+        if (d instanceof Date) return d;
+        return new Date(d);
+    }
     
     if (result.paymentDeadline) result.paymentDeadline = toTs(result.paymentDeadline);
     if (result.theoreticalClassDate) result.theoreticalClassDate = toTs(result.theoreticalClassDate);
     if (result.theoreticalClassDates) {
         result.theoreticalClassDates = result.theoreticalClassDates
             .filter((d: any) => d !== null && d !== undefined)
-            .map((d: any) => toTs(d));
+            .map((d: any) => toTs(toDateObj(d)));
     }
     if (result.practicalClassSchedules) {
         result.practicalClassSchedules = result.practicalClassSchedules.map((s: any) => ({
             ...s,
-            date: s.date ? toTs(s.date) : null
+            date: s.date ? toTs(toDateObj(s.date)) : null
         }));
     }
     if (result.motoPracticalClassSchedules) {
         result.motoPracticalClassSchedules = result.motoPracticalClassSchedules.map((s: any) => ({
             ...s,
-            date: s.date ? toTs(s.date) : null
+            date: s.date ? toTs(toDateObj(s.date)) : null
         }));
     }
     return result;
 };
 
-export function ContractForm() {
+interface ContractFormProps {
+    initialContract?: Contract;
+}
+
+export function ContractForm({ initialContract }: ContractFormProps) {
   const db = useDb();
   const { user } = useUser();
   const { role: currentUserRole } = useCurrentRole();
   const router = useRouter();
   const { toast } = useToast();
   const searchParams = useSearchParams();
-  const contractTypeParam = searchParams.get('type') as ContractType | null;
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const contractType: ContractType = useMemo(() => contractTypeParam || 'Curso Auto', [contractTypeParam]);
+
+  const contractType: ContractType = useMemo(() => {
+      if (initialContract) return initialContract.type;
+      return (searchParams.get('type') as ContractType) || 'Curso Auto';
+  }, [initialContract, searchParams]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(contractSchema),
@@ -223,6 +235,49 @@ export function ContractForm() {
     },
   });
 
+  // Populate form with initial data if editing
+  useEffect(() => {
+    if (initialContract) {
+        const details = initialContract.autoMotoDetails || initialContract.deluxeDetails || initialContract.ampliacionesDetails;
+        
+        const toDateObj = (d: any) => {
+            if (!d) return undefined;
+            if (d instanceof Timestamp) return d.toDate();
+            if (d instanceof Date) return d;
+            const parsed = new Date(d);
+            return isNaN(parsed.getTime()) ? undefined : parsed;
+        };
+
+        const formValues: any = {
+            clientName: initialContract.clientName,
+            clientEmail: initialContract.clientEmail,
+            contractType: initialContract.type,
+            idType: details?.idType || 'C.I.P.',
+            studentIdNumber: details?.studentIdNumber || '',
+            studentAddress: details?.studentAddress || '',
+            studentPhone1: details?.studentPhone1 || '',
+            studentPhone2: details?.studentPhone2 || '',
+            coursePlan: details?.coursePlan || '',
+            courseValue: details?.courseValue || 0,
+            downPayment: details?.downPayment || 0,
+            balance: details?.balance || 0,
+            paymentType: details?.paymentType || 'cash',
+            paymentDeadline: toDateObj(details?.paymentDeadline),
+            vehicleTransmission: details?.vehicleTransmission,
+            licenseCategory: details?.licenseCategory,
+            theoreticalClassSchedule: details?.theoreticalClassSchedule,
+            theoreticalClassDates: (details?.theoreticalClassDates || []).map(toDateObj),
+            theoreticalClassDate: toDateObj(details?.theoreticalClassDate),
+            theoreticalClassTime: details?.theoreticalClassTime,
+            selectedPlans: details?.selectedPlans || [],
+            practicalClassSchedules: (details?.practicalClassSchedules || []).map((s: any) => ({ ...s, date: toDateObj(s.date) })),
+            motoPracticalClassSchedules: (details?.motoPracticalClassSchedules || []).map((s: any) => ({ ...s, date: toDateObj(s.date) })),
+        };
+        
+        form.reset(formValues);
+    }
+  }, [initialContract, form]);
+
   const { fields: practicalFields, replace: replacePractical } = useFieldArray({ control: form.control, name: "practicalClassSchedules" });
   const { fields: motoFields, replace: replaceMoto } = useFieldArray({ control: form.control, name: "motoPracticalClassSchedules" });
 
@@ -233,8 +288,10 @@ export function ContractForm() {
   const theoreticalDates = form.watch('theoreticalClassDates') || [];
   const selectedPlans = form.watch('selectedPlans') || [];
   
+  // Re-calculate schedules ONLY when plan changes during creation (not initial load of edit)
   useEffect(() => {
-    if (!selectedPlanId || contractType === 'Ampliaciones') return;
+    if (!selectedPlanId || contractType === 'Ampliaciones' || initialContract) return;
+    
     let pkg: any;
     if (contractType === 'Curso Auto') pkg = autoPackages.find(p => p.id === selectedPlanId);
     else if (contractType === 'Curso Moto') pkg = motoPackages.find(p => p.id === selectedPlanId);
@@ -315,9 +372,12 @@ export function ContractForm() {
             }
         }
     }
-  }, [selectedPlanId, contractType, form, replacePractical, replaceMoto]);
+  }, [selectedPlanId, contractType, form, replacePractical, replaceMoto, initialContract]);
 
+  // Re-calculate theoretical dates ONLY when schedule changes during creation (not initial load)
   useEffect(() => {
+    if (initialContract) return;
+
     if (selectedTheoreticalSchedule === 'Clase Semanal') {
       const currentDates = form.getValues('theoreticalClassDates') || [];
       const newDates = Array.from({ length: 4 }).map((_, i) => currentDates[i] || addDays(new Date(), i + 1));
@@ -329,7 +389,7 @@ export function ContractForm() {
     } else if (contractType !== 'Ampliaciones') {
       form.setValue('theoreticalClassDates', []);
     }
-  }, [selectedTheoreticalSchedule, form, contractType]);
+  }, [selectedTheoreticalSchedule, form, contractType, initialContract]);
 
   useEffect(() => {
     const val = Number(courseValue) || 0;
@@ -341,47 +401,66 @@ export function ContractForm() {
     if (!db || !user) return;
     setIsSubmitting(true);
     try {
-      const clientsRef = collection(db, 'clients');
-      const q = query(clientsRef, where('idNumber', '==', values.studentIdNumber));
-      const clientSnapshot = await getDocs(q);
-      const existingClientDoc = clientSnapshot.docs[0];
+      const cleanedData = convertDatesToTimestamps(values);
 
-      const newContractId = await runTransaction(db, async (transaction) => {
-        const counterRef = doc(db, 'counters', 'contract_folio');
-        const counterDoc = await transaction.get(counterRef);
-        const newFolioNumber = counterDoc.exists() ? counterDoc.data().count + 1 : 1;
+      if (initialContract) {
+          // MODE: UPDATE
+          const contractRef = doc(db, 'contracts', initialContract.id);
+          const updateData: any = {
+              clientName: values.clientName,
+              clientEmail: values.clientEmail,
+          };
 
-        let clientId = existingClientDoc?.id;
-        if (!existingClientDoc) {
-          const newClientRef = doc(collection(db, 'clients'));
-          clientId = newClientRef.id;
-          transaction.set(newClientRef, {
-            id: clientId, name: values.clientName, email: values.clientEmail, 
-            idNumber: values.studentIdNumber, phone: values.studentPhone1,
-            userId: user.uid, createdAt: serverTimestamp() as any
+          if (values.contractType === 'Curso Deluxe') updateData.deluxeDetails = cleanedData;
+          else if (values.contractType === 'Ampliaciones') updateData.ampliacionesDetails = cleanedData;
+          else updateData.autoMotoDetails = cleanedData;
+
+          await updateDoc(contractRef, updateData);
+          toast({ title: 'Contrato Actualizado', description: 'Los cambios han sido guardados.' });
+          router.push(`/contracts/${initialContract.id}`);
+      } else {
+          // MODE: CREATE
+          const clientsRef = collection(db, 'clients');
+          const q = query(clientsRef, where('idNumber', '==', values.studentIdNumber));
+          const clientSnapshot = await getDocs(q);
+          const existingClientDoc = clientSnapshot.docs[0];
+
+          const newContractId = await runTransaction(db, async (transaction) => {
+            const counterRef = doc(db, 'counters', 'contract_folio');
+            const counterDoc = await transaction.get(counterRef);
+            const newFolioNumber = counterDoc.exists() ? counterDoc.data().count + 1 : 1;
+
+            let clientId = existingClientDoc?.id;
+            if (!existingClientDoc) {
+              const newClientRef = doc(collection(db, 'clients'));
+              clientId = newClientRef.id;
+              transaction.set(newClientRef, {
+                id: clientId, name: values.clientName, email: values.clientEmail, 
+                idNumber: values.studentIdNumber, phone: values.studentPhone1,
+                userId: user.uid, createdAt: serverTimestamp() as any
+              });
+            }
+
+            const newContractRef = doc(collection(db, 'contracts'));
+            const contractData: any = {
+              id: newContractRef.id, folioNumber: newFolioNumber, title: values.contractType,
+              clientName: values.clientName, clientEmail: values.clientEmail, clientId: clientId,
+              type: values.contractType, status: 'active', userId: user.uid, createdAt: serverTimestamp() as any,
+              createdBy: currentUserRole || undefined
+            };
+
+            if (values.contractType === 'Curso Deluxe') contractData.deluxeDetails = cleanedData;
+            else if (values.contractType === 'Ampliaciones') contractData.ampliacionesDetails = cleanedData;
+            else contractData.autoMotoDetails = cleanedData;
+
+            transaction.set(newContractRef, contractData);
+            transaction.set(counterRef, { count: newFolioNumber }, { merge: true });
+            return newContractRef.id;
           });
-        }
 
-        const newContractRef = doc(collection(db, 'contracts'));
-        const cleanedData = convertDatesToTimestamps(values);
-        const contractData: any = {
-          id: newContractRef.id, folioNumber: newFolioNumber, title: values.contractType,
-          clientName: values.clientName, clientEmail: values.clientEmail, clientId: clientId,
-          type: values.contractType, status: 'active', userId: user.uid, createdAt: serverTimestamp() as any,
-          createdBy: currentUserRole || undefined
-        };
-
-        if (values.contractType === 'Curso Deluxe') contractData.deluxeDetails = cleanedData;
-        else if (values.contractType === 'Ampliaciones') contractData.ampliacionesDetails = cleanedData;
-        else contractData.autoMotoDetails = cleanedData;
-
-        transaction.set(newContractRef, contractData);
-        transaction.set(counterRef, { count: newFolioNumber }, { merge: true });
-        return newContractRef.id;
-      });
-
-      toast({ title: 'Contrato Generado', description: 'Éxito.' });
-      router.push(`/contracts/${newContractId}`);
+          toast({ title: 'Contrato Generado', description: 'Éxito.' });
+          router.push(`/contracts/${newContractId}`);
+      }
     } catch (e: any) {
       console.error("Error saving contract:", e);
       toast({ variant: 'destructive', title: 'Error al Guardar', description: e.message || 'Error desconocido' });
@@ -481,7 +560,7 @@ export function ContractForm() {
                         <FormField control={form.control} name="idType" render={({ field }) => (
                             <FormItem className="w-[100px]">
                                 <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Tipo</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger></FormControl>
                                     <SelectContent>
                                         <SelectItem value="C.I.P.">C.I.P.</SelectItem>
@@ -493,7 +572,7 @@ export function ContractForm() {
                         <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
                             <FormItem className="flex-1">
                                 <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">N° Identificación</FormLabel>
-                                <FormControl><Input className="h-8 text-sm" placeholder="8-000-000" {...field} /></FormControl>
+                                <FormControl><Input className="h-8 text-sm" placeholder="8-000-000" {...field} readOnly={!!initialContract} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
@@ -541,7 +620,7 @@ export function ContractForm() {
                     <FormField control={form.control} name="paymentType" render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Método de Pago</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl><SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger></FormControl>
                                 <SelectContent>
                                     <SelectItem value="cash">Efectivo</SelectItem>
@@ -721,7 +800,7 @@ export function ContractForm() {
             </Card>
         )}
 
-        {/* 5. Programación de Clases Prácticas (Generadas automáticamente) */}
+        {/* 5. Programación de Clases Prácticas */}
         {contractType !== 'Ampliaciones' && (
             <div className="space-y-4">
                 {renderClassSlots(practicalFields, "practicalClassSchedules", carVehicles, "5. Programación Clases Prácticas (Auto)", Car)}
@@ -731,7 +810,9 @@ export function ContractForm() {
 
         <div className="flex justify-end pt-2 pb-8">
             <Button type="submit" size="lg" className="w-full md:w-auto h-10 px-12 font-bold shadow-md" disabled={isSubmitting}>
-                {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Procesando...</> : 'Generar Contrato y Guardar'}
+                {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Procesando...</> : (
+                    initialContract ? <><Save className="mr-2 h-4 w-4" /> Guardar Cambios</> : 'Generar Contrato y Guardar'
+                )}
             </Button>
         </div>
       </form>

@@ -6,11 +6,11 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const Line = ({ children, className }: { children?: React.ReactNode, className?: string }) => (
-  <span className={cn("border-b border-dotted border-black flex-1 min-w-8 text-center font-semibold text-primary print:text-black", className)}>
+  <span className={cn("border-b border-dotted border-black flex-1 min-w-8 text-center font-semibold text-black", className)}>
     {children || <>&nbsp;</>}
   </span>
 );
-const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary print:text-black">{children}</span>;
+const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-black">{children}</span>;
 
 const Checkbox = ({ checked }: { checked: boolean }) => (
     <span className={`border border-black inline-block w-3 h-3 text-center leading-none align-middle ${checked ? 'bg-black text-white' : ''}`}>
@@ -103,14 +103,14 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, stude
                     </div>
                 </>
             )}
-            <p>4. Horario para clases practicas (Fecha, Hora, Vehículo e Instructor):</p>
+            <p>4. Horario para clases prácticas (Fecha y Hora):</p>
             {type === 'Curso Mixto' ? (
                 <>
                     <p className="font-semibold">Clases de Auto:</p>
                     <div className="pl-4 space-y-0.5">
                         {(autoMotoDetails?.practicalClassSchedules || []).map((s, index) => (
                             <div key={index} className="flex flex-wrap items-center gap-x-2 text-[9px]">
-                                ○ Clase {index + 1}: <Line>{s.date ? formatDate(s.date) : ''}</Line> Hora: <Line>{s.time}</Line> Vehículo: <Line>{s.vehicle}</Line> Instructor: <Line>{s.instructor}</Line>
+                                ○ Clase {index + 1}: <Line>{s.date ? formatDate(s.date) : ''}</Line> Hora: <Line>{s.time}</Line>
                             </div>
                         ))}
                     </div>
@@ -118,7 +118,7 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, stude
                      <div className="pl-4 space-y-0.5">
                         {(autoMotoDetails?.motoPracticalClassSchedules || []).map((s, index) => (
                             <div key={index} className="flex flex-wrap items-center gap-x-2 text-[9px]">
-                                ○ Clase {index + 1}: <Line>{s.date ? formatDate(s.date) : ''}</Line> Hora: <Line>{s.time}</Line> Vehículo: <Line>{s.vehicle}</Line> Instructor: <Line>{s.instructor}</Line>
+                                ○ Clase {index + 1}: <Line>{s.date ? formatDate(s.date) : ''}</Line> Hora: <Line>{s.time}</Line>
                             </div>
                         ))}
                     </div>
@@ -127,7 +127,7 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, stude
                 <div className="pl-4 space-y-0.5">
                     {(autoMotoDetails?.practicalClassSchedules || []).map((s, index) => (
                         <div key={index} className="flex flex-wrap items-center gap-x-2 text-[9px]">
-                            ○ Clase {index + 1}: <Line>{s.date ? formatDate(s.date) : ''}</Line> Hora: <Line>{s.time}</Line> Vehículo: <Line>{s.vehicle}</Line> Instructor: <Line>{s.instructor}</Line>
+                            ○ Clase {index + 1}: <Line>{s.date ? formatDate(s.date) : ''}</Line> Hora: <Line>{s.time}</Line>
                         </div>
                     ))}
                 </div>

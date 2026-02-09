@@ -1,4 +1,3 @@
-
 'use client';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -6,15 +5,14 @@ import { Card, CardContent } from './ui/card';
 import { useState, useEffect } from 'react';
 import { cn, toDate } from '@/lib/utils';
 import type { DeluxeContractDetails } from '@/lib/types';
-import { useCurrentRole } from '@/hooks/use-current-role';
 
 const Line = ({ children, className }: { children?: React.ReactNode, className?: string }) => (
-  <span className={cn("border-b border-dotted border-black flex-1 min-w-8 text-center font-semibold text-primary print:text-black", className)}>
+  <span className={cn("border-b border-dotted border-black flex-1 min-w-8 text-center font-semibold text-black", className)}>
     {children || <>&nbsp;</>}
   </span>
 );
 const LongLine = () => <span className="border-b border-dotted border-black flex-1 h-4 min-w-40" />;
-const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary print:text-black">{children}</span>;
+const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-black">{children}</span>;
 
 interface DeluxePremiumContractPreviewProps {
     clientName?: string;

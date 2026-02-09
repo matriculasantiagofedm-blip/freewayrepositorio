@@ -10,7 +10,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, CalendarIcon, Banknote } from 'lucide-react';
+import { Loader2, CalendarIcon, Banknote, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Contract, Payment, BookSalePayment } from '@/lib/types';
 import {
@@ -37,6 +37,12 @@ interface PaymentTypeRow {
   total: number;
 }
 
+interface RoleRow {
+  role: string;
+  transactions: number;
+  total: number;
+}
+
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',
@@ -59,6 +65,7 @@ export default function FinanceReportPage() {
   const [view, setView] = useState('daily');
   const [reportData, setReportData] = useState<ReportRow[]>([]);
   const [paymentTypeData, setPaymentTypeData] = useState<PaymentTypeRow[]>([]);
+  const [roleData, setRoleData] = useState<RoleRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -108,6 +115,7 @@ export default function FinanceReportPage() {
 
         const aggregated: { [key: string]: { transactions: number; total: number } } = {};
         const paymentTypeAggregated: { [key: string]: { transactions: number; total: number } } = {};
+        const roleAggregated: { [key: string]: { transactions: number; total: number } } = {};
 
         // Helper to aggregate data by concept
         const aggregate = (concept: string, amount: number) => {
@@ -125,6 +133,16 @@ export default function FinanceReportPage() {
           }
           paymentTypeAggregated[paymentType].transactions += 1;
           paymentTypeAggregated[paymentType].total += amount;
+        };
+
+        // Helper to aggregate data by role
+        const aggregateByRole = (role: string | undefined, amount: number) => {
+          const roleName = role || 'Sin Asignar';
+          if (!roleAggregated[roleName]) {
+            roleAggregated[roleName] = { transactions: 0, total: 0 };
+          }
+          roleAggregated[roleName].transactions += 1;
+          roleAggregated[roleName].total += amount;
         };
 
         // 1. Contract down payments
@@ -152,6 +170,7 @@ export default function FinanceReportPage() {
           if (amount > 0) {
             aggregate(concept, amount);
             aggregateByPaymentType(paymentType, amount);
+            aggregateByRole(contract.createdBy, amount);
           }
         });
 
@@ -159,21 +178,24 @@ export default function FinanceReportPage() {
         cancellationsSnap.forEach((doc) => {
           const payment = doc.data() as Payment;
           aggregate('Abono/Cancelación de Saldo', payment.amount);
-          aggregateByPaymentType('cash', payment.amount);
+          aggregateByPaymentType(payment.paymentType || 'cash', payment.amount);
+          aggregateByRole(payment.createdBy, payment.amount);
         });
 
         // 3. Update payments
         updatesSnap.forEach((doc) => {
           const payment = doc.data() as Payment;
           aggregate('Actualización de Certificado', payment.amount);
-          aggregateByPaymentType('cash', payment.amount);
+          aggregateByPaymentType(payment.paymentType || 'cash', payment.amount);
+          aggregateByRole(payment.createdBy, payment.amount);
         });
 
         // 4. Book sale payments
         bookSalesSnap.forEach((doc) => {
           const payment = doc.data() as BookSalePayment;
           aggregate('Venta de Libros', payment.amount);
-           aggregateByPaymentType('cash', payment.amount);
+          aggregateByPaymentType(payment.paymentType || 'cash', payment.amount);
+          aggregateByRole(payment.createdBy, payment.amount);
         });
 
         const finalReport = Object.entries(aggregated).map(([concept, data]) => ({
@@ -186,8 +208,14 @@ export default function FinanceReportPage() {
           ...data,
         })).sort((a, b) => b.total - a.total);
 
+        const finalRoleReport = Object.entries(roleAggregated).map(([role, data]) => ({
+          role,
+          ...data,
+        })).sort((a, b) => b.total - a.total);
+
         setReportData(finalReport);
         setPaymentTypeData(finalPaymentTypeReport);
+        setRoleData(finalRoleReport);
 
       } catch (error) {
         console.error("Error fetching financial data:", error);
@@ -217,7 +245,7 @@ export default function FinanceReportPage() {
           <Banknote className="h-8 w-8 text-primary" />
           <div>
             <h1 className="font-headline text-3xl font-bold">Reporte Financiero</h1>
-            <p className="text-muted-foreground">Desglose de ingresos por concepto y período.</p>
+            <p className="text-muted-foreground">Desglose de ingresos por concepto, tipo de pago y roles.</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -266,6 +294,7 @@ export default function FinanceReportPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 flex flex-col gap-8">
+                {/* Desglose por Concepto */}
                 <Card>
                     <CardHeader>
                         <CardTitle>Desglose de Ingresos por Concepto</CardTitle>
@@ -300,7 +329,45 @@ export default function FinanceReportPage() {
                         </Table>
                     </CardContent>
                 </Card>
+
+                {/* Desglose por Rol */}
+                <Card className="border-primary/20 bg-primary/5">
+                    <CardHeader>
+                        <div className="flex items-center gap-2">
+                            <Users className="h-5 w-5 text-primary" />
+                            <CardTitle>Ventas por Rol de Usuario</CardTitle>
+                        </div>
+                        <CardDescription>Resumen de facturación según el cargo de quien registró la operación.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Rol de Usuario</TableHead>
+                                    <TableHead className="text-center"># Transacciones</TableHead>
+                                    <TableHead className="text-right">Monto Recaudado</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {roleData.map((row) => (
+                                    <TableRow key={row.role}>
+                                        <TableCell className="font-bold text-primary">{row.role}</TableCell>
+                                        <TableCell className="text-center">{row.transactions}</TableCell>
+                                        <TableCell className="text-right font-semibold">{currencyFormatter.format(row.total)}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                            <TableFooter>
+                                <TableRow className="font-bold text-base bg-transparent">
+                                    <TableCell colSpan={2}>Total Recaudado</TableCell>
+                                    <TableCell className="text-right">{currencyFormatter.format(totalIncome)}</TableCell>
+                                </TableRow>
+                            </TableFooter>
+                        </Table>
+                    </CardContent>
+                </Card>
                 
+                {/* Desglose por Tipo de Pago */}
                 <Card>
                     <CardHeader>
                         <CardTitle>Desglose por Tipo de Pago</CardTitle>

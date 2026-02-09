@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -36,6 +35,8 @@ import { Loader2, CalendarIcon, PlusCircle, Trash2, CalendarClock, X } from 'luc
 import { cn, toDate } from '@/lib/utils';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useCurrentRole } from '@/hooks/use-current-role';
+import Link from 'next/link';
 
 const classEntrySchema = z.object({
   date: z.date({ required_error: 'Fecha requerida' }),
@@ -65,6 +66,7 @@ const timeSlots = [
 export default function ManualSchedulePage() {
     const db = useDb();
     const { user } = useUser();
+    const { role, isLoading: isRoleLoading } = useCurrentRole();
     const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
 
@@ -96,6 +98,22 @@ export default function ManualSchedulePage() {
     }, [db]);
 
     const { data: entries, isLoading: isLoadingEntries } = useCollection<ManualSchedule>(manualEntriesQuery);
+
+    if (isRoleLoading) {
+        return <div className="flex justify-center p-12"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>;
+    }
+
+    if (role !== 'Administrador') {
+        return (
+            <div className="p-12 text-center border-2 border-dashed rounded-lg max-w-2xl mx-auto mt-12">
+                <h3 className="text-lg font-semibold text-destructive">Acceso Restringido</h3>
+                <p className="text-muted-foreground mt-2">Solo los usuarios con rol de Administrador pueden gestionar la agenda manual.</p>
+                <Button asChild className="mt-6" variant="outline">
+                    <Link href="/dashboard">Volver al Panel</Link>
+                </Button>
+            </div>
+        );
+    }
 
     const onSubmit = async (values: FormValues) => {
         if (!db || !user) {

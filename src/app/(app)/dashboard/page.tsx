@@ -78,7 +78,7 @@ export default function DashboardPage() {
       title: 'Gestión de Trámites y Agenda',
       actions: [
         { name: 'Generar Certificado Manual', href: '/certificates?mode=manual', bgColor: 'bg-amber-50', textColor: 'text-amber-600', roles: ['Administrador'] },
-        { name: 'Agenda Manual', href: '/manual-schedule', bgColor: 'bg-rose-50', textColor: 'text-rose-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+        { name: 'Agenda Manual', href: '/manual-schedule', bgColor: 'bg-rose-50', textColor: 'text-rose-600', roles: ['Administrador'] },
       ]
     },
     {

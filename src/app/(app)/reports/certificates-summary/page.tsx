@@ -58,12 +58,15 @@ export default function CertificatesSummaryReportPage() {
       const end = endOfDay(endDate);
 
       const contractsRef = collection(db, 'contracts');
+      
+      // Consulta 1: Contratos dentro del rango de fecha
       const qContracts = query(
         contractsRef,
         where('certificateGeneratedAt', '>=', Timestamp.fromDate(start)),
         where('certificateGeneratedAt', '<=', Timestamp.fromDate(end))
       );
       
+      // Consulta 2: Actualizaciones dentro del rango
       const updatesRef = collection(db, 'update_payments');
       const qUpdates = query(
         updatesRef,
@@ -71,14 +74,22 @@ export default function CertificatesSummaryReportPage() {
         where('paymentDate', '<=', Timestamp.fromDate(end))
       );
 
-      const [contractsSnap, updatesSnap] = await Promise.all([
+      // Consulta 3: Forzar la búsqueda de folios de corrección específicos por si están fuera de fecha
+      // pero el usuario los quiere ver en este reporte consolidado
+      const qSpecialCorrections = query(
+        contractsRef,
+        where('certificateFolio', 'in', CORRECTION_FOLIOS)
+      );
+
+      const [contractsSnap, updatesSnap, specialSnap] = await Promise.all([
         getDocs(qContracts),
-        getDocs(qUpdates)
+        getDocs(qUpdates),
+        getDocs(qSpecialCorrections)
       ]);
 
       const resultsMap = new Map<string, DiplomaRow>();
 
-      contractsSnap.forEach(doc => {
+      const processContractDoc = (doc: any) => {
         const data = doc.data() as any;
         const rawFolio = data.certificateFolio || '';
         if (!rawFolio) return;
@@ -107,10 +118,14 @@ export default function CertificatesSummaryReportPage() {
           type: data.isManualPrint ? 'manual' : 'contract'
         };
 
+        // Solo agregar si no existe o si es de la lista de correcciones (para priorizar el registro más reciente)
         if (!resultsMap.has(rawFolio)) {
             resultsMap.set(rawFolio, diploma);
         }
-      });
+      };
+
+      contractsSnap.forEach(processContractDoc);
+      specialSnap.forEach(processContractDoc);
 
       updatesSnap.forEach(doc => {
         const data = doc.data() as Payment;
@@ -167,6 +182,7 @@ export default function CertificatesSummaryReportPage() {
       const folioNumber = rawFolio.includes('/') ? rawFolio.split('/')[1].trim() : rawFolio.trim();
       const paddedFolio = folioNumber.padStart(4, '0');
 
+      // REGLA DE ORO: Las correcciones específicas SIEMPRE van a la línea de correcciones
       if (CORRECTION_FOLIOS.includes(folioNumber) || CORRECTION_FOLIOS.includes(paddedFolio)) {
         counts.corrections++;
       } else if (d.type === 'update') {

@@ -1,6 +1,6 @@
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ClipboardPenLine, ListChecks, Award, Gauge, FileText, Banknote, CalendarClock } from 'lucide-react';
+import { ClipboardPenLine, ListChecks, Award, Gauge, FileText, Banknote, CalendarClock, ScrollText } from 'lucide-react';
 import Link from 'next/link';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,13 @@ export default function ReportsPage() {
       description: 'Analiza los ingresos por tipo de curso y período.',
       href: '/reports/finance',
       icon: Banknote,
+      roles: ['Administrador'],
+    },
+    {
+      title: 'Consolidado de Certificados',
+      description: 'Control semanal de diplomas emitidos con resumen estadístico.',
+      href: '/reports/certificates-summary',
+      icon: ScrollText,
       roles: ['Administrador'],
     },
     {

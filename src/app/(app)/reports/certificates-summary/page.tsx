@@ -75,14 +75,15 @@ export default function CertificatesSummaryReportPage() {
         getDocs(qUpdates)
       ]);
 
-      const results: DiplomaRow[] = [];
+      // Usamos un Map para de-duplicar por folio
+      const resultsMap = new Map<string, DiplomaRow>();
 
       contractsSnap.forEach(doc => {
         const data = doc.data() as any;
         const rawFolio = data.certificateFolio || '';
         if (!rawFolio) return;
 
-        // Limpiar el folio para comparación (extraer el número si viene en formato YYYY / NNNN)
+        // Limpiar el folio para comparación
         const folioNumber = rawFolio.includes('/') ? rawFolio.split('/')[1].trim() : rawFolio.trim();
         const paddedFolio = folioNumber.padStart(4, '0');
 
@@ -95,7 +96,7 @@ export default function CertificatesSummaryReportPage() {
         const sLName = data.certificateSecondLastName || splitName(data.clientName).sLName;
         const mLastName = data.certificateMarriedLastName || '';
         
-        results.push({
+        const diploma: DiplomaRow = {
           index: 0,
           folio: rawFolio,
           idNumber: data.certificateCip || data.autoMotoDetails?.studentIdNumber || data.deluxeDetails?.studentIdNumber || data.ampliacionesDetails?.studentIdNumber || '',
@@ -106,7 +107,12 @@ export default function CertificatesSummaryReportPage() {
           marriedLastName: mLastName,
           category: data.certificateLicenseType || (data.autoMotoDetails?.licenseCategory) || '',
           type: data.isManualPrint ? 'manual' : 'contract'
-        });
+        };
+
+        // Solo agregamos si el folio no existe ya en el reporte actual
+        if (!resultsMap.has(rawFolio)) {
+            resultsMap.set(rawFolio, diploma);
+        }
       });
 
       updatesSnap.forEach(doc => {
@@ -119,7 +125,7 @@ export default function CertificatesSummaryReportPage() {
 
         const { fName, mName, lName, sLName } = splitName(data.clientName);
         
-        results.push({
+        const diploma: DiplomaRow = {
           index: 0,
           folio: paddedUpdateFolio,
           idNumber: data.studentIdNumber || '',
@@ -130,10 +136,18 @@ export default function CertificatesSummaryReportPage() {
           marriedLastName: '',
           category: 'ACTUALIZACIÓN',
           type: 'update'
-        });
+        };
+
+        // De-duplicación por folio para actualizaciones
+        if (!resultsMap.has(paddedUpdateFolio)) {
+            resultsMap.set(paddedUpdateFolio, diploma);
+        }
       });
 
-      const sorted = results.sort((a, b) => a.folio.localeCompare(b.folio)).map((item, i) => ({ ...item, index: i + 1 }));
+      const sorted = Array.from(resultsMap.values())
+        .sort((a, b) => a.folio.localeCompare(b.folio, undefined, { numeric: true }))
+        .map((item, i) => ({ ...item, index: i + 1 }));
+        
       setDiplomas(sorted);
 
     } catch (error) {
@@ -195,7 +209,7 @@ export default function CertificatesSummaryReportPage() {
       <div className="flex justify-between items-center print-hide">
         <div>
           <h1 className="text-2xl font-bold font-headline">Consolidado de Certificados</h1>
-          <p className="text-sm text-muted-foreground">Control semanal de diplomas emitidos.</p>
+          <p className="text-sm text-muted-foreground">Control semanal de diplomas emitidos (sin duplicados).</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 border p-1 rounded-md bg-white">

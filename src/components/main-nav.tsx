@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -39,11 +38,6 @@ const navLinks = [
         {
             href: '/cancellations',
             label: 'Gestionar Saldos',
-            roles: ['Administrador', 'Ventas', 'Ventas Externas'],
-        },
-        {
-            href: '/manual-schedule',
-            label: 'Agenda Manual',
             roles: ['Administrador', 'Ventas', 'Ventas Externas'],
         },
         {

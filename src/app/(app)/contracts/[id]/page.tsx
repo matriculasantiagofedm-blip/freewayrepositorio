@@ -1,6 +1,7 @@
+
 'use client';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { ContractView } from '@/components/contract-view';
 import { Button } from '@/components/ui/button';
@@ -95,7 +96,6 @@ export default function ContractDetailPage() {
 
   const { data: contract, isLoading, error } = useDoc<Contract>(contractRef);
 
-  // Limpiar categorías no válidas al abrir modal si no es ampliación
   useEffect(() => {
     if (contract && contract.type !== 'Ampliaciones' && isCertificateModalOpen) {
         const current = certificateData.licenseType.split(',').map(p => p.trim()).filter(p => p);
@@ -170,9 +170,16 @@ export default function ContractDetailPage() {
 
     setIsGenerating(true);
     try {
+        const timestamp = Timestamp.fromDate(certificateData.issueDate);
         const updateData = {
-            certificateGeneratedAt: serverTimestamp(),
+            certificateGeneratedAt: timestamp,
             certificateFolio: certificateData.folio,
+            certificateFirstName: certificateData.firstName,
+            certificateMiddleName: certificateData.middleName,
+            certificateLastName: certificateData.lastName,
+            certificateSecondLastName: certificateData.secondLastName,
+            certificateLicenseType: finalLicenseType,
+            certificateCip: certificateData.cip,
         };
         await updateDoc(contractRef, updateData);
         localStorage.setItem('lastCertificateFolio', certificateData.folio);
@@ -197,7 +204,7 @@ export default function ContractDetailPage() {
         window.open(`/certificate-print/${contractId}?${queryParams.toString()}`, '_blank');
         setIsCertificateModalOpen(false);
     } catch (error) {
-        toast({ variant: 'destructive', title: 'Error al Guardar', description: 'No se pudo actualizar el folio.' });
+        toast({ variant: 'destructive', title: 'Error al Guardar', description: 'No se pudo registrar la impresión.' });
     } finally {
         setIsGenerating(false);
     }

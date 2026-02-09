@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
@@ -7,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDb, useUser } from '@/components/firebase-provider';
-import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, setDoc, Timestamp } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Search, Printer, CheckCircle2, PlusCircle, FileText, Repeat, CalendarIcon, Phone } from 'lucide-react';
@@ -86,7 +87,6 @@ function CertificatesContent() {
     }
   }, []);
 
-  // Detectar modo manual desde el Dashboard (Solo Administrador)
   useEffect(() => {
     const mode = searchParams.get('mode');
     if (mode === 'manual' && role === 'Administrador') {
@@ -94,7 +94,6 @@ function CertificatesContent() {
     }
   }, [searchParams, role]);
 
-  // Limpiar categorías no válidas al cambiar de tipo de trámite
   useEffect(() => {
     if (!selectedContract && manualType === 'primera-vez') {
         const current = certificateData.licenseType.split(',').map(p => p.trim()).filter(p => p);
@@ -208,7 +207,6 @@ function CertificatesContent() {
 
   const handleCloseModal = (open: boolean) => {
     setIsCertificateModalOpen(open);
-    // Si el modal se cierra y estamos en modo manual (vinimos del Dashboard), regresamos al Dashboard
     if (!open && searchParams.get('mode') === 'manual') {
         router.push('/dashboard');
     }
@@ -230,7 +228,7 @@ function CertificatesContent() {
   };
 
   const handleProceedToPrint = async (customLicenseType?: string) => {
-    if (!certificateData.folio || !db) {
+    if (!certificateData.folio || !db || !user) {
         toast({ variant: 'destructive', title: 'Datos Inválidos', description: 'Faltan datos para imprimir.' });
         return;
     }
@@ -239,13 +237,35 @@ function CertificatesContent() {
 
     setIsGenerating(true);
     try {
+        const timestamp = Timestamp.fromDate(certificateData.issueDate);
+        const sharedData = {
+            certificateGeneratedAt: timestamp,
+            certificateFolio: certificateData.folio,
+            certificateFirstName: certificateData.firstName,
+            certificateMiddleName: certificateData.middleName,
+            certificateLastName: certificateData.lastName,
+            certificateSecondLastName: certificateData.secondLastName,
+            certificateLicenseType: finalLicenseType,
+            certificateCip: certificateData.cip,
+        };
+
         if (selectedContract) {
             const contractRef = doc(db, 'contracts', selectedContract.id);
-            const updateData = {
-                certificateGeneratedAt: serverTimestamp(),
-                certificateFolio: certificateData.folio,
-            };
-            await updateDoc(contractRef, updateData);
+            await updateDoc(contractRef, sharedData);
+        } else {
+            // Persistir impresión manual para el reporte
+            const manualRef = doc(collection(db, 'contracts'));
+            await setDoc(manualRef, {
+                ...sharedData,
+                id: manualRef.id,
+                clientName: certificateData.clientName,
+                type: manualType === 'ampliaciones' ? 'Ampliaciones' : 'Manual',
+                status: 'completed',
+                isManualPrint: true,
+                userId: user.uid,
+                createdAt: serverTimestamp(),
+                folioNumber: 0,
+            });
         }
         
         localStorage.setItem('lastCertificateFolio', certificateData.folio);
@@ -272,7 +292,8 @@ function CertificatesContent() {
         window.open(`/certificate-print/${printId}?${queryParams.toString()}`, '_blank');
         handleCloseModal(false);
     } catch (error) {
-        toast({ variant: 'destructive', title: 'Error al Guardar', description: 'No se pudo actualizar el folio.' });
+        console.error("Error saving certificate print:", error);
+        toast({ variant: 'destructive', title: 'Error al Guardar', description: 'No se pudo registrar la impresión.' });
     } finally {
         setIsGenerating(false);
     }
@@ -489,7 +510,6 @@ function CertificatesContent() {
                                     )}
 
                                     {groupedLicenses.individuals.map(license => {
-                                        // La Tipo A siempre es 80h en ampliación. B,C,D,F son 36h.
                                         const isAmpliacionFormat = ['A'].includes(license); 
                                         const bgColor = !isAmpliacionFormat ? 'bg-green-50 border-green-100' : 'bg-amber-50 border-amber-100';
                                         const textColor = !isAmpliacionFormat ? 'text-green-800' : 'text-amber-800';

@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp, orderBy } from 'firebase/firestore';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -23,7 +24,7 @@ interface DiplomaRow {
     secondLastName: string;
     marriedLastName: string;
     category: string;
-    type: 'contract' | 'update';
+    type: 'contract' | 'update' | 'manual';
 }
 
 export default function CertificatesSummaryReportPage() {
@@ -54,7 +55,7 @@ export default function CertificatesSummaryReportPage() {
       const start = startOfDay(startDate);
       const end = endOfDay(endDate);
 
-      // 1. Obtener contratos con certificados emitidos
+      // 1. Obtener todos los registros en contracts que tengan certificado (incluye manuales)
       const contractsRef = collection(db, 'contracts');
       const qContracts = query(
         contractsRef,
@@ -78,21 +79,27 @@ export default function CertificatesSummaryReportPage() {
       const results: DiplomaRow[] = [];
 
       contractsSnap.forEach(doc => {
-        const data = doc.data() as Contract;
-        const { fName, mName, lName, sLName } = splitName(data.clientName);
-        const details = data.autoMotoDetails || data.deluxeDetails || data.ampliacionesDetails;
+        const data = doc.data() as any;
+        const folio = data.certificateFolio || '';
+        if (!folio) return;
+
+        // Priorizar nombres guardados durante la impresión
+        const fName = data.certificateFirstName || splitName(data.clientName).fName;
+        const mName = data.certificateMiddleName || splitName(data.clientName).mName;
+        const lName = data.certificateLastName || splitName(data.clientName).lName;
+        const sLName = data.certificateSecondLastName || splitName(data.clientName).sLName;
         
         results.push({
           index: 0,
-          folio: data.certificateFolio || '',
-          idNumber: details?.studentIdNumber || '',
+          folio: folio,
+          idNumber: data.certificateCip || data.autoMotoDetails?.studentIdNumber || data.deluxeDetails?.studentIdNumber || data.ampliacionesDetails?.studentIdNumber || '',
           firstName: fName,
           middleName: mName,
           lastName: lName,
           secondLastName: sLName,
           marriedLastName: '',
-          category: (details as any)?.licenseCategory || (data.type === 'Ampliaciones' ? data.ampliacionesDetails?.selectedPlans?.map(p => p.name).join(', ') : '') || '',
-          type: 'contract'
+          category: data.certificateLicenseType || (data.autoMotoDetails?.licenseCategory) || '',
+          type: data.isManualPrint ? 'manual' : 'contract'
         });
       });
 
@@ -153,7 +160,6 @@ export default function CertificatesSummaryReportPage() {
   }, [diplomas]);
 
   const handlePrint = () => {
-    // Pequeño timeout para asegurar que el DOM esté listo
     setTimeout(() => {
         window.print();
     }, 100);
@@ -161,7 +167,6 @@ export default function CertificatesSummaryReportPage() {
 
   return (
     <div className="flex flex-col gap-6 print:gap-0">
-      {/* Estilos de Impresión Optimizados */}
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           @page { size: letter landscape; margin: 10mm; }

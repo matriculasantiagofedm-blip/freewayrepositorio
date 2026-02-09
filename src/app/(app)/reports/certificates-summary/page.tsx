@@ -56,7 +56,6 @@ export default function CertificatesSummaryReportPage() {
       const start = startOfDay(startDate);
       const end = endOfDay(endDate);
 
-      // 1. Obtener todos los registros en contracts que tengan certificado (incluye manuales)
       const contractsRef = collection(db, 'contracts');
       const qContracts = query(
         contractsRef,
@@ -64,7 +63,6 @@ export default function CertificatesSummaryReportPage() {
         where('certificateGeneratedAt', '<=', Timestamp.fromDate(end))
       );
       
-      // 2. Obtener pagos de actualizaciones
       const updatesRef = collection(db, 'update_payments');
       const qUpdates = query(
         updatesRef,
@@ -88,10 +86,9 @@ export default function CertificatesSummaryReportPage() {
         const folioNumber = rawFolio.includes('/') ? rawFolio.split('/')[1].trim() : rawFolio.trim();
         const paddedFolio = folioNumber.padStart(4, '0');
 
-        // EXCLUSIÓN DE PRUEBAS
+        // EXCLUSIÓN DE PRUEBAS 0004 y 0044
         if (EXCLUDED_FOLIOS.includes(paddedFolio) || EXCLUDED_FOLIOS.includes(folioNumber)) return;
 
-        // Priorizar nombres guardados durante la impresión
         const fName = data.certificateFirstName || splitName(data.clientName).fName;
         const mName = data.certificateMiddleName || splitName(data.clientName).mName;
         const lName = data.certificateLastName || splitName(data.clientName).lName;
@@ -116,7 +113,7 @@ export default function CertificatesSummaryReportPage() {
         const updateFolio = String(data.updateFolio || '');
         const paddedUpdateFolio = updateFolio.padStart(4, '0');
 
-        // EXCLUSIÓN DE PRUEBAS
+        // EXCLUSIÓN DE PRUEBAS 0004 y 0044
         if (EXCLUDED_FOLIOS.includes(paddedUpdateFolio) || EXCLUDED_FOLIOS.includes(updateFolio)) return;
 
         const { fName, mName, lName, sLName } = splitName(data.clientName);
@@ -135,7 +132,6 @@ export default function CertificatesSummaryReportPage() {
         });
       });
 
-      // Ordenar por folio y asignar índice
       const sorted = results.sort((a, b) => a.folio.localeCompare(b.folio)).map((item, i) => ({ ...item, index: i + 1 }));
       setDiplomas(sorted);
 
@@ -174,9 +170,7 @@ export default function CertificatesSummaryReportPage() {
   }, [diplomas]);
 
   const handlePrint = () => {
-    setTimeout(() => {
-        window.print();
-    }, 100);
+    window.print();
   };
 
   return (

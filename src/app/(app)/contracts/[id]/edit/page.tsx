@@ -10,11 +10,13 @@ import { ChevronLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { ContractForm } from '@/components/contract-form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useCurrentRole } from '@/hooks/use-current-role';
 
 export default function EditContractPage() {
   const { id } = useParams();
   const db = useDb();
   const { user, isUserLoading } = useUser();
+  const { role, isLoading: isRoleLoading } = useCurrentRole();
   
   const contractId = Array.isArray(id) ? id[0] : id;
 
@@ -25,12 +27,25 @@ export default function EditContractPage() {
 
   const { data: contract, isLoading, error } = useDoc<Contract>(contractRef);
 
-  if (isLoading || isUserLoading) {
+  if (isLoading || isUserLoading || isRoleLoading) {
     return (
         <div className="flex flex-col items-center justify-center py-24 gap-4">
             <Loader2 className="h-12 w-12 animate-spin text-primary opacity-20" />
             <p className="text-muted-foreground animate-pulse">Cargando datos del contrato...</p>
         </div>
+    );
+  }
+
+  // RESTRICCIÓN DE SEGURIDAD: Solo Administrador puede ver esta página
+  if (role !== 'Administrador') {
+    return (
+      <div className="p-12 text-center border-2 border-dashed rounded-lg max-w-2xl mx-auto mt-12">
+        <h3 className="text-lg font-semibold text-destructive">Acceso Restringido</h3>
+        <p className="text-muted-foreground mt-2">Solo los usuarios con rol de Administrador pueden modificar contratos existentes.</p>
+        <Button asChild className="mt-6" variant="outline">
+          <Link href={`/contracts/${contractId}`}>Volver al Contrato</Link>
+        </Button>
+      </div>
     );
   }
 

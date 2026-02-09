@@ -326,7 +326,7 @@ export default function ContractDetailPage() {
                 </Button>
             </div>
             <div className="flex items-center gap-2">
-              {(role === 'Administrador' || role === 'Ventas' || role === 'Ventas Externas') && (
+              {role === 'Administrador' && (
                 <Button variant="outline" asChild>
                     <Link href={`/contracts/${contractId}/edit`}>
                         <Edit className="mr-2 h-4 w-4" />

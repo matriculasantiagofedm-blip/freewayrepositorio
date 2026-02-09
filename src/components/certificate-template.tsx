@@ -80,7 +80,7 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                     <p className="text-xl uppercase tracking-widest mb-6">Otorga el presente Certificado a:</p>
 
                     <div className="mb-6 w-full">
-                        <p className="font-bold text-5xl tracking-tighter leading-tight mb-2 uppercase">
+                        <p className="font-bold text-4xl tracking-tighter leading-none mb-2 uppercase">
                             {certificate.clientName}
                         </p>
                         <p className="font-bold text-3xl tracking-widest mt-2">C.I.P. &nbsp; {certificate.cip}</p>

@@ -211,7 +211,7 @@ export function ContractForm() {
       clientName: '', clientEmail: '', contractType: contractType, studentIdNumber: '',
       studentAddress: '', studentPhone1: '', studentPhone2: '', courseValue: 0, downPayment: 0, balance: 0,
       paymentType: 'cash', coursePlan: '', vehicleTransmission: contractType === 'Curso Moto' ? 'Moto' : 'Manual',
-      licenseCategory: contractType === 'Curso Moto' ? 'A, B' : 'A, C, B',
+      licenseCategory: contractType === 'Curso Moto' ? 'A, B' : 'A, C',
       theoreticalClassSchedule: '',
       theoreticalClassDates: [],
       theoreticalClassDate: undefined,
@@ -610,8 +610,8 @@ export function ContractForm() {
                                         <SelectItem value="A, B">A, B (Moto)</SelectItem>
                                     ) : (
                                         <>
-                                            <SelectItem value="A, C, B">A, C, B</SelectItem>
-                                            <SelectItem value="A, B, C, D">A, B, C, D</SelectItem>
+                                            <SelectItem value="A, C">A, C</SelectItem>
+                                            <SelectItem value="A, C, D">A, C, D</SelectItem>
                                         </>
                                     )}
                                 </SelectContent></Select></FormItem>

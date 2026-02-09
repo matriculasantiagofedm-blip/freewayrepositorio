@@ -1,17 +1,16 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { collection, query, where, getDocs, Timestamp, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { useDb, useUser } from '@/components/firebase-provider';
-import { format, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
+import { format, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Printer, CalendarIcon, FileText } from 'lucide-react';
+import { Loader2, Printer, CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { cn, toDate } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import type { Contract, Payment } from '@/lib/types';
 
 interface DiplomaRow {
@@ -63,7 +62,7 @@ export default function CertificatesSummaryReportPage() {
         where('certificateGeneratedAt', '<=', Timestamp.fromDate(end))
       );
       
-      // 2. Obtener pagos de actualizaciones (que también generan certificados)
+      // 2. Obtener pagos de actualizaciones
       const updatesRef = collection(db, 'update_payments');
       const qUpdates = query(
         updatesRef,
@@ -153,23 +152,31 @@ export default function CertificatesSummaryReportPage() {
     return { ...counts, total, uniquePersons, surplus: total - uniquePersons };
   }, [diplomas]);
 
-  const handlePrint = () => window.print();
+  const handlePrint = () => {
+    // Pequeño timeout para asegurar que el DOM esté listo
+    setTimeout(() => {
+        window.print();
+    }, 100);
+  };
 
   return (
     <div className="flex flex-col gap-6 print:gap-0">
-      <style jsx global>{`
+      {/* Estilos de Impresión Optimizados */}
+      <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           @page { size: letter landscape; margin: 10mm; }
-          header, footer, nav, aside, .print-hide { display: none !important; }
-          body { background: white !important; padding: 0 !important; }
+          header, footer, nav, aside, .print-hide, button { display: none !important; }
+          body { background: white !important; padding: 0 !important; overflow: visible !important; }
           .print-container { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
-          table { font-size: 9px !important; border-collapse: collapse !important; width: 100% !important; }
-          th, td { border: 1px solid black !important; padding: 2px !important; color: black !important; }
-          .bg-yellow-400 { background-color: #facc15 !important; -webkit-print-color-adjust: exact; }
-          .bg-blue-400 { background-color: #60a5fa !important; -webkit-print-color-adjust: exact; }
-          .bg-green-400 { background-color: #4ade80 !important; -webkit-print-color-adjust: exact; }
+          table { font-size: 9px !important; border-collapse: collapse !important; width: 100% !important; border: 1px solid black !important; }
+          th, td { border: 1px solid black !important; padding: 3px !important; color: black !important; text-align: left; }
+          .text-center { text-align: center !important; }
+          .bg-yellow-400 { background-color: #facc15 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .bg-blue-400 { background-color: #60a5fa !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .bg-green-400 { background-color: #4ade80 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .bg-slate-100 { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
-      `}</style>
+      `}} />
 
       <div className="flex justify-between items-center print-hide">
         <div>
@@ -183,14 +190,18 @@ export default function CertificatesSummaryReportPage() {
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 text-xs">{format(startDate, 'dd/MM/yyyy')}</Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={startDate} onSelect={(d) => d && setStartDate(d)} /></PopoverContent>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={startDate} onSelect={(d) => d && setStartDate(d)} initialFocus />
+              </PopoverContent>
             </Popover>
             <span className="text-muted-foreground text-xs">al</span>
             <Popover modal={true}>
               <PopoverTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 text-xs">{format(endDate, 'dd/MM/yyyy')}</Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={endDate} onSelect={(d) => d && setEndDate(d)} /></PopoverContent>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={endDate} onSelect={(d) => d && setEndDate(d)} initialFocus />
+              </PopoverContent>
             </Popover>
           </div>
           <Button onClick={handlePrint} size="sm"><Printer className="mr-2 h-4 w-4" /> Imprimir Reporte</Button>
@@ -239,7 +250,7 @@ export default function CertificatesSummaryReportPage() {
                     const isUpdate = d.type === 'update';
                     
                     return (
-                      <TableRow key={`${d.type}-${d.folio}`} className={cn(
+                      <TableRow key={`${d.type}-${d.folio}-${d.index}`} className={cn(
                         "h-7 hover:bg-transparent",
                         isE && "bg-yellow-400",
                         isF && "bg-blue-400",

@@ -1,11 +1,11 @@
 'use client';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { ContractView } from '@/components/contract-view';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ChevronLeft, Printer, Loader2, CheckCircle2, CalendarIcon, Phone } from 'lucide-react';
+import { ChevronLeft, Printer, Loader2, CheckCircle2, CalendarIcon, Phone, Trash2 } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -243,6 +243,20 @@ export default function ContractDetailPage() {
     }
   };
 
+  const handleDeleteContract = async () => {
+    if (!contractRef || !contract) return;
+    setIsGenerating(true);
+    try {
+      await deleteDoc(contractRef);
+      toast({ title: 'Contrato Eliminado', description: `Folio ${contract.folioNumber} ha sido eliminado permanentemente.` });
+      router.push('/contracts');
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo eliminar el contrato.' });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const handleReactivateContract = async () => {
     if (!contractRef || !contract) return;
     setIsGenerating(true);
@@ -343,6 +357,31 @@ export default function ContractDetailPage() {
                 <Button variant="secondary" onClick={handleReactivateContract}>
                     Reactivar Contrato
                 </Button>
+               )}
+               {role === 'Administrador' && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" className="text-destructive hover:bg-destructive/10">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Eliminar permanentemente
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-destructive">¡ADVERTENCIA: ACCIÓN IRREVERSIBLE!</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        ¿Deseas eliminar definitivamente el Folio <span className="font-bold">{contract.folioNumber}</span>? 
+                        Esta acción borrará el registro de la base de datos y de todos los reportes. Úsalo solo para corregir duplicados.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDeleteContract} className="bg-destructive hover:bg-destructive/90">
+                        Sí, eliminar definitivamente
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
                )}
             </div>
       </div>

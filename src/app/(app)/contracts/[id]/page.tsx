@@ -164,7 +164,7 @@ export default function ContractDetailPage() {
       middleName,
       lastName,
       secondLastName,
-      marriedLastName: '',
+      marriedLastName: contract.marriedLastName || '',
       issueDate: new Date(),
     });
     setIsCertificateModalOpen(true);
@@ -358,7 +358,7 @@ export default function ContractDetailPage() {
                     Reactivar Contrato
                 </Button>
                )}
-               {role === 'Administrador' && (
+               {role === 'Administrador' && contract && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="ghost" className="text-destructive hover:bg-destructive/10">

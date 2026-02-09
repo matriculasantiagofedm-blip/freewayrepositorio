@@ -540,7 +540,7 @@ export default function DailyCashReportPage() {
 
                     <div className="space-y-4">
                         <Table className="text-[10px] border border-black">
-                            <TableHeader className="bg-slate-800 text-white"><TableRow><TableHead colSpan={2} className="text-center font-bold p-1 h-7 uppercase">Consolidado Final</TableHead></TableRow></TableHeader>
+                            <TableHeader className="bg-slate-800 text-white"><TableRow><TableHead colSpan={2} className="text-center font-bold p-1 h-7 uppercase text-white">Consolidado Final</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 <TableRow className="hover:bg-transparent"><TableCell className="border-r border-black p-1">TOTAL CRÉDITO</TableCell><TableCell className="p-1 text-right">{currencyFormatter.format(transactionTotals.credit)}</TableCell></TableRow>
                                 <TableRow className="hover:bg-transparent"><TableCell className="border-r border-black p-1">TOTAL DÉBITO</TableCell><TableCell className="p-1 text-right">{currencyFormatter.format(transactionTotals.debit)}</TableCell></TableRow>
@@ -553,7 +553,7 @@ export default function DailyCashReportPage() {
                         </Table>
 
                         <Table className="text-[10px] border border-black">
-                            <TableHeader className="bg-red-800 text-white"><TableRow><TableHead colSpan={3} className="text-center font-bold p-1 h-7 uppercase">Gastos Menores</TableHead></TableRow></TableHeader>
+                            <TableHeader className="bg-red-800 text-white"><TableRow><TableHead colSpan={3} className="text-center font-bold p-1 h-7 uppercase text-white">Gastos Menores</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {expenses.map((expense, index) => (
                                     <TableRow key={index} className="hover:bg-transparent">

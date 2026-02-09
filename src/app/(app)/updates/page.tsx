@@ -10,15 +10,31 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import type { Contract, Payment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Save, UserPlus, Printer, PlusCircle } from 'lucide-react';
+import { Loader2, Search, Save, UserPlus, Printer, PlusCircle, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useCurrentRole } from '@/hooks/use-current-role';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const updateOptions = [
     { id: '1', label: '1 Certificado', price: 59.00 },
     { id: '2', label: '2 Certificados', price: 79.00 },
     { id: '3', label: '3 Certificados', price: 107.00 },
+];
+
+const paymentMethodOptions = [
+    { value: 'cash', label: 'Efectivo' },
+    { value: 'debit', label: 'Tarjeta Débito' },
+    { value: 'credit', label: 'Tarjeta Crédito' },
+    { value: 'bac', label: 'BAC' },
+    { value: 'general', label: 'General' },
+    { value: 'cheques', label: 'Cheque' },
 ];
 
 export default function UpdatesPage() {
@@ -30,6 +46,7 @@ export default function UpdatesPage() {
   const [studentIdNumber, setStudentIdNumber] = useState('');
   const [manualName, setManualName] = useState('');
   const [manualAddress, setManualAddress] = useState('');
+  const [paymentType, setPaymentType] = useState('cash');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [foundContract, setFoundContract] = useState<Contract | null>(null);
@@ -41,9 +58,15 @@ export default function UpdatesPage() {
   const today = new Date();
 
   const resetFormState = () => {
-    setStudentIdNumber(''); setManualName(''); setManualAddress('');
-    setFoundContract(null); setSearched(false); setSelectedUpdate(null);
-    setPaymentSaved(false); setSavedPaymentData(null);
+    setStudentIdNumber(''); 
+    setManualName(''); 
+    setManualAddress('');
+    setPaymentType('cash');
+    setFoundContract(null); 
+    setSearched(false); 
+    setSelectedUpdate(null);
+    setPaymentSaved(false); 
+    setSavedPaymentData(null);
   };
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -83,10 +106,19 @@ export default function UpdatesPage() {
 
         const paymentRef = doc(collection(db, 'update_payments'));
         const paymentData: Partial<Payment> = {
-          amount: selectedUpdate.price, contractId: foundContract?.id || 'MANUAL', contractFolio: foundContract?.folioNumber || 0,
-          updateFolio: newUpdateFolio, clientId: foundContract?.clientId || 'MANUAL', clientName: foundContract?.clientName || manualName,
+          amount: selectedUpdate.price, 
+          contractId: foundContract?.id || 'MANUAL', 
+          contractFolio: foundContract?.folioNumber || 0,
+          updateFolio: newUpdateFolio, 
+          clientId: foundContract?.clientId || 'MANUAL', 
+          clientName: foundContract?.clientName || manualName,
           clientAddress: foundContract ? (foundContract.autoMotoDetails?.studentAddress || foundContract.ampliacionesDetails?.studentAddress || foundContract.deluxeDetails?.studentAddress) : manualAddress,
-          studentIdNumber: studentIdNumber, paymentDate: serverTimestamp() as any, userId: user.uid, type: 'actualizacion', createdBy: role || undefined,
+          studentIdNumber: studentIdNumber, 
+          paymentDate: serverTimestamp() as any, 
+          userId: user.uid, 
+          type: 'actualizacion', 
+          paymentType: paymentType,
+          createdBy: role || undefined,
         };
         transaction.set(paymentRef, paymentData);
         return { ...paymentData, id: paymentRef.id, paymentDate: new Date() as any };
@@ -125,27 +157,68 @@ export default function UpdatesPage() {
                 <CardContent className="space-y-6">
                     {!foundContract && (
                         <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                            <Input placeholder="Nombre" value={manualName} onChange={(e) => setManualName(e.target.value)} />
-                            <Input placeholder="Dirección" value={manualAddress} onChange={(e) => setManualAddress(e.target.value)} />
+                            <div className="space-y-2">
+                                <Label className="text-xs uppercase font-bold text-muted-foreground">Nombre del Cliente</Label>
+                                <Input placeholder="Nombre" value={manualName} onChange={(e) => setManualName(e.target.value)} disabled={paymentSaved} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs uppercase font-bold text-muted-foreground">Dirección</Label>
+                                <Input placeholder="Dirección" value={manualAddress} onChange={(e) => setManualAddress(e.target.value)} disabled={paymentSaved} />
+                            </div>
                         </div>
                     )}
-                    <RadioGroup onValueChange={(v) => setSelectedUpdate(updateOptions.find(o => o.id === v) || null)} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {updateOptions.map(o => (
-                             <Label key={o.id} className="flex flex-col items-center p-4 border rounded-md cursor-pointer">
-                                <RadioGroupItem value={o.id} />
-                                <span className="font-semibold">{o.label}</span>
-                                <span className="text-xl font-bold">B/.{o.price.toFixed(2)}</span>
-                            </Label>
-                        ))}
-                    </RadioGroup>
+
+                    <div className="space-y-2">
+                        <Label className="text-xs uppercase font-bold text-muted-foreground">Método de Pago</Label>
+                        <Select 
+                            onValueChange={setPaymentType} 
+                            value={paymentType}
+                            disabled={paymentSaved}
+                        >
+                            <SelectTrigger className="h-10">
+                                <SelectValue placeholder="Seleccionar método..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {paymentMethodOptions.map(opt => (
+                                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-xs uppercase font-bold text-muted-foreground">Seleccionar Opción de Actualización</Label>
+                        <RadioGroup 
+                            onValueChange={(v) => setSelectedUpdate(updateOptions.find(o => o.id === v) || null)} 
+                            className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                            disabled={paymentSaved}
+                            value={selectedUpdate?.id}
+                        >
+                            {updateOptions.map(o => (
+                                <Label key={o.id} className="flex flex-col items-center p-4 border-2 border-muted rounded-md cursor-pointer hover:bg-accent peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                                    <RadioGroupItem value={o.id} className="sr-only" />
+                                    <CreditCard className="h-6 w-6 mb-2" />
+                                    <span className="font-semibold">{o.label}</span>
+                                    <span className="text-2xl font-bold mt-1">B/.{o.price.toFixed(2)}</span>
+                                </Label>
+                            ))}
+                        </RadioGroup>
+                    </div>
                 </CardContent>
                 <CardFooter>
                     {!paymentSaved ? (
-                        <Button onClick={handleSaveUpdate} disabled={isSaving || !selectedUpdate}>{isSaving && <Loader2 className="animate-spin" />} Registrar</Button>
+                        <Button onClick={handleSaveUpdate} size="lg" disabled={isSaving || !selectedUpdate}>
+                            {isSaving ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} 
+                            Registrar Actualización
+                        </Button>
                     ) : (
-                        <div className='flex gap-2'>
-                            <Button variant="outline" onClick={handlePrint}><Printer /> Imprimir</Button>
-                            <Button onClick={resetFormState}><PlusCircle /> Nueva</Button>
+                        <div className='flex gap-2 w-full'>
+                            <Button variant="outline" onClick={handlePrint} className="flex-1">
+                                <Printer className="mr-2 h-4 w-4" /> Imprimir Recibo
+                            </Button>
+                            <Button onClick={resetFormState} className="flex-1">
+                                <PlusCircle className="mr-2 h-4 w-4" /> Nueva Actualización
+                            </Button>
                         </div>
                     )}
                 </CardFooter>

@@ -5,7 +5,7 @@ import type { Contract } from '@/lib/types';
 import { ContractView } from '@/components/contract-view';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ChevronLeft, Printer, Loader2, CheckCircle2, CalendarIcon } from 'lucide-react';
+import { ChevronLeft, Printer, Loader2, CheckCircle2, CalendarIcon, Phone } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -367,7 +367,11 @@ export default function ContractDetailPage() {
                                     <Calendar
                                         mode="single"
                                         selected={certificateData.issueDate}
-                                        onSelect={(date) => date && handleCertDataChange('issueDate', date)}
+                                        onSelect={(date) => {
+                                            if (date) {
+                                                handleCertDataChange('issueDate', date);
+                                            }
+                                        }}
                                         initialFocus
                                     />
                                 </PopoverContent>
@@ -387,12 +391,12 @@ export default function ContractDetailPage() {
                     <div className="space-y-2"><Label className="text-xs uppercase font-bold text-muted-foreground">Dirección Residencial</Label><Input value={certificateData.address} onChange={(e) => handleCertDataChange('address', e.target.value)} /></div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-xs uppercase font-bold text-muted-foreground">Teléfono Residencial</Label>
-                            <Input value={certificateData.phone1} onChange={(e) => handleCertDataChange('phone1', e.target.value)} />
+                            <Label className="text-xs uppercase font-bold text-muted-foreground flex items-center gap-2"><Phone className="h-3 w-3" /> Teléfono Residencial</Label>
+                            <Input value={certificateData.phone1} onChange={(e) => handleCertDataChange('phone1', e.target.value)} placeholder="Ej: 255-0000" />
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-xs uppercase font-bold text-muted-foreground">Teléfono Celular</Label>
-                            <Input value={certificateData.phone2} onChange={(e) => handleCertDataChange('phone2', e.target.value)} />
+                            <Label className="text-xs uppercase font-bold text-muted-foreground flex items-center gap-2"><Phone className="h-3 w-3" /> Teléfono Celular</Label>
+                            <Input value={certificateData.phone2} onChange={(e) => handleCertDataChange('phone2', e.target.value)} placeholder="Ej: 6000-0000" />
                         </div>
                     </div>
                 </div>

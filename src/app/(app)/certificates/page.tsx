@@ -10,7 +10,7 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Printer, CheckCircle2, PlusCircle, FileText, Repeat, CalendarIcon } from 'lucide-react';
+import { Loader2, Search, Printer, CheckCircle2, PlusCircle, FileText, Repeat, CalendarIcon, Phone } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import {
   Dialog,
@@ -184,6 +184,8 @@ function CertificatesContent() {
   };
 
   const handleOpenManualModal = () => {
+    if (role !== 'Administrador') return;
+    
     setSelectedContract(null);
     setManualType('primera-vez');
     const suggestedFolio = getNextFolio(lastFolio);
@@ -425,7 +427,11 @@ function CertificatesContent() {
                                         <Calendar
                                             mode="single"
                                             selected={certificateData.issueDate}
-                                            onSelect={(date) => date && handleCertDataChange('issueDate', date)}
+                                            onSelect={(date) => {
+                                                if (date) {
+                                                    handleCertDataChange('issueDate', date);
+                                                }
+                                            }}
                                             initialFocus
                                         />
                                     </PopoverContent>
@@ -445,12 +451,12 @@ function CertificatesContent() {
                         <div className="space-y-2"><Label className="text-xs uppercase font-bold text-muted-foreground">Dirección Residencial</Label><Input value={certificateData.address} onChange={(e) => handleCertDataChange('address', e.target.value)} className="bg-white" /></div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label className="text-xs uppercase font-bold text-muted-foreground">Teléfono Residencial</Label>
-                                <Input value={certificateData.phone1} onChange={(e) => handleCertDataChange('phone1', e.target.value)} className="bg-white" />
+                                <Label className="text-xs uppercase font-bold text-muted-foreground flex items-center gap-2"><Phone className="h-3 w-3" /> Teléfono Residencial</Label>
+                                <Input value={certificateData.phone1} onChange={(e) => handleCertDataChange('phone1', e.target.value)} className="bg-white" placeholder="Ej: 255-0000" />
                             </div>
                             <div className="space-y-2">
-                                <Label className="text-xs uppercase font-bold text-muted-foreground">Teléfono Celular</Label>
-                                <Input value={certificateData.phone2} onChange={(e) => handleCertDataChange('phone2', e.target.value)} className="bg-white" />
+                                <Label className="text-xs uppercase font-bold text-muted-foreground flex items-center gap-2"><Phone className="h-3 w-3" /> Teléfono Celular</Label>
+                                <Input value={certificateData.phone2} onChange={(e) => handleCertDataChange('phone2', e.target.value)} className="bg-white" placeholder="Ej: 6000-0000" />
                             </div>
                         </div>
                     </div>

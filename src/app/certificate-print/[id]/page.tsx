@@ -51,6 +51,7 @@ function CertificatePrintContent() {
       const middleName = searchParams.get('middleName');
       const lastName = searchParams.get('lastName');
       const secondLastName = searchParams.get('secondLastName');
+      const marriedLastName = searchParams.get('marriedLastName');
       const address = searchParams.get('address');
       const phone1 = searchParams.get('phone1');
       const phone2 = searchParams.get('phone2');
@@ -95,6 +96,7 @@ function CertificatePrintContent() {
         middleName: middleName || undefined,
         lastName: lastName || undefined,
         secondLastName: secondLastName || undefined,
+        marriedLastName: marriedLastName || undefined,
       };
       setCertificate(certificateData);
 

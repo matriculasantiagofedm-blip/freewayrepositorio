@@ -93,6 +93,7 @@ export default function CertificatesSummaryReportPage() {
         const mName = data.certificateMiddleName || splitName(data.clientName).mName;
         const lName = data.certificateLastName || splitName(data.clientName).lName;
         const sLName = data.certificateSecondLastName || splitName(data.clientName).sLName;
+        const mLastName = data.certificateMarriedLastName || '';
         
         results.push({
           index: 0,
@@ -102,7 +103,7 @@ export default function CertificatesSummaryReportPage() {
           middleName: mName,
           lastName: lName,
           secondLastName: sLName,
-          marriedLastName: '',
+          marriedLastName: mLastName,
           category: data.certificateLicenseType || (data.autoMotoDetails?.licenseCategory) || '',
           type: data.isManualPrint ? 'manual' : 'contract'
         });
@@ -276,7 +277,7 @@ export default function CertificatesSummaryReportPage() {
                         <TableCell className="border border-black p-1 uppercase text-[9px]">{d.middleName}</TableCell>
                         <TableCell className="border border-black p-1 uppercase text-[9px]">{d.lastName}</TableCell>
                         <TableCell className="border border-black p-1 uppercase text-[9px]">{d.secondLastName}</TableCell>
-                        <TableCell className="border border-black p-1 text-[9px]"></TableCell>
+                        <TableCell className="border border-black p-1 uppercase text-[9px]">{d.marriedLastName}</TableCell>
                         <TableCell className="border border-black p-1 text-center font-bold text-[9px]">{d.category}</TableCell>
                         <TableCell className="border border-black p-1"></TableCell>
                       </TableRow>

@@ -126,6 +126,7 @@ export interface Certificate {
   middleName?: string;
   lastName?: string;
   secondLastName?: string;
+  marriedLastName?: string;
 }
 
 export interface Transaction {

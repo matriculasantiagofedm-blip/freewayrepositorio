@@ -84,6 +84,7 @@ export default function ContractDetailPage() {
     middleName: '',
     lastName: '',
     secondLastName: '',
+    marriedLastName: '',
     issueDate: new Date(),
   });
 
@@ -163,6 +164,7 @@ export default function ContractDetailPage() {
       middleName,
       lastName,
       secondLastName,
+      marriedLastName: '',
       issueDate: new Date(),
     });
     setIsCertificateModalOpen(true);
@@ -186,6 +188,7 @@ export default function ContractDetailPage() {
             certificateMiddleName: certificateData.middleName,
             certificateLastName: certificateData.lastName,
             certificateSecondLastName: certificateData.secondLastName,
+            certificateMarriedLastName: certificateData.marriedLastName,
             certificateLicenseType: finalLicenseType,
             certificateCip: certificateData.cip,
             certificateIdType: certificateData.idType,
@@ -206,15 +209,13 @@ export default function ContractDetailPage() {
             middleName: certificateData.middleName,
             lastName: certificateData.lastName,
             secondLastName: certificateData.secondLastName,
+            marriedLastName: certificateData.marriedLastName,
             address: certificateData.address,
             phone1: certificateData.phone1,
             phone2: certificateData.phone2,
         });
 
         window.open(`/certificate-print/${contractId}?${queryParams.toString()}`, '_blank');
-        
-        // NO cerramos el modal automáticamente para permitir múltiples impresiones sucesivas
-        // setIsCertificateModalOpen(false);
         
         toast({ title: 'Impresión Iniciada', description: 'Se ha abierto la pestaña de impresión.' });
     } catch (error) {
@@ -422,11 +423,12 @@ export default function ContractDetailPage() {
                         <Label className="text-xs uppercase font-bold text-muted-foreground">Nombre Completo (Frente)</Label>
                         <Input value={certificateData.clientName} onChange={(e) => handleCertDataChange('clientName', e.target.value)} className="font-bold" />
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                         <div className="space-y-2"><Label className="text-[10px] uppercase font-bold text-slate-400">1er Nombre</Label><Input value={certificateData.firstName} onChange={(e) => handleCertDataChange('firstName', e.target.value)} /></div>
                         <div className="space-y-2"><Label className="text-[10px] uppercase font-bold text-slate-400">2do Nombre</Label><Input value={certificateData.middleName} onChange={(e) => handleCertDataChange('middleName', e.target.value)} /></div>
                         <div className="space-y-2"><Label className="text-[10px] uppercase font-bold text-slate-400">1er Apellido</Label><Input value={certificateData.lastName} onChange={(e) => handleCertDataChange('lastName', e.target.value)} /></div>
                         <div className="space-y-2"><Label className="text-[10px] uppercase font-bold text-slate-400">2do Apellido</Label><Input value={certificateData.secondLastName} onChange={(e) => handleCertDataChange('secondLastName', e.target.value)} /></div>
+                        <div className="space-y-2"><Label className="text-[10px] uppercase font-bold text-slate-400">Ap. Casada</Label><Input value={certificateData.marriedLastName} onChange={(e) => handleCertDataChange('marriedLastName', e.target.value)} /></div>
                     </div>
                     <div className="space-y-2"><Label className="text-xs uppercase font-bold text-muted-foreground">Dirección Residencial</Label><Input value={certificateData.address} onChange={(e) => handleCertDataChange('address', e.target.value)} /></div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

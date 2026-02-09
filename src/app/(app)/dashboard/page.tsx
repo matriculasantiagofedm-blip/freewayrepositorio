@@ -65,17 +65,30 @@ export default function DashboardPage() {
       { name: 'Curso Solo Practica', href: '/contracts/new?type=Curso%20Solo%20Practica', bgColor: 'bg-teal-50', textColor: 'text-teal-600'},
   ];
 
-  const otherActions = [
-      { name: 'Generar Certificado Manual', href: '/certificates?mode=manual', bgColor: 'bg-amber-50', textColor: 'text-amber-600', roles: ['Administrador'] },
-      { name: 'Agenda Manual', href: '/manual-schedule', bgColor: 'bg-rose-50', textColor: 'text-rose-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-      { name: 'Actualizaciones', href: '/updates', bgColor: 'bg-green-50', textColor: 'text-green-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-      { name: 'Pago de Saldos', href: '/cancellations', bgColor: 'bg-blue-50', textColor: 'text-blue-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-      { name: 'Venta de Libros', href: '/book-sales', bgColor: 'bg-indigo-50', textColor: 'text-indigo-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-      { name: 'Kilometraje', href: '/mileage-log', bgColor: 'bg-gray-50', textColor: 'text-gray-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-      { name: 'Mantenimiento', href: '/maintenance', bgColor: 'bg-stone-50', textColor: 'text-stone-600', roles: ['Administrador'] },
+  const actionGroups = [
+    {
+      title: 'Gestión de Trámites y Agenda',
+      actions: [
+        { name: 'Generar Certificado Manual', href: '/certificates?mode=manual', bgColor: 'bg-amber-50', textColor: 'text-amber-600', roles: ['Administrador'] },
+        { name: 'Agenda Manual', href: '/manual-schedule', bgColor: 'bg-rose-50', textColor: 'text-rose-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+        { name: 'Actualizaciones', href: '/updates', bgColor: 'bg-green-50', textColor: 'text-green-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+      ]
+    },
+    {
+      title: 'Caja y Ventas',
+      actions: [
+        { name: 'Pago de Saldos', href: '/cancellations', bgColor: 'bg-blue-50', textColor: 'text-blue-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+        { name: 'Venta de Libros', href: '/book-sales', bgColor: 'bg-indigo-50', textColor: 'text-indigo-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+      ]
+    },
+    {
+      title: 'Control de Flota y Mantenimiento',
+      actions: [
+        { name: 'Kilometraje', href: '/mileage-log', bgColor: 'bg-gray-50', textColor: 'text-gray-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+        { name: 'Mantenimiento', href: '/maintenance', bgColor: 'bg-stone-50', textColor: 'text-stone-600', roles: ['Administrador'] },
+      ]
+    }
   ];
-  
-  const visibleOtherActions = otherActions.filter(action => action.roles.includes(role || ''));
 
   return (
     <div className="flex flex-col gap-8">
@@ -103,7 +116,7 @@ export default function DashboardPage() {
       </div>
 
       <div>
-        <h2 className="text-xl font-bold font-headline mb-4 text-slate-800">Nuevo Contrato</h2>
+        <h2 className="text-xl font-bold font-headline mb-4 text-slate-800 border-b pb-2">Nuevo Contrato</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {contractTypes.map((type) => (
             <Card key={type.name} className="transition-all hover:shadow-md border-slate-200">
@@ -118,23 +131,34 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {visibleOtherActions.length > 0 && (
-        <div>
-          <h2 className="text-xl font-bold font-headline mb-4 text-slate-800">Operaciones Rápidas</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {visibleOtherActions.map((action) => (
-                  <Card key={action.name} className={cn("transition-all hover:shadow-md border-slate-200", action.bgColor)}>
-                      <CardContent className="p-4 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                              <span className={cn("font-bold", action.textColor)}>{action.name}</span>
-                          </div>
-                          <Button asChild size="sm" variant="ghost" className="bg-white/50 hover:bg-white"><Link href={action.href}>Entrar</Link></Button>
-                      </CardContent>
-                  </Card>
-              ))}
-          </div>
-        </div>
-      )}
+      <div className="space-y-8">
+        <h2 className="text-xl font-bold font-headline text-slate-800 border-b pb-2">Operaciones Rápidas</h2>
+        {actionGroups.map((group) => {
+          const visibleActions = group.actions.filter(action => action.roles.includes(role || ''));
+          if (visibleActions.length === 0) return null;
+
+          return (
+            <div key={group.title} className="space-y-4">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
+                {group.title}
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {visibleActions.map((action) => (
+                      <Card key={action.name} className={cn("transition-all hover:shadow-md border-slate-200", action.bgColor)}>
+                          <CardContent className="p-4 flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                  <span className={cn("font-bold text-sm", action.textColor)}>{action.name}</span>
+                              </div>
+                              <Button asChild size="sm" variant="ghost" className="bg-white/50 hover:bg-white h-8"><Link href={action.href}>Entrar</Link></Button>
+                          </CardContent>
+                      </Card>
+                  ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

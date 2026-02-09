@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { collection, query, where } from 'firebase/firestore';
 import { useDb, useUser } from '@/components/firebase-provider';
-import type { Contract, VehicleName, TimeSlot, InstructorName } from '@/lib/types';
+import type { Contract, VehicleName, TimeSlot, InstructorName, ManualSchedule } from '@/lib/types';
 import {
   Table,
   TableBody,
@@ -67,21 +68,27 @@ export default function VehicleScheduleReportPage() {
     return query(collection(db, 'contracts'), where('status', '==', 'active'));
   }, [db]);
 
+  const manualEntriesQuery = useMemoQuery(() => {
+    if (!db) return null;
+    return collection(db, 'manual_schedules');
+  }, [db]);
+
   const { data: contracts, isLoading: isLoadingContracts } = useCollection<Contract>(contractsQuery);
+  const { data: manualEntries, isLoading: isLoadingManual } = useCollection<ManualSchedule>(manualEntriesQuery);
 
   const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
   const days = Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
 
   useEffect(() => {
-    if (!contracts) return;
+    if (!contracts && !manualEntries) return;
 
     const weekInterval = { start: startOfDay(weekStart), end: endOfWeek(currentDate, { weekStartsOn: 1 }) };
     const newWeeklyAssignments = new Map<string, LocalAssignment[]>();
 
-    contracts.forEach(contract => {
+    // 1. Procesar Asignaciones de Contratos
+    contracts?.forEach(contract => {
         const details = contract.autoMotoDetails || contract.deluxeDetails;
 
-        // Función auxiliar para añadir asignaciones
         const addAssignment = (date: any, timeSlot: TimeSlot | null, type: 'Práctica' | 'Teórica', index: number, vehicleLabel?: string, instructorLabel?: string) => {
             if (!date) return;
             const classDate = toDate(date);
@@ -104,7 +111,6 @@ export default function VehicleScheduleReportPage() {
             newWeeklyAssignments.set(dateKey, dayAssignments);
         };
 
-        // 1. Clases Prácticas
         const autoSchedules = contract.autoMotoDetails?.practicalClassSchedules || [];
         const motoSchedules = contract.autoMotoDetails?.motoPracticalClassSchedules || [];
         const deluxeSchedules = contract.deluxeDetails?.classSchedules || [];
@@ -113,21 +119,40 @@ export default function VehicleScheduleReportPage() {
         motoSchedules.forEach((s, i) => addAssignment(s.date, timeStringToTimeSlot(s.time || ''), 'Práctica', i, s.vehicle, s.instructor));
         deluxeSchedules.forEach((s, i) => addAssignment(s.date, timeStringToTimeSlot(s.time || ''), 'Práctica', i, s.vehicle, s.instructor));
 
-        // 2. Clases Teóricas
         const theoreticalDates = contract.autoMotoDetails?.theoreticalClassDates || contract.deluxeDetails?.theoreticalClasses || [];
         theoreticalDates.forEach((d, i) => addAssignment(d, '8am-10am', 'Teórica', i, 'Teórica', 'Sede Central'));
     });
 
+    // 2. Procesar Asignaciones Manuales
+    manualEntries?.forEach(entry => {
+        const classDate = toDate(entry.date);
+        if (isNaN(classDate.getTime()) || !isWithinInterval(classDate, weekInterval)) return;
+
+        const dateKey = format(classDate, 'yyyy-MM-dd');
+        const assignment: LocalAssignment = {
+            studentName: entry.studentName,
+            instructor: entry.instructor,
+            vehicle: entry.vehicle,
+            timeSlot: entry.timeSlot,
+            classNumber: entry.classNumber || 1,
+            classType: entry.classType || 'Práctica',
+        };
+
+        const dayAssignments = newWeeklyAssignments.get(dateKey) || [];
+        dayAssignments.push(assignment);
+        newWeeklyAssignments.set(dateKey, dayAssignments);
+    });
+
     setWeeklyAssignments(newWeeklyAssignments);
 
-  }, [contracts, currentDate, weekStart]);
+  }, [contracts, manualEntries, currentDate, weekStart]);
 
   const handlePrevWeek = () => setCurrentDate(subDays(currentDate, 7));
   const handleNextWeek = () => setCurrentDate(addDays(currentDate, 7));
   const handleToday = () => setCurrentDate(new Date());
 
   const renderContent = () => {
-    if (isLoadingContracts) {
+    if (isLoadingContracts || isLoadingManual) {
       return (
         <div className="flex flex-col items-center justify-center p-20 gap-4">
             <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />

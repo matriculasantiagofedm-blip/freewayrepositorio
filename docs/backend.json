@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Contract": {
@@ -25,6 +26,24 @@
         "ampliacionesDetails": { "$ref": "#/entities/AmpliacionesContractDetails" }
       },
       "required": ["id", "folioNumber", "title", "clientName", "clientId", "type", "status", "userId", "createdAt"]
+    },
+    "ManualSchedule": {
+      "title": "Manual Schedule Entry",
+      "type": "object",
+      "description": "A manual assignment for the weekly schedule.",
+      "properties": {
+        "id": { "type": "string" },
+        "studentName": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "timeSlot": { "type": "string", "enum": ["8am-10am", "10am-12pm", "1pm-3pm", "3pm-5pm"] },
+        "vehicle": { "type": "string" },
+        "instructor": { "type": "string" },
+        "classNumber": { "type": "number" },
+        "classType": { "type": "string", "enum": ["Práctica", "Teórica"] },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "studentName", "date", "timeSlot", "vehicle", "instructor", "userId"]
     },
     "User": {
       "title": "User",
@@ -233,6 +252,13 @@
         "definition": {
           "schema": { "$ref": "#/entities/Contract" },
           "description": "Stores all contracts in a single collection for easy querying."
+        }
+      },
+      {
+        "path": "/manual_schedules/{entryId}",
+        "definition": {
+          "schema": { "$ref": "#/entities/ManualSchedule" },
+          "description": "Stores manual weekly schedule assignments."
         }
       },
       {

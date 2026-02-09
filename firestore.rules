@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -43,6 +44,10 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update: if isSignedIn();
       allow delete: if isSignedIn();
+    }
+
+    match /manual_schedules/{entryId} {
+      allow read, write: if isSignedIn();
     }
 
     match /clients/{clientId} {

@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -38,6 +39,11 @@ const navLinks = [
         {
             href: '/cancellations',
             label: 'Gestionar Saldos',
+            roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+        },
+        {
+            href: '/manual-schedule',
+            label: 'Agenda Manual',
             roles: ['Administrador', 'Ventas', 'Ventas Externas'],
         },
         {
@@ -116,7 +122,7 @@ const navLinks = [
       },
       {
           href: '/reports/vehicle-schedule',
-          label: 'Horarios',
+          label: 'Agenda Semanal',
           roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
     ]

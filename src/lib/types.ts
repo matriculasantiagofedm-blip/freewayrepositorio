@@ -1,3 +1,4 @@
+
 import { Timestamp, FieldValue } from 'firebase/firestore';
 
 export interface User {
@@ -107,6 +108,19 @@ export interface Contract {
   studentIdNumber?: string;
   clauses?: string;
   content?: string;
+}
+
+export interface ManualSchedule {
+  id: string;
+  studentName: string;
+  date: any;
+  timeSlot: TimeSlot;
+  vehicle: string;
+  instructor: string;
+  classNumber: number;
+  classType: 'Práctica' | 'Teórica';
+  userId: string;
+  createdAt: any;
 }
 
 export interface Certificate {

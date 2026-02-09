@@ -10,7 +10,7 @@ const Line = ({ children, className }: { children?: React.ReactNode, className?:
     {children || <>&nbsp;</>}
   </span>
 );
-const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary print:text-blue-600">{children}</span>;
+const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary print:text-black">{children}</span>;
 
 const Checkbox = ({ checked }: { checked: boolean }) => (
     <span className={`border border-black inline-block w-3 h-3 text-center leading-none align-middle ${checked ? 'bg-black text-white print:text-black print:bg-white print:font-bold' : ''}`}>
@@ -28,12 +28,12 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
   const downPayment = autoMotoDetails?.downPayment ?? 0;
   const courseValue = autoMotoDetails?.courseValue ?? 0;
   
-  const formatDate = (date: Date) => {
-    if (!date || isNaN(date.getTime())) return <Line />;
+  const formatDateStr = (date: Date) => {
+    if (!date || isNaN(date.getTime())) return "";
     try {
-        return <Value>{format(date, 'P', { locale: es })}</Value>;
+        return format(date, 'P', { locale: es });
     } catch {
-        return <Line />;
+        return "";
     }
   };
 
@@ -63,7 +63,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
             <h3 className="font-bold">CLÁUSULA PRIMERA - VALOR Y FORMA DE PAGO</h3>
             <div className='space-y-1 text-[10px]'>
                 <p>El valor total del curso es de <Line><Value>{courseValue.toFixed(2)}</Value></Line> (B/.).</p>
-                <p>"El estudiante ha efectuado un abono por la suma de B/. <Line><Value>{downPayment.toFixed(2)}</Value></Line>, quedando un saldo pendiente de B/. <Line><Value>{balance > 0 ? balance.toFixed(2) : '0.00'}</Value></Line>, el cual se compromete a cancelar en su totalidad el día {formatDate(paymentDeadline)}."</p>
+                <p>"El estudiante ha efectuado un abono por la suma de B/. <Line><Value>{downPayment.toFixed(2)}</Value></Line>, quedando un saldo pendiente de B/. <Line><Value>{balance > 0 ? balance.toFixed(2) : '0.00'}</Value></Line>, el cual se compromete a cancelar en su totalidad el día <Line><Value>{formatDateStr(paymentDeadline)}</Value></Line>."</p>
                 <ul className="list-disc list-inside pl-2">
                     <li>Para la inscripción, EL ESTUDIANTE deberá abonar el 25% del valor total como reserva de su cupo y horario.</li>
                     <li>El saldo restante deberá cancelarse antes de iniciar la primera clase práctica.</li>
@@ -112,7 +112,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                         <div className="flex items-center gap-2">3. Horario para clases teóricas: <Line><Value>{autoMotoDetails?.theoreticalClassSchedule}</Value></Line></div>
                         <div className="pl-4">
                             {(autoMotoDetails?.theoreticalClassDates || []).map((date, index) => (
-                                <span key={index} className="mr-4">Clase {index + 1}: {formatDate(toDate(date))}</span>
+                                <span key={index} className="mr-4">Clase {index + 1}: <Value>{formatDateStr(toDate(date))}</Value></span>
                             ))}
                         </div>
                     </>
@@ -125,7 +125,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                         <div className="pl-4 space-y-0.5">
                             {(autoMotoDetails?.practicalClassSchedules || []).map((s, index) => (
                                 <div key={index} className="flex flex-wrap items-center gap-x-2 text-[9px]">
-                                    ○ Clase {index + 1}: <Line><Value>{s.date ? formatDate(toDate(s.date)) : ''}</Value></Line> Hora: <Line><Value>{s.time}</Value></Line> Vehículo: <Line><Value>{s.vehicle}</Value></Line> Instructor: <Line><Value>{s.instructor}</Value></Line>
+                                    ○ Clase {index + 1}: <Line><Value>{s.date ? formatDateStr(toDate(s.date)) : ''}</Value></Line> Hora: <Line><Value>{s.time}</Value></Line> Vehículo: <Line><Value>{s.vehicle}</Value></Line> Instructor: <Line><Value>{s.instructor}</Value></Line>
                                 </div>
                             ))}
                         </div>
@@ -133,16 +133,16 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                         <div className="pl-4 space-y-0.5">
                             {(autoMotoDetails?.motoPracticalClassSchedules || []).map((s, index) => (
                                 <div key={index} className="flex flex-wrap items-center gap-x-2 text-[9px]">
-                                    ○ Clase {index + 1}: <Line><Value>{s.date ? formatDate(toDate(s.date)) : ''}</Value></Line> Hora: <Line><Value>{s.time}</Value></Line> Vehículo: <Line><Value>{s.vehicle}</Value></Line> Instructor: <Line><Value>{s.instructor}</Value></Line>
+                                    ○ Clase {index + 1}: <Line><Value>{s.date ? formatDateStr(toDate(s.date)) : ''}</Value></Line> Hora: <Line><Value>{s.time}</Value></Line> Vehículo: <Line><Value>{s.vehicle}</Value></Line> Instructor: <Line><Value>{s.instructor}</Value></Line>
                                 </div>
                             ))}
                         </div>
                     </>
                 ) : (
                     <div className="pl-4 space-y-0.5">
-                        {(autoMotoDetails?.practicalClassSchedules || []).map((s, index) => (
+                        {( (autoMotoDetails?.practicalClassSchedules?.length ? autoMotoDetails.practicalClassSchedules : autoMotoDetails?.motoPracticalClassSchedules) || [] ).map((s, index) => (
                             <div key={index} className="flex flex-wrap items-center gap-x-2 text-[9px]">
-                                ○ Clase {index + 1}: <Line><Value>{s.date ? formatDate(toDate(s.date)) : ''}</Value></Line> Hora: <Line><Value>{s.time}</Value></Line> Vehículo: <Line><Value>{s.vehicle}</Value></Line> Instructor: <Line><Value>{s.instructor}</Value></Line>
+                                ○ Clase {index + 1}: <Line><Value>{s.date ? formatDateStr(toDate(s.date)) : ''}</Value></Line> Hora: <Line><Value>{s.time}</Value></Line> Vehículo: <Line><Value>{s.vehicle}</Value></Line> Instructor: <Line><Value>{s.instructor}</Value></Line>
                             </div>
                         ))}
                     </div>

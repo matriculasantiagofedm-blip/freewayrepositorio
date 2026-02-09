@@ -1,4 +1,3 @@
-
 'use client';
 import type { Contract } from '@/lib/types';
 import { format } from 'date-fns';
@@ -11,7 +10,7 @@ const Line = ({ children, className }: { children?: React.ReactNode, className?:
     {children || <>&nbsp;</>}
   </span>
 );
-const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary print:text-blue-600">{children}</span>;
+const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary print:text-black">{children}</span>;
 
 const LongLine = () => <span className="border-b border-dotted border-black flex-1 h-4 min-w-40" />;
 
@@ -21,12 +20,12 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
   const paymentDeadline = toDate(ampliacionesDetails?.paymentDeadline);
   const balance = ampliacionesDetails?.balance || 0;
   
-  const formatDate = (date: Date) => {
-    if (!date || isNaN(date.getTime())) return <Line />;
+  const formatDateStr = (date: Date) => {
+    if (!date || isNaN(date.getTime())) return "";
     try {
-        return <Value>{format(date, 'P', { locale: es })}</Value>;
+        return format(date, 'P', { locale: es });
     } catch {
-        return <Line />;
+        return "";
     }
   };
 
@@ -47,7 +46,7 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
         </p>
 
         <div className="bg-slate-50 p-4 rounded-md print:bg-transparent print:p-0 space-y-1">
-            <h3 className="font-bold text-center pt-1">CLÁUSULAS</h3>
+            <h3 className="font-bold text-center pt-1">CLÁUSULA PESPECÍFICA</h3>
             
             <h3 className="font-bold">PRIMERA: OBJETO DEL CONTRATO</h3>
             <p className='text-[10px]'>LA EMPRESA se compromete a brindar a EL ESTUDIANTE el servicio de capacitación teórica para la ampliación de su licencia de conducir, según los planes seleccionados.</p>
@@ -57,7 +56,7 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
                 {ampliacionesDetails?.selectedPlans && ampliacionesDetails.selectedPlans.length > 0 ? (
                     <div className="flex flex-wrap justify-center items-center gap-x-2 text-[10px]">
                         {ampliacionesDetails.selectedPlans.map((plan, index) => (
-                            <span key={plan.name}>
+                            <span key={plan.name} className="font-bold">
                                 {plan.name}{index < ampliacionesDetails!.selectedPlans!.length - 1 ? ',' : ''}
                             </span>
                         ))}
@@ -70,7 +69,7 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
                 <p>El valor total del servicio es de B/. <Line><Value>{ampliacionesDetails?.courseValue?.toFixed(2)}</Value></Line>.</p>
                 <p>El estudiante ha efectuado un abono de B/. <Line><Value>{ampliacionesDetails?.downPayment?.toFixed(2)}</Value></Line>, quedando un saldo de B/. <Line><Value>{balance > 0 ? balance.toFixed(2) : '0.00'}</Value></Line>.</p>
                 {balance > 0 && !isNaN(paymentDeadline.getTime()) && (
-                    <p>El saldo pendiente se cancelará a más tardar el día {formatDate(paymentDeadline)}.</p>
+                    <p>El saldo pendiente se cancelará a más tardar el día <Line><Value>{formatDateStr(paymentDeadline)}</Value></Line>.</p>
                 )}
                 <p>Si el monto total es de B/.100.00 o menos, debe ser cancelado en su totalidad al momento de la inscripción. Para montos superiores, se requiere un abono del 25%.</p>
             </div>
@@ -79,7 +78,7 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
             <div className='text-[10px]'>
                 <p>La capacitación consiste en una única clase teórica.</p>
                 <div className='flex items-center gap-2'>
-                    Fecha de la clase: {formatDate(toDate(ampliacionesDetails?.theoreticalClassDate))}
+                    Fecha de la clase: <Line><Value>{ampliacionesDetails?.theoreticalClassDate ? formatDateStr(toDate(ampliacionesDetails.theoreticalClassDate)) : ''}</Value></Line>
                 </div>
                 <div className='flex items-center gap-2'>
                     Horario: <Line><Value>{ampliacionesDetails?.theoreticalClassTime}</Value></Line>

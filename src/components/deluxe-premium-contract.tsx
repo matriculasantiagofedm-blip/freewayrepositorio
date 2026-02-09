@@ -1,4 +1,3 @@
-
 'use client';
 import type { Contract } from '@/lib/types';
 import { format } from 'date-fns';
@@ -12,7 +11,7 @@ const Line = ({ children, className }: { children?: React.ReactNode, className?:
   </span>
 );
 const LongLine = () => <span className="border-b border-dotted border-black flex-1 h-4 min-w-40" />;
-const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary print:text-blue-600">{children}</span>;
+const Value = ({ children }: { children: React.ReactNode }) => <span className="px-1 font-semibold text-primary print:text-black">{children}</span>;
 
 const Checkbox = ({ checked }: { checked: boolean }) => (
     <span className={`border border-black inline-block w-3 h-3 text-center leading-none align-middle ${checked ? 'bg-black text-white print:text-black print:bg-white print:font-bold' : ''}`}>
@@ -23,12 +22,12 @@ const Checkbox = ({ checked }: { checked: boolean }) => (
 export function DeluxePremiumContractTemplate({ contract }: { contract: Contract }) {
   const deluxeDetails = contract.deluxeDetails;
 
-  const formatDate = (date: Date) => {
-    if (!date || isNaN(date.getTime())) return <Line />;
+  const formatDateStr = (date: Date) => {
+    if (!date || isNaN(date.getTime())) return "";
     try {
-        return <Value>{format(date, 'P', { locale: es })}</Value>;
+        return format(date, 'P', { locale: es });
     } catch {
-        return <Line />;
+        return "";
     }
   };
 
@@ -87,12 +86,12 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
             <p><Value>{paymentDetailsText}</Value></p>
             <p>El pago se realizará de la siguiente manera: 6 cuotas de B/.<Value>{paymentAmount.toFixed(2)}</Value> cada una, con fechas de pago establecidas cada dos semanas a partir del inicio del curso.</p>
             <div className="grid grid-cols-2 gap-x-6 gap-y-0 text-[10px]">
-              <span>CUOTA 1: {formatDate(toDate(deluxeDetails?.paymentInstallments?.[0]))}</span>
-              <span>CUOTA 4: {formatDate(toDate(deluxeDetails?.paymentInstallments?.[3]))}</span>
-              <span>CUOTA 2: {formatDate(toDate(deluxeDetails?.paymentInstallments?.[1]))}</span>
-              <span>CUOTA 5: {formatDate(toDate(deluxeDetails?.paymentInstallments?.[4]))}</span>
-              <span>CUOTA 3: {formatDate(toDate(deluxeDetails?.paymentInstallments?.[2]))}</span>
-              <span>CUOTA 6: {formatDate(toDate(deluxeDetails?.paymentInstallments?.[5]))}</span>
+              <span>CUOTA 1: <Value>{deluxeDetails?.paymentInstallments?.[0] ? formatDateStr(toDate(deluxeDetails.paymentInstallments[0])) : ''}</Value></span>
+              <span>CUOTA 4: <Value>{deluxeDetails?.paymentInstallments?.[3] ? formatDateStr(toDate(deluxeDetails.paymentInstallments[3])) : ''}</Value></span>
+              <span>CUOTA 2: <Value>{deluxeDetails?.paymentInstallments?.[1] ? formatDateStr(toDate(deluxeDetails.paymentInstallments[1])) : ''}</Value></span>
+              <span>CUOTA 5: <Value>{deluxeDetails?.paymentInstallments?.[4] ? formatDateStr(toDate(deluxeDetails.paymentInstallments[4])) : ''}</Value></span>
+              <span>CUOTA 3: <Value>{deluxeDetails?.paymentInstallments?.[2] ? formatDateStr(toDate(deluxeDetails.paymentInstallments[2])) : ''}</Value></span>
+              <span>CUOTA 6: <Value>{deluxeDetails?.paymentInstallments?.[5] ? formatDateStr(toDate(deluxeDetails.paymentInstallments[5])) : ''}</Value></span>
             </div>
             
             <h3 className="font-bold">CLÁUSULA TERCERA - DETALLES DEL CURSO</h3>
@@ -106,15 +105,15 @@ export function DeluxePremiumContractTemplate({ contract }: { contract: Contract
             <p><Value>{theoreticalScheduleText}</Value></p>
             <div className="grid grid-cols-3 gap-x-4 gap-y-0 text-[10px]">
                 {Array.from({ length: 10 }).map((_, index) => (
-                    <span key={index}>Semana {index + 1}: {formatDate(toDate(deluxeDetails?.theoreticalClasses?.[index]))}</span>
+                    <span key={index}>Semana {index + 1}: <Value>{deluxeDetails?.theoreticalClasses?.[index] ? formatDateStr(toDate(deluxeDetails.theoreticalClasses[index])) : ''}</Value></span>
                 ))}
             </div>
             <p>Clases prácticas: Se programarán a partir de la semana 8 de la capacitación teórica, en horario diurno o vespertino, de acuerdo con la disponibilidad de LA ESCUELA.</p>
             <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 pl-4 text-[10px]">
-              {Array.from({ length: 6 }).map((_, index) => (
+              {(deluxeDetails?.classSchedules || Array.from({ length: 6 })).map((s: any, index: number) => (
                 <div key={index} className="flex items-center gap-1">
-                    Clase {index + 1}: <Line className="min-w-20"></Line> 
-                    Hora <Line className="min-w-12"></Line>
+                    Clase {index + 1}: <Line><Value>{s?.date ? formatDateStr(toDate(s.date)) : ''}</Value></Line> 
+                    Hora <Line><Value>{s?.time || ''}</Value></Line>
                 </div>
               ))}
             </div>

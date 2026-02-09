@@ -350,7 +350,7 @@ export default function ContractDetailPage() {
                         </div>
                         <div className="space-y-2">
                             <Label className="text-xs uppercase font-bold text-muted-foreground">Fecha de Emisión</Label>
-                            <Popover>
+                            <Popover modal={true}>
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant="outline"
@@ -363,7 +363,7 @@ export default function ContractDetailPage() {
                                         {certificateData.issueDate ? format(certificateData.issueDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
                                     </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
+                                <PopoverContent className="w-auto p-0" align="start" side="bottom">
                                     <Calendar
                                         mode="single"
                                         selected={certificateData.issueDate}

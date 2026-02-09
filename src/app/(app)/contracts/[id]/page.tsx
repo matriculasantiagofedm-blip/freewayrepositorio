@@ -37,7 +37,7 @@ import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
 import { Separator } from '@/components/ui/separator';
 
 const ALL_CATEGORIES = ['A', 'B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];
-const FIRST_TIME_CATEGORIES = ['B', 'C', 'D'];
+const FIRST_TIME_CATEGORIES = ['A', 'B', 'C', 'D'];
 
 const getNextFolio = (lastFolio: string | null): string => {
     const year = new Date().getFullYear();

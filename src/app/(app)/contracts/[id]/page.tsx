@@ -5,7 +5,7 @@ import type { Contract } from '@/lib/types';
 import { ContractView } from '@/components/contract-view';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ChevronLeft, Printer, Loader2, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, Printer, Loader2, CheckCircle2, CalendarIcon } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -35,6 +35,10 @@ import { Label } from '@/components/ui/label';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
 import { Separator } from '@/components/ui/separator';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 const ALL_CATEGORIES = ['A', 'B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];
 const FIRST_TIME_CATEGORIES = ['A', 'B', 'C', 'D'];
@@ -72,6 +76,7 @@ export default function ContractDetailPage() {
     middleName: '',
     lastName: '',
     secondLastName: '',
+    issueDate: new Date(),
   });
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -101,7 +106,7 @@ export default function ContractDetailPage() {
     }
   }, [isCertificateModalOpen, contract, certificateData.licenseType]);
 
-  const handleCertDataChange = (field: keyof typeof certificateData, value: string) => {
+  const handleCertDataChange = (field: keyof typeof certificateData, value: any) => {
     setCertificateData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -150,6 +155,7 @@ export default function ContractDetailPage() {
       middleName,
       lastName,
       secondLastName,
+      issueDate: new Date(),
     });
     setIsCertificateModalOpen(true);
   };
@@ -178,7 +184,7 @@ export default function ContractDetailPage() {
             cip: certificateData.cip,
             licenseType: finalLicenseType,
             courseName: contract.title || '',
-            issueDate: new Date().toISOString(),
+            issueDate: certificateData.issueDate.toISOString(),
             firstName: certificateData.firstName,
             middleName: certificateData.middleName,
             lastName: certificateData.lastName,
@@ -333,7 +339,7 @@ export default function ContractDetailPage() {
             <div className="flex-1 overflow-y-auto pr-4 py-4 space-y-6">
                 <div className="grid gap-4 p-4 border rounded-lg bg-muted/30">
                     <h3 className="font-bold text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> Información del Documento</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2">
                             <Label className="text-xs uppercase font-bold text-muted-foreground">Folio de Certificado</Label>
                             <Input value={certificateData.folio} onChange={(e) => handleCertDataChange('folio', e.target.value)} />
@@ -341,6 +347,31 @@ export default function ContractDetailPage() {
                         <div className="space-y-2">
                             <Label className="text-xs uppercase font-bold text-muted-foreground">Número de Cédula</Label>
                             <Input value={certificateData.cip} onChange={(e) => handleCertDataChange('cip', e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-xs uppercase font-bold text-muted-foreground">Fecha de Emisión</Label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        className={cn(
+                                            "w-full h-10 justify-start text-left font-normal bg-white",
+                                            !certificateData.issueDate && "text-muted-foreground"
+                                        )}
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {certificateData.issueDate ? format(certificateData.issueDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        mode="single"
+                                        selected={certificateData.issueDate}
+                                        onSelect={(date) => date && handleCertDataChange('issueDate', date)}
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
                         </div>
                     </div>
                     <div className="space-y-2">

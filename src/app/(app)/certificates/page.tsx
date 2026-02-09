@@ -10,7 +10,7 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Printer, CheckCircle2, PlusCircle, FileText, Repeat } from 'lucide-react';
+import { Loader2, Search, Printer, CheckCircle2, PlusCircle, FileText, Repeat, CalendarIcon } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import {
   Dialog,
@@ -24,6 +24,10 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 const ALL_CATEGORIES = ['A', 'B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];
 const FIRST_TIME_CATEGORIES = ['A', 'B', 'C', 'D'];
@@ -70,6 +74,7 @@ function CertificatesContent() {
     middleName: '',
     lastName: '',
     secondLastName: '',
+    issueDate: new Date(),
   });
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -173,6 +178,7 @@ function CertificatesContent() {
       middleName,
       lastName,
       secondLastName,
+      issueDate: new Date(),
     });
     setIsCertificateModalOpen(true);
   };
@@ -193,6 +199,7 @@ function CertificatesContent() {
       middleName: '',
       lastName: '',
       secondLastName: '',
+      issueDate: new Date(),
     });
     setIsCertificateModalOpen(true);
   };
@@ -205,7 +212,7 @@ function CertificatesContent() {
     }
   };
 
-  const handleCertDataChange = (field: keyof typeof certificateData, value: string) => {
+  const handleCertDataChange = (field: keyof typeof certificateData, value: any) => {
     setCertificateData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -248,7 +255,7 @@ function CertificatesContent() {
             cip: certificateData.cip,
             licenseType: finalLicenseType,
             courseName: selectedContract?.title || (manualType === 'ampliaciones' ? 'Ampliación Manual' : 'Primera Vez Manual'),
-            issueDate: new Date().toISOString(),
+            issueDate: certificateData.issueDate.toISOString(),
             firstName: certificateData.firstName,
             middleName: certificateData.middleName,
             lastName: certificateData.lastName,
@@ -390,7 +397,7 @@ function CertificatesContent() {
 
                     <div className="grid gap-4 p-5 border rounded-xl bg-slate-50/50">
                         <h3 className="font-bold text-xs uppercase tracking-wider text-slate-500 flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-green-600" /> Información del Documento</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="space-y-2">
                                 <Label className="text-xs uppercase font-bold text-muted-foreground">Folio de Certificado</Label>
                                 <Input value={certificateData.folio} onChange={(e) => handleCertDataChange('folio', e.target.value)} className="bg-white" />
@@ -398,6 +405,31 @@ function CertificatesContent() {
                             <div className="space-y-2">
                                 <Label className="text-xs uppercase font-bold text-muted-foreground">Número de Cédula</Label>
                                 <Input value={certificateData.cip} onChange={(e) => handleCertDataChange('cip', e.target.value)} className="bg-white" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs uppercase font-bold text-muted-foreground">Fecha de Emisión</Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            className={cn(
+                                                "w-full h-10 justify-start text-left font-normal bg-white",
+                                                !certificateData.issueDate && "text-muted-foreground"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {certificateData.issueDate ? format(certificateData.issueDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={certificateData.issueDate}
+                                            onSelect={(date) => date && handleCertDataChange('issueDate', date)}
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
                             </div>
                         </div>
                         <div className="space-y-2">

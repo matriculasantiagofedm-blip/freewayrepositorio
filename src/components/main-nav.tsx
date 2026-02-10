@@ -72,9 +72,13 @@ const navLinks = [
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     children: [
       {
-          href: '/contracts',
-          label: 'Todos los Contratos',
-          roles: ['Administrador'],
+          href: '/reports/vehicle-schedule',
+          label: 'Agenda Semanal',
+          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+      },
+      {
+          separator: true,
+          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
       {
           href: '/reports/certificates-summary',
@@ -83,6 +87,11 @@ const navLinks = [
       },
       {
           separator: true,
+          roles: ['Administrador'],
+      },
+      {
+          href: '/contracts',
+          label: 'Todos los Contratos',
           roles: ['Administrador'],
       },
       {
@@ -116,11 +125,6 @@ const navLinks = [
       {
           href: '/reports/mileage-log',
           label: 'Kilometraje',
-          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
-      },
-      {
-          href: '/reports/vehicle-schedule',
-          label: 'Agenda Semanal',
           roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
     ]

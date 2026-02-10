@@ -79,7 +79,6 @@ export default function DailyCashReportPage() {
   const [billQuantities, setBillQuantities] = useState(initialBillQuantities);
   const [coinQuantities, setCoinQuantities] = useState(initialCoinQuantities);
   const [expenses, setExpenses] = useState(initialExpenses);
-  const [totalDeposit, setTotalDeposit] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
@@ -291,9 +290,10 @@ export default function DailyCashReportPage() {
   const grandTotals = useMemo(() => {
     const totalFacturado = Object.values(transactionTotals).reduce((sum, val) => sum + val, 0);
     const totalEfectivoMenosGastos = transactionTotals.cash - totalExpenses;
-    const diferencia = totalEfectivoMenosGastos - totalDeposit;
+    // DIFERENCIA: Lo que debería haber (Sistema - Gastos) vs Lo que hay físicamente (Contado)
+    const diferencia = totalEfectivoMenosGastos - cashBreakdownTotals.total;
     return { totalFacturado, totalEfectivoMenosGastos, diferencia };
-  }, [transactionTotals, totalExpenses, totalDeposit]);
+  }, [transactionTotals, totalExpenses, cashBreakdownTotals.total]);
   
 
   const handleTransactionChange = (index: number, field: keyof Transaction, value: any) => {
@@ -625,7 +625,12 @@ export default function DailyCashReportPage() {
                         <Table className="text-[10px] border border-black">
                             <TableBody>
                                 <TableRow className="hover:bg-transparent bg-slate-50"><TableCell className="border-r border-black p-1 font-bold uppercase">EFECTIVO NETO (MENOS GASTOS)</TableCell><TableCell className="p-1 text-right font-black">{currencyFormatter.format(grandTotals.totalEfectivoMenosGastos)}</TableCell></TableRow>
-                                <TableRow className="hover:bg-transparent"><TableCell className="border-r border-black p-1 uppercase">DEPÓSITO REALIZADO</TableCell><TableCell className="p-0 w-24"><Input type="number" value={totalDeposit || ''} onChange={e => setTotalDeposit(parseFloat(e.target.value) || 0)} className="w-full h-7 border-none rounded-none text-[10px] p-1 text-right font-bold" /></TableCell></TableRow>
+                                <TableRow className="hover:bg-transparent">
+                                    <TableCell className="border-r border-black p-1 uppercase">DEPÓSITO REALIZADO (CONTADO)</TableCell>
+                                    <TableCell className="p-1 text-right font-bold bg-muted/30">
+                                        {currencyFormatter.format(cashBreakdownTotals.total)}
+                                    </TableCell>
+                                </TableRow>
                                 <TableRow className={cn("font-bold border-t border-black", grandTotals.diferencia !== 0 ? "bg-red-100 text-red-900" : "bg-green-100 text-green-900")}><TableCell className="border-r border-black p-1 uppercase">DIFERENCIA / FALTANTE</TableCell><TableCell className="p-1 text-right text-sm">{currencyFormatter.format(grandTotals.diferencia)}</TableCell></TableRow>
                             </TableBody>
                         </Table>

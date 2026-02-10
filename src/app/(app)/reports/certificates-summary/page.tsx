@@ -11,7 +11,7 @@ import { Loader2, Printer, CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import type { Contract, Payment } from '@/lib/types';
+import type { Contract } from '@/lib/types';
 
 interface DiplomaRow {
     index: number;
@@ -23,12 +23,9 @@ interface DiplomaRow {
     secondLastName: string;
     marriedLastName: string;
     category: string;
-    type: 'contract' | 'update' | 'manual';
+    type: 'contract' | 'manual';
     isCorrection: boolean;
 }
-
-const EXCLUDED_FOLIOS = ['0004', '0044', '4', '44'];
-const CORRECTION_FOLIOS = ['0001', '0067', '0061', '0103', '0085', '1', '67', '61', '103', '85'];
 
 export default function CertificatesSummaryReportPage() {
   const db = useDb();
@@ -60,44 +57,20 @@ export default function CertificatesSummaryReportPage() {
 
       const contractsRef = collection(db, 'contracts');
       
-      // Consulta 1: Contratos dentro del rango de fecha
+      // Consulta UNIFICADA: Solo contratos con certificados generados en el rango
       const qContracts = query(
         contractsRef,
         where('certificateGeneratedAt', '>=', Timestamp.fromDate(start)),
         where('certificateGeneratedAt', '<=', Timestamp.fromDate(end))
       );
       
-      // Consulta 2: Actualizaciones dentro del rango
-      const updatesRef = collection(db, 'update_payments');
-      const qUpdates = query(
-        updatesRef,
-        where('paymentDate', '>=', Timestamp.fromDate(start)),
-        where('paymentDate', '<=', Timestamp.fromDate(end))
-      );
+      const contractsSnap = await getDocs(qContracts);
+      const results: DiplomaRow[] = [];
 
-      // Consulta 3: Folios de corrección específicos
-      const qSpecialCorrections = query(
-        contractsRef,
-        where('certificateFolio', 'in', CORRECTION_FOLIOS)
-      );
-
-      const [contractsSnap, updatesSnap, specialSnap] = await Promise.all([
-        getDocs(qContracts),
-        getDocs(qUpdates),
-        getDocs(qSpecialCorrections)
-      ]);
-
-      const resultsMap = new Map<string, DiplomaRow>();
-
-      const processContractDoc = (doc: any) => {
+      contractsSnap.forEach((doc) => {
         const data = doc.data() as any;
         const rawFolio = data.certificateFolio || '';
         if (!rawFolio) return;
-
-        const folioNumber = rawFolio.includes('/') ? rawFolio.split('/')[1].trim() : rawFolio.trim();
-        const paddedFolio = folioNumber.padStart(4, '0');
-
-        if (EXCLUDED_FOLIOS.includes(paddedFolio) || EXCLUDED_FOLIOS.includes(folioNumber)) return;
 
         const fName = data.certificateFirstName || splitName(data.clientName).fName;
         const mName = data.certificateMiddleName || splitName(data.clientName).mName;
@@ -105,7 +78,7 @@ export default function CertificatesSummaryReportPage() {
         const sLName = data.certificateSecondLastName || splitName(data.clientName).sLName;
         const mLastName = data.certificateMarriedLastName || '';
         
-        const diploma: DiplomaRow = {
+        results.push({
           index: 0,
           folio: rawFolio,
           idNumber: data.certificateCip || data.autoMotoDetails?.studentIdNumber || data.deluxeDetails?.studentIdNumber || data.ampliacionesDetails?.studentIdNumber || '',
@@ -116,46 +89,11 @@ export default function CertificatesSummaryReportPage() {
           marriedLastName: mLastName,
           category: data.certificateLicenseType || (data.autoMotoDetails?.licenseCategory) || '',
           type: data.isManualPrint ? 'manual' : 'contract',
-          isCorrection: data.isCorrection || CORRECTION_FOLIOS.includes(folioNumber) || CORRECTION_FOLIOS.includes(paddedFolio)
-        };
-
-        if (!resultsMap.has(rawFolio)) {
-            resultsMap.set(rawFolio, diploma);
-        }
-      };
-
-      contractsSnap.forEach(processContractDoc);
-      specialSnap.forEach(processContractDoc);
-
-      updatesSnap.forEach(doc => {
-        const data = doc.data() as Payment;
-        const updateFolio = String(data.updateFolio || '');
-        const paddedUpdateFolio = updateFolio.padStart(4, '0');
-
-        if (EXCLUDED_FOLIOS.includes(paddedUpdateFolio) || EXCLUDED_FOLIOS.includes(updateFolio)) return;
-
-        const { fName, mName, lName, sLName } = splitName(data.clientName);
-        
-        const diploma: DiplomaRow = {
-          index: 0,
-          folio: paddedUpdateFolio,
-          idNumber: data.studentIdNumber || '',
-          firstName: fName,
-          middleName: mName,
-          lastName: lName,
-          secondLastName: sLName,
-          marriedLastName: '',
-          category: 'ACTUALIZACIÓN',
-          type: 'update',
-          isCorrection: false
-        };
-
-        if (!resultsMap.has(paddedUpdateFolio)) {
-            resultsMap.set(paddedUpdateFolio, diploma);
-        }
+          isCorrection: !!data.isCorrection
+        });
       });
 
-      const sorted = Array.from(resultsMap.values())
+      const sorted = results
         .sort((a, b) => a.folio.localeCompare(b.folio, undefined, { numeric: true }))
         .map((item, i) => ({ ...item, index: i + 1 }));
         
@@ -174,17 +112,14 @@ export default function CertificatesSummaryReportPage() {
 
   const stats = useMemo(() => {
     const counts = {
-      ab: 0, ac: 0, acd: 0, abcd: 0, bd: 0, e: 0, f: 0, gh: 0, updates: 0, corrections: 0
+      ab: 0, ac: 0, acd: 0, abcd: 0, bd: 0, e: 0, f: 0, gh: 0, corrections: 0
     };
 
     diplomas.forEach(d => {
       const cat = d.category.toUpperCase();
       
-      // REGLA DE ORO: Las correcciones marcadas SIEMPRE van a la línea de correcciones
       if (d.isCorrection) {
         counts.corrections++;
-      } else if (d.type === 'update') {
-        counts.updates++;
       } else if (cat.includes('E')) {
         counts.e++;
       } else if (cat.includes('F')) {
@@ -225,7 +160,6 @@ export default function CertificatesSummaryReportPage() {
           .text-center { text-align: center !important; }
           .bg-yellow-400 { background-color: #facc15 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .bg-blue-400 { background-color: #60a5fa !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .bg-green-400 { background-color: #4ade80 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .bg-slate-100 { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
       `}} />
@@ -233,7 +167,7 @@ export default function CertificatesSummaryReportPage() {
       <div className="flex justify-between items-center print-hide">
         <div>
           <h1 className="text-2xl font-bold font-headline">Consolidado de Certificados</h1>
-          <p className="text-sm text-muted-foreground">Control semanal de diplomas emitidos (con correcciones).</p>
+          <p className="text-sm text-muted-foreground">Control semanal basado únicamente en el módulo de impresión.</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 border p-1 rounded-md bg-white">
@@ -299,7 +233,6 @@ export default function CertificatesSummaryReportPage() {
                   {diplomas.map((d) => {
                     const isE = d.category.toUpperCase().includes('E');
                     const isF = d.category.toUpperCase().includes('F');
-                    const isUpdate = d.type === 'update';
                     const isCorrection = d.isCorrection;
                     
                     return (
@@ -307,7 +240,6 @@ export default function CertificatesSummaryReportPage() {
                         "h-7 hover:bg-transparent",
                         isE && "bg-yellow-400",
                         isF && "bg-blue-400",
-                        isUpdate && "bg-green-400",
                         isCorrection && "bg-slate-100"
                       )}>
                         <TableCell className="border border-black p-1 text-center font-medium text-[9px]">{d.index}</TableCell>
@@ -348,7 +280,6 @@ export default function CertificatesSummaryReportPage() {
                             <tr className="bg-yellow-400"><td className="border border-black p-1 font-bold">AMPLIACIÓN E1E2E3</td><td className="border border-black p-1 text-center font-bold">{stats.e || ''}</td></tr>
                             <tr className="bg-blue-400"><td className="border border-black p-1 font-bold">AMPLIACIÓN F-I</td><td className="border border-black p-1 text-center font-bold">{stats.f || ''}</td></tr>
                             <tr><td className="border border-black p-1">AMPLIACIÓN G-H</td><td className="border border-black p-1 text-center font-bold">{stats.gh || ''}</td></tr>
-                            <tr className="bg-green-400"><td className="border border-black p-1 font-bold">ACTUALIZACIONES</td><td className="border border-black p-1 text-center font-bold">{stats.updates || ''}</td></tr>
                             <tr><td className="border border-black p-1 font-bold">CORRECCIONES / DUPLICADOS</td><td className="border border-black p-1 text-center font-bold">{stats.corrections || ''}</td></tr>
                             <tr className="bg-slate-100 font-bold"><td className="border border-black p-1 text-right pr-4 uppercase">TOTAL</td><td className="border border-black p-1 text-center">{stats.total}</td></tr>
                         </tbody>

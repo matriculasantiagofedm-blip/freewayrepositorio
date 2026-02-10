@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -73,7 +74,12 @@ const navLinks = [
     children: [
       {
           href: '/reports/vehicle-schedule',
-          label: 'Agenda Semanal',
+          label: 'Agenda Práctica',
+          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+      },
+      {
+          href: '/reports/theory-schedule',
+          label: 'Agenda Teórica',
           roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
       {

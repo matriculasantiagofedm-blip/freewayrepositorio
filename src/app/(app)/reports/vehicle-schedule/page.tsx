@@ -3,8 +3,8 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { collection, query, where } from 'firebase/firestore';
-import { useDb, useUser } from '@/components/firebase-provider';
-import type { Contract, VehicleName, TimeSlot, InstructorName, ManualSchedule } from '@/lib/types';
+import { useDb } from '@/components/firebase-provider';
+import type { Contract, TimeSlot, ManualSchedule } from '@/lib/types';
 import {
   Table,
   TableBody,
@@ -14,7 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, ChevronLeft, ChevronRight, User, BookOpen, GraduationCap } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, User, Car } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addDays, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
@@ -45,8 +45,7 @@ const vehicleColors: Record<string, string> = {
     'Picanto Bronce': 'bg-amber-50 border-amber-400 text-amber-900 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-300',
     'Spark': 'bg-green-50 border-green-300 text-green-800 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300',
     'Moto Roja': 'bg-red-50 border-red-300 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300',
-    'Moto Negra': 'bg-[#efebe9] border-[#a1887f] text-[#4e342e] dark:bg-stone-900/40 dark:border-stone-800 dark:text-stone-300', // Chocolate/Marrón
-    'Teórica': 'bg-slate-100 border-slate-300 text-slate-800 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200',
+    'Moto Negra': 'bg-[#efebe9] border-[#a1887f] text-[#4e342e] dark:bg-stone-900/40 dark:border-stone-800 dark:text-stone-300',
 };
 
 interface LocalAssignment {
@@ -55,7 +54,6 @@ interface LocalAssignment {
     vehicle: string;
     timeSlot: TimeSlot;
     classNumber: number;
-    classType: 'Práctica' | 'Teórica';
 }
 
 export default function VehicleScheduleReportPage() {
@@ -85,11 +83,9 @@ export default function VehicleScheduleReportPage() {
     const weekInterval = { start: startOfDay(weekStart), end: endOfWeek(currentDate, { weekStartsOn: 1 }) };
     const newWeeklyAssignments = new Map<string, LocalAssignment[]>();
 
-    // 1. Procesar Asignaciones de Contratos
+    // 1. Procesar Asignaciones de Contratos (Solo Prácticas)
     contracts?.forEach(contract => {
-        const details = contract.autoMotoDetails || contract.deluxeDetails;
-
-        const addAssignment = (date: any, timeSlot: TimeSlot | null, type: 'Práctica' | 'Teórica', index: number, vehicleLabel?: string, instructorLabel?: string) => {
+        const addAssignment = (date: any, timeSlot: TimeSlot | null, index: number, vehicleLabel?: string, instructorLabel?: string) => {
             if (!date) return;
             const classDate = toDate(date);
             if (isNaN(classDate.getTime()) || !isWithinInterval(classDate, weekInterval)) return;
@@ -103,7 +99,6 @@ export default function VehicleScheduleReportPage() {
                 vehicle: vehicleLabel || 'Sin Vehículo',
                 timeSlot: slot,
                 classNumber: index + 1,
-                classType: type,
             };
 
             const dayAssignments = newWeeklyAssignments.get(dateKey) || [];
@@ -115,16 +110,15 @@ export default function VehicleScheduleReportPage() {
         const motoSchedules = contract.autoMotoDetails?.motoPracticalClassSchedules || [];
         const deluxeSchedules = contract.deluxeDetails?.classSchedules || [];
 
-        autoSchedules.forEach((s, i) => addAssignment(s.date, timeStringToTimeSlot(s.time || ''), 'Práctica', i, s.vehicle, s.instructor));
-        motoSchedules.forEach((s, i) => addAssignment(s.date, timeStringToTimeSlot(s.time || ''), 'Práctica', i, s.vehicle, s.instructor));
-        deluxeSchedules.forEach((s, i) => addAssignment(s.date, timeStringToTimeSlot(s.time || ''), 'Práctica', i, s.vehicle, s.instructor));
-
-        const theoreticalDates = contract.autoMotoDetails?.theoreticalClassDates || contract.deluxeDetails?.theoreticalClasses || [];
-        theoreticalDates.forEach((d, i) => addAssignment(d, '8am-10am', 'Teórica', i, 'Teórica', 'Sede Central'));
+        autoSchedules.forEach((s, i) => addAssignment(s.date, timeStringToTimeSlot(s.time || ''), i, s.vehicle, s.instructor));
+        motoSchedules.forEach((s, i) => addAssignment(s.date, timeStringToTimeSlot(s.time || ''), i, s.vehicle, s.instructor));
+        deluxeSchedules.forEach((s, i) => addAssignment(s.date, timeStringToTimeSlot(s.time || ''), i, s.vehicle, s.instructor));
     });
 
-    // 2. Procesar Asignaciones Manuales
+    // 2. Procesar Asignaciones Manuales (Solo Prácticas)
     manualEntries?.forEach(entry => {
+        if (entry.classType === 'Teórica') return;
+
         const classDate = toDate(entry.date);
         if (isNaN(classDate.getTime()) || !isWithinInterval(classDate, weekInterval)) return;
 
@@ -135,7 +129,6 @@ export default function VehicleScheduleReportPage() {
             vehicle: entry.vehicle,
             timeSlot: entry.timeSlot,
             classNumber: entry.classNumber || 1,
-            classType: entry.classType || 'Práctica',
         };
 
         const dayAssignments = newWeeklyAssignments.get(dateKey) || [];
@@ -156,7 +149,7 @@ export default function VehicleScheduleReportPage() {
       return (
         <div className="flex flex-col items-center justify-center p-20 gap-4">
             <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
-            <p className="text-muted-foreground font-medium animate-pulse">Sincronizando agenda...</p>
+            <p className="text-muted-foreground font-medium animate-pulse">Sincronizando agenda práctica...</p>
         </div>
       );
     }
@@ -196,7 +189,7 @@ export default function VehicleScheduleReportPage() {
                                     )}>
                                         <div className="flex justify-between items-start mb-1">
                                             <p className="font-black truncate uppercase flex-1 pr-1">{assignment.studentName}</p>
-                                            {assignment.classType === 'Teórica' ? <GraduationCap className="h-3 w-3 shrink-0" /> : <BookOpen className="h-3 w-3 shrink-0" />}
+                                            <Car className="h-3 w-3 shrink-0" />
                                         </div>
                                         <div className="flex items-center gap-1 opacity-75 mb-1">
                                             <User className="h-2.5 w-2.5 shrink-0" />
@@ -231,8 +224,8 @@ export default function VehicleScheduleReportPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-            <h1 className="font-headline text-3xl font-bold">Agenda Semanal</h1>
-            <p className="text-muted-foreground">Gestión de turnos teóricos y prácticos de la escuela.</p>
+            <h1 className="font-headline text-3xl font-bold">Agenda Práctica Semanal</h1>
+            <p className="text-muted-foreground">Gestión de turnos prácticos y disponibilidad de flota.</p>
         </div>
         <div className="flex items-center gap-2 bg-background border p-1 rounded-md shadow-sm">
             <Button variant="ghost" size="sm" onClick={handleToday} className="text-xs h-8">Hoy</Button>

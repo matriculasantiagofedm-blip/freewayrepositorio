@@ -1,6 +1,7 @@
+
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ClipboardPenLine, ListChecks, Award, Gauge, FileText, Banknote, CalendarClock, ScrollText } from 'lucide-react';
+import { ClipboardPenLine, ListChecks, Award, Gauge, FileText, Banknote, CalendarClock, ScrollText, GraduationCap } from 'lucide-react';
 import Link from 'next/link';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,27 @@ export default function ReportsPage() {
   const { role } = useCurrentRole();
 
   const allReports = [
+    {
+      title: 'Agenda Práctica',
+      description: 'Visualiza la agenda semanal de clases prácticas por vehículo e instructor.',
+      href: '/reports/vehicle-schedule',
+      icon: CalendarClock,
+      roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+    },
+    {
+      title: 'Agenda Teórica',
+      description: 'Visualiza la programación semanal de alumnos en aula teórica.',
+      href: '/reports/theory-schedule',
+      icon: GraduationCap,
+      roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+    },
+    {
+      title: 'Consolidado de Certificados',
+      description: 'Control semanal de diplomas emitidos con resumen estadístico.',
+      href: '/reports/certificates-summary',
+      icon: ScrollText,
+      roles: ['Administrador'],
+    },
     {
       title: 'Todos los Contratos',
       description: 'Ver, buscar y filtrar todos los contratos activos y pasados.',
@@ -31,13 +53,6 @@ export default function ReportsPage() {
       roles: ['Administrador'],
     },
     {
-      title: 'Consolidado de Certificados',
-      description: 'Control semanal de diplomas emitidos con resumen estadístico.',
-      href: '/reports/certificates-summary',
-      icon: ScrollText,
-      roles: ['Administrador'],
-    },
-    {
       title: 'Listado de Pagos de Cancelación',
       description: 'Ver y filtrar todos los pagos de cancelación registrados.',
       href: '/reports/cancellation-payments',
@@ -56,13 +71,6 @@ export default function ReportsPage() {
       description: 'Ver y filtrar el historial de kilometraje diario de los vehículos.',
       href: '/reports/mileage-log',
       icon: Gauge,
-      roles: ['Administrador', 'Ventas', 'Ventas Externas'],
-    },
-    {
-      title: 'Reporte de Asignación de Horarios',
-      description: 'Visualiza la agenda semanal de clases prácticas por vehículo.',
-      href: '/reports/vehicle-schedule',
-      icon: CalendarClock,
       roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     },
   ];

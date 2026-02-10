@@ -72,6 +72,7 @@ export default function CertificatesSummaryReportPage() {
         const data = doc.data() as any;
         const rawFolio = data.certificateFolio || '';
         
+        // Exclusión de folio de prueba 0004 y similares si es necesario
         if (!rawFolio || rawFolio.includes('0004')) return;
 
         const fName = data.certificateFirstName || splitName(data.clientName).fName;
@@ -131,9 +132,8 @@ export default function CertificatesSummaryReportPage() {
         else if (cat.includes('F')) counts.f++;
         else if (cat.includes('G') || cat.includes('H')) counts.gh++;
         else if (cat.includes('B') && cat.includes('C') && cat.includes('D')) counts.bcd++;
-        else if (cat.includes('B') && cat.includes('D')) counts.bcd++; // Caso B-D entra en B-C-D
+        else if (cat.includes('B') && cat.includes('D')) counts.bcd++; 
       } else {
-        // Trámite Primera Vez
         if (cat.includes('A') && cat.includes('B') && cat.includes('C') && cat.includes('D')) counts.abcd++;
         else if (cat.includes('A') && cat.includes('C') && cat.includes('D')) counts.acd++;
         else if (cat.includes('A') && cat.includes('C')) counts.ac++;
@@ -141,7 +141,6 @@ export default function CertificatesSummaryReportPage() {
       }
     });
 
-    // LAS ACTUALIZACIONES NO SE SUMAN COMO PERSONAS QUE TRAMITARON
     const peopleProcessedIDs = new Set(
         diplomas
             .filter(d => !d.isUpdate && !d.isCorrection)
@@ -162,12 +161,12 @@ export default function CertificatesSummaryReportPage() {
     <div className="flex flex-col gap-6 print:gap-0">
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
-          @page { size: letter landscape; margin: 10mm; }
+          @page { size: letter portrait; margin: 10mm; }
           header, footer, nav, aside, .print-hide, button { display: none !important; }
           body { background: white !important; padding: 0 !important; overflow: visible !important; }
           .print-container { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
-          table { font-size: 9px !important; border-collapse: collapse !important; width: 100% !important; border: 1px solid black !important; }
-          th, td { border: 1px solid black !important; padding: 3px !important; color: black !important; text-align: left; }
+          table { font-size: 7.5pt !important; border-collapse: collapse !important; width: 100% !important; border: 1px solid black !important; }
+          th, td { border: 1px solid black !important; padding: 2px 4px !important; color: black !important; text-align: left; }
           .text-center { text-align: center !important; }
           .bg-yellow-400 { background-color: #facc15 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .bg-blue-400 { background-color: #60a5fa !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -179,7 +178,7 @@ export default function CertificatesSummaryReportPage() {
       <div className="flex justify-between items-center print-hide">
         <div>
           <h1 className="text-2xl font-bold font-headline">Consolidado de Certificados</h1>
-          <p className="text-sm text-muted-foreground">Control semanal basado únicamente en el módulo de impresión.</p>
+          <p className="text-sm text-muted-foreground">Control semanal (Impresión Vertical / Carta)</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 border p-1 rounded-md bg-white">
@@ -209,16 +208,16 @@ export default function CertificatesSummaryReportPage() {
       <div className="print-container space-y-4">
         <div className="flex justify-between items-end border-b-2 border-black pb-2">
             <div className="flex flex-col">
-                <span className="font-bold text-lg uppercase tracking-tighter">FREEWAY</span>
-                <span className="text-[10px] font-bold uppercase -mt-1">ESCUELA DE MANEJO</span>
+                <span className="font-bold text-base uppercase tracking-tighter">FREEWAY</span>
+                <span className="text-[8px] font-bold uppercase -mt-1">ESCUELA DE MANEJO</span>
             </div>
             <div className="text-center flex-1">
-                <h2 className="font-black text-xl uppercase italic">FREEWAY ESCUELA DE MANEJO CHORRERA</h2>
-                <p className="text-xs font-bold uppercase">
-                    CONTROL DE DIPLOMAS CORRESPONDIENTES A LA SEMANA DEL {format(startDate, 'dd', { locale: es })} AL {format(endDate, "dd 'DE' MMMM 'DE' yyyy", { locale: es })}
+                <h2 className="font-black text-lg uppercase italic">FREEWAY ESCUELA DE MANEJO CHORRERA</h2>
+                <p className="text-[10px] font-bold uppercase">
+                    CONTROL DE DIPLOMAS: {format(startDate, 'dd/MM', { locale: es })} AL {format(endDate, "dd/MM/yyyy", { locale: es })}
                 </p>
             </div>
-            <div className="w-24"></div>
+            <div className="w-16"></div>
         </div>
 
         {isLoading ? (
@@ -228,17 +227,17 @@ export default function CertificatesSummaryReportPage() {
             <div className="overflow-hidden border border-black rounded-sm">
               <Table className="min-w-full border-collapse">
                 <TableHeader>
-                  <TableRow className="bg-slate-100 hover:bg-slate-100 h-8">
-                    <TableHead className="border border-black p-1 text-center font-bold text-black text-[9px] w-8">N°</TableHead>
-                    <TableHead className="border border-black p-1 text-center font-bold text-black text-[9px] w-20">N° de DIPLOMA</TableHead>
-                    <TableHead className="border border-black p-1 text-center font-bold text-black text-[9px] w-24">N° de I.P</TableHead>
-                    <TableHead className="border border-black p-1 text-center font-bold text-black text-[9px]">1er Nombre</TableHead>
-                    <TableHead className="border border-black p-1 text-center font-bold text-black text-[9px]">2 do Nombre</TableHead>
-                    <TableHead className="border border-black p-1 text-center font-bold text-black text-[9px]">1 er Apellido</TableHead>
-                    <TableHead className="border border-black p-1 text-center font-bold text-black text-[9px]">2 do Apellido</TableHead>
-                    <TableHead className="border border-black p-1 text-center font-bold text-black text-[9px]">Apellido De Casada</TableHead>
-                    <TableHead className="border border-black p-1 text-center font-bold text-black text-[9px] w-20">CATEGORIA</TableHead>
-                    <TableHead className="border border-black p-1 text-center font-bold text-black text-[9px] w-32">FIRMA</TableHead>
+                  <TableRow className="bg-slate-100 hover:bg-slate-100 h-7">
+                    <TableHead className="border border-black p-1 text-center font-bold text-black text-[8px] w-6">N°</TableHead>
+                    <TableHead className="border border-black p-1 text-center font-bold text-black text-[8px] w-16">DIPLOMA</TableHead>
+                    <TableHead className="border border-black p-1 text-center font-bold text-black text-[8px] w-20">I.P</TableHead>
+                    <TableHead className="border border-black p-1 text-center font-bold text-black text-[8px]">1er Nombre</TableHead>
+                    <TableHead className="border border-black p-1 text-center font-bold text-black text-[8px]">2do Nombre</TableHead>
+                    <TableHead className="border border-black p-1 text-center font-bold text-black text-[8px]">1er Apellido</TableHead>
+                    <TableHead className="border border-black p-1 text-center font-bold text-black text-[8px]">2do Apellido</TableHead>
+                    <TableHead className="border border-black p-1 text-center font-bold text-black text-[8px]">Ap. Casada</TableHead>
+                    <TableHead className="border border-black p-1 text-center font-bold text-black text-[8px] w-14">CAT.</TableHead>
+                    <TableHead className="border border-black p-1 text-center font-bold text-black text-[8px] w-20">FIRMA</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -250,35 +249,35 @@ export default function CertificatesSummaryReportPage() {
                     
                     return (
                       <TableRow key={`${d.type}-${d.folio}-${d.index}`} className={cn(
-                        "h-7 hover:bg-transparent",
+                        "h-6 hover:bg-transparent",
                         isE && "bg-yellow-400",
                         isF && "bg-blue-400",
                         isCorrection && "bg-slate-100",
                         isUpdate && "bg-indigo-100"
                       )}>
-                        <TableCell className="border border-black p-1 text-center font-medium text-[9px]">{d.index}</TableCell>
-                        <TableCell className="border border-black p-1 text-center font-bold text-[9px]">{d.folio}</TableCell>
-                        <TableCell className="border border-black p-1 text-center text-[9px]">{d.idNumber}</TableCell>
-                        <TableCell className="border border-black p-1 uppercase text-[9px]">{d.firstName}</TableCell>
-                        <TableCell className="border border-black p-1 uppercase text-[9px]">{d.middleName}</TableCell>
-                        <TableCell className="border border-black p-1 uppercase text-[9px]">{d.lastName}</TableCell>
-                        <TableCell className="border border-black p-1 uppercase text-[9px]">{d.secondLastName}</TableCell>
-                        <TableCell className="border border-black p-1 uppercase text-[9px]">{d.marriedLastName}</TableCell>
-                        <TableCell className="border border-black p-1 text-center font-bold text-[9px]">{d.category}</TableCell>
+                        <TableCell className="border border-black p-1 text-center font-medium text-[8px]">{d.index}</TableCell>
+                        <TableCell className="border border-black p-1 text-center font-bold text-[8px]">{d.folio}</TableCell>
+                        <TableCell className="border border-black p-1 text-center text-[8px]">{d.idNumber}</TableCell>
+                        <TableCell className="border border-black p-1 uppercase text-[8px]">{d.firstName}</TableCell>
+                        <TableCell className="border border-black p-1 uppercase text-[8px]">{d.middleName}</TableCell>
+                        <TableCell className="border border-black p-1 uppercase text-[8px]">{d.lastName}</TableCell>
+                        <TableCell className="border border-black p-1 uppercase text-[8px]">{d.secondLastName}</TableCell>
+                        <TableCell className="border border-black p-1 uppercase text-[8px]">{d.marriedLastName}</TableCell>
+                        <TableCell className="border border-black p-1 text-center font-bold text-[8px]">{d.category}</TableCell>
                         <TableCell className="border border-black p-1"></TableCell>
                       </TableRow>
                     );
                   })}
                   {diplomas.length === 0 && (
-                    <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground italic">No se encontraron certificados emitidos en este rango.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={10} className="text-center py-8 text-muted-foreground italic">No hay registros.</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
             </div>
 
-            <div className="grid grid-cols-2 gap-8 pt-4">
-                <div className="space-y-4">
-                    <table className="w-full border-collapse border border-black text-[10px]">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div className="space-y-3">
+                    <table className="w-full border-collapse border border-black text-[9px]">
                         <thead>
                             <tr className="bg-slate-100 font-bold">
                                 <td className="border border-black p-1 text-center w-2/3 uppercase">CATEGORÍA</td>
@@ -296,22 +295,23 @@ export default function CertificatesSummaryReportPage() {
                             <tr><td className="border border-black p-1">AMPLIACIÓN G-H</td><td className="border border-black p-1 text-center font-bold">{stats.gh || ''}</td></tr>
                             <tr><td className="border border-black p-1 font-bold">CORRECCIONES / DUPLICADOS</td><td className="border border-black p-1 text-center font-bold">{stats.corrections || ''}</td></tr>
                             <tr className="bg-indigo-100"><td className="border border-black p-1 font-bold">ACTUALIZACIONES</td><td className="border border-black p-1 text-center font-bold">{stats.updates || ''}</td></tr>
-                            <tr className="bg-slate-100 font-bold"><td className="border border-black p-1 text-right pr-4 uppercase">TOTAL</td><td className="border border-black p-1 text-center">{stats.total}</td></tr>
+                            <tr className="bg-slate-100 font-bold"><td className="border border-black p-1 text-right pr-4 uppercase">TOTAL FOLIOS USADOS</td><td className="border border-black p-1 text-center">{stats.total}</td></tr>
                         </tbody>
                     </table>
 
-                    <table className="w-full border-collapse border border-black text-[10px]">
-                        <tbody>
-                            <tr className="bg-slate-100 font-bold"><td className="border border-black p-1 uppercase w-2/3">PERSONAS QUE TRAMITARON</td><td className="border border-black p-1 text-center">{stats.uniquePersons}</td></tr>
-                            <tr className="bg-slate-100 font-bold"><td className="border border-black p-1 uppercase">EXCEDENTE</td><td className="border border-black p-1 text-center">{stats.surplus}</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div className="flex flex-col items-center justify-center pt-20">
-                    <div className="w-64 border-t-2 border-black mb-2"></div>
-                    <p className="font-bold text-sm">Ayax A. Ortega</p>
-                    <p className="text-xs italic">Representante Legal</p>
+                    <div className="grid grid-cols-2 gap-2">
+                        <table className="w-full border-collapse border border-black text-[9px]">
+                            <tbody>
+                                <tr className="bg-slate-100 font-bold"><td className="border border-black p-1 uppercase w-2/3">PERSONAS TRAMITADAS</td><td className="border border-black p-1 text-center">{stats.uniquePersons}</td></tr>
+                                <tr className="bg-slate-100 font-bold"><td className="border border-black p-1 uppercase">EXCEDENTE OPERATIVO</td><td className="border border-black p-1 text-center">{stats.surplus}</td></tr>
+                            </tbody>
+                        </table>
+                        <div className="flex flex-col items-center justify-center border border-black rounded-sm p-2">
+                            <div className="w-32 border-t border-black mb-1"></div>
+                            <p className="font-bold text-[8px]">Ayax A. Ortega</p>
+                            <p className="text-[7px] italic">Representante Legal</p>
+                        </div>
+                    </div>
                 </div>
             </div>
           </>

@@ -126,6 +126,7 @@ export default function DailyCashReportPage() {
 
         const filterByRole = (snapshot: any) => {
             if (isAdmin) return snapshot.docs;
+            // Garantizar que Ventas Externas y otros vean sus propios contratos
             return snapshot.docs.filter((doc: any) => doc.data().createdBy === role);
         }
 
@@ -143,6 +144,7 @@ export default function DailyCashReportPage() {
                 paymentType = contract.deluxeDetails?.paymentType || 'cash';
                 amount = 15.00;
             } else {
+                // Captura abonos de cualquier tipo de contrato (Auto, Moto, Mixto, Solo Práctica, Ampliación)
                 const details = contract.autoMotoDetails || contract.ampliacionesDetails;
                 paymentType = details?.paymentType || 'cash';
                 amount = details?.downPayment || 0;
@@ -163,7 +165,7 @@ export default function DailyCashReportPage() {
                     service: contract.type === 'Curso Deluxe' ? 'Matrícula Deluxe' : `Abono ${contract.type}`,
                     amount: amount,
                     paymentType: paymentType,
-                    createdBy: contract.createdBy,
+                    createdBy: contract.createdBy || 'Sistema',
                     ...paymentColumns,
                 });
             }
@@ -189,7 +191,7 @@ export default function DailyCashReportPage() {
                 service: 'Abono/Cancelación de Saldo',
                 amount: amount,
                 paymentType: pType,
-                createdBy: payment.createdBy,
+                createdBy: payment.createdBy || 'Sistema',
                 ...paymentColumns,
             });
         });
@@ -214,7 +216,7 @@ export default function DailyCashReportPage() {
                 service: 'Actualización de Certificado',
                 amount: amount,
                 paymentType: pType,
-                createdBy: payment.createdBy,
+                createdBy: payment.createdBy || 'Sistema',
                 ...paymentColumns,
             });
         });
@@ -239,7 +241,7 @@ export default function DailyCashReportPage() {
                 service: `Libro: ${payment.bookTitle}`,
                 amount: amount,
                 paymentType: pType,
-                createdBy: payment.createdBy,
+                createdBy: payment.createdBy || 'Sistema',
                 ...paymentColumns,
             });
         });
@@ -290,8 +292,7 @@ export default function DailyCashReportPage() {
   const grandTotals = useMemo(() => {
     const totalFacturado = Object.values(transactionTotals).reduce((sum, val) => sum + val, 0);
     const totalEfectivoMenosGastos = transactionTotals.cash - totalExpenses;
-    // DIFERENCIA: Lo que debería haber (Sistema - Gastos) vs Lo que hay físicamente (Contado)
-    const diferencia = totalEfectivoMenosGastos - cashBreakdownTotals.total;
+    const diferencia = cashBreakdownTotals.total - totalEfectivoMenosGastos;
     return { totalFacturado, totalEfectivoMenosGastos, diferencia };
   }, [transactionTotals, totalExpenses, cashBreakdownTotals.total]);
   
@@ -310,7 +311,6 @@ export default function DailyCashReportPage() {
         newTransaction.paymentType = value;
     }
 
-    // Reset column values and redistribute amount
     newTransaction.cash = 0; newTransaction.debit = 0; newTransaction.credit = 0;
     newTransaction.bac = 0; newTransaction.general = 0; newTransaction.cheques = 0;
     
@@ -624,14 +624,14 @@ export default function DailyCashReportPage() {
 
                         <Table className="text-[10px] border border-black">
                             <TableBody>
-                                <TableRow className="hover:bg-transparent bg-slate-50"><TableCell className="border-r border-black p-1 font-bold uppercase">EFECTIVO NETO (MENOS GASTOS)</TableCell><TableCell className="p-1 text-right font-black">{currencyFormatter.format(grandTotals.totalEfectivoMenosGastos)}</TableCell></TableRow>
+                                <TableRow className="hover:bg-transparent bg-slate-50"><TableCell className="border-r border-black p-1 font-bold uppercase">EFECTIVO NETO (SISTEMA)</TableCell><TableCell className="p-1 text-right font-black">{currencyFormatter.format(grandTotals.totalEfectivoMenosGastos)}</TableCell></TableRow>
                                 <TableRow className="hover:bg-transparent">
-                                    <TableCell className="border-r border-black p-1 uppercase">DEPÓSITO REALIZADO (CONTADO)</TableCell>
+                                    <TableCell className="border-r border-black p-1 uppercase font-bold">DEPÓSITO REALIZADO (CONTADO)</TableCell>
                                     <TableCell className="p-1 text-right font-bold bg-muted/30">
                                         {currencyFormatter.format(cashBreakdownTotals.total)}
                                     </TableCell>
                                 </TableRow>
-                                <TableRow className={cn("font-bold border-t border-black", grandTotals.diferencia !== 0 ? "bg-red-100 text-red-900" : "bg-green-100 text-green-900")}><TableCell className="border-r border-black p-1 uppercase">DIFERENCIA / FALTANTE</TableCell><TableCell className="p-1 text-right text-sm">{currencyFormatter.format(grandTotals.diferencia)}</TableCell></TableRow>
+                                <TableRow className={cn("font-bold border-t border-black", grandTotals.diferencia < 0 ? "bg-red-100 text-red-900" : grandTotals.diferencia > 0 ? "bg-green-100 text-green-900" : "bg-green-50 text-green-800")}><TableCell className="border-r border-black p-1 uppercase">DIFERENCIA / FALTANTE</TableCell><TableCell className="p-1 text-right text-sm">{currencyFormatter.format(grandTotals.diferencia)}</TableCell></TableRow>
                             </TableBody>
                         </Table>
                     </div>

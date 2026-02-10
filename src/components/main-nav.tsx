@@ -82,6 +82,10 @@ const navLinks = [
           roles: ['Administrador'],
       },
       {
+          separator: true,
+          roles: ['Administrador'],
+      },
+      {
           href: '/reports/cancellation-payments',
           label: 'Cancelaciones',
           roles: ['Administrador', 'Ventas', 'Ventas Externas'],

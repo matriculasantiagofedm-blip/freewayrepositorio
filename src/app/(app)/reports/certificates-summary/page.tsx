@@ -26,6 +26,7 @@ interface DiplomaRow {
     type: 'contract' | 'manual';
     isCorrection: boolean;
     isUpdate: boolean;
+    isAmpliacion: boolean;
 }
 
 export default function CertificatesSummaryReportPage() {
@@ -58,7 +59,6 @@ export default function CertificatesSummaryReportPage() {
 
       const contractsRef = collection(db, 'contracts');
       
-      // Consulta UNIFICADA: Solo contratos con certificados generados en el rango
       const qContracts = query(
         contractsRef,
         where('certificateGeneratedAt', '>=', Timestamp.fromDate(start)),
@@ -72,7 +72,6 @@ export default function CertificatesSummaryReportPage() {
         const data = doc.data() as any;
         const rawFolio = data.certificateFolio || '';
         
-        // FILTRO DE SEGURIDAD: Excluir folios de prueba (0004) o nulos
         if (!rawFolio || rawFolio.includes('0004')) return;
 
         const fName = data.certificateFirstName || splitName(data.clientName).fName;
@@ -93,7 +92,8 @@ export default function CertificatesSummaryReportPage() {
           category: data.certificateLicenseType || (data.autoMotoDetails?.licenseCategory) || '',
           type: data.isManualPrint ? 'manual' : 'contract',
           isCorrection: !!data.isCorrection,
-          isUpdate: !!data.isUpdate
+          isUpdate: !!data.isUpdate,
+          isAmpliacion: data.type === 'Ampliaciones' || (data.isManualPrint && data.type === 'Ampliaciones')
         });
       });
 
@@ -116,7 +116,7 @@ export default function CertificatesSummaryReportPage() {
 
   const stats = useMemo(() => {
     const counts = {
-      ab: 0, ac: 0, acd: 0, abcd: 0, bd: 0, e: 0, f: 0, gh: 0, corrections: 0, updates: 0
+      ab: 0, ac: 0, acd: 0, abcd: 0, bcd: 0, e: 0, f: 0, gh: 0, corrections: 0, updates: 0
     };
 
     diplomas.forEach(d => {
@@ -126,24 +126,29 @@ export default function CertificatesSummaryReportPage() {
         counts.corrections++;
       } else if (d.isUpdate) {
         counts.updates++;
-      } else if (cat.includes('E')) {
-        counts.e++;
-      } else if (cat.includes('F')) {
-        counts.f++;
-      } else if (cat.includes('A') && cat.includes('B') && cat.includes('C') && cat.includes('D')) {
-        counts.abcd++;
-      } else if (cat.includes('A') && cat.includes('C') && cat.includes('D')) {
-        counts.acd++;
-      } else if (cat.includes('A') && cat.includes('C')) {
-        counts.ac++;
-      } else if (cat.includes('A') && cat.includes('B')) {
-        counts.ab++;
-      } else if (cat.includes('B') && cat.includes('D')) {
-        counts.bd++;
+      } else if (d.isAmpliacion) {
+        if (cat.includes('E')) counts.e++;
+        else if (cat.includes('F')) counts.f++;
+        else if (cat.includes('G') || cat.includes('H')) counts.gh++;
+        else if (cat.includes('B') && cat.includes('C') && cat.includes('D')) counts.bcd++;
+        else if (cat.includes('B') && cat.includes('D')) counts.bcd++; // Caso B-D entra en B-C-D
+      } else {
+        // Trámite Primera Vez
+        if (cat.includes('A') && cat.includes('B') && cat.includes('C') && cat.includes('D')) counts.abcd++;
+        else if (cat.includes('A') && cat.includes('C') && cat.includes('D')) counts.acd++;
+        else if (cat.includes('A') && cat.includes('C')) counts.ac++;
+        else if (cat.includes('A') && cat.includes('B')) counts.ab++;
       }
     });
 
-    const uniquePersons = new Set(diplomas.map(d => d.idNumber)).size;
+    // LAS ACTUALIZACIONES NO SE SUMAN COMO PERSONAS QUE TRAMITARON
+    const peopleProcessedIDs = new Set(
+        diplomas
+            .filter(d => !d.isUpdate && !d.isCorrection)
+            .map(d => d.idNumber)
+    );
+    
+    const uniquePersons = peopleProcessedIDs.size;
     const total = diplomas.length;
 
     return { ...counts, total, uniquePersons, surplus: total - uniquePersons };
@@ -285,7 +290,7 @@ export default function CertificatesSummaryReportPage() {
                             <tr><td className="border border-black p-1">TRAMITE A,C</td><td className="border border-black p-1 text-center font-bold">{stats.ac || ''}</td></tr>
                             <tr><td className="border border-black p-1">TRAMITE A,C,D</td><td className="border border-black p-1 text-center font-bold">{stats.acd || ''}</td></tr>
                             <tr><td className="border border-black p-1">TRAMITE A,B,C,D</td><td className="border border-black p-1 text-center font-bold">{stats.abcd || ''}</td></tr>
-                            <tr><td className="border border-black p-1">AMPLIACIÓN B-D</td><td className="border border-black p-1 text-center font-bold">{stats.bd || ''}</td></tr>
+                            <tr><td className="border border-black p-1">AMPLIACIÓN B-C-D</td><td className="border border-black p-1 text-center font-bold">{stats.bcd || ''}</td></tr>
                             <tr className="bg-yellow-400"><td className="border border-black p-1 font-bold">AMPLIACIÓN E1E2E3</td><td className="border border-black p-1 text-center font-bold">{stats.e || ''}</td></tr>
                             <tr className="bg-blue-400"><td className="border border-black p-1 font-bold">AMPLIACIÓN F-I</td><td className="border border-black p-1 text-center font-bold">{stats.f || ''}</td></tr>
                             <tr><td className="border border-black p-1">AMPLIACIÓN G-H</td><td className="border border-black p-1 text-center font-bold">{stats.gh || ''}</td></tr>

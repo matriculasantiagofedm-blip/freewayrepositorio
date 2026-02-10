@@ -77,22 +77,18 @@ const navLinks = [
           roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
       {
-          separator: true,
-          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
-      },
-      {
           href: '/reports/certificates-summary',
           label: 'Consolidado Certificados',
-          roles: ['Administrador'],
-      },
-      {
-          separator: true,
           roles: ['Administrador'],
       },
       {
           href: '/contracts',
           label: 'Todos los Contratos',
           roles: ['Administrador'],
+      },
+      {
+          separator: true,
+          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
       {
           href: '/reports/cancellation-payments',

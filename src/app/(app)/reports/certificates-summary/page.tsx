@@ -25,6 +25,7 @@ interface DiplomaRow {
     category: string;
     type: 'contract' | 'manual';
     isCorrection: boolean;
+    isUpdate: boolean;
 }
 
 export default function CertificatesSummaryReportPage() {
@@ -91,7 +92,8 @@ export default function CertificatesSummaryReportPage() {
           marriedLastName: mLastName,
           category: data.certificateLicenseType || (data.autoMotoDetails?.licenseCategory) || '',
           type: data.isManualPrint ? 'manual' : 'contract',
-          isCorrection: !!data.isCorrection
+          isCorrection: !!data.isCorrection,
+          isUpdate: !!data.isUpdate
         });
       });
 
@@ -114,7 +116,7 @@ export default function CertificatesSummaryReportPage() {
 
   const stats = useMemo(() => {
     const counts = {
-      ab: 0, ac: 0, acd: 0, abcd: 0, bd: 0, e: 0, f: 0, gh: 0, corrections: 0
+      ab: 0, ac: 0, acd: 0, abcd: 0, bd: 0, e: 0, f: 0, gh: 0, corrections: 0, updates: 0
     };
 
     diplomas.forEach(d => {
@@ -122,6 +124,8 @@ export default function CertificatesSummaryReportPage() {
       
       if (d.isCorrection) {
         counts.corrections++;
+      } else if (d.isUpdate) {
+        counts.updates++;
       } else if (cat.includes('E')) {
         counts.e++;
       } else if (cat.includes('F')) {
@@ -163,6 +167,7 @@ export default function CertificatesSummaryReportPage() {
           .bg-yellow-400 { background-color: #facc15 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .bg-blue-400 { background-color: #60a5fa !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .bg-slate-100 { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .bg-indigo-100 { background-color: #e0e7ff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
       `}} />
 
@@ -236,13 +241,15 @@ export default function CertificatesSummaryReportPage() {
                     const isE = d.category.toUpperCase().includes('E');
                     const isF = d.category.toUpperCase().includes('F');
                     const isCorrection = d.isCorrection;
+                    const isUpdate = d.isUpdate;
                     
                     return (
                       <TableRow key={`${d.type}-${d.folio}-${d.index}`} className={cn(
                         "h-7 hover:bg-transparent",
                         isE && "bg-yellow-400",
                         isF && "bg-blue-400",
-                        isCorrection && "bg-slate-100"
+                        isCorrection && "bg-slate-100",
+                        isUpdate && "bg-indigo-100"
                       )}>
                         <TableCell className="border border-black p-1 text-center font-medium text-[9px]">{d.index}</TableCell>
                         <TableCell className="border border-black p-1 text-center font-bold text-[9px]">{d.folio}</TableCell>
@@ -283,6 +290,7 @@ export default function CertificatesSummaryReportPage() {
                             <tr className="bg-blue-400"><td className="border border-black p-1 font-bold">AMPLIACIÓN F-I</td><td className="border border-black p-1 text-center font-bold">{stats.f || ''}</td></tr>
                             <tr><td className="border border-black p-1">AMPLIACIÓN G-H</td><td className="border border-black p-1 text-center font-bold">{stats.gh || ''}</td></tr>
                             <tr><td className="border border-black p-1 font-bold">CORRECCIONES / DUPLICADOS</td><td className="border border-black p-1 text-center font-bold">{stats.corrections || ''}</td></tr>
+                            <tr className="bg-indigo-100"><td className="border border-black p-1 font-bold">ACTUALIZACIONES</td><td className="border border-black p-1 text-center font-bold">{stats.updates || ''}</td></tr>
                             <tr className="bg-slate-100 font-bold"><td className="border border-black p-1 text-right pr-4 uppercase">TOTAL</td><td className="border border-black p-1 text-center">{stats.total}</td></tr>
                         </tbody>
                     </table>

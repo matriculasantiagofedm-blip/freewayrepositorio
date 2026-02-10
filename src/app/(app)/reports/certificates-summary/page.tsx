@@ -70,7 +70,9 @@ export default function CertificatesSummaryReportPage() {
       contractsSnap.forEach((doc) => {
         const data = doc.data() as any;
         const rawFolio = data.certificateFolio || '';
-        if (!rawFolio) return;
+        
+        // FILTRO DE SEGURIDAD: Excluir folios de prueba (0004) o nulos
+        if (!rawFolio || rawFolio.includes('0004')) return;
 
         const fName = data.certificateFirstName || splitName(data.clientName).fName;
         const mName = data.certificateMiddleName || splitName(data.clientName).mName;

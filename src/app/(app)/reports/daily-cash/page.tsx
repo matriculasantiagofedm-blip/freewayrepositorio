@@ -306,15 +306,19 @@ export default function DailyCashReportPage() {
     
     if (field === 'amount') {
         newTransaction.amount = parseFloat(value) || 0;
-        newTransaction.cash = 0; newTransaction.debit = 0; newTransaction.credit = 0;
-        newTransaction.bac = 0; newTransaction.general = 0; newTransaction.cheques = 0;
-        
-        const pType = newTransaction.paymentType;
-        if (pType && newTransaction.hasOwnProperty(pType)) {
-            (newTransaction as any)[pType] = newTransaction.amount;
-        } else {
-            newTransaction.cash = newTransaction.amount;
-        }
+    } else if (field === 'paymentType') {
+        newTransaction.paymentType = value;
+    }
+
+    // Reset column values and redistribute amount
+    newTransaction.cash = 0; newTransaction.debit = 0; newTransaction.credit = 0;
+    newTransaction.bac = 0; newTransaction.general = 0; newTransaction.cheques = 0;
+    
+    const pType = newTransaction.paymentType;
+    if (pType && newTransaction.hasOwnProperty(pType)) {
+        (newTransaction as any)[pType] = newTransaction.amount;
+    } else {
+        newTransaction.cash = newTransaction.amount;
     }
 
     updated[originalIndex] = newTransaction;
@@ -369,6 +373,8 @@ export default function DailyCashReportPage() {
       );
   }
 
+  const isAdmin = role === 'Administrador';
+
   return (
     <div className="space-y-6 rounded-lg print:bg-white min-h-screen pb-12">
       <style jsx global>{`
@@ -421,7 +427,7 @@ export default function DailyCashReportPage() {
             <p className="text-xs text-muted-foreground">Ingresos registrados en el sistema para la fecha seleccionada.</p>
         </div>
         <div className="flex items-center gap-2">
-            {role === 'Administrador' && (
+            {isAdmin && (
               <Select value={sellerFilter} onValueChange={setSellerFilter}>
                   <SelectTrigger className="w-[180px] h-9 text-xs"><SelectValue placeholder="Vendedor..." /></SelectTrigger>
                   <SelectContent>
@@ -504,11 +510,28 @@ export default function DailyCashReportPage() {
                                     type="number" 
                                     value={transaction.amount} 
                                     onChange={e => handleTransactionChange(index, 'amount', e.target.value)} 
-                                    className="w-full h-7 border-none rounded-none text-[10px] p-1 text-center focus-visible:ring-0" 
+                                    disabled={!isAdmin}
+                                    className="w-full h-7 border-none rounded-none text-[10px] p-1 text-center focus-visible:ring-0 disabled:opacity-100" 
                                 />
                             </TableCell>
                             <TableCell className="border-r border-black p-0 text-center">
-                                <span className="text-[9px] uppercase px-1">{paymentTypes.find(p => p.value === transaction.paymentType)?.label || transaction.paymentType}</span>
+                                {isAdmin ? (
+                                    <Select 
+                                        value={transaction.paymentType} 
+                                        onValueChange={v => handleTransactionChange(index, 'paymentType', v)}
+                                    >
+                                        <SelectTrigger className="h-7 w-full border-none rounded-none text-[9px] uppercase px-1 focus:ring-0">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {paymentTypes.map(pt => (
+                                                <SelectItem key={pt.value} value={pt.value} className="text-[9px]">{pt.label}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                ) : (
+                                    <span className="text-[9px] uppercase px-1">{paymentTypes.find(p => p.value === transaction.paymentType)?.label || transaction.paymentType}</span>
+                                )}
                             </TableCell>
                             <TableCell className="border-r border-black p-1 text-right bg-muted/20">{transaction.cash > 0 ? transaction.cash.toFixed(2) : '-'}</TableCell>
                             <TableCell className="border-r border-black p-1 text-right bg-muted/20">{transaction.debit > 0 ? transaction.debit.toFixed(2) : '-'}</TableCell>

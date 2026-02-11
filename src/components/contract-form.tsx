@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -56,10 +55,18 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
 const isEvalPlan = (planId?: string) => planId === 'evaluacion-estacionamiento' || planId === 'moto-evaluacion-estacionamiento';
 
 const getGlobalCapacity = (date: Date, slotId: string) => {
-    const day = date.getDay(); 
-    if (day === 1 && slotId === '8am-10am') return 2; 
-    if (day === 6 && slotId === '3pm-5pm') return 2;  
-    return 3; 
+    const day = date.getDay(); // 0: Dom, 1: Lun, 2: Mar, 3: Mie, 4: Jue, 5: Vie, 6: Sab
+    
+    // Regla 8am-10am: Lunes 3, Martes-Viernes 2
+    if (slotId === '8am-10am') {
+        if (day === 1) return 3;
+        if (day >= 2 && day <= 5) return 2;
+    }
+    
+    // Regla Sabatino tarde: 2 vehiculos
+    if (day === 6 && slotId === '3pm-5pm') return 2;
+    
+    return 3;
 };
 
 const autoPackages = [
@@ -267,11 +274,10 @@ function ClassSlotGrid({
                             isFull = currentOccupancy >= capacity;
                         }
 
-                        // Lógica de conflicto especial para Evaluaciones
                         const hasConflict = conflictStudents.length > 0 && (
-                            !isCurrentEval || // Si la actual no es eval, cualquier cosa es conflicto
-                            conflictStudents.some(s => !s.isEval) || // Si alguna ocupante no es eval, es conflicto
-                            conflictStudents.length >= 3 // Si ya hay 3 evals, es conflicto
+                            !isCurrentEval || 
+                            conflictStudents.some(s => !s.isEval) || 
+                            conflictStudents.length >= 3 
                         );
 
                         return (
@@ -403,7 +409,6 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
       processSlots(c.deluxeDetails?.classSchedules || []);
     });
 
-    // Calcular capacidad global (Clases normales + (1 si hay evals))
     Object.keys(vehicleOccupancy).forEach(vKey => {
         const [dateKey, slotId] = vKey.split('|');
         const sKey = `${dateKey}|${slotId}`;

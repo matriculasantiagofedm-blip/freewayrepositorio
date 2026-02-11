@@ -79,10 +79,18 @@ const timeSlots = [
 ];
 
 const getGlobalCapacity = (date: Date, slotId: string) => {
-    const day = date.getDay(); 
-    if (day === 1 && slotId === '8am-10am') return 2;
+    const day = date.getDay(); // 0: Dom, 1: Lun, 2: Mar, 3: Mie, 4: Jue, 5: Vie, 6: Sab
+    
+    // Regla 8am-10am: Lunes 3, Martes-Viernes 2
+    if (slotId === '8am-10am') {
+        if (day === 1) return 3;
+        if (day >= 2 && day <= 5) return 2;
+    }
+    
+    // Regla Sabatino tarde: 2 vehiculos
     if (day === 6 && slotId === '3pm-5pm') return 2;
-    return 3;
+    
+    return 3; // Estándar
 };
 
 export default function ManualSchedulePage() {
@@ -122,7 +130,6 @@ export default function ManualSchedulePage() {
         
         const processEntry = (date: any, slot: string, vehicle: string, name: string, entryId?: string) => {
             if (!date || !slot || !vehicle) return;
-            // Si estamos editando un contrato, no contar sus propios turnos como conflicto
             if (selectedContract && entryId === selectedContract.id) return;
 
             const dateKey = format(toDate(date), 'yyyy-MM-dd');
@@ -378,12 +385,12 @@ export default function ManualSchedulePage() {
                                     return (
                                         <div key={field.id} className={cn("grid grid-cols-1 md:grid-cols-6 lg:grid-cols-7 gap-3 p-4 border rounded-xl bg-slate-50/50 items-end relative", (conflictStudent || isFull) && "border-amber-500 bg-amber-50/30")}>
                                             {conflictStudent && (
-                                                <div className="absolute -top-2 right-2 bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10">
+                                                <div className="absolute -top-2 right-2 bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10 uppercase">
                                                     <AlertTriangle className="h-3 w-3" /> OCUPADO POR: {conflictStudent.toUpperCase()}
                                                 </div>
                                             )}
                                             {isFull && !conflictStudent && (
-                                                <div className="absolute -top-2 right-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10">
+                                                <div className="absolute -top-2 right-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10 uppercase">
                                                     <AlertTriangle className="h-3 w-3" /> CAPACIDAD MÁXIMA ({capacity})
                                                 </div>
                                             )}

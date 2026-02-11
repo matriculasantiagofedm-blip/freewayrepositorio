@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -42,10 +41,18 @@ const motoVehicles = ['Moto Roja', 'Moto Negra'];
 const isEvalPlan = (planId?: string) => planId === 'evaluacion-estacionamiento' || planId === 'moto-evaluacion-estacionamiento';
 
 const getGlobalCapacity = (date: Date, slotId: string) => {
-    const day = date.getDay(); 
-    if (day === 1 && slotId === '8am-10am') return 2; 
-    if (day === 6 && slotId === '3pm-5pm') return 2;  
-    return 3; 
+    const day = date.getDay(); // 0: Dom, 1: Lun, 2: Mar, 3: Mie, 4: Jue, 5: Vie, 6: Sab
+    
+    // Regla 8am-10am: Lunes 3, Martes-Viernes 2
+    if (slotId === '8am-10am') {
+        if (day === 1) return 3;
+        if (day >= 2 && day <= 5) return 2;
+    }
+    
+    // Regla Sabatino tarde: 2 vehiculos
+    if (day === 6 && slotId === '3pm-5pm') return 2;
+    
+    return 3;
 };
 
 const timeStringToTimeSlot = (timeString: string): TimeSlot | null => {
@@ -96,7 +103,6 @@ export default function VehicleScheduleReportPage() {
     const weekInterval = { start: startOfDay(weekStart), end: endOfWeek(currentDate, { weekStartsOn: 1 }) };
     const newWeeklyAssignments = new Map<string, LocalAssignment[]>();
 
-    // 1. Procesar Asignaciones de Contratos
     contracts?.forEach(contract => {
         const details = contract.autoMotoDetails || contract.deluxeDetails;
         const isEval = isEvalPlan(details?.coursePlan);
@@ -132,7 +138,6 @@ export default function VehicleScheduleReportPage() {
         deluxeSchedules.forEach((s, i) => addAssignment(s.date, timeStringToTimeSlot(s.time || ''), i, s.vehicle, s.instructor));
     });
 
-    // 2. Procesar Asignaciones Manuales
     manualEntries?.forEach(entry => {
         if (entry.classType === 'Teórica') return;
 
@@ -197,7 +202,6 @@ export default function VehicleScheduleReportPage() {
                             const dayKey = format(day, 'yyyy-MM-dd');
                             const allAssignments = weeklyAssignments.get(dayKey)?.filter(a => a.timeSlot === timeSlot.id) || [];
                             
-                            // Agrupar evaluaciones por vehículo para contar como 1 solo cupo de flota
                             const vehicleUsage: Record<string, { isEval: boolean, count: number }> = {};
                             allAssignments.forEach(a => {
                                 if (!vehicleUsage[a.vehicle]) {
@@ -209,12 +213,10 @@ export default function VehicleScheduleReportPage() {
 
                             const globalCount = Object.keys(vehicleUsage).length;
                             const globalCap = getGlobalCapacity(day, timeSlot.id);
-                            
                             const isFull = globalCount >= globalCap;
 
                             return (
                             <TableCell key={day.toISOString()} className={cn("border p-1.5 align-top transition-colors relative", format(new Date(), 'yyyy-MM-dd') === dayKey && "bg-primary/[0.02]")}>
-                                {/* Indicador de Capacidad Global */}
                                 <div className="absolute top-1 right-1 z-10">
                                     <div className={cn(
                                         "px-1.5 py-0.5 rounded text-[9px] font-black flex items-center gap-1 shadow-sm border",

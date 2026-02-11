@@ -31,12 +31,13 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, addDoc, serverTimestamp, deleteDoc, doc, query, orderBy, Timestamp, where, getDocs, updateDoc } from 'firebase/firestore';
 import type { ManualSchedule, VehicleName, InstructorName, Contract, TimeSlot } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CalendarIcon, PlusCircle, Trash2, CalendarClock, X, AlertTriangle, Search, UserCheck, RefreshCw, Save } from 'lucide-react';
+import { Loader2, CalendarIcon, PlusCircle, Trash2, CalendarClock, X, AlertTriangle, Search, UserCheck, RefreshCw, Save, Landmark } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import Link from 'next/link';
+import { isPanamaHoliday } from '@/lib/holidays';
 
 const TIME_STRING_TO_SLOT_MAP: { [key: string]: TimeSlot } = {
     '8:00am a 10:00am': '8am-10am',
@@ -364,6 +365,7 @@ export default function ManualSchedulePage() {
                                     const watchDate = form.watch(`classes.${index}.date`);
                                     const watchTime = form.watch(`classes.${index}.timeSlot`);
                                     const watchVehicle = form.watch(`classes.${index}.vehicle`);
+                                    const holiday = isPanamaHoliday(toDate(watchDate));
                                     
                                     let conflictStudent = null;
                                     let isFull = false;
@@ -383,13 +385,18 @@ export default function ManualSchedulePage() {
                                     }
 
                                     return (
-                                        <div key={field.id} className={cn("grid grid-cols-1 md:grid-cols-6 lg:grid-cols-7 gap-3 p-4 border rounded-xl bg-slate-50/50 items-end relative", (conflictStudent || isFull) && "border-amber-500 bg-amber-50/30")}>
-                                            {conflictStudent && (
+                                        <div key={field.id} className={cn("grid grid-cols-1 md:grid-cols-6 lg:grid-cols-7 gap-3 p-4 border rounded-xl bg-slate-50/50 items-end relative", (conflictStudent || isFull || holiday) && "border-amber-500 bg-amber-50/30")}>
+                                            {holiday && (
+                                                <div className="absolute -top-2 right-2 bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10 uppercase">
+                                                    <Landmark className="h-3 w-3" /> FERIADO: {holiday.name.toUpperCase()}
+                                                </div>
+                                            )}
+                                            {conflictStudent && !holiday && (
                                                 <div className="absolute -top-2 right-2 bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10 uppercase">
                                                     <AlertTriangle className="h-3 w-3" /> OCUPADO POR: {conflictStudent.toUpperCase()}
                                                 </div>
                                             )}
-                                            {isFull && !conflictStudent && (
+                                            {isFull && !conflictStudent && !holiday && (
                                                 <div className="absolute -top-2 right-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10 uppercase">
                                                     <AlertTriangle className="h-3 w-3" /> CAPACIDAD MÁXIMA ({capacity})
                                                 </div>
@@ -402,7 +409,7 @@ export default function ManualSchedulePage() {
                                                     <FormLabel className="text-[10px] uppercase font-bold">Fecha</FormLabel>
                                                     <Popover>
                                                         <PopoverTrigger asChild>
-                                                            <FormControl><Button variant="outline" className="w-full h-9 text-xs px-2 text-left font-normal">{field.value ? format(field.value, "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-3 w-3 opacity-50" /></Button></FormControl>
+                                                            <FormControl><Button variant="outline" className={cn("w-full h-9 text-xs px-2 text-left font-normal", holiday && "border-amber-400")}>{field.value ? format(field.value, "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-3 w-3 opacity-50" /></Button></FormControl>
                                                         </PopoverTrigger>
                                                         <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
                                                     </Popover>
@@ -413,7 +420,7 @@ export default function ManualSchedulePage() {
                                                 <FormItem className="md:col-span-1 lg:col-span-1">
                                                     <FormLabel className="text-[10px] uppercase font-bold">Turno</FormLabel>
                                                     <Select onValueChange={field.onChange} value={field.value}>
-                                                        <FormControl><SelectTrigger className="h-9 text-xs px-2"><SelectValue /></SelectTrigger></FormControl>
+                                                        <FormControl><SelectTrigger className={cn("h-9 text-xs px-2", (hasConflict || isFull || holiday) && "border-amber-400")}><SelectValue /></SelectTrigger></FormControl>
                                                         <SelectContent>{timeSlots.map(t => {
                                                             const dateKey = watchDate ? format(toDate(watchDate), 'yyyy-MM-dd') : '';
                                                             const count = dateKey ? (availabilityData.globalCounts[`${dateKey}|${t.id}`] || 0) : 0;
@@ -428,7 +435,7 @@ export default function ManualSchedulePage() {
                                                 <FormItem className="md:col-span-1 lg:col-span-1">
                                                     <FormLabel className="text-[10px] uppercase font-bold">Vehículo</FormLabel>
                                                     <Select onValueChange={field.onChange} value={field.value}>
-                                                        <FormControl><SelectTrigger className="h-9 text-xs px-2"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
+                                                        <FormControl><SelectTrigger className={cn("h-9 text-xs px-2", hasConflict && "border-amber-400")}><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
                                                         <SelectContent>{allVehicles.map(v => <SelectItem key={v} value={v} className="text-xs">{v}</SelectItem>)}</SelectContent>
                                                     </Select>
                                                 </FormItem>
@@ -439,7 +446,7 @@ export default function ManualSchedulePage() {
                                                     <FormLabel className="text-[10px] uppercase font-bold">Instructor</FormLabel>
                                                     <Select onValueChange={field.onChange} value={field.value}>
                                                         <FormControl><SelectTrigger className="h-9 text-xs px-2"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
-                                                        <SelectContent>{instructors.map(i => <SelectItem key={i} value={i} className="text-xs">{i}</SelectItem>)}</SelectContent>
+                                                        <SelectContent>{instructors.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}</SelectContent>
                                                     </Select>
                                                 </FormItem>
                                             )} />
@@ -489,9 +496,14 @@ export default function ManualSchedulePage() {
                             <Table>
                                 <TableHeader><TableRow><TableHead>Estudiante</TableHead><TableHead>Fecha</TableHead><TableHead>Turno</TableHead><TableHead>Vehículo</TableHead><TableHead>Instructor</TableHead><TableHead className="text-right">Acciones</TableHead></TableRow></TableHeader>
                                 <TableBody>
-                                    {allManualEntries.map(entry => (
-                                        <TableRow key={entry.id}>
-                                            <TableCell className="font-bold uppercase text-xs">{entry.studentName}</TableCell>
+                                    {allManualEntries.map(entry => {
+                                        const holiday = isPanamaHoliday(toDate(entry.date));
+                                        return (
+                                        <TableRow key={entry.id} className={cn(holiday && "bg-amber-50/50")}>
+                                            <TableCell className="font-bold uppercase text-xs">
+                                                {entry.studentName}
+                                                {holiday && <div className="text-[8px] text-amber-600 font-black uppercase mt-0.5">{holiday.name}</div>}
+                                            </TableCell>
                                             <TableCell className="text-xs">{format(toDate(entry.date), 'dd/MM/yyyy')}</TableCell>
                                             <TableCell className="text-xs font-medium">{timeSlots.find(ts => ts.id === entry.timeSlot)?.label}</TableCell>
                                             <TableCell className="text-xs">{entry.vehicle}</TableCell>
@@ -500,7 +512,7 @@ export default function ManualSchedulePage() {
                                                 <Button variant="ghost" size="icon" className="text-destructive h-8 w-8" onClick={() => handleDeleteEntry(entry.id)}><Trash2 className="h-4 w-4"/></Button>
                                             </TableCell>
                                         </TableRow>
-                                    ))}
+                                    )})}
                                 </TableBody>
                             </Table>
                         </div>

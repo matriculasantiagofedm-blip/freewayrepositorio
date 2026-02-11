@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -14,13 +13,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, ChevronLeft, ChevronRight, GraduationCap, BookOpen } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, GraduationCap, BookOpen, Landmark } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addDays, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { Separator } from '@/components/ui/separator';
+import { isPanamaHoliday } from '@/lib/holidays';
 
 interface TheoryAssignment {
     studentName: string;
@@ -132,15 +132,17 @@ export default function TheoryScheduleReportPage() {
                 const dayKey = format(day, 'yyyy-MM-dd');
                 const assignments = weeklyAssignments.get(dayKey) || [];
                 const isToday = format(new Date(), 'yyyy-MM-dd') === dayKey;
+                const holiday = isPanamaHoliday(day);
 
                 return (
-                    <Card key={dayKey} className={cn("overflow-hidden border-2", isToday ? "border-primary shadow-md" : "border-slate-100")}>
-                        <div className={cn("p-3 flex justify-between items-center", isToday ? "bg-primary text-white" : "bg-slate-50 text-slate-900")}>
+                    <Card key={dayKey} className={cn("overflow-hidden border-2", isToday ? "border-primary shadow-md" : "border-slate-100", holiday && "border-amber-200 bg-amber-50/10")}>
+                        <div className={cn("p-3 flex justify-between items-start", isToday ? "bg-primary text-white" : holiday ? "bg-amber-100 text-amber-900" : "bg-slate-50 text-slate-900")}>
                             <div>
-                                <p className="text-[10px] font-bold uppercase opacity-80">{format(day, 'EEEE', { locale: es })}</p>
+                                <p className={cn("text-[10px] font-bold uppercase", isToday ? "opacity-80" : "opacity-60")}>{format(day, 'EEEE', { locale: es })}</p>
                                 <p className="text-lg font-black">{format(day, 'd \'de\' MMMM', { locale: es })}</p>
+                                {holiday && <p className="text-[9px] font-black uppercase mt-1 flex items-center gap-1 text-amber-700"><Landmark className="h-2 w-2" /> {holiday.name}</p>}
                             </div>
-                            <GraduationCap className={cn("h-6 w-6", isToday ? "text-white/40" : "text-slate-300")} />
+                            <GraduationCap className={cn("h-6 w-6", isToday ? "text-white/40" : holiday ? "text-amber-400" : "text-slate-300")} />
                         </div>
                         <CardContent className="p-0">
                             {assignments.length > 0 ? (

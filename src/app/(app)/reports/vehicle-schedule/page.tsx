@@ -13,13 +13,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, ChevronLeft, ChevronRight, User, Car, Bike, ShieldCheck, Timer } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, User, Car, Bike, ShieldCheck, Timer, Landmark } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addDays, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { Separator } from '@/components/ui/separator';
+import { isPanamaHoliday } from '@/lib/holidays';
 
 const TIME_SLOTS: { id: TimeSlot; label: string }[] = [
     { id: '8am-10am', label: '08:00 - 10:00' },
@@ -184,12 +185,16 @@ export default function VehicleScheduleReportPage() {
                     <TableHeader>
                         <TableRow className="bg-muted/50 border-b-2">
                             <TableHead className="w-[120px] border p-2 text-center text-[10px] uppercase font-bold">Turno</TableHead>
-                            {days.map(day => (
-                            <TableHead key={day.toISOString()} className={cn("text-center border p-2", format(new Date(), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd') && "bg-primary/5")}>
-                                <div className="font-bold text-xs uppercase opacity-70">{format(day, 'eee', { locale: es })}</div>
-                                <div className="text-xl font-black">{format(day, 'd')}</div>
-                            </TableHead>
-                            ))}
+                            {days.map(day => {
+                                const holiday = isPanamaHoliday(day);
+                                return (
+                                <TableHead key={day.toISOString()} className={cn("text-center border p-2", format(new Date(), 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd') && "bg-primary/5", holiday && "bg-amber-50")}>
+                                    <div className="font-bold text-xs uppercase opacity-70">{format(day, 'eee', { locale: es })}</div>
+                                    <div className="text-xl font-black">{format(day, 'd')}</div>
+                                    {holiday && <div className="text-[8px] font-black text-amber-700 uppercase leading-tight mt-1">{holiday.name}</div>}
+                                </TableHead>
+                                )
+                            })}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -200,6 +205,7 @@ export default function VehicleScheduleReportPage() {
                         </TableCell>
                         {days.map(day => {
                             const dayKey = format(day, 'yyyy-MM-dd');
+                            const holiday = isPanamaHoliday(day);
                             const allAssignments = weeklyAssignments.get(dayKey)?.filter(a => a.timeSlot === timeSlot.id) || [];
                             
                             const vehicleUsage: Record<string, { isEval: boolean, count: number }> = {};
@@ -216,8 +222,9 @@ export default function VehicleScheduleReportPage() {
                             const isFull = globalCount >= globalCap;
 
                             return (
-                            <TableCell key={day.toISOString()} className={cn("border p-1.5 align-top transition-colors relative", format(new Date(), 'yyyy-MM-dd') === dayKey && "bg-primary/[0.02]")}>
-                                <div className="absolute top-1 right-1 z-10">
+                            <TableCell key={day.toISOString()} className={cn("border p-1.5 align-top transition-colors relative", format(new Date(), 'yyyy-MM-dd') === dayKey && "bg-primary/[0.02]", holiday && "bg-amber-50/30")}>
+                                <div className="absolute top-1 right-1 z-10 flex items-center gap-1">
+                                    {holiday && <Landmark className="h-3 w-3 text-amber-600 opacity-50" />}
                                     <div className={cn(
                                         "px-1.5 py-0.5 rounded text-[9px] font-black flex items-center gap-1 shadow-sm border",
                                         isFull ? "bg-red-500 text-white border-red-600 animate-pulse" : "bg-white text-slate-600 border-slate-200"

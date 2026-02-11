@@ -28,7 +28,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Loader2, Calculator, UserCircle, Settings2, BookOpen, Car, Bike, Save, AlertTriangle } from 'lucide-react';
+import { CalendarIcon, Loader2, Calculator, UserCircle, Settings2, BookOpen, Car, Bike, Save, AlertTriangle, Landmark } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { Timestamp, collection, query, where, getDocs, doc, serverTimestamp, runTransaction, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -36,6 +36,7 @@ import type { Contract, ContractType, InstructorName, VehicleName, ManualSchedul
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useDb, useUser } from './firebase-provider';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
+import { isPanamaHoliday } from '@/lib/holidays';
 
 const instructors: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', ''];
 const carVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
@@ -255,6 +256,7 @@ function ClassSlotGrid({
                         const watchDate = form.watch(`${namePrefix}.${index}.date`);
                         const watchTime = form.watch(`${namePrefix}.${index}.time`);
                         const watchVehicle = form.watch(`${namePrefix}.${index}.vehicle`);
+                        const holiday = isPanamaHoliday(toDate(watchDate));
                         
                         let conflictStudents: { name: string, isEval: boolean }[] = [];
                         let isFull = false;
@@ -281,13 +283,18 @@ function ClassSlotGrid({
                         );
 
                         return (
-                            <div key={field.id} className={cn("p-3 border rounded-md bg-muted/5 space-y-3 relative", (hasConflict || isFull) && "border-amber-500 bg-amber-50/30")}>
-                                {hasConflict && (
+                            <div key={field.id} className={cn("p-3 border rounded-md bg-muted/5 space-y-3 relative", (hasConflict || isFull || holiday) && "border-amber-500 bg-amber-50/30")}>
+                                {holiday && (
+                                    <div className="absolute -top-2 right-2 bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10 uppercase">
+                                        <Landmark className="h-3 w-3" /> ATENCIÓN: ESTA FECHA ES FERIADO ({holiday.name.toUpperCase()})
+                                    </div>
+                                )}
+                                {hasConflict && !holiday && (
                                     <div className="absolute -top-2 right-2 bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10 uppercase">
                                         <AlertTriangle className="h-3 w-3" /> OCUPADO POR: {conflictStudents.map(s => s.name).join(', ')}
                                     </div>
                                 )}
-                                {isFull && !hasConflict && (
+                                {isFull && !hasConflict && !holiday && (
                                     <div className="absolute -top-2 right-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10 uppercase">
                                         <AlertTriangle className="h-3 w-3" /> CAPACIDAD MÁXIMA ({capacity} VEHÍCULOS)
                                     </div>
@@ -299,7 +306,7 @@ function ClassSlotGrid({
                                             <FormItem>
                                                 <Popover>
                                                     <PopoverTrigger asChild>
-                                                        <FormControl><Button variant="outline" className={cn("h-8 text-xs w-full text-left font-normal px-2", !f.value && "text-muted-foreground", (hasConflict || isFull) && "border-amber-400")}><CalendarIcon className="mr-1 h-3 w-3" />{f.value ? format(f.value, "dd/MM") : "Fecha"}</Button></FormControl>
+                                                        <FormControl><Button variant="outline" className={cn("h-8 text-xs w-full text-left font-normal px-2", !f.value && "text-muted-foreground", (hasConflict || isFull || holiday) && "border-amber-400")}><CalendarIcon className="mr-1 h-3 w-3" />{f.value ? format(f.value, "dd/MM") : "Fecha"}</Button></FormControl>
                                                     </PopoverTrigger>
                                                     <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={f.value} onSelect={f.onChange} initialFocus /></PopoverContent>
                                                 </Popover>
@@ -308,7 +315,7 @@ function ClassSlotGrid({
                                         <FormField control={form.control} name={`${namePrefix}.${index}.time`} render={({ field: f }) => (
                                             <FormItem>
                                                 <Select onValueChange={f.onChange} value={f.value}>
-                                                    <FormControl><SelectTrigger className={cn("h-8 text-[10px] md:text-xs px-2", (hasConflict || isFull) && "border-amber-400")}><SelectValue placeholder="Hora" /></SelectTrigger></FormControl>
+                                                    <FormControl><SelectTrigger className={cn("h-8 text-[10px] md:text-xs px-2", (hasConflict || isFull || holiday) && "border-amber-400")}><SelectValue placeholder="Hora" /></SelectTrigger></FormControl>
                                                     <SelectContent>{practicalTimes.map(t => (
                                                         <SelectItem key={t} value={t} className="text-xs">
                                                             {getTimeSlotLabel(t, watchDate)}
@@ -636,15 +643,37 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                 <CardContent className="p-3 space-y-2">
                     {contractType === 'Ampliaciones' ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <FormField control={form.control} name="theoreticalClassDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Fecha</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className="h-8 text-sm pl-3 text-left font-normal"><CalendarIcon className="mr-2 h-3 w-3" />{field.value ? format(field.value, "dd/MM/yy") : "Seleccionar"}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover></FormItem>)} />
+                            <FormField control={form.control} name="theoreticalClassDate" render={({ field }) => {
+                                const holiday = isPanamaHoliday(field.value);
+                                return (
+                                <FormItem className="flex flex-col relative">
+                                    <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Fecha</FormLabel>
+                                    <Popover>
+                                        <PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("h-8 text-sm pl-3 text-left font-normal", holiday && "border-amber-500")}><CalendarIcon className="mr-2 h-3 w-3" />{field.value ? format(field.value, "dd/MM/yy") : "Seleccionar"}</Button></FormControl></PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                                    </Popover>
+                                    {holiday && <div className="text-[8px] font-black text-amber-600 animate-pulse mt-1 uppercase flex items-center gap-1"><Landmark className="h-2 w-2" /> FERIADO: {holiday.name}</div>}
+                                </FormItem>
+                            )}} />
                             <FormField control={form.control} name="theoreticalClassTime" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Horario</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl><SelectContent>{ampliacionTheoreticalTimes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></FormItem>)} />
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <FormField control={form.control} name="theoreticalClassSchedule" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Horario Teórico</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl><SelectContent>{theoreticalSchedules.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></FormItem>)} />
-                            {watchTheoreticalDates.map((_, idx) => (
-                                <FormField key={idx} control={form.control} name={`theoreticalClassDates.${idx}`} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Fecha Clase {idx + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className="h-8 text-sm pl-3 text-left font-normal"><CalendarIcon className="mr-2 h-3 w-3" />{field.value ? format(field.value, "dd/MM/yy") : "Seleccionar"}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover></FormItem>)} />
-                            ))}
+                            {watchTheoreticalDates.map((dateVal, idx) => {
+                                const holiday = isPanamaHoliday(dateVal);
+                                return (
+                                <FormField key={idx} control={form.control} name={`theoreticalClassDates.${idx}`} render={({ field }) => (
+                                    <FormItem className="flex flex-col relative">
+                                        <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Fecha Clase {idx + 1}</FormLabel>
+                                        <Popover>
+                                            <PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("h-8 text-sm pl-3 text-left font-normal", holiday && "border-amber-500")}><CalendarIcon className="mr-2 h-3 w-3" />{field.value ? format(field.value, "dd/MM/yy") : "Seleccionar"}</Button></FormControl></PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                                        </Popover>
+                                        {holiday && <div className="text-[8px] font-black text-amber-600 animate-pulse mt-1 uppercase flex items-center gap-1"><Landmark className="h-2 w-2" /> FERIADO: {holiday.name}</div>}
+                                    </FormItem>
+                                )} />
+                            )})}
                         </div>
                     )}
                 </CardContent>

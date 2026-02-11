@@ -183,7 +183,7 @@ const convertDatesToTimestamps = (data: any) => {
     return result;
 };
 
-// --- COMPONENTE AUXILIAR PARA TURNOS ---
+// Componente para manejar las grillas de turnos prácticos
 function ClassSlotGrid({ 
     fields, 
     namePrefix, 
@@ -278,7 +278,6 @@ function ClassSlotGrid({
     );
 }
 
-// --- COMPONENTE PRINCIPAL ---
 export function ContractForm({ initialContract }: { initialContract?: Contract }) {
   const db = useDb();
   const { user } = useUser();
@@ -319,16 +318,16 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
     });
     allContracts?.forEach(c => {
       if (c.id === initialContract?.id) return;
-      const process = (slots: any[], isManual: boolean = false) => {
+      const processSlots = (slots: any[]) => {
         slots.forEach(s => {
           if (!s.date || !s.time || !s.vehicle) return;
-          const key = `${format(toDate(s.date), 'yyyy-MM-dd')}|${isManual ? s.time : (TIME_STRING_TO_SLOT_MAP[s.time] || s.time)}|${s.vehicle}`;
+          const key = `${format(toDate(s.date), 'yyyy-MM-dd')}|${TIME_STRING_TO_SLOT_MAP[s.time] || s.time}|${s.vehicle}`;
           map[key] = c.clientName;
         });
       };
-      process(c.autoMotoDetails?.practicalClassSchedules || []);
-      process(c.autoMotoDetails?.motoPracticalClassSchedules || []);
-      process(c.deluxeDetails?.classSchedules || []);
+      processSlots(c.autoMotoDetails?.practicalClassSchedules || []);
+      processSlots(c.autoMotoDetails?.motoPracticalClassSchedules || []);
+      processSlots(c.deluxeDetails?.classSchedules || []);
     });
     return map;
   }, [allContracts, manualEntries, initialContract]);
@@ -359,7 +358,6 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
   const downPayment = form.watch('downPayment');
   const selectedPlanId = form.watch('coursePlan');
   const selectedTheoreticalSchedule = form.watch('theoreticalClassSchedule');
-  const theoreticalDates = form.watch('theoreticalClassDates') || [];
   const selectedPlans = form.watch('selectedPlans') || [];
   
   useEffect(() => {
@@ -395,7 +393,9 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
     else if (contractType !== 'Ampliaciones') form.setValue('theoreticalClassDates', []);
   }, [selectedTheoreticalSchedule, form, contractType, initialContract]);
 
-  useEffect(() => { form.setValue('balance', Math.max(0, (Number(courseValue) || 0) - (Number(downPayment) || 0))); }, [courseValue, downPayment, form]);
+  useEffect(() => { 
+    form.setValue('balance', Math.max(0, (Number(courseValue) || 0) - (Number(downPayment) || 0))); 
+  }, [courseValue, downPayment, form]);
 
   async function onSubmit(values: FormValues) {
     if (!db || !user) return;
@@ -431,7 +431,11 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
           toast({ title: 'Contrato Generado', description: 'Éxito.' });
           router.push(`/contracts/${cid}`);
       }
-    } catch (e: any) { toast({ variant: 'destructive', title: 'Error', description: e.message }); } finally { setIsSubmitting(false); }
+    } catch (e: any) { 
+      toast({ variant: 'destructive', title: 'Error', description: e.message }); 
+    } finally { 
+      setIsSubmitting(false); 
+    }
   }
 
   const currentPackages = useMemo(() => {
@@ -442,6 +446,8 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
     if (contractType === 'Curso Solo Practica') return soloPracticaPackages;
     return null;
   }, [contractType]);
+
+  const watchTheoreticalDates = form.watch('theoreticalClassDates') || [];
 
   return (
     <Form {...form}>
@@ -476,7 +482,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
         <Card className="shadow-sm">
             <CardHeader className="py-2 px-4 border-b">
                 <CardTitle className="text-sm flex items-center gap-2 text-primary font-bold"><Calculator className="h-4 w-4" /> 2. Valor y Forma de Pago</CardTitle>
-            </Header>
+            </CardHeader>
             <CardContent className="p-3 space-y-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {currentPackages && (
@@ -544,7 +550,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                             <FormField control={form.control} name="theoreticalClassSchedule" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Horario Teórico</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl><SelectContent>{theoreticalSchedules.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></FormItem>)} />
-                            {theoreticalDates.map((_, idx) => (
+                            {watchTheoreticalDates.map((_, idx) => (
                                 <FormField key={idx} control={form.control} name={`theoreticalClassDates.${idx}`} render={({ field }) => (<FormItem className="flex flex-col"><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Fecha Clase {idx + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className="h-8 text-sm pl-3 text-left font-normal"><CalendarIcon className="mr-2 h-3 w-3" />{field.value ? format(field.value, "dd/MM/yy") : "Seleccionar"}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover></FormItem>)} />
                             ))}
                         </div>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -13,7 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, ChevronLeft, ChevronRight, User, Car, Bike, ShieldCheck } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, User, Car, Bike, ShieldCheck, Timer } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addDays, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
@@ -37,6 +38,8 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: TimeSlot } = {
 
 const carVehicles = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
 const motoVehicles = ['Moto Roja', 'Moto Negra'];
+
+const isEvalPlan = (planId?: string) => planId === 'evaluacion-estacionamiento' || planId === 'moto-evaluacion-estacionamiento';
 
 const getGlobalCapacity = (date: Date, slotId: string) => {
     const day = date.getDay(); 
@@ -63,6 +66,7 @@ interface LocalAssignment {
     vehicle: string;
     timeSlot: TimeSlot;
     classNumber: number;
+    isEvaluation: boolean;
 }
 
 export default function VehicleScheduleReportPage() {
@@ -94,6 +98,9 @@ export default function VehicleScheduleReportPage() {
 
     // 1. Procesar Asignaciones de Contratos
     contracts?.forEach(contract => {
+        const details = contract.autoMotoDetails || contract.deluxeDetails;
+        const isEval = isEvalPlan(details?.coursePlan);
+
         const addAssignment = (date: any, timeSlot: TimeSlot | null, index: number, vehicleLabel?: string, instructorLabel?: string) => {
             if (!date) return;
             const classDate = toDate(date);
@@ -108,6 +115,7 @@ export default function VehicleScheduleReportPage() {
                 vehicle: vehicleLabel || 'Sin Vehículo',
                 timeSlot: slot,
                 classNumber: index + 1,
+                isEvaluation: isEval,
             };
 
             const dayAssignments = newWeeklyAssignments.get(dateKey) || [];
@@ -138,6 +146,7 @@ export default function VehicleScheduleReportPage() {
             vehicle: entry.vehicle,
             timeSlot: entry.timeSlot,
             classNumber: entry.classNumber || 1,
+            isEvaluation: false,
         };
 
         const dayAssignments = newWeeklyAssignments.get(dateKey) || [];
@@ -186,9 +195,19 @@ export default function VehicleScheduleReportPage() {
                         </TableCell>
                         {days.map(day => {
                             const dayKey = format(day, 'yyyy-MM-dd');
-                            const assignments = weeklyAssignments.get(dayKey)?.filter(a => a.timeSlot === timeSlot.id) || [];
+                            const allAssignments = weeklyAssignments.get(dayKey)?.filter(a => a.timeSlot === timeSlot.id) || [];
                             
-                            const globalCount = assignments.length;
+                            // Agrupar evaluaciones por vehículo para contar como 1 solo cupo de flota
+                            const vehicleUsage: Record<string, { isEval: boolean, count: number }> = {};
+                            allAssignments.forEach(a => {
+                                if (!vehicleUsage[a.vehicle]) {
+                                    vehicleUsage[a.vehicle] = { isEval: a.isEvaluation, count: 1 };
+                                } else {
+                                    vehicleUsage[a.vehicle].count++;
+                                }
+                            });
+
+                            const globalCount = Object.keys(vehicleUsage).length;
                             const globalCap = getGlobalCapacity(day, timeSlot.id);
                             
                             const isFull = globalCount >= globalCap;
@@ -206,14 +225,16 @@ export default function VehicleScheduleReportPage() {
                                 </div>
 
                                 <div className="flex flex-col gap-1.5 h-full pt-5">
-                                    {assignments.map((assignment, index) => (
+                                    {allAssignments.map((assignment, index) => (
                                     <div key={index} className={cn(
                                         "p-2 rounded border text-[10px] shadow-sm leading-tight relative overflow-hidden transition-all hover:scale-[1.02]",
-                                        vehicleColors[assignment.vehicle] || 'bg-gray-100 border-gray-300'
+                                        assignment.isEvaluation ? "bg-purple-50 border-purple-300 text-purple-900" : (vehicleColors[assignment.vehicle] || 'bg-gray-100 border-gray-300')
                                     )}>
                                         <div className="flex justify-between items-start mb-1">
-                                            <p className="font-black truncate uppercase flex-1 pr-1">{assignment.studentName}</p>
-                                            {carVehicles.includes(assignment.vehicle) ? <Car className="h-3 w-3 shrink-0" /> : <Bike className="h-3 w-3 shrink-0" />}
+                                            <p className={cn("truncate uppercase flex-1 pr-1", assignment.isEvaluation ? "font-bold text-[9px]" : "font-black")}>
+                                                {assignment.studentName}
+                                            </p>
+                                            {assignment.isEvaluation ? <Timer className="h-3 w-3 text-purple-600" /> : (carVehicles.includes(assignment.vehicle) ? <Car className="h-3 w-3 shrink-0" /> : <Bike className="h-3 w-3 shrink-0" />)}
                                         </div>
                                         <div className="flex items-center gap-1 opacity-75 mb-1">
                                             <User className="h-2.5 w-2.5 shrink-0" />
@@ -221,11 +242,11 @@ export default function VehicleScheduleReportPage() {
                                         </div>
                                         <div className="mt-1 pt-1 border-t border-current/10 flex justify-between font-bold">
                                             <span className="truncate">{assignment.vehicle}</span>
-                                            <span className="bg-white/40 px-1 rounded">#{assignment.classNumber}</span>
+                                            <span className="bg-white/40 px-1 rounded">{assignment.isEvaluation ? '10m' : `#${assignment.classNumber}`}</span>
                                         </div>
                                     </div>
                                     ))}
-                                    {assignments.length === 0 && (
+                                    {allAssignments.length === 0 && (
                                         <div className="flex-1 flex items-center justify-center opacity-0 group-hover:opacity-5 transition-opacity">
                                             <div className="w-full h-full border-2 border-dashed border-primary rounded-lg"></div>
                                         </div>
@@ -249,7 +270,7 @@ export default function VehicleScheduleReportPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
             <h1 className="font-headline text-3xl font-bold">Agenda Práctica Semanal</h1>
-            <p className="text-muted-foreground">Ocupación global de flota (Máx 3 vehículos simultáneos).</p>
+            <p className="text-muted-foreground">Ocupación global de flota (Evals: hasta 3 por auto).</p>
         </div>
         <div className="flex items-center gap-2 bg-background border p-1 rounded-md shadow-sm">
             <Button variant="ghost" size="sm" onClick={handleToday} className="text-xs h-8">Hoy</Button>

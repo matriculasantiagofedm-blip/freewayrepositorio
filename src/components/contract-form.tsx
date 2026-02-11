@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -51,6 +52,8 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
     '1:00pm a 3:00pm': '1pm-3pm',
     '3:00pm a 5:00pm': '3pm-5pm',
 };
+
+const isEvalPlan = (planId?: string) => planId === 'evaluacion-estacionamiento' || planId === 'moto-evaluacion-estacionamiento';
 
 const getGlobalCapacity = (date: Date, slotId: string) => {
     const day = date.getDay(); 
@@ -206,10 +209,15 @@ function ClassSlotGrid({
     title: string, 
     Icon: any, 
     form: any, 
-    availabilityData: { vehicleOccupancy: Record<string, string>, globalCounts: Record<string, number> }
+    availabilityData: { 
+        vehicleOccupancy: Record<string, { name: string, isEval: boolean }[]>, 
+        globalCounts: Record<string, number> 
+    }
 }) {
     if (fields.length === 0) return null;
     const { vehicleOccupancy, globalCounts } = availabilityData;
+    const currentCoursePlan = form.watch('coursePlan');
+    const isCurrentEval = isEvalPlan(currentCoursePlan);
 
     const getTimeSlotLabel = (timeStr: string, date: Date | null | undefined) => {
         if (!date) return timeStr;
@@ -241,7 +249,7 @@ function ClassSlotGrid({
                         const watchTime = form.watch(`${namePrefix}.${index}.time`);
                         const watchVehicle = form.watch(`${namePrefix}.${index}.vehicle`);
                         
-                        let conflictStudent = null;
+                        let conflictStudents: { name: string, isEval: boolean }[] = [];
                         let isFull = false;
                         let capacity = 3;
 
@@ -251,7 +259,7 @@ function ClassSlotGrid({
                             const slotId = TIME_STRING_TO_SLOT_MAP[watchTime] || watchTime;
                             
                             if (watchVehicle) {
-                                conflictStudent = vehicleOccupancy[`${dateKey}|${slotId}|${watchVehicle}`];
+                                conflictStudents = vehicleOccupancy[`${dateKey}|${slotId}|${watchVehicle}`] || [];
                             }
 
                             capacity = getGlobalCapacity(dateObj, slotId);
@@ -259,15 +267,22 @@ function ClassSlotGrid({
                             isFull = currentOccupancy >= capacity;
                         }
 
+                        // Lógica de conflicto especial para Evaluaciones
+                        const hasConflict = conflictStudents.length > 0 && (
+                            !isCurrentEval || // Si la actual no es eval, cualquier cosa es conflicto
+                            conflictStudents.some(s => !s.isEval) || // Si alguna ocupante no es eval, es conflicto
+                            conflictStudents.length >= 3 // Si ya hay 3 evals, es conflicto
+                        );
+
                         return (
-                            <div key={field.id} className={cn("p-3 border rounded-md bg-muted/5 space-y-3 relative", (conflictStudent || isFull) && "border-amber-500 bg-amber-50/30")}>
-                                {conflictStudent && (
-                                    <div className="absolute -top-2 right-2 bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10">
-                                        <AlertTriangle className="h-3 w-3" /> OCUPADO POR: {conflictStudent.toUpperCase()}
+                            <div key={field.id} className={cn("p-3 border rounded-md bg-muted/5 space-y-3 relative", (hasConflict || isFull) && "border-amber-500 bg-amber-50/30")}>
+                                {hasConflict && (
+                                    <div className="absolute -top-2 right-2 bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10 uppercase">
+                                        <AlertTriangle className="h-3 w-3" /> OCUPADO POR: {conflictStudents.map(s => s.name).join(', ')}
                                     </div>
                                 )}
-                                {isFull && !conflictStudent && (
-                                    <div className="absolute -top-2 right-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10">
+                                {isFull && !hasConflict && (
+                                    <div className="absolute -top-2 right-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10 uppercase">
                                         <AlertTriangle className="h-3 w-3" /> CAPACIDAD MÁXIMA ({capacity} VEHÍCULOS)
                                     </div>
                                 )}
@@ -278,7 +293,7 @@ function ClassSlotGrid({
                                             <FormItem>
                                                 <Popover>
                                                     <PopoverTrigger asChild>
-                                                        <FormControl><Button variant="outline" className={cn("h-8 text-xs w-full text-left font-normal px-2", !f.value && "text-muted-foreground", (conflictStudent || isFull) && "border-amber-400")}><CalendarIcon className="mr-1 h-3 w-3" />{f.value ? format(f.value, "dd/MM") : "Fecha"}</Button></FormControl>
+                                                        <FormControl><Button variant="outline" className={cn("h-8 text-xs w-full text-left font-normal px-2", !f.value && "text-muted-foreground", (hasConflict || isFull) && "border-amber-400")}><CalendarIcon className="mr-1 h-3 w-3" />{f.value ? format(f.value, "dd/MM") : "Fecha"}</Button></FormControl>
                                                     </PopoverTrigger>
                                                     <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={f.value} onSelect={f.onChange} initialFocus /></PopoverContent>
                                                 </Popover>
@@ -287,7 +302,7 @@ function ClassSlotGrid({
                                         <FormField control={form.control} name={`${namePrefix}.${index}.time`} render={({ field: f }) => (
                                             <FormItem>
                                                 <Select onValueChange={f.onChange} value={f.value}>
-                                                    <FormControl><SelectTrigger className={cn("h-8 text-[10px] md:text-xs px-2", (conflictStudent || isFull) && "border-amber-400")}><SelectValue placeholder="Hora" /></SelectTrigger></FormControl>
+                                                    <FormControl><SelectTrigger className={cn("h-8 text-[10px] md:text-xs px-2", (hasConflict || isFull) && "border-amber-400")}><SelectValue placeholder="Hora" /></SelectTrigger></FormControl>
                                                     <SelectContent>{practicalTimes.map(t => (
                                                         <SelectItem key={t} value={t} className="text-xs">
                                                             {getTimeSlotLabel(t, watchDate)}
@@ -299,7 +314,7 @@ function ClassSlotGrid({
                                         <FormField control={form.control} name={`${namePrefix}.${index}.vehicle`} render={({ field: f }) => (
                                             <FormItem>
                                                 <Select onValueChange={f.onChange} value={f.value}>
-                                                    <FormControl><SelectTrigger className={cn("h-8 text-xs px-2", conflictStudent && "border-amber-400")}><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
+                                                    <FormControl><SelectTrigger className={cn("h-8 text-xs px-2", hasConflict && "border-amber-400")}><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
                                                     <SelectContent>{availableVehicles.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent>
                                                 </Select>
                                             </FormItem>
@@ -355,34 +370,50 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
   const { data: manualEntries } = useCollection<ManualSchedule>(manualEntriesQuery);
 
   const availabilityData = useMemo(() => {
-    const vehicleOccupancy: Record<string, string> = {};
+    const vehicleOccupancy: Record<string, { name: string, isEval: boolean }[]> = {};
     const globalCounts: Record<string, number> = {};
     
-    const processEntry = (date: any, slot: string, vehicle: string, name: string) => {
+    const processEntry = (date: any, slot: string, vehicle: string, name: string, isEval: boolean) => {
         if (!date || !slot || !vehicle) return;
         const dateKey = format(toDate(date), 'yyyy-MM-dd');
         const vKey = `${dateKey}|${slot}|${vehicle}`;
         const sKey = `${dateKey}|${slot}`;
         
-        vehicleOccupancy[vKey] = name;
-        globalCounts[sKey] = (globalCounts[sKey] || 0) + 1;
+        if (!vehicleOccupancy[vKey]) vehicleOccupancy[vKey] = [];
+        vehicleOccupancy[vKey].push({ name, isEval });
     };
 
     manualEntries?.forEach(entry => {
       if (entry.classType === 'Teórica') return;
-      processEntry(entry.date, entry.timeSlot, entry.vehicle, entry.studentName);
+      processEntry(entry.date, entry.timeSlot, entry.vehicle, entry.studentName, false);
     });
 
     allContracts?.forEach(c => {
       if (c.id === initialContract?.id) return;
+      const details = c.autoMotoDetails || c.deluxeDetails;
+      const isEval = isEvalPlan(details?.coursePlan);
+
       const processSlots = (slots: any[]) => {
         slots.forEach(s => {
-          processEntry(s.date, TIME_STRING_TO_SLOT_MAP[s.time] || s.time, s.vehicle, c.clientName);
+          processEntry(s.date, TIME_STRING_TO_SLOT_MAP[s.time] || s.time, s.vehicle, c.clientName, isEval);
         });
       };
       processSlots(c.autoMotoDetails?.practicalClassSchedules || []);
       processSlots(c.autoMotoDetails?.motoPracticalClassSchedules || []);
       processSlots(c.deluxeDetails?.classSchedules || []);
+    });
+
+    // Calcular capacidad global (Clases normales + (1 si hay evals))
+    Object.keys(vehicleOccupancy).forEach(vKey => {
+        const [dateKey, slotId] = vKey.split('|');
+        const sKey = `${dateKey}|${slotId}`;
+        const students = vehicleOccupancy[vKey];
+        
+        const hasNormalClass = students.some(s => !s.isEval);
+        const evalCount = students.filter(s => s.isEval).length;
+        
+        if (hasNormalClass) globalCounts[sKey] = (globalCounts[sKey] || 0) + 1;
+        else if (evalCount > 0) globalCounts[sKey] = (globalCounts[sKey] || 0) + 1;
     });
 
     return { vehicleOccupancy, globalCounts };

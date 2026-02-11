@@ -28,7 +28,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Loader2, Calculator, UserCircle, Settings2, BookOpen, Car, Bike, Save, AlertTriangle, Info } from 'lucide-react';
+import { CalendarIcon, Loader2, Calculator, UserCircle, Settings2, BookOpen, Car, Bike, Save, AlertTriangle } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { Timestamp, collection, query, where, getDocs, doc, serverTimestamp, runTransaction, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -51,12 +51,14 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
     '3:00pm a 5:00pm': '3pm-5pm',
 };
 
-const getSlotCapacity = (date: Date, slotId: string) => {
-    const day = date.getDay(); // 0=Dom, 1=Lun, ..., 6=Sab
-    if (day === 1 && slotId === '8am-10am') return 2; // Lunes 8-10: 2 autos
-    if (day === 6 && slotId === '3pm-5pm') return 2;  // Sábados 3-5: 2 autos
-    return 3; // Resto: 3 autos
+const getAutoCapacity = (date: Date, slotId: string) => {
+    const day = date.getDay(); 
+    if (day === 1 && slotId === '8am-10am') return 2;
+    if (day === 6 && slotId === '3pm-5pm') return 2;
+    return 3;
 };
+
+const getMotoCapacity = () => 2;
 
 const autoPackages = [
     { id: 'basico', label: 'Curso Auto Básico (8hrz)', price: 133.00, hours: 8 },
@@ -205,10 +207,10 @@ function ClassSlotGrid({
     title: string, 
     Icon: any, 
     form: any, 
-    availabilityData: { vehicleOccupancy: Record<string, string>, slotCounts: Record<string, number> }
+    availabilityData: { vehicleOccupancy: Record<string, string>, autoCounts: Record<string, number>, motoCounts: Record<string, number> }
 }) {
     if (fields.length === 0) return null;
-    const { vehicleOccupancy, slotCounts } = availabilityData;
+    const { vehicleOccupancy, autoCounts, motoCounts } = availabilityData;
 
     return (
         <Card className="shadow-sm mt-4">
@@ -233,15 +235,17 @@ function ClassSlotGrid({
                             const dateKey = format(dateObj, 'yyyy-MM-dd');
                             const slotId = TIME_STRING_TO_SLOT_MAP[watchTime] || watchTime;
                             
-                            // 1. Verificar si el vehículo específico está ocupado
                             if (watchVehicle) {
                                 conflictStudent = vehicleOccupancy[`${dateKey}|${slotId}|${watchVehicle}`];
                             }
 
-                            // 2. Verificar capacidad total del horario (Solo para Autos)
                             if (namePrefix === 'practicalClassSchedules') {
-                                capacity = getSlotCapacity(dateObj, slotId);
-                                const currentOccupancy = slotCounts[`${dateKey}|${slotId}`] || 0;
+                                capacity = getAutoCapacity(dateObj, slotId);
+                                const currentOccupancy = autoCounts[`${dateKey}|${slotId}`] || 0;
+                                isFull = currentOccupancy >= capacity;
+                            } else if (namePrefix === 'motoPracticalClassSchedules') {
+                                capacity = getMotoCapacity();
+                                const currentOccupancy = motoCounts[`${dateKey}|${slotId}`] || 0;
                                 isFull = currentOccupancy >= capacity;
                             }
                         }
@@ -339,7 +343,8 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
 
   const availabilityData = useMemo(() => {
     const vehicleOccupancy: Record<string, string> = {};
-    const slotCounts: Record<string, number> = {};
+    const autoCounts: Record<string, number> = {};
+    const motoCounts: Record<string, number> = {};
     
     const processEntry = (date: any, slot: string, vehicle: string, name: string) => {
         if (!date || !slot || !vehicle) return;
@@ -348,9 +353,10 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
         const sKey = `${dateKey}|${slot}`;
         
         vehicleOccupancy[vKey] = name;
-        // Solo sumamos a la ocupación global si es un vehículo de tipo Auto (para la lógica de 3/2 autos)
         if (carVehicles.includes(vehicle as VehicleName)) {
-            slotCounts[sKey] = (slotCounts[sKey] || 0) + 1;
+            autoCounts[sKey] = (autoCounts[sKey] || 0) + 1;
+        } else if (motoVehicles.includes(vehicle as VehicleName)) {
+            motoCounts[sKey] = (motoCounts[sKey] || 0) + 1;
         }
     };
 
@@ -371,7 +377,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
       processSlots(c.deluxeDetails?.classSchedules || []);
     });
 
-    return { vehicleOccupancy, slotCounts };
+    return { vehicleOccupancy, autoCounts, motoCounts };
   }, [allContracts, manualEntries, initialContract]);
 
   useEffect(() => {

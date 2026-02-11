@@ -13,7 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, ChevronLeft, ChevronRight, User, Car, AlertCircle } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, User, Car, Bike } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addDays, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
@@ -36,13 +36,16 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: TimeSlot } = {
 };
 
 const carVehicles = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
+const motoVehicles = ['Moto Roja', 'Moto Negra'];
 
-const getSlotCapacity = (date: Date, slotId: string) => {
+const getAutoCapacity = (date: Date, slotId: string) => {
     const day = date.getDay(); 
     if (day === 1 && slotId === '8am-10am') return 2; // Lunes 8-10: 2 autos
     if (day === 6 && slotId === '3pm-5pm') return 2;  // Sábados 3-5: 2 autos
     return 3; // Resto: 3 autos
 };
+
+const getMotoCapacity = () => 2; // Siempre 2 motos
 
 const timeStringToTimeSlot = (timeString: string): TimeSlot | null => {
     return TIME_STRING_TO_SLOT_MAP[timeString] || null;
@@ -187,22 +190,34 @@ export default function VehicleScheduleReportPage() {
                             const dayKey = format(day, 'yyyy-MM-dd');
                             const assignments = weeklyAssignments.get(dayKey)?.filter(a => a.timeSlot === timeSlot.id) || [];
                             
-                            // Filtrar solo vehículos de tipo Auto para la lógica de capacidad
-                            const autoAssignmentsCount = assignments.filter(a => carVehicles.includes(a.vehicle)).length;
-                            const capacity = getSlotCapacity(day, timeSlot.id);
-                            const isOverCapacity = autoAssignmentsCount >= capacity;
+                            const autoCount = assignments.filter(a => carVehicles.includes(a.vehicle)).length;
+                            const motoCount = assignments.filter(a => motoVehicles.includes(a.vehicle)).length;
+                            
+                            const autoCap = getAutoCapacity(day, timeSlot.id);
+                            const motoCap = getMotoCapacity();
+                            
+                            const isAutoFull = autoCount >= autoCap;
+                            const isMotoFull = motoCount >= motoCap;
 
                             return (
                             <TableCell key={day.toISOString()} className={cn("border p-1.5 align-top transition-colors relative", format(new Date(), 'yyyy-MM-dd') === dayKey && "bg-primary/[0.02]")}>
-                                {/* Indicador de Capacidad */}
-                                <div className={cn(
-                                    "absolute top-1 right-1 px-1.5 py-0.5 rounded text-[9px] font-black z-10",
-                                    isOverCapacity ? "bg-red-500 text-white animate-pulse" : "bg-slate-100 text-slate-500"
-                                )}>
-                                    {autoAssignmentsCount} / {capacity}
+                                {/* Indicadores de Capacidad */}
+                                <div className="absolute top-1 right-1 flex gap-1 z-10">
+                                    <div className={cn(
+                                        "px-1 py-0.5 rounded text-[8px] font-black flex items-center gap-0.5 shadow-sm",
+                                        isAutoFull ? "bg-red-500 text-white animate-pulse" : "bg-slate-100 text-slate-500"
+                                    )}>
+                                        <Car className="h-2 w-2" /> {autoCount}/{autoCap}
+                                    </div>
+                                    <div className={cn(
+                                        "px-1 py-0.5 rounded text-[8px] font-black flex items-center gap-0.5 shadow-sm",
+                                        isMotoFull ? "bg-red-500 text-white animate-pulse" : "bg-slate-100 text-slate-500"
+                                    )}>
+                                        <Bike className="h-2 w-2" /> {motoCount}/{motoCap}
+                                    </div>
                                 </div>
 
-                                <div className="flex flex-col gap-1.5 h-full pt-4">
+                                <div className="flex flex-col gap-1.5 h-full pt-5">
                                     {assignments.map((assignment, index) => (
                                     <div key={index} className={cn(
                                         "p-2 rounded border text-[10px] shadow-sm leading-tight relative overflow-hidden transition-all hover:scale-[1.02]",
@@ -210,7 +225,7 @@ export default function VehicleScheduleReportPage() {
                                     )}>
                                         <div className="flex justify-between items-start mb-1">
                                             <p className="font-black truncate uppercase flex-1 pr-1">{assignment.studentName}</p>
-                                            <Car className="h-3 w-3 shrink-0" />
+                                            {carVehicles.includes(assignment.vehicle) ? <Car className="h-3 w-3 shrink-0" /> : <Bike className="h-3 w-3 shrink-0" />}
                                         </div>
                                         <div className="flex items-center gap-1 opacity-75 mb-1">
                                             <User className="h-2.5 w-2.5 shrink-0" />

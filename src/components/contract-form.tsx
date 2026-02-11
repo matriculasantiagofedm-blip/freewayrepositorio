@@ -212,6 +212,30 @@ function ClassSlotGrid({
     if (fields.length === 0) return null;
     const { vehicleOccupancy, autoCounts, motoCounts } = availabilityData;
 
+    const getTimeSlotLabel = (timeStr: string, date: Date | null | undefined) => {
+        if (!date) return timeStr;
+        const dateObj = toDate(date);
+        if (isNaN(dateObj.getTime())) return timeStr;
+
+        const dateKey = format(dateObj, 'yyyy-MM-dd');
+        const slotId = TIME_STRING_TO_SLOT_MAP[timeStr] || timeStr;
+        
+        let count = 0;
+        let cap = 0;
+
+        if (namePrefix === 'practicalClassSchedules') {
+            count = autoCounts[`${dateKey}|${slotId}`] || 0;
+            cap = getAutoCapacity(dateObj, slotId);
+        } else {
+            count = motoCounts[`${dateKey}|${slotId}`] || 0;
+            cap = getMotoCapacity();
+        }
+
+        const available = cap - count;
+        if (available <= 0) return `${timeStr} (LLENO)`;
+        return `${timeStr} (${available} de ${cap} disp.)`;
+    };
+
     return (
         <Card className="shadow-sm mt-4">
             <CardHeader className="py-2 px-4 border-b">
@@ -278,8 +302,12 @@ function ClassSlotGrid({
                                         <FormField control={form.control} name={`${namePrefix}.${index}.time`} render={({ field: f }) => (
                                             <FormItem>
                                                 <Select onValueChange={f.onChange} value={f.value}>
-                                                    <FormControl><SelectTrigger className={cn("h-8 text-xs px-2", (conflictStudent || isFull) && "border-amber-400")}><SelectValue placeholder="Hora" /></SelectTrigger></FormControl>
-                                                    <SelectContent>{practicalTimes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                                                    <FormControl><SelectTrigger className={cn("h-8 text-[10px] md:text-xs px-2", (conflictStudent || isFull) && "border-amber-400")}><SelectValue placeholder="Hora" /></SelectTrigger></FormControl>
+                                                    <SelectContent>{practicalTimes.map(t => (
+                                                        <SelectItem key={t} value={t} className="text-xs">
+                                                            {getTimeSlotLabel(t, watchDate)}
+                                                        </SelectItem>
+                                                    ))}</SelectContent>
                                                 </Select>
                                             </FormItem>
                                         )} />

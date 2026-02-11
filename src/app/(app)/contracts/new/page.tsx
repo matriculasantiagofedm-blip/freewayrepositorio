@@ -1,22 +1,43 @@
 'use client';
-import { Suspense } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import dynamic from 'next/dynamic';
+import { ContractForm } from '@/components/contract-form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useSearchParams } from 'next/navigation';
-
-// Carga dinámica del formulario para evitar errores de hidratación (hydration)
-const ContractForm = dynamic(() => import('@/components/contract-form').then(mod => mod.ContractForm), {
-    ssr: false,
-    loading: () => <p>Cargando formulario...</p>
-});
-
 
 function NewContractPageContent() {
     const searchParams = useSearchParams();
     const contractType = searchParams.get('type') || 'Contrato';
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!mounted) {
+        return (
+            <div className="flex flex-col gap-8">
+                <div className="flex items-center gap-4 animate-pulse">
+                    <div className="h-10 w-10 bg-muted rounded-md" />
+                    <div className='flex flex-col gap-2'>
+                        <div className="h-8 w-48 bg-muted rounded" />
+                        <div className="h-4 w-32 bg-muted rounded" />
+                    </div>
+                </div>
+                <Card className="max-w-5xl mx-auto w-full shadow-lg">
+                    <CardHeader>
+                        <div className="h-8 w-64 bg-muted rounded mb-2" />
+                        <div className="h-4 w-48 bg-muted rounded" />
+                    </CardHeader>
+                    <CardContent className="h-96 flex items-center justify-center">
+                        <p className="text-muted-foreground">Iniciando formulario...</p>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col gap-8">
@@ -48,7 +69,7 @@ function NewContractPageContent() {
 
 export default function NewContractPage() {
     return (
-        <Suspense fallback={<div className="flex justify-center items-center h-full"><p>Cargando...</p></div>}>
+        <Suspense fallback={<div className="flex justify-center items-center h-full p-12"><p>Cargando página...</p></div>}>
             <NewContractPageContent />
         </Suspense>
     );

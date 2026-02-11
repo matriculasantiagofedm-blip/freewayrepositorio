@@ -66,14 +66,12 @@ const timeSlots = [
     { id: '3pm-5pm', label: '15:00 - 17:00' },
 ];
 
-const getAutoCapacity = (date: Date, slotId: string) => {
-    const day = date.getDay(); // 0=Dom, 1=Lun
-    if (day === 1 && slotId === '8am-10am') return 2; // Lunes 8-10: 2 autos
-    if (day === 6 && slotId === '3pm-5pm') return 2;  // Sábados 3-5: 2 autos
+const getGlobalCapacity = (date: Date, slotId: string) => {
+    const day = date.getDay(); 
+    if (day === 1 && slotId === '8am-10am') return 2;
+    if (day === 6 && slotId === '3pm-5pm') return 2;
     return 3;
 };
-
-const getMotoCapacity = () => 2;
 
 export default function ManualSchedulePage() {
     const db = useDb();
@@ -104,7 +102,6 @@ export default function ManualSchedulePage() {
         name: "classes"
     });
 
-    // Cargar datos para verificar disponibilidad
     const activeContractsQuery = useMemoQuery(() => db ? query(collection(db, 'contracts'), where('status', '==', 'active')) : null, [db]);
     const manualEntriesQuery = useMemoQuery(() => db ? collection(db, 'manual_schedules') : null, [db]);
     
@@ -113,8 +110,7 @@ export default function ManualSchedulePage() {
 
     const availabilityData = useMemo(() => {
         const vehicleOccupancy: Record<string, string> = {};
-        const autoCounts: Record<string, number> = {};
-        const motoCounts: Record<string, number> = {};
+        const globalCounts: Record<string, number> = {};
         
         const processEntry = (date: any, slot: string, vehicle: string, name: string) => {
             if (!date || !slot || !vehicle) return;
@@ -123,11 +119,7 @@ export default function ManualSchedulePage() {
             const sKey = `${dateKey}|${slot}`;
             
             vehicleOccupancy[vKey] = name;
-            if (carVehicles.includes(vehicle as any)) {
-                autoCounts[sKey] = (autoCounts[sKey] || 0) + 1;
-            } else if (motoVehicles.includes(vehicle as any)) {
-                motoCounts[sKey] = (motoCounts[sKey] || 0) + 1;
-            }
+            globalCounts[sKey] = (globalCounts[sKey] || 0) + 1;
         };
 
         allManualEntries?.forEach(entry => {
@@ -152,7 +144,7 @@ export default function ManualSchedulePage() {
             processSlots(c.deluxeDetails?.classSchedules || []);
         });
 
-        return { vehicleOccupancy, autoCounts, motoCounts };
+        return { vehicleOccupancy, globalCounts };
     }, [allContracts, allManualEntries]);
 
     if (isRoleLoading) {
@@ -232,7 +224,7 @@ export default function ManualSchedulePage() {
                 <CalendarClock className="h-8 w-8 text-primary" />
                 <div>
                     <h1 className="font-headline text-3xl font-bold">Gestión de Agenda Manual</h1>
-                    <p className="text-muted-foreground">Llena la agenda semanal manualmente sin necesidad de un contrato previo.</p>
+                    <p className="text-muted-foreground">Llena la agenda semanal manualmente con restricción de flota global (Máx 3).</p>
                 </div>
             </div>
 
@@ -253,7 +245,7 @@ export default function ManualSchedulePage() {
                             )} />
 
                             <div className="space-y-4">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground">Listado de Clases / Fechas</Final>
+                                <Label className="text-xs font-bold uppercase text-muted-foreground">Listado de Clases / Fechas</Label>
                                 {fields.map((field, index) => {
                                     const watchDate = form.watch(`classes.${index}.date`);
                                     const watchTime = form.watch(`classes.${index}.timeSlot`);
@@ -271,13 +263,9 @@ export default function ManualSchedulePage() {
                                             conflictStudent = availabilityData.vehicleOccupancy[`${dateKey}|${watchTime}|${watchVehicle}`];
                                         }
 
-                                        if (carVehicles.includes(watchVehicle as any)) {
-                                            capacity = getAutoCapacity(dateObj, watchTime);
-                                            isFull = (availabilityData.autoCounts[`${dateKey}|${watchTime}`] || 0) >= capacity;
-                                        } else if (motoVehicles.includes(watchVehicle as any)) {
-                                            capacity = getMotoCapacity();
-                                            isFull = (availabilityData.motoCounts[`${dateKey}|${watchTime}`] || 0) >= capacity;
-                                        }
+                                        capacity = getGlobalCapacity(dateObj, watchTime);
+                                        const currentOccupancy = availabilityData.globalCounts[`${dateKey}|${watchTime}`] || 0;
+                                        isFull = currentOccupancy >= capacity;
                                     }
 
                                     return (
@@ -327,7 +315,16 @@ export default function ManualSchedulePage() {
                                                     <FormLabel className="text-[10px] uppercase font-bold">Turno</FormLabel>
                                                     <Select onValueChange={field.onChange} value={field.value}>
                                                         <FormControl><SelectTrigger className="h-9 text-xs px-2"><SelectValue /></SelectTrigger></FormControl>
-                                                        <SelectContent>{timeSlots.map(t => <SelectItem key={t.id} value={t.id} className="text-xs">{t.label}</SelectItem>)}</SelectContent>
+                                                        <SelectContent>{timeSlots.map(t => {
+                                                            const dateKey = watchDate ? format(toDate(watchDate), 'yyyy-MM-dd') : '';
+                                                            const count = dateKey ? (availabilityData.globalCounts[`${dateKey}|${t.id}`] || 0) : 0;
+                                                            const cap = watchDate ? getGlobalCapacity(toDate(watchDate), t.id) : 3;
+                                                            return (
+                                                                <SelectItem key={t.id} value={t.id} className="text-xs">
+                                                                    {t.label} ({cap - count} disp.)
+                                                                </SelectItem>
+                                                            );
+                                                        })}</SelectContent>
                                                     </Select>
                                                 </FormItem>
                                             )} />

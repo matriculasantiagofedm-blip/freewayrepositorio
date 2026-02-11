@@ -13,7 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, ChevronLeft, ChevronRight, User, Car, Bike } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, User, Car, Bike, ShieldCheck } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addDays, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
@@ -38,14 +38,12 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: TimeSlot } = {
 const carVehicles = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
 const motoVehicles = ['Moto Roja', 'Moto Negra'];
 
-const getAutoCapacity = (date: Date, slotId: string) => {
+const getGlobalCapacity = (date: Date, slotId: string) => {
     const day = date.getDay(); 
-    if (day === 1 && slotId === '8am-10am') return 2; // Lunes 8-10: 2 autos
-    if (day === 6 && slotId === '3pm-5pm') return 2;  // Sábados 3-5: 2 autos
-    return 3; // Resto: 3 autos
+    if (day === 1 && slotId === '8am-10am') return 2; 
+    if (day === 6 && slotId === '3pm-5pm') return 2;  
+    return 3; 
 };
-
-const getMotoCapacity = () => 2; // Siempre 2 motos
 
 const timeStringToTimeSlot = (timeString: string): TimeSlot | null => {
     return TIME_STRING_TO_SLOT_MAP[timeString] || null;
@@ -94,7 +92,7 @@ export default function VehicleScheduleReportPage() {
     const weekInterval = { start: startOfDay(weekStart), end: endOfWeek(currentDate, { weekStartsOn: 1 }) };
     const newWeeklyAssignments = new Map<string, LocalAssignment[]>();
 
-    // 1. Procesar Asignaciones de Contratos (Solo Prácticas)
+    // 1. Procesar Asignaciones de Contratos
     contracts?.forEach(contract => {
         const addAssignment = (date: any, timeSlot: TimeSlot | null, index: number, vehicleLabel?: string, instructorLabel?: string) => {
             if (!date) return;
@@ -126,7 +124,7 @@ export default function VehicleScheduleReportPage() {
         deluxeSchedules.forEach((s, i) => addAssignment(s.date, timeStringToTimeSlot(s.time || ''), i, s.vehicle, s.instructor));
     });
 
-    // 2. Procesar Asignaciones Manuales (Solo Prácticas)
+    // 2. Procesar Asignaciones Manuales
     manualEntries?.forEach(entry => {
         if (entry.classType === 'Teórica') return;
 
@@ -160,7 +158,7 @@ export default function VehicleScheduleReportPage() {
       return (
         <div className="flex flex-col items-center justify-center p-20 gap-4">
             <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
-            <p className="text-muted-foreground font-medium animate-pulse">Sincronizando agenda práctica...</p>
+            <p className="text-muted-foreground font-medium animate-pulse">Sincronizando flota global...</p>
         </div>
       );
     }
@@ -190,30 +188,20 @@ export default function VehicleScheduleReportPage() {
                             const dayKey = format(day, 'yyyy-MM-dd');
                             const assignments = weeklyAssignments.get(dayKey)?.filter(a => a.timeSlot === timeSlot.id) || [];
                             
-                            const autoCount = assignments.filter(a => carVehicles.includes(a.vehicle)).length;
-                            const motoCount = assignments.filter(a => motoVehicles.includes(a.vehicle)).length;
+                            const globalCount = assignments.length;
+                            const globalCap = getGlobalCapacity(day, timeSlot.id);
                             
-                            const autoCap = getAutoCapacity(day, timeSlot.id);
-                            const motoCap = getMotoCapacity();
-                            
-                            const isAutoFull = autoCount >= autoCap;
-                            const isMotoFull = motoCount >= motoCap;
+                            const isFull = globalCount >= globalCap;
 
                             return (
                             <TableCell key={day.toISOString()} className={cn("border p-1.5 align-top transition-colors relative", format(new Date(), 'yyyy-MM-dd') === dayKey && "bg-primary/[0.02]")}>
-                                {/* Indicadores de Capacidad */}
-                                <div className="absolute top-1 right-1 flex gap-1 z-10">
+                                {/* Indicador de Capacidad Global */}
+                                <div className="absolute top-1 right-1 z-10">
                                     <div className={cn(
-                                        "px-1 py-0.5 rounded text-[8px] font-black flex items-center gap-0.5 shadow-sm",
-                                        isAutoFull ? "bg-red-500 text-white animate-pulse" : "bg-slate-100 text-slate-500"
+                                        "px-1.5 py-0.5 rounded text-[9px] font-black flex items-center gap-1 shadow-sm border",
+                                        isFull ? "bg-red-500 text-white border-red-600 animate-pulse" : "bg-white text-slate-600 border-slate-200"
                                     )}>
-                                        <Car className="h-2 w-2" /> {autoCount}/{autoCap}
-                                    </div>
-                                    <div className={cn(
-                                        "px-1 py-0.5 rounded text-[8px] font-black flex items-center gap-0.5 shadow-sm",
-                                        isMotoFull ? "bg-red-500 text-white animate-pulse" : "bg-slate-100 text-slate-500"
-                                    )}>
-                                        <Bike className="h-2 w-2" /> {motoCount}/{motoCap}
+                                        <ShieldCheck className="h-2.5 w-2.5" /> {globalCount}/{globalCap}
                                     </div>
                                 </div>
 
@@ -261,7 +249,7 @@ export default function VehicleScheduleReportPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
             <h1 className="font-headline text-3xl font-bold">Agenda Práctica Semanal</h1>
-            <p className="text-muted-foreground">Gestión de turnos prácticos y disponibilidad de flota.</p>
+            <p className="text-muted-foreground">Ocupación global de flota (Máx 3 vehículos simultáneos).</p>
         </div>
         <div className="flex items-center gap-2 bg-background border p-1 rounded-md shadow-sm">
             <Button variant="ghost" size="sm" onClick={handleToday} className="text-xs h-8">Hoy</Button>

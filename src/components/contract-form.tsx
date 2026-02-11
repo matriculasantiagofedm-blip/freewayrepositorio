@@ -40,6 +40,7 @@ import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 const instructors: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', ''];
 const carVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
 const motoVehicles: VehicleName[] = ['Moto Roja', 'Moto Negra'];
+const allVehicles: VehicleName[] = [...carVehicles, ...motoVehicles];
 const practicalTimes = ['8:00am a 10:00am', '10:00am a 12:pm', '1:00pm a 3:00pm', '3:00pm a 5:00pm'];
 const ampliacionTheoreticalTimes = ['8:00 am a 12:00 pm', '3:00 pm a 5:00 pm'];
 const theoreticalSchedules = ['Clase Semanal', 'Clase Sabatina'];
@@ -51,14 +52,12 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
     '3:00pm a 5:00pm': '3pm-5pm',
 };
 
-const getAutoCapacity = (date: Date, slotId: string) => {
+const getGlobalCapacity = (date: Date, slotId: string) => {
     const day = date.getDay(); 
-    if (day === 1 && slotId === '8am-10am') return 2; // Lunes 8-10: 2 autos
-    if (day === 6 && slotId === '3pm-5pm') return 2;  // Sábados 3-5: 2 autos
-    return 3;
+    if (day === 1 && slotId === '8am-10am') return 2; // Lunes 8-10: 2 vehículos
+    if (day === 6 && slotId === '3pm-5pm') return 2;  // Sábados 3-5: 2 vehículos
+    return 3; // Resto: 3 vehículos máximo total (independiente de si es auto o moto)
 };
-
-const getMotoCapacity = () => 2;
 
 const autoPackages = [
     { id: 'basico', label: 'Curso Auto Básico (8hrz)', price: 133.00, hours: 8 },
@@ -207,10 +206,10 @@ function ClassSlotGrid({
     title: string, 
     Icon: any, 
     form: any, 
-    availabilityData: { vehicleOccupancy: Record<string, string>, autoCounts: Record<string, number>, motoCounts: Record<string, number> }
+    availabilityData: { vehicleOccupancy: Record<string, string>, globalCounts: Record<string, number> }
 }) {
     if (fields.length === 0) return null;
-    const { vehicleOccupancy, autoCounts, motoCounts } = availabilityData;
+    const { vehicleOccupancy, globalCounts } = availabilityData;
 
     const getTimeSlotLabel = (timeStr: string, date: Date | null | undefined) => {
         if (!date) return timeStr;
@@ -220,16 +219,8 @@ function ClassSlotGrid({
         const dateKey = format(dateObj, 'yyyy-MM-dd');
         const slotId = TIME_STRING_TO_SLOT_MAP[timeStr] || timeStr;
         
-        let count = 0;
-        let cap = 0;
-
-        if (namePrefix === 'practicalClassSchedules') {
-            count = autoCounts[`${dateKey}|${slotId}`] || 0;
-            cap = getAutoCapacity(dateObj, slotId);
-        } else {
-            count = motoCounts[`${dateKey}|${slotId}`] || 0;
-            cap = getMotoCapacity();
-        }
+        const count = globalCounts[`${dateKey}|${slotId}`] || 0;
+        const cap = getGlobalCapacity(dateObj, slotId);
 
         const available = cap - count;
         if (available <= 0) return `${timeStr} (LLENO)`;
@@ -263,15 +254,9 @@ function ClassSlotGrid({
                                 conflictStudent = vehicleOccupancy[`${dateKey}|${slotId}|${watchVehicle}`];
                             }
 
-                            if (namePrefix === 'practicalClassSchedules') {
-                                capacity = getAutoCapacity(dateObj, slotId);
-                                const currentOccupancy = autoCounts[`${dateKey}|${slotId}`] || 0;
-                                isFull = currentOccupancy >= capacity;
-                            } else if (namePrefix === 'motoPracticalClassSchedules') {
-                                capacity = getMotoCapacity();
-                                const currentOccupancy = motoCounts[`${dateKey}|${slotId}`] || 0;
-                                isFull = currentOccupancy >= capacity;
-                            }
+                            capacity = getGlobalCapacity(dateObj, slotId);
+                            const currentOccupancy = globalCounts[`${dateKey}|${slotId}`] || 0;
+                            isFull = currentOccupancy >= capacity;
                         }
 
                         return (
@@ -283,7 +268,7 @@ function ClassSlotGrid({
                                 )}
                                 {isFull && !conflictStudent && (
                                     <div className="absolute -top-2 right-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10">
-                                        <AlertTriangle className="h-3 w-3" /> CAPACIDAD MÁXIMA ALCANZADA ({capacity})
+                                        <AlertTriangle className="h-3 w-3" /> CAPACIDAD MÁXIMA ({capacity} VEHÍCULOS)
                                     </div>
                                 )}
                                 <div className="flex items-center gap-2">
@@ -371,8 +356,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
 
   const availabilityData = useMemo(() => {
     const vehicleOccupancy: Record<string, string> = {};
-    const autoCounts: Record<string, number> = {};
-    const motoCounts: Record<string, number> = {};
+    const globalCounts: Record<string, number> = {};
     
     const processEntry = (date: any, slot: string, vehicle: string, name: string) => {
         if (!date || !slot || !vehicle) return;
@@ -381,11 +365,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
         const sKey = `${dateKey}|${slot}`;
         
         vehicleOccupancy[vKey] = name;
-        if (carVehicles.includes(vehicle as VehicleName)) {
-            autoCounts[sKey] = (autoCounts[sKey] || 0) + 1;
-        } else if (motoVehicles.includes(vehicle as VehicleName)) {
-            motoCounts[sKey] = (motoCounts[sKey] || 0) + 1;
-        }
+        globalCounts[sKey] = (globalCounts[sKey] || 0) + 1;
     };
 
     manualEntries?.forEach(entry => {
@@ -405,7 +385,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
       processSlots(c.deluxeDetails?.classSchedules || []);
     });
 
-    return { vehicleOccupancy, autoCounts, motoCounts };
+    return { vehicleOccupancy, globalCounts };
   }, [allContracts, manualEntries, initialContract]);
 
   useEffect(() => {

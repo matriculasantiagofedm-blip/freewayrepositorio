@@ -53,8 +53,8 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
 
 const getAutoCapacity = (date: Date, slotId: string) => {
     const day = date.getDay(); 
-    if (day === 1 && slotId === '8am-10am') return 2;
-    if (day === 6 && slotId === '3pm-5pm') return 2;
+    if (day === 1 && slotId === '8am-10am') return 2; // Lunes 8-10: 2 autos
+    if (day === 6 && slotId === '3pm-5pm') return 2;  // Sábados 3-5: 2 autos
     return 3;
 };
 
@@ -253,12 +253,12 @@ function ClassSlotGrid({
                         return (
                             <div key={field.id} className={cn("p-3 border rounded-md bg-muted/5 space-y-3 relative", (conflictStudent || isFull) && "border-amber-500 bg-amber-50/30")}>
                                 {conflictStudent && (
-                                    <div className="absolute -top-2 right-2 bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse">
+                                    <div className="absolute -top-2 right-2 bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10">
                                         <AlertTriangle className="h-3 w-3" /> OCUPADO POR: {conflictStudent.toUpperCase()}
                                     </div>
                                 )}
                                 {isFull && !conflictStudent && (
-                                    <div className="absolute -top-2 right-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse">
+                                    <div className="absolute -top-2 right-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10">
                                         <AlertTriangle className="h-3 w-3" /> CAPACIDAD MÁXIMA ALCANZADA ({capacity})
                                     </div>
                                 )}

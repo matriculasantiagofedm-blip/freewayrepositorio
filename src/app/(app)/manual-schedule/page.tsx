@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -28,10 +28,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useDb, useUser } from '@/components/firebase-provider';
-import { collection, addDoc, serverTimestamp, deleteDoc, doc, query, orderBy, Timestamp } from 'firebase/firestore';
-import type { ManualSchedule, VehicleName, InstructorName } from '@/lib/types';
+import { collection, addDoc, serverTimestamp, deleteDoc, doc, query, orderBy, Timestamp, where } from 'firebase/firestore';
+import type { ManualSchedule, VehicleName, InstructorName, Contract } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CalendarIcon, PlusCircle, Trash2, CalendarClock, X } from 'lucide-react';
+import { Loader2, CalendarIcon, PlusCircle, Trash2, CalendarClock, X, AlertTriangle } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -55,13 +55,25 @@ const manualScheduleSchema = z.object({
 type FormValues = z.infer<typeof manualScheduleSchema>;
 
 const instructors: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon'];
-const vehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Moto Roja', 'Moto Negra'];
+const carVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
+const motoVehicles: VehicleName[] = ['Moto Roja', 'Moto Negra'];
+const allVehicles: VehicleName[] = [...carVehicles, ...motoVehicles];
+
 const timeSlots = [
     { id: '8am-10am', label: '08:00 - 10:00' },
     { id: '10am-12pm', label: '10:00 - 12:00' },
     { id: '1pm-3pm', label: '13:00 - 15:00' },
     { id: '3pm-5pm', label: '15:00 - 17:00' },
 ];
+
+const getAutoCapacity = (date: Date, slotId: string) => {
+    const day = date.getDay(); // 0=Dom, 1=Lun
+    if (day === 1 && slotId === '8am-10am') return 2; // Lunes 8-10: 2 autos
+    if (day === 6 && slotId === '3pm-5pm') return 2;  // Sábados 3-5: 2 autos
+    return 3;
+};
+
+const getMotoCapacity = () => 2;
 
 export default function ManualSchedulePage() {
     const db = useDb();
@@ -92,12 +104,56 @@ export default function ManualSchedulePage() {
         name: "classes"
     });
 
-    const manualEntriesQuery = useMemoQuery(() => {
-        if (!db) return null;
-        return query(collection(db, 'manual_schedules'), orderBy('createdAt', 'desc'));
-    }, [db]);
+    // Cargar datos para verificar disponibilidad
+    const activeContractsQuery = useMemoQuery(() => db ? query(collection(db, 'contracts'), where('status', '==', 'active')) : null, [db]);
+    const manualEntriesQuery = useMemoQuery(() => db ? collection(db, 'manual_schedules') : null, [db]);
+    
+    const { data: allContracts } = useCollection<Contract>(activeContractsQuery);
+    const { data: allManualEntries, isLoading: isLoadingEntries } = useCollection<ManualSchedule>(manualEntriesQuery);
 
-    const { data: entries, isLoading: isLoadingEntries } = useCollection<ManualSchedule>(manualEntriesQuery);
+    const availabilityData = useMemo(() => {
+        const vehicleOccupancy: Record<string, string> = {};
+        const autoCounts: Record<string, number> = {};
+        const motoCounts: Record<string, number> = {};
+        
+        const processEntry = (date: any, slot: string, vehicle: string, name: string) => {
+            if (!date || !slot || !vehicle) return;
+            const dateKey = format(toDate(date), 'yyyy-MM-dd');
+            const vKey = `${dateKey}|${slot}|${vehicle}`;
+            const sKey = `${dateKey}|${slot}`;
+            
+            vehicleOccupancy[vKey] = name;
+            if (carVehicles.includes(vehicle as any)) {
+                autoCounts[sKey] = (autoCounts[sKey] || 0) + 1;
+            } else if (motoVehicles.includes(vehicle as any)) {
+                motoCounts[sKey] = (motoCounts[sKey] || 0) + 1;
+            }
+        };
+
+        allManualEntries?.forEach(entry => {
+            if (entry.classType === 'Teórica') return;
+            processEntry(entry.date, entry.timeSlot, entry.vehicle, entry.studentName);
+        });
+
+        allContracts?.forEach(c => {
+            const processSlots = (slots: any[]) => {
+                slots.forEach(s => {
+                    const timeMap: Record<string, string> = {
+                        '8:00am a 10:00am': '8am-10am',
+                        '10:00am a 12:pm': '10am-12pm',
+                        '1:00pm a 3:00pm': '1pm-3pm',
+                        '3:00pm a 5:00pm': '3pm-5pm',
+                    };
+                    processEntry(s.date, timeMap[s.time] || s.time, s.vehicle, c.clientName);
+                });
+            };
+            processSlots(c.autoMotoDetails?.practicalClassSchedules || []);
+            processSlots(c.autoMotoDetails?.motoPracticalClassSchedules || []);
+            processSlots(c.deluxeDetails?.classSchedules || []);
+        });
+
+        return { vehicleOccupancy, autoCounts, motoCounts };
+    }, [allContracts, allManualEntries]);
 
     if (isRoleLoading) {
         return <div className="flex justify-center p-12"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>;
@@ -162,8 +218,8 @@ export default function ManualSchedulePage() {
         const lastClass = form.getValues(`classes.${fields.length - 1}`);
         append({
             date: lastClass?.date ? new Date(lastClass.date) : new Date(),
-            timeSlot: '8am-10am',
-            vehicle: lastClass?.vehicle || '',
+            timeSlot: lastClass?.timeSlot || '8am-10am',
+            vehicle: '',
             instructor: lastClass?.instructor || '',
             classNumber: (lastClass?.classNumber || 0) + 1,
             classType: 'Práctica',
@@ -197,95 +253,127 @@ export default function ManualSchedulePage() {
                             )} />
 
                             <div className="space-y-4">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground">Listado de Clases / Fechas</Label>
-                                {fields.map((field, index) => (
-                                    <div key={field.id} className="grid grid-cols-1 md:grid-cols-6 lg:grid-cols-7 gap-3 p-4 border rounded-xl bg-slate-50/50 items-end relative group">
-                                        {fields.length > 1 && (
-                                            <Button 
-                                                type="button" 
-                                                variant="ghost" 
-                                                size="icon" 
-                                                className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-white border shadow-sm text-destructive hover:bg-red-50"
-                                                onClick={() => remove(index)}
-                                            >
-                                                <X className="h-3 w-3" />
-                                            </Button>
-                                        )}
+                                <Label className="text-xs font-bold uppercase text-muted-foreground">Listado de Clases / Fechas</Final>
+                                {fields.map((field, index) => {
+                                    const watchDate = form.watch(`classes.${index}.date`);
+                                    const watchTime = form.watch(`classes.${index}.timeSlot`);
+                                    const watchVehicle = form.watch(`classes.${index}.vehicle`);
+                                    
+                                    let conflictStudent = null;
+                                    let isFull = false;
+                                    let capacity = 3;
+
+                                    if (watchDate && watchTime) {
+                                        const dateObj = toDate(watchDate);
+                                        const dateKey = format(dateObj, 'yyyy-MM-dd');
                                         
-                                        <FormField control={form.control} name={`classes.${index}.date`} render={({ field }) => (
-                                            <FormItem className="md:col-span-1 lg:col-span-1">
-                                                <FormLabel className="text-[10px] uppercase font-bold">Fecha</FormLabel>
-                                                <Popover>
-                                                    <PopoverTrigger asChild>
-                                                        <FormControl>
-                                                            <Button variant="outline" className={cn("w-full h-9 text-xs px-2 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                                                {field.value ? format(field.value, "dd/MM/yy") : "Fecha"}
-                                                                <CalendarIcon className="ml-auto h-3 w-3 opacity-50" />
-                                                            </Button>
-                                                        </FormControl>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
-                                                </Popover>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )} />
+                                        if (watchVehicle) {
+                                            conflictStudent = availabilityData.vehicleOccupancy[`${dateKey}|${watchTime}|${watchVehicle}`];
+                                        }
 
-                                        <FormField control={form.control} name={`classes.${index}.timeSlot`} render={({ field }) => (
-                                            <FormItem className="md:col-span-1 lg:col-span-1">
-                                                <FormLabel className="text-[10px] uppercase font-bold">Turno</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value}>
-                                                    <FormControl><SelectTrigger className="h-9 text-xs px-2"><SelectValue /></SelectTrigger></FormControl>
-                                                    <SelectContent>{timeSlots.map(t => <SelectItem key={t.id} value={t.id} className="text-xs">{t.label}</SelectItem>)}</SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )} />
+                                        if (carVehicles.includes(watchVehicle as any)) {
+                                            capacity = getAutoCapacity(dateObj, watchTime);
+                                            isFull = (availabilityData.autoCounts[`${dateKey}|${watchTime}`] || 0) >= capacity;
+                                        } else if (motoVehicles.includes(watchVehicle as any)) {
+                                            capacity = getMotoCapacity();
+                                            isFull = (availabilityData.motoCounts[`${dateKey}|${watchTime}`] || 0) >= capacity;
+                                        }
+                                    }
 
-                                        <FormField control={form.control} name={`classes.${index}.vehicle`} render={({ field }) => (
-                                            <FormItem className="md:col-span-1 lg:col-span-1">
-                                                <FormLabel className="text-[10px] uppercase font-bold">Vehículo</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value}>
-                                                    <FormControl><SelectTrigger className="h-9 text-xs px-2"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
-                                                    <SelectContent>{vehicles.map(v => <SelectItem key={v} value={v} className="text-xs">{v}</SelectItem>)}</SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )} />
+                                    return (
+                                        <div key={field.id} className={cn("grid grid-cols-1 md:grid-cols-6 lg:grid-cols-7 gap-3 p-4 border rounded-xl bg-slate-50/50 items-end relative group", (conflictStudent || isFull) && "border-amber-500 bg-amber-50/30")}>
+                                            {conflictStudent && (
+                                                <div className="absolute -top-2 right-2 bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10">
+                                                    <AlertTriangle className="h-3 w-3" /> OCUPADO POR: {conflictStudent.toUpperCase()}
+                                                </div>
+                                            )}
+                                            {isFull && !conflictStudent && (
+                                                <div className="absolute -top-2 right-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10">
+                                                    <AlertTriangle className="h-3 w-3" /> CAPACIDAD MÁXIMA ({capacity})
+                                                </div>
+                                            )}
 
-                                        <FormField control={form.control} name={`classes.${index}.instructor`} render={({ field }) => (
-                                            <FormItem className="md:col-span-1 lg:col-span-1">
-                                                <FormLabel className="text-[10px] uppercase font-bold">Instructor</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value}>
-                                                    <FormControl><SelectTrigger className="h-9 text-xs px-2"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
-                                                    <SelectContent>{instructors.map(i => <SelectItem key={i} value={i} className="text-xs">{i}</SelectItem>)}</SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )} />
+                                            {fields.length > 1 && (
+                                                <Button 
+                                                    type="button" 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    className="absolute -top-2 -left-2 h-6 w-6 rounded-full bg-white border shadow-sm text-destructive hover:bg-red-50 z-10"
+                                                    onClick={() => remove(index)}
+                                                >
+                                                    <X className="h-3 w-3" />
+                                                </Button>
+                                            )}
+                                            
+                                            <FormField control={form.control} name={`classes.${index}.date`} render={({ field }) => (
+                                                <FormItem className="md:col-span-1 lg:col-span-1">
+                                                    <FormLabel className="text-[10px] uppercase font-bold">Fecha</FormLabel>
+                                                    <Popover>
+                                                        <PopoverTrigger asChild>
+                                                            <FormControl>
+                                                                <Button variant="outline" className={cn("w-full h-9 text-xs px-2 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                                    {field.value ? format(field.value, "dd/MM/yy") : "Fecha"}
+                                                                    <CalendarIcon className="ml-auto h-3 w-3 opacity-50" />
+                                                                </Button>
+                                                            </FormControl>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                                                    </Popover>
+                                                </FormItem>
+                                            )} />
 
-                                        <FormField control={form.control} name={`classes.${index}.classNumber`} render={({ field }) => (
-                                            <FormItem className="md:col-span-1 lg:col-span-1">
-                                                <FormLabel className="text-[10px] uppercase font-bold">N° Clase</FormLabel>
-                                                <FormControl><Input type="number" {...field} className="h-9 text-xs" /></FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )} />
+                                            <FormField control={form.control} name={`classes.${index}.timeSlot`} render={({ field }) => (
+                                                <FormItem className="md:col-span-1 lg:col-span-1">
+                                                    <FormLabel className="text-[10px] uppercase font-bold">Turno</FormLabel>
+                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                        <FormControl><SelectTrigger className="h-9 text-xs px-2"><SelectValue /></SelectTrigger></FormControl>
+                                                        <SelectContent>{timeSlots.map(t => <SelectItem key={t.id} value={t.id} className="text-xs">{t.label}</SelectItem>)}</SelectContent>
+                                                    </Select>
+                                                </FormItem>
+                                            )} />
 
-                                        <FormField control={form.control} name={`classes.${index}.classType`} render={({ field }) => (
-                                            <FormItem className="md:col-span-1 lg:col-span-1">
-                                                <FormLabel className="text-[10px] uppercase font-bold">Tipo</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value}>
-                                                    <FormControl><SelectTrigger className="h-9 text-xs px-2"><SelectValue /></SelectTrigger></FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="Práctica" className="text-xs">Práctica</SelectItem>
-                                                        <SelectItem value="Teórica" className="text-xs">Teórica</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )} />
-                                    </div>
-                                ))}
+                                            <FormField control={form.control} name={`classes.${index}.vehicle`} render={({ field }) => (
+                                                <FormItem className="md:col-span-1 lg:col-span-1">
+                                                    <FormLabel className="text-[10px] uppercase font-bold">Vehículo</FormLabel>
+                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                        <FormControl><SelectTrigger className="h-9 text-xs px-2"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
+                                                        <SelectContent>{allVehicles.map(v => <SelectItem key={v} value={v} className="text-xs">{v}</SelectItem>)}</SelectContent>
+                                                    </Select>
+                                                </FormItem>
+                                            )} />
+
+                                            <FormField control={form.control} name={`classes.${index}.instructor`} render={({ field }) => (
+                                                <FormItem className="md:col-span-1 lg:col-span-1">
+                                                    <FormLabel className="text-[10px] uppercase font-bold">Instructor</FormLabel>
+                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                        <FormControl><SelectTrigger className="h-9 text-xs px-2"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
+                                                        <SelectContent>{instructors.map(i => <SelectItem key={i} value={i} className="text-xs">{i}</SelectItem>)}</SelectContent>
+                                                    </Select>
+                                                </FormItem>
+                                            )} />
+
+                                            <FormField control={form.control} name={`classes.${index}.classNumber`} render={({ field }) => (
+                                                <FormItem className="md:col-span-1 lg:col-span-1">
+                                                    <FormLabel className="text-[10px] uppercase font-bold">N° Clase</FormLabel>
+                                                    <FormControl><Input type="number" {...field} className="h-9 text-xs" /></FormControl>
+                                                </FormItem>
+                                            )} />
+
+                                            <FormField control={form.control} name={`classes.${index}.classType`} render={({ field }) => (
+                                                <FormItem className="md:col-span-1 lg:col-span-1">
+                                                    <FormLabel className="text-[10px] uppercase font-bold">Tipo</FormLabel>
+                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                        <FormControl><SelectTrigger className="h-9 text-xs px-2"><SelectValue /></SelectTrigger></FormControl>
+                                                        <SelectContent>
+                                                            <SelectItem value="Práctica" className="text-xs">Práctica</SelectItem>
+                                                            <SelectItem value="Teórica" className="text-xs">Teórica</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </FormItem>
+                                            )} />
+                                        </div>
+                                    );
+                                })}
                             </div>
 
                             <div className="flex flex-col sm:flex-row gap-3 pt-2">
@@ -308,12 +396,12 @@ export default function ManualSchedulePage() {
                 <CardContent>
                     {isLoadingEntries ? (
                         <div className="flex justify-center p-8"><Loader2 className="animate-spin h-8 w-8 text-primary opacity-20" /></div>
-                    ) : entries && entries.length > 0 ? (
+                    ) : allManualEntries && allManualEntries.length > 0 ? (
                         <div className="border rounded-lg overflow-hidden">
                             <Table>
                                 <TableHeader><TableRow><TableHead>Estudiante</TableHead><TableHead>Fecha</TableHead><TableHead>Turno</TableHead><TableHead>Vehículo</TableHead><TableHead>Instructor</TableHead><TableHead className="text-right">Acciones</TableHead></TableRow></TableHeader>
                                 <TableBody>
-                                    {entries.map(entry => (
+                                    {allManualEntries.map(entry => (
                                         <TableRow key={entry.id}>
                                             <TableCell className="font-bold uppercase text-xs">{entry.studentName}</TableCell>
                                             <TableCell className="text-xs">{format(toDate(entry.date), 'dd/MM/yyyy')}</TableCell>

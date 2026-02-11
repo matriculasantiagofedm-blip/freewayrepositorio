@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -14,7 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, ChevronLeft, ChevronRight, User, Car } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, User, Car, AlertCircle } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addDays, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
@@ -34,6 +33,15 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: TimeSlot } = {
     '10:00am a 12:pm': '10am-12pm',
     '1:00pm a 3:00pm': '1pm-3pm',
     '3:00pm a 5:00pm': '3pm-5pm',
+};
+
+const carVehicles = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
+
+const getSlotCapacity = (date: Date, slotId: string) => {
+    const day = date.getDay(); 
+    if (day === 1 && slotId === '8am-10am') return 2; // Lunes 8-10: 2 autos
+    if (day === 6 && slotId === '3pm-5pm') return 2;  // Sábados 3-5: 2 autos
+    return 3; // Resto: 3 autos
 };
 
 const timeStringToTimeSlot = (timeString: string): TimeSlot | null => {
@@ -179,9 +187,22 @@ export default function VehicleScheduleReportPage() {
                             const dayKey = format(day, 'yyyy-MM-dd');
                             const assignments = weeklyAssignments.get(dayKey)?.filter(a => a.timeSlot === timeSlot.id) || [];
                             
+                            // Filtrar solo vehículos de tipo Auto para la lógica de capacidad
+                            const autoAssignmentsCount = assignments.filter(a => carVehicles.includes(a.vehicle)).length;
+                            const capacity = getSlotCapacity(day, timeSlot.id);
+                            const isOverCapacity = autoAssignmentsCount >= capacity;
+
                             return (
-                            <TableCell key={day.toISOString()} className={cn("border p-1.5 align-top transition-colors", format(new Date(), 'yyyy-MM-dd') === dayKey && "bg-primary/[0.02]")}>
-                                <div className="flex flex-col gap-1.5 h-full">
+                            <TableCell key={day.toISOString()} className={cn("border p-1.5 align-top transition-colors relative", format(new Date(), 'yyyy-MM-dd') === dayKey && "bg-primary/[0.02]")}>
+                                {/* Indicador de Capacidad */}
+                                <div className={cn(
+                                    "absolute top-1 right-1 px-1.5 py-0.5 rounded text-[9px] font-black z-10",
+                                    isOverCapacity ? "bg-red-500 text-white animate-pulse" : "bg-slate-100 text-slate-500"
+                                )}>
+                                    {autoAssignmentsCount} / {capacity}
+                                </div>
+
+                                <div className="flex flex-col gap-1.5 h-full pt-4">
                                     {assignments.map((assignment, index) => (
                                     <div key={index} className={cn(
                                         "p-2 rounded border text-[10px] shadow-sm leading-tight relative overflow-hidden transition-all hover:scale-[1.02]",

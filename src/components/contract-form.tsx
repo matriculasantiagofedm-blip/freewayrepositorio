@@ -28,7 +28,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { CalendarIcon, Loader2, Calculator, UserCircle, Settings2, BookOpen, Car, Bike, Save, AlertTriangle } from 'lucide-react';
+import { CalendarIcon, Loader2, Calculator, UserCircle, Settings2, BookOpen, Car, Bike, Save, AlertTriangle, Info } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { Timestamp, collection, query, where, getDocs, doc, serverTimestamp, runTransaction, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -49,6 +49,13 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
     '10:00am a 12:pm': '10am-12pm',
     '1:00pm a 3:00pm': '1pm-3pm',
     '3:00pm a 5:00pm': '3pm-5pm',
+};
+
+const getSlotCapacity = (date: Date, slotId: string) => {
+    const day = date.getDay(); // 0=Dom, 1=Lun, ..., 6=Sab
+    if (day === 1 && slotId === '8am-10am') return 2; // Lunes 8-10: 2 autos
+    if (day === 6 && slotId === '3pm-5pm') return 2;  // Sábados 3-5: 2 autos
+    return 3; // Resto: 3 autos
 };
 
 const autoPackages = [
@@ -183,7 +190,6 @@ const convertDatesToTimestamps = (data: any) => {
     return result;
 };
 
-// Componente para manejar las grillas de turnos prácticos
 function ClassSlotGrid({ 
     fields, 
     namePrefix, 
@@ -191,7 +197,7 @@ function ClassSlotGrid({
     title, 
     Icon, 
     form, 
-    busySlots 
+    availabilityData 
 }: { 
     fields: any[], 
     namePrefix: string, 
@@ -199,9 +205,11 @@ function ClassSlotGrid({
     title: string, 
     Icon: any, 
     form: any, 
-    busySlots: Record<string, string> 
+    availabilityData: { vehicleOccupancy: Record<string, string>, slotCounts: Record<string, number> }
 }) {
     if (fields.length === 0) return null;
+    const { vehicleOccupancy, slotCounts } = availabilityData;
+
     return (
         <Card className="shadow-sm mt-4">
             <CardHeader className="py-2 px-4 border-b">
@@ -217,17 +225,37 @@ function ClassSlotGrid({
                         const watchVehicle = form.watch(`${namePrefix}.${index}.vehicle`);
                         
                         let conflictStudent = null;
-                        if (watchDate && watchTime && watchVehicle) {
-                            const dateKey = format(toDate(watchDate), 'yyyy-MM-dd');
+                        let isFull = false;
+                        let capacity = 3;
+
+                        if (watchDate && watchTime) {
+                            const dateObj = toDate(watchDate);
+                            const dateKey = format(dateObj, 'yyyy-MM-dd');
                             const slotId = TIME_STRING_TO_SLOT_MAP[watchTime] || watchTime;
-                            conflictStudent = busySlots[`${dateKey}|${slotId}|${watchVehicle}`];
+                            
+                            // 1. Verificar si el vehículo específico está ocupado
+                            if (watchVehicle) {
+                                conflictStudent = vehicleOccupancy[`${dateKey}|${slotId}|${watchVehicle}`];
+                            }
+
+                            // 2. Verificar capacidad total del horario (Solo para Autos)
+                            if (namePrefix === 'practicalClassSchedules') {
+                                capacity = getSlotCapacity(dateObj, slotId);
+                                const currentOccupancy = slotCounts[`${dateKey}|${slotId}`] || 0;
+                                isFull = currentOccupancy >= capacity;
+                            }
                         }
 
                         return (
-                            <div key={field.id} className={cn("p-3 border rounded-md bg-muted/5 space-y-3 relative", conflictStudent && "border-amber-500 bg-amber-50/30")}>
+                            <div key={field.id} className={cn("p-3 border rounded-md bg-muted/5 space-y-3 relative", (conflictStudent || isFull) && "border-amber-500 bg-amber-50/30")}>
                                 {conflictStudent && (
                                     <div className="absolute -top-2 right-2 bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse">
                                         <AlertTriangle className="h-3 w-3" /> OCUPADO POR: {conflictStudent.toUpperCase()}
+                                    </div>
+                                )}
+                                {isFull && !conflictStudent && (
+                                    <div className="absolute -top-2 right-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse">
+                                        <AlertTriangle className="h-3 w-3" /> CAPACIDAD MÁXIMA ALCANZADA ({capacity})
                                     </div>
                                 )}
                                 <div className="flex items-center gap-2">
@@ -237,7 +265,7 @@ function ClassSlotGrid({
                                             <FormItem>
                                                 <Popover>
                                                     <PopoverTrigger asChild>
-                                                        <FormControl><Button variant="outline" className={cn("h-8 text-xs w-full text-left font-normal px-2", !f.value && "text-muted-foreground", conflictStudent && "border-amber-400")}><CalendarIcon className="mr-1 h-3 w-3" />{f.value ? format(f.value, "dd/MM") : "Fecha"}</Button></FormControl>
+                                                        <FormControl><Button variant="outline" className={cn("h-8 text-xs w-full text-left font-normal px-2", !f.value && "text-muted-foreground", (conflictStudent || isFull) && "border-amber-400")}><CalendarIcon className="mr-1 h-3 w-3" />{f.value ? format(f.value, "dd/MM") : "Fecha"}</Button></FormControl>
                                                     </PopoverTrigger>
                                                     <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={f.value} onSelect={f.onChange} initialFocus /></PopoverContent>
                                                 </Popover>
@@ -246,7 +274,7 @@ function ClassSlotGrid({
                                         <FormField control={form.control} name={`${namePrefix}.${index}.time`} render={({ field: f }) => (
                                             <FormItem>
                                                 <Select onValueChange={f.onChange} value={f.value}>
-                                                    <FormControl><SelectTrigger className={cn("h-8 text-xs px-2", conflictStudent && "border-amber-400")}><SelectValue placeholder="Hora" /></SelectTrigger></FormControl>
+                                                    <FormControl><SelectTrigger className={cn("h-8 text-xs px-2", (conflictStudent || isFull) && "border-amber-400")}><SelectValue placeholder="Hora" /></SelectTrigger></FormControl>
                                                     <SelectContent>{practicalTimes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                                                 </Select>
                                             </FormItem>
@@ -309,27 +337,41 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
   const { data: allContracts } = useCollection<Contract>(activeContractsQuery);
   const { data: manualEntries } = useCollection<ManualSchedule>(manualEntriesQuery);
 
-  const busySlots = useMemo(() => {
-    const map: Record<string, string> = {};
+  const availabilityData = useMemo(() => {
+    const vehicleOccupancy: Record<string, string> = {};
+    const slotCounts: Record<string, number> = {};
+    
+    const processEntry = (date: any, slot: string, vehicle: string, name: string) => {
+        if (!date || !slot || !vehicle) return;
+        const dateKey = format(toDate(date), 'yyyy-MM-dd');
+        const vKey = `${dateKey}|${slot}|${vehicle}`;
+        const sKey = `${dateKey}|${slot}`;
+        
+        vehicleOccupancy[vKey] = name;
+        // Solo sumamos a la ocupación global si es un vehículo de tipo Auto (para la lógica de 3/2 autos)
+        if (carVehicles.includes(vehicle as VehicleName)) {
+            slotCounts[sKey] = (slotCounts[sKey] || 0) + 1;
+        }
+    };
+
     manualEntries?.forEach(entry => {
       if (entry.classType === 'Teórica') return;
-      const key = `${format(toDate(entry.date), 'yyyy-MM-dd')}|${entry.timeSlot}|${entry.vehicle}`;
-      map[key] = entry.studentName;
+      processEntry(entry.date, entry.timeSlot, entry.vehicle, entry.studentName);
     });
+
     allContracts?.forEach(c => {
       if (c.id === initialContract?.id) return;
       const processSlots = (slots: any[]) => {
         slots.forEach(s => {
-          if (!s.date || !s.time || !s.vehicle) return;
-          const key = `${format(toDate(s.date), 'yyyy-MM-dd')}|${TIME_STRING_TO_SLOT_MAP[s.time] || s.time}|${s.vehicle}`;
-          map[key] = c.clientName;
+          processEntry(s.date, TIME_STRING_TO_SLOT_MAP[s.time] || s.time, s.vehicle, c.clientName);
         });
       };
       processSlots(c.autoMotoDetails?.practicalClassSchedules || []);
       processSlots(c.autoMotoDetails?.motoPracticalClassSchedules || []);
       processSlots(c.deluxeDetails?.classSchedules || []);
     });
-    return map;
+
+    return { vehicleOccupancy, slotCounts };
   }, [allContracts, manualEntries, initialContract]);
 
   useEffect(() => {
@@ -561,8 +603,8 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
 
         {contractType !== 'Ampliaciones' && (
             <div className="space-y-4">
-                <ClassSlotGrid fields={practicalFields} namePrefix="practicalClassSchedules" availableVehicles={carVehicles} title="5. Programación Clases Prácticas (Auto)" Icon={Car} form={form} busySlots={busySlots} />
-                <ClassSlotGrid fields={motoFields} namePrefix="motoPracticalClassSchedules" availableVehicles={motoVehicles} title="5. Programación Clases Prácticas (Moto)" Icon={Bike} form={form} busySlots={busySlots} />
+                <ClassSlotGrid fields={practicalFields} namePrefix="practicalClassSchedules" availableVehicles={carVehicles} title="5. Programación Clases Prácticas (Auto)" Icon={Car} form={form} availabilityData={availabilityData} />
+                <ClassSlotGrid fields={motoFields} namePrefix="motoPracticalClassSchedules" availableVehicles={motoVehicles} title="5. Programación Clases Prácticas (Moto)" Icon={Bike} form={form} availabilityData={availabilityData} />
             </div>
         )}
 

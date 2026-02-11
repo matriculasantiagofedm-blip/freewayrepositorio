@@ -50,6 +50,9 @@ const autoPackages = [
     { id: 'basico', label: 'Curso Auto Básico (8hrz)', price: 133.00, hours: 8 },
     { id: 'plus', label: 'Curso Auto Plus (10hrz)', price: 155.00, hours: 10 },
     { id: 'premium', label: 'Curso Auto Premium (12hrz)', price: 180.00, hours: 12 },
+    { id: 'reforzamiento-4h', label: 'Reforzamiento 4hrs', price: 98.00, hours: 4 },
+    { id: 'reforzamiento-2h', label: 'Reforzamiento Plus 2hrs', price: 75.00, hours: 2 },
+    { id: 'evaluacion-estacionamiento', label: 'Ya se Manejar (Evaluación Estacionamiento)', price: 57.00, hours: 1 },
 ];
 
 const motoPackages = [

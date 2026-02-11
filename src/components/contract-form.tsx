@@ -54,9 +54,9 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
 
 const getGlobalCapacity = (date: Date, slotId: string) => {
     const day = date.getDay(); 
-    if (day === 1 && slotId === '8am-10am') return 2; // Lunes 8-10: 2 vehículos
-    if (day === 6 && slotId === '3pm-5pm') return 2;  // Sábados 3-5: 2 vehículos
-    return 3; // Resto: 3 vehículos máximo total (independiente de si es auto o moto)
+    if (day === 1 && slotId === '8am-10am') return 2; 
+    if (day === 6 && slotId === '3pm-5pm') return 2;  
+    return 3; 
 };
 
 const autoPackages = [
@@ -65,7 +65,7 @@ const autoPackages = [
     { id: 'premium', label: 'Curso Auto Premium (12hrz)', price: 180.00, hours: 12 },
     { id: 'reforzamiento-4h', label: 'Reforzamiento 4hrs', price: 98.00, hours: 4 },
     { id: 'reforzamiento-2h', label: 'Reforzamiento Plus 2hrs', price: 75.00, hours: 2 },
-    { id: 'evaluacion-estacionamiento', label: 'Ya se Manejar (Evaluación Estacionamiento)', price: 57.00, hours: 1 },
+    { id: 'evaluacion-estacionamiento', label: 'Ya se manejar 10 mins (Evaluacion Estacionamiento)', price: 57.00, hours: 1 },
 ];
 
 const motoPackages = [
@@ -74,7 +74,7 @@ const motoPackages = [
     { id: 'moto-premium', label: 'Curso Moto Premium (12hrz)', price: 155.00, hours: 12 },
     { id: 'moto-reforzamiento-4h', label: 'Reforzamiento 4hrs', price: 98.00, hours: 4 },
     { id: 'moto-reforzamiento-2h', label: 'Reforzamiento Plus 2hrs', price: 75.00, hours: 2 },
-    { id: 'moto-evaluacion-estacionamiento', label: 'Ya se Manejar (Evaluación Estacionamiento)', price: 57.00, hours: 1 },
+    { id: 'moto-evaluacion-estacionamiento', label: 'Ya se manejar 10 mins (Evaluacion Estacionamiento)', price: 57.00, hours: 1 },
 ];
 
 const mixtoPackages = [
@@ -583,11 +583,11 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                     <>
                         {contractType !== 'Curso Solo Practica' && (
                             <FormField control={form.control} name="licenseCategory" render={({ field }) => (
-                                <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Categoría de Licencia</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger></FormControl><SelectContent>{contractType === 'Curso Moto' ? <SelectItem value="A, B">A, B (Moto)</SelectItem> : <><SelectItem value="A, C">A, C</SelectItem><SelectItem value="A, C, D">A, C, D</SelectItem></>}</SelectContent></Select></FormItem>
+                                <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Categoría de Licencia</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl><SelectContent>{contractType === 'Curso Moto' ? <SelectItem value="A, B">A, B (Moto)</SelectItem> : <><SelectItem value="A, C">A, C</SelectItem><SelectItem value="A, C, D">A, C, D</SelectItem></>}</SelectContent></Select></FormItem>
                             )} />
                         )}
                         <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
-                            <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Transmisión</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger></FormControl><SelectContent>{contractType === 'Curso Moto' ? <SelectItem value="Moto">Moto</SelectItem> : <><SelectItem value="Manual">Manual</SelectItem><SelectItem value="Automático">Automático</SelectItem></>}</SelectContent></Select></FormItem>
+                            <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Transmisión</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl><SelectContent>{contractType === 'Curso Moto' ? <SelectItem value="Moto">Moto</SelectItem> : <><SelectItem value="Manual">Manual</SelectItem><SelectItem value="Automático">Automático</SelectItem></>}</SelectContent></Select></FormItem>
                         )} />
                     </>
                 )}
@@ -601,7 +601,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                     {contractType === 'Ampliaciones' ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <FormField control={form.control} name="theoreticalClassDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Fecha</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className="h-8 text-sm pl-3 text-left font-normal"><CalendarIcon className="mr-2 h-3 w-3" />{field.value ? format(field.value, "dd/MM/yy") : "Seleccionar"}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover></FormItem>)} />
-                            <FormField control={form.control} name="theoreticalClassTime" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Horario</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger></FormControl><SelectContent>{ampliacionTheoreticalTimes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></FormItem>)} />
+                            <FormField control={form.control} name="theoreticalClassTime" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Horario</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl><SelectContent>{ampliacionTheoreticalTimes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></FormItem>)} />
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

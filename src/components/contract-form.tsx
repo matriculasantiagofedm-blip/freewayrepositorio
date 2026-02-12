@@ -45,7 +45,6 @@ import type { Contract, ContractType, InstructorName, VehicleName } from '@/lib/
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useDb, useUser } from './firebase-provider';
 
-// Constantes
 const instructors: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', ''];
 const carVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
 const motoVehicles: VehicleName[] = ['Moto Roja', 'Moto Negra'];
@@ -297,7 +296,12 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-5xl mx-auto pb-20">
         <Card className="border-t-4 border-t-primary shadow-md">
-            <CardHeader className="bg-slate-50/50 border-b"><div className="flex items-center gap-2"><UserCircle className="h-6 w-6 text-primary" /><CardTitle className="text-lg">Datos del Estudiante</CardTitle></div></CardHeader>
+            <CardHeader className="bg-slate-50/50 border-b">
+                <div className="flex items-center gap-2">
+                    <UserCircle className="h-6 w-6 text-primary" />
+                    <CardTitle className="text-lg">Datos del Estudiante</CardTitle>
+                </div>
+            </CardHeader>
             <CardContent className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField control={form.control} name="clientName" render={({ field }) => (<FormItem><FormLabel className="text-xs font-bold uppercase">Nombre Completo</FormLabel><FormControl><Input {...field} className="h-11" /></FormControl><FormMessage /></FormItem>)} />
@@ -316,18 +320,33 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
         </Card>
 
         <Card className="border-t-4 border-t-blue-600 shadow-md">
-            <CardHeader className="bg-blue-50/30 border-b"><div className="flex items-center gap-2"><DollarSign className="h-6 w-6 text-blue-600" /><CardTitle className="text-lg">Financiamiento</CardTitle></div></CardHeader>
+            <CardHeader className="bg-blue-50/30 border-b">
+                <div className="flex items-center gap-2">
+                    <DollarSign className="h-6 w-6 text-blue-600" />
+                    <CardTitle className="text-lg">Financiamiento</CardTitle>
+                </div>
+            </CardHeader>
             <CardContent className="p-6 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <FormField control={form.control} name="coursePlan" render={({ field }) => (
-                        <FormItem className="md:col-span-2"><FormLabel className="text-xs font-bold uppercase">Plan de Curso</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11"><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl><SelectContent>
-                            {contractType === 'Curso Auto' && autoPackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label} - B/.{p.price}</SelectItem>)}
-                            {contractType === 'Curso Moto' && motoPackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label} - B/.{p.price}</SelectItem>)}
-                            {contractType === 'Curso Mixto' && mixtoPackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label} - B/.{p.price}</SelectItem>)}
-                            {contractType === 'Curso Deluxe' && deluxePackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label} - B/.{p.price}</SelectItem>)}
-                            {contractType === 'Curso Solo Practica' && soloPracticaPackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label} - B/.{p.price}</SelectItem>)}
-                            {contractType === 'Ampliaciones' && ampliacionesPackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label} - B/.{p.price}</SelectItem>)}
-                        </Select></FormControl></FormItem>
+                        <FormItem className="md:col-span-2">
+                            <FormLabel className="text-xs font-bold uppercase">Plan de Curso</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                    <SelectTrigger className="h-11">
+                                        <SelectValue placeholder="Seleccionar..." />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {contractType === 'Curso Auto' && autoPackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label} - B/.{p.price}</SelectItem>)}
+                                    {contractType === 'Curso Moto' && motoPackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label} - B/.{p.price}</SelectItem>)}
+                                    {contractType === 'Curso Mixto' && mixtoPackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label} - B/.{p.price}</SelectItem>)}
+                                    {contractType === 'Curso Deluxe' && deluxePackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label} - B/.{p.price}</SelectItem>)}
+                                    {contractType === 'Curso Solo Practica' && soloPracticaPackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label} - B/.{p.price}</SelectItem>)}
+                                    {contractType === 'Ampliaciones' && ampliacionesPackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label} - B/.{p.price}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </FormItem>
                     )} />
                     <FormField control={form.control} name="paymentType" render={({ field }) => (<FormItem><FormLabel className="text-xs font-bold uppercase">Método Pago</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="cash">Efectivo</SelectItem><SelectItem value="debit">T. Débito</SelectItem><SelectItem value="credit">T. Crédito</SelectItem><SelectItem value="bac">BAC</SelectItem><SelectItem value="general">General</SelectItem><SelectItem value="cheques">Cheque</SelectItem></Select></FormControl></FormItem>)} />
                 </div>
@@ -337,8 +356,14 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                     <FormField control={form.control} name="balance" render={({ field }) => (<FormItem><FormLabel className="text-xs text-red-700 font-bold">Saldo</FormLabel><FormControl><Input {...field} readOnly className="h-10 font-black text-red-600 bg-red-50" /></FormControl></FormItem>)} />
                     <FormField control={form.control} name="paymentDeadline" render={({ field }) => (
                         <FormItem><FormLabel className="text-xs">Límite</FormLabel>
-                        <Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant="outline" className="h-10 w-full">{field.value ? format(toDate(field.value), "dd/MM/yy") : "Fecha"}</Button></FormControl></PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover>
+                        <Popover modal={true}>
+                            <PopoverTrigger asChild>
+                                <FormControl><Button variant="outline" className="h-10 w-full">{field.value ? format(toDate(field.value), "dd/MM/yy") : "Fecha"}</Button></FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus />
+                            </PopoverContent>
+                        </Popover>
                         </FormItem>
                     )} />
                 </div>
@@ -346,12 +371,29 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
         </Card>
 
         <Card className="border-t-4 border-t-amber-500 shadow-md">
-            <CardHeader className="bg-amber-50/30 border-b"><div className="flex items-center gap-2"><Settings2 className="h-6 w-6 text-amber-600" /><CardTitle className="text-lg">Configuración del Trámite</CardTitle></div></CardHeader>
+            <CardHeader className="bg-amber-50/30 border-b">
+                <div className="flex items-center gap-2">
+                    <Settings2 className="h-6 w-6 text-amber-600" />
+                    <CardTitle className="text-lg">Configuración del Trámite</CardTitle>
+                </div>
+            </CardHeader>
             <CardContent className="p-6 space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-6">
                         {contractType !== 'Ampliaciones' && (
-                            <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (<FormItem><FormLabel className="text-xs uppercase">Transmisión</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Automático">Automático</SelectItem><SelectItem value="Manual">Manual</SelectItem><SelectItem value="Moto">Moto</SelectItem></Select></FormControl></FormItem>)} />
+                            <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-xs uppercase">Transmisión</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl><SelectTrigger className="h-11"><SelectValue /></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="Automático">Automático</SelectItem>
+                                            <SelectItem value="Manual">Manual</SelectItem>
+                                            <SelectItem value="Moto">Moto</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </FormItem>
+                            )} />
                         )}
                         <div className="space-y-3">
                             <FormLabel className="text-xs font-bold uppercase text-amber-700">Categoría Licencia</FormLabel>
@@ -374,7 +416,15 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                             </div>
                         </div>
                         {contractType !== 'Ampliaciones' && (
-                            <FormField control={form.control} name="theoreticalClassSchedule" render={({ field }) => (<FormItem><FormLabel className="text-xs font-bold">Horario Teórico</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11"><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl><SelectContent>{theoreticalSchedules.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</Select></FormControl></FormItem>)} />
+                            <FormField control={form.control} name="theoreticalClassSchedule" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-xs font-bold">Horario Teórico</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl><SelectTrigger className="h-11"><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl>
+                                        <SelectContent>{theoreticalSchedules.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                                    </Select>
+                                </FormItem>
+                            )} />
                         )}
                     </div>
                 </div>
@@ -384,8 +434,14 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                         <FormField control={form.control} name="theoreticalClassDate" render={({ field }) => (
                             <FormItem>
                                 <FormLabel className="text-xs font-bold uppercase flex items-center gap-2"><CalendarIcon className="h-3 w-3" /> Fecha de Clase Teórica</FormLabel>
-                                <Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant="outline" className="h-11 w-full bg-white">{field.value ? format(toDate(field.value), "PPP", { locale: es }) : "Seleccionar fecha..."}</Button></FormControl></PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus /></PopoverContent>
+                                <Popover modal={true}>
+                                    <PopoverTrigger asChild>
+                                        <FormControl><Button variant="outline" className="h-11 w-full bg-white">{field.value ? format(toDate(field.value), "PPP", { locale: es }) : "Seleccionar fecha..."}</Button></FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus />
+                                    </PopoverContent>
+                                </Popover>
                             </FormItem>
                         )} />
                         <FormField control={form.control} name="theoreticalClassTime" render={({ field }) => (
@@ -397,11 +453,23 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                     </div>
                 ) : (
                     <div className="bg-slate-50 p-6 rounded-xl border border-dashed">
-                        <div className="flex items-center gap-2 text-amber-700 font-bold mb-4"><GraduationCap className="h-5 w-5" /><h3 className="text-sm uppercase">Sesiones Teóricas ({theorySessionCount})</h3></div>
+                        <div className="flex items-center gap-2 text-amber-700 font-bold mb-4">
+                            <GraduationCap className="h-5 w-5" />
+                            <h3 className="text-sm uppercase">Sesiones Teóricas ({theorySessionCount})</h3>
+                        </div>
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                             {Array.from({ length: theorySessionCount }).map((_, index) => (
                                 <FormField key={index} control={form.control} name={`theoreticalClassDates.${index}`} render={({ field }) => (
-                                    <FormItem><Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant="outline" className="h-10 text-xs w-full bg-white">{field.value ? format(toDate(field.value), "dd/MM") : "---"}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover></FormItem>
+                                    <FormItem>
+                                        <Popover modal={true}>
+                                            <PopoverTrigger asChild>
+                                                <FormControl><Button variant="outline" className="h-10 text-xs w-full bg-white">{field.value ? format(toDate(field.value), "dd/MM") : "---"}</Button></FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus />
+                                            </PopoverContent>
+                                        </Popover>
+                                    </FormItem>
                                 )} />
                             ))}
                         </div>
@@ -410,9 +478,12 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
 
                 {contractType !== 'Ampliaciones' && (
                     <div className="space-y-6">
-                        <div className="flex items-center gap-2 text-primary font-bold"><Clock className="h-5 w-5" /><h3 className="text-sm uppercase">Clases Prácticas</h3></div>
+                        <div className="flex items-center gap-2 text-primary font-bold">
+                            <Clock className="h-5 w-5" />
+                            <h3 className="text-sm uppercase">Clases Prácticas</h3>
+                        </div>
                         <div className="grid grid-cols-1 gap-4">
-                            {(contractType === 'Curso Mixto' || contractType === 'Curso Auto' || contractType === 'Curso Solo Practica') && (
+                            {(contractType === 'Curso Mixto' || contractType === 'Curso Auto' || contractType === 'Curso Solo Practica' || contractType === 'Curso Deluxe') && (
                                 <div className="space-y-4">
                                     {contractType === 'Curso Mixto' && <h4 className="text-xs font-bold uppercase text-muted-foreground">Sesiones de Auto</h4>}
                                     {form.watch('practicalClassSchedules')?.map((_, index) => (

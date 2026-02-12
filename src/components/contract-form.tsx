@@ -45,14 +45,11 @@ import type { Contract, ContractType, InstructorName, VehicleName } from '@/lib/
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useDb, useUser } from './firebase-provider';
 
-// Constants
+// Constantes
 const instructors: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', ''];
 const carVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
 const motoVehicles: VehicleName[] = ['Moto Roja', 'Moto Negra'];
-const theoreticalSchedules = [
-    'Semanal (8:00 am a 10:00 am)', 
-    'Sabatino (3:00 pm a 5:00 pm)'
-];
+const theoreticalSchedules = ['Semanal (8:00 am a 10:00 am)', 'Sabatino (3:00 pm a 5:00 pm)'];
 
 const ALL_CATEGORIES = ['A', 'B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];
 const AMPLIACION_CATEGORIES = ['B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];

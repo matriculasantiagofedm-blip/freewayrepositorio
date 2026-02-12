@@ -3,6 +3,7 @@ import type { Contract, ContractType } from '@/lib/types';
 import { DeluxePremiumContractTemplate } from './deluxe-premium-contract';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { AutoMotoContractTemplate } from './auto-moto-contract';
+import { AmpliacionesContractTemplate } from './ampliaciones-contract';
 
 
 export function ContractView({ contract, type }: { contract: Contract, type?: ContractType }) {
@@ -12,6 +13,8 @@ export function ContractView({ contract, type }: { contract: Contract, type?: Co
     switch(contractType) {
       case 'Curso Deluxe':
         return <DeluxePremiumContractTemplate contract={contract} />;
+      case 'Ampliaciones':
+        return <AmpliacionesContractTemplate contract={contract} />;
       case 'Curso Auto':
       case 'Curso Moto':
       case 'Curso Mixto':

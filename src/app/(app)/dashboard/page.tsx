@@ -12,7 +12,7 @@ import { useMemo } from 'react';
 import type { Contract } from '@/lib/types';
 
 const getBalance = (contract: Contract): number => {
-    const details = contract.autoMotoDetails || contract.deluxeDetails;
+    const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
     return details?.balance || 0;
 }
 
@@ -62,6 +62,7 @@ export default function DashboardPage() {
       { name: 'Curso Mixto', href: '/contracts/new?type=Curso%20Mixto', bgColor: 'bg-purple-50', textColor: 'text-purple-600'},
       { name: 'Curso Deluxe', href: '/contracts/new?type=Curso%20Deluxe', bgColor: 'bg-yellow-50', textColor: 'text-yellow-600'},
       { name: 'Curso Solo Practica', href: '/contracts/new?type=Curso%20Solo%20Practica', bgColor: 'bg-teal-50', textColor: 'text-teal-600'},
+      { name: 'Ampliaciones', href: '/contracts/new?type=Ampliaciones', bgColor: 'bg-indigo-50', textColor: 'text-indigo-600'},
   ];
 
   const actionGroups = [

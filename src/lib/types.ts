@@ -22,7 +22,8 @@ export type ContractType =
   | 'Curso Moto' 
   | 'Curso Mixto'
   | 'Curso Deluxe'
-  | 'Curso Solo Practica';
+  | 'Curso Solo Practica'
+  | 'Ampliaciones';
 
 export interface DeluxeContractDetails {
   idType?: string;
@@ -69,6 +70,22 @@ export interface AutoMotoContractDetails {
   instructor?: InstructorName;
 }
 
+export interface AmpliacionesContractDetails {
+  idType?: string;
+  studentIdNumber: string;
+  studentAddress: string;
+  studentPhone1: string;
+  studentPhone2?: string;
+  courseValue: number;
+  downPayment: number;
+  balance: number;
+  paymentDeadline?: any;
+  licenseCategory: string;
+  theoreticalClassDate?: any;
+  theoreticalClassTime?: string;
+  paymentType: string;
+}
+
 export interface Contract {
   id: string;
   folioNumber: number;
@@ -83,6 +100,7 @@ export interface Contract {
   createdBy?: string;
   deluxeDetails?: Partial<DeluxeContractDetails>;
   autoMotoDetails?: Partial<AutoMotoContractDetails>;
+  ampliacionesDetails?: Partial<AmpliacionesContractDetails>;
   certificateGeneratedAt?: any;
   certificateFolio?: string;
   studentIdNumber?: string;

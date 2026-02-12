@@ -307,7 +307,20 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                     <FormField control={form.control} name="clientName" render={({ field }) => (<FormItem><FormLabel className="text-xs font-bold uppercase">Nombre Completo</FormLabel><FormControl><Input {...field} className="h-11" /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="clientEmail" render={({ field }) => (<FormItem><FormLabel className="text-xs font-bold uppercase">Correo Electrónico</FormLabel><FormControl><Input {...field} type="email" className="h-11" /></FormControl><FormMessage /></FormItem>)} />
                     <div className="grid grid-cols-3 gap-2">
-                        <FormField control={form.control} name="idType" render={({ field }) => (<FormItem><FormLabel className="text-xs font-bold uppercase">ID</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="C.I.P.">C.I.P.</SelectItem><SelectItem value="PASS">PASS</SelectItem></Select></FormItem>)} />
+                        <FormField control={form.control} name="idType" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-xs font-bold uppercase">ID</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="C.I.P.">C.I.P.</SelectItem>
+                                        <SelectItem value="PASS">PASS</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </FormItem>
+                        )} />
                         <FormField control={form.control} name="studentIdNumber" render={({ field }) => (<FormItem className="col-span-2"><FormLabel className="text-xs font-bold uppercase">Número</FormLabel><FormControl><Input {...field} className="h-11" /></FormControl><FormMessage /></FormItem>)} />
                     </div>
                     <FormField control={form.control} name="studentAddress" render={({ field }) => (<FormItem><FormLabel className="text-xs font-bold uppercase">Dirección</FormLabel><FormControl><Input {...field} className="h-11" /></FormControl><FormMessage /></FormItem>)} />
@@ -348,7 +361,24 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                             </Select>
                         </FormItem>
                     )} />
-                    <FormField control={form.control} name="paymentType" render={({ field }) => (<FormItem><FormLabel className="text-xs font-bold uppercase">Método Pago</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="cash">Efectivo</SelectItem><SelectItem value="debit">T. Débito</SelectItem><SelectItem value="credit">T. Crédito</SelectItem><SelectItem value="bac">BAC</SelectItem><SelectItem value="general">General</SelectItem><SelectItem value="cheques">Cheque</SelectItem></Select></FormControl></FormItem>)} />
+                    <FormField control={form.control} name="paymentType" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-xs font-bold uppercase">Método Pago</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                    <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="cash">Efectivo</SelectItem>
+                                    <SelectItem value="debit">T. Débito</SelectItem>
+                                    <SelectItem value="credit">T. Crédito</SelectItem>
+                                    <SelectItem value="bac">BAC</SelectItem>
+                                    <SelectItem value="general">General</SelectItem>
+                                    <SelectItem value="cheques">Cheque</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </FormItem>
+                    )} />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border">
                     <FormField control={form.control} name="courseValue" render={({ field }) => (<FormItem><FormLabel className="text-xs opacity-70">Total</FormLabel><FormControl><Input {...field} type="number" step="0.01" className="h-10 font-bold" /></FormControl></FormItem>)} />
@@ -421,7 +451,9 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                                     <FormLabel className="text-xs font-bold">Horario Teórico</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value}>
                                         <FormControl><SelectTrigger className="h-11"><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl>
-                                        <SelectContent>{theoreticalSchedules.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                                        <SelectContent>
+                                            {theoreticalSchedules.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                        </SelectContent>
                                     </Select>
                                 </FormItem>
                             )} />
@@ -492,13 +524,37 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                                                 <FormItem><Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant="outline" className="h-9 text-xs w-full">{field.value ? format(toDate(field.value), "dd/MM/yy") : "Fecha"}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover></FormItem>
                                             )} />
                                             <FormField control={form.control} name={`practicalClassSchedules.${index}.time`} render={({ field }) => (
-                                                <FormItem><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="8:00am a 10:00am">8am-10am</SelectItem><SelectItem value="10:00am a 12:pm">10am-12pm</SelectItem><SelectItem value="1:00pm a 3:00pm">1pm-3pm</SelectItem><SelectItem value="3:00pm a 5:00pm">3pm-5pm</SelectItem></Select></FormControl></FormItem>
+                                                <FormItem>
+                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                        <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
+                                                        <SelectContent>
+                                                            <SelectItem value="8:00am a 10:00am">8am-10am</SelectItem>
+                                                            <SelectItem value="10:00am a 12:pm">10am-12pm</SelectItem>
+                                                            <SelectItem value="1:00pm a 3:00pm">1pm-3pm</SelectItem>
+                                                            <SelectItem value="3:00pm a 5:00pm">3pm-5pm</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </FormItem>
                                             )} />
                                             <FormField control={form.control} name={`practicalClassSchedules.${index}.vehicle`} render={({ field }) => (
-                                                <FormItem><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl><SelectContent>{carVehicles.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}</Select></FormControl></FormItem>
+                                                <FormItem>
+                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                        <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
+                                                        <SelectContent>
+                                                            {carVehicles.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </FormItem>
                                             )} />
                                             <FormField control={form.control} name={`practicalClassSchedules.${index}.instructor`} render={({ field }) => (
-                                                <FormItem><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl><SelectContent>{instructors.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}</Select></FormControl></FormItem>
+                                                <FormItem>
+                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                        <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
+                                                        <SelectContent>
+                                                            {instructors.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </FormItem>
                                             )} />
                                         </div>
                                     ))}
@@ -513,13 +569,37 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                                                 <FormItem><Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant="outline" className="h-9 text-xs w-full">{field.value ? format(toDate(field.value), "dd/MM/yy") : "Fecha"}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover></FormItem>
                                             )} />
                                             <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.time`} render={({ field }) => (
-                                                <FormItem><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="8:00am a 10:00am">8am-10am</SelectItem><SelectItem value="10:00am a 12:pm">10am-12pm</SelectItem><SelectItem value="1:00pm a 3:00pm">1pm-3pm</SelectItem><SelectItem value="3:00pm a 5:00pm">3pm-5pm</SelectItem></Select></FormControl></FormItem>
+                                                <FormItem>
+                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                        <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
+                                                        <SelectContent>
+                                                            <SelectItem value="8:00am a 10:00am">8am-10am</SelectItem>
+                                                            <SelectItem value="10:00am a 12:pm">10am-12pm</SelectItem>
+                                                            <SelectItem value="1:00pm a 3:00pm">1pm-3pm</SelectItem>
+                                                            <SelectItem value="3:00pm a 5:00pm">3pm-5pm</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </FormItem>
                                             )} />
                                             <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.vehicle`} render={({ field }) => (
-                                                <FormItem><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Moto" /></SelectTrigger></FormControl><SelectContent>{motoVehicles.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}</Select></FormControl></FormItem>
+                                                <FormItem>
+                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                        <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Moto" /></SelectTrigger></FormControl>
+                                                        <SelectContent>
+                                                            {motoVehicles.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </FormItem>
                                             )} />
                                             <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.instructor`} render={({ field }) => (
-                                                <FormItem><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl><SelectContent>{instructors.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}</Select></FormControl></FormItem>
+                                                <FormItem>
+                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                        <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
+                                                        <SelectContent>
+                                                            {instructors.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </FormItem>
                                             )} />
                                         </div>
                                     ))}

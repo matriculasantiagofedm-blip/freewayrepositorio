@@ -34,6 +34,7 @@
       "properties": {
         "id": { "type": "string" },
         "studentName": { "type": "string" },
+        "coursePlan": { "type": "string" },
         "date": { "type": "string", "format": "date-time" },
         "timeSlot": { "type": "string", "enum": ["8am-10am", "10am-12pm", "1pm-3pm", "3pm-5pm"] },
         "vehicle": { "type": "string" },

@@ -113,6 +113,7 @@ export interface Contract {
 export interface ManualSchedule {
   id: string;
   studentName: string;
+  coursePlan?: string;
   date: any;
   timeSlot: TimeSlot;
   vehicle: string;

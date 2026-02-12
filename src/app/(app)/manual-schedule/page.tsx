@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -31,12 +32,21 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, addDoc, serverTimestamp, deleteDoc, doc, query, orderBy, Timestamp, where, getDocs, updateDoc } from 'firebase/firestore';
 import type { ManualSchedule, VehicleName, InstructorName, Contract, TimeSlot } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CalendarIcon, PlusCircle, Trash2, CalendarClock, X, AlertTriangle, Search, UserCheck, RefreshCw, Save, Landmark, Ban, Edit2 } from 'lucide-react';
+import { Loader2, CalendarIcon, PlusCircle, Trash2, CalendarClock, X, AlertTriangle, Search, UserCheck, RefreshCw, Save, Landmark, Ban, Edit2, BookOpen } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { isPanamaHoliday } from '@/lib/holidays';
+
+const ALL_COURSE_PLANS = [
+    "Curso Auto Básico (8hrz)", "Curso Auto Plus (10hrz)", "Curso Auto Premium (12hrz)", "Reforzamiento 4hrs", "Reforzamiento Plus 2hrs", "Evaluación Estacionamiento (10 min)",
+    "Curso Moto Básico (8hrz)", "Curso Moto Plus (10hrz)", "Curso Moto Premium (12hrz)", "Moto Reforzamiento 4hrs", "Moto Reforzamiento Plus 2hrs", "Moto Evaluación Estacionamiento (10 min)",
+    "Auto + Moto 10Hrs", "Básico Auto + Moto", "Plus Auto + Moto", "Premium Auto + Moto", "Básico Moto + Auto", "Plus Moto + Auto", "Premium Moto + Auto",
+    "Deluxe Premium (12 semanas)", "Deluxe Full (16 semanas)",
+    "Ampliación 1 Letra", "Ampliación 2 Letras", "Ampliación 3 Letras", "Ampliación 4 Letras",
+    "Solo Práctica (Varios)"
+];
 
 const TIME_STRING_TO_SLOT_MAP: { [key: string]: TimeSlot } = {
     '8:00am a 10:00am': '8am-10am',
@@ -63,6 +73,7 @@ const classEntrySchema = z.object({
 
 const manualScheduleSchema = z.object({
   studentName: z.string().min(1, 'El nombre del estudiante es requerido.'),
+  coursePlan: z.string().optional(),
   classes: z.array(classEntrySchema).min(1, 'Añade al menos una clase.'),
 });
 
@@ -109,6 +120,7 @@ export default function ManualSchedulePage() {
         resolver: zodResolver(manualScheduleSchema),
         defaultValues: {
             studentName: '',
+            coursePlan: '',
             classes: [{ date: new Date(), timeSlot: '8am-10am', vehicle: '', instructor: '', classNumber: 1, classType: 'Práctica' }],
         },
     });
@@ -118,7 +130,6 @@ export default function ManualSchedulePage() {
         name: "classes"
     });
 
-    // Asegurar que las consultas solo se ejecuten si el usuario existe
     const activeContractsQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'contracts'), where('status', '==', 'active')) : null, [db, user]);
     const manualEntriesQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'manual_schedules'), orderBy('date', 'desc')) : null, [db, user]);
     
@@ -210,6 +221,7 @@ export default function ManualSchedulePage() {
         setSelectedContract(contract);
         setEditingManualEntryId(null);
         form.setValue('studentName', contract.clientName);
+        form.setValue('coursePlan', contract.type);
         const details = contract.autoMotoDetails || contract.deluxeDetails;
         const schedules = details?.practicalClassSchedules || details?.motoPracticalClassSchedules || (details as any)?.classSchedules || [];
         if (schedules.length > 0) {
@@ -232,6 +244,7 @@ export default function ManualSchedulePage() {
         setEditingManualEntryId(entry.id);
         form.reset({
             studentName: entry.studentName,
+            coursePlan: entry.coursePlan || '',
             classes: [{
                 date: toDate(entry.date),
                 timeSlot: entry.timeSlot,
@@ -260,6 +273,7 @@ export default function ManualSchedulePage() {
         setEditingManualEntryId(null);
         form.reset({
             studentName: '',
+            coursePlan: '',
             classes: [{ date: new Date(), timeSlot: '8am-10am', vehicle: '', instructor: '', classNumber: 1, classType: 'Práctica' }],
         });
     };
@@ -287,6 +301,7 @@ export default function ManualSchedulePage() {
                 const classItem = values.classes[0]; 
                 await updateDoc(entryRef, {
                     studentName: values.studentName,
+                    coursePlan: values.coursePlan,
                     ...classItem,
                     date: Timestamp.fromDate(classItem.date),
                     updatedAt: serverTimestamp(),
@@ -296,6 +311,7 @@ export default function ManualSchedulePage() {
                 const promises = values.classes.map(classItem => 
                     addDoc(collection(db, 'manual_schedules'), {
                         studentName: values.studentName,
+                        coursePlan: values.coursePlan,
                         ...classItem,
                         date: Timestamp.fromDate(classItem.date),
                         userId: user.uid,
@@ -369,13 +385,34 @@ export default function ManualSchedulePage() {
                 <CardContent>
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                            <FormField control={form.control} name="studentName" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="text-xs font-bold uppercase text-muted-foreground">Nombre del Estudiante</FormLabel>
-                                    <FormControl><Input placeholder="Nombre completo..." {...field} className="h-11 text-lg font-semibold" readOnly={!!selectedContract} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormField control={form.control} name="studentName" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-xs font-bold uppercase text-muted-foreground">Nombre del Estudiante</FormLabel>
+                                        <FormControl><Input placeholder="Nombre completo..." {...field} className="h-11 text-lg font-semibold" readOnly={!!selectedContract} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+
+                                <FormField control={form.control} name="coursePlan" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-xs font-bold uppercase text-muted-foreground">Plan de Curso</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger className="h-11">
+                                                    <SelectValue placeholder="Seleccionar plan..." />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {ALL_COURSE_PLANS.map(plan => (
+                                                    <SelectItem key={plan} value={plan}>{plan}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                            </div>
 
                             <div className="space-y-4">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground">Turnos Programados</Label>
@@ -515,6 +552,7 @@ export default function ManualSchedulePage() {
                                     <TableRow>
                                         <TableHead className="font-bold text-[10px] uppercase">Fecha</TableHead>
                                         <TableHead className="font-bold text-[10px] uppercase">Estudiante</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase">Plan</TableHead>
                                         <TableHead className="font-bold text-[10px] uppercase">Turno</TableHead>
                                         <TableHead className="font-bold text-[10px] uppercase">Vehículo</TableHead>
                                         <TableHead className="font-bold text-[10px] uppercase">Instructor</TableHead>
@@ -528,6 +566,7 @@ export default function ManualSchedulePage() {
                                         <TableRow key={entry.id}>
                                             <TableCell className="text-xs font-medium">{!isNaN(entryDate.getTime()) ? format(entryDate, 'dd/MM/yyyy') : '---'}</TableCell>
                                             <TableCell className="text-xs font-bold uppercase">{entry.studentName}</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground">{entry.coursePlan || '---'}</TableCell>
                                             <TableCell className="text-xs">{timeSlots.find(t => t.id === entry.timeSlot)?.label || entry.timeSlot}</TableCell>
                                             <TableCell className="text-xs">{entry.vehicle}</TableCell>
                                             <TableCell className="text-xs">{entry.instructor}</TableCell>

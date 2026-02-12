@@ -91,7 +91,7 @@ const autoPackages = [
     { id: 'premium', label: 'Curso Auto Premium (12hrz)', price: 180.00, hours: 12 },
     { id: 'reforzamiento-4h', label: 'Reforzamiento 4hrs', price: 98.00, hours: 4 },
     { id: 'reforzamiento-2h', label: 'Reforzamiento Plus 2hrs', price: 75.00, hours: 2 },
-    { id: 'evaluacion-estacionamiento', label: 'Ya se manejar 10 mins (Evaluacion)', price: 57.00, hours: 1 },
+    { id: 'evaluacion-estacionamiento', label: 'Ya se manejar 10 mins (Evaluacion Estacionamiento)', price: 57.00, hours: 1 },
 ];
 
 const motoPackages = [
@@ -100,7 +100,7 @@ const motoPackages = [
     { id: 'moto-premium', label: 'Curso Moto Premium (12hrz)', price: 155.00, hours: 12 },
     { id: 'moto-reforzamiento-4h', label: 'Reforzamiento 4hrs', price: 98.00, hours: 4 },
     { id: 'moto-reforzamiento-2h', label: 'Reforzamiento Plus 2hrs', price: 75.00, hours: 2 },
-    { id: 'moto-evaluacion-estacionamiento', label: 'Ya se manejar 10 mins (Evaluacion)', price: 57.00, hours: 1 },
+    { id: 'moto-evaluacion-estacionamiento', label: 'Ya se manejar 10 mins (Evaluacion Estacionamiento)', price: 57.00, hours: 1 },
 ];
 
 const mixtoPackages = [
@@ -125,6 +125,13 @@ const soloPracticaPackages = [
     { id: 'solo-basico-moto', label: 'Paquete Básico 8hrs (Moto)', price: 103.00, hours: 8, vehicleType: 'Moto' },
     { id: 'solo-plus-moto', label: 'Paquete Plus 10hrs (Moto)', price: 117.00, hours: 10, vehicleType: 'Moto' },
     { id: 'solo-premium-moto', label: 'Paquete Premium 12hrs (Moto)', price: 130.00, hours: 12, vehicleType: 'Moto' },
+];
+
+const ampliacionesPackages = [
+    { id: 'amp-1', label: 'Ampliación 1 Letra', price: 59.00 },
+    { id: 'amp-2', label: 'Ampliación 2 Letras', price: 79.00 },
+    { id: 'amp-3', label: 'Ampliación 3 Letras', price: 107.00 },
+    { id: 'amp-4', label: 'Ampliación 4 Letras', price: 135.00 },
 ];
 
 const contractSchema = z.object({
@@ -435,7 +442,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
     const plan = form.watch('coursePlan');
     if (!plan || initialContract) return;
     
-    let pkg = [...autoPackages, ...motoPackages, ...mixtoPackages, ...deluxePackages, ...soloPracticaPackages].find(p => p.id === plan);
+    let pkg = [...autoPackages, ...motoPackages, ...mixtoPackages, ...deluxePackages, ...soloPracticaPackages, ...ampliacionesPackages].find(p => p.id === plan);
     if (pkg) {
         form.setValue('courseValue', pkg.price);
         const slotsCount = Math.ceil((pkg.hours || 0) / 2);
@@ -449,6 +456,9 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
             const motoSlots = Array.from({ length: Math.floor(slotsCount / 2) }).map(() => ({ date: null, time: '8:00am a 10:00am', vehicle: '', instructor: '' }));
             replacePractical(autoSlots);
             replaceMoto(motoSlots);
+        } else if (contractType === 'Ampliaciones') {
+            replacePractical([]);
+            replaceMoto([]);
         } else {
             replacePractical(slots);
             replaceMoto([]);
@@ -617,6 +627,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                                     {contractType === 'Curso Mixto' && mixtoPackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label} - B/.{p.price}</SelectItem>)}
                                     {contractType === 'Curso Deluxe' && deluxePackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label} - B/.{p.price}</SelectItem>)}
                                     {contractType === 'Curso Solo Practica' && soloPracticaPackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label} - B/.{p.price}</SelectItem>)}
+                                    {contractType === 'Ampliaciones' && ampliacionesPackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label} - B/.{p.price}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </FormItem>

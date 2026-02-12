@@ -334,22 +334,13 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
     initialContract?.type || (searchParams.get('type') as ContractType) || 'Curso Auto', 
   [initialContract, searchParams]);
 
-  const initialTheoryDates = useMemo(() => {
-    if (initialContract) {
-        const details = initialContract.autoMotoDetails || initialContract.deluxeDetails || initialContract.ampliacionesDetails;
-        if (details?.theoreticalClassDates) return details.theoreticalClassDates.map(d => toDate(d));
-    }
-    if (contractType === 'Curso Deluxe') return Array(10).fill(null);
-    return Array(2).fill(null);
-  }, [initialContract, contractType]);
-
   const form = useForm<FormValues>({
     resolver: zodResolver(contractSchema),
     defaultValues: initialContract ? {
         ...initialContract,
         contractType: initialContract.type,
         ...(initialContract.autoMotoDetails || initialContract.deluxeDetails || initialContract.ampliacionesDetails),
-        theoreticalClassDates: initialTheoryDates
+        theoreticalClassDates: (initialContract.autoMotoDetails || initialContract.deluxeDetails || initialContract.ampliacionesDetails)?.theoreticalClassDates?.map(d => toDate(d)) || []
     } : {
         clientName: '',
         clientEmail: '',
@@ -364,7 +355,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
         paymentType: 'cash',
         vehicleTransmission: contractType === 'Curso Moto' ? 'Moto' : 'Manual',
         licenseCategory: contractType === 'Curso Moto' ? 'A, B' : 'A, C',
-        theoreticalClassDates: initialTheoryDates,
+        theoreticalClassDates: [],
         practicalClassSchedules: [],
         motoPracticalClassSchedules: [],
     },
@@ -374,6 +365,25 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
   const manualEntriesQuery = useMemoQuery(() => (db && user) ? collection(db, 'manual_schedules') : null, [db, user]);
   const { data: allContracts } = useCollection<Contract>(activeContractsQuery);
   const { data: manualEntries } = useCollection<ManualSchedule>(manualEntriesQuery);
+
+  const theoreticalClassSchedule = form.watch('theoreticalClassSchedule');
+
+  // Lógica dinámica de cantidad de clases teóricas
+  const theorySessionCount = useMemo(() => {
+    if (contractType === 'Curso Deluxe') return 10;
+    if (contractType === 'Ampliaciones') return 0;
+    if (theoreticalClassSchedule === 'Clase Semanal') return 4;
+    if (theoreticalClassSchedule === 'Clase Sabatina') return 3;
+    return 2; // Fallback
+  }, [contractType, theoreticalClassSchedule]);
+
+  useEffect(() => {
+    const currentDates = form.getValues('theoreticalClassDates') || [];
+    if (currentDates.length !== theorySessionCount) {
+        const newDates = Array.from({ length: theorySessionCount }).map((_, i) => currentDates[i] || null);
+        form.setValue('theoreticalClassDates', newDates);
+    }
+  }, [theorySessionCount, form]);
 
   const availabilityData = useMemo(() => {
     const vehicleOccupancy: Record<string, any[]> = {};
@@ -696,10 +706,10 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                     <div className="space-y-4 bg-slate-50 p-6 rounded-xl border border-dashed">
                         <div className="flex items-center gap-2 text-amber-700 font-bold mb-4">
                             <GraduationCap className="h-5 w-5" />
-                            <h3 className="text-sm uppercase tracking-wider">Fechas de Clases Teóricas</h3>
+                            <h3 className="text-sm uppercase tracking-wider">Fechas de Clases Teóricas ({theorySessionCount} sesiones)</h3>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
-                            {initialTheoryDates.map((_, index) => {
+                            {Array.from({ length: theorySessionCount }).map((_, index) => {
                                 const watchDate = form.watch(`theoreticalClassDates.${index}`);
                                 const dObj = toDate(watchDate);
                                 const holiday = !isNaN(dObj.getTime()) ? isPanamaHoliday(dObj) : null;
@@ -707,7 +717,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
 
                                 return (
                                     <div key={index} className="space-y-2 relative">
-                                        <FormLabel className="text-[10px] font-black uppercase opacity-60">Semana {index + 1}</FormLabel>
+                                        <FormLabel className="text-[10px] font-black uppercase opacity-60">Clase {index + 1}</FormLabel>
                                         <FormField control={form.control} name={`theoreticalClassDates.${index}`} render={({ field }) => (
                                             <FormItem>
                                                 <Popover modal={true}>

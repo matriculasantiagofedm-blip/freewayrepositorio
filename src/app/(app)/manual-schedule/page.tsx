@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -32,7 +31,7 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, addDoc, serverTimestamp, deleteDoc, doc, query, orderBy, Timestamp, where, getDocs, updateDoc } from 'firebase/firestore';
 import type { ManualSchedule, VehicleName, InstructorName, Contract, TimeSlot } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CalendarIcon, PlusCircle, Trash2, CalendarClock, X, AlertTriangle, Search, UserCheck, RefreshCw, Save, Landmark, Ban, Edit2, BookOpen } from 'lucide-react';
+import { Loader2, CalendarIcon, PlusCircle, Trash2, CalendarClock, X, AlertTriangle, Search, UserCheck, RefreshCw, Save, Landmark, Ban, Edit2 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -44,7 +43,6 @@ const ALL_COURSE_PLANS = [
     "Curso Moto Básico (8hrz)", "Curso Moto Plus (10hrz)", "Curso Moto Premium (12hrz)", "Moto Reforzamiento 4hrs", "Moto Reforzamiento Plus 2hrs", "Moto Evaluación Estacionamiento (10 min)",
     "Auto + Moto 10Hrs", "Básico Auto + Moto", "Plus Auto + Moto", "Premium Auto + Moto", "Básico Moto + Auto", "Plus Moto + Auto", "Premium Moto + Auto",
     "Deluxe Premium (12 semanas)", "Deluxe Full (16 semanas)",
-    "Ampliación 1 Letra", "Ampliación 2 Letras", "Ampliación 3 Letras", "Ampliación 4 Letras",
     "Solo Práctica (Varios)"
 ];
 
@@ -92,21 +90,18 @@ const timeSlots = [
 const getGlobalCapacity = (date: Date, slotId: string) => {
     const day = date.getDay(); 
     if (day === 0) return 0; 
-    
     if (slotId === '8am-10am') {
         if (day === 1) return 3;
         if (day >= 2 && day <= 5) return 2;
     }
-    
     if (day === 6 && slotId === '3pm-5pm') return 2;
-    
     return 3;
 };
 
 export default function ManualSchedulePage() {
     const db = useDb();
     const { user } = useUser();
-    const { role, isLoading: isRoleLoading } = useCurrentRole();
+    const { role } = useCurrentRole();
     const { toast } = useToast();
     
     const [isSaving, setIsSaving] = useState(false);
@@ -144,12 +139,10 @@ export default function ManualSchedulePage() {
             if (!date || !slot || !vehicle) return;
             const dObj = toDate(date);
             if (isNaN(dObj.getTime())) return;
-            
             if (editingManualEntryId && entryId === editingManualEntryId) return; 
 
             const dateKey = format(dObj, 'yyyy-MM-dd');
             const vKey = `${dateKey}|${slot}|${vehicle}`;
-            
             if (!vehicleOccupancy[vKey]) vehicleOccupancy[vKey] = [];
             vehicleOccupancy[vKey].push({ name, isEval });
         };
@@ -163,16 +156,15 @@ export default function ManualSchedulePage() {
             if (selectedContract && c.id === selectedContract.id) return;
             const details = c.autoMotoDetails || c.deluxeDetails;
             const isEval = (details?.coursePlan === 'evaluacion-estacionamiento' || details?.coursePlan === 'moto-evaluacion-estacionamiento');
-
             const processSlots = (slots: any[]) => {
                 slots.forEach(s => {
                     const slotId = TIME_STRING_TO_SLOT_MAP[s.time] || s.time;
                     processEntry(s.date, slotId, s.vehicle, c.clientName, isEval);
                 });
             };
-            processSlots(c.autoMotoDetails?.practicalClassSchedules || []);
-            processSlots(c.autoMotoDetails?.motoPracticalClassSchedules || []);
-            processSlots(c.deluxeDetails?.classSchedules || []);
+            if (c.autoMotoDetails?.practicalClassSchedules) processSlots(c.autoMotoDetails.practicalClassSchedules);
+            if (c.autoMotoDetails?.motoPracticalClassSchedules) processSlots(c.autoMotoDetails.motoPracticalClassSchedules);
+            if (c.deluxeDetails?.classSchedules) processSlots(c.deluxeDetails.classSchedules);
         });
 
         Object.keys(vehicleOccupancy).forEach(vKey => {
@@ -181,8 +173,7 @@ export default function ManualSchedulePage() {
             const students = vehicleOccupancy[vKey];
             const hasNormalClass = students.some(s => !s.isEval);
             const evalCount = students.filter(s => s.isEval).length;
-            if (hasNormalClass) globalCounts[sKey] = (globalCounts[sKey] || 0) + 1;
-            else if (evalCount > 0) globalCounts[sKey] = (globalCounts[sKey] || 0) + 1;
+            if (hasNormalClass || evalCount > 0) globalCounts[sKey] = (globalCounts[sKey] || 0) + 1;
         });
 
         return { vehicleOccupancy, globalCounts };
@@ -193,20 +184,12 @@ export default function ManualSchedulePage() {
         setIsSearching(true);
         setFoundContracts([]);
         try {
-            const contractsRef = collection(db, 'contracts');
-            const q1 = query(contractsRef, where('autoMotoDetails.studentIdNumber', '==', searchId.trim()));
-            const q2 = query(contractsRef, where('deluxeDetails.studentIdNumber', '==', searchId.trim()));
-            const q3 = query(contractsRef, where('ampliacionesDetails.studentIdNumber', '==', searchId.trim()));
-
-            const [snap1, snap2, snap3] = await Promise.all([getDocs(q1), getDocs(q2), getDocs(q3)]);
             const results: Contract[] = [];
-            [snap1, snap2, snap3].forEach(snap => {
-                snap.forEach(doc => {
-                    const data = { id: doc.id, ...doc.data() } as Contract;
-                    if (data.status === 'active' && !results.find(r => r.id === data.id)) {
-                        results.push(data);
-                    }
-                });
+            allContracts?.forEach(c => {
+                const details = c.autoMotoDetails || c.deluxeDetails;
+                if (details?.studentIdNumber === searchId.trim()) {
+                    results.push(c);
+                }
             });
             setFoundContracts(results);
             if (results.length === 0) toast({ description: 'No se encontraron contratos activos.' });
@@ -329,8 +312,6 @@ export default function ManualSchedulePage() {
         }
     };
 
-    if (isRoleLoading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>;
-
     return (
         <div className="flex flex-col gap-8 pb-20">
             <div className="flex items-center gap-3">
@@ -441,26 +422,12 @@ export default function ManualSchedulePage() {
 
                                     return (
                                         <div key={field.id} className={cn("grid grid-cols-1 md:grid-cols-6 lg:grid-cols-7 gap-3 p-4 border rounded-xl bg-slate-50/50 items-end relative", (hasConflict || isFull || holiday || isSunday) && "border-amber-500 bg-amber-50/30")}>
-                                            {isSunday && (
-                                                <div className="absolute -top-2 right-2 bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10 uppercase">
-                                                    <Ban className="h-3 w-3" /> DOMINGO: DÍA NO LABORABLE
-                                                </div>
-                                            )}
-                                            {holiday && !isSunday && (
-                                                <div className="absolute -top-2 right-2 bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10 uppercase">
-                                                    <Landmark className="h-3 w-3" /> FERIADO: {holiday.name.toUpperCase()}
-                                                </div>
-                                            )}
-                                            {hasConflict && !holiday && !isSunday && (
-                                                <div className="absolute -top-2 right-2 bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10 uppercase">
-                                                    <AlertTriangle className="h-3 w-3" /> OCUPADO POR: {conflictStudents[0]?.name.toUpperCase()}
-                                                </div>
-                                            )}
-                                            {isFull && !hasConflict && !holiday && !isSunday && (
-                                                <div className="absolute -top-2 right-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10 uppercase">
-                                                    <AlertTriangle className="h-3 w-3" /> CAPACIDAD MÁXIMA ({capacity})
-                                                </div>
-                                            )}
+                                            <div className="absolute -top-2 right-2 flex gap-1 z-10">
+                                                {isSunday && <div className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">DOMINGO</div>}
+                                                {holiday && !isSunday && <div className="bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">FERIADO</div>}
+                                                {hasConflict && !holiday && !isSunday && <div className="bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">OCUPADO</div>}
+                                                {isFull && !hasConflict && !holiday && !isSunday && <div className="bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">LLENO</div>}
+                                            </div>
 
                                             {!editingManualEntryId && (
                                                 <Button type="button" variant="ghost" size="icon" className="absolute -top-2 -left-2 h-6 w-6 rounded-full bg-white border shadow-sm text-destructive" onClick={() => remove(index)}><X className="h-3 w-3" /></Button>

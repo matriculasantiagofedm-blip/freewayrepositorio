@@ -88,6 +88,17 @@ export interface Contract {
   studentIdNumber?: string;
   clauses?: string;
   content?: string;
+  certificateFirstName?: string;
+  certificateMiddleName?: string;
+  certificateLastName?: string;
+  certificateSecondLastName?: string;
+  certificateMarriedLastName?: string;
+  certificateLicenseType?: string;
+  certificateCip?: string;
+  certificateIdType?: string;
+  isCorrection?: boolean;
+  isUpdate?: boolean;
+  isManualPrint?: boolean;
 }
 
 export interface ManualSchedule {

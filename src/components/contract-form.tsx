@@ -36,7 +36,6 @@ import {
     Car, 
     Bike, 
     Save, 
-    Clock,
     DollarSign,
     GraduationCap
 } from 'lucide-react';
@@ -231,7 +230,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
   useEffect(() => {
     const plan = form.watch('coursePlan');
     if (!plan || initialContract) return;
-    let pkg = [...autoPackages, ...motoPackages, ...mixtoPackages, ...deluxePackages, ...soloPackages].find(p => p.id === plan);
+    let pkg = [...autoPackages, ...motoPackages, ...mixtoPackages, ...deluxePackages, ...soloPracticaPackages].find(p => p.id === plan);
     if (pkg) {
         form.setValue('courseValue', pkg.price);
         const count = Math.ceil((pkg.hours || 0) / 2);
@@ -279,7 +278,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
             motoPracticalClassSchedules: motoPractical
         };
 
-        const detailField = contractType === 'Curso Deluxe' ? 'deluxeDetails' : 'autoMotoDetails';
+        const detailField = values.contractType === 'Curso Deluxe' ? 'deluxeDetails' : 'autoMotoDetails';
 
         if (initialContract) {
             await updateDoc(doc(db, 'contracts', initialContract.id), { 

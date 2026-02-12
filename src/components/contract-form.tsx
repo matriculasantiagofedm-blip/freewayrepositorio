@@ -57,7 +57,7 @@ const instructors: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Ad
 const carVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
 const motoVehicles: VehicleName[] = ['Moto Roja', 'Moto Negra'];
 const practicalTimes = ['8:00am a 10:00am', '10:00am a 12:pm', '1:00pm a 3:00pm', '3:00pm a 5:00pm'];
-const theoreticalSchedules = ['Clase Semanal', 'Clase Sabatina'];
+const theoreticalSchedules = ['Semanal (8:00 am a 10:00 am)', 'Sabatino (3:00 pm a 5:00 pm)'];
 
 const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
     '8:00am a 10:00am': '8am-10am',
@@ -372,8 +372,8 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
   const theorySessionCount = useMemo(() => {
     if (contractType === 'Curso Deluxe') return 10;
     if (contractType === 'Ampliaciones') return 0;
-    if (theoreticalClassSchedule === 'Clase Semanal') return 4;
-    if (theoreticalClassSchedule === 'Clase Sabatina') return 3;
+    if (theoreticalClassSchedule?.startsWith('Semanal')) return 4;
+    if (theoreticalClassSchedule?.startsWith('Sabatino')) return 3;
     return 2; // Fallback
   }, [contractType, theoreticalClassSchedule]);
 

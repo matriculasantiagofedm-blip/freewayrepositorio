@@ -293,6 +293,14 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
     }
   }
 
+  // Lógica para filtrar categorías por tipo de contrato
+  const categoriesToShow = useMemo(() => {
+    if (contractType === 'Curso Auto') return ['A', 'C', 'D'];
+    if (contractType === 'Curso Moto') return ['A', 'B'];
+    if (contractType === 'Curso Mixto') return ['A', 'B', 'C', 'D'];
+    return ALL_CATEGORIES;
+  }, [contractType]);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-5xl mx-auto pb-20">
@@ -475,7 +483,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                         <div className="space-y-3">
                             <FormLabel className="text-xs font-bold uppercase">Categorías a Aplicar</FormLabel>
                             <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-                                {ALL_CATEGORIES.map(cat => {
+                                {categoriesToShow.map(cat => {
                                     const isSelected = form.watch('licenseCategory')?.includes(cat);
                                     return (
                                         <Button key={cat} type="button" variant={isSelected ? "default" : "outline"} className={cn("h-10 font-bold text-xs", isSelected && "bg-primary text-white")} onClick={() => {

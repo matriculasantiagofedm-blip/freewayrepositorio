@@ -46,13 +46,11 @@ import type { Contract, ContractType, InstructorName, VehicleName } from '@/lib/
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useDb, useUser } from './firebase-provider';
 
-const instructors: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', ''];
+// Lista de instructores corregida (sin cadenas vacías)
+const instructors: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon'];
 const carVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
 const motoVehicles: VehicleName[] = ['Moto Roja', 'Moto Negra'];
 const theoreticalSchedules = ['Semanal (8:00 am a 10:00 am)', 'Sabatino (3:00 pm a 5:00 pm)'];
-
-const ALL_CATEGORIES = ['A', 'B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];
-const AMPLIACION_CATEGORIES = ['B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];
 
 const autoPackages = [
     { id: 'basico', label: 'Curso Auto Básico (8hrz)', price: 133.00, hours: 8 },
@@ -293,12 +291,11 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
     }
   }
 
-  // Lógica para filtrar categorías por tipo de contrato
   const categoriesToShow = useMemo(() => {
     if (contractType === 'Curso Auto') return ['A', 'C', 'D'];
     if (contractType === 'Curso Moto') return ['A', 'B'];
     if (contractType === 'Curso Mixto') return ['A', 'B', 'C', 'D'];
-    return ALL_CATEGORIES;
+    return ['B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];
   }, [contractType]);
 
   return (
@@ -409,7 +406,6 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
             </CardContent>
         </Card>
 
-        {/* SECCIÓN EXCLUSIVA PARA AMPLIACIONES */}
         {contractType === 'Ampliaciones' && (
             <Card className="border-t-4 border-t-amber-500 shadow-md">
                 <CardHeader className="bg-amber-50/30 border-b">
@@ -422,7 +418,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                     <div className="space-y-3">
                         <FormLabel className="text-xs font-bold uppercase text-amber-700">Categoría Licencia (Ampliación)</FormLabel>
                         <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-                            {AMPLIACION_CATEGORIES.map(cat => {
+                            {categoriesToShow.map(cat => {
                                 const isSelected = form.watch('licenseCategory') === cat;
                                 return (
                                     <Button key={cat} type="button" variant={isSelected ? "default" : "outline"} className={cn("h-10 font-bold text-xs", isSelected && "bg-primary text-white")} onClick={() => form.setValue('licenseCategory', cat)}>{cat}</Button>
@@ -456,7 +452,6 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
             </Card>
         )}
 
-        {/* SECCIÓN DE PROGRAMACIÓN PARA CURSOS REGULARES */}
         {contractType !== 'Ampliaciones' && (
             <Card className="border-t-4 border-t-primary shadow-md">
                 <CardHeader className="bg-slate-50 border-b">
@@ -580,7 +575,6 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                                 </div>
                             ))}
                             
-                            {/* Sesiones de Moto para Mixto/Moto */}
                             {(contractType === 'Curso Mixto' || contractType === 'Curso Moto') && (
                                 <div className="space-y-4 pt-4 border-t border-dashed mt-4">
                                     <h4 className="text-xs font-bold uppercase text-muted-foreground">Sesiones de Motocicleta</h4>

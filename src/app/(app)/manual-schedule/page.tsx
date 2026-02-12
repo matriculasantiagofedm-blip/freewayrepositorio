@@ -31,12 +31,11 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, addDoc, serverTimestamp, deleteDoc, doc, query, orderBy, Timestamp, where, getDocs, updateDoc } from 'firebase/firestore';
 import type { ManualSchedule, VehicleName, InstructorName, Contract, TimeSlot } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CalendarIcon, PlusCircle, Trash2, CalendarClock, X, AlertTriangle, Search, UserCheck, RefreshCw, Save, Landmark, Ban } from 'lucide-react';
+import { Loader2, CalendarIcon, PlusCircle, Trash2, CalendarClock, X, AlertTriangle, Search, UserCheck, RefreshCw, Save, Landmark, Ban, Edit2 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useCurrentRole } from '@/hooks/use-current-role';
-import Link from 'next/link';
 import { isPanamaHoliday } from '@/lib/holidays';
 
 const TIME_STRING_TO_SLOT_MAP: { [key: string]: TimeSlot } = {
@@ -80,8 +79,8 @@ const timeSlots = [
 ];
 
 const getGlobalCapacity = (date: Date, slotId: string) => {
-    const day = date.getDay(); // 0: Dom, 1: Lun, 2: Mar, 3: Mie, 4: Jue, 5: Vie, 6: Sab
-    if (day === 0) return 0; // Domingo capacidad 0
+    const day = date.getDay(); 
+    if (day === 0) return 0; 
     
     if (slotId === '8am-10am') {
         if (day === 1) return 3;
@@ -104,6 +103,7 @@ export default function ManualSchedulePage() {
     const [searchId, setSearchId] = useState('');
     const [foundContracts, setFoundContracts] = useState<Contract[]>([]);
     const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+    const [editingManualEntryId, setEditingManualEntryId] = useState<string | null>(null);
 
     const form = useForm<FormValues>({
         resolver: zodResolver(manualScheduleSchema),
@@ -119,7 +119,7 @@ export default function ManualSchedulePage() {
     });
 
     const activeContractsQuery = useMemoQuery(() => db ? query(collection(db, 'contracts'), where('status', '==', 'active')) : null, [db]);
-    const manualEntriesQuery = useMemoQuery(() => db ? collection(db, 'manual_schedules') : null, [db]);
+    const manualEntriesQuery = useMemoQuery(() => db ? query(collection(db, 'manual_schedules'), orderBy('date', 'desc')) : null, [db]);
     
     const { data: allContracts } = useCollection<Contract>(activeContractsQuery);
     const { data: allManualEntries, isLoading: isLoadingEntries } = useCollection<ManualSchedule>(manualEntriesQuery);
@@ -128,8 +128,10 @@ export default function ManualSchedulePage() {
         const vehicleOccupancy: Record<string, { name: string, isEval: boolean }[]> = {};
         const globalCounts: Record<string, number> = {};
         
-        const processEntry = (date: any, slot: string, vehicle: string, name: string, isEval: boolean) => {
+        const processEntry = (date: any, slot: string, vehicle: string, name: string, isEval: boolean, entryId?: string) => {
             if (!date || !slot || !vehicle) return;
+            if (editingManualEntryId && entryId === editingManualEntryId) return; // Ignorar el que se está editando
+
             const dateKey = format(toDate(date), 'yyyy-MM-dd');
             const vKey = `${dateKey}|${slot}|${vehicle}`;
             
@@ -139,7 +141,7 @@ export default function ManualSchedulePage() {
 
         allManualEntries?.forEach(entry => {
             if (entry.classType === 'Teórica') return;
-            processEntry(entry.date, entry.timeSlot, entry.vehicle, entry.studentName, false);
+            processEntry(entry.date, entry.timeSlot, entry.vehicle, entry.studentName, false, entry.id);
         });
 
         allContracts?.forEach(c => {
@@ -169,7 +171,7 @@ export default function ManualSchedulePage() {
         });
 
         return { vehicleOccupancy, globalCounts };
-    }, [allContracts, allManualEntries, selectedContract]);
+    }, [allContracts, allManualEntries, selectedContract, editingManualEntryId]);
 
     const handleSearch = async () => {
         if (!db || !searchId.trim()) return;
@@ -202,6 +204,7 @@ export default function ManualSchedulePage() {
 
     const loadContractSchedule = (contract: Contract) => {
         setSelectedContract(contract);
+        setEditingManualEntryId(null);
         form.setValue('studentName', contract.clientName);
         const details = contract.autoMotoDetails || contract.deluxeDetails;
         const schedules = details?.practicalClassSchedules || details?.motoPracticalClassSchedules || (details as any)?.classSchedules || [];
@@ -220,8 +223,37 @@ export default function ManualSchedulePage() {
         }
     };
 
+    const loadManualEntryForEdit = (entry: ManualSchedule) => {
+        setSelectedContract(null);
+        setEditingManualEntryId(entry.id);
+        form.reset({
+            studentName: entry.studentName,
+            classes: [{
+                date: toDate(entry.date),
+                timeSlot: entry.timeSlot,
+                vehicle: entry.vehicle,
+                instructor: entry.instructor,
+                classNumber: entry.classNumber,
+                classType: entry.classType,
+            }]
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleDeleteManualEntry = async (id: string) => {
+        if (!db) return;
+        if (!confirm('¿Estás seguro de eliminar este registro manual?')) return;
+        try {
+            await deleteDoc(doc(db, 'manual_schedules', id));
+            toast({ title: 'Registro eliminado' });
+        } catch (e) {
+            toast({ variant: 'destructive', title: 'Error al eliminar' });
+        }
+    };
+
     const resetSelection = () => {
         setSelectedContract(null);
+        setEditingManualEntryId(null);
         form.reset({
             studentName: '',
             classes: [{ date: new Date(), timeSlot: '8am-10am', vehicle: '', instructor: '', classNumber: 1, classType: 'Práctica' }],
@@ -246,6 +278,16 @@ export default function ManualSchedulePage() {
                 else updateData['autoMotoDetails.practicalClassSchedules'] = mappedSchedules;
                 await updateDoc(contractRef, updateData);
                 toast({ title: 'Contrato Actualizado' });
+            } else if (editingManualEntryId) {
+                const entryRef = doc(db, 'manual_schedules', editingManualEntryId);
+                const classItem = values.classes[0]; // Solo permitimos editar de a uno en este modo
+                await updateDoc(entryRef, {
+                    studentName: values.studentName,
+                    ...classItem,
+                    date: Timestamp.fromDate(classItem.date),
+                    updatedAt: serverTimestamp(),
+                });
+                toast({ title: 'Registro Actualizado' });
             } else {
                 const promises = values.classes.map(classItem => 
                     addDoc(collection(db, 'manual_schedules'), {
@@ -270,7 +312,7 @@ export default function ManualSchedulePage() {
     if (isRoleLoading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>;
 
     return (
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-8 pb-20">
             <div className="flex items-center gap-3">
                 <CalendarClock className="h-8 w-8 text-primary" />
                 <div>
@@ -298,9 +340,9 @@ export default function ManualSchedulePage() {
                             {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                             Buscar
                         </Button>
-                        {selectedContract && (
+                        {(selectedContract || editingManualEntryId) && (
                             <Button variant="outline" onClick={resetSelection} className="bg-white">
-                                <RefreshCw className="h-4 w-4 mr-2" /> Limpiar Selección
+                                <RefreshCw className="h-4 w-4 mr-2" /> Cancelar Edición
                             </Button>
                         )}
                     </div>
@@ -315,7 +357,10 @@ export default function ManualSchedulePage() {
 
             <Card className="shadow-md">
                 <CardHeader>
-                    <CardTitle>{selectedContract ? 'Modificar Agenda de Contrato' : 'Nueva Asignación Manual'}</CardTitle>
+                    <CardTitle>
+                        {selectedContract ? 'Modificar Agenda de Contrato' : 
+                         editingManualEntryId ? 'Editar Registro Manual' : 'Nueva Asignación Manual'}
+                    </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Form {...form}>
@@ -373,7 +418,9 @@ export default function ManualSchedulePage() {
                                                 </div>
                                             )}
 
-                                            <Button type="button" variant="ghost" size="icon" className="absolute -top-2 -left-2 h-6 w-6 rounded-full bg-white border shadow-sm text-destructive" onClick={() => remove(index)}><X className="h-3 w-3" /></Button>
+                                            {!editingManualEntryId && (
+                                                <Button type="button" variant="ghost" size="icon" className="absolute -top-2 -left-2 h-6 w-6 rounded-full bg-white border shadow-sm text-destructive" onClick={() => remove(index)}><X className="h-3 w-3" /></Button>
+                                            )}
                                             
                                             <FormField control={form.control} name={`classes.${index}.date`} render={({ field }) => (
                                                 <FormItem>
@@ -381,7 +428,7 @@ export default function ManualSchedulePage() {
                                                         <PopoverTrigger asChild>
                                                             <FormControl><Button variant="outline" className={cn("w-full h-9 text-xs", (holiday || isSunday) && "border-amber-400")}>{field.value ? format(field.value, "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-3 w-3 opacity-50" /></Button></FormControl>
                                                         </PopoverTrigger>
-                                                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                                                        <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
                                                     </Popover>
                                                 </FormItem>
                                             )} />
@@ -431,16 +478,64 @@ export default function ManualSchedulePage() {
                             </div>
 
                             <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                                <Button type="button" variant="outline" onClick={() => append({ date: new Date(), timeSlot: '8am-10am', vehicle: '', instructor: '', classNumber: fields.length + 1, classType: 'Práctica' })} className="h-11 px-6 border-dashed border-2">
-                                    <PlusCircle className="mr-2 h-4 w-4" /> Añadir Clase
-                                </Button>
+                                {!editingManualEntryId && (
+                                    <Button type="button" variant="outline" onClick={() => append({ date: new Date(), timeSlot: '8am-10am', vehicle: '', instructor: '', classNumber: fields.length + 1, classType: 'Práctica' })} className="h-11 px-6 border-dashed border-2">
+                                        <PlusCircle className="mr-2 h-4 w-4" /> Añadir Clase
+                                    </Button>
+                                )}
                                 <Button type="submit" disabled={isSaving} className="h-11 px-8 font-bold flex-1 sm:flex-none">
                                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                    {selectedContract ? 'Actualizar Agenda' : 'Guardar Manual'}
+                                    {selectedContract ? 'Actualizar Agenda' : editingManualEntryId ? 'Actualizar Registro' : 'Guardar Manual'}
                                 </Button>
                             </div>
                         </form>
                     </Form>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Historial de Asignaciones Manuales</CardTitle>
+                    <CardDescription>Consulta y edita los turnos asignados de forma manual.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {isLoadingEntries ? (
+                        <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin opacity-20" /></div>
+                    ) : allManualEntries && allManualEntries.length > 0 ? (
+                        <div className="border rounded-lg overflow-hidden">
+                            <Table>
+                                <TableHeader className="bg-slate-50">
+                                    <TableRow>
+                                        <TableHead className="font-bold text-[10px] uppercase">Fecha</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase">Estudiante</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase">Turno</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase">Vehículo</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase">Instructor</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase text-right">Acciones</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {allManualEntries.map(entry => (
+                                        <TableRow key={entry.id}>
+                                            <TableCell className="text-xs font-medium">{format(toDate(entry.date), 'dd/MM/yyyy')}</TableCell>
+                                            <TableCell className="text-xs font-bold uppercase">{entry.studentName}</TableCell>
+                                            <TableCell className="text-xs">{timeSlots.find(t => t.id === entry.timeSlot)?.label || entry.timeSlot}</TableCell>
+                                            <TableCell className="text-xs">{entry.vehicle}</TableCell>
+                                            <TableCell className="text-xs">{entry.instructor}</TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex justify-end gap-1">
+                                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-blue-600" onClick={() => loadManualEntryForEdit(entry)}><Edit2 className="h-4 w-4" /></Button>
+                                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => handleDeleteManualEntry(entry.id)}><Trash2 className="h-4 w-4" /></Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    ) : (
+                        <div className="text-center py-12 text-muted-foreground italic">No hay registros manuales previos.</div>
+                    )}
                 </CardContent>
             </Card>
         </div>

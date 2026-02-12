@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -36,7 +37,7 @@ export default function EditContractPage() {
     );
   }
 
-  // RESTRICCIÓN DE SEGURIDAD: Solo Administrador puede ver esta página
+  // Permisos: Administrador tiene acceso total a edición
   if (role !== 'Administrador') {
     return (
       <div className="p-12 text-center border-2 border-dashed rounded-lg max-w-2xl mx-auto mt-12">

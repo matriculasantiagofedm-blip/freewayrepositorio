@@ -37,13 +37,18 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: TimeSlot } = {
 };
 
 const getGlobalCapacity = (date: Date, slotId: string) => {
-    const day = date.getDay(); // 0: Dom
-    if (day === 0) return 0;
+    const day = date.getDay(); // 0: Dom, 1: Lun, 2: Mar, 3: Mie, 4: Jue, 5: Vie, 6: Sab
+    if (day === 0) return 0; // Domingo capacidad 0
+    
+    // Lógica: 8-10am -> Lunes 3, Martes-Viernes 2.
     if (slotId === '8am-10am') {
         if (day === 1) return 3;
         if (day >= 2 && day <= 5) return 2;
     }
+    
+    // Sábados 3-5pm -> 2 vehículos
     if (day === 6 && slotId === '3pm-5pm') return 2;
+    
     return 3;
 };
 
@@ -60,10 +65,18 @@ export default function VehicleScheduleReportPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [weeklyAssignments, setWeeklyAssignments] = useState<Map<string, any[]>>(new Map());
 
-  const contractsQuery = useMemoQuery(() => db ? query(collection(db, 'contracts'), where('status', '==', 'active')) : null, [db]);
-  const manualEntriesQuery = useMemoQuery(() => db ? collection(db, 'manual_schedules') : null, [db]);
-  const { data: contracts } = useCollection<Contract>(contractsQuery);
-  const { data: manualEntries } = useCollection<ManualSchedule>(manualEntriesQuery);
+  const contractsQuery = useMemoQuery(() => {
+    if (!db) return null;
+    return query(collection(db, 'contracts'), where('status', '==', 'active'));
+  }, [db]);
+
+  const manualEntriesQuery = useMemoQuery(() => {
+    if (!db) return null;
+    return collection(db, 'manual_schedules');
+  }, [db]);
+
+  const { data: contracts, isLoading: isLoadingContracts } = useCollection<Contract>(contractsQuery);
+  const { data: manualEntries, isLoading: isLoadingManual } = useCollection<ManualSchedule>(manualEntriesQuery);
 
   const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
   const days = Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
@@ -86,10 +99,23 @@ export default function VehicleScheduleReportPage() {
     contracts?.forEach(c => {
         const d = c.autoMotoDetails || c.deluxeDetails;
         const isEval = (d?.coursePlan === 'evaluacion-estacionamiento' || d?.coursePlan === 'moto-evaluacion-estacionamiento');
-        const proc = (arr: any[]) => arr.forEach((s, i) => add(c.clientName, s.date, TIME_STRING_TO_SLOT_MAP[s.time] || s.time, s.vehicle, s.instructor, isEval, i + 1));
-        proc(c.autoMotoDetails?.practicalClassSchedules || []); proc(c.autoMotoDetails?.motoPracticalClassSchedules || []); proc(c.deluxeDetails?.classSchedules || []);
+        
+        const proc = (arr: any[]) => arr.forEach((s, i) => {
+            const slotId = TIME_STRING_TO_SLOT_MAP[s.time] || s.time;
+            add(c.clientName, s.date, slotId, s.vehicle, s.instructor, isEval, i + 1);
+        });
+
+        if (c.autoMotoDetails?.practicalClassSchedules) proc(c.autoMotoDetails.practicalClassSchedules);
+        if (c.autoMotoDetails?.motoPracticalClassSchedules) proc(c.autoMotoDetails.motoPracticalClassSchedules);
+        if (c.deluxeDetails?.classSchedules) proc(c.deluxeDetails.classSchedules);
     });
-    manualEntries?.forEach(e => { if (e.classType === 'Práctica') add(e.studentName, e.date, e.timeSlot, e.vehicle, e.instructor, false, e.classNumber); });
+
+    manualEntries?.forEach(e => {
+        if (e.classType === 'Práctica') {
+            add(e.studentName, e.date, e.timeSlot, e.vehicle, e.instructor, false, e.classNumber);
+        }
+    });
+
     setWeeklyAssignments(newWeeklyAssignments);
   }, [contracts, manualEntries, weekStart, currentDate]);
 
@@ -132,7 +158,11 @@ export default function VehicleScheduleReportPage() {
                         const holiday = isPanamaHoliday(day);
                         const isSunday = day.getDay() === 0;
                         const assignments = weeklyAssignments.get(dateKey)?.filter(a => a.slot === slot.id) || [];
+                        
+                        // Lógica de capacidad global por slot (excluyendo evaluaciones agrupadas)
                         const cap = getGlobalCapacity(day, slot.id);
+                        
+                        // Contar vehículos únicos (Evaluaciones grupales cuentan como 1 vehículo)
                         const count = new Set(assignments.map(a => a.vehicle)).size;
 
                         return (
@@ -147,8 +177,11 @@ export default function VehicleScheduleReportPage() {
                             <div className="flex flex-col gap-1.5 h-full pt-5">
                                 {assignments.map((a, i) => (
                                     <div key={i} className={cn("p-2 rounded border text-[10px] shadow-sm leading-tight", a.isEval ? "bg-purple-50 border-purple-200" : (vehicleColors[a.vehicle] || 'bg-gray-100 border-gray-200'))}>
-                                        <p className="truncate font-black uppercase mb-1">{a.name}</p>
-                                        <div className="flex justify-between font-bold text-[9px] opacity-80">
+                                        <p className="truncate font-black uppercase mb-0.5">{a.name}</p>
+                                        <p className="truncate text-[8px] font-bold text-muted-foreground uppercase mb-1 flex items-center gap-1">
+                                            <User className="h-2.5 w-2.5" /> {a.instructor || 'SIN ASIGNAR'}
+                                        </p>
+                                        <div className="flex justify-between font-bold text-[9px] opacity-80 border-t border-black/10 pt-1 mt-1">
                                             <span>{a.vehicle}</span>
                                             <span>{a.isEval ? '10m' : `#${a.num}`}</span>
                                         </div>

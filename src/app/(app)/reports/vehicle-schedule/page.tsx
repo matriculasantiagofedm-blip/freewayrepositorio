@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { collection, query, where } from 'firebase/firestore';
-import { useDb } from '@/components/firebase-provider';
+import { useDb, useUser } from '@/components/firebase-provider';
 import type { Contract, TimeSlot, ManualSchedule } from '@/lib/types';
 import {
   Table,
@@ -62,18 +62,19 @@ const vehicleColors: Record<string, string> = {
 
 export default function VehicleScheduleReportPage() {
   const db = useDb();
+  const { user } = useUser();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [weeklyAssignments, setWeeklyAssignments] = useState<Map<string, any[]>>(new Map());
 
   const contractsQuery = useMemoQuery(() => {
-    if (!db) return null;
+    if (!db || !user) return null;
     return query(collection(db, 'contracts'), where('status', '==', 'active'));
-  }, [db]);
+  }, [db, user]);
 
   const manualEntriesQuery = useMemoQuery(() => {
-    if (!db) return null;
+    if (!db || !user) return null;
     return collection(db, 'manual_schedules');
-  }, [db]);
+  }, [db, user]);
 
   const { data: contracts, isLoading: isLoadingContracts } = useCollection<Contract>(contractsQuery);
   const { data: manualEntries, isLoading: isLoadingManual } = useCollection<ManualSchedule>(manualEntriesQuery);
@@ -159,10 +160,7 @@ export default function VehicleScheduleReportPage() {
                         const isSunday = day.getDay() === 0;
                         const assignments = weeklyAssignments.get(dateKey)?.filter(a => a.slot === slot.id) || [];
                         
-                        // Lógica de capacidad global por slot (excluyendo evaluaciones agrupadas)
                         const cap = getGlobalCapacity(day, slot.id);
-                        
-                        // Contar vehículos únicos (Evaluaciones grupales cuentan como 1 vehículo)
                         const count = new Set(assignments.map(a => a.vehicle)).size;
 
                         return (

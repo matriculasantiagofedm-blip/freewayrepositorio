@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { collection, query, where } from 'firebase/firestore';
-import { useDb } from '@/components/firebase-provider';
+import { useDb, useUser } from '@/components/firebase-provider';
 import type { Contract, ManualSchedule } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Loader2, ChevronLeft, ChevronRight, GraduationCap, BookOpen, Landmark, Ban } from 'lucide-react';
@@ -23,18 +23,19 @@ interface TheoryAssignment {
 
 export default function TheoryScheduleReportPage() {
   const db = useDb();
+  const { user } = useUser();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [weeklyAssignments, setWeeklyAssignments] = useState<Map<string, TheoryAssignment[]>>(new Map());
 
   const contractsQuery = useMemoQuery(() => {
-    if (!db) return null;
+    if (!db || !user) return null;
     return query(collection(db, 'contracts'), where('status', '==', 'active'));
-  }, [db]);
+  }, [db, user]);
 
   const manualEntriesQuery = useMemoQuery(() => {
-    if (!db) return null;
+    if (!db || !user) return null;
     return collection(db, 'manual_schedules');
-  }, [db]);
+  }, [db, user]);
 
   const { data: contracts, isLoading: isLoadingContracts } = useCollection<Contract>(contractsQuery);
   const { data: manualEntries, isLoading: isLoadingManual } = useCollection<ManualSchedule>(manualEntriesQuery);

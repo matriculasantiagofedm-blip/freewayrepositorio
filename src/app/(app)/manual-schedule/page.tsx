@@ -118,8 +118,9 @@ export default function ManualSchedulePage() {
         name: "classes"
     });
 
-    const activeContractsQuery = useMemoQuery(() => db ? query(collection(db, 'contracts'), where('status', '==', 'active')) : null, [db]);
-    const manualEntriesQuery = useMemoQuery(() => db ? query(collection(db, 'manual_schedules'), orderBy('date', 'desc')) : null, [db]);
+    // Asegurar que las consultas solo se ejecuten si el usuario existe
+    const activeContractsQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'contracts'), where('status', '==', 'active')) : null, [db, user]);
+    const manualEntriesQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'manual_schedules'), orderBy('date', 'desc')) : null, [db, user]);
     
     const { data: allContracts } = useCollection<Contract>(activeContractsQuery);
     const { data: allManualEntries, isLoading: isLoadingEntries } = useCollection<ManualSchedule>(manualEntriesQuery);
@@ -130,7 +131,7 @@ export default function ManualSchedulePage() {
         
         const processEntry = (date: any, slot: string, vehicle: string, name: string, isEval: boolean, entryId?: string) => {
             if (!date || !slot || !vehicle) return;
-            if (editingManualEntryId && entryId === editingManualEntryId) return; // Ignorar el que se está editando
+            if (editingManualEntryId && entryId === editingManualEntryId) return; 
 
             const dateKey = format(toDate(date), 'yyyy-MM-dd');
             const vKey = `${dateKey}|${slot}|${vehicle}`;
@@ -280,7 +281,7 @@ export default function ManualSchedulePage() {
                 toast({ title: 'Contrato Actualizado' });
             } else if (editingManualEntryId) {
                 const entryRef = doc(db, 'manual_schedules', editingManualEntryId);
-                const classItem = values.classes[0]; // Solo permitimos editar de a uno en este modo
+                const classItem = values.classes[0]; 
                 await updateDoc(entryRef, {
                     studentName: values.studentName,
                     ...classItem,

@@ -12,6 +12,9 @@ import { FirestorePermissionError } from '@/firebase/errors';
 
 export type WithId<T> = T & { id: string };
 
+/**
+ * Hook para suscribirse a un documento de Firestore en tiempo real.
+ */
 export function useDoc<T>(ref: DocumentReference<DocumentData> | null | undefined) {
   const [data, setData] = useState<WithId<T> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,6 +60,9 @@ export function useDoc<T>(ref: DocumentReference<DocumentData> | null | undefine
   return { data, isLoading, error };
 }
 
+/**
+ * Hook para suscribirse a una colección o query de Firestore en tiempo real.
+ */
 export function useCollection<T>(q: Query<DocumentData> | CollectionReference<DocumentData> | null | undefined) {
   const [data, setData] = useState<WithId<T>[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -82,10 +88,22 @@ export function useCollection<T>(q: Query<DocumentData> | CollectionReference<Do
         setError(null);
       },
       (err) => {
-        // Reportar error solo si no es una cancelación normal
         if (err.code === 'permission-denied') {
+          // Extraer la ruta de forma segura para el reporte de error contextual
+          let path = 'unknown_collection';
+          if ('path' in q) {
+            path = (q as CollectionReference).path;
+          } else if ('_query' in q) {
+            // Intento de extraer de query interna si es posible
+            try {
+              path = (q as any)._query.path.canonicalString();
+            } catch {
+              path = 'query_collection';
+            }
+          }
+
           const permissionError = new FirestorePermissionError({
-            path: 'contracts_collection',
+            path: path,
             operation: 'list',
           });
           errorEmitter.emit('permission-error', permissionError);

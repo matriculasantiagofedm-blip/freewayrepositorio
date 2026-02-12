@@ -212,7 +212,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
     return ['B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];
   }, [contractType]);
 
-  async function onSubmit(values: FormValues) {
+  const onSubmit = async (values: FormValues) => {
     if (!db || !user) return;
     setIsSubmitting(true);
     try {
@@ -295,7 +295,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
     } finally { 
         setIsSubmitting(false); 
     }
-  }
+  };
 
   return (
     <Form {...form}>

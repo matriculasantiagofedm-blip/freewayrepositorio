@@ -184,7 +184,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
   useEffect(() => {
     const plan = form.watch('coursePlan');
     if (!plan || initialContract) return;
-    let pkg = [...autoPackages, ...motoPackages, ...mixtoPackages, ...deluxePackages, ...soloPracticaPackages, ...ampliacionesPackages].find(p => p.id === plan);
+    const pkg = [...autoPackages, ...motoPackages, ...mixtoPackages, ...deluxePackages, ...soloPracticaPackages, ...ampliacionesPackages].find(p => p.id === plan);
     if (pkg) {
         form.setValue('courseValue', pkg.price);
         if (contractType !== 'Ampliaciones') {
@@ -513,7 +513,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                             {Array.from({ length: theorySessionCount }).map((_, index) => (
                                 <FormField key={index} control={form.control} name={`theoreticalClassDates.${index}`} render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-[10px] uppercase opacity-50">Sesión {index + 1}</FormLabel>
+                                        <FormLabel className="text-[10px] uppercase opacity-50 font-bold">Sesión {index + 1}</FormLabel>
                                         <Popover modal={true}>
                                             <PopoverTrigger asChild>
                                                 <FormControl><Button variant="outline" className="h-10 text-xs w-full bg-white">{field.value ? format(toDate(field.value), "dd/MM") : `Fecha`}</Button></FormControl>

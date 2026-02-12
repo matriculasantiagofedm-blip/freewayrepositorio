@@ -219,7 +219,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
             studentIdNumber: values.studentIdNumber,
             studentAddress: values.studentAddress,
             studentPhone1: values.studentPhone1,
-            studentPhone2: values.studentPhone2,
+            studentPhone2: values.studentPhone2 || '',
             coursePlan: values.coursePlan,
             courseValue: values.courseValue,
             downPayment: values.downPayment,

@@ -31,7 +31,7 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, addDoc, serverTimestamp, deleteDoc, doc, query, orderBy, Timestamp, where, getDocs, updateDoc } from 'firebase/firestore';
 import type { ManualSchedule, VehicleName, InstructorName, Contract, TimeSlot } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CalendarIcon, PlusCircle, Trash2, CalendarClock, X, AlertTriangle, Search, UserCheck, RefreshCw, Save, Landmark } from 'lucide-react';
+import { Loader2, CalendarIcon, PlusCircle, Trash2, CalendarClock, X, AlertTriangle, Search, UserCheck, RefreshCw, Save, Landmark, Ban } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -81,17 +81,16 @@ const timeSlots = [
 
 const getGlobalCapacity = (date: Date, slotId: string) => {
     const day = date.getDay(); // 0: Dom, 1: Lun, 2: Mar, 3: Mie, 4: Jue, 5: Vie, 6: Sab
+    if (day === 0) return 0; // Domingo capacidad 0
     
-    // Regla 8am-10am: Lunes 3, Martes-Viernes 2
     if (slotId === '8am-10am') {
         if (day === 1) return 3;
         if (day >= 2 && day <= 5) return 2;
     }
     
-    // Regla Sabatino tarde: 2 vehiculos
     if (day === 6 && slotId === '3pm-5pm') return 2;
     
-    return 3; // Estándar
+    return 3;
 };
 
 export default function ManualSchedulePage() {
@@ -126,36 +125,47 @@ export default function ManualSchedulePage() {
     const { data: allManualEntries, isLoading: isLoadingEntries } = useCollection<ManualSchedule>(manualEntriesQuery);
 
     const availabilityData = useMemo(() => {
-        const vehicleOccupancy: Record<string, string> = {};
+        const vehicleOccupancy: Record<string, { name: string, isEval: boolean }[]> = {};
         const globalCounts: Record<string, number> = {};
         
-        const processEntry = (date: any, slot: string, vehicle: string, name: string, entryId?: string) => {
+        const processEntry = (date: any, slot: string, vehicle: string, name: string, isEval: boolean) => {
             if (!date || !slot || !vehicle) return;
-            if (selectedContract && entryId === selectedContract.id) return;
-
             const dateKey = format(toDate(date), 'yyyy-MM-dd');
             const vKey = `${dateKey}|${slot}|${vehicle}`;
-            const sKey = `${dateKey}|${slot}`;
             
-            vehicleOccupancy[vKey] = name;
-            globalCounts[sKey] = (globalCounts[sKey] || 0) + 1;
+            if (!vehicleOccupancy[vKey]) vehicleOccupancy[vKey] = [];
+            vehicleOccupancy[vKey].push({ name, isEval });
         };
 
         allManualEntries?.forEach(entry => {
             if (entry.classType === 'Teórica') return;
-            processEntry(entry.date, entry.timeSlot, entry.vehicle, entry.studentName);
+            processEntry(entry.date, entry.timeSlot, entry.vehicle, entry.studentName, false);
         });
 
         allContracts?.forEach(c => {
+            if (selectedContract && c.id === selectedContract.id) return;
+            const details = c.autoMotoDetails || c.deluxeDetails;
+            const isEval = (details?.coursePlan === 'evaluacion-estacionamiento' || details?.coursePlan === 'moto-evaluacion-estacionamiento');
+
             const processSlots = (slots: any[]) => {
                 slots.forEach(s => {
                     const slotId = TIME_STRING_TO_SLOT_MAP[s.time] || s.time;
-                    processEntry(s.date, slotId, s.vehicle, c.clientName, c.id);
+                    processEntry(s.date, slotId, s.vehicle, c.clientName, isEval);
                 });
             };
             processSlots(c.autoMotoDetails?.practicalClassSchedules || []);
             processSlots(c.autoMotoDetails?.motoPracticalClassSchedules || []);
             processSlots(c.deluxeDetails?.classSchedules || []);
+        });
+
+        Object.keys(vehicleOccupancy).forEach(vKey => {
+            const [dateKey, slotId] = vKey.split('|');
+            const sKey = `${dateKey}|${slotId}`;
+            const students = vehicleOccupancy[vKey];
+            const hasNormalClass = students.some(s => !s.isEval);
+            const evalCount = students.filter(s => s.isEval).length;
+            if (hasNormalClass) globalCounts[sKey] = (globalCounts[sKey] || 0) + 1;
+            else if (evalCount > 0) globalCounts[sKey] = (globalCounts[sKey] || 0) + 1;
         });
 
         return { vehicleOccupancy, globalCounts };
@@ -182,7 +192,7 @@ export default function ManualSchedulePage() {
                 });
             });
             setFoundContracts(results);
-            if (results.length === 0) toast({ description: 'No se encontraron contratos activos para esa cédula.' });
+            if (results.length === 0) toast({ description: 'No se encontraron contratos activos.' });
         } catch (e) {
             toast({ variant: 'destructive', description: 'Error al buscar.' });
         } finally {
@@ -193,10 +203,8 @@ export default function ManualSchedulePage() {
     const loadContractSchedule = (contract: Contract) => {
         setSelectedContract(contract);
         form.setValue('studentName', contract.clientName);
-        
         const details = contract.autoMotoDetails || contract.deluxeDetails;
         const schedules = details?.practicalClassSchedules || details?.motoPracticalClassSchedules || (details as any)?.classSchedules || [];
-        
         if (schedules.length > 0) {
             const mapped = schedules.map((s: any, i: number) => ({
                 date: toDate(s.date),
@@ -210,7 +218,6 @@ export default function ManualSchedulePage() {
         } else {
             replace([{ date: new Date(), timeSlot: '8am-10am', vehicle: '', instructor: '', classNumber: 1, classType: 'Práctica' }]);
         }
-        toast({ title: 'Contrato Cargado', description: `Editando agenda de ${contract.clientName}` });
     };
 
     const resetSelection = () => {
@@ -233,18 +240,12 @@ export default function ManualSchedulePage() {
                     vehicle: c.vehicle,
                     instructor: c.instructor
                 }));
-
                 const updateData: any = {};
-                if (selectedContract.type === 'Curso Deluxe') {
-                    updateData['deluxeDetails.classSchedules'] = mappedSchedules;
-                } else if (selectedContract.type === 'Curso Moto') {
-                    updateData['autoMotoDetails.motoPracticalClassSchedules'] = mappedSchedules;
-                } else {
-                    updateData['autoMotoDetails.practicalClassSchedules'] = mappedSchedules;
-                }
-
+                if (selectedContract.type === 'Curso Deluxe') updateData['deluxeDetails.classSchedules'] = mappedSchedules;
+                else if (selectedContract.type === 'Curso Moto') updateData['autoMotoDetails.motoPracticalClassSchedules'] = mappedSchedules;
+                else updateData['autoMotoDetails.practicalClassSchedules'] = mappedSchedules;
                 await updateDoc(contractRef, updateData);
-                toast({ title: 'Contrato Actualizado', description: 'La agenda del contrato ha sido guardada.' });
+                toast({ title: 'Contrato Actualizado' });
             } else {
                 const promises = values.classes.map(classItem => 
                     addDoc(collection(db, 'manual_schedules'), {
@@ -256,28 +257,17 @@ export default function ManualSchedulePage() {
                     })
                 );
                 await Promise.all(promises);
-                toast({ title: 'Asignaciones Guardadas', description: `${values.classes.length} clases añadidas a la agenda manual.` });
+                toast({ title: 'Asignaciones Guardadas' });
             }
             resetSelection();
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Error al Guardar', description: 'No se pudo completar la operación.' });
+            toast({ variant: 'destructive', title: 'Error al Guardar' });
         } finally {
             setIsSaving(false);
         }
     };
 
-    const handleDeleteEntry = async (id: string) => {
-        if (!db) return;
-        try {
-            await deleteDoc(doc(db, 'manual_schedules', id));
-            toast({ title: 'Registro Eliminado' });
-        } catch (e) {
-            toast({ variant: 'destructive', description: 'Error al eliminar.' });
-        }
-    };
-
     if (isRoleLoading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>;
-    if (role !== 'Administrador') return <div className="p-12 text-center border-2 border-dashed rounded-lg max-w-2xl mx-auto mt-12"><h3 className="text-lg font-semibold text-destructive">Acceso Restringido</h3><p className="text-muted-foreground mt-2">Solo Administradores.</p><Button asChild className="mt-6" variant="outline"><Link href="/dashboard">Volver</Link></Button></div>;
 
     return (
         <div className="flex flex-col gap-8">
@@ -289,7 +279,6 @@ export default function ManualSchedulePage() {
                 </div>
             </div>
 
-            {/* BUSCADOR DE CONTRATOS */}
             <Card className="border-primary/20 bg-primary/5">
                 <CardHeader className="pb-3">
                     <CardTitle className="text-sm font-bold uppercase flex items-center gap-2 text-primary">
@@ -315,38 +304,18 @@ export default function ManualSchedulePage() {
                             </Button>
                         )}
                     </div>
-
-                    {foundContracts.length > 0 && (
-                        <div className="grid gap-2 animate-in fade-in slide-in-from-top-2">
-                            {foundContracts.map(c => (
-                                <div key={c.id} className="flex items-center justify-between p-3 bg-white border rounded-lg shadow-sm">
-                                    <div>
-                                        <p className="font-bold text-sm uppercase">{c.clientName}</p>
-                                        <p className="text-[10px] text-muted-foreground font-bold">CONTRATO N° {String(c.folioNumber).padStart(6, '0')} | {c.type}</p>
-                                    </div>
-                                    <Button size="sm" variant="secondary" onClick={() => loadContractSchedule(c)}>
-                                        <UserCheck className="h-4 w-4 mr-2" /> Gestionar Horarios
-                                    </Button>
-                                </div>
-                            ))}
+                    {foundContracts.map(c => (
+                        <div key={c.id} className="flex items-center justify-between p-3 bg-white border rounded-lg shadow-sm">
+                            <div><p className="font-bold text-sm uppercase">{c.clientName}</p><p className="text-[10px] text-muted-foreground font-bold uppercase">CONTRATO N° {String(c.folioNumber).padStart(6, '0')} | {c.type}</p></div>
+                            <Button size="sm" variant="secondary" onClick={() => loadContractSchedule(c)}><UserCheck className="h-4 w-4 mr-2" /> Gestionar</Button>
                         </div>
-                    )}
+                    ))}
                 </CardContent>
             </Card>
 
             <Card className="shadow-md">
                 <CardHeader>
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <CardTitle>{selectedContract ? 'Modificar Agenda de Contrato' : 'Nueva Asignación Manual'}</CardTitle>
-                            <CardDescription>
-                                {selectedContract 
-                                    ? `Editando clases prácticas del contrato ${String(selectedContract.folioNumber).padStart(6, '0')}`
-                                    : 'Añade clases a estudiantes externos o asignaciones directas.'}
-                            </CardDescription>
-                        </div>
-                        {selectedContract && <div className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-1 rounded">MODO EDICIÓN</div>}
-                    </div>
+                    <CardTitle>{selectedContract ? 'Modificar Agenda de Contrato' : 'Nueva Asignación Manual'}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <Form {...form}>
@@ -366,103 +335,92 @@ export default function ManualSchedulePage() {
                                     const watchTime = form.watch(`classes.${index}.timeSlot`);
                                     const watchVehicle = form.watch(`classes.${index}.vehicle`);
                                     const holiday = isPanamaHoliday(toDate(watchDate));
+                                    const isSunday = toDate(watchDate).getDay() === 0;
                                     
-                                    let conflictStudent = null;
+                                    let conflictStudents: { name: string, isEval: boolean }[] = [];
                                     let isFull = false;
                                     let capacity = 3;
 
                                     if (watchDate && watchTime) {
-                                        const dateObj = toDate(watchDate);
-                                        const dateKey = format(dateObj, 'yyyy-MM-dd');
-                                        
-                                        if (watchVehicle) {
-                                            conflictStudent = availabilityData.vehicleOccupancy[`${dateKey}|${watchTime}|${watchVehicle}`];
-                                        }
-
-                                        capacity = getGlobalCapacity(dateObj, watchTime);
-                                        const currentOccupancy = availabilityData.globalCounts[`${dateKey}|${watchTime}`] || 0;
-                                        isFull = currentOccupancy >= capacity;
+                                        const dateKey = format(toDate(watchDate), 'yyyy-MM-dd');
+                                        if (watchVehicle) conflictStudents = availabilityData.vehicleOccupancy[`${dateKey}|${watchTime}|${watchVehicle}`] || [];
+                                        capacity = getGlobalCapacity(toDate(watchDate), watchTime);
+                                        isFull = (availabilityData.globalCounts[`${dateKey}|${watchTime}`] || 0) >= capacity;
                                     }
 
+                                    const hasConflict = conflictStudents.length > 0;
+
                                     return (
-                                        <div key={field.id} className={cn("grid grid-cols-1 md:grid-cols-6 lg:grid-cols-7 gap-3 p-4 border rounded-xl bg-slate-50/50 items-end relative", (conflictStudent || isFull || holiday) && "border-amber-500 bg-amber-50/30")}>
-                                            {holiday && (
+                                        <div key={field.id} className={cn("grid grid-cols-1 md:grid-cols-6 lg:grid-cols-7 gap-3 p-4 border rounded-xl bg-slate-50/50 items-end relative", (hasConflict || isFull || holiday || isSunday) && "border-amber-500 bg-amber-50/30")}>
+                                            {isSunday && (
+                                                <div className="absolute -top-2 right-2 bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10 uppercase">
+                                                    <Ban className="h-3 w-3" /> DOMINGO: DÍA NO LABORABLE
+                                                </div>
+                                            )}
+                                            {holiday && !isSunday && (
                                                 <div className="absolute -top-2 right-2 bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10 uppercase">
                                                     <Landmark className="h-3 w-3" /> FERIADO: {holiday.name.toUpperCase()}
                                                 </div>
                                             )}
-                                            {conflictStudent && !holiday && (
+                                            {hasConflict && !holiday && !isSunday && (
                                                 <div className="absolute -top-2 right-2 bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10 uppercase">
-                                                    <AlertTriangle className="h-3 w-3" /> OCUPADO POR: {conflictStudent.toUpperCase()}
+                                                    <AlertTriangle className="h-3 w-3" /> OCUPADO POR: {conflictStudents[0]?.name.toUpperCase()}
                                                 </div>
                                             )}
-                                            {isFull && !conflictStudent && !holiday && (
+                                            {isFull && !hasConflict && !holiday && !isSunday && (
                                                 <div className="absolute -top-2 right-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm flex items-center gap-1 animate-pulse z-10 uppercase">
                                                     <AlertTriangle className="h-3 w-3" /> CAPACIDAD MÁXIMA ({capacity})
                                                 </div>
                                             )}
 
-                                            <Button type="button" variant="ghost" size="icon" className="absolute -top-2 -left-2 h-6 w-6 rounded-full bg-white border shadow-sm text-destructive hover:bg-red-50 z-10" onClick={() => remove(index)}><X className="h-3 w-3" /></Button>
+                                            <Button type="button" variant="ghost" size="icon" className="absolute -top-2 -left-2 h-6 w-6 rounded-full bg-white border shadow-sm text-destructive" onClick={() => remove(index)}><X className="h-3 w-3" /></Button>
                                             
                                             <FormField control={form.control} name={`classes.${index}.date`} render={({ field }) => (
-                                                <FormItem className="md:col-span-1 lg:col-span-1">
-                                                    <FormLabel className="text-[10px] uppercase font-bold">Fecha</FormLabel>
+                                                <FormItem>
                                                     <Popover>
                                                         <PopoverTrigger asChild>
-                                                            <FormControl><Button variant="outline" className={cn("w-full h-9 text-xs px-2 text-left font-normal", holiday && "border-amber-400")}>{field.value ? format(field.value, "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-3 w-3 opacity-50" /></Button></FormControl>
+                                                            <FormControl><Button variant="outline" className={cn("w-full h-9 text-xs", (holiday || isSunday) && "border-amber-400")}>{field.value ? format(field.value, "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-3 w-3 opacity-50" /></Button></FormControl>
                                                         </PopoverTrigger>
-                                                        <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                                                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
                                                     </Popover>
                                                 </FormItem>
                                             )} />
 
                                             <FormField control={form.control} name={`classes.${index}.timeSlot`} render={({ field }) => (
-                                                <FormItem className="md:col-span-1 lg:col-span-1">
-                                                    <FormLabel className="text-[10px] uppercase font-bold">Turno</FormLabel>
+                                                <FormItem>
                                                     <Select onValueChange={field.onChange} value={field.value}>
-                                                        <FormControl><SelectTrigger className={cn("h-9 text-xs px-2", (hasConflict || isFull || holiday) && "border-amber-400")}><SelectValue /></SelectTrigger></FormControl>
-                                                        <SelectContent>{timeSlots.map(t => {
-                                                            const dateKey = watchDate ? format(toDate(watchDate), 'yyyy-MM-dd') : '';
-                                                            const count = dateKey ? (availabilityData.globalCounts[`${dateKey}|${t.id}`] || 0) : 0;
-                                                            const cap = watchDate ? getGlobalCapacity(toDate(watchDate), t.id) : 3;
-                                                            return <SelectItem key={t.id} value={t.id} className="text-xs">{t.label} ({cap - count} disp.)</SelectItem>;
-                                                        })}</SelectContent>
+                                                        <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
+                                                        <SelectContent>{timeSlots.map(t => <SelectItem key={t.id} value={t.id} className="text-xs">{t.label}</SelectItem>)}</SelectContent>
                                                     </Select>
                                                 </FormItem>
                                             )} />
 
                                             <FormField control={form.control} name={`classes.${index}.vehicle`} render={({ field }) => (
-                                                <FormItem className="md:col-span-1 lg:col-span-1">
-                                                    <FormLabel className="text-[10px] uppercase font-bold">Vehículo</FormLabel>
+                                                <FormItem>
                                                     <Select onValueChange={field.onChange} value={field.value}>
-                                                        <FormControl><SelectTrigger className={cn("h-9 text-xs px-2", hasConflict && "border-amber-400")}><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
+                                                        <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
                                                         <SelectContent>{allVehicles.map(v => <SelectItem key={v} value={v} className="text-xs">{v}</SelectItem>)}</SelectContent>
                                                     </Select>
                                                 </FormItem>
                                             )} />
 
                                             <FormField control={form.control} name={`classes.${index}.instructor`} render={({ field }) => (
-                                                <FormItem className="md:col-span-1 lg:col-span-1">
-                                                    <FormLabel className="text-[10px] uppercase font-bold">Instructor</FormLabel>
+                                                <FormItem>
                                                     <Select onValueChange={field.onChange} value={field.value}>
-                                                        <FormControl><SelectTrigger className="h-9 text-xs px-2"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
+                                                        <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
                                                         <SelectContent>{instructors.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}</SelectContent>
                                                     </Select>
                                                 </FormItem>
                                             )} />
 
                                             <FormField control={form.control} name={`classes.${index}.classNumber`} render={({ field }) => (
-                                                <FormItem className="md:col-span-1 lg:col-span-1">
-                                                    <FormLabel className="text-[10px] uppercase font-bold">N° Clase</FormLabel>
-                                                    <FormControl><Input type="number" {...field} className="h-9 text-xs" /></FormControl>
-                                                </FormItem>
+                                                <FormItem><FormControl><Input type="number" {...field} className="h-9 text-xs" /></FormControl></FormItem>
                                             )} />
 
                                             <FormField control={form.control} name={`classes.${index}.classType`} render={({ field }) => (
-                                                <FormItem className="md:col-span-1 lg:col-span-1">
-                                                    <FormLabel className="text-[10px] uppercase font-bold">Tipo</FormLabel>
+                                                <FormItem>
                                                     <Select onValueChange={field.onChange} value={field.value}>
-                                                        <FormControl><SelectTrigger className="h-9 text-xs px-2"><SelectValue /></SelectTrigger></FormControl>
+                                                        <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
                                                         <SelectContent><SelectItem value="Práctica" className="text-xs">Práctica</SelectItem><SelectItem value="Teórica" className="text-xs">Teórica</SelectItem></SelectContent>
                                                     </Select>
                                                 </FormItem>
@@ -478,47 +436,11 @@ export default function ManualSchedulePage() {
                                 </Button>
                                 <Button type="submit" disabled={isSaving} className="h-11 px-8 font-bold flex-1 sm:flex-none">
                                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                    {selectedContract ? 'Actualizar Agenda del Contrato' : 'Guardar Agenda Manual'}
+                                    {selectedContract ? 'Actualizar Agenda' : 'Guardar Manual'}
                                 </Button>
                             </div>
                         </form>
                     </Form>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader><CardTitle>Asignaciones Manuales Recientes</CardTitle></CardHeader>
-                <CardContent>
-                    {isLoadingEntries ? (
-                        <div className="flex justify-center p-8"><Loader2 className="animate-spin h-8 w-8 text-primary opacity-20" /></div>
-                    ) : allManualEntries && allManualEntries.length > 0 ? (
-                        <div className="border rounded-lg overflow-hidden">
-                            <Table>
-                                <TableHeader><TableRow><TableHead>Estudiante</TableHead><TableHead>Fecha</TableHead><TableHead>Turno</TableHead><TableHead>Vehículo</TableHead><TableHead>Instructor</TableHead><TableHead className="text-right">Acciones</TableHead></TableRow></TableHeader>
-                                <TableBody>
-                                    {allManualEntries.map(entry => {
-                                        const holiday = isPanamaHoliday(toDate(entry.date));
-                                        return (
-                                        <TableRow key={entry.id} className={cn(holiday && "bg-amber-50/50")}>
-                                            <TableCell className="font-bold uppercase text-xs">
-                                                {entry.studentName}
-                                                {holiday && <div className="text-[8px] text-amber-600 font-black uppercase mt-0.5">{holiday.name}</div>}
-                                            </TableCell>
-                                            <TableCell className="text-xs">{format(toDate(entry.date), 'dd/MM/yyyy')}</TableCell>
-                                            <TableCell className="text-xs font-medium">{timeSlots.find(ts => ts.id === entry.timeSlot)?.label}</TableCell>
-                                            <TableCell className="text-xs">{entry.vehicle}</TableCell>
-                                            <TableCell className="text-xs">{entry.instructor}</TableCell>
-                                            <TableCell className="text-right">
-                                                <Button variant="ghost" size="icon" className="text-destructive h-8 w-8" onClick={() => handleDeleteEntry(entry.id)}><Trash2 className="h-4 w-4"/></Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    )})}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    ) : (
-                        <p className="text-center text-muted-foreground py-8">No hay registros manuales.</p>
-                    )}
                 </CardContent>
             </Card>
         </div>

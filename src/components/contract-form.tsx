@@ -57,7 +57,12 @@ const instructors: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Ad
 const carVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
 const motoVehicles: VehicleName[] = ['Moto Roja', 'Moto Negra'];
 const practicalTimes = ['8:00am a 10:00am', '10:00am a 12:pm', '1:00pm a 3:00pm', '3:00pm a 5:00pm'];
-const theoreticalSchedules = ['Semanal (8:00 am a 10:00 am)', 'Sabatino (3:00 pm a 5:00 pm)'];
+const theoreticalSchedules = [
+    'Semanal (8:00 am a 10:00 am)', 
+    'Sabatino (3:00 pm a 5:00 pm)'
+];
+
+const ALL_CATEGORIES = ['A', 'B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];
 
 const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
     '8:00am a 10:00am': '8am-10am',
@@ -368,13 +373,12 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
 
   const theoreticalClassSchedule = form.watch('theoreticalClassSchedule');
 
-  // Lógica dinámica de cantidad de clases teóricas
   const theorySessionCount = useMemo(() => {
     if (contractType === 'Curso Deluxe') return 10;
     if (contractType === 'Ampliaciones') return 0;
     if (theoreticalClassSchedule?.startsWith('Semanal')) return 4;
     if (theoreticalClassSchedule?.startsWith('Sabatino')) return 3;
-    return 2; // Fallback
+    return 2; 
   }, [contractType, theoreticalClassSchedule]);
 
   useEffect(() => {
@@ -457,6 +461,18 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
     const down = form.watch('downPayment');
     form.setValue('balance', Math.max(0, val - down));
   }, [form.watch('courseValue'), form.watch('downPayment'), form]);
+
+  const toggleCategory = (cat: string) => {
+    const current = form.getValues('licenseCategory') || '';
+    const parts = current.split(',').map(p => p.trim()).filter(p => p);
+    let newVal = '';
+    if (parts.includes(cat)) {
+        newVal = parts.filter(p => p !== cat).join(', ');
+    } else {
+        newVal = [...parts, cat].sort().join(', ');
+    }
+    form.setValue('licenseCategory', newVal);
+  };
 
   const onSubmit = async (values: FormValues) => {
     if (!db || !user) return;
@@ -658,11 +674,43 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                             <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
                                 <FormItem><FormLabel className="text-xs font-bold uppercase">Transmisión</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Automático">Automático</SelectItem><SelectItem value="Manual">Manual</SelectItem><SelectItem value="Moto">Moto</SelectItem></SelectContent></Select></FormItem>
                             )} />
-                            <FormField control={form.control} name="licenseCategory" render={({ field }) => (
-                                <FormItem><FormLabel className="text-xs font-bold uppercase">Categoría</FormLabel><FormControl><Input {...field} placeholder="A, C, D" className="h-11" /></FormControl></FormItem>
-                            )} />
+                            
+                            {contractType !== 'Ampliaciones' && (
+                                <FormField control={form.control} name="licenseCategory" render={({ field }) => (
+                                    <FormItem><FormLabel className="text-xs font-bold uppercase">Categoría</FormLabel><FormControl><Input {...field} placeholder="A, C, D" className="h-11" /></FormControl></FormItem>
+                                )} />
+                            )}
                         </div>
                         
+                        {/* SELECTOR DE CATEGORÍAS PARA AMPLIACIONES (BOTONES) */}
+                        {contractType === 'Ampliaciones' && (
+                            <div className="space-y-3">
+                                <FormLabel className="text-xs font-bold uppercase text-amber-700">Categorías de Licencia (Selección múltiple)</FormLabel>
+                                <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                                    {ALL_CATEGORIES.map(cat => {
+                                        const isSelected = form.watch('licenseCategory')?.includes(cat);
+                                        return (
+                                            <Button 
+                                                key={cat} 
+                                                type="button"
+                                                variant={isSelected ? "default" : "outline"}
+                                                className={cn(
+                                                    "h-10 font-bold text-xs transition-all", 
+                                                    isSelected ? "bg-primary text-white scale-105 shadow-md" : "hover:bg-amber-50"
+                                                )}
+                                                onClick={() => toggleCategory(cat)}
+                                            >
+                                                {cat}
+                                            </Button>
+                                        );
+                                    })}
+                                </div>
+                                <div className="p-3 bg-muted/30 rounded-lg border border-dashed text-[10px] font-medium uppercase text-muted-foreground">
+                                    Seleccionado: <span className="font-bold text-primary">{form.watch('licenseCategory') || '(Ninguna)'}</span>
+                                </div>
+                            </div>
+                        )}
+
                         {contractType !== 'Ampliaciones' && (
                             <FormField control={form.control} name="theoreticalClassSchedule" render={({ field }) => (
                                 <FormItem><FormLabel className="text-xs font-bold uppercase">Horario Teórico</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11"><SelectValue placeholder="Seleccionar horario..." /></SelectTrigger></FormControl><SelectContent>{theoreticalSchedules.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></FormItem>
@@ -670,7 +718,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                         )}
 
                         {contractType === 'Ampliaciones' && (
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-dashed">
                                 <FormField control={form.control} name="theoreticalClassDate" render={({ field }) => (
                                     <FormItem>
                                         <FormLabel className="text-xs font-bold uppercase">Fecha Clase Teórica</FormLabel>

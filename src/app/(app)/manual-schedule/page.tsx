@@ -131,9 +131,12 @@ export default function ManualSchedulePage() {
         
         const processEntry = (date: any, slot: string, vehicle: string, name: string, isEval: boolean, entryId?: string) => {
             if (!date || !slot || !vehicle) return;
+            const dObj = toDate(date);
+            if (isNaN(dObj.getTime())) return;
+            
             if (editingManualEntryId && entryId === editingManualEntryId) return; 
 
-            const dateKey = format(toDate(date), 'yyyy-MM-dd');
+            const dateKey = format(dObj, 'yyyy-MM-dd');
             const vKey = `${dateKey}|${slot}|${vehicle}`;
             
             if (!vehicleOccupancy[vKey]) vehicleOccupancy[vKey] = [];
@@ -380,17 +383,20 @@ export default function ManualSchedulePage() {
                                     const watchDate = form.watch(`classes.${index}.date`);
                                     const watchTime = form.watch(`classes.${index}.timeSlot`);
                                     const watchVehicle = form.watch(`classes.${index}.vehicle`);
-                                    const holiday = isPanamaHoliday(toDate(watchDate));
-                                    const isSunday = toDate(watchDate).getDay() === 0;
+                                    
+                                    const dObj = toDate(watchDate);
+                                    const isValidDate = !isNaN(dObj.getTime());
+                                    const holiday = isValidDate ? isPanamaHoliday(dObj) : null;
+                                    const isSunday = isValidDate && dObj.getDay() === 0;
                                     
                                     let conflictStudents: { name: string, isEval: boolean }[] = [];
                                     let isFull = false;
                                     let capacity = 3;
 
-                                    if (watchDate && watchTime) {
-                                        const dateKey = format(toDate(watchDate), 'yyyy-MM-dd');
+                                    if (isValidDate && watchTime) {
+                                        const dateKey = format(dObj, 'yyyy-MM-dd');
                                         if (watchVehicle) conflictStudents = availabilityData.vehicleOccupancy[`${dateKey}|${watchTime}|${watchVehicle}`] || [];
-                                        capacity = getGlobalCapacity(toDate(watchDate), watchTime);
+                                        capacity = getGlobalCapacity(dObj, watchTime);
                                         isFull = (availabilityData.globalCounts[`${dateKey}|${watchTime}`] || 0) >= capacity;
                                     }
 
@@ -423,51 +429,51 @@ export default function ManualSchedulePage() {
                                                 <Button type="button" variant="ghost" size="icon" className="absolute -top-2 -left-2 h-6 w-6 rounded-full bg-white border shadow-sm text-destructive" onClick={() => remove(index)}><X className="h-3 w-3" /></Button>
                                             )}
                                             
-                                            <FormField control={form.control} name={`classes.${index}.date`} render={({ field }) => (
+                                            <FormField control={form.control} name={`classes.${index}.date`} render={({ field: f }) => (
                                                 <FormItem>
                                                     <Popover>
                                                         <PopoverTrigger asChild>
-                                                            <FormControl><Button variant="outline" className={cn("w-full h-9 text-xs", (holiday || isSunday) && "border-amber-400")}>{field.value ? format(field.value, "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-3 w-3 opacity-50" /></Button></FormControl>
+                                                            <FormControl><Button variant="outline" className={cn("w-full h-9 text-xs", (holiday || isSunday) && "border-amber-400")}>{f.value ? format(toDate(f.value), "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-3 w-3 opacity-50" /></Button></FormControl>
                                                         </PopoverTrigger>
-                                                        <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                                                        <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={f.value} onSelect={f.onChange} initialFocus /></PopoverContent>
                                                     </Popover>
                                                 </FormItem>
                                             )} />
 
-                                            <FormField control={form.control} name={`classes.${index}.timeSlot`} render={({ field }) => (
+                                            <FormField control={form.control} name={`classes.${index}.timeSlot`} render={({ field: f }) => (
                                                 <FormItem>
-                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                    <Select onValueChange={f.onChange} value={f.value}>
                                                         <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
                                                         <SelectContent>{timeSlots.map(t => <SelectItem key={t.id} value={t.id} className="text-xs">{t.label}</SelectItem>)}</SelectContent>
                                                     </Select>
                                                 </FormItem>
                                             )} />
 
-                                            <FormField control={form.control} name={`classes.${index}.vehicle`} render={({ field }) => (
+                                            <FormField control={form.control} name={`classes.${index}.vehicle`} render={({ field: f }) => (
                                                 <FormItem>
-                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                    <Select onValueChange={f.onChange} value={f.value}>
                                                         <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
                                                         <SelectContent>{allVehicles.map(v => <SelectItem key={v} value={v} className="text-xs">{v}</SelectItem>)}</SelectContent>
                                                     </Select>
                                                 </FormItem>
                                             )} />
 
-                                            <FormField control={form.control} name={`classes.${index}.instructor`} render={({ field }) => (
+                                            <FormField control={form.control} name={`classes.${index}.instructor`} render={({ field: f }) => (
                                                 <FormItem>
-                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                    <Select onValueChange={f.onChange} value={f.value}>
                                                         <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
                                                         <SelectContent>{instructors.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}</SelectContent>
                                                     </Select>
                                                 </FormItem>
                                             )} />
 
-                                            <FormField control={form.control} name={`classes.${index}.classNumber`} render={({ field }) => (
-                                                <FormItem><FormControl><Input type="number" {...field} className="h-9 text-xs" /></FormControl></FormItem>
+                                            <FormField control={form.control} name={`classes.${index}.classNumber`} render={({ field: f }) => (
+                                                <FormItem><FormControl><Input type="number" {...f} className="h-9 text-xs" /></FormControl></FormItem>
                                             )} />
 
-                                            <FormField control={form.control} name={`classes.${index}.classType`} render={({ field }) => (
+                                            <FormField control={form.control} name={`classes.${index}.classType`} render={({ field: f }) => (
                                                 <FormItem>
-                                                    <Select onValueChange={field.onChange} value={field.value}>
+                                                    <Select onValueChange={f.onChange} value={f.value}>
                                                         <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
                                                         <SelectContent><SelectItem value="Práctica" className="text-xs">Práctica</SelectItem><SelectItem value="Teórica" className="text-xs">Teórica</SelectItem></SelectContent>
                                                     </Select>
@@ -516,9 +522,11 @@ export default function ManualSchedulePage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {allManualEntries.map(entry => (
+                                    {allManualEntries.map(entry => {
+                                        const entryDate = toDate(entry.date);
+                                        return (
                                         <TableRow key={entry.id}>
-                                            <TableCell className="text-xs font-medium">{format(toDate(entry.date), 'dd/MM/yyyy')}</TableCell>
+                                            <TableCell className="text-xs font-medium">{!isNaN(entryDate.getTime()) ? format(entryDate, 'dd/MM/yyyy') : '---'}</TableCell>
                                             <TableCell className="text-xs font-bold uppercase">{entry.studentName}</TableCell>
                                             <TableCell className="text-xs">{timeSlots.find(t => t.id === entry.timeSlot)?.label || entry.timeSlot}</TableCell>
                                             <TableCell className="text-xs">{entry.vehicle}</TableCell>
@@ -530,7 +538,7 @@ export default function ManualSchedulePage() {
                                                 </div>
                                             </TableCell>
                                         </TableRow>
-                                    ))}
+                                    )})}
                                 </TableBody>
                             </Table>
                         </div>

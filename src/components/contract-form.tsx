@@ -179,19 +179,21 @@ function ClassSlotGrid({ fields, namePrefix, availableVehicles, title, Icon, for
                     const watchDate = form.watch(`${namePrefix}.${index}.date`);
                     const watchTime = form.watch(`${namePrefix}.${index}.time`);
                     const watchVehicle = form.watch(`${namePrefix}.${index}.vehicle`);
-                    const holiday = isPanamaHoliday(toDate(watchDate));
-                    const isSunday = toDate(watchDate).getDay() === 0;
+                    
+                    const dObj = toDate(watchDate);
+                    const isValidDate = !isNaN(dObj.getTime());
+                    const holiday = isValidDate ? isPanamaHoliday(dObj) : null;
+                    const isSunday = isValidDate && dObj.getDay() === 0;
                     
                     let conflictStudents: any[] = [];
                     let isFull = false;
                     let capacity = 3;
 
-                    if (watchDate && watchTime) {
-                        const dateObj = toDate(watchDate);
-                        const dateKey = format(dateObj, 'yyyy-MM-dd');
+                    if (isValidDate && watchTime) {
+                        const dateKey = format(dObj, 'yyyy-MM-dd');
                         const slotId = TIME_STRING_TO_SLOT_MAP[watchTime] || watchTime;
                         if (watchVehicle) conflictStudents = vehicleOccupancy[`${dateKey}|${slotId}|${watchVehicle}`] || [];
-                        capacity = getGlobalCapacity(dateObj, slotId);
+                        capacity = getGlobalCapacity(dObj, slotId);
                         isFull = (globalCounts[`${dateKey}|${slotId}`] || 0) >= capacity;
                     }
 
@@ -237,7 +239,7 @@ function ClassSlotGrid({ fields, namePrefix, availableVehicles, title, Icon, for
                                                     <FormControl>
                                                         <Button variant="outline" className="h-9 text-xs w-full justify-start font-normal bg-white">
                                                             <CalendarIcon className="mr-2 h-3.5 w-3.5 opacity-50" />
-                                                            {f.value ? format(f.value, "dd/MM/yy") : "Fecha"}
+                                                            {f.value ? format(toDate(f.value), "dd/MM/yy") : "Fecha"}
                                                         </Button>
                                                     </FormControl>
                                                 </PopoverTrigger>
@@ -258,10 +260,13 @@ function ClassSlotGrid({ fields, namePrefix, availableVehicles, title, Icon, for
                                                 </FormControl>
                                                 <SelectContent>
                                                     {practicalTimes.map(t => {
-                                                        const dateKey = f.value ? format(toDate(form.watch(`${namePrefix}.${index}.date`)), 'yyyy-MM-dd') : '';
+                                                        const dateValue = form.watch(`${namePrefix}.${index}.date`);
+                                                        const dValObj = toDate(dateValue);
+                                                        const isDateValid = !isNaN(dValObj.getTime());
+                                                        const dateKey = isDateValid ? format(dValObj, 'yyyy-MM-dd') : '';
                                                         const slotId = TIME_STRING_TO_SLOT_MAP[t] || t;
-                                                        const cap = getGlobalCapacity(toDate(form.watch(`${namePrefix}.${index}.date`)), slotId);
-                                                        const current = globalCounts[`${dateKey}|${slotId}`] || 0;
+                                                        const cap = isDateValid ? getGlobalCapacity(dValObj, slotId) : 3;
+                                                        const current = dateKey ? (globalCounts[`${dateKey}|${slotId}`] || 0) : 0;
                                                         const isFullSlot = current >= cap && cap > 0;
                                                         
                                                         return (
@@ -369,6 +374,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
     const process = (date: any, slot: string, vehicle: string, name: string, isEval: boolean) => {
         if (!date || !slot || !vehicle) return;
         const dObj = toDate(date);
+        if (isNaN(dObj.getTime())) return;
         const dateKey = format(dObj, 'yyyy-MM-dd');
         const vKey = `${dateKey}|${slot}|${vehicle}`;
         if (!vehicleOccupancy[vKey]) vehicleOccupancy[vKey] = [];
@@ -587,7 +593,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                     )} />
                     <FormField control={form.control} name="paymentDeadline" render={({ field }) => (
                         <FormItem><FormLabel className="text-xs font-bold uppercase">Límite Pago Saldo</FormLabel>
-                            <Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant="outline" className="h-10 w-full justify-start font-normal">{field.value ? format(field.value, "PPP", { locale: es }) : "Fecha"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger>
+                            <Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant="outline" className="h-10 w-full justify-start font-normal">{field.value ? format(toDate(field.value), "PPP", { locale: es }) : "Fecha"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="end"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover>
                         </FormItem>
                     )} />

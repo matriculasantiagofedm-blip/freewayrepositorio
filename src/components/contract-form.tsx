@@ -328,7 +328,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                         )} />
                         <FormField control={form.control} name="studentIdNumber" render={({ field }) => (<FormItem className="col-span-2"><FormLabel className="text-xs font-bold uppercase">Número</FormLabel><FormControl><Input {...field} className="h-11" /></FormControl><FormMessage /></FormItem>)} />
                     </div>
-                    <FormField control={form.control} name="studentAddress" render={({ field }) => (<FormItem><FormLabel className="text-xs font-bold uppercase">Dirección</FormLabel><FormControl><Input {...field} className="h-11" /></FormControl><FormMessage /></FormMessage></FormItem>)} />
+                    <FormField control={form.control} name="studentAddress" render={({ field }) => (<FormItem><FormLabel className="text-xs font-bold uppercase">Dirección</FormLabel><FormControl><Input {...field} className="h-11" /></FormControl><FormMessage /></FormItem>)} />
                     <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="studentPhone1" render={({ field }) => (<FormItem><FormLabel className="text-xs font-bold uppercase">Teléfono 1</FormLabel><FormControl><Input {...field} className="h-11" /></FormControl><FormMessage /></FormItem>)} />
                         <FormField control={form.control} name="studentPhone2" render={({ field }) => (<FormItem><FormLabel className="text-xs font-bold uppercase">Teléfono 2</FormLabel><FormControl><Input {...field} className="h-11" /></FormControl></FormItem>)} />
@@ -632,7 +632,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
 
         <div className="flex flex-col sm:flex-row gap-4 pt-4 sticky bottom-0 bg-background/95 backdrop-blur p-4 z-50 border-t shadow-lg">
             <Button type="submit" disabled={isSubmitting} size="lg" className="flex-1 h-14 text-lg font-bold">
-                {isSubmitting ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Save className="mr-2 h-6 w-6" />}
+                {isSubmitting ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 {initialContract ? 'Guardar Cambios' : 'Generar Contrato'}
             </Button>
             <Button type="button" variant="outline" size="lg" className="h-14" onClick={() => router.back()}>Cancelar</Button>

@@ -44,7 +44,7 @@ import { Timestamp, collection, doc, serverTimestamp, runTransaction, updateDoc 
 import { useDb, useUser } from './firebase-provider';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useToast } from '@/hooks/use-toast';
-import type { Contract, ContractType, InstructorName, VehicleName } from '@/lib/types';
+import type { Contract, ContractType, VehicleName } from '@/lib/types';
 
 const instructors: string[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon'];
 const carVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
@@ -205,6 +205,13 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
     form.setValue('balance', Math.max(0, val - down));
   }, [form.watch('courseValue'), form.watch('downPayment'), form]);
 
+  const categoriesToShow = useMemo(() => {
+    if (contractType === 'Curso Auto') return ['A', 'C', 'D'];
+    if (contractType === 'Curso Moto') return ['A', 'B'];
+    if (contractType === 'Curso Mixto') return ['A', 'B', 'C', 'D'];
+    return ['B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];
+  }, [contractType]);
+
   async function onSubmit(values: FormValues) {
     if (!db || !user) return;
     setIsSubmitting(true);
@@ -289,13 +296,6 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
         setIsSubmitting(false); 
     }
   }
-
-  const categoriesToShow = useMemo(() => {
-    if (contractType === 'Curso Auto') return ['A', 'C', 'D'];
-    if (contractType === 'Curso Moto') return ['A', 'B'];
-    if (contractType === 'Curso Mixto') return ['A', 'B', 'C', 'D'];
-    return ['B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];
-  }, [contractType]);
 
   return (
     <Form {...form}>
@@ -405,7 +405,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
             </CardContent>
         </Card>
 
-        {contractType === 'Ampliaciones' && (
+        {contractType === 'Ampliaciones' ? (
             <Card className="border-t-4 border-t-amber-500 shadow-md">
                 <CardHeader className="bg-amber-50/30 border-b">
                     <div className="flex items-center gap-2">
@@ -449,9 +449,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                     </div>
                 </CardContent>
             </Card>
-        )}
-
-        {contractType !== 'Ampliaciones' && (
+        ) : (
             <Card className="border-t-4 border-t-primary shadow-md">
                 <CardHeader className="bg-slate-50 border-b">
                     <div className="flex items-center gap-2">

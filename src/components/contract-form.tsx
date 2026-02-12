@@ -166,7 +166,9 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
         contractType: initialContract.type,
         ...(initialContract.autoMotoDetails || initialContract.deluxeDetails),
         paymentDeadline: (initialContract.autoMotoDetails || initialContract.deluxeDetails)?.paymentDeadline ? toDate((initialContract.autoMotoDetails || initialContract.deluxeDetails)?.paymentDeadline) : null,
-        theoreticalClassDates: (initialContract.autoMotoDetails || initialContract.deluxeDetails)?.theoreticalClassDates?.map(d => d ? toDate(d) : null) || []
+        theoreticalClassDates: (initialContract.autoMotoDetails || initialContract.deluxeDetails)?.theoreticalClassDates?.map(d => d ? toDate(d) : null) || [],
+        practicalClassSchedules: (initialContract.autoMotoDetails?.practicalClassSchedules || []).map(s => ({ ...s, date: s.date ? toDate(s.date) : null })),
+        motoPracticalClassSchedules: (initialContract.autoMotoDetails?.motoPracticalClassSchedules || []).map(s => ({ ...s, date: s.date ? toDate(s.date) : null })),
     } : {
         clientName: '', clientEmail: '', contractType, studentIdNumber: '', idType: 'C.I.P.', studentAddress: '', studentPhone1: '',
         courseValue: 0, downPayment: 0, balance: 0, paymentType: 'cash',
@@ -249,7 +251,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
     form.setValue('balance', Math.max(0, val - down));
   }, [form.watch('courseValue'), form.watch('downPayment')]);
 
-  const onSubmit = async (values: FormValues) => {
+  async function onSubmit(values: FormValues) {
     if (!db || !user) return;
     setIsSubmitting(true);
     try {
@@ -281,7 +283,8 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
         const detailField = values.contractType === 'Curso Deluxe' ? 'deluxeDetails' : 'autoMotoDetails';
 
         if (initialContract) {
-            await updateDoc(doc(db, 'contracts', initialContract.id), { 
+            const contractRef = doc(db, 'contracts', initialContract.id);
+            await updateDoc(contractRef, { 
                 clientName: values.clientName, 
                 clientEmail: values.clientEmail, 
                 [detailField]: details, 
@@ -293,7 +296,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
             const cid = await runTransaction(db, async (t) => {
                 const cRef = doc(db, 'counters', 'contract_folio');
                 const cSnap = await t.get(cRef);
-                const newFolio = (cSnap.data()?.count || 0) + 1;
+                const newFolio = (cSnap.exists() ? cSnap.data().count : 0) + 1;
                 const nRef = doc(collection(db, 'contracts'));
                 const data = { 
                     id: nRef.id, 
@@ -301,7 +304,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                     title: values.contractType, 
                     clientName: values.clientName, 
                     clientEmail: values.clientEmail, 
-                    clientId: 'temp', 
+                    clientId: 'temp_id', 
                     type: values.contractType, 
                     status: 'active', 
                     userId: user.uid, 
@@ -318,11 +321,11 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
         }
     } catch (e) { 
         console.error(e);
-        toast({ variant: 'destructive', title: 'Error al procesar' }); 
+        toast({ variant: 'destructive', title: 'Error al procesar el contrato' }); 
     } finally { 
         setIsSubmitting(false); 
     }
-  };
+  }
 
   const ClassSlotGrid = ({ fields, namePrefix, availableVehicles, title, Icon, form, availabilityData }: any) => {
     if (fields.length === 0) return null;
@@ -376,13 +379,13 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                                         <FormItem><Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant="outline" className="h-9 text-xs w-full justify-start font-normal bg-white"><CalendarIcon className="mr-2 h-3.5 w-3.5 opacity-50" />{f.value ? format(toDate(f.value), "dd/MM/yy") : "Fecha"}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={f.value} onSelect={f.onChange} initialFocus /></PopoverContent></Popover></FormItem>
                                     )} />
                                     <FormField control={form.control} name={`${namePrefix}.${index}.time`} render={({ field: f }) => (
-                                        <FormItem><Select onValueChange={f.onChange} value={f.value}><FormControl><SelectTrigger className="h-9 text-xs bg-white"><SelectValue placeholder="Turno" /></SelectTrigger></FormControl><SelectContent>{practicalTimes.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent></Select></FormItem>
+                                        <FormItem><Select onValueChange={f.onChange} value={f.value}><FormControl><SelectTrigger className="h-9 text-xs bg-white"><SelectValue placeholder="Turno" /></SelectTrigger></FormControl><SelectContent>{practicalTimes.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</Select></FormItem>
                                     )} />
                                     <FormField control={form.control} name={`${namePrefix}.${index}.vehicle`} render={({ field: f }) => (
-                                        <FormItem><Select onValueChange={f.onChange} value={f.value}><FormControl><SelectTrigger className="h-9 text-xs bg-white"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl><SelectContent>{availableVehicles.map((v: string) => <SelectItem key={v} value={v} className="text-xs">{v}</SelectItem>)}</SelectContent></Select></FormItem>
+                                        <FormItem><Select onValueChange={f.onChange} value={f.value}><FormControl><SelectTrigger className="h-9 text-xs bg-white"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl><SelectContent>{availableVehicles.map((v: string) => <SelectItem key={v} value={v} className="text-xs">{v}</SelectItem>)}</Select></FormItem>
                                     )} />
                                     <FormField control={form.control} name={`${namePrefix}.${index}.instructor`} render={({ field: f }) => (
-                                        <FormItem><Select onValueChange={f.onChange} value={f.value}><FormControl><SelectTrigger className="h-9 text-xs bg-white"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl><SelectContent>{instructors.filter(Boolean).map(i => <SelectItem key={i} value={i} className="text-xs">{i}</SelectItem>)}</SelectContent></Select></FormItem>
+                                        <FormItem><Select onValueChange={f.onChange} value={f.value}><FormControl><SelectTrigger className="h-9 text-xs bg-white"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl><SelectContent>{instructors.filter(Boolean).map(i => <SelectItem key={i} value={i} className="text-xs">{i}</SelectItem>)}</Select></FormItem>
                                     )} />
                                 </div>
                             </div>
@@ -478,7 +481,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                         {Array.from({ length: theorySessionCount }).map((_, index) => (
                             <FormField key={index} control={form.control} name={`theoreticalClassDates.${index}`} render={({ field }) => (
-                                <FormItem><Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant="outline" className="h-10 text-xs w-full bg-white">{field.value ? format(toDate(field.value), "dd/MM") : "---"}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} /></PopoverContent></Popover></FormItem>
+                                <FormItem><Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant="outline" className="h-10 text-xs w-full bg-white">{field.value ? format(toDate(field.value), "dd/MM") : "---"}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover></FormItem>
                             )} />
                         ))}
                     </div>

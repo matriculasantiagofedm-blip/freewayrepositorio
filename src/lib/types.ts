@@ -1,4 +1,3 @@
-
 import { Timestamp, FieldValue } from 'firebase/firestore';
 
 export interface User {
@@ -23,7 +22,6 @@ export type ContractType =
   | 'Curso Moto' 
   | 'Curso Mixto'
   | 'Curso Deluxe'
-  | 'Ampliaciones'
   | 'Curso Solo Practica';
 
 export interface DeluxeContractDetails {
@@ -42,7 +40,6 @@ export interface DeluxeContractDetails {
   classSchedules?: { date?: any; time?: string; vehicle?: VehicleName; instructor?: InstructorName; }[];
   paymentType?: string;
   instructor?: InstructorName;
-  // Campos financieros consistentes
   courseValue?: number;
   downPayment?: number;
   balance?: number;
@@ -72,22 +69,6 @@ export interface AutoMotoContractDetails {
   instructor?: InstructorName;
 }
 
-export interface AmpliacionesContractDetails {
-    idType?: string;
-    studentIdNumber?: string;
-    studentAddress?: string;
-    studentPhone1?: string;
-    studentPhone2?: string;
-    courseValue?: number;
-    downPayment?: number;
-    balance?: number;
-    paymentDeadline?: any;
-    selectedPlans?: { name: string; price: number }[];
-    theoreticalClassDate?: any;
-    theoreticalClassTime?: string;
-    paymentType?: string;
-}
-
 export interface Contract {
   id: string;
   folioNumber: number;
@@ -102,7 +83,6 @@ export interface Contract {
   createdBy?: string;
   deluxeDetails?: Partial<DeluxeContractDetails>;
   autoMotoDetails?: Partial<AutoMotoContractDetails>;
-  ampliacionesDetails?: Partial<AmpliacionesContractDetails>;
   certificateGeneratedAt?: any;
   certificateFolio?: string;
   studentIdNumber?: string;
@@ -134,7 +114,7 @@ export interface Certificate {
   courseName: string;
   issueDate: any;
   cip: string;
-  idType?: string; // 'C.I.P.' o 'PASS'
+  idType?: string;
   licenseType: string;
   contract?: Contract;
   firstName?: string;

@@ -1,10 +1,8 @@
-
 'use client';
 import type { Contract, ContractType } from '@/lib/types';
 import { DeluxePremiumContractTemplate } from './deluxe-premium-contract';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { AutoMotoContractTemplate } from './auto-moto-contract';
-import { AmpliacionesContractTemplate } from './ampliaciones-contract';
 
 
 export function ContractView({ contract, type }: { contract: Contract, type?: ContractType }) {
@@ -19,10 +17,7 @@ export function ContractView({ contract, type }: { contract: Contract, type?: Co
       case 'Curso Mixto':
       case 'Curso Solo Practica':
         return <AutoMotoContractTemplate contract={contract} />;
-      case 'Ampliaciones':
-        return <AmpliacionesContractTemplate contract={contract} />;
       default:
-        // Fallback for other contract types or when type is not available
         return (
           <Card className="print:shadow-none print:border-none">
             <CardHeader>

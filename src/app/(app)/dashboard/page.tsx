@@ -10,7 +10,7 @@ import { collection, orderBy, query } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import type { Contract } from '@/lib/types';
-import { Car, Bike, Plus, History } from 'lucide-react';
+import { Car, Bike, Plus, History, Repeat } from 'lucide-react';
 
 const getBalance = (contract: Contract): number => {
     const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
@@ -60,6 +60,7 @@ export default function DashboardPage() {
   const contractTypes = [
     { name: 'Curso Auto', href: '/contracts/new?type=Curso Auto', icon: Car, color: 'text-blue-600', bgColor: 'bg-blue-50' },
     { name: 'Curso Moto', href: '/contracts/new?type=Curso Moto', icon: Bike, color: 'text-orange-600', bgColor: 'bg-orange-50' },
+    { name: 'Ampliaciones', href: '/contracts/new?type=Ampliaciones', icon: Repeat, color: 'text-amber-600', bgColor: 'bg-amber-50' },
   ];
 
   const actionGroups = [

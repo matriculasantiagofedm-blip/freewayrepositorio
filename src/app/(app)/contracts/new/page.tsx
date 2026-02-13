@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useSearchParams } from 'next/navigation';
 import { AutoContractForm } from '@/components/forms/auto-contract-form';
 import { MotoContractForm } from '@/components/forms/moto-contract-form';
+import { AmpliacionesContractForm } from '@/components/forms/ampliaciones-contract-form';
 
 function NewContractPageContent() {
     const searchParams = useSearchParams();
@@ -23,6 +24,8 @@ function NewContractPageContent() {
                 return <AutoContractForm />;
             case 'Curso Moto':
                 return <MotoContractForm />;
+            case 'Ampliaciones':
+                return <AmpliacionesContractForm />;
             default:
                 return (
                     <div className="p-12 text-center border-2 border-dashed rounded-lg">

@@ -1,12 +1,12 @@
 'use client';
 
 /**
- * FORMULARIO DE CONTRATO: AMPLIACIONES DE LICENCIA (CON CALCULADORA DE PRECIOS)
+ * FORMULARIO DE CONTRATO: AMPLIACIONES DE LICENCIA (CON CALCULADORA DE PRECIOS Y COMBINACIONES)
  * Freeway Escuela de Manejo, S.A.
  * 
  * - Ficha de estudiante técnica (12 columnas) ULTRA COMPACTA.
- * - Selector de categorías por botones con suma automática de precios.
- * - Categorías operativas: B, C, D, E1, E2, E3, F.
+ * - Selector de categorías por botones con lógica de combinaciones.
+ * - Precios individuales y paquetes especiales según requerimientos.
  */
 
 import { useState, useEffect } from 'react';
@@ -71,6 +71,21 @@ const CATEGORY_PRICES: Record<string, number> = {
   'F': 85.00
 };
 
+// Matriz de combinaciones especiales (Normalizada alfabéticamente para búsqueda)
+const COMBINATION_PRICES: Record<string, number> = {
+  'D, E1': 85.00,
+  'E1, E2': 75.00,
+  'E1, E2, E3': 85.00,
+  'E1, E2, E3, F': 95.00,
+  'D, E1, E2, E3, F': 150.00,
+  'B, E1, E2, E3, F': 150.00,
+  'B, D': 85.00,
+  'B, E1': 85.00,
+  'E2, E3': 85.00,
+  'B, F': 85.00,
+  'B, D, E1, E2, E3, F': 200.00
+};
+
 const ampliacionesSchema = z.object({
   clientName: z.string().min(3, 'El nombre es requerido'),
   clientEmail: z.string().email('Email inválido'),
@@ -117,11 +132,24 @@ export function AmpliacionesContractForm() {
 
   const watchCategories = form.watch('licenseCategory');
 
-  // LÓGICA DE CÁLCULO AUTOMÁTICO DE PRECIO
+  // LÓGICA DE CÁLCULO DE PRECIOS DINÁMICA (INDIVIDUALES + COMBINACIONES)
   useEffect(() => {
     const categories = watchCategories ? watchCategories.split(', ').filter(c => c) : [];
-    const total = categories.reduce((sum, cat) => sum + (CATEGORY_PRICES[cat] || 0), 0);
-    form.setValue('courseValue', total);
+    if (categories.length === 0) {
+      form.setValue('courseValue', 0);
+      return;
+    }
+
+    const sortedKey = [...categories].sort().join(', ');
+    
+    // Primero intentamos buscar una combinación exacta
+    if (COMBINATION_PRICES[sortedKey]) {
+      form.setValue('courseValue', COMBINATION_PRICES[sortedKey]);
+    } else {
+      // Si no hay combinación exacta, sumamos los precios individuales
+      const total = categories.reduce((sum, cat) => sum + (CATEGORY_PRICES[cat] || 0), 0);
+      form.setValue('courseValue', total);
+    }
   }, [watchCategories, form]);
 
   const toggleCategory = (category: string) => {

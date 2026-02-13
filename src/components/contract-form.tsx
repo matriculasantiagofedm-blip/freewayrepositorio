@@ -264,7 +264,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
 
         if (initialContract) {
             const contractRef = doc(db, 'contracts', initialContract.id);
-            updateDoc(contractRef, { 
+            await updateDoc(contractRef, { 
                 clientName: values.clientName, 
                 clientEmail: values.clientEmail, 
                 [detailField]: details, 

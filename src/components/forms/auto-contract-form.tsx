@@ -1,13 +1,13 @@
 'use client';
 
 /**
- * FORMULARIO DE CONTRATO: CURSO DE AUTO (SINTAXIS VERIFICADA)
+ * FORMULARIO DE CONTRATO: CURSO DE AUTO
  * Freeway Escuela de Manejo, S.A.
  * 
  * - Ficha de estudiante técnica (12 columnas).
- * - Teoría dinámica (Semanal 4 / Sabatino 3).
- * - Plan de Pagos y Saldo con selector de Paquetes.
- * - Práctica dinámica (ubicada debajo de pagos).
+ * - Precios actualizados según requerimiento.
+ * - Programación de clases dinámica basada en plan.
+ * - Sintaxis blindada para evitar errores de compilación.
  */
 
 import { useState, useEffect } from 'react';
@@ -67,17 +67,26 @@ const AUTO_PLANS = [
   "Curso Auto Plus (10 Hrs)",
   "Curso Auto Premium (12 Hrs)",
   "Reforzamiento 4 Hrs",
-  "Reforzamiento Plus 2 Hrs",
-  "Evaluación Estacionamiento (10 min)"
+  "Reforzamiento 2 Hrs",
+  "Ya se manejar"
 ];
+
+const PLAN_PRICES: Record<string, number> = {
+  "Curso Auto Básico (8 Hrs)": 133.00,
+  "Curso Auto Plus (10 Hrs)": 155.00,
+  "Curso Auto Premium (12 Hrs)": 180.00,
+  "Reforzamiento 4 Hrs": 95.00,
+  "Reforzamiento 2 Hrs": 75.00,
+  "Ya se manejar": 57.00
+};
 
 const PLAN_PRACTICAL_COUNTS: Record<string, number> = {
   "Curso Auto Básico (8 Hrs)": 4,
   "Curso Auto Plus (10 Hrs)": 5,
   "Curso Auto Premium (12 Hrs)": 6,
   "Reforzamiento 4 Hrs": 2,
-  "Reforzamiento Plus 2 Hrs": 1,
-  "Evaluación Estacionamiento (10 min)": 1
+  "Reforzamiento 2 Hrs": 1,
+  "Ya se manejar": 1
 };
 
 const TIME_OPTIONS = [
@@ -154,6 +163,26 @@ export function AutoContractForm() {
   const watchSchedule = form.watch('theoreticalClassSchedule');
   const watchPlan = form.watch('coursePlan');
 
+  // Lógica de Precios y Clases Prácticas dinámica
+  useEffect(() => {
+    if (watchPlan) {
+      // Asignar precio automáticamente
+      const price = PLAN_PRICES[watchPlan] || 0;
+      form.setValue('courseValue', price);
+
+      // Generar sesiones prácticas exactas
+      const count = PLAN_PRACTICAL_COUNTS[watchPlan] || 0;
+      const current = form.getValues('practicalClassSchedules') || [];
+      const newSchedules = Array.from({ length: count }, (_, i) => current[i] || { 
+        date: new Date(), 
+        time: '08:00am a 10:00am', 
+        vehicle: '', 
+        instructor: '' 
+      });
+      replacePractical(newSchedules);
+    }
+  }, [watchPlan, replacePractical, form]);
+
   // Lógica de Clases Teóricas dinámica
   useEffect(() => {
     const count = watchSchedule === 'Semanal 8:00 am a 10:00 am' ? 4 : 3;
@@ -161,14 +190,6 @@ export function AutoContractForm() {
     const newDates = Array.from({ length: count }, (_, i) => current[i] || new Date());
     form.setValue('theoreticalClassDates', newDates);
   }, [watchSchedule, form]);
-
-  // Lógica de Clases Prácticas dinámica basada en el Plan
-  useEffect(() => {
-    const count = PLAN_PRACTICAL_COUNTS[watchPlan] || 0;
-    const current = form.getValues('practicalClassSchedules') || [];
-    const newSchedules = Array.from({ length: count }, (_, i) => current[i] || { date: new Date(), time: '08:00am a 10:00am', vehicle: '', instructor: '' });
-    replacePractical(newSchedules);
-  }, [watchPlan, replacePractical, form]);
 
   const onSubmit = async (values: FormValues) => {
     if (!db || !user) return;
@@ -252,6 +273,7 @@ export function AutoContractForm() {
           </CardHeader>
           <CardContent className="p-6">
             <div className="grid grid-cols-12 gap-4">
+              {/* Fila 1: Nombre y Email */}
               <div className="col-span-12 md:col-span-8">
                 <FormField control={form.control} name="clientName" render={({ field }) => (
                   <FormItem>
@@ -270,6 +292,8 @@ export function AutoContractForm() {
                   </FormItem>
                 )} />
               </div>
+
+              {/* Fila 2: Tipo ID, Número y Teléfonos */}
               <div className="col-span-4 md:col-span-2">
                 <FormField control={form.control} name="idType" render={({ field }) => (
                   <FormItem>
@@ -299,12 +323,14 @@ export function AutoContractForm() {
                     <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Teléfonos de Contacto</FormLabel>
                     <div className="flex gap-2">
                       <FormControl><Input placeholder="Principal" {...field} className="h-9" /></FormControl>
-                      <Input placeholder="Secundario (Opcional)" onChange={(e) => form.setValue('studentPhone2', e.target.value)} className="h-9" />
+                      <Input placeholder="Secundario" onChange={(e) => form.setValue('studentPhone2', e.target.value)} className="h-9" />
                     </div>
                     <FormMessage />
                   </FormItem>
                 )} />
               </div>
+
+              {/* Fila 3: Dirección */}
               <div className="col-span-12">
                 <FormField control={form.control} name="studentAddress" render={({ field }) => (
                   <FormItem>
@@ -403,7 +429,7 @@ export function AutoContractForm() {
           </CardContent>
         </Card>
 
-        {/* SECCIÓN 3: PLAN DE PAGOS */}
+        {/* SECCIÓN 3: PLAN DE PAGOS Y SALDO */}
         <Card className="shadow-sm">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -450,7 +476,7 @@ export function AutoContractForm() {
               <FormField control={form.control} name="courseValue" render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Valor del Curso (B/.)</FormLabel>
-                  <FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold" /></FormControl>
+                  <FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold bg-muted/30" readOnly /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -493,7 +519,7 @@ export function AutoContractForm() {
           </CardContent>
         </Card>
 
-        {/* SECCIÓN 4: CLASES PRÁCTICAS */}
+        {/* SECCIÓN 4: CLASES PRÁCTICAS (DINÁMICAS SEGÚN PLAN) */}
         <Card className="shadow-sm">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -503,8 +529,8 @@ export function AutoContractForm() {
           </CardHeader>
           <CardContent className="p-6">
             {!watchPlan ? (
-              <div className="p-8 text-center border-2 border-dashed rounded-lg text-muted-foreground">
-                Seleccione un Plan / Paquete en la sección de pagos para habilitar la programación práctica.
+              <div className="p-8 text-center border-2 border-dashed rounded-lg text-muted-foreground italic">
+                Seleccione un Plan / Paquete para habilitar la agenda práctica.
               </div>
             ) : (
               <div className="space-y-4">

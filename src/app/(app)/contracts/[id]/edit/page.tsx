@@ -12,6 +12,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { AutoContractForm } from '@/components/forms/auto-contract-form';
 import { AmpliacionesContractForm } from '@/components/forms/ampliaciones-contract-form';
+import { MotoContractForm } from '@/components/forms/moto-contract-form';
+import { MixtoContractForm } from '@/components/forms/mixto-contract-form';
+import { DeluxeContractForm } from '@/components/forms/deluxe-contract-form';
+import { SoloPracticaContractForm } from '@/components/forms/solo-practica-contract-form';
 
 export default function EditContractPage() {
   const { id } = useParams();
@@ -33,6 +37,14 @@ export default function EditContractPage() {
     switch(contract.type) {
         case 'Ampliaciones':
             return <AmpliacionesContractForm initialContract={contract} />;
+        case 'Curso Moto':
+            return <MotoContractForm initialContract={contract} />;
+        case 'Curso Mixto':
+            return <MixtoContractForm initialContract={contract} />;
+        case 'Curso Deluxe':
+            return <DeluxeContractForm initialContract={contract} />;
+        case 'Curso Solo Practica':
+            return <SoloPracticaContractForm initialContract={contract} />;
         default:
             return <AutoContractForm initialContract={contract} />;
     }

@@ -7,6 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useSearchParams } from 'next/navigation';
 import { AutoContractForm } from '@/components/forms/auto-contract-form';
 import { AmpliacionesContractForm } from '@/components/forms/ampliaciones-contract-form';
+import { MotoContractForm } from '@/components/forms/moto-contract-form';
+import { MixtoContractForm } from '@/components/forms/mixto-contract-form';
+import { DeluxeContractForm } from '@/components/forms/deluxe-contract-form';
+import { SoloPracticaContractForm } from '@/components/forms/solo-practica-contract-form';
 
 function NewContractPageContent() {
     const searchParams = useSearchParams();
@@ -21,6 +25,14 @@ function NewContractPageContent() {
         switch(contractType) {
             case 'Ampliaciones':
                 return <AmpliacionesContractForm />;
+            case 'Curso Moto':
+                return <MotoContractForm />;
+            case 'Curso Mixto':
+                return <MixtoContractForm />;
+            case 'Curso Deluxe':
+                return <DeluxeContractForm />;
+            case 'Curso Solo Practica':
+                return <SoloPracticaContractForm />;
             default:
                 return <AutoContractForm />;
         }

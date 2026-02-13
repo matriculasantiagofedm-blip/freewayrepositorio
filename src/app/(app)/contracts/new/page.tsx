@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useSearchParams } from 'next/navigation';
 import { MotoContractForm } from '@/components/forms/moto-contract-form';
-import { MixtoContractForm } from '@/components/forms/mixto-contract-form';
 import { SoloPracticaContractForm } from '@/components/forms/solo-practica-contract-form';
 
 function NewContractPageContent() {
@@ -22,14 +21,12 @@ function NewContractPageContent() {
         switch(contractType) {
             case 'Curso Moto':
                 return <MotoContractForm />;
-            case 'Curso Mixto':
-                return <MixtoContractForm />;
             case 'Curso Solo Practica':
                 return <SoloPracticaContractForm />;
             default:
                 return (
                     <div className="p-12 text-center border-2 border-dashed rounded-lg">
-                        <p className="text-muted-foreground">Seleccione un tipo de contrato válido.</p>
+                        <p className="text-muted-foreground">Este trámite ha sido deshabilitado o el tipo seleccionado no es válido.</p>
                     </div>
                 );
         }

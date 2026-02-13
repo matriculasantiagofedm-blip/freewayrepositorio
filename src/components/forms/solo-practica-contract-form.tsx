@@ -120,11 +120,11 @@ export function SoloPracticaContractForm({ initialContract }: { initialContract?
             <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
                 <div className="flex items-center gap-2">
                     <UserCircle className="h-5 w-5 text-teal-600" />
-                    <CardTitle className="text-sm font-bold uppercase tracking-tight">Datos del Estudiante (Compacto)</CardTitle>
+                    <CardTitle className="text-sm font-bold uppercase tracking-tight">Datos del Estudiante (Ficha Compacta)</CardTitle>
                 </div>
             </CardHeader>
             <CardContent className="grid grid-cols-12 gap-x-4 gap-y-3 pt-6">
-                <div className="col-span-8">
+                <div className="col-span-12 md:col-span-8">
                     <FormField control={form.control} name="clientName" render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Nombre Completo</FormLabel>
@@ -132,7 +132,7 @@ export function SoloPracticaContractForm({ initialContract }: { initialContract?
                         </FormItem>
                     )} />
                 </div>
-                <div className="col-span-4">
+                <div className="col-span-12 md:col-span-4">
                     <FormField control={form.control} name="clientEmail" render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Email</FormLabel>
@@ -140,7 +140,7 @@ export function SoloPracticaContractForm({ initialContract }: { initialContract?
                         </FormItem>
                     )} />
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-4 md:col-span-2">
                     <FormField control={form.control} name="idType" render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Tipo ID</FormLabel>
@@ -151,7 +151,7 @@ export function SoloPracticaContractForm({ initialContract }: { initialContract?
                         </FormItem>
                     )} />
                 </div>
-                <div className="col-span-4">
+                <div className="col-span-8 md:col-span-4">
                     <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Identificación</FormLabel>
@@ -159,10 +159,10 @@ export function SoloPracticaContractForm({ initialContract }: { initialContract?
                         </FormItem>
                     )} />
                 </div>
-                <div className="col-span-6">
+                <div className="col-span-12 md:col-span-6">
                     <FormField control={form.control} name="studentPhone1" render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Teléfono</FormLabel>
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Teléfono de Contacto</FormLabel>
                             <FormControl><Input {...field} className="h-9" /></FormControl>
                         </FormItem>
                     )} />

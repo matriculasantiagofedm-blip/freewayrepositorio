@@ -1,4 +1,7 @@
 'use client';
+/**
+ * Módulo deshabilitado por solicitud del usuario.
+ */
 export function AmpliacionesContractForm() {
   return (
     <div className="p-12 text-center border-2 border-dashed rounded-lg bg-slate-50">

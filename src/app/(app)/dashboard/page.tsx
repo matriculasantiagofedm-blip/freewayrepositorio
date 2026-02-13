@@ -58,7 +58,6 @@ export default function DashboardPage() {
 
   const contractTypes = [
       { name: 'Curso Moto', href: '/contracts/new?type=Curso%20Moto', bgColor: 'bg-orange-50', textColor: 'text-orange-600'},
-      { name: 'Curso Mixto', href: '/contracts/new?type=Curso%20Mixto', bgColor: 'bg-purple-50', textColor: 'text-purple-600'},
       { name: 'Curso Solo Practica', href: '/contracts/new?type=Curso%20Solo%20Practica', bgColor: 'bg-teal-50', textColor: 'text-teal-600'},
   ];
 

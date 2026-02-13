@@ -7,7 +7,7 @@
  * - Ficha de estudiante técnica (12 columnas).
  * - Sincronización con Reporte de Agenda Práctica.
  * - Visualización de ocupación en tiempo real.
- * - NUEVO: Sección "Añadir" para servicios de Moto con lógica de precios especial.
+ * - Categorías dinámicas según servicios adicionales de moto.
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -132,7 +132,7 @@ const autoContractSchema = z.object({
   studentAddress: z.string().min(5, 'Dirección requerida'),
   studentPhone1: z.string().min(7, 'Teléfono requerido'),
   studentPhone2: z.string().optional(),
-  licenseCategory: z.enum(['A, C', 'A, C, D']).default('A, C'),
+  licenseCategory: z.string().min(1, 'Categoría requerida'),
   vehicleTransmission: z.enum(['Automático', 'Manual']).default('Automático'),
   coursePlan: z.string({ required_error: "Seleccione un plan" }),
   additionalService: z.enum(['Ninguno', 'Ya se manejar Moto', 'Basico Moto 10Hrs']).default('Ninguno'),
@@ -270,6 +270,20 @@ export function AutoContractForm() {
       form.setValue('additionalService', 'Ninguno');
     }
   }, [watchPlan, watchAdditional, form]);
+
+  // Sincronizar categorías de licencia según servicio adicional
+  useEffect(() => {
+    const currentCategory = form.getValues('licenseCategory');
+    const isMotoAdded = watchAdditional !== 'Ninguno';
+    
+    if (isMotoAdded) {
+      if (currentCategory === 'A, C') form.setValue('licenseCategory', 'A, C, B');
+      if (currentCategory === 'A, C, D') form.setValue('licenseCategory', 'A, C, B, D');
+    } else {
+      if (currentCategory === 'A, C, B') form.setValue('licenseCategory', 'A, C');
+      if (currentCategory === 'A, C, B, D') form.setValue('licenseCategory', 'A, C, D');
+    }
+  }, [watchAdditional, form]);
 
   useEffect(() => {
     const count = watchSchedule === 'Semanal 8:00 am a 10:00 am' ? 4 : 3;
@@ -432,15 +446,30 @@ export function AutoContractForm() {
           </CardHeader>
           <CardContent className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <FormField control={form.control} name="licenseCategory" render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Categoría</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent><SelectItem value="A, C">Tipo A y C</SelectItem><SelectItem value="A, C, D">Tipo A, C y D</SelectItem></SelectContent>
-                  </Select>
-                </FormItem>
-              )} />
+              <FormField control={form.control} name="licenseCategory" render={({ field }) => {
+                const isMotoAdded = watchAdditional !== 'Ninguno';
+                return (
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Categoría</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        {!isMotoAdded ? (
+                          <>
+                            <SelectItem value="A, C">Tipo A y C</SelectItem>
+                            <SelectItem value="A, C, D">Tipo A, C y D</SelectItem>
+                          </>
+                        ) : (
+                          <>
+                            <SelectItem value="A, C, B">Tipo A, C y B</SelectItem>
+                            <SelectItem value="A, C, B, D">Tipo A, C, B y D</SelectItem>
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                );
+              }} />
               <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Transmisión</FormLabel>

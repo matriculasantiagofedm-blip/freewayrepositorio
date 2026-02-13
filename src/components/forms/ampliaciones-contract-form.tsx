@@ -7,6 +7,7 @@
  * - Ficha de estudiante técnica (12 columnas) ULTRA COMPACTA.
  * - Selector de categorías por botones (Individuales y Combinaciones).
  * - Programación de sesión teórica única.
+ * - Categorías actualizadas: B, C, D, E1, E2, E3, F (Orden Alfabético).
  */
 
 import { useState } from 'react';
@@ -53,14 +54,13 @@ import {
   UserCircle, 
   Repeat, 
   CreditCard, 
-  Clock,
-  CheckCircle2
+  Clock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useCurrentRole } from '@/hooks/use-current-role';
 
-const LICENSE_CATEGORIES = ['E1', 'E2', 'E3', 'F', 'G', 'H', 'I', 'B', 'C', 'D'];
+const LICENSE_CATEGORIES = ['B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];
 
 const ampliacionesSchema = z.object({
   clientName: z.string().min(3, 'El nombre es requerido'),
@@ -270,7 +270,7 @@ export function AmpliacionesContractForm() {
           <CardContent className="p-6 space-y-8">
             <div className="space-y-4">
               <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Seleccionar Categorías Destino (Individuales o Combinadas)</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-5 md:grid-cols-10 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
                 {LICENSE_CATEGORIES.map(cat => {
                   const isSelected = selectedCategories.includes(cat);
                   return (

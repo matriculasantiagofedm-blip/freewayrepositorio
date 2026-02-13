@@ -56,10 +56,6 @@ export default function DashboardPage() {
     return true;
   });
 
-  const contractTypes = [
-      { name: 'Curso Solo Práctica', href: '/contracts/new?type=Curso%20Solo%20Practica', bgColor: 'bg-teal-50', textColor: 'text-teal-600'},
-  ];
-
   const actionGroups = [
     {
       title: 'Caja y Ventas',
@@ -108,22 +104,6 @@ export default function DashboardPage() {
                 </Card>
             </Link>
         ))}
-      </div>
-
-      <div>
-        <h2 className="text-xl font-bold font-headline mb-4 text-slate-800 border-b pb-2">Nuevo Registro</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {contractTypes.map((type) => (
-            <Card key={type.name} className="transition-all hover:shadow-md border-slate-200">
-                <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <span className="font-semibold text-slate-700">{type.name}</span>
-                    </div>
-                    <Button asChild size="sm" variant="secondary"><Link href={type.href}>Crear</Link></Button>
-                </CardContent>
-            </Card>
-          ))}
-        </div>
       </div>
 
       <div className="space-y-8">

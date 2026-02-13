@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { doc } from 'firebase/firestore';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
@@ -10,7 +10,6 @@ import { ChevronLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCurrentRole } from '@/hooks/use-current-role';
-import { SoloPracticaContractForm } from '@/components/forms/solo-practica-contract-form';
 
 export default function EditContractPage() {
   const { id } = useParams();
@@ -28,28 +27,21 @@ export default function EditContractPage() {
 
   if (error || !contract) return <div className="p-8 text-center">Error: Contrato no encontrado.</div>;
 
-  const renderForm = () => {
-    switch(contract.type) {
-        case 'Curso Solo Practica':
-            return <SoloPracticaContractForm initialContract={contract} />;
-        default:
-            return <div className="p-12 text-center border-2 border-dashed rounded-lg">Este tipo de contrato ya no es editable o ha sido deshabilitado.</div>;
-    }
-  };
-
   return (
     <div className="flex flex-col gap-8">
         <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild><Link href={`/contracts/${contractId}`}><ChevronLeft className="h-4 w-4" /></Link></Button>
             <div className="flex flex-col">
-                <h1 className="font-headline text-3xl font-bold">Modificar Contrato</h1>
+                <h1 className="font-headline text-3xl font-bold">Modificar Registro</h1>
                 <p className="text-muted-foreground">Folio: <span className="font-bold text-primary">{String(contract.folioNumber).padStart(6, '0')}</span></p>
             </div>
         </div>
         <Card className="max-w-5xl mx-auto w-full shadow-lg">
             <CardHeader><CardTitle className="text-2xl font-bold">Edición de Documento</CardTitle></CardHeader>
             <CardContent>
-                {renderForm()}
+                <div className="p-12 text-center border-2 border-dashed rounded-lg">
+                    <p className="text-muted-foreground">La edición para el tipo de contrato <strong>{contract.type}</strong> ha sido deshabilitada.</p>
+                </div>
             </CardContent>
         </Card>
     </div>

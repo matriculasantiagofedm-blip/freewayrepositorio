@@ -5,29 +5,15 @@ import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useSearchParams } from 'next/navigation';
-import { SoloPracticaContractForm } from '@/components/forms/solo-practica-contract-form';
 
 function NewContractPageContent() {
     const searchParams = useSearchParams();
-    const contractType = searchParams.get('type') || 'Curso Solo Practica';
+    const contractType = searchParams.get('type') || 'Desconocido';
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => { setMounted(true); }, []);
 
     if (!mounted) return <div className="p-12 text-center">Iniciando...</div>;
-
-    const renderForm = () => {
-        switch(contractType) {
-            case 'Curso Solo Practica':
-                return <SoloPracticaContractForm />;
-            default:
-                return (
-                    <div className="p-12 text-center border-2 border-dashed rounded-lg">
-                        <p className="text-muted-foreground">Este trámite ha sido deshabilitado o el tipo seleccionado no es válido.</p>
-                    </div>
-                );
-        }
-    };
 
     return (
         <div className="flex flex-col gap-8">
@@ -41,10 +27,12 @@ function NewContractPageContent() {
              <Card className="max-w-5xl mx-auto w-full shadow-lg print:shadow-none print:border-none">
                 <CardHeader className="print:hidden">
                     <CardTitle className="text-2xl font-bold font-headline">Freeway Escuela de Manejo, S.A.</CardTitle>
-                    <CardDescription>Completa los campos para generar el contrato.</CardDescription>
+                    <CardDescription>Gestión de documentos administrativos.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {renderForm()}
+                    <div className="p-12 text-center border-2 border-dashed rounded-lg">
+                        <p className="text-muted-foreground">No hay formularios activos para el tipo de trámite seleccionado.</p>
+                    </div>
                 </CardContent>
             </Card>
         </div>

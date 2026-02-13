@@ -8,7 +8,7 @@
  * - Programación dinámica de clases teóricas:
  *   - Semanal: 4 clases.
  *   - Sabatino: 3 clases.
- * - Sintaxis verificada para evitar errores de compilación.
+ * - Inclusión de opción Plan / Paquete en la sección de pagos.
  */
 
 import { useState, useEffect } from 'react';
@@ -44,7 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
@@ -55,12 +55,21 @@ import {
   UserCircle, 
   Car, 
   CreditCard, 
-  Clock,
-  BookOpen
+  BookOpen,
+  Package
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useCurrentRole } from '@/hooks/use-current-role';
+
+const AUTO_PLANS = [
+  "Curso Auto Básico (8hrz)",
+  "Curso Auto Plus (10hrz)",
+  "Curso Auto Premium (12hrz)",
+  "Reforzamiento 4hrs",
+  "Reforzamiento Plus 2hrs",
+  "Evaluación Estacionamiento (10 min)"
+];
 
 const autoContractSchema = z.object({
   clientName: z.string().min(3, 'El nombre es requerido'),
@@ -72,6 +81,7 @@ const autoContractSchema = z.object({
   studentPhone2: z.string().optional(),
   licenseCategory: z.enum(['A, C', 'A, C, D']).default('A, C'),
   vehicleTransmission: z.enum(['Automático', 'Manual']).default('Automático'),
+  coursePlan: z.string({ required_error: "Seleccione un plan" }),
   courseValue: z.coerce.number().min(1, 'Monto inválido'),
   downPayment: z.coerce.number().min(0),
   paymentDeadline: z.date({ required_error: 'Fecha límite requerida' }),
@@ -101,6 +111,7 @@ export function AutoContractForm() {
       studentPhone1: '',
       licenseCategory: 'A, C',
       vehicleTransmission: 'Automático',
+      coursePlan: '',
       courseValue: 0,
       downPayment: 0,
       paymentType: 'cash',
@@ -112,7 +123,6 @@ export function AutoContractForm() {
   const watchSchedule = form.watch('theoreticalClassSchedule');
   const theoreticalClassCount = watchSchedule === 'Semanal 8:00 am a 10:00 am' ? 4 : 3;
 
-  // Ajustar el array de fechas cuando cambia el horario
   useEffect(() => {
     const currentDates = form.getValues('theoreticalClassDates') || [];
     if (currentDates.length !== theoreticalClassCount) {
@@ -149,8 +159,6 @@ export function AutoContractForm() {
 
         const contractRef = doc(collection(db, 'contracts'));
         const balance = values.courseValue - values.downPayment;
-        
-        // Convertir fechas de JS a Timestamps de Firestore
         const formattedTheoryDates = (values.theoreticalClassDates || []).map(d => Timestamp.fromDate(d));
 
         transaction.set(contractRef, {
@@ -358,7 +366,41 @@ export function AutoContractForm() {
               <CardTitle className="text-sm font-bold uppercase tracking-wider">Plan de Pagos y Saldo</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="p-6 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField control={form.control} name="coursePlan" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1">
+                    <Package className="h-3 w-3" /> Plan / Paquete
+                  </FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger className="h-10"><SelectValue placeholder="Seleccionar paquete..." /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {AUTO_PLANS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              
+              <FormField control={form.control} name="paymentType" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Método de Pago (Abono)</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="cash">Efectivo</SelectItem>
+                      <SelectItem value="debit">Tarjeta Débito</SelectItem>
+                      <SelectItem value="credit">Tarjeta Crédito</SelectItem>
+                      <SelectItem value="bac">BAC</SelectItem>
+                      <SelectItem value="general">General</SelectItem>
+                      <SelectItem value="cheques">Cheque</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )} />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
               <FormField control={form.control} name="courseValue" render={({ field }) => (
                 <FormItem>
@@ -381,6 +423,7 @@ export function AutoContractForm() {
                 </div>
               </div>
             </div>
+
             <div className="mt-6 pt-4 border-t">
               <FormField control={form.control} name="paymentDeadline" render={({ field }) => (
                 <FormItem className="flex flex-col max-w-xs">

@@ -1,96 +1,32 @@
 /**
  * Firestore Security Rules for ContractTime
  *
- * Core Philosophy:
- * This ruleset enforces a strict user-ownership model. Every document in the database is 
- * hierarchically nested under a specific user's ID (/users/{userId}/...). This ensures that 
- * authorization is tied directly to the document path, making security checks efficient 
- * and independent of external lookups.
- *
- * Data Structure:
- * All application data follows a deep nesting pattern:
- * - /users/{userId}/clients/{clientId} (Client details)
- * - /users/{userId}/clients/{clientId}/contracts/{contractId} (Contract terms)
- * - /users/{userId}/clients/{clientId}/contracts/{contractId}/events/{eventId} (Schedules/Reminders)
- *
- * Key Security Decisions:
- * 1. Path-Based Authorization: Ownership is determined by comparing the {userId} in the 
- *    path against the authenticated user's UID (request.auth.uid).
- * 2. Relational Integrity: When creating or updating documents, we ensure that internal 
- *    linking fields (like clientId or contractId) remain consistent with the URL path 
- *    to prevent data drift and orphaned records.
- * 3. Prototyping Flexibility: While authorization is strictly enforced, these rules 
- *    do not validate the specific schema (types/required fields) of data being written, 
- *    facilitating rapid development.
- * 4. Write Protection: All write operations (create, update, delete) require valid 
- *    ownership. Deletes and updates specifically require the document to exist before 
- *    the operation is processed.
+ * Se ha simplificado el modelo para permitir acceso global a las colecciones raíz
+ * por parte de los usuarios autenticados del sistema (Administrador, Ventas, etc.).
  */
 
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- Helper Functions ---
-
-    /** Checks if the user is authenticated. */
+    /** Verifica si el usuario ha iniciado sesión en el sistema */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** Checks if the authenticated user's ID matches the provided userId from the path. */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    /** Checks for ownership and ensures the document exists (for updates and deletes). */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
-    }
-
-    // --- Collection Rules ---
-
-    /**
-     * @description Rules for the 'Client' entity, storing contact info for contract holders.
-     * @path /users/{userId}/clients/{clientId}
-     * @allow (create) User 'ABC' creating a client at /users/ABC/clients/123.
-     * @deny (list) User 'XYZ' attempting to list clients belonging to User 'ABC'.
-     * @principle Restricts access to a user's own data tree and validates path/ID consistency.
+    /** 
+     * Regla global para prototipado: permite lectura y escritura en todas las 
+     * colecciones raíz si el usuario está autenticado.
      */
-    match /users/{userId}/clients/{clientId} {
-      allow get, list: if isOwner(userId);
-      allow create: if isOwner(userId) && (request.resource.data.id == clientId);
-      allow update: if isExistingOwner(userId) && (request.resource.data.id == resource.data.id);
-      allow delete: if isExistingOwner(userId);
+    match /{collectionName}/{docId} {
+      allow read, write: if isSignedIn();
     }
 
-    /**
-     * @description Rules for the 'Contract' entity, representing legal agreements.
-     * @path /users/{userId}/clients/{clientId}/contracts/{contractId}
-     * @allow (get) User 'ABC' reading their own contract.
-     * @deny (create) User 'ABC' trying to create a contract for a client they don't own.
-     * @principle Enforces deep hierarchical ownership and ensures relational fields are immutable.
+    /** 
+     * Soporte para subcolecciones (si existieran en el futuro)
      */
-    match /users/{userId}/clients/{clientId}/contracts/{contractId} {
-      allow get, list: if isOwner(userId);
-      allow create: if isOwner(userId) && (request.resource.data.id == contractId && request.resource.data.clientId == clientId);
-      allow update: if isExistingOwner(userId) && (request.resource.data.id == resource.data.id && request.resource.data.clientId == resource.data.clientId);
-      allow delete: if isExistingOwner(userId);
+    match /{path=**} {
+      allow read, write: if isSignedIn();
     }
-
-    /**
-     * @description Rules for 'ContractEvent', managing deadlines and reminders.
-     * @path /users/{userId}/clients/{clientId}/contracts/{contractId}/events/{eventId}
-     * @allow (update) User 'ABC' marking a reminder as sent on their own event.
-     * @deny (update) User 'ABC' attempting to move an event to a different contract by changing contractId.
-     * @principle Maintains data integrity by preventing the reassignment of events between contracts.
-     */
-    match /users/{userId}/clients/{clientId}/contracts/{contractId}/events/{eventId} {
-      allow get, list: if isOwner(userId);
-      allow create: if isOwner(userId) && (request.resource.data.id == eventId && request.resource.data.contractId == contractId);
-      allow update: if isExistingOwner(userId) && (request.resource.data.id == resource.data.id && request.resource.data.contractId == resource.data.contractId);
-      allow delete: if isExistingOwner(userId);
-    }
-
   }
 }

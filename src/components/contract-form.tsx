@@ -297,8 +297,8 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
             toast({ title: 'Contrato Creado' }); 
             router.push(`/contracts/${cid}`);
         }
-    } catch (e) { 
-        console.error(e);
+    } catch (error) { 
+        console.error(error);
         toast({ variant: 'destructive', title: 'Error al procesar el contrato' }); 
     } finally {
         setIsSubmitting(false);
@@ -522,134 +522,75 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                                         <FormLabel className="text-[10px] uppercase opacity-50 font-bold">Sesión {index + 1}</FormLabel>
                                         <Popover modal={true}>
                                             <PopoverTrigger asChild>
-                                                <FormControl><Button variant="outline" className="h-10 text-xs w-full bg-white">{field.value ? format(toDate(field.value), "dd/MM") : `Fecha`}</Button></FormControl>
+                                                <FormControl>
+                                                  <Button variant="outline" className="h-10 text-xs w-full bg-white">
+                                                    {field.value ? format(toDate(field.value), "dd/MM/yy") : "Fecha"}
+                                                  </Button>
+                                                </FormControl>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-auto p-0" align="start">
                                                 <Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus />
                                             </PopoverContent>
                                         </Popover>
                                     </FormItem>
-                                ))}
-                            )}
+                                )} />
+                            ))}
                         </div>
                     </div>
 
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-2 text-primary font-bold">
-                            <Clock className="h-5 w-5" />
-                            <h3 className="text-sm uppercase">Cronograma Práctico</h3>
-                        </div>
-                        <div className="grid grid-cols-1 gap-4">
-                            {form.watch('practicalClassSchedules')?.map((_, index) => (
-                                <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-2 p-3 bg-white border rounded-lg shadow-sm items-end">
-                                    <div className="space-y-1">
-                                        <Label className="text-[10px] uppercase font-bold text-muted-foreground">Clase {index + 1}</Label>
-                                        <FormField control={form.control} name={`practicalClassSchedules.${index}.date`} render={({ field }) => (
-                                            <FormItem><Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant="outline" className="h-9 text-xs w-full">{field.value ? format(toDate(field.value), "dd/MM/yy") : "Fecha"}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover></FormItem>
-                                        )} />
-                                    </div>
-                                    <FormField control={form.control} name={`practicalClassSchedules.${index}.time`} render={({ field }) => (
-                                        <FormItem>
-                                            <Select onValueChange={field.onChange} value={field.value}>
-                                                <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
-                                                <SelectContent>
-                                                    <SelectItem value="8:00am a 10:00am">8am-10am</SelectItem>
-                                                    <SelectItem value="10:00am a 12:pm">10am-12pm</SelectItem>
-                                                    <SelectItem value="1:00pm a 3:00pm">1pm-3pm</SelectItem>
-                                                    <SelectItem value="3:00pm a 5:00pm">3pm-5pm</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </FormItem>
-                                    )} />
-                                    <FormField control={form.control} name={`practicalClassSchedules.${index}.vehicle`} render={({ field }) => (
-                                        <FormItem>
-                                            <Select onValueChange={field.onChange} value={field.value}>
-                                                <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
-                                                <SelectContent>
-                                                    {carVehicles.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
-                                        </FormItem>
-                                    )} />
-                                    <FormField control={form.control} name={`practicalClassSchedules.${index}.instructor`} render={({ field }) => (
-                                        <FormItem>
-                                            <Select onValueChange={field.onChange} value={field.value}>
-                                                <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
-                                                <SelectContent>
-                                                    {instructors.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
-                                        </FormItem>
-                                    )} />
-                                </div>
-                            ))}
-                            
-                            {(contractType === 'Curso Mixto' || contractType === 'Curso Moto') && (
-                                <div className="space-y-4 pt-4 border-t border-dashed mt-4">
-                                    <h4 className="text-xs font-bold uppercase text-muted-foreground">Sesiones de Motocicleta</h4>
-                                    {form.watch('motoPracticalClassSchedules')?.map((_, index) => (
-                                        <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-2 p-3 bg-white border rounded-lg shadow-sm items-end">
-                                            <div className="space-y-1">
-                                                <Label className="text-[10px] uppercase font-bold text-muted-foreground">Clase {index + 1} (Moto)</Label>
-                                                <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.date`} render={({ field }) => (
-                                                    <FormItem><Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant="outline" className="h-9 text-xs w-full">{field.value ? format(toDate(field.value), "dd/MM/yy") : "Fecha"}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover></FormItem>
-                                                )} />
-                                            </div>
-                                            <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.time`} render={({ field }) => (
-                                                <FormItem>
-                                                    <Select onValueChange={field.onChange} value={field.value}>
-                                                        <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
-                                                        <SelectContent>
-                                                            <SelectItem value="8:00am a 10:00am">8am-10am</SelectItem>
-                                                            <SelectItem value="10:00am a 12:pm">10am-12pm</SelectItem>
-                                                            <SelectItem value="1:00pm a 3:00pm">1pm-3pm</SelectItem>
-                                                            <SelectItem value="3:00pm a 5:00pm">3pm-5pm</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </FormItem>
-                                            )} />
-                                            <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.vehicle`} render={({ field }) => (
-                                                <FormItem>
-                                                    <Select onValueChange={field.onChange} value={field.value}>
-                                                        <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Moto" /></SelectTrigger></FormControl>
-                                                        <SelectContent>
-                                                            {motoVehicles.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </FormItem>
-                                            )} />
-                                            <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.instructor`} render={({ field }) => (
-                                                <FormItem>
-                                                    <Select onValueChange={field.onChange} value={field.value}>
-                                                        <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
-                                                        <SelectContent>
-                                                            {instructors.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </FormItem>
-                                            )} />
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                    {/* Práctica Auto */}
+                    {form.watch('practicalClassSchedules') && form.watch('practicalClassSchedules')!.length > 0 && (
+                      <div className="space-y-4">
+                        <h3 className="text-sm font-bold uppercase flex items-center gap-2 text-blue-600">
+                          <Clock className="h-4 w-4" /> Práctica Auto
+                        </h3>
+                        {form.watch('practicalClassSchedules')?.map((_, index) => (
+                          <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-3 p-3 border rounded-lg bg-white shadow-sm">
+                            <FormField control={form.control} name={`practicalClassSchedules.${index}.date`} render={({ field }) => (
+                              <FormItem>
+                                <Popover modal={true}>
+                                  <PopoverTrigger asChild>
+                                    <FormControl><Button variant="outline" className="w-full h-9 text-xs">{field.value ? format(toDate(field.value), "dd/MM/yy") : "Fecha"}</Button></FormControl>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} /></PopoverContent>
+                                </Popover>
+                              </FormItem>
+                            )} />
+                            <FormField control={form.control} name={`practicalClassSchedules.${index}.time`} render={({ field }) => (
+                              <FormItem><FormControl><Input {...field} className="h-9 text-xs" placeholder="Horario" /></FormControl></FormItem>
+                            )} />
+                            <FormField control={form.control} name={`practicalClassSchedules.${index}.vehicle`} render={({ field }) => (
+                              <FormItem>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
+                                  <SelectContent>{carVehicles.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent>
+                                </Select>
+                              </FormItem>
+                            )} />
+                            <FormField control={form.control} name={`practicalClassSchedules.${index}.instructor`} render={({ field }) => (
+                              <FormItem>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
+                                  <SelectContent>{instructors.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}</SelectContent>
+                                </Select>
+                              </FormItem>
+                            )} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                 </CardContent>
             </Card>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-4 pt-4 sticky bottom-0 bg-background/95 backdrop-blur p-4 z-50 border-t shadow-lg">
-            <Button type="submit" disabled={isSubmitting} size="lg" className="flex-1 h-14 text-lg font-bold">
-                {isSubmitting ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                {initialContract ? 'Guardar Cambios' : 'Generar Contrato'}
+        <div className="flex justify-end gap-4">
+            <Button type="button" variant="outline" onClick={() => router.back()}>Cancelar</Button>
+            <Button type="submit" disabled={isSubmitting} className="min-w-[150px]">
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                {initialContract ? 'Actualizar Contrato' : 'Guardar Contrato'}
             </Button>
-            <Button type="button" variant="outline" size="lg" className="h-14" onClick={() => router.back()}>Cancelar</Button>
         </div>
       </form>
     </Form>
   );
 }
-
-const Label = ({ children, className }: { children: React.ReactNode, className?: string }) => (
-    <span className={cn("text-sm font-medium leading-none", className)}>{children}</span>
-);

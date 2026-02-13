@@ -5,6 +5,7 @@ import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useSearchParams } from 'next/navigation';
+import { AutoContractForm } from '@/components/forms/auto-contract-form';
 
 function NewContractPageContent() {
     const searchParams = useSearchParams();
@@ -14,6 +15,19 @@ function NewContractPageContent() {
     useEffect(() => { setMounted(true); }, []);
 
     if (!mounted) return <div className="p-12 text-center">Iniciando...</div>;
+
+    const renderForm = () => {
+        switch (contractType) {
+            case 'Curso Auto':
+                return <AutoContractForm />;
+            default:
+                return (
+                    <div className="p-12 text-center border-2 border-dashed rounded-lg">
+                        <p className="text-muted-foreground">No hay formularios activos para el tipo de trámite seleccionado.</p>
+                    </div>
+                );
+        }
+    };
 
     return (
         <div className="flex flex-col gap-8">
@@ -30,9 +44,7 @@ function NewContractPageContent() {
                     <CardDescription>Gestión de documentos administrativos.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="p-12 text-center border-2 border-dashed rounded-lg">
-                        <p className="text-muted-foreground">No hay formularios activos para el tipo de trámite seleccionado.</p>
-                    </div>
+                    {renderForm()}
                 </CardContent>
             </Card>
         </div>

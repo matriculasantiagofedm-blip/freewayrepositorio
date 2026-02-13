@@ -10,6 +10,7 @@ import { collection, orderBy, query } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import type { Contract } from '@/lib/types';
+import { Car, Bike, Plus, History } from 'lucide-react';
 
 const getBalance = (contract: Contract): number => {
     const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
@@ -55,6 +56,10 @@ export default function DashboardPage() {
     if (stat.adminOnly && role !== 'Administrador') return false;
     return true;
   });
+
+  const contractTypes = [
+    { name: 'Curso Auto', href: '/contracts/new?type=Curso Auto', icon: Car, color: 'text-blue-600', bgColor: 'bg-blue-50' },
+  ];
 
   const actionGroups = [
     {
@@ -104,6 +109,28 @@ export default function DashboardPage() {
                 </Card>
             </Link>
         ))}
+      </div>
+
+      {/* NUEVA SECCIÓN: CREACIÓN RÁPIDA DE CONTRATOS */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold font-headline text-slate-800 border-b pb-2">Registrar Nuevo Trámite</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {contractTypes.map((type) => (
+                <Link key={type.name} href={type.href} className="no-underline group">
+                    <Card className={cn("transition-all hover:shadow-md border-slate-200 overflow-hidden", type.bgColor)}>
+                        <CardContent className="p-0 flex flex-col items-center justify-center h-32 relative">
+                            <div className="bg-white/80 p-3 rounded-full mb-2 group-hover:scale-110 transition-transform shadow-sm">
+                                <type.icon className={cn("h-6 w-6", type.color)} />
+                            </div>
+                            <span className={cn("font-bold text-sm uppercase", type.color)}>{type.name}</span>
+                            <div className="absolute top-2 right-2 opacity-20 group-hover:opacity-100 transition-opacity">
+                                <Plus className="h-4 w-4" />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
+            ))}
+        </div>
       </div>
 
       <div className="space-y-8">

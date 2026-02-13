@@ -4,10 +4,10 @@
  * FORMULARIO DE CONTRATO: CURSO DE MOTO (SINCRONIZADO CON AGENDA)
  * Freeway Escuela de Manejo, S.A.
  * 
- * - Ficha de estudiante técnica (12 columnas).
+ * - Ficha de estudiante técnica (12 columnas) ULTRA COMPACTA.
  * - Sincronización con Reporte de Agenda Práctica.
- * - Visualización de ocupación en tiempo real (quién ocupa el horario).
- * - Precios y planes específicos para motocicletas.
+ * - Visualización de ocupación en tiempo real.
+ * - Precios actualizados: Básico 115, Plus 135, Premium 155.
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -78,9 +78,9 @@ const MOTO_PLANS = [
 ];
 
 const PLAN_PRICES: Record<string, number> = {
-  "Curso Moto Básico (8 Hrs)": 133.00,
-  "Curso Moto Plus (10 Hrs)": 155.00,
-  "Curso Moto Premium (12 Hrs)": 180.00,
+  "Curso Moto Básico (8 Hrs)": 115.00,
+  "Curso Moto Plus (10 Hrs)": 135.00,
+  "Curso Moto Premium (12 Hrs)": 155.00,
   "Moto Reforzamiento 4 Hrs": 95.00,
   "Moto Reforzamiento 2 Hrs": 75.00,
   "Ya se manejar (Moto)": 57.00

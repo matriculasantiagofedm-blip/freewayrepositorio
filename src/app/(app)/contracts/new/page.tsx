@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useSearchParams } from 'next/navigation';
 import { MotoContractForm } from '@/components/forms/moto-contract-form';
 import { MixtoContractForm } from '@/components/forms/mixto-contract-form';
-import { DeluxeContractForm } from '@/components/forms/deluxe-contract-form';
 import { SoloPracticaContractForm } from '@/components/forms/solo-practica-contract-form';
 
 function NewContractPageContent() {
@@ -25,8 +24,6 @@ function NewContractPageContent() {
                 return <MotoContractForm />;
             case 'Curso Mixto':
                 return <MixtoContractForm />;
-            case 'Curso Deluxe':
-                return <DeluxeContractForm />;
             case 'Curso Solo Practica':
                 return <SoloPracticaContractForm />;
             default:

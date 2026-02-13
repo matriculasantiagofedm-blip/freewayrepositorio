@@ -6,10 +6,9 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -43,12 +42,12 @@ const TIME_MAP: Record<string, string> = {
 };
 
 const schema = z.object({
-  clientName: z.string().min(1, 'Requerido'),
+  clientName: z.string().min(1, 'Nombre requerido'),
   clientEmail: z.string().email('Email inválido'),
   idType: z.string().default('C.I.P.'),
-  studentIdNumber: z.string().min(1, 'Requerido'),
-  studentAddress: z.string().min(1, 'Requerido'),
-  studentPhone1: z.string().min(1, 'Requerido'),
+  studentIdNumber: z.string().min(1, 'Identificación requerida'),
+  studentAddress: z.string().min(1, 'Dirección requerida'),
+  studentPhone1: z.string().min(1, 'Teléfono requerido'),
   coursePlan: z.string().min(1, 'Seleccione plan'),
   courseValue: z.coerce.number().min(0),
   downPayment: z.coerce.number().min(0),
@@ -173,7 +172,12 @@ export function MotoContractForm({ initialContract }: { initialContract?: Contra
       });
       toast({ title: 'Éxito', description: 'Contrato de moto guardado.' });
       router.push('/dashboard');
-    } catch (e) { console.error(e); toast({ variant: 'destructive', title: 'Error al guardar' }); } finally { setIsSaving(false); }
+    } catch (e) { 
+      console.error(e); 
+      toast({ variant: 'destructive', title: 'Error al guardar' }); 
+    } finally { 
+      setIsSaving(false); 
+    }
   };
 
   return (
@@ -183,7 +187,7 @@ export function MotoContractForm({ initialContract }: { initialContract?: Contra
             <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
                 <div className="flex items-center gap-2">
                     <UserCircle className="h-5 w-5 text-orange-600" />
-                    <CardTitle className="text-sm font-bold uppercase">Datos del Estudiante (Compacto)</CardTitle>
+                    <CardTitle className="text-sm font-bold uppercase tracking-tight">Datos del Estudiante (Compacto)</CardTitle>
                 </div>
             </CardHeader>
             <CardContent className="grid grid-cols-12 gap-x-4 gap-y-3 pt-6">
@@ -191,7 +195,7 @@ export function MotoContractForm({ initialContract }: { initialContract?: Contra
                     <FormField control={form.control} name="clientName" render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Nombre Completo</FormLabel>
-                            <FormControl><Input {...field} className="h-9 font-semibold" /></FormControl>
+                            <FormControl><Input {...field} className="h-9 font-semibold uppercase" /></FormControl>
                         </FormItem>
                     )} />
                 </div>
@@ -206,7 +210,7 @@ export function MotoContractForm({ initialContract }: { initialContract?: Contra
                 <div className="col-span-2">
                     <FormField control={form.control} name="idType" render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">ID</FormLabel>
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Tipo ID</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
                                 <SelectContent><SelectItem value="C.I.P.">C.I.P.</SelectItem><SelectItem value="PASS">PASS</SelectItem></SelectContent>
@@ -217,7 +221,7 @@ export function MotoContractForm({ initialContract }: { initialContract?: Contra
                 <div className="col-span-4">
                     <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Número</FormLabel>
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Identificación</FormLabel>
                             <FormControl><Input {...field} className="h-9 font-mono" /></FormControl>
                         </FormItem>
                     )} />
@@ -242,7 +246,7 @@ export function MotoContractForm({ initialContract }: { initialContract?: Contra
         </Card>
 
         <Card className="shadow-md">
-            <CardHeader className="bg-slate-50/50 border-b py-3 px-6"><div className="flex items-center gap-2"><Settings2 className="h-5 w-5 text-orange-600" /><CardTitle className="text-sm font-bold uppercase">Configuración del Curso Moto</CardTitle></div></CardHeader>
+            <CardHeader className="bg-slate-50/50 border-b py-3 px-6"><div className="flex items-center gap-2"><Settings2 className="h-5 w-5 text-orange-600" /><CardTitle className="text-sm font-bold uppercase tracking-tight">Configuración del Curso Moto</CardTitle></div></CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
                 <FormField control={form.control} name="coursePlan" render={({ field }) => (<FormItem><FormLabel className="text-xs uppercase font-bold text-muted-foreground">Plan de Curso</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-10"><SelectValue placeholder="Elegir..." /></SelectTrigger></FormControl><SelectContent>{motoPackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>)}</SelectContent></Select></FormItem>)} />
                 <FormField control={form.control} name="licenseCategory" render={({ field }) => (<FormItem><FormLabel className="text-xs uppercase font-bold text-muted-foreground">Categoría (A, B)</FormLabel><FormControl><Input {...field} className="h-10 font-bold" /></FormControl></FormItem>)} />
@@ -250,7 +254,7 @@ export function MotoContractForm({ initialContract }: { initialContract?: Contra
         </Card>
 
         <Card className="shadow-md">
-            <CardHeader className="bg-slate-50/50 border-b py-3 px-6"><div className="flex items-center gap-2"><Clock className="h-5 w-5 text-orange-600" /><CardTitle className="text-sm font-bold uppercase">Agenda Práctica Moto</CardTitle></div></CardHeader>
+            <CardHeader className="bg-slate-50/50 border-b py-3 px-6"><div className="flex items-center gap-2"><Clock className="h-5 w-5 text-orange-600" /><CardTitle className="text-sm font-bold uppercase tracking-tight">Agenda Práctica Moto</CardTitle></div></CardHeader>
             <CardContent className="space-y-4 pt-6">
                 {fields.map((field, i) => {
                     const d = form.watch(`practicalClassSchedules.${i}.date`);
@@ -283,7 +287,7 @@ export function MotoContractForm({ initialContract }: { initialContract?: Contra
         </Card>
 
         <Card className="shadow-md">
-            <CardHeader className="bg-slate-50/50 border-b py-3 px-6"><div className="flex items-center gap-2"><DollarSign className="h-5 w-5 text-orange-600" /><CardTitle className="text-sm font-bold uppercase">Información de Pago</CardTitle></div></CardHeader>
+            <CardHeader className="bg-slate-50/50 border-b py-3 px-6"><div className="flex items-center gap-2"><DollarSign className="h-5 w-5 text-orange-600" /><CardTitle className="text-sm font-bold uppercase tracking-tight">Información de Pago</CardTitle></div></CardHeader>
             <CardContent className="grid grid-cols-2 md:grid-cols-5 gap-4 pt-6">
                 <FormField control={form.control} name="courseValue" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Total (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10" /></FormControl></FormItem>)} />
                 <FormField control={form.control} name="downPayment" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Abono (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 text-green-700 font-bold" /></FormControl></FormItem>)} />

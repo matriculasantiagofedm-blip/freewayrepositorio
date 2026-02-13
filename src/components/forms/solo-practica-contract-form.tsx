@@ -6,17 +6,16 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { UserCircle, Settings2, Save, DollarSign, Loader2 } from 'lucide-react';
-import { toDate } from '@/lib/utils';
+import { cn, toDate } from '@/lib/utils';
 import { Timestamp, collection, doc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { useDb, useUser } from '../firebase-provider';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -24,12 +23,12 @@ import { useToast } from '@/hooks/use-toast';
 import type { Contract } from '@/lib/types';
 
 const schema = z.object({
-  clientName: z.string().min(1, 'Requerido'),
+  clientName: z.string().min(1, 'Nombre requerido'),
   clientEmail: z.string().email('Email inválido'),
   idType: z.string().default('C.I.P.'),
-  studentIdNumber: z.string().min(1, 'Requerido'),
-  studentAddress: z.string().min(1, 'Requerido'),
-  studentPhone1: z.string().min(1, 'Requerido'),
+  studentIdNumber: z.string().min(1, 'Identificación requerida'),
+  studentAddress: z.string().min(1, 'Dirección requerida'),
+  studentPhone1: z.string().min(1, 'Teléfono requerido'),
   courseValue: z.coerce.number().min(0),
   downPayment: z.coerce.number().min(0),
   balance: z.coerce.number().min(0),
@@ -88,7 +87,6 @@ export function SoloPracticaContractForm({ initialContract }: { initialContract?
         }
         const contractId = initialContract?.id || doc(collection(db, 'contracts')).id;
         const contractRef = doc(db, 'contracts', contractId);
-        
         const finalData = {
             id: contractId, folioNumber: folio, title: 'Curso Solo Práctica', clientName: values.clientName, clientEmail: values.clientEmail,
             clientId: values.studentIdNumber, type: 'Curso Solo Practica', status: initialContract?.status || 'active',
@@ -102,14 +100,13 @@ export function SoloPracticaContractForm({ initialContract }: { initialContract?
                 vehicleTransmission: values.vehicleTransmission, licenseCategory: 'No Aplica'
             }
         };
-        
         if (!initialContract) transaction.set(contractRef, finalData);
         else transaction.update(contractRef, finalData);
       });
       toast({ title: 'Éxito', description: 'Registro guardado.' });
       router.push('/dashboard');
     } catch (e) { 
-      console.error(e);
+      console.error(e); 
       toast({ variant: 'destructive', title: 'Error al guardar' }); 
     } finally { 
       setIsSaving(false); 
@@ -123,28 +120,73 @@ export function SoloPracticaContractForm({ initialContract }: { initialContract?
             <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
                 <div className="flex items-center gap-2">
                     <UserCircle className="h-5 w-5 text-teal-600" />
-                    <CardTitle className="text-sm font-bold uppercase">Datos del Estudiante (Compacto)</CardTitle>
+                    <CardTitle className="text-sm font-bold uppercase tracking-tight">Datos del Estudiante (Compacto)</CardTitle>
                 </div>
             </CardHeader>
             <CardContent className="grid grid-cols-12 gap-x-4 gap-y-3 pt-6">
-                <div className="col-span-8"><FormField control={form.control} name="clientName" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Nombre Completo</FormLabel><FormControl><Input {...field} className="h-9 font-semibold" /></FormControl></FormItem>)} /></div>
-                <div className="col-span-4"><FormField control={form.control} name="clientEmail" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Email</FormLabel><FormControl><Input {...field} className="h-9" /></FormControl></FormItem>)} /></div>
-                <div className="col-span-2"><FormField control={form.control} name="idType" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">ID</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="C.I.P.">C.I.P.</SelectItem><SelectItem value="PASS">PASS</SelectItem></Select></FormItem>)} /></div>
-                <div className="col-span-4"><FormField control={form.control} name="studentIdNumber" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Número</FormLabel><FormControl><Input {...field} className="h-9 font-mono" /></FormControl></FormItem>)} /></div>
-                <div className="col-span-6"><FormField control={form.control} name="studentPhone1" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Teléfono</FormLabel><FormControl><Input {...field} className="h-9" /></FormControl></FormItem>)} /></div>
-                <div className="col-span-12"><FormField control={form.control} name="studentAddress" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Dirección Residencial</FormLabel><FormControl><Input {...field} className="h-9 text-xs" /></FormControl></FormItem>)} /></div>
+                <div className="col-span-8">
+                    <FormField control={form.control} name="clientName" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Nombre Completo</FormLabel>
+                            <FormControl><Input {...field} className="h-9 font-semibold uppercase" /></FormControl>
+                        </FormItem>
+                    )} />
+                </div>
+                <div className="col-span-4">
+                    <FormField control={form.control} name="clientEmail" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Email</FormLabel>
+                            <FormControl><Input {...field} className="h-9" /></FormControl>
+                        </FormItem>
+                    )} />
+                </div>
+                <div className="col-span-2">
+                    <FormField control={form.control} name="idType" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Tipo ID</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
+                                <SelectContent><SelectItem value="C.I.P.">C.I.P.</SelectItem><SelectItem value="PASS">PASS</SelectItem></SelectContent>
+                            </Select>
+                        </FormItem>
+                    )} />
+                </div>
+                <div className="col-span-4">
+                    <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Identificación</FormLabel>
+                            <FormControl><Input {...field} className="h-9 font-mono" /></FormControl>
+                        </FormItem>
+                    )} />
+                </div>
+                <div className="col-span-6">
+                    <FormField control={form.control} name="studentPhone1" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Teléfono</FormLabel>
+                            <FormControl><Input {...field} className="h-9" /></FormControl>
+                        </FormItem>
+                    )} />
+                </div>
+                <div className="col-span-12">
+                    <FormField control={form.control} name="studentAddress" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Dirección Residencial</FormLabel>
+                            <FormControl><Input {...field} className="h-9 text-xs" /></FormControl>
+                        </FormItem>
+                    )} />
+                </div>
             </CardContent>
         </Card>
 
         <Card className="shadow-md">
-            <CardHeader className="bg-slate-50/50 border-b py-3 px-6"><div className="flex items-center gap-2"><Settings2 className="h-5 w-5 text-teal-600" /><CardTitle className="text-sm font-bold uppercase">Configuración Solo Práctica</CardTitle></div></CardHeader>
+            <CardHeader className="bg-slate-50/50 border-b py-3 px-6"><div className="flex items-center gap-2"><Settings2 className="h-5 w-5 text-teal-600" /><CardTitle className="text-sm font-bold uppercase tracking-tight">Configuración Solo Práctica</CardTitle></div></CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
                 <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (<FormItem><FormLabel className="text-xs uppercase font-bold text-muted-foreground">Tipo de Vehículo / Transmisión</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Automático">Automático</SelectItem><SelectItem value="Manual">Manual</SelectItem><SelectItem value="Moto">Moto</SelectItem></Select></FormControl></FormItem>)} />
             </CardContent>
         </Card>
 
         <Card className="shadow-md">
-            <CardHeader className="bg-slate-50/50 border-b py-3 px-6"><div className="flex items-center gap-2"><DollarSign className="h-5 w-5 text-teal-600" /><CardTitle className="text-sm font-bold uppercase">Información de Pago</CardTitle></div></CardHeader>
+            <CardHeader className="bg-slate-50/50 border-b py-3 px-6"><div className="flex items-center gap-2"><DollarSign className="h-5 w-5 text-teal-600" /><CardTitle className="text-sm font-bold uppercase tracking-tight">Información de Pago</CardTitle></div></CardHeader>
             <CardContent className="grid grid-cols-2 md:grid-cols-5 gap-4 pt-6">
                 <FormField control={form.control} name="courseValue" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Total (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10" /></FormControl></FormItem>)} />
                 <FormField control={form.control} name="downPayment" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Abono (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 text-green-700 font-bold" /></FormControl></FormItem>)} />

@@ -6,10 +6,9 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -45,13 +44,13 @@ const TIME_MAP: Record<string, string> = {
 };
 
 const schema = z.object({
-  clientName: z.string().min(1, 'Requerido'),
+  clientName: z.string().min(1, 'Nombre requerido'),
   clientEmail: z.string().email('Email inválido'),
   idType: z.string().default('C.I.P.'),
-  studentIdNumber: z.string().min(1, 'Requerido'),
-  studentAddress: z.string().min(1, 'Requerido'),
-  studentPhone1: z.string().min(1, 'Requerido'),
-  coursePlan: z.string().min(1, 'Seleccione plan'),
+  studentIdNumber: z.string().min(1, 'Identificación requerida'),
+  studentAddress: z.string().min(1, 'Dirección requerida'),
+  studentPhone1: z.string().min(1, 'Teléfono requerido'),
+  coursePlan: z.string().min(1, 'Seleccione un plan'),
   courseValue: z.coerce.number().min(0),
   downPayment: z.coerce.number().min(0),
   balance: z.coerce.number().min(0),
@@ -139,7 +138,9 @@ export function MixtoContractForm({ initialContract }: { initialContract?: Contr
     }
   }, [watchPlan, replaceAuto, replaceMoto, form, initialContract]);
 
-  useEffect(() => { form.setValue('balance', Math.max(0, watchValue - watchDown)); }, [watchValue, watchDown, form]);
+  useEffect(() => { 
+    form.setValue('balance', Math.max(0, watchValue - watchDown)); 
+  }, [watchValue, watchDown, form]);
 
   const onSubmit = async (values: z.infer<typeof schema>) => {
     if (!db || !user) return;
@@ -175,7 +176,12 @@ export function MixtoContractForm({ initialContract }: { initialContract?: Contr
       });
       toast({ title: 'Éxito', description: 'Contrato mixto guardado.' });
       router.push('/dashboard');
-    } catch (e) { console.error(e); toast({ variant: 'destructive', title: 'Error al guardar' }); } finally { setIsSaving(false); }
+    } catch (e) { 
+      console.error(e); 
+      toast({ variant: 'destructive', title: 'Error al guardar' }); 
+    } finally { 
+      setIsSaving(false); 
+    }
   };
 
   return (
@@ -185,21 +191,71 @@ export function MixtoContractForm({ initialContract }: { initialContract?: Contr
             <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
                 <div className="flex items-center gap-2">
                     <UserCircle className="h-5 w-5 text-purple-600" />
-                    <CardTitle className="text-sm font-bold uppercase">Datos del Estudiante (Compacto)</CardTitle>
+                    <CardTitle className="text-sm font-bold uppercase tracking-tight">Datos del Estudiante (Compacto)</CardTitle>
                 </div>
             </CardHeader>
             <CardContent className="grid grid-cols-12 gap-x-4 gap-y-3 pt-6">
-                <div className="col-span-8"><FormField control={form.control} name="clientName" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Nombre Completo</FormLabel><FormControl><Input {...field} className="h-9 font-semibold" /></FormControl></FormItem>)} /></div>
-                <div className="col-span-4"><FormField control={form.control} name="clientEmail" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Email</FormLabel><FormControl><Input {...field} className="h-9" /></FormControl></FormItem>)} /></div>
-                <div className="col-span-2"><FormField control={form.control} name="idType" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Tipo ID</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="C.I.P.">C.I.P.</SelectItem><SelectItem value="PASS">PASS</SelectItem></Select></FormItem>)} /></div>
-                <div className="col-span-4"><FormField control={form.control} name="studentIdNumber" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Identificación</FormLabel><FormControl><Input {...field} className="h-9 font-mono" /></FormControl></FormItem>)} /></div>
-                <div className="col-span-6"><FormField control={form.control} name="studentPhone1" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Teléfono</FormLabel><FormControl><Input {...field} className="h-9" /></FormControl></FormItem>)} /></div>
-                <div className="col-span-12"><FormField control={form.control} name="studentAddress" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Dirección Residencial</FormLabel><FormControl><Input {...field} className="h-9 text-xs" /></FormControl></FormItem>)} /></div>
+                <div className="col-span-8">
+                    <FormField control={form.control} name="clientName" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Nombre Completo</FormLabel>
+                            <FormControl><Input {...field} className="h-9 font-semibold uppercase" /></FormControl>
+                        </FormItem>
+                    )} />
+                </div>
+                <div className="col-span-4">
+                    <FormField control={form.control} name="clientEmail" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Email</FormLabel>
+                            <FormControl><Input {...field} className="h-9" /></FormControl>
+                        </FormItem>
+                    )} />
+                </div>
+                <div className="col-span-2">
+                    <FormField control={form.control} name="idType" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Tipo ID</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
+                                <SelectContent><SelectItem value="C.I.P.">C.I.P.</SelectItem><SelectItem value="PASS">PASS</SelectItem></SelectContent>
+                            </Select>
+                        </FormItem>
+                    )} />
+                </div>
+                <div className="col-span-4">
+                    <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Identificación</FormLabel>
+                            <FormControl><Input {...field} className="h-9 font-mono" /></FormControl>
+                        </FormItem>
+                    )} />
+                </div>
+                <div className="col-span-6">
+                    <FormField control={form.control} name="studentPhone1" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Teléfono</FormLabel>
+                            <FormControl><Input {...field} className="h-9" /></FormControl>
+                        </FormItem>
+                    )} />
+                </div>
+                <div className="col-span-12">
+                    <FormField control={form.control} name="studentAddress" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Dirección Residencial</FormLabel>
+                            <FormControl><Input {...field} className="h-9 text-xs" /></FormControl>
+                        </FormItem>
+                    )} />
+                </div>
             </CardContent>
         </Card>
 
         <Card className="shadow-md">
-            <CardHeader className="bg-slate-50/50 border-b py-3 px-6"><div className="flex items-center gap-2"><Settings2 className="h-5 w-5 text-purple-600" /><CardTitle className="text-sm font-bold uppercase">Configuración del Curso Mixto</CardTitle></div></CardHeader>
+            <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
+                <div className="flex items-center gap-2">
+                    <Settings2 className="h-5 w-5 text-purple-600" />
+                    <CardTitle className="text-sm font-bold uppercase tracking-tight">Configuración del Curso Mixto</CardTitle>
+                </div>
+            </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
                 <FormField control={form.control} name="coursePlan" render={({ field }) => (<FormItem><FormLabel className="text-xs uppercase font-bold text-muted-foreground">Plan Mixto</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-10"><SelectValue placeholder="Elegir..." /></SelectTrigger></FormControl><SelectContent>{mixtoPackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>)}</SelectContent></Select></FormItem>)} />
                 <FormField control={form.control} name="licenseCategory" render={({ field }) => (<FormItem><FormLabel className="text-xs uppercase font-bold text-muted-foreground">Categorías</FormLabel><FormControl><Input {...field} className="h-10 font-bold" /></FormControl></FormItem>)} />
@@ -208,7 +264,7 @@ export function MixtoContractForm({ initialContract }: { initialContract?: Contr
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card className="shadow-sm border-blue-100">
-                <CardHeader className="py-3 px-4 bg-blue-50/50 border-b"><CardTitle className="text-xs font-bold uppercase text-blue-700">Clases de Auto</CardTitle></CardHeader>
+                <CardHeader className="py-3 px-4 bg-blue-50/50 border-b"><CardTitle className="text-xs font-bold uppercase text-blue-700">Agenda: Clases de Auto</CardTitle></CardHeader>
                 <CardContent className="space-y-3 pt-4">
                     {autoFields.map((field, index) => {
                         const d = form.watch(`practicalClassSchedules.${index}.date`);
@@ -240,7 +296,7 @@ export function MixtoContractForm({ initialContract }: { initialContract?: Contr
                 </CardContent>
             </Card>
             <Card className="shadow-sm border-orange-100">
-                <CardHeader className="py-3 px-4 bg-orange-50/50 border-b"><CardTitle className="text-xs font-bold uppercase text-orange-700">Clases de Moto</CardTitle></CardHeader>
+                <CardHeader className="py-3 px-4 bg-orange-50/50 border-b"><CardTitle className="text-xs font-bold uppercase text-orange-700">Agenda: Clases de Moto</CardTitle></CardHeader>
                 <CardContent className="space-y-3 pt-4">
                     {motoFields.map((field, index) => {
                         const d = form.watch(`motoPracticalClassSchedules.${index}.date`);
@@ -274,7 +330,7 @@ export function MixtoContractForm({ initialContract }: { initialContract?: Contr
         </div>
 
         <Card className="shadow-md">
-            <CardHeader className="bg-slate-50/50 border-b py-3 px-6"><div className="flex items-center gap-2"><DollarSign className="h-5 w-5 text-purple-600" /><CardTitle className="text-sm font-bold uppercase">Información de Pago</CardTitle></div></CardHeader>
+            <CardHeader className="bg-slate-50/50 border-b py-3 px-6"><div className="flex items-center gap-2"><DollarSign className="h-5 w-5 text-purple-600" /><CardTitle className="text-sm font-bold uppercase tracking-tight">Información de Pago</CardTitle></div></CardHeader>
             <CardContent className="grid grid-cols-2 md:grid-cols-5 gap-4 pt-6">
                 <FormField control={form.control} name="courseValue" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Total (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10" /></FormControl></FormItem>)} />
                 <FormField control={form.control} name="downPayment" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Abono (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 text-green-700 font-bold" /></FormControl></FormItem>)} />

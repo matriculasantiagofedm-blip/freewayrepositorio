@@ -47,7 +47,6 @@ import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { isPanamaHoliday } from '@/lib/holidays';
 import type { Contract, VehicleName, ManualSchedule } from '@/lib/types';
 
-// --- CONSTANTES ---
 const instructors = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon'];
 const carVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Auto Diesel'];
 const motoVehicles: VehicleName[] = ['Moto Roja', 'Moto Negra'];
@@ -102,7 +101,6 @@ const getGlobalCapacity = (date: Date, slotId: string) => {
     return 3;
 };
 
-// --- ESQUEMA DE VALIDACIÓN ---
 const contractSchema = z.object({
   clientName: z.string().min(1, 'El nombre es requerido.'),
   clientEmail: z.string().email('Email inválido.'),
@@ -140,7 +138,6 @@ const contractSchema = z.object({
 
 type FormValues = z.infer<typeof contractSchema>;
 
-// --- COMPONENTE DE FILA DE CLASE ---
 const ClassRow = ({ 
     index, 
     namePrefix, 
@@ -212,7 +209,6 @@ const ClassRow = ({
     );
 };
 
-// --- COMPONENTE PRINCIPAL ---
 export function ContractForm({ initialContract }: { initialContract?: Contract }) {
   const db = useDb();
   const { user } = useUser();

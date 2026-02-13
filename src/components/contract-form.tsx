@@ -18,6 +18,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -208,7 +209,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
   useEffect(() => {
     const val = form.watch('courseValue');
     const down = form.watch('downPayment');
-    form.setValue('balance', Math.max(0, val - down));
+    form.setValue('balance', Math.max(0, (val || 0) - (down || 0)));
   }, [form.watch('courseValue'), form.watch('downPayment'), form]);
 
   const categoriesToShow = useMemo(() => {
@@ -500,7 +501,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2 text-primary font-bold">
                                 <GraduationCap className="h-5 w-5" />
-                                <h3 className="text-sm uppercase">Sesiones Teóricas ({theorySessionCount})</h3>
+                                <h3 className="text-sm uppercase">Cronograma Teórico</h3>
                             </div>
                             <FormField control={form.control} name="theoreticalClassSchedule" render={({ field }) => (
                                 <FormItem className="w-64">
@@ -647,6 +648,3 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
     </Form>
   );
 }
-
-// Ensure the functions and hooks are properly exported and the closing braces are in place.
-import { Label } from './ui/label';

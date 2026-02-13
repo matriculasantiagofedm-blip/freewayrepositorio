@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useSearchParams } from 'next/navigation';
 import { AutoContractForm } from '@/components/forms/auto-contract-form';
-import { AmpliacionesContractForm } from '@/components/forms/ampliaciones-contract-form';
 import { MotoContractForm } from '@/components/forms/moto-contract-form';
 import { MixtoContractForm } from '@/components/forms/mixto-contract-form';
 import { DeluxeContractForm } from '@/components/forms/deluxe-contract-form';
@@ -23,8 +22,6 @@ function NewContractPageContent() {
 
     const renderForm = () => {
         switch(contractType) {
-            case 'Ampliaciones':
-                return <AmpliacionesContractForm />;
             case 'Curso Moto':
                 return <MotoContractForm />;
             case 'Curso Mixto':

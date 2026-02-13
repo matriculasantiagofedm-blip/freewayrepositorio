@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -178,46 +178,63 @@ export function MixtoContractForm({ initialContract }: { initialContract?: Contr
     } catch (e) { console.error(e); toast({ variant: 'destructive', title: 'Error al guardar' }); } finally { setIsSaving(false); }
   };
 
-  const ClassRow = ({ field, index, name, vOptions, availability }: any) => {
-    const d = form.watch(`${name}.${index}.date`);
-    const t = form.watch(`${name}.${index}.time`);
-    const v = form.watch(`${name}.${index}.vehicle`);
-    const dObj = d ? toDate(d) : null;
-    const isSun = dObj?.getDay() === 0;
-    const hol = dObj ? isPanamaHoliday(dObj) : null;
-    const slot = t ? (TIME_MAP[t] || t) : null;
-    const keyD = dObj ? format(dObj, 'yyyy-MM-dd') : null;
-    const isBusy = (keyD && slot && v && availability.occ[`${keyD}|${slot}|${v}`]);
-    const isFull = keyD && slot && (availability.glob[`${keyD}|${slot}`] || 0) >= 3;
-
-    return (
-        <div className={cn("grid grid-cols-4 gap-3 p-3 border rounded-lg bg-white relative", (isBusy || isFull || isSun || hol) && "border-amber-500 bg-amber-50/30")}>
-            <div className="absolute -top-2 right-2 flex gap-1 z-10">
-                {isSun && <span className="bg-red-600 text-white text-[8px] font-black px-1 py-0.5 rounded shadow-sm">DOMINGO</span>}
-                {hol && !isSun && <span className="bg-orange-500 text-white text-[8px] font-black px-1 py-0.5 rounded shadow-sm">FERIADO</span>}
-                {isBusy && <span className="bg-amber-500 text-white text-[8px] font-black px-1 py-0.5 rounded shadow-sm">OCUPADO</span>}
-                {isFull && !isBusy && <span className="bg-red-500 text-white text-[8px] font-black px-1 py-0.5 rounded shadow-sm">LLENO</span>}
-            </div>
-            <FormField control={form.control} name={`${name}.${index}.date`} render={({ field }) => (<FormItem><Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant="outline" className="w-full h-9 text-xs"><CalendarIcon className="mr-2 h-3 w-3" /> {field.value ? format(toDate(field.value), "dd/MM/yy") : "Fecha"}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover></FormItem>)} />
-            <FormField control={form.control} name={`${name}.${index}.time`} render={({ field }) => (<FormItem><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Turno" /></SelectTrigger></FormControl><SelectContent>{practicalTimeSlots.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent></Select></FormItem>)} />
-            <FormField control={form.control} name={`${name}.${index}.vehicle`} render={({ field }) => (<FormItem><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl><SelectContent>{vOptions.map((v: any) => <SelectItem key={v} value={v} className="text-xs">{v}</SelectItem>)}</SelectContent></Select></FormItem>)} />
-            <FormField control={form.control} name={`${name}.${index}.instructor`} render={({ field }) => (<FormItem><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Inst." /></SelectTrigger></FormControl><SelectContent>{instructors.map(ins => <SelectItem key={ins} value={ins} className="text-xs">{ins}</SelectItem>)}</SelectContent></Select></FormItem>)} />
-        </div>
-    );
-  };
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-5xl mx-auto pb-20">
         <Card className="border-t-4 border-t-purple-600 shadow-md">
             <CardHeader className="bg-slate-50/50 border-b py-3 px-6"><div className="flex items-center gap-2"><UserCircle className="h-5 w-5 text-purple-600" /><CardTitle className="text-sm font-bold uppercase">Datos del Estudiante (Compacto)</CardTitle></div></CardHeader>
-            <CardContent className="grid grid-cols-12 gap-4 pt-6">
-                <div className="col-span-8"><FormField control={form.control} name="clientName" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Nombre Completo</FormLabel><FormControl><Input {...field} className="h-9 font-semibold" /></FormControl></FormItem>)} /></div>
-                <div className="col-span-4"><FormField control={form.control} name="clientEmail" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Email</FormLabel><FormControl><Input {...field} className="h-9" /></FormControl></FormItem>)} /></div>
-                <div className="col-span-2"><FormField control={form.control} name="idType" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Tipo ID</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="C.I.P.">C.I.P.</SelectItem><SelectItem value="PASS">PASS</SelectItem></Select></FormControl></FormItem>)} /></div>
-                <div className="col-span-4"><FormField control={form.control} name="studentIdNumber" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Identificación</FormLabel><FormControl><Input {...field} className="h-9 font-mono" /></FormControl></FormItem>)} /></div>
-                <div className="col-span-6"><FormField control={form.control} name="studentPhone1" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Teléfono</FormLabel><FormControl><Input {...field} className="h-9" /></FormControl></FormItem>)} /></div>
-                <div className="col-span-12"><FormField control={form.control} name="studentAddress" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Dirección Residencial</FormLabel><FormControl><Input {...field} className="h-9 text-xs" /></FormControl></FormItem>)} /></div>
+            <CardContent className="grid grid-cols-12 gap-x-4 gap-y-3 pt-6">
+                <div className="col-span-8">
+                  <FormField control={form.control} name="clientName" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Nombre Completo</FormLabel>
+                      <FormControl><Input {...field} className="h-9 font-semibold" /></FormControl>
+                    </FormItem>
+                  )} />
+                </div>
+                <div className="col-span-4">
+                  <FormField control={form.control} name="clientEmail" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Email</FormLabel>
+                      <FormControl><Input {...field} className="h-9" /></FormControl>
+                    </FormItem>
+                  )} />
+                </div>
+                <div className="col-span-2">
+                  <FormField control={form.control} name="idType" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Tipo ID</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent><SelectItem value="C.I.P.">C.I.P.</SelectItem><SelectItem value="PASS">PASS</SelectItem></SelectContent>
+                      </Select>
+                    </FormItem>
+                  )} />
+                </div>
+                <div className="col-span-4">
+                  <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Identificación</FormLabel>
+                      <FormControl><Input {...field} className="h-9 font-mono" /></FormControl>
+                    </FormItem>
+                  )} />
+                </div>
+                <div className="col-span-6">
+                  <FormField control={form.control} name="studentPhone1" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Teléfono</FormLabel>
+                      <FormControl><Input {...field} className="h-9" /></FormControl>
+                    </FormItem>
+                  )} />
+                </div>
+                <div className="col-span-12">
+                  <FormField control={form.control} name="studentAddress" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Dirección Residencial</FormLabel>
+                      <FormControl><Input {...field} className="h-9 text-xs" /></FormControl>
+                    </FormItem>
+                  )} />
+                </div>
             </CardContent>
         </Card>
 
@@ -232,11 +249,67 @@ export function MixtoContractForm({ initialContract }: { initialContract?: Contr
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card className="shadow-sm border-blue-100">
                 <CardHeader className="py-3 px-4 bg-blue-50/50 border-b"><CardTitle className="text-xs font-bold uppercase text-blue-700">Clases de Auto</CardTitle></CardHeader>
-                <CardContent className="space-y-3 pt-4">{autoFields.map((f, i) => <ClassRow key={f.id} field={f} index={i} name="practicalClassSchedules" vOptions={carVehicles} availability={availability} />)}</CardContent>
+                <CardContent className="space-y-3 pt-4">
+                    {autoFields.map((field, index) => {
+                        const d = form.watch(`practicalClassSchedules.${index}.date`);
+                        const t = form.watch(`practicalClassSchedules.${index}.time`);
+                        const v = form.watch(`practicalClassSchedules.${index}.vehicle`);
+                        const dObj = d ? toDate(d) : null;
+                        const isSun = dObj?.getDay() === 0;
+                        const hol = dObj ? isPanamaHoliday(dObj) : null;
+                        const slot = t ? (TIME_MAP[t] || t) : null;
+                        const keyD = dObj ? format(dObj, 'yyyy-MM-dd') : null;
+                        const isBusy = (keyD && slot && v && availability.occ[`${keyD}|${slot}|${v}`]);
+                        const isFull = keyD && slot && (availability.glob[`${keyD}|${slot}`] || 0) >= 3;
+
+                        return (
+                            <div key={field.id} className={cn("grid grid-cols-4 gap-3 p-3 border rounded-lg bg-white relative", (isBusy || isFull || isSun || hol) && "border-amber-500 bg-amber-50/30")}>
+                                <div className="absolute -top-2 right-2 flex gap-1 z-10">
+                                    {isSun && <span className="bg-red-600 text-white text-[8px] font-black px-1 py-0.5 rounded shadow-sm">DOMINGO</span>}
+                                    {hol && !isSun && <span className="bg-orange-500 text-white text-[8px] font-black px-1 py-0.5 rounded shadow-sm">FERIADO</span>}
+                                    {isBusy && <span className="bg-amber-500 text-white text-[8px] font-black px-1 py-0.5 rounded shadow-sm">OCUPADO</span>}
+                                    {isFull && !isBusy && <span className="bg-red-500 text-white text-[8px] font-black px-1 py-0.5 rounded shadow-sm">LLENO</span>}
+                                </div>
+                                <FormField control={form.control} name={`practicalClassSchedules.${index}.date`} render={({ field: f }) => (<FormItem><Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant="outline" className="w-full h-9 text-xs"><CalendarIcon className="mr-2 h-3 w-3" /> {f.value ? format(toDate(f.value), "dd/MM/yy") : "Fecha"}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={f.value || undefined} onSelect={f.onChange} initialFocus /></PopoverContent></Popover></FormItem>)} />
+                                <FormField control={form.control} name={`practicalClassSchedules.${index}.time`} render={({ field: f }) => (<FormItem><Select onValueChange={f.onChange} value={f.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Turno" /></SelectTrigger></FormControl><SelectContent>{practicalTimeSlots.map(ts => <SelectItem key={ts} value={ts} className="text-xs">{ts}</SelectItem>)}</SelectContent></Select></FormItem>)} />
+                                <FormField control={form.control} name={`practicalClassSchedules.${index}.vehicle`} render={({ field: f }) => (<FormItem><Select onValueChange={f.onChange} value={f.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl><SelectContent>{carVehicles.map(vOpt => <SelectItem key={vOpt} value={vOpt} className="text-xs">{vOpt}</SelectItem>)}</SelectContent></Select></FormItem>)} />
+                                <FormField control={form.control} name={`practicalClassSchedules.${index}.instructor`} render={({ field: f }) => (<FormItem><Select onValueChange={f.onChange} value={f.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Inst." /></SelectTrigger></FormControl><SelectContent>{instructors.map(ins => <SelectItem key={ins} value={ins} className="text-xs">{ins}</SelectItem>)}</SelectContent></Select></FormItem>)} />
+                            </div>
+                        );
+                    })}
+                </CardContent>
             </Card>
             <Card className="shadow-sm border-orange-100">
                 <CardHeader className="py-3 px-4 bg-orange-50/50 border-b"><CardTitle className="text-xs font-bold uppercase text-orange-700">Clases de Moto</CardTitle></CardHeader>
-                <CardContent className="space-y-3 pt-4">{motoFields.map((f, i) => <ClassRow key={f.id} field={f} index={i} name="motoPracticalClassSchedules" vOptions={motoVehicles} availability={availability} />)}</CardContent>
+                <CardContent className="space-y-3 pt-4">
+                    {motoFields.map((field, index) => {
+                        const d = form.watch(`motoPracticalClassSchedules.${index}.date`);
+                        const t = form.watch(`motoPracticalClassSchedules.${index}.time`);
+                        const v = form.watch(`motoPracticalClassSchedules.${index}.vehicle`);
+                        const dObj = d ? toDate(d) : null;
+                        const isSun = dObj?.getDay() === 0;
+                        const hol = dObj ? isPanamaHoliday(dObj) : null;
+                        const slot = t ? (TIME_MAP[t] || t) : null;
+                        const keyD = dObj ? format(dObj, 'yyyy-MM-dd') : null;
+                        const isBusy = (keyD && slot && v && availability.occ[`${keyD}|${slot}|${v}`]);
+                        const isFull = keyD && slot && (availability.glob[`${keyD}|${slot}`] || 0) >= 3;
+
+                        return (
+                            <div key={field.id} className={cn("grid grid-cols-4 gap-3 p-3 border rounded-lg bg-white relative", (isBusy || isFull || isSun || hol) && "border-amber-500 bg-amber-50/30")}>
+                                <div className="absolute -top-2 right-2 flex gap-1 z-10">
+                                    {isSun && <span className="bg-red-600 text-white text-[8px] font-black px-1 py-0.5 rounded shadow-sm">DOMINGO</span>}
+                                    {hol && !isSun && <span className="bg-orange-500 text-white text-[8px] font-black px-1 py-0.5 rounded shadow-sm">FERIADO</span>}
+                                    {isBusy && <span className="bg-amber-500 text-white text-[8px] font-black px-1 py-0.5 rounded shadow-sm">OCUPADO</span>}
+                                    {isFull && !isBusy && <span className="bg-red-500 text-white text-[8px] font-black px-1 py-0.5 rounded shadow-sm">LLENO</span>}
+                                </div>
+                                <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.date`} render={({ field: f }) => (<FormItem><Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant="outline" className="w-full h-9 text-xs"><CalendarIcon className="mr-2 h-3 w-3" /> {f.value ? format(toDate(f.value), "dd/MM/yy") : "Fecha"}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={f.value || undefined} onSelect={f.onChange} initialFocus /></PopoverContent></Popover></FormItem>)} />
+                                <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.time`} render={({ field: f }) => (<FormItem><Select onValueChange={f.onChange} value={f.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Turno" /></SelectTrigger></FormControl><SelectContent>{practicalTimeSlots.map(ts => <SelectItem key={ts} value={ts} className="text-xs">{ts}</SelectItem>)}</SelectContent></Select></FormItem>)} />
+                                <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.vehicle`} render={({ field: f }) => (<FormItem><Select onValueChange={f.onChange} value={f.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl><SelectContent>{motoVehicles.map(vOpt => <SelectItem key={vOpt} value={vOpt} className="text-xs">{vOpt}</SelectItem>)}</SelectContent></Select></FormItem>)} />
+                                <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.instructor`} render={({ field: f }) => (<FormItem><Select onValueChange={f.onChange} value={f.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Inst." /></SelectTrigger></FormControl><SelectContent>{instructors.map(ins => <SelectItem key={ins} value={ins} className="text-xs">{ins}</SelectItem>)}</SelectContent></Select></FormItem>)} />
+                            </div>
+                        );
+                    })}
+                </CardContent>
             </Card>
         </div>
 

@@ -3,7 +3,6 @@ import type { Contract, ContractType } from '@/lib/types';
 import { DeluxePremiumContractTemplate } from './deluxe-premium-contract';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { AutoMotoContractTemplate } from './auto-moto-contract';
-import { AmpliacionesContractTemplate } from './ampliaciones-contract';
 import { AutoContractTemplate } from './auto-contract';
 
 
@@ -16,8 +15,6 @@ export function ContractView({ contract, type }: { contract: Contract, type?: Co
         return <AutoContractTemplate contract={contract} />;
       case 'Curso Deluxe':
         return <DeluxePremiumContractTemplate contract={contract} />;
-      case 'Ampliaciones':
-        return <AmpliacionesContractTemplate contract={contract} />;
       case 'Curso Moto':
       case 'Curso Mixto':
       case 'Curso Solo Practica':
@@ -26,10 +23,12 @@ export function ContractView({ contract, type }: { contract: Contract, type?: Co
         return (
           <Card className="print:shadow-none print:border-none">
             <CardHeader>
-                <CardTitle className="font-headline text-4xl pt-8">{contract.title || 'Contrato'}</CardTitle>
+                <CardTitle className="font-headline text-2xl pt-8">{contract.title || 'Contrato de Servicio'}</CardTitle>
             </CardHeader>
-            <CardContent className="prose prose-lg max-w-none text-foreground leading-relaxed p-6">
-                <p>{contract.content || 'Contenido no disponible.'}</p>
+            <CardContent className="text-foreground leading-relaxed p-6">
+                <p>Tipo de trámite: {contract.type}</p>
+                <p>Cliente: {contract.clientName}</p>
+                <p>Estado: {contract.status}</p>
             </CardContent>
              {contract.createdBy && (
               <CardFooter className="print:block hidden">

@@ -649,3 +649,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
     </Form>
   );
 }
+
+const Label = ({ children, className }: { children: React.ReactNode, className?: string }) => (
+    <span className={cn("text-sm font-medium leading-none", className)}>{children}</span>
+);

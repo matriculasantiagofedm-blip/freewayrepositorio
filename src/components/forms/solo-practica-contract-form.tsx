@@ -1,12 +1,12 @@
 'use client';
 
 /**
- * FORMULARIO DE CONTRATO: CURSO DE SOLO PRÁCTICA (SIN TEORÍA)
+ * FORMULARIO DE CONTRATO: CURSO DE SOLO PRÁCTICA (CON CALCULADORA DE PRECIOS)
  * Freeway Escuela de Manejo, S.A.
  * 
  * - Ficha de estudiante técnica (12 columnas) ULTRA COMPACTA.
  * - Sincronización con Reporte de Agenda Práctica.
- * - Selección de Vehículo (Auto/Motocicleta) y Paquetes (8, 10, 12 Hrs).
+ * - Selección de Vehículo (Auto/Motocicleta) y Paquetes con precios automáticos.
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -72,6 +72,12 @@ const PRACTICE_PLANS = [
   "Plus 10 Hrs",
   "Premium 12 Hrs"
 ];
+
+const PLAN_PRICES: Record<string, number> = {
+  "Basico 8 Hrs": 123.00,
+  "Plus 10 Hrs": 135.00,
+  "Premium 12 Hrs": 160.00
+};
 
 const PLAN_PRACTICAL_COUNTS: Record<string, number> = {
   "Basico 8 Hrs": 4,
@@ -216,6 +222,11 @@ export function SoloPracticaContractForm() {
 
   useEffect(() => {
     if (watchPlan) {
+      // Asignar precio automático
+      const price = PLAN_PRICES[watchPlan] || 0;
+      form.setValue('courseValue', price);
+
+      // Generar clases prácticas correspondientes
       const count = PLAN_PRACTICAL_COUNTS[watchPlan] || 0;
       const current = form.getValues('practicalClassSchedules') || [];
       const newSchedules = Array.from({ length: count }, (_, i) => current[i] || { 
@@ -396,7 +407,7 @@ export function SoloPracticaContractForm() {
                 <FormItem>
                   <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1"><Package className="h-3 w-3" /> Paquete de Práctica</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger className="h-10"><SelectValue placeholder="Seleccionar horas..." /></SelectTrigger></FormControl>
+                    <FormControl><SelectTrigger className="h-10"><SelectValue placeholder="Seleccionar paquete..." /></SelectTrigger></FormControl>
                     <SelectContent>{PRACTICE_PLANS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
                   </Select>
                   <FormMessage />
@@ -436,7 +447,7 @@ export function SoloPracticaContractForm() {
               <FormField control={form.control} name="courseValue" render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Valor del Trámite (B/.)</FormLabel>
-                  <FormControl><Input type="number" step="0.01" {...field} className="h-10 font-black text-emerald-900 bg-emerald-50/30" /></FormControl>
+                  <FormControl><Input type="number" step="0.01" {...field} className="h-10 font-black text-emerald-900 bg-emerald-50/30" readOnly /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />

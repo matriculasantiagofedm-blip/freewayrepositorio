@@ -43,7 +43,10 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
     <Card className="p-6 print:shadow-none print:border-none print:p-0 font-serif text-xs">
       <CardContent className="p-0 space-y-2 relative">
         <div className="flex justify-between items-start pb-2 border-b border-black mb-2">
-            <h2 className="text-center font-bold text-sm uppercase">Contrato de Servicio de Capacitación Vial</h2>
+            <div className='flex flex-col'>
+                <h2 className="font-bold text-sm uppercase">Contrato de Servicio de Capacitación Vial</h2>
+                <p className='text-[8px] text-muted-foreground uppercase'>FREEWAY ESCUELA DE MANEJO S.A. | RUC 155628022-2-2016 DV 2</p>
+            </div>
              {contract.folioNumber && (
                 <div className="text-right">
                     <p className="font-bold text-sm text-destructive print:text-red-500">FOLIO N° {String(contract.folioNumber).padStart(6, '0')}</p>
@@ -51,37 +54,28 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
             )}
         </div>
         
-        {/* SECCIÓN COMPACTA DEL ESTUDIANTE Y EMPRESA */}
-        <div className="border border-black p-2 bg-slate-50/30">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1 text-[9px] leading-tight">
-                <div className="flex gap-1">
-                    <span className="font-bold min-w-[60px]">EMPRESA:</span>
-                    <span>FREEWAY ESCUELA DE MANEJO S.A. (RUC 155628022-2-2016 DV 2)</span>
+        {/* SECCIÓN ULTRA COMPACTA TIPO FICHA */}
+        <div className="border border-black p-2 bg-slate-50/20 mb-3">
+            <div className="grid grid-cols-4 gap-x-4 gap-y-2">
+                <div className="col-span-2">
+                    <p className="text-[10px] font-black uppercase border-b border-black/5 mb-0.5">{contract.clientName}</p>
+                    <p className="text-[7px] text-muted-foreground font-bold uppercase tracking-tighter">Nombre Completo del Estudiante</p>
                 </div>
-                <div className="flex gap-1">
-                    <span className="font-bold min-w-[60px]">UBICACIÓN:</span>
-                    <span>Costa Verde, PH Green Plaza, Local #20, La Chorrera.</span>
+                <div>
+                    <p className="text-[10px] font-bold border-b border-black/5 mb-0.5">{autoMotoDetails?.studentIdNumber}</p>
+                    <p className="text-[7px] text-muted-foreground font-bold uppercase tracking-tighter">{autoMotoDetails?.idType || 'Identificación'}</p>
                 </div>
-                <div className="md:col-span-2 border-t border-black/10 my-1"></div>
-                <div className="flex gap-1">
-                    <span className="font-bold min-w-[60px]">ESTUDIANTE:</span>
-                    <span className="uppercase font-bold">{contract.clientName}</span>
+                <div>
+                    <p className="text-[10px] font-bold border-b border-black/5 mb-0.5">{autoMotoDetails?.studentPhone1} {autoMotoDetails?.studentPhone2 ? `/ ${autoMotoDetails.studentPhone2}` : ''}</p>
+                    <p className="text-[7px] text-muted-foreground font-bold uppercase tracking-tighter">Teléfonos de Contacto</p>
                 </div>
-                <div className="flex gap-1">
-                    <span className="font-bold min-w-[60px] uppercase">{autoMotoDetails?.idType || 'ID'}:</span>
-                    <span className="font-bold">{autoMotoDetails?.studentIdNumber}</span>
+                <div className="col-span-3">
+                    <p className="text-[9px] font-medium uppercase border-b border-black/5 mb-0.5">{autoMotoDetails?.studentAddress}</p>
+                    <p className="text-[7px] text-muted-foreground font-bold uppercase tracking-tighter">Dirección de Domicilio</p>
                 </div>
-                <div className="flex gap-1">
-                    <span className="font-bold min-w-[60px]">DOMICILIO:</span>
-                    <span className="uppercase">{autoMotoDetails?.studentAddress}</span>
-                </div>
-                <div className="flex gap-1">
-                    <span className="font-bold min-w-[60px]">TELÉFONOS:</span>
-                    <span>{autoMotoDetails?.studentPhone1} {autoMotoDetails?.studentPhone2 ? `/ ${autoMotoDetails.studentPhone2}` : ''}</span>
-                </div>
-                <div className="flex gap-1 md:col-span-2">
-                    <span className="font-bold min-w-[60px]">EMAIL:</span>
-                    <span className="lowercase font-semibold">{contract.clientEmail}</span>
+                <div>
+                    <p className="text-[9px] font-medium lowercase border-b border-black/5 mb-0.5">{contract.clientEmail}</p>
+                    <p className="text-[7px] text-muted-foreground font-bold uppercase tracking-tighter">Correo Electrónico</p>
                 </div>
             </div>
         </div>

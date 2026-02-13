@@ -6,8 +6,7 @@
  * 
  * - Ficha de estudiante técnica (12 columnas) ULTRA COMPACTA.
  * - Sincronización con Reporte de Agenda Práctica.
- * - Sin sección de teoría (trámite de solo manejo).
- * - Visualización de ocupación en tiempo real.
+ * - Selección de Vehículo (Auto/Motocicleta) y Paquetes (8, 10, 12 Hrs).
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -59,7 +58,8 @@ import {
   Clock,
   AlertTriangle,
   ShieldCheck,
-  Package
+  Package,
+  Car
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useDb, useUser } from '@/components/firebase-provider';
@@ -68,21 +68,15 @@ import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { isPanamaHoliday } from '@/lib/holidays';
 
 const PRACTICE_PLANS = [
-  "Solo Práctica (2 Hrs)",
-  "Solo Práctica (4 Hrs)",
-  "Solo Práctica (6 Hrs)",
-  "Solo Práctica (8 Hrs)",
-  "Solo Práctica (10 Hrs)",
-  "Evaluación de Manejo"
+  "Basico 8 Hrs",
+  "plus 10 Hrs",
+  "premium 12 Hrs"
 ];
 
 const PLAN_PRACTICAL_COUNTS: Record<string, number> = {
-  "Solo Práctica (2 Hrs)": 1,
-  "Solo Práctica (4 Hrs)": 2,
-  "Solo Práctica (6 Hrs)": 3,
-  "Solo Práctica (8 Hrs)": 4,
-  "Solo Práctica (10 Hrs)": 5,
-  "Evaluación de Manejo": 1
+  "Basico 8 Hrs": 4,
+  "plus 10 Hrs": 5,
+  "premium 12 Hrs": 6
 };
 
 const TIME_OPTIONS = [
@@ -121,6 +115,7 @@ const soloPracticaSchema = z.object({
   studentAddress: z.string().min(5, 'Dirección requerida'),
   studentPhone1: z.string().min(7, 'Teléfono requerido'),
   studentPhone2: z.string().optional(),
+  vehicleType: z.enum(['Auto', 'Motocicleta']).default('Auto'),
   vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).default('Automático'),
   coursePlan: z.string({ required_error: "Seleccione un paquete" }),
   courseValue: z.coerce.number().min(1, 'Monto inválido'),
@@ -160,6 +155,7 @@ export function SoloPracticaContractForm() {
       studentIdNumber: '',
       studentAddress: '',
       studentPhone1: '',
+      vehicleType: 'Auto',
       vehicleTransmission: 'Automático',
       coursePlan: '',
       courseValue: 0,
@@ -383,7 +379,19 @@ export function SoloPracticaContractForm() {
             </div>
           </CardHeader>
           <CardContent className="p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <FormField control={form.control} name="vehicleType" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1"><Car className="h-3 w-3" /> Tipo de Vehículo</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="Auto">Automóvil</SelectItem>
+                      <SelectItem value="Motocicleta">Motocicleta</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )} />
               <FormField control={form.control} name="coursePlan" render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1"><Package className="h-3 w-3" /> Paquete de Práctica</FormLabel>

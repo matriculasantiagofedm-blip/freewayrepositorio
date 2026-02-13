@@ -59,6 +59,7 @@ export interface AutoMotoContractDetails {
   balance?: number;
   paymentDeadline?: any;
   vehicle?: VehicleName;
+  vehicleType?: 'Auto' | 'Motocicleta';
   vehicleTransmission?: 'Automático' | 'Manual' | 'Moto';
   licenseCategory?: string;
   theoreticalClassSchedule?: string;

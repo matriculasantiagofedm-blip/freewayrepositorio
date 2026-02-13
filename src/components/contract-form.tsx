@@ -47,7 +47,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { Contract, ContractType, VehicleName } from '@/lib/types';
 
 const instructors: string[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon'];
-const carVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
+const carVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Auto Diesel'];
 const motoVehicles: VehicleName[] = ['Moto Roja', 'Moto Negra'];
 const theoreticalSchedules = ['Semanal (8:00 am a 10:00 am)', 'Sabatino (3:00 pm a 5:00 pm)'];
 

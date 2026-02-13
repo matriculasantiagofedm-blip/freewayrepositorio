@@ -24,6 +24,7 @@ const initialVehicles: VehicleMileageState[] = [
     { name: 'Picanto Blanco', initialMileage: '', finalMileage: '', distance: 0 },
     { name: 'Picanto Bronce', initialMileage: '', finalMileage: '', distance: 0 },
     { name: 'Spark', initialMileage: '', finalMileage: '', distance: 0 },
+    { name: 'Auto Diesel', initialMileage: '', finalMileage: '', distance: 0 },
     { name: 'Moto Roja', initialMileage: '', finalMileage: '', distance: 0 },
     { name: 'Moto Negra', initialMileage: '', finalMileage: '', distance: 0 },
 ];

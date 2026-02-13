@@ -78,7 +78,7 @@ const manualScheduleSchema = z.object({
 type FormValues = z.infer<typeof manualScheduleSchema>;
 
 const instructors: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon'];
-const allVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Moto Roja', 'Moto Negra'];
+const allVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Auto Diesel', 'Moto Roja', 'Moto Negra'];
 
 const timeSlots = [
     { id: '8am-10am', label: '08:00 - 10:00' },

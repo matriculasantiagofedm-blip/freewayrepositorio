@@ -56,6 +56,7 @@ const vehicleColors: Record<string, string> = {
     'Picanto Blanco': 'bg-blue-50 border-blue-300 text-blue-800',
     'Picanto Bronce': 'bg-amber-50 border-amber-400 text-amber-900',
     'Spark': 'bg-green-50 border-green-300 text-green-800',
+    'Auto Diesel': 'bg-indigo-50 border-indigo-300 text-indigo-800',
     'Moto Roja': 'bg-red-50 border-red-300 text-red-800',
     'Moto Negra': 'bg-stone-50 border-stone-400 text-stone-800',
 };

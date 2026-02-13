@@ -8,6 +8,7 @@
  * - Sincronización con Reporte de Agenda Práctica.
  * - Visualización de ocupación en tiempo real.
  * - Precios actualizados: Básico 115, Plus 135, Premium 155.
+ * - OPCIÓN AÑADIR AUTO: Lógica de combo (290.00) e incremento (20.00).
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -60,7 +61,9 @@ import {
   Package,
   Clock,
   AlertTriangle,
-  ShieldCheck
+  ShieldCheck,
+  Plus,
+  Car
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useDb, useUser } from '@/components/firebase-provider';
@@ -131,9 +134,10 @@ const motoContractSchema = z.object({
   studentAddress: z.string().min(5, 'Dirección requerida'),
   studentPhone1: z.string().min(7, 'Teléfono requerido'),
   studentPhone2: z.string().optional(),
-  licenseCategory: z.enum(['A, B']).default('A, B'),
+  licenseCategory: z.string().min(1, 'Categoría requerida'),
   vehicleTransmission: z.enum(['Moto']).default('Moto'),
   coursePlan: z.string({ required_error: "Seleccione un plan" }),
+  additionalService: z.enum(['Ninguno', 'Ya se manejar Auto', 'Basico Auto']).default('Ninguno'),
   courseValue: z.coerce.number().min(1, 'Monto inválido'),
   downPayment: z.coerce.number().min(0),
   paymentDeadline: z.date({ required_error: 'Fecha límite requerida' }),
@@ -176,6 +180,7 @@ export function MotoContractForm() {
       licenseCategory: 'A, B',
       vehicleTransmission: 'Moto',
       coursePlan: '',
+      additionalService: 'Ninguno',
       courseValue: 0,
       downPayment: 0,
       paymentType: 'cash',
@@ -234,11 +239,22 @@ export function MotoContractForm() {
 
   const watchSchedule = form.watch('theoreticalClassSchedule');
   const watchPlan = form.watch('coursePlan');
+  const watchAdditional = form.watch('additionalService');
 
+  // Lógica de Precios y Agenda
   useEffect(() => {
     if (watchPlan) {
-      const price = PLAN_PRICES[watchPlan] || 0;
+      let price = PLAN_PRICES[watchPlan] || 0;
+      
+      // Aplicar reglas de combo auto
+      if (watchAdditional === 'Basico Auto') {
+        price = 290.00;
+      } else if (watchAdditional === 'Ya se manejar Auto') {
+        price += 20.00;
+      }
+
       form.setValue('courseValue', price);
+      
       const count = PLAN_PRACTICAL_COUNTS[watchPlan] || 0;
       const current = form.getValues('practicalClassSchedules') || [];
       const newSchedules = Array.from({ length: count }, (_, i) => current[i] || { 
@@ -249,7 +265,22 @@ export function MotoContractForm() {
       });
       replacePractical(newSchedules);
     }
-  }, [watchPlan, replacePractical, form]);
+  }, [watchPlan, watchAdditional, replacePractical, form]);
+
+  // Sincronizar categorías de licencia según servicio adicional
+  useEffect(() => {
+    const isAutoAdded = watchAdditional !== 'Ninguno';
+    if (isAutoAdded) {
+      // Si se añade auto, mostrar categorías combinadas
+      const current = form.getValues('licenseCategory');
+      if (current === 'A, B') {
+        form.setValue('licenseCategory', 'A, B, C');
+      }
+    } else {
+      // Revertir a categoría de moto pura
+      form.setValue('licenseCategory', 'A, B');
+    }
+  }, [watchAdditional, form]);
 
   useEffect(() => {
     const count = watchSchedule === 'Semanal 8:00 am a 10:00 am' ? 4 : 3;
@@ -329,6 +360,7 @@ export function MotoContractForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-5xl mx-auto pb-20">
         
+        {/* FICHA TÉCNICA (12 COLUMNAS) */}
         <Card className="border-t-4 border-t-orange-600 shadow-md">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -401,6 +433,7 @@ export function MotoContractForm() {
           </CardContent>
         </Card>
 
+        {/* CONFIGURACIÓN Y TEORÍA */}
         <Card className="shadow-md">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -410,15 +443,27 @@ export function MotoContractForm() {
           </CardHeader>
           <CardContent className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <FormField control={form.control} name="licenseCategory" render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Categoría</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent><SelectItem value="A, B">Tipo A y B</SelectItem></SelectContent>
-                  </Select>
-                </FormItem>
-              )} />
+              <FormField control={form.control} name="licenseCategory" render={({ field }) => {
+                const isAutoAdded = watchAdditional !== 'Ninguno';
+                return (
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Categoría</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        {!isAutoAdded ? (
+                          <SelectItem value="A, B">Tipo A y B (Moto)</SelectItem>
+                        ) : (
+                          <>
+                            <SelectItem value="A, B, C">Tipo A, B y C</SelectItem>
+                            <SelectItem value="A, B, C, D">Tipo A, B, C y D</SelectItem>
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                );
+              }} />
               <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Tipo de Vehículo</FormLabel>
@@ -466,6 +511,7 @@ export function MotoContractForm() {
           </CardContent>
         </Card>
 
+        {/* PLAN DE PAGOS Y SALDO */}
         <Card className="shadow-md">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -474,7 +520,7 @@ export function MotoContractForm() {
             </div>
           </CardHeader>
           <CardContent className="p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <FormField control={form.control} name="coursePlan" render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1"><Package className="h-3 w-3" /> Plan / Paquete</FormLabel>
@@ -485,6 +531,21 @@ export function MotoContractForm() {
                   <FormMessage />
                 </FormItem>
               )} />
+
+              <FormField control={form.control} name="additionalService" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1"><Plus className="h-3 w-3" /> Añadir Auto</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="Ninguno">Ninguno</SelectItem>
+                      <SelectItem value="Ya se manejar Auto">Ya se manejar Auto (+B/.20)</SelectItem>
+                      <SelectItem value="Basico Auto">Basico Auto (Combo B/.290)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )} />
+
               <FormField control={form.control} name="paymentType" render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Método de Pago (Abono)</FormLabel>
@@ -502,15 +563,17 @@ export function MotoContractForm() {
                 </FormItem>
               )} />
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
               <FormField control={form.control} name="courseValue" render={({ field }) => (
-                <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Valor del Curso (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold bg-muted/30" readOnly /></FormControl></FormItem>
+                <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Valor del Contrato (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold bg-muted/30" readOnly /></FormControl></FormItem>
               )} />
               <FormField control={form.control} name="downPayment" render={({ field }) => (
                 <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Abono Inicial (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold text-green-600" /></FormControl></FormItem>
               )} />
               <div className="flex flex-col gap-1.5"><Label className="text-[10px] font-bold uppercase text-muted-foreground">Saldo Pendiente</Label><div className="flex items-center justify-between h-10 px-4 bg-orange-50 rounded-md border border-orange-100"><span className="text-lg font-black text-orange-900">B/. {currentBalance.toFixed(2)}</span></div></div>
             </div>
+
             <div className="mt-6 pt-4 border-t">
               <FormField control={form.control} name="paymentDeadline" render={({ field }) => (
                 <FormItem className="flex flex-col max-w-xs">
@@ -527,6 +590,7 @@ export function MotoContractForm() {
           </CardContent>
         </Card>
 
+        {/* AGENDA PRÁCTICA SINCRONIZADA */}
         <Card className="shadow-md">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">

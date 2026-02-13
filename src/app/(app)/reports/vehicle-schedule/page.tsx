@@ -31,7 +31,7 @@ const TIME_SLOTS: { id: TimeSlot; label: string }[] = [
 
 const TIME_STRING_TO_SLOT_MAP: { [key: string]: TimeSlot } = {
     '8:00am a 10:00am': '8am-10am',
-    '10:00am a 12:pm': '10am-12pm',
+    '10:00am a 12:00pm': '10am-12pm',
     '1:00pm a 3:00pm': '1pm-3pm',
     '3:00pm a 5:00pm': '3pm-5pm',
 };

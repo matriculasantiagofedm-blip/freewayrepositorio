@@ -50,6 +50,7 @@ const instructors: string[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gor
 const carVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Auto Diesel'];
 const motoVehicles: VehicleName[] = ['Moto Roja', 'Moto Negra'];
 const theoreticalSchedules = ['Semanal (8:00 am a 10:00 am)', 'Sabatino (3:00 pm a 5:00 pm)'];
+const practicalTimeSlots = ['8:00am a 10:00am', '10:00am a 12:00pm', '1:00pm a 3:00pm', '3:00pm a 5:00pm'];
 
 const CATEGORY_PRICES_AMPLIACIONES: Record<string, number> = {
   'B': 57.00,
@@ -604,7 +605,12 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                               </FormItem>
                             )} />
                             <FormField control={form.control} name={`practicalClassSchedules.${index}.time`} render={({ field }) => (
-                              <FormItem><FormControl><Input {...field} className="h-9 text-xs" placeholder="Horario" /></FormControl></FormItem>
+                              <FormItem>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Horario" /></SelectTrigger></FormControl>
+                                  <SelectContent>{practicalTimeSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                                </Select>
+                              </FormItem>
                             )} />
                             <FormField control={form.control} name={`practicalClassSchedules.${index}.vehicle`} render={({ field }) => (
                               <FormItem>
@@ -646,7 +652,12 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                               </FormItem>
                             )} />
                             <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.time`} render={({ field }) => (
-                              <FormItem><FormControl><Input {...field} className="h-9 text-xs" placeholder="Horario" /></FormControl></FormItem>
+                              <FormItem>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Horario" /></SelectTrigger></FormControl>
+                                  <SelectContent>{practicalTimeSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                                </Select>
+                              </FormItem>
                             )} />
                             <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.vehicle`} render={({ field }) => (
                               <FormItem>

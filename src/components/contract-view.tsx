@@ -4,6 +4,7 @@ import { DeluxePremiumContractTemplate } from './deluxe-premium-contract';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { AutoMotoContractTemplate } from './auto-moto-contract';
 import { AmpliacionesContractTemplate } from './ampliaciones-contract';
+import { AutoContractTemplate } from './auto-contract';
 
 
 export function ContractView({ contract, type }: { contract: Contract, type?: ContractType }) {
@@ -11,11 +12,12 @@ export function ContractView({ contract, type }: { contract: Contract, type?: Co
   const renderContractTemplate = () => {
     const contractType = type || contract.type;
     switch(contractType) {
+      case 'Curso Auto':
+        return <AutoContractTemplate contract={contract} />;
       case 'Curso Deluxe':
         return <DeluxePremiumContractTemplate contract={contract} />;
       case 'Ampliaciones':
         return <AmpliacionesContractTemplate contract={contract} />;
-      case 'Curso Auto':
       case 'Curso Moto':
       case 'Curso Mixto':
       case 'Curso Solo Practica':

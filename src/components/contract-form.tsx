@@ -138,77 +138,6 @@ const contractSchema = z.object({
 
 type FormValues = z.infer<typeof contractSchema>;
 
-const ClassRow = ({ 
-    index, 
-    namePrefix, 
-    vehicles, 
-    form, 
-    occupancyData 
-}: { 
-    index: number, 
-    namePrefix: "practicalClassSchedules" | "motoPracticalClassSchedules", 
-    vehicles: string[],
-    form: UseFormReturn<FormValues>,
-    occupancyData: any
-}) => {
-    const watchDate = form.watch(`${namePrefix}.${index}.date`);
-    const watchTime = form.watch(`${namePrefix}.${index}.time`);
-    const watchVehicle = form.watch(`${namePrefix}.${index}.vehicle`);
-    
-    const dObj = watchDate ? toDate(watchDate) : null;
-    const isValidDate = dObj && !isNaN(dObj.getTime());
-    const holiday = isValidDate ? isPanamaHoliday(dObj) : null;
-    const isSunday = isValidDate && dObj.getDay() === 0;
-    
-    let isOccupied = false;
-    let isFull = false;
-
-    if (isValidDate && watchTime) {
-        const slotId = TIME_STRING_TO_SLOT_MAP[watchTime] || watchTime;
-        const dateKey = format(dObj, 'yyyy-MM-dd');
-        
-        if (watchVehicle) {
-            isOccupied = (occupancyData.vehicleOccupancy[`${dateKey}|${slotId}|${watchVehicle}`] || []).length > 0;
-        }
-        
-        const capacity = getGlobalCapacity(dObj, slotId);
-        const currentCount = occupancyData.globalCounts[`${dateKey}|${slotId}`] || 0;
-        isFull = currentCount >= capacity && capacity > 0;
-    }
-
-    return (
-        <div className={cn("grid grid-cols-1 md:grid-cols-4 gap-3 p-3 border rounded-lg bg-white relative", (isOccupied || isFull || holiday || isSunday) && "border-amber-500 bg-amber-50/30")}>
-            <div className="absolute -top-2 right-2 flex gap-1 z-10">
-                {isSunday && <span className="bg-red-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-sm uppercase">DOMINGO</span>}
-                {holiday && !isSunday && <span className="bg-orange-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-sm uppercase">FERIADO</span>}
-                {isOccupied && <span className="bg-amber-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-sm uppercase">OCUPADO</span>}
-                {isFull && !isOccupied && <span className="bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-sm uppercase">LLENO</span>}
-            </div>
-            <FormField control={form.control} name={`${namePrefix}.${index}.date`} render={({ field }) => (
-                <FormItem>
-                    <Popover modal={true}>
-                        <PopoverTrigger asChild>
-                            <FormControl><Button variant="outline" className="w-full h-9 text-xs">{field.value ? format(toDate(field.value), "dd/MM/yy") : "Fecha"}</Button></FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus />
-                        </PopoverContent>
-                    </Popover>
-                </FormItem>
-            )} />
-            <FormField control={form.control} name={`${namePrefix}.${index}.time`} render={({ field }) => (
-                <FormItem><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Horario" /></SelectTrigger></FormControl><SelectContent>{practicalTimeSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></FormItem>
-            )} />
-            <FormField control={form.control} name={`${namePrefix}.${index}.vehicle`} render={({ field }) => (
-                <FormItem><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl><SelectContent>{vehicles.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent></Select></FormItem>
-            )} />
-            <FormField control={form.control} name={`${namePrefix}.${index}.instructor`} render={({ field }) => (
-                <FormItem><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl><SelectContent>{instructors.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}</SelectContent></Select></FormItem>
-            )} />
-        </div>
-    );
-};
-
 export function ContractForm({ initialContract }: { initialContract?: Contract }) {
   const db = useDb();
   const { user } = useUser();
@@ -337,6 +266,77 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
   useEffect(() => {
     form.setValue('balance', Math.max(0, watchValue - watchDown));
   }, [watchValue, watchDown, form]);
+
+  const ClassRow = ({ 
+      index, 
+      namePrefix, 
+      vehicles, 
+      form, 
+      occupancyData 
+  }: { 
+      index: number, 
+      namePrefix: "practicalClassSchedules" | "motoPracticalClassSchedules", 
+      vehicles: string[],
+      form: UseFormReturn<FormValues>,
+      occupancyData: any
+  }) => {
+      const watchDate = form.watch(`${namePrefix}.${index}.date`);
+      const watchTime = form.watch(`${namePrefix}.${index}.time`);
+      const watchVehicle = form.watch(`${namePrefix}.${index}.vehicle`);
+      
+      const dObj = watchDate ? toDate(watchDate) : null;
+      const isValidDate = dObj && !isNaN(dObj.getTime());
+      const holiday = isValidDate ? isPanamaHoliday(dObj) : null;
+      const isSunday = isValidDate && dObj.getDay() === 0;
+      
+      let isOccupied = false;
+      let isFull = false;
+
+      if (isValidDate && watchTime) {
+          const slotId = TIME_STRING_TO_SLOT_MAP[watchTime] || watchTime;
+          const dateKey = format(dObj, 'yyyy-MM-dd');
+          
+          if (watchVehicle) {
+              isOccupied = (occupancyData.vehicleOccupancy[`${dateKey}|${slotId}|${watchVehicle}`] || []).length > 0;
+          }
+          
+          const capacity = getGlobalCapacity(dObj, slotId);
+          const currentCount = occupancyData.globalCounts[`${dateKey}|${slotId}`] || 0;
+          isFull = currentCount >= capacity && capacity > 0;
+      }
+
+      return (
+          <div className={cn("grid grid-cols-1 md:grid-cols-4 gap-3 p-3 border rounded-lg bg-white relative", (isOccupied || isFull || holiday || isSunday) && "border-amber-500 bg-amber-50/30")}>
+              <div className="absolute -top-2 right-2 flex gap-1 z-10">
+                  {isSunday && <span className="bg-red-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-sm uppercase">DOMINGO</span>}
+                  {holiday && !isSunday && <span className="bg-orange-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-sm uppercase">FERIADO</span>}
+                  {isOccupied && <span className="bg-amber-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-sm uppercase">OCUPADO</span>}
+                  {isFull && !isOccupied && <span className="bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-sm uppercase">LLENO</span>}
+              </div>
+              <FormField control={form.control} name={`${namePrefix}.${index}.date`} render={({ field }) => (
+                  <FormItem>
+                      <Popover modal={true}>
+                          <PopoverTrigger asChild>
+                              <FormControl><Button variant="outline" className="w-full h-9 text-xs">{field.value ? format(toDate(field.value), "dd/MM/yy") : "Fecha"}</Button></FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus />
+                          </PopoverContent>
+                      </Popover>
+                  </FormItem>
+              )} />
+              <FormField control={form.control} name={`${namePrefix}.${index}.time`} render={({ field }) => (
+                  <FormItem><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Horario" /></SelectTrigger></FormControl><SelectContent>{practicalTimeSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></FormItem>
+              )} />
+              <FormField control={form.control} name={`${namePrefix}.${index}.vehicle`} render={({ field }) => (
+                  <FormItem><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl><SelectContent>{vehicles.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent></Select></FormItem>
+              )} />
+              <FormField control={form.control} name={`${namePrefix}.${index}.instructor`} render={({ field }) => (
+                  <FormItem><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl><SelectContent>{instructors.map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}</SelectContent></Select></FormItem>
+              )} />
+          </div>
+      );
+  };
 
   const onSubmit = async (values: FormValues) => {
     if (!db || !user) return;

@@ -5,8 +5,8 @@
  * Freeway Escuela de Manejo, S.A.
  * 
  * - Ficha de estudiante técnica (12 columnas) ULTRA COMPACTA.
- * - Configuración de trámite de ampliación (Categoría y Teoría).
- * - Gestión de folio y saldos en tiempo real.
+ * - Selector de categorías por botones (Individuales y Combinaciones).
+ * - Programación de sesión teórica única.
  */
 
 import { useState } from 'react';
@@ -53,9 +53,8 @@ import {
   UserCircle, 
   Repeat, 
   CreditCard, 
-  BookOpen,
-  Package,
-  Clock
+  Clock,
+  CheckCircle2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDb, useUser } from '@/components/firebase-provider';
@@ -71,7 +70,7 @@ const ampliacionesSchema = z.object({
   studentAddress: z.string().min(5, 'Dirección requerida'),
   studentPhone1: z.string().min(7, 'Teléfono requerido'),
   studentPhone2: z.string().optional(),
-  licenseCategory: z.string().min(1, 'Categoría requerida'),
+  licenseCategory: z.string().min(1, 'Seleccione al menos una categoría'),
   courseValue: z.coerce.number().min(1, 'Monto inválido'),
   downPayment: z.coerce.number().min(0),
   paymentDeadline: z.date({ required_error: 'Fecha límite requerida' }),
@@ -107,6 +106,20 @@ export function AmpliacionesContractForm() {
     },
   });
 
+  const toggleCategory = (category: string) => {
+    const current = form.getValues('licenseCategory');
+    const categories = current ? current.split(', ').filter(c => c) : [];
+    
+    let newCategories;
+    if (categories.includes(category)) {
+      newCategories = categories.filter(c => c !== category);
+    } else {
+      newCategories = [...categories, category].sort();
+    }
+    
+    form.setValue('licenseCategory', newCategories.join(', '), { shouldValidate: true });
+  };
+
   const onSubmit = async (values: FormValues) => {
     if (!db || !user) return;
     setIsSaving(true);
@@ -137,7 +150,7 @@ export function AmpliacionesContractForm() {
         const balance = values.courseValue - values.downPayment;
 
         transaction.set(contractRef, {
-          title: `Ampliación de Licencia - Folio ${nextFolio}`,
+          title: `Ampliación ${values.licenseCategory} - Folio ${nextFolio}`,
           clientName: values.clientName,
           clientEmail: values.clientEmail,
           clientId: clientRef.id,
@@ -156,17 +169,18 @@ export function AmpliacionesContractForm() {
         });
       });
 
-      toast({ title: 'Ampliación Registrada', description: 'El contrato de ampliación se ha guardado exitosamente.' });
+      toast({ title: 'Ampliación Registrada', description: 'El contrato se ha guardado correctamente.' });
       router.push('/dashboard');
     } catch (error: any) {
       console.error("Error saving contract:", error);
-      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo guardar el registro.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'Fallo al procesar el registro.' });
     } finally {
       setIsSaving(false);
     }
   };
 
   const currentBalance = form.watch('courseValue') - form.watch('downPayment');
+  const selectedCategories = form.watch('licenseCategory').split(', ').filter(c => c);
 
   return (
     <Form {...form}>
@@ -177,7 +191,7 @@ export function AmpliacionesContractForm() {
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
               <UserCircle className="h-5 w-5 text-amber-600" />
-              <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-700">Ficha Técnica del Estudiante (Ampliación)</CardTitle>
+              <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-700">Ficha Estudiantil (Ampliación)</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="p-6">
@@ -226,7 +240,7 @@ export function AmpliacionesContractForm() {
                     <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Teléfonos de Contacto</FormLabel>
                     <div className="flex gap-2">
                       <FormControl><Input placeholder="Principal" {...field} className="h-9" /></FormControl>
-                      <Input placeholder="Secundario (Opcional)" onChange={(e) => form.setValue('studentPhone2', e.target.value)} className="h-9" />
+                      <Input placeholder="Secundario" onChange={(e) => form.setValue('studentPhone2', e.target.value)} className="h-9" />
                     </div>
                     <FormMessage />
                   </FormItem>
@@ -236,7 +250,7 @@ export function AmpliacionesContractForm() {
                 <FormField control={form.control} name="studentAddress" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Dirección Residencial</FormLabel>
-                    <FormControl><Input placeholder="Provincia, Distrito, Corregimiento, Calle y Casa..." {...field} className="h-9 uppercase" /></FormControl>
+                    <FormControl><Input placeholder="Ubicación completa..." {...field} className="h-9 uppercase" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -245,7 +259,7 @@ export function AmpliacionesContractForm() {
           </CardContent>
         </Card>
 
-        {/* SECCIÓN 2: CONFIGURACIÓN DEL TRÁMITE */}
+        {/* SECCIÓN 2: DETALLES DE LA AMPLIACIÓN (BOTONES) */}
         <Card className="shadow-sm">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -253,24 +267,44 @@ export function AmpliacionesContractForm() {
               <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-700">Detalles de la Ampliación</CardTitle>
             </div>
           </CardHeader>
-          <CardContent className="p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <CardContent className="p-6 space-y-8">
+            <div className="space-y-4">
+              <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Seleccionar Categorías Destino (Individuales o Combinadas)</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-5 md:grid-cols-10 gap-2">
+                {LICENSE_CATEGORIES.map(cat => {
+                  const isSelected = selectedCategories.includes(cat);
+                  return (
+                    <Button
+                      key={cat}
+                      type="button"
+                      variant={isSelected ? "default" : "outline"}
+                      className={cn(
+                        "h-12 font-black transition-all",
+                        isSelected && "bg-amber-600 hover:bg-amber-700 scale-105 shadow-md"
+                      )}
+                      onClick={() => toggleCategory(cat)}
+                    >
+                      {cat}
+                    </Button>
+                  );
+                })}
+              </div>
               <FormField control={form.control} name="licenseCategory" render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Categoría Destino</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger className="h-10"><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      {LICENSE_CATEGORIES.map(cat => <SelectItem key={cat} value={cat}>Tipo {cat}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <FormControl><Input type="hidden" {...field} /></FormControl>
+                  <div className="flex items-center gap-2 mt-2">
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground">Selección Actual:</span>
+                    <span className="text-sm font-black text-amber-700">{field.value || 'Ninguna'}</span>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )} />
-              
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t">
               <FormField control={form.control} name="theoreticalClassDate" render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> Fecha Clase Teórica</FormLabel>
+                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> Fecha Sesión Teórica</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl><Button variant="outline" className={cn("w-full h-10 pl-3 text-left font-normal text-xs", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP", { locale: es }) : <span>Elegir fecha</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
@@ -283,7 +317,7 @@ export function AmpliacionesContractForm() {
 
               <FormField control={form.control} name="theoreticalClassTime" render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Horario Sesión Única</FormLabel>
+                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Horario del Trámite</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent>
@@ -299,7 +333,7 @@ export function AmpliacionesContractForm() {
           </CardContent>
         </Card>
 
-        {/* SECCIÓN 3: PLAN DE PAGOS Y SALDO */}
+        {/* SECCIÓN 3: GESTIÓN DE COBRO */}
         <Card className="shadow-sm">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -318,13 +352,13 @@ export function AmpliacionesContractForm() {
               )} />
               <FormField control={form.control} name="downPayment" render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Abono Inicial (B/.)</FormLabel>
+                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Abono Realizado (B/.)</FormLabel>
                   <FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold text-green-600" /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
               <div className="flex flex-col gap-1.5">
-                <Label className="text-[10px] font-bold uppercase text-muted-foreground">Saldo a Cancelar</Label>
+                <Label className="text-[10px] font-bold uppercase text-muted-foreground">Saldo Pendiente</Label>
                 <div className="flex items-center h-10 px-4 bg-amber-50 rounded-md border border-amber-100">
                   <span className="text-lg font-black text-amber-900">B/. {currentBalance.toFixed(2)}</span>
                 </div>
@@ -351,7 +385,7 @@ export function AmpliacionesContractForm() {
               
               <FormField control={form.control} name="paymentDeadline" render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Fecha Límite de Cancelación</FormLabel>
+                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Fecha Límite para el Saldo</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl><Button variant="outline" className={cn("w-full h-10 pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>

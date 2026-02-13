@@ -38,7 +38,6 @@ import {
     GraduationCap,
     Clock,
     CalendarDays,
-    CheckCircle2
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { Timestamp, collection, doc, serverTimestamp, runTransaction, updateDoc, query, where } from 'firebase/firestore';
@@ -263,8 +262,12 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
       'D, E1': 85.00, 'E1, E2': 75.00, 'E1, E2, E3': 85.00, 'E1, E2, E3, F': 95.00,
       'D, E1, E2, E3, F': 150.00, 'B, E1, E2, E3, F': 150.00, 'B, D, E1, E2, E3, F': 200.00,
     };
-    if (combos[selected.join(', ')]) form.setValue('courseValue', combos[selected.join(', ')]);
-    else form.setValue('courseValue', selected.reduce((t, c) => t + (CATEGORY_PRICES_AMPLIACIONES[c] || 0), 0));
+    const comboKey = selected.join(', ');
+    if (combos[comboKey]) {
+        form.setValue('courseValue', combos[comboKey]);
+    } else {
+        form.setValue('courseValue', selected.reduce((t, c) => t + (CATEGORY_PRICES_AMPLIACIONES[c] || 0), 0));
+    }
   }, [form.watch('licenseCategory'), contractType, form]);
 
   useEffect(() => {
@@ -315,7 +318,12 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
             });
             toast({ title: 'Contrato Creado' }); router.push(`/contracts/${cid}`);
         }
-    } catch (e) { toast({ variant: 'destructive', title: 'Error' }); } finally { setIsSubmitting(false); }
+    } catch (e) { 
+        console.error(e);
+        toast({ variant: 'destructive', title: 'Error al procesar el contrato' }); 
+    } finally { 
+        setIsSubmitting(false); 
+    }
   };
 
   const ClassRow = ({ index, namePrefix, vehicles }: { index: number, namePrefix: "practicalClassSchedules" | "motoPracticalClassSchedules", vehicles: string[] }) => {
@@ -395,7 +403,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                                 {contractType === 'Curso Mixto' && mixtoPackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label} - B/.{p.price}</SelectItem>)}
                                 {contractType === 'Curso Deluxe' && deluxePackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label} - B/.{p.price}</SelectItem>)}
                                 {contractType === 'Curso Solo Practica' && soloPracticaPackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label} - B/.{p.price}</SelectItem>)}
-                            </SelectContent></Select></FormItem>
+                            </Select></FormControl></Select></FormItem>
                         )} />
                     )}
                     <FormField control={form.control} name="paymentType" render={({ field }) => (<FormItem className={cn(contractType === 'Ampliaciones' && "md:col-span-3")}><FormLabel className="text-xs font-bold uppercase">Método Pago</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="cash">Efectivo</SelectItem><SelectItem value="debit">T. Débito</SelectItem><SelectItem value="credit">T. Crédito</SelectItem><SelectItem value="bac">BAC</SelectItem><SelectItem value="general">General</SelectItem><SelectItem value="cheques">Cheque</SelectItem></Select></FormItem>)} />
@@ -435,47 +443,108 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                 <CardHeader className="bg-slate-50 border-b"><div className="flex items-center gap-2"><CalendarDays className="h-6 w-6 text-primary" /><CardTitle className="text-lg">Programación del Curso</CardTitle></div></CardHeader>
                 <CardContent className="p-6 space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (<FormItem><FormLabel className="text-xs uppercase font-bold">Transmisión del Vehículo</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Automático">Automático</SelectItem><SelectItem value="Manual">Manual</SelectItem><SelectItem value="Moto">Moto</SelectItem></Select></FormItem>)} />
-                        <div className="space-y-3"><FormLabel className="text-xs font-bold uppercase">Categorías a Aplicar</FormLabel><div className="grid grid-cols-4 sm:grid-cols-8 gap-2">{categoriesToShow.map(cat => {
-                            const isSelected = form.watch('licenseCategory')?.includes(cat);
-                            return (<Button key={cat} type="button" variant={isSelected ? "default" : "outline"} className={cn("h-10 font-bold text-xs", isSelected && "bg-primary text-white")} onClick={() => {
-                                const cur = form.getValues('licenseCategory') || '';
-                                const parts = cur.split(',').map(p => p.trim()).filter(p => p);
-                                const next = parts.includes(cat) ? parts.filter(p => p !== cat) : [...parts, cat].sort();
-                                form.setValue('licenseCategory', next.join(', '));
-                            }}>{cat}</Button>);
-                        })}</div></div>
+                        <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs uppercase font-bold">Transmisión del Vehículo</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl><SelectTrigger className="h-11"><SelectValue /></SelectTrigger></FormControl>
+                              <SelectContent>
+                                <SelectItem value="Automático">Automático</SelectItem>
+                                <SelectItem value="Manual">Manual</SelectItem>
+                                <SelectItem value="Moto">Moto</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )} />
+                        <div className="space-y-3">
+                            <FormLabel className="text-xs font-bold uppercase">Categorías</FormLabel>
+                            <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                                {categoriesToShow.map(cat => {
+                                    const isSelected = form.watch('licenseCategory')?.includes(cat);
+                                    return (
+                                        <Button key={cat} type="button" variant={isSelected ? "default" : "outline"} className={cn("h-10 font-bold text-xs", isSelected && "bg-primary text-white")} onClick={() => {
+                                            const cur = form.getValues('licenseCategory') || '';
+                                            const parts = cur.split(',').map(p => p.trim()).filter(p => p);
+                                            const next = parts.includes(cat) ? parts.filter(p => p !== cat) : [...parts, cat].sort();
+                                            form.setValue('licenseCategory', next.join(', '));
+                                        }}>{cat}</Button>
+                                    );
+                                })}
+                            </div>
+                        </div>
                     </div>
 
                     <div className="bg-slate-50 p-6 rounded-xl border border-dashed">
-                        <div className="flex items-center justify-between mb-4"><div className="flex items-center gap-2 text-primary font-bold"><GraduationCap className="h-5 w-5" /><h3 className="text-sm uppercase">Cronograma Teórico</h3></div>
-                            <FormField control={form.control} name="theoreticalClassSchedule" render={({ field }) => (<FormItem className="w-64"><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9 bg-white"><SelectValue placeholder="Horario..." /></SelectTrigger></FormControl><SelectContent>{theoreticalSchedules.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></FormItem>)} />
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2 text-primary font-bold">
+                                <GraduationCap className="h-5 w-5" />
+                                <h3 className="text-sm uppercase">Cronograma Teórico</h3>
+                            </div>
+                            <FormField control={form.control} name="theoreticalClassSchedule" render={({ field }) => (
+                                <FormItem className="w-64">
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl><SelectTrigger className="h-9 bg-white"><SelectValue placeholder="Horario..." /></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            {theoreticalSchedules.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </FormItem>
+                            )} />
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">{Array.from({ length: theorySessionCount }).map((_, i) => (
-                            <FormField key={i} control={form.control} name={`theoreticalClassDates.${i}`} render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase opacity-50 font-bold">Sesión {i + 1}</FormLabel><Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant="outline" className="h-10 text-xs w-full bg-white">{field.value ? format(toDate(field.value), "dd/MM/yy") : "Fecha"}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover></FormItem>)} />
-                        ))}</div>
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                            {Array.from({ length: theorySessionCount }).map((_, index) => (
+                                <FormField key={index} control={form.control} name={`theoreticalClassDates.${index}`} render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-[10px] uppercase opacity-50 font-bold">Sesión {index + 1}</FormLabel>
+                                        <Popover modal={true}>
+                                            <PopoverTrigger asChild>
+                                                <FormControl>
+                                                  <Button variant="outline" className="h-10 text-xs w-full bg-white">
+                                                    {field.value ? format(toDate(field.value), "dd/MM/yy") : "Fecha"}
+                                                  </Button>
+                                                </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus />
+                                            </PopoverContent>
+                                        </Popover>
+                                    </FormItem>
+                                )} />
+                            ))}
+                        </div>
                     </div>
 
-                    {form.watch('practicalClassSchedules')?.length ? (
+                    {form.watch('practicalClassSchedules') && form.watch('practicalClassSchedules')!.length > 0 && (
                       <div className="space-y-4">
-                        <h3 className="text-sm font-bold uppercase flex items-center gap-2 text-blue-600"><Clock className="h-4 w-4" /> Práctica Auto</h3>
-                        {form.watch('practicalClassSchedules')?.map((_, i) => <ClassRow key={i} index={i} namePrefix="practicalClassSchedules" vehicles={carVehicles} />)}
+                        <h3 className="text-sm font-bold uppercase flex items-center gap-2 text-blue-600">
+                          <Clock className="h-4 w-4" /> Práctica Auto
+                        </h3>
+                        {form.watch('practicalClassSchedules')?.map((_, index) => (
+                          <ClassRow key={index} index={index} namePrefix="practicalClassSchedules" vehicles={carVehicles} />
+                        ))}
                       </div>
-                    ) : null}
+                    )}
 
-                    {form.watch('motoPracticalClassSchedules')?.length ? (
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-bold uppercase flex items-center gap-2 text-orange-600"><Clock className="h-4 w-4" /> Práctica Moto</h3>
-                        {form.watch('motoPracticalClassSchedules')?.map((_, i) => <ClassRow key={i} index={i} namePrefix="motoPracticalClassSchedules" vehicles={motoVehicles} />)}
+                    {form.watch('motoPracticalClassSchedules') && form.watch('motoPracticalClassSchedules')!.length > 0 && (
+                      <div className="space-y-4 pt-4 border-t border-dashed">
+                        <h3 className="text-sm font-bold uppercase flex items-center gap-2 text-amber-600">
+                          <Clock className="h-4 w-4" /> Práctica Moto
+                        </h3>
+                        {form.watch('motoPracticalClassSchedules')?.map((_, index) => (
+                          <ClassRow key={index} index={index} namePrefix="motoPracticalClassSchedules" vehicles={motoVehicles} />
+                        ))}
                       </div>
-                    ) : null}
+                    )}
                 </CardContent>
             </Card>
         )}
 
         <div className="flex justify-end gap-4">
             <Button type="button" variant="outline" onClick={() => router.back()}>Cancelar</Button>
-            <Button type="submit" disabled={isSubmitting} className="min-w-[150px]">{isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} {initialContract ? 'Actualizar Contrato' : 'Guardar Contrato'}</Button>
+            <Button type="submit" disabled={isSubmitting} className="min-w-[150px]">
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                {initialContract ? 'Actualizar Contrato' : 'Guardar Contrato'}
+            </Button>
         </div>
       </form>
     </Form>

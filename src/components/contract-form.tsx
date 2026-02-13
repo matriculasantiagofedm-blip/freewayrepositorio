@@ -38,7 +38,6 @@ import {
     GraduationCap,
     Clock,
     CalendarDays,
-    AlertTriangle,
     CheckCircle2
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
@@ -154,7 +153,6 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
     initialContract?.type || (searchParams.get('type') as ContractType) || 'Curso Auto', 
   [initialContract, searchParams]);
 
-  // FETCH DATA FOR OCCUPANCY SYNC
   const activeContractsQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'contracts'), where('status', '==', 'active')) : null, [db, user]);
   const manualEntriesQuery = useMemoQuery(() => (db && user) ? collection(db, 'manual_schedules') : null, [db, user]);
   const { data: allContracts } = useCollection<Contract>(activeContractsQuery);
@@ -373,7 +371,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                     <FormField control={form.control} name="clientName" render={({ field }) => (<FormItem><FormLabel className="text-xs font-bold uppercase">Nombre Completo</FormLabel><FormControl><Input {...field} className="h-11" /></FormControl><FormMessage /></FormItem>)} />
                     <FormField control={form.control} name="clientEmail" render={({ field }) => (<FormItem><FormLabel className="text-xs font-bold uppercase">Correo Electrónico</FormLabel><FormControl><Input {...field} type="email" className="h-11" /></FormControl><FormMessage /></FormItem>)} />
                     <div className="grid grid-cols-3 gap-2">
-                        <FormField control={form.control} name="idType" render={({ field }) => (<FormItem><FormLabel className="text-xs font-bold uppercase">ID</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="C.I.P.">C.I.P.</SelectItem><SelectItem value="PASS">PASS</SelectItem></SelectContent></Select></FormItem>)} />
+                        <FormField control={form.control} name="idType" render={({ field }) => (<FormItem><FormLabel className="text-xs font-bold uppercase">ID</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="C.I.P.">C.I.P.</SelectItem><SelectItem value="PASS">PASS</SelectItem></SelectContent></FormItem>)} />
                         <FormField control={form.control} name="studentIdNumber" render={({ field }) => (<FormItem className="col-span-2"><FormLabel className="text-xs font-bold uppercase">Número</FormLabel><FormControl><Input {...field} className="h-11" /></FormControl><FormMessage /></FormItem>)} />
                     </div>
                     <FormField control={form.control} name="studentAddress" render={({ field }) => (<FormItem><FormLabel className="text-xs font-bold uppercase">Dirección</FormLabel><FormControl><Input {...field} className="h-11" /></FormControl><FormMessage /></FormItem>)} />

@@ -57,8 +57,7 @@ export default function DashboardPage() {
   });
 
   const contractTypes = [
-      { name: 'Curso Moto', href: '/contracts/new?type=Curso%20Moto', bgColor: 'bg-orange-50', textColor: 'text-orange-600'},
-      { name: 'Curso Solo Practica', href: '/contracts/new?type=Curso%20Solo%20Practica', bgColor: 'bg-teal-50', textColor: 'text-teal-600'},
+      { name: 'Curso Solo Práctica', href: '/contracts/new?type=Curso%20Solo%20Practica', bgColor: 'bg-teal-50', textColor: 'text-teal-600'},
   ];
 
   const actionGroups = [
@@ -112,7 +111,7 @@ export default function DashboardPage() {
       </div>
 
       <div>
-        <h2 className="text-xl font-bold font-headline mb-4 text-slate-800 border-b pb-2">Nuevo Contrato</h2>
+        <h2 className="text-xl font-bold font-headline mb-4 text-slate-800 border-b pb-2">Nuevo Registro</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {contractTypes.map((type) => (
             <Card key={type.name} className="transition-all hover:shadow-md border-slate-200">

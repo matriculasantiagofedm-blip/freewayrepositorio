@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { UserCircle, Settings2, Save, DollarSign, Loader2 } from 'lucide-react';
+import { UserCircle, Settings2, Save, DollarSign, Loader2, CalendarIcon } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { Timestamp, collection, doc, serverTimestamp, runTransaction } from 'firebase/firestore';
 import { useDb, useUser } from '../firebase-provider';
@@ -88,26 +88,40 @@ export function SoloPracticaContractForm({ initialContract }: { initialContract?
         const contractId = initialContract?.id || doc(collection(db, 'contracts')).id;
         const contractRef = doc(db, 'contracts', contractId);
         const finalData = {
-            id: contractId, folioNumber: folio, title: 'Curso Solo Práctica', clientName: values.clientName, clientEmail: values.clientEmail,
-            clientId: values.studentIdNumber, type: 'Curso Solo Practica', status: initialContract?.status || 'active',
-            userId: user.uid, createdBy: initialContract?.createdBy || role || 'Sistema', updatedAt: serverTimestamp(),
+            id: contractId,
+            folioNumber: folio,
+            title: 'Curso Solo Práctica',
+            clientName: values.clientName,
+            clientEmail: values.clientEmail,
+            clientId: values.studentIdNumber,
+            type: 'Curso Solo Practica',
+            status: initialContract?.status || 'active',
+            userId: user.uid,
+            createdBy: initialContract?.createdBy || role || 'Sistema',
+            updatedAt: serverTimestamp(),
             createdAt: initialContract?.createdAt || serverTimestamp(),
             autoMotoDetails: {
-                idType: values.idType, studentIdNumber: values.studentIdNumber, studentAddress: values.studentAddress,
-                studentPhone1: values.studentPhone1, courseValue: values.courseValue, downPayment: values.downPayment,
-                balance: values.balance, paymentType: values.paymentType,
+                idType: values.idType,
+                studentIdNumber: values.studentIdNumber,
+                studentAddress: values.studentAddress,
+                studentPhone1: values.studentPhone1,
+                courseValue: values.courseValue,
+                downPayment: values.downPayment,
+                balance: values.balance,
+                paymentType: values.paymentType,
                 paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null,
-                vehicleTransmission: values.vehicleTransmission, licenseCategory: 'No Aplica'
+                vehicleTransmission: values.vehicleTransmission,
+                licenseCategory: 'No Aplica'
             }
         };
         if (!initialContract) transaction.set(contractRef, finalData);
         else transaction.update(contractRef, finalData);
       });
-      toast({ title: 'Éxito', description: 'Registro guardado.' });
+      toast({ title: 'Éxito', description: 'Registro guardado correctamente.' });
       router.push('/dashboard');
     } catch (e) { 
       console.error(e); 
-      toast({ variant: 'destructive', title: 'Error al guardar' }); 
+      toast({ variant: 'destructive', title: 'Error al guardar', description: 'Ocurrió un fallo en la base de datos.' }); 
     } finally { 
       setIsSaving(false); 
     }
@@ -124,6 +138,7 @@ export function SoloPracticaContractForm({ initialContract }: { initialContract?
                 </div>
             </CardHeader>
             <CardContent className="grid grid-cols-12 gap-x-4 gap-y-3 pt-6">
+                {/* FILA 1: NOMBRE (8) Y EMAIL (4) */}
                 <div className="col-span-12 md:col-span-8">
                     <FormField control={form.control} name="clientName" render={({ field }) => (
                         <FormItem>
@@ -140,13 +155,18 @@ export function SoloPracticaContractForm({ initialContract }: { initialContract?
                         </FormItem>
                     )} />
                 </div>
+
+                {/* FILA 2: TIPO ID (2), NUMERO (4) Y TELEFONO (6) */}
                 <div className="col-span-4 md:col-span-2">
                     <FormField control={form.control} name="idType" render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Tipo ID</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
-                                <SelectContent><SelectItem value="C.I.P.">C.I.P.</SelectItem><SelectItem value="PASS">PASS</SelectItem></SelectContent>
+                                <SelectContent>
+                                    <SelectItem value="C.I.P.">C.I.P.</SelectItem>
+                                    <SelectItem value="PASS">PASS</SelectItem>
+                                </SelectContent>
                             </Select>
                         </FormItem>
                     )} />
@@ -167,6 +187,8 @@ export function SoloPracticaContractForm({ initialContract }: { initialContract?
                         </FormItem>
                     )} />
                 </div>
+
+                {/* FILA 3: DIRECCION (12) */}
                 <div className="col-span-12">
                     <FormField control={form.control} name="studentAddress" render={({ field }) => (
                         <FormItem>
@@ -179,26 +201,101 @@ export function SoloPracticaContractForm({ initialContract }: { initialContract?
         </Card>
 
         <Card className="shadow-md">
-            <CardHeader className="bg-slate-50/50 border-b py-3 px-6"><div className="flex items-center gap-2"><Settings2 className="h-5 w-5 text-teal-600" /><CardTitle className="text-sm font-bold uppercase tracking-tight">Configuración Solo Práctica</CardTitle></div></CardHeader>
+            <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
+                <div className="flex items-center gap-2">
+                    <Settings2 className="h-5 w-5 text-teal-600" />
+                    <CardTitle className="text-sm font-bold uppercase tracking-tight">Configuración Solo Práctica</CardTitle>
+                </div>
+            </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
-                <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (<FormItem><FormLabel className="text-xs uppercase font-bold text-muted-foreground">Tipo de Vehículo / Transmisión</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Automático">Automático</SelectItem><SelectItem value="Manual">Manual</SelectItem><SelectItem value="Moto">Moto</SelectItem></Select></FormControl></FormItem>)} />
+                <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel className="text-xs uppercase font-bold text-muted-foreground">Tipo de Vehículo / Transmisión</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                                <SelectTrigger className="h-10">
+                                    <SelectValue />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="Automático">Automático</SelectItem>
+                                <SelectItem value="Manual">Manual</SelectItem>
+                                <SelectItem value="Moto">Moto</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </FormItem>
+                )} />
             </CardContent>
         </Card>
 
         <Card className="shadow-md">
-            <CardHeader className="bg-slate-50/50 border-b py-3 px-6"><div className="flex items-center gap-2"><DollarSign className="h-5 w-5 text-teal-600" /><CardTitle className="text-sm font-bold uppercase tracking-tight">Información de Pago</CardTitle></div></CardHeader>
+            <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
+                <div className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5 text-teal-600" />
+                    <CardTitle className="text-sm font-bold uppercase tracking-tight">Información de Pago</CardTitle>
+                </div>
+            </CardHeader>
             <CardContent className="grid grid-cols-2 md:grid-cols-5 gap-4 pt-6">
-                <FormField control={form.control} name="courseValue" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Total (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10" /></FormControl></FormItem>)} />
-                <FormField control={form.control} name="downPayment" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Abono (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 text-green-700 font-bold" /></FormControl></FormItem>)} />
-                <FormField control={form.control} name="balance" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Saldo</FormLabel><FormControl><Input className="h-10 bg-muted font-black text-destructive" readOnly {...field} /></FormControl></FormItem>)} />
-                <FormField control={form.control} name="paymentDeadline" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Límite</FormLabel><Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant="outline" className="w-full h-10 text-xs">{field.value ? format(toDate(field.value), "dd/MM/yy") : "Fecha"}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus /></PopoverContent></FormItem>)} />
-                <FormField control={form.control} name="paymentType" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Método</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="cash">Efectivo</SelectItem><SelectItem value="debit">T.Débito</SelectItem><SelectItem value="credit">T.Crédito</SelectItem></Select></FormControl></FormItem>)} />
+                <FormField control={form.control} name="courseValue" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Valor Total (B/.)</FormLabel>
+                        <FormControl><Input type="number" step="0.01" {...field} className="h-10" /></FormControl>
+                    </FormItem>
+                )} />
+                <FormField control={form.control} name="downPayment" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Abono Inicial (B/.)</FormLabel>
+                        <FormControl><Input type="number" step="0.01" {...field} className="h-10 text-green-700 font-bold" /></FormControl>
+                    </FormItem>
+                )} />
+                <FormField control={form.control} name="balance" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Saldo Pendiente</FormLabel>
+                        <FormControl><Input className="h-10 bg-muted font-black text-destructive" readOnly {...field} /></FormControl>
+                    </FormItem>
+                )} />
+                <FormField control={form.control} name="paymentDeadline" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Fecha Límite</FormLabel>
+                        <Popover modal={true}>
+                            <PopoverTrigger asChild>
+                                <FormControl>
+                                    <Button variant="outline" className={cn("w-full h-10 text-xs", !field.value && "text-muted-foreground")}>
+                                        {field.value ? format(toDate(field.value), "dd/MM/yy") : <><CalendarIcon className="mr-2 h-3 w-3" /> Seleccionar</>}
+                                    </Button>
+                                </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus />
+                            </PopoverContent>
+                        </Popover>
+                    </FormItem>
+                )} />
+                <FormField control={form.control} name="paymentType" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Método Pago</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                                <SelectTrigger className="h-10 text-xs">
+                                    <SelectValue />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="cash">Efectivo</SelectItem>
+                                <SelectItem value="debit">T. Débito</SelectItem>
+                                <SelectItem value="credit">T. Crédito</SelectItem>
+                                <SelectItem value="bac">BAC</SelectItem>
+                                <SelectItem value="general">General</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </FormItem>
+                )} />
             </CardContent>
         </Card>
 
         <div className="flex justify-end gap-4">
             <Button type="button" variant="outline" size="lg" onClick={() => router.back()}>Cancelar</Button>
-            <Button type="submit" size="lg" className="px-12 h-14 text-lg font-bold shadow-xl bg-teal-600 hover:bg-teal-700" disabled={isSaving}>
+            <Button type="submit" size="lg" className="px-12 h-14 text-lg font-bold shadow-xl bg-teal-600 hover:bg-teal-700 text-white" disabled={isSaving}>
                 {isSaving ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2" />} 
                 {initialContract ? 'Actualizar Registro' : 'Generar Solo Práctica'}
             </Button>

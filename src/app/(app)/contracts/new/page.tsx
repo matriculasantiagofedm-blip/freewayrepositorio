@@ -5,12 +5,11 @@ import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useSearchParams } from 'next/navigation';
-import { MotoContractForm } from '@/components/forms/moto-contract-form';
 import { SoloPracticaContractForm } from '@/components/forms/solo-practica-contract-form';
 
 function NewContractPageContent() {
     const searchParams = useSearchParams();
-    const contractType = searchParams.get('type') || 'Curso Moto';
+    const contractType = searchParams.get('type') || 'Curso Solo Practica';
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => { setMounted(true); }, []);
@@ -19,8 +18,6 @@ function NewContractPageContent() {
 
     const renderForm = () => {
         switch(contractType) {
-            case 'Curso Moto':
-                return <MotoContractForm />;
             case 'Curso Solo Practica':
                 return <SoloPracticaContractForm />;
             default:

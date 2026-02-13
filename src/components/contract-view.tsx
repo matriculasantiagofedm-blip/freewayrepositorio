@@ -8,8 +8,6 @@ export function ContractView({ contract, type }: { contract: Contract, type?: Co
   const renderContractTemplate = () => {
     const contractType = type || contract.type;
     switch(contractType) {
-      case 'Curso Moto':
-      case 'Curso Mixto':
       case 'Curso Solo Practica':
         return <AutoMotoContractTemplate contract={contract} />;
       default:

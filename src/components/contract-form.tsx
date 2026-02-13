@@ -29,14 +29,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { 
-    CalendarIcon, 
-    Loader2, 
     UserCircle, 
     Settings2, 
     Save, 
     DollarSign,
     Clock,
     CalendarDays,
+    Loader2
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { Timestamp, collection, doc, serverTimestamp, runTransaction, query, where } from 'firebase/firestore';
@@ -210,8 +209,8 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
       theoreticalClassDates: initialContract.autoMotoDetails?.theoreticalClassDates?.map(d => toDate(d)) || initialContract.deluxeDetails?.theoreticalClasses?.map(d => toDate(d)) || [],
       theoreticalClassDate: initialContract.ampliacionesDetails?.theoreticalClassDate ? toDate(initialContract.ampliacionesDetails.theoreticalClassDate) : null,
       theoreticalClassTime: initialContract.ampliacionesDetails?.theoreticalClassTime || '',
-      practicalClassSchedules: initialContract.autoMotoDetails?.practicalClassSchedules?.map(s => ({ ...s, date: toDate(s.date) })) || initialContract.deluxeDetails?.classSchedules?.map(s => ({ ...s, date: toDate(s.date) })) || [],
-      motoPracticalClassSchedules: initialContract.autoMotoDetails?.motoPracticalClassSchedules?.map(s => ({ ...s, date: toDate(s.date) })) || [],
+      practicalClassSchedules: initialContract.autoMotoDetails?.practicalClassSchedules?.map(s => ({ ...s, date: s.date ? toDate(s.date) : null })) || initialContract.deluxeDetails?.classSchedules?.map(s => ({ ...s, date: s.date ? toDate(s.date) : null })) || [],
+      motoPracticalClassSchedules: initialContract.autoMotoDetails?.motoPracticalClassSchedules?.map(s => ({ ...s, date: s.date ? toDate(s.date) : null })) || [],
     } : {
       contractType: (searchParams.get('type') as any) || 'Curso Auto',
       theoreticalClassDates: [],

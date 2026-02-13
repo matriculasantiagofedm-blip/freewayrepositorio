@@ -160,7 +160,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
         clientName: '', clientEmail: '', contractType, studentIdNumber: '', idType: 'C.I.P.', studentAddress: '', studentPhone1: '',
         courseValue: 0, downPayment: 0, balance: 0, paymentType: 'cash',
         vehicleTransmission: contractType === 'Curso Moto' ? 'Moto' : 'Manual',
-        licenseCategory: contractType === 'Curso Moto' ? 'A, B' : 'A, C',
+        licenseCategory: contractType === 'Curso Moto' ? 'A, B' : (contractType === 'Curso Auto' ? 'A, C' : ''),
         theoreticalClassDates: [], practicalClassSchedules: [], motoPracticalClassSchedules: [], theoreticalClassDate: null, theoreticalClassTime: '8:00 am a 10:00 am'
     },
   });
@@ -215,14 +215,28 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
     if (contractType !== 'Ampliaciones') return;
     
     const categories = form.watch('licenseCategory') || '';
-    const selected = categories.split(',').map(c => c.trim()).filter(c => c);
-    
-    let total = 0;
-    selected.forEach(cat => {
-      total += CATEGORY_PRICES_AMPLIACIONES[cat] || 0;
-    });
-    
-    form.setValue('courseValue', total);
+    const selected = categories.split(',').map(c => c.trim()).filter(c => c).sort();
+    const comboKey = selected.join(', ');
+
+    const combos: Record<string, number> = {
+      'D, E1': 85.00,
+      'E1, E2': 75.00,
+      'E1, E2, E3': 85.00,
+      'E1, E2, E3, F': 95.00,
+      'D, E1, E2, E3, F': 150.00,
+      'B, E1, E2, E3, F': 150.00,
+      'B, D, E1, E2, E3, F': 200.00,
+    };
+
+    if (combos[comboKey]) {
+      form.setValue('courseValue', combos[comboKey]);
+    } else {
+      let total = 0;
+      selected.forEach(cat => {
+        total += CATEGORY_PRICES_AMPLIACIONES[cat] || 0;
+      });
+      form.setValue('courseValue', total);
+    }
   }, [form.watch('licenseCategory'), contractType, form]);
 
   useEffect(() => {

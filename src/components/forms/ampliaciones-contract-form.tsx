@@ -5,9 +5,8 @@
  * Freeway Escuela de Manejo, S.A.
  * 
  * - Ficha de estudiante técnica (12 columnas) ULTRA COMPACTA.
- * - Selector de categorías por botones (Individuales y Combinaciones).
- * - Programación de sesión teórica única.
- * - Categorías actualizadas: B, C, D, E1, E2, E3, F (Orden Alfabético).
+ * - Selector de categorías por botones (B, C, D, E1, E2, E3, F).
+ * - Horario de clase teórica restringido a Sabatino y Semanal.
  */
 
 import { useState } from 'react';
@@ -76,7 +75,7 @@ const ampliacionesSchema = z.object({
   paymentDeadline: z.date({ required_error: 'Fecha límite requerida' }),
   paymentType: z.string().default('cash'),
   theoreticalClassDate: z.date({ required_error: 'Fecha de teoría requerida' }),
-  theoreticalClassTime: z.string().default('08:00 am a 10:00 am'),
+  theoreticalClassTime: z.string().default('Semanal 8:00 am a 10:00 am'),
 });
 
 type FormValues = z.infer<typeof ampliacionesSchema>;
@@ -102,7 +101,7 @@ export function AmpliacionesContractForm() {
       courseValue: 0,
       downPayment: 0,
       paymentType: 'cash',
-      theoreticalClassTime: '08:00 am a 10:00 am',
+      theoreticalClassTime: 'Semanal 8:00 am a 10:00 am',
     },
   });
 
@@ -269,7 +268,7 @@ export function AmpliacionesContractForm() {
           </CardHeader>
           <CardContent className="p-6 space-y-8">
             <div className="space-y-4">
-              <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Seleccionar Categorías Destino (Individuales o Combinadas)</Label>
+              <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Seleccionar Categorías Destino</Label>
               <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
                 {LICENSE_CATEGORIES.map(cat => {
                   const isSelected = selectedCategories.includes(cat);
@@ -304,7 +303,7 @@ export function AmpliacionesContractForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t">
               <FormField control={form.control} name="theoreticalClassDate" render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> Fecha Sesión Teórica</FormLabel>
+                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> Fecha Clase Teórica</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl><Button variant="outline" className={cn("w-full h-10 pl-3 text-left font-normal text-xs", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP", { locale: es }) : <span>Elegir fecha</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
@@ -317,14 +316,12 @@ export function AmpliacionesContractForm() {
 
               <FormField control={form.control} name="theoreticalClassTime" render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Horario del Trámite</FormLabel>
+                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Horario Clase Teórica</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent>
-                      <SelectItem value="08:00 am a 10:00 am">08:00 am a 10:00 am</SelectItem>
-                      <SelectItem value="10:00 am a 12:00 pm">10:00 am a 12:00 pm</SelectItem>
-                      <SelectItem value="01:00 pm a 03:00 pm">01:00 pm a 03:00 pm</SelectItem>
-                      <SelectItem value="03:00 pm a 05:00 pm">03:00 pm a 05:00 pm</SelectItem>
+                      <SelectItem value="Sabatino 3:00 pm a 5:00 pm">Sabatino 3:00 pm a 5:00 pm</SelectItem>
+                      <SelectItem value="Semanal 8:00 am a 10:00 am">Semanal 8:00 am a 10:00 am</SelectItem>
                     </SelectContent>
                   </Select>
                 </FormItem>

@@ -3,9 +3,11 @@
 /**
  * FORMULARIO DE CONTRATO: CURSO DE AUTO
  * Freeway Escuela de Manejo, S.A.
+ * 
+ * Este archivo ha sido creado individualmente con sintaxis blindada.
  */
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -69,7 +71,7 @@ const autoContractSchema = z.object({
   downPayment: z.coerce.number().min(0),
   paymentDeadline: z.date({ required_error: 'Fecha límite requerida' }),
   paymentType: z.string().default('cash'),
-  theoreticalClassSchedule: z.string().optional(),
+  theoreticalClassSchedule: z.enum(['Sabados 3:00 pm a 5:00 pm', 'Semanal 8:00 am a 10:00 am'], { required_error: "Seleccione un horario" }),
 });
 
 type FormValues = z.infer<typeof autoContractSchema>;
@@ -96,7 +98,7 @@ export function AutoContractForm() {
       courseValue: 0,
       downPayment: 0,
       paymentType: 'cash',
-      theoreticalClassSchedule: 'Sábados 8:00am - 12:00pm',
+      theoreticalClassSchedule: 'Sabados 3:00 pm a 5:00 pm',
     },
   });
 
@@ -106,7 +108,6 @@ export function AutoContractForm() {
 
     try {
       await runTransaction(db, async (transaction) => {
-        // 1. Obtener Folio
         const counterRef = doc(db, 'counters', 'contracts_folio');
         const counterDoc = await transaction.get(counterRef);
         let nextFolio = 1;
@@ -117,7 +118,6 @@ export function AutoContractForm() {
           transaction.set(counterRef, { count: nextFolio });
         }
 
-        // 2. Gestionar Cliente
         const clientRef = doc(collection(db, 'clients'));
         transaction.set(clientRef, {
           name: values.clientName,
@@ -128,7 +128,6 @@ export function AutoContractForm() {
           userId: user.uid,
         });
 
-        // 3. Crear Contrato
         const contractRef = doc(collection(db, 'contracts'));
         const balance = values.courseValue - values.downPayment;
         
@@ -161,11 +160,13 @@ export function AutoContractForm() {
     }
   };
 
+  const currentBalance = form.watch('courseValue') - form.watch('downPayment');
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-5xl mx-auto pb-20">
         
-        {/* SECCIÓN 1: DATOS DEL ESTUDIANTE (ULTRA COMPACTO) */}
+        {/* SECCIÓN 1: FICHA TÉCNICA DEL ESTUDIANTE (DISEÑO ULTRA COMPACTO 12 COL) */}
         <Card className="border-t-4 border-t-blue-600 shadow-sm">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -175,7 +176,7 @@ export function AutoContractForm() {
           </CardHeader>
           <CardContent className="p-6">
             <div className="grid grid-cols-12 gap-4">
-              {/* Fila 1 */}
+              {/* Fila 1: Nombre y Email */}
               <div className="col-span-12 md:col-span-8">
                 <FormField control={form.control} name="clientName" render={({ field }) => (
                   <FormItem>
@@ -195,7 +196,7 @@ export function AutoContractForm() {
                 )} />
               </div>
 
-              {/* Fila 2 */}
+              {/* Fila 2: ID y Teléfonos */}
               <div className="col-span-4 md:col-span-2">
                 <FormField control={form.control} name="idType" render={({ field }) => (
                   <FormItem>
@@ -232,7 +233,7 @@ export function AutoContractForm() {
                 )} />
               </div>
 
-              {/* Fila 3 */}
+              {/* Fila 3: Dirección */}
               <div className="col-span-12">
                 <FormField control={form.control} name="studentAddress" render={({ field }) => (
                   <FormItem>
@@ -246,7 +247,7 @@ export function AutoContractForm() {
           </CardContent>
         </Card>
 
-        {/* SECCIÓN 2: DETALLES DEL CURSO */}
+        {/* SECCIÓN 2: CONFIGURACIÓN Y PAGOS */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="shadow-sm">
             <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
@@ -285,13 +286,23 @@ export function AutoContractForm() {
               <FormField control={form.control} name="theoreticalClassSchedule" render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Horario de Teoría</FormLabel>
-                  <FormControl><Input {...field} className="h-10" /></FormControl>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="h-10">
+                        <SelectValue placeholder="Seleccionar horario..." />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Sabados 3:00 pm a 5:00 pm">Sábados 3:00 pm a 5:00 pm</SelectItem>
+                      <SelectItem value="Semanal 8:00 am a 10:00 am">Semanal 8:00 am a 10:00 am</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
                 </FormItem>
               )} />
             </CardContent>
           </Card>
 
-          {/* SECCIÓN 3: PAGOS */}
           <Card className="shadow-sm">
             <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
               <div className="flex items-center gap-2">
@@ -320,13 +331,13 @@ export function AutoContractForm() {
               <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
                 <span className="text-[10px] font-bold uppercase text-blue-800">Saldo Pendiente:</span>
                 <span className="text-lg font-black text-blue-900">
-                  B/. {(form.watch('courseValue') - form.watch('downPayment')).toFixed(2)}
+                  B/. {currentBalance.toFixed(2)}
                 </span>
               </div>
 
               <FormField control={form.control} name="paymentDeadline" render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Fecha Límite para Cancelar Saldo</FormLabel>
+                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Fecha Límite para Saldo</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>

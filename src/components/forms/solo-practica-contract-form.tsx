@@ -404,13 +404,12 @@ export function SoloPracticaContractForm() {
               )} />
               <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Transmisión Deseada</FormLabel>
+                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Transmisión</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent>
                       <SelectItem value="Automático">Automático</SelectItem>
                       <SelectItem value="Manual">Manual</SelectItem>
-                      <SelectItem value="Moto">Motocicleta</SelectItem>
                     </SelectContent>
                   </Select>
                 </FormItem>
@@ -444,7 +443,7 @@ export function SoloPracticaContractForm() {
               <FormField control={form.control} name="downPayment" render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Abono Realizado (B/.)</FormLabel>
-                  <FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold text-emerald-600" /></FormControl>
+                  <FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold text-green-600" /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />

@@ -189,12 +189,18 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
         form.setValue('courseValue', pkg.price);
         if (contractType !== 'Ampliaciones') {
             const count = Math.ceil((pkg.hours || 0) / 2);
-            const slots = Array.from({ length: count }).map(() => ({ date: null, time: '8:00am a 10:00am', vehicle: '', instructor: instructors[0] }));
-            if (contractType === 'Curso Moto') { replaceMoto(slots); replacePractical([]); }
+            const slots = Array.from({ length: count }).map(() => ({ date: null, time: '8:00am a 10:00am', vehicle: carVehicles[0], instructor: instructors[0] }));
+            if (contractType === 'Curso Moto') { 
+                replaceMoto(slots.map(s => ({ ...s, vehicle: motoVehicles[0] }))); 
+                replacePractical([]); 
+            }
             else if (contractType === 'Curso Mixto') {
                 replacePractical(Array.from({ length: Math.ceil(count / 2) }).map(() => ({ date: null, time: '8:00am a 10:00am', vehicle: carVehicles[0], instructor: instructors[0] })));
                 replaceMoto(Array.from({ length: Math.floor(count / 2) }).map(() => ({ date: null, time: '8:00am a 10:00am', vehicle: motoVehicles[0], instructor: instructors[0] })));
-            } else { replacePractical(slots); replaceMoto([]); }
+            } else { 
+                replacePractical(slots); 
+                replaceMoto([]); 
+            }
         }
     }
   }, [form.watch('coursePlan'), contractType, initialContract, replacePractical, replaceMoto]);

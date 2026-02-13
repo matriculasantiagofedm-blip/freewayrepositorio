@@ -1,15 +1,15 @@
 'use client';
 
 /**
- * FORMULARIO DE CONTRATO: AMPLIACIONES DE LICENCIA
+ * FORMULARIO DE CONTRATO: AMPLIACIONES DE LICENCIA (CON CALCULADORA DE PRECIOS)
  * Freeway Escuela de Manejo, S.A.
  * 
  * - Ficha de estudiante técnica (12 columnas) ULTRA COMPACTA.
- * - Selector de categorías por botones (B, C, D, E1, E2, E3, F).
- * - Horario de clase teórica restringido a Sabatino y Semanal.
+ * - Selector de categorías por botones con suma automática de precios.
+ * - Categorías operativas: B, C, D, E1, E2, E3, F.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -61,6 +61,16 @@ import { useCurrentRole } from '@/hooks/use-current-role';
 
 const LICENSE_CATEGORIES = ['B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];
 
+const CATEGORY_PRICES: Record<string, number> = {
+  'B': 57.00,
+  'C': 57.00,
+  'D': 57.00,
+  'E1': 57.00,
+  'E2': 75.00,
+  'E3': 75.00,
+  'F': 85.00
+};
+
 const ampliacionesSchema = z.object({
   clientName: z.string().min(3, 'El nombre es requerido'),
   clientEmail: z.string().email('Email inválido'),
@@ -104,6 +114,15 @@ export function AmpliacionesContractForm() {
       theoreticalClassTime: 'Semanal 8:00 am a 10:00 am',
     },
   });
+
+  const watchCategories = form.watch('licenseCategory');
+
+  // LÓGICA DE CÁLCULO AUTOMÁTICO DE PRECIO
+  useEffect(() => {
+    const categories = watchCategories ? watchCategories.split(', ').filter(c => c) : [];
+    const total = categories.reduce((sum, cat) => sum + (CATEGORY_PRICES[cat] || 0), 0);
+    form.setValue('courseValue', total);
+  }, [watchCategories, form]);
 
   const toggleCategory = (category: string) => {
     const current = form.getValues('licenseCategory');
@@ -258,7 +277,7 @@ export function AmpliacionesContractForm() {
           </CardContent>
         </Card>
 
-        {/* SECCIÓN 2: DETALLES DE LA AMPLIACIÓN (BOTONES) */}
+        {/* SECCIÓN 2: DETALLES DE LA AMPLIACIÓN (BOTONES CON PRECIO) */}
         <Card className="shadow-sm">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -272,18 +291,20 @@ export function AmpliacionesContractForm() {
               <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
                 {LICENSE_CATEGORIES.map(cat => {
                   const isSelected = selectedCategories.includes(cat);
+                  const price = CATEGORY_PRICES[cat];
                   return (
                     <Button
                       key={cat}
                       type="button"
                       variant={isSelected ? "default" : "outline"}
                       className={cn(
-                        "h-12 font-black transition-all",
-                        isSelected && "bg-amber-600 hover:bg-amber-700 scale-105 shadow-md"
+                        "h-16 flex flex-col gap-1 font-black transition-all",
+                        isSelected && "bg-amber-600 hover:bg-amber-700 scale-105 shadow-md border-amber-700"
                       )}
                       onClick={() => toggleCategory(cat)}
                     >
-                      {cat}
+                      <span className="text-lg">{cat}</span>
+                      <span className="text-[9px] font-bold opacity-80">B/. {price.toFixed(2)}</span>
                     </Button>
                   );
                 })}
@@ -292,8 +313,8 @@ export function AmpliacionesContractForm() {
                 <FormItem>
                   <FormControl><Input type="hidden" {...field} /></FormControl>
                   <div className="flex items-center gap-2 mt-2">
-                    <span className="text-[10px] font-bold uppercase text-muted-foreground">Selección Actual:</span>
-                    <span className="text-sm font-black text-amber-700">{field.value || 'Ninguna'}</span>
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground">Trámite actual:</span>
+                    <span className="text-sm font-black text-amber-700">{field.value || 'Ninguno seleccionado'}</span>
                   </div>
                   <FormMessage />
                 </FormItem>
@@ -330,7 +351,7 @@ export function AmpliacionesContractForm() {
           </CardContent>
         </Card>
 
-        {/* SECCIÓN 3: GESTIÓN DE COBRO */}
+        {/* SECCIÓN 3: GESTIÓN DE COBRO (CÁLCULO AUTOMÁTICO) */}
         <Card className="shadow-sm">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -343,7 +364,7 @@ export function AmpliacionesContractForm() {
               <FormField control={form.control} name="courseValue" render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Valor del Trámite (B/.)</FormLabel>
-                  <FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold" /></FormControl>
+                  <FormControl><Input type="number" step="0.01" {...field} className="h-10 font-black text-amber-900 bg-amber-50/30" /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -356,8 +377,8 @@ export function AmpliacionesContractForm() {
               )} />
               <div className="flex flex-col gap-1.5">
                 <Label className="text-[10px] font-bold uppercase text-muted-foreground">Saldo Pendiente</Label>
-                <div className="flex items-center h-10 px-4 bg-amber-50 rounded-md border border-amber-100">
-                  <span className="text-lg font-black text-amber-900">B/. {currentBalance.toFixed(2)}</span>
+                <div className="flex items-center h-10 px-4 bg-red-50 rounded-md border border-red-100">
+                  <span className="text-lg font-black text-red-900">B/. {currentBalance.toFixed(2)}</span>
                 </div>
               </div>
             </div>

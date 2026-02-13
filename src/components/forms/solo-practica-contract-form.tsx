@@ -69,14 +69,14 @@ import { isPanamaHoliday } from '@/lib/holidays';
 
 const PRACTICE_PLANS = [
   "Basico 8 Hrs",
-  "plus 10 Hrs",
-  "premium 12 Hrs"
+  "Plus 10 Hrs",
+  "Premium 12 Hrs"
 ];
 
 const PLAN_PRACTICAL_COUNTS: Record<string, number> = {
   "Basico 8 Hrs": 4,
-  "plus 10 Hrs": 5,
-  "premium 12 Hrs": 6
+  "Plus 10 Hrs": 5,
+  "Premium 12 Hrs": 6
 };
 
 const TIME_OPTIONS = [
@@ -116,7 +116,7 @@ const soloPracticaSchema = z.object({
   studentPhone1: z.string().min(7, 'Teléfono requerido'),
   studentPhone2: z.string().optional(),
   vehicleType: z.enum(['Auto', 'Motocicleta']).default('Auto'),
-  vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).default('Automático'),
+  vehicleTransmission: z.enum(['Automático', 'Manual']).default('Automático'),
   coursePlan: z.string({ required_error: "Seleccione un paquete" }),
   courseValue: z.coerce.number().min(1, 'Monto inválido'),
   downPayment: z.coerce.number().min(0),

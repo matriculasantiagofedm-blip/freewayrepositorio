@@ -1,18 +1,17 @@
 'use client';
 
 /**
- * FORMULARIO DE CONTRATO: CURSO DE AUTO
+ * FORMULARIO DE CONTRATO: CURSO DE AUTO (ULTRA COMPACTO)
  * Freeway Escuela de Manejo, S.A.
  * 
- * - Sección de estudiante ultra compacta (12 col).
- * - Programación dinámica de clases teóricas:
- *   - Semanal: 4 clases.
- *   - Sabatino: 3 clases.
- * - Inclusión de opción Plan / Paquete en la sección de pagos.
+ * - Ficha de estudiante técnica (12 columnas).
+ * - Teoría dinámica (Semanal 4 / Sabatino 3).
+ * - Práctica dinámica basada en el Plan/Paquete seleccionado.
+ * - Sintaxis blindada para evitar errores de compilación.
  */
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
@@ -56,7 +55,9 @@ import {
   Car, 
   CreditCard, 
   BookOpen,
-  Package
+  Package,
+  Clock,
+  Navigation
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDb, useUser } from '@/components/firebase-provider';
@@ -70,6 +71,25 @@ const AUTO_PLANS = [
   "Reforzamiento Plus 2hrs",
   "Evaluación Estacionamiento (10 min)"
 ];
+
+const PLAN_PRACTICAL_COUNTS: Record<string, number> = {
+  "Curso Auto Básico (8hrz)": 4,
+  "Curso Auto Plus (10hrz)": 5,
+  "Curso Auto Premium (12hrz)": 6,
+  "Reforzamiento 4hrs": 2,
+  "Reforzamiento Plus 2hrs": 1,
+  "Evaluación Estacionamiento (10 min)": 1
+};
+
+const TIME_OPTIONS = [
+  "08:00am a 10:00am",
+  "10:00am a 12:00pm",
+  "01:00pm a 03:00pm",
+  "03:00pm a 05:00pm"
+];
+
+const VEHICLES = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Auto Diesel'];
+const INSTRUCTORS = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon'];
 
 const autoContractSchema = z.object({
   clientName: z.string().min(3, 'El nombre es requerido'),
@@ -88,6 +108,12 @@ const autoContractSchema = z.object({
   paymentType: z.string().default('cash'),
   theoreticalClassSchedule: z.enum(['Sabados 3:00 pm a 5:00 pm', 'Semanal 8:00 am a 10:00 am'], { required_error: "Seleccione un horario" }),
   theoreticalClassDates: z.array(z.date()).optional(),
+  practicalClassSchedules: z.array(z.object({
+    date: z.date({ required_error: 'Fecha requerida' }),
+    time: z.string().min(1, 'Hora requerida'),
+    vehicle: z.string().optional(),
+    instructor: z.string().optional(),
+  })).optional(),
 });
 
 type FormValues = z.infer<typeof autoContractSchema>;
@@ -117,19 +143,38 @@ export function AutoContractForm() {
       paymentType: 'cash',
       theoreticalClassSchedule: 'Sabados 3:00 pm a 5:00 pm',
       theoreticalClassDates: [],
+      practicalClassSchedules: [],
     },
   });
 
-  const watchSchedule = form.watch('theoreticalClassSchedule');
-  const theoreticalClassCount = watchSchedule === 'Semanal 8:00 am a 10:00 am' ? 4 : 3;
+  const { fields: theoryFields, replace: replaceTheory } = useFieldArray({
+    control: form.control,
+    name: "theoreticalClassDates" as any
+  });
 
+  const { fields: practicalFields, replace: replacePractical } = useFieldArray({
+    control: form.control,
+    name: "practicalClassSchedules"
+  });
+
+  const watchSchedule = form.watch('theoreticalClassSchedule');
+  const watchPlan = form.watch('coursePlan');
+
+  // Lógica de Clases Teóricas
   useEffect(() => {
-    const currentDates = form.getValues('theoreticalClassDates') || [];
-    if (currentDates.length !== theoreticalClassCount) {
-      const newDates = Array(theoreticalClassCount).fill(null).map((_, i) => currentDates[i] || new Date());
-      form.setValue('theoreticalClassDates', newDates);
-    }
-  }, [watchSchedule, theoreticalClassCount, form]);
+    const count = watchSchedule === 'Semanal 8:00 am a 10:00 am' ? 4 : 3;
+    const current = form.getValues('theoreticalClassDates') || [];
+    const newDates = Array.from({ length: count }, (_, i) => current[i] || new Date());
+    form.setValue('theoreticalClassDates', newDates);
+  }, [watchSchedule, form]);
+
+  // Lógica de Clases Prácticas
+  useEffect(() => {
+    const count = PLAN_PRACTICAL_COUNTS[watchPlan] || 0;
+    const current = form.getValues('practicalClassSchedules') || [];
+    const newSchedules = Array.from({ length: count }, (_, i) => current[i] || { date: new Date(), time: '08:00am a 10:00am', vehicle: '', instructor: '' });
+    replacePractical(newSchedules);
+  }, [watchPlan, replacePractical, form]);
 
   const onSubmit = async (values: FormValues) => {
     if (!db || !user) return;
@@ -159,7 +204,12 @@ export function AutoContractForm() {
 
         const contractRef = doc(collection(db, 'contracts'));
         const balance = values.courseValue - values.downPayment;
+        
         const formattedTheoryDates = (values.theoreticalClassDates || []).map(d => Timestamp.fromDate(d));
+        const formattedPracticalSchedules = (values.practicalClassSchedules || []).map(s => ({
+          ...s,
+          date: Timestamp.fromDate(s.date)
+        }));
 
         transaction.set(contractRef, {
           title: `Curso de Auto - Folio ${nextFolio}`,
@@ -176,6 +226,7 @@ export function AutoContractForm() {
             ...values,
             paymentDeadline: Timestamp.fromDate(values.paymentDeadline),
             theoreticalClassDates: formattedTheoryDates,
+            practicalClassSchedules: formattedPracticalSchedules,
             balance: balance,
           }
         });
@@ -324,17 +375,17 @@ export function AutoContractForm() {
             <div className="space-y-4 pt-2 border-t">
               <div className="flex items-center gap-2 mb-2">
                 <BookOpen className="h-4 w-4 text-blue-600" />
-                <h4 className="text-xs font-bold uppercase text-slate-700">Programación de Clases Teóricas ({theoreticalClassCount} sesiones)</h4>
+                <h4 className="text-xs font-bold uppercase text-slate-700">Programación de Clases Teóricas</h4>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                {Array.from({ length: theoreticalClassCount }).map((_, i) => (
+                {(form.watch('theoreticalClassDates') || []).map((_, i) => (
                   <FormField
                     key={i}
                     control={form.control}
                     name={`theoreticalClassDates.${i}`}
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
-                        <FormLabel className="text-[10px] font-bold uppercase text-blue-600">Clase {i + 1}</FormLabel>
+                        <FormLabel className="text-[10px] font-bold uppercase text-blue-600">Sesión {i + 1}</FormLabel>
                         <Popover>
                           <PopoverTrigger asChild>
                             <FormControl>
@@ -358,7 +409,83 @@ export function AutoContractForm() {
           </CardContent>
         </Card>
 
-        {/* SECCIÓN 3: PLAN DE PAGOS */}
+        {/* SECCIÓN 3: CLASES PRÁCTICAS (DINÁMICAS) */}
+        <Card className="shadow-sm">
+          <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-blue-600" />
+              <CardTitle className="text-sm font-bold uppercase tracking-wider">Programación de Clases Prácticas</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            {!watchPlan ? (
+              <div className="p-8 text-center border-2 border-dashed rounded-lg text-muted-foreground">
+                Seleccione un Plan / Paquete para habilitar la programación práctica.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {practicalFields.map((field, index) => (
+                  <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-lg bg-slate-50/30 items-end">
+                    <FormField control={form.control} name={`practicalClassSchedules.${index}.date`} render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel className="text-[10px] font-bold uppercase text-blue-600">Clase {index + 1} - Fecha</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button variant="outline" className={cn("w-full h-9 text-left font-normal text-xs", !field.value && "text-muted-foreground")}>
+                                {field.value ? format(field.value, "dd/MM/yy") : "Fecha"}
+                                <CalendarIcon className="ml-auto h-3 w-3 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                        </Popover>
+                      </FormItem>
+                    )} />
+
+                    <FormField control={form.control} name={`practicalClassSchedules.${index}.time`} render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-bold uppercase text-blue-600">Turno / Horario</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            {TIME_OPTIONS.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+
+                    <FormField control={form.control} name={`practicalClassSchedules.${index}.vehicle`} render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Vehículo (Opcional)</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Vehículo..." /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            {VEHICLES.map(v => <SelectItem key={v} value={v} className="text-xs">{v}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+
+                    <FormField control={form.control} name={`practicalClassSchedules.${index}.instructor`} render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Instructor (Opcional)</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Instructor..." /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            {INSTRUCTORS.map(i => <SelectItem key={i} value={i} className="text-xs">{i}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* SECCIÓN 4: PLAN DE PAGOS */}
         <Card className="shadow-sm">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">

@@ -3,16 +3,12 @@ import type { Contract, ContractType } from '@/lib/types';
 import { DeluxePremiumContractTemplate } from './deluxe-premium-contract';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { AutoMotoContractTemplate } from './auto-moto-contract';
-import { AutoContractTemplate } from './auto-contract';
-
 
 export function ContractView({ contract, type }: { contract: Contract, type?: ContractType }) {
 
   const renderContractTemplate = () => {
     const contractType = type || contract.type;
     switch(contractType) {
-      case 'Curso Auto':
-        return <AutoContractTemplate contract={contract} />;
       case 'Curso Deluxe':
         return <DeluxePremiumContractTemplate contract={contract} />;
       case 'Curso Moto':

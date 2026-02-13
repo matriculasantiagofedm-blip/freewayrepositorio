@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { UserCircle, Settings2, Save, DollarSign, Clock, Loader2, CalendarIcon } from 'lucide-react';
+import { UserCircle, Settings2, Save, DollarSign, Loader2, CalendarIcon } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { Timestamp, collection, doc, serverTimestamp, runTransaction, query, where } from 'firebase/firestore';
 import { useDb, useUser } from '../firebase-provider';
@@ -182,59 +182,19 @@ export function MixtoContractForm({ initialContract }: { initialContract?: Contr
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-5xl mx-auto pb-20">
         <Card className="border-t-4 border-t-purple-600 shadow-md">
-            <CardHeader className="bg-slate-50/50 border-b py-3 px-6"><div className="flex items-center gap-2"><UserCircle className="h-5 w-5 text-purple-600" /><CardTitle className="text-sm font-bold uppercase">Datos del Estudiante (Compacto)</CardTitle></div></CardHeader>
+            <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
+                <div className="flex items-center gap-2">
+                    <UserCircle className="h-5 w-5 text-purple-600" />
+                    <CardTitle className="text-sm font-bold uppercase">Datos del Estudiante (Compacto)</CardTitle>
+                </div>
+            </CardHeader>
             <CardContent className="grid grid-cols-12 gap-x-4 gap-y-3 pt-6">
-                <div className="col-span-8">
-                  <FormField control={form.control} name="clientName" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Nombre Completo</FormLabel>
-                      <FormControl><Input {...field} className="h-9 font-semibold" /></FormControl>
-                    </FormItem>
-                  )} />
-                </div>
-                <div className="col-span-4">
-                  <FormField control={form.control} name="clientEmail" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Email</FormLabel>
-                      <FormControl><Input {...field} className="h-9" /></FormControl>
-                    </FormItem>
-                  )} />
-                </div>
-                <div className="col-span-2">
-                  <FormField control={form.control} name="idType" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Tipo ID</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
-                        <SelectContent><SelectItem value="C.I.P.">C.I.P.</SelectItem><SelectItem value="PASS">PASS</SelectItem></SelectContent>
-                      </Select>
-                    </FormItem>
-                  )} />
-                </div>
-                <div className="col-span-4">
-                  <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Identificación</FormLabel>
-                      <FormControl><Input {...field} className="h-9 font-mono" /></FormControl>
-                    </FormItem>
-                  )} />
-                </div>
-                <div className="col-span-6">
-                  <FormField control={form.control} name="studentPhone1" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Teléfono</FormLabel>
-                      <FormControl><Input {...field} className="h-9" /></FormControl>
-                    </FormItem>
-                  )} />
-                </div>
-                <div className="col-span-12">
-                  <FormField control={form.control} name="studentAddress" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Dirección Residencial</FormLabel>
-                      <FormControl><Input {...field} className="h-9 text-xs" /></FormControl>
-                    </FormItem>
-                  )} />
-                </div>
+                <div className="col-span-8"><FormField control={form.control} name="clientName" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Nombre Completo</FormLabel><FormControl><Input {...field} className="h-9 font-semibold" /></FormControl></FormItem>)} /></div>
+                <div className="col-span-4"><FormField control={form.control} name="clientEmail" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Email</FormLabel><FormControl><Input {...field} className="h-9" /></FormControl></FormItem>)} /></div>
+                <div className="col-span-2"><FormField control={form.control} name="idType" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Tipo ID</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="C.I.P.">C.I.P.</SelectItem><SelectItem value="PASS">PASS</SelectItem></Select></FormItem>)} /></div>
+                <div className="col-span-4"><FormField control={form.control} name="studentIdNumber" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Identificación</FormLabel><FormControl><Input {...field} className="h-9 font-mono" /></FormControl></FormItem>)} /></div>
+                <div className="col-span-6"><FormField control={form.control} name="studentPhone1" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Teléfono</FormLabel><FormControl><Input {...field} className="h-9" /></FormControl></FormItem>)} /></div>
+                <div className="col-span-12"><FormField control={form.control} name="studentAddress" render={({ field }) => (<FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Dirección Residencial</FormLabel><FormControl><Input {...field} className="h-9 text-xs" /></FormControl></FormItem>)} /></div>
             </CardContent>
         </Card>
 

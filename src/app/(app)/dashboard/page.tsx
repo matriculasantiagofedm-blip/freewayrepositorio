@@ -57,7 +57,6 @@ export default function DashboardPage() {
   });
 
   const contractTypes = [
-      { name: 'Curso Auto', href: '/contracts/new?type=Curso%20Auto', bgColor: 'bg-blue-50', textColor: 'text-blue-600'},
       { name: 'Curso Moto', href: '/contracts/new?type=Curso%20Moto', bgColor: 'bg-orange-50', textColor: 'text-orange-600'},
       { name: 'Curso Mixto', href: '/contracts/new?type=Curso%20Mixto', bgColor: 'bg-purple-50', textColor: 'text-purple-600'},
       { name: 'Curso Deluxe', href: '/contracts/new?type=Curso%20Deluxe', bgColor: 'bg-yellow-50', textColor: 'text-yellow-600'},
@@ -116,7 +115,7 @@ export default function DashboardPage() {
 
       <div>
         <h2 className="text-xl font-bold font-headline mb-4 text-slate-800 border-b pb-2">Nuevo Contrato</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
           {contractTypes.map((type) => (
             <Card key={type.name} className="transition-all hover:shadow-md border-slate-200">
                 <CardContent className="p-4 flex items-center justify-between">

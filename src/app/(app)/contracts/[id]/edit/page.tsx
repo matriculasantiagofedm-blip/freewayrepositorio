@@ -10,7 +10,6 @@ import { ChevronLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useCurrentRole } from '@/hooks/use-current-role';
-import { AutoContractForm } from '@/components/forms/auto-contract-form';
 import { MotoContractForm } from '@/components/forms/moto-contract-form';
 import { MixtoContractForm } from '@/components/forms/mixto-contract-form';
 import { DeluxeContractForm } from '@/components/forms/deluxe-contract-form';
@@ -43,7 +42,7 @@ export default function EditContractPage() {
         case 'Curso Solo Practica':
             return <SoloPracticaContractForm initialContract={contract} />;
         default:
-            return <AutoContractForm initialContract={contract} />;
+            return <div className="p-12 text-center border-2 border-dashed rounded-lg">Este tipo de contrato ya no es editable o ha sido deshabilitado.</div>;
     }
   };
 

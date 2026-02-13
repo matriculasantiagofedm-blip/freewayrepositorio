@@ -5,7 +5,6 @@ import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useSearchParams } from 'next/navigation';
-import { AutoContractForm } from '@/components/forms/auto-contract-form';
 import { MotoContractForm } from '@/components/forms/moto-contract-form';
 import { MixtoContractForm } from '@/components/forms/mixto-contract-form';
 import { DeluxeContractForm } from '@/components/forms/deluxe-contract-form';
@@ -13,7 +12,7 @@ import { SoloPracticaContractForm } from '@/components/forms/solo-practica-contr
 
 function NewContractPageContent() {
     const searchParams = useSearchParams();
-    const contractType = searchParams.get('type') || 'Curso Auto';
+    const contractType = searchParams.get('type') || 'Curso Moto';
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => { setMounted(true); }, []);
@@ -31,7 +30,11 @@ function NewContractPageContent() {
             case 'Curso Solo Practica':
                 return <SoloPracticaContractForm />;
             default:
-                return <AutoContractForm />;
+                return (
+                    <div className="p-12 text-center border-2 border-dashed rounded-lg">
+                        <p className="text-muted-foreground">Seleccione un tipo de contrato válido.</p>
+                    </div>
+                );
         }
     };
 

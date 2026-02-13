@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -207,7 +207,7 @@ export function AutoContractForm({ initialContract }: { initialContract?: Contra
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-5xl mx-auto pb-20">
         <Card className="border-t-4 border-t-blue-600 shadow-md">
             <CardHeader className="bg-slate-50/50 border-b py-3 px-6"><div className="flex items-center gap-2"><UserCircle className="h-5 w-5 text-blue-600" /><CardTitle className="text-sm font-bold uppercase">Datos del Estudiante (Compacto)</CardTitle></div></CardHeader>
-            <CardContent className="grid grid-cols-12 gap-4 pt-6">
+            <CardContent className="grid grid-cols-12 gap-x-4 gap-y-3 pt-6">
                 <div className="col-span-8">
                   <FormField control={form.control} name="clientName" render={({ field }) => (
                     <FormItem>

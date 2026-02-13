@@ -45,6 +45,8 @@ import { useDb, useUser } from './firebase-provider';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useToast } from '@/hooks/use-toast';
 import type { Contract, ContractType, VehicleName } from '@/lib/types';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const instructors: string[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon'];
 const carVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];
@@ -184,9 +186,6 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
   useEffect(() => {
     const plan = form.watch('coursePlan');
     if (!plan || initialContract) return;
-    const pkg = [...autoPackages, ...motoPackages, ...mixtoPackages, ...deluxePackages, ...soloPackages, ...ampliacionesPackages].find(p => p.id === plan);
-    
-    // Package list might be different, fixing references
     const allPkgs = [...autoPackages, ...motoPackages, ...mixtoPackages, ...deluxePackages, ...soloPracticaPackages, ...ampliacionesPackages];
     const currentPkg = allPkgs.find(p => p.id === plan);
 
@@ -265,11 +264,18 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
 
         if (initialContract) {
             const contractRef = doc(db, 'contracts', initialContract.id);
-            await updateDoc(contractRef, { 
+            updateDoc(contractRef, { 
                 clientName: values.clientName, 
                 clientEmail: values.clientEmail, 
                 [detailField]: details, 
                 updatedAt: serverTimestamp() 
+            }).catch(async (serverError) => {
+                const permissionError = new FirestorePermissionError({
+                    path: contractRef.path,
+                    operation: 'update',
+                    requestResourceData: { clientName: values.clientName, clientEmail: values.clientEmail, [detailField]: details },
+                });
+                errorEmitter.emit('permission-error', permissionError);
             });
             toast({ title: 'Contrato Actualizado' }); 
             router.push(`/contracts/${initialContract.id}`);

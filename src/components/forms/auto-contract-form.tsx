@@ -1,14 +1,13 @@
 'use client';
 
 /**
- * FORMULARIO DE CONTRATO: CURSO DE AUTO (ULTRA COMPACTO)
+ * FORMULARIO DE CONTRATO: CURSO DE AUTO (SINTAXIS VERIFICADA)
  * Freeway Escuela de Manejo, S.A.
  * 
  * - Ficha de estudiante técnica (12 columnas).
  * - Teoría dinámica (Semanal 4 / Sabatino 3).
  * - Plan de Pagos y Saldo con selector de Paquetes.
  * - Práctica dinámica (ubicada debajo de pagos).
- * - Sintaxis blindada para evitar errores de compilación.
  */
 
 import { useState, useEffect } from 'react';
@@ -64,20 +63,20 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { useCurrentRole } from '@/hooks/use-current-role';
 
 const AUTO_PLANS = [
-  "Curso Auto Básico (8hrz)",
-  "Curso Auto Plus (10hrz)",
-  "Curso Auto Premium (12hrz)",
-  "Reforzamiento 4hrs",
-  "Reforzamiento Plus 2hrs",
+  "Curso Auto Básico (8 Hrs)",
+  "Curso Auto Plus (10 Hrs)",
+  "Curso Auto Premium (12 Hrs)",
+  "Reforzamiento 4 Hrs",
+  "Reforzamiento Plus 2 Hrs",
   "Evaluación Estacionamiento (10 min)"
 ];
 
 const PLAN_PRACTICAL_COUNTS: Record<string, number> = {
-  "Curso Auto Básico (8hrz)": 4,
-  "Curso Auto Plus (10hrz)": 5,
-  "Curso Auto Premium (12hrz)": 6,
-  "Reforzamiento 4hrs": 2,
-  "Reforzamiento Plus 2hrs": 1,
+  "Curso Auto Básico (8 Hrs)": 4,
+  "Curso Auto Plus (10 Hrs)": 5,
+  "Curso Auto Premium (12 Hrs)": 6,
+  "Reforzamiento 4 Hrs": 2,
+  "Reforzamiento Plus 2 Hrs": 1,
   "Evaluación Estacionamiento (10 min)": 1
 };
 
@@ -145,11 +144,6 @@ export function AutoContractForm() {
       theoreticalClassDates: [],
       practicalClassSchedules: [],
     },
-  });
-
-  const { fields: theoryFields } = useFieldArray({
-    control: form.control,
-    name: "theoreticalClassDates" as any
   });
 
   const { fields: practicalFields, replace: replacePractical } = useFieldArray({
@@ -409,7 +403,7 @@ export function AutoContractForm() {
           </CardContent>
         </Card>
 
-        {/* SECCIÓN 3: PLAN DE PAGOS (AHORA ANTES QUE LA PRÁCTICA) */}
+        {/* SECCIÓN 3: PLAN DE PAGOS */}
         <Card className="shadow-sm">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -499,7 +493,7 @@ export function AutoContractForm() {
           </CardContent>
         </Card>
 
-        {/* SECCIÓN 4: CLASES PRÁCTICAS (UBICADA DEBAJO DE PAGOS) */}
+        {/* SECCIÓN 4: CLASES PRÁCTICAS */}
         <Card className="shadow-sm">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -516,27 +510,27 @@ export function AutoContractForm() {
               <div className="space-y-4">
                 {practicalFields.map((field, index) => (
                   <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-lg bg-slate-50/30 items-end">
-                    <FormField control={form.control} name={`practicalClassSchedules.${index}.date`} render={({ field }) => (
+                    <FormField control={form.control} name={`practicalClassSchedules.${index}.date`} render={({ field: f }) => (
                       <FormItem className="flex flex-col">
                         <FormLabel className="text-[10px] font-bold uppercase text-blue-600">Clase {index + 1} - Fecha</FormLabel>
                         <Popover>
                           <PopoverTrigger asChild>
                             <FormControl>
-                              <Button variant="outline" className={cn("w-full h-9 text-left font-normal text-xs", !field.value && "text-muted-foreground")}>
-                                {field.value ? format(field.value, "dd/MM/yy") : "Fecha"}
+                              <Button variant="outline" className={cn("w-full h-9 text-left font-normal text-xs", !f.value && "text-muted-foreground")}>
+                                {f.value ? format(f.value, "dd/MM/yy") : "Fecha"}
                                 <CalendarIcon className="ml-auto h-3 w-3 opacity-50" />
                               </Button>
                             </FormControl>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                          <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={f.value} onSelect={f.onChange} initialFocus /></PopoverContent>
                         </Popover>
                       </FormItem>
                     )} />
 
-                    <FormField control={form.control} name={`practicalClassSchedules.${index}.time`} render={({ field }) => (
+                    <FormField control={form.control} name={`practicalClassSchedules.${index}.time`} render={({ field: f }) => (
                       <FormItem>
                         <FormLabel className="text-[10px] font-bold uppercase text-blue-600">Turno / Horario</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select onValueChange={f.onChange} value={f.value}>
                           <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
                           <SelectContent>
                             {TIME_OPTIONS.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}
@@ -545,10 +539,10 @@ export function AutoContractForm() {
                       </FormItem>
                     )} />
 
-                    <FormField control={form.control} name={`practicalClassSchedules.${index}.vehicle`} render={({ field }) => (
+                    <FormField control={form.control} name={`practicalClassSchedules.${index}.vehicle`} render={({ field: f }) => (
                       <FormItem>
                         <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Vehículo (Opcional)</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select onValueChange={f.onChange} value={f.value}>
                           <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Vehículo..." /></SelectTrigger></FormControl>
                           <SelectContent>
                             {VEHICLES.map(v => <SelectItem key={v} value={v} className="text-xs">{v}</SelectItem>)}
@@ -557,10 +551,10 @@ export function AutoContractForm() {
                       </FormItem>
                     )} />
 
-                    <FormField control={form.control} name={`practicalClassSchedules.${index}.instructor`} render={({ field }) => (
+                    <FormField control={form.control} name={`practicalClassSchedules.${index}.instructor`} render={({ field: f }) => (
                       <FormItem>
                         <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Instructor (Opcional)</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select onValueChange={f.onChange} value={f.value}>
                           <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Instructor..." /></SelectTrigger></FormControl>
                           <SelectContent>
                             {INSTRUCTORS.map(i => <SelectItem key={i} value={i} className="text-xs">{i}</SelectItem>)}

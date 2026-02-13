@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { 
@@ -45,13 +45,12 @@ import { useCurrentRole } from '@/hooks/use-current-role';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { isPanamaHoliday } from '@/lib/holidays';
-import type { Contract, ContractType, VehicleName, ManualSchedule } from '@/lib/types';
+import type { Contract, VehicleName, ManualSchedule } from '@/lib/types';
 
 // --- CONSTANTES ---
 const instructors = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon'];
 const carVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Auto Diesel'];
 const motoVehicles: VehicleName[] = ['Moto Roja', 'Moto Negra'];
-const allVehicles = [...carVehicles, ...motoVehicles];
 const practicalTimeSlots = ['8:00am a 10:00am', '10:00am a 12:00pm', '1:00pm a 3:00pm', '3:00pm a 5:00pm'];
 
 const TIME_STRING_TO_SLOT_MAP: Record<string, string> = {
@@ -59,10 +58,6 @@ const TIME_STRING_TO_SLOT_MAP: Record<string, string> = {
     '10:00am a 12:00pm': '10am-12pm',
     '1:00pm a 3:00pm': '1pm-3pm',
     '3:00pm a 5:00pm': '3pm-5pm',
-};
-
-const CATEGORY_PRICES_AMPLIACIONES: Record<string, number> = {
-  'B': 57.00, 'C': 57.00, 'D': 57.00, 'E1': 57.00, 'E2': 75.00, 'E3': 75.00, 'F': 85.00,
 };
 
 const autoPackages = [
@@ -217,6 +212,7 @@ const ClassRow = ({
     );
 };
 
+// --- COMPONENTE PRINCIPAL ---
 export function ContractForm({ initialContract }: { initialContract?: Contract }) {
   const db = useDb();
   const { user } = useUser();
@@ -338,8 +334,6 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
         } else if (watchType === 'Ampliaciones') {
             const cats = watchCats ? watchCats.split(',').map(c => c.trim()).filter(c => c) : [];
             form.setValue('courseValue', calculateAmpliacionPrice(cats));
-        } else if (watchType === 'Curso Deluxe') {
-            form.setValue('courseValue', watchPlan?.includes('semanas') ? 0 : 0); // Logic for deluxe prices if needed
         }
     }
   }, [watchType, watchPlan, watchCats, replacePractical, replaceMotoPractical, form, initialContract]);
@@ -440,51 +434,63 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-5xl mx-auto pb-20">
         <Card className="border-t-4 border-t-primary shadow-md">
-            <CardHeader className="bg-slate-50/50 border-b">
+            <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
                 <div className="flex items-center gap-2">
-                    <UserCircle className="h-6 w-6 text-primary" />
-                    <CardTitle className="text-lg">Datos del Estudiante</CardTitle>
+                    <UserCircle className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base font-bold uppercase tracking-wide">Datos del Estudiante</CardTitle>
                 </div>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6">
-                <FormField control={form.control} name="clientName" render={({ field }) => (
-                    <FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="clientEmail" render={({ field }) => (
-                    <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <div className="grid grid-cols-3 gap-2">
-                    <FormField control={form.control} name="idType" render={({ field }) => (
-                        <FormItem className="col-span-1"><FormLabel>Tipo ID</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="C.I.P.">C.I.P.</SelectItem><SelectItem value="PASS">PASS</SelectItem></SelectContent></Select></FormItem>
-                    )} />
-                    <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
-                        <FormItem className="col-span-2"><FormLabel>Identificación</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+            <CardContent className="grid grid-cols-1 md:grid-cols-6 gap-4 pt-6">
+                <div className="md:col-span-3">
+                    <FormField control={form.control} name="clientName" render={({ field }) => (
+                        <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Nombre Completo</FormLabel><FormControl><Input {...field} className="h-9" /></FormControl><FormMessage /></FormItem>
                     )} />
                 </div>
-                <FormField control={form.control} name="studentAddress" render={({ field }) => (
-                    <FormItem className="md:col-span-2"><FormLabel>Dirección</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="studentPhone1" render={({ field }) => (
-                    <FormItem><FormLabel>Teléfono 1</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
+                <div className="md:col-span-3">
+                    <FormField control={form.control} name="clientEmail" render={({ field }) => (
+                        <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Email</FormLabel><FormControl><Input type="email" {...field} className="h-9" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                </div>
+                
+                <div className="md:col-span-1">
+                    <FormField control={form.control} name="idType" render={({ field }) => (
+                        <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Tipo ID</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="C.I.P.">C.I.P.</SelectItem><SelectItem value="PASS">PASS</SelectItem></SelectContent></Select></FormItem>
+                    )} />
+                </div>
+                <div className="md:col-span-2">
+                    <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
+                        <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Identificación</FormLabel><FormControl><Input {...field} className="h-9" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                </div>
+                <div className="md:col-span-3">
+                    <FormField control={form.control} name="studentPhone1" render={({ field }) => (
+                        <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Teléfono Principal</FormLabel><FormControl><Input {...field} className="h-9" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                </div>
+
+                <div className="md:col-span-6">
+                    <FormField control={form.control} name="studentAddress" render={({ field }) => (
+                        <FormItem><FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Dirección Residencial</FormLabel><FormControl><Input {...field} className="h-9" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                </div>
             </CardContent>
         </Card>
 
         <Card className="shadow-md">
-            <CardHeader className="bg-slate-50/50 border-b">
+            <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
                 <div className="flex items-center gap-2">
-                    <Settings2 className="h-6 w-6 text-primary" />
-                    <CardTitle className="text-lg">Configuración del Trámite</CardTitle>
+                    <Settings2 className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base font-bold uppercase tracking-wide">Configuración del Trámite</CardTitle>
                 </div>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-6">
                 <FormField control={form.control} name="contractType" render={({ field }) => (
-                    <FormItem><FormLabel>Tipo de Contrato</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={!!initialContract}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Curso Auto">Curso Auto</SelectItem><SelectItem value="Curso Moto">Curso Moto</SelectItem><SelectItem value="Curso Mixto">Curso Mixto</SelectItem><SelectItem value="Curso Deluxe">Curso Deluxe</SelectItem><SelectItem value="Curso Solo Practica">Curso Solo Practica</SelectItem><SelectItem value="Ampliaciones">Ampliaciones</SelectItem></SelectContent></Select></FormItem>
+                    <FormItem><FormLabel className="text-xs uppercase font-bold">Tipo de Contrato</FormLabel><Select onValueChange={field.onChange} value={field.value} disabled={!!initialContract}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Curso Auto">Curso Auto</SelectItem><SelectItem value="Curso Moto">Curso Moto</SelectItem><SelectItem value="Curso Mixto">Curso Mixto</SelectItem><SelectItem value="Curso Deluxe">Curso Deluxe</SelectItem><SelectItem value="Curso Solo Practica">Curso Solo Practica</SelectItem><SelectItem value="Ampliaciones">Ampliaciones</SelectItem></Select></FormControl></FormItem>
                 )} />
 
                 {watchType !== 'Ampliaciones' && watchType !== 'Curso Solo Practica' && (
                     <FormField control={form.control} name="coursePlan" render={({ field }) => (
-                        <FormItem><FormLabel>Plan de Curso</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar plan..." /></SelectTrigger></FormControl><SelectContent>
+                        <FormItem><FormLabel className="text-xs uppercase font-bold">Plan de Curso</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar plan..." /></SelectTrigger></FormControl><SelectContent>
                             {watchType === 'Curso Auto' && autoPackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>)}
                             {watchType === 'Curso Moto' && motoPackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>)}
                             {watchType === 'Curso Mixto' && mixtoPackages.map(p => <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>)}
@@ -494,36 +500,36 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                 )}
 
                 <FormField control={form.control} name="licenseCategory" render={({ field }) => (
-                    <FormItem><FormLabel>Categorías</FormLabel><FormControl><Input placeholder="Ej: A, C, D" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel className="text-xs uppercase font-bold">Categorías</FormLabel><FormControl><Input placeholder={watchType === 'Curso Auto' ? 'Ej: A, C, D' : 'Ej: A, C'} {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
 
                 <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
-                    <FormItem><FormLabel>Transmisión</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Automático">Automático</SelectItem><SelectItem value="Manual">Manual</SelectItem><SelectItem value="Moto">Solo Moto</SelectItem></SelectContent></Select></FormItem>
+                    <FormItem><FormLabel className="text-xs uppercase font-bold">Transmisión</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Automático">Automático</SelectItem><SelectItem value="Manual">Manual</SelectItem><SelectItem value="Moto">Solo Moto</SelectItem></Select></FormControl></FormItem>
                 )} />
             </CardContent>
         </Card>
 
         {watchType !== 'Ampliaciones' && (
             <Card className="shadow-md">
-                <CardHeader className="bg-slate-50/50 border-b">
+                <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
                     <div className="flex items-center gap-2">
-                        <Clock className="h-6 w-6 text-primary" />
-                        <CardTitle className="text-lg">Agenda de Clases</CardTitle>
+                        <Clock className="h-5 w-5 text-primary" />
+                        <CardTitle className="text-base font-bold uppercase tracking-wide">Agenda de Clases</CardTitle>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-8 pt-6">
                     {watchType !== 'Curso Solo Practica' && (
                         <div className="space-y-4">
-                            <FormLabel className="text-primary font-bold uppercase tracking-wider flex items-center gap-2"><CalendarDays className="h-4 w-4" /> Clases Teóricas</FormLabel>
+                            <FormLabel className="text-primary font-black text-[10px] uppercase tracking-widest flex items-center gap-2"><CalendarDays className="h-3 w-3" /> Clases Teóricas</FormLabel>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <FormField control={form.control} name="theoreticalClassSchedule" render={({ field }) => (
-                                    <FormItem><FormLabel>Horario Teórico</FormLabel><FormControl><Input placeholder="Ej: Lunes y Martes 6-8pm" {...field} /></FormControl></FormItem>
+                                    <FormItem><FormLabel className="text-[10px] uppercase font-bold">Horario Teórico</FormLabel><FormControl><Input placeholder="Ej: Lunes y Martes 6-8pm" {...field} className="h-9" /></FormControl></FormItem>
                                 )} />
                                 {form.watch('theoreticalClassDates')?.map((_, i) => (
                                     <FormField key={i} control={form.control} name={`theoreticalClassDates.${i}`} render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Sesión {i + 1}</FormLabel>
-                                            <Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant="outline" className="w-full h-10">{field.value ? format(toDate(field.value), "PPP", { locale: es }) : "Elegir Fecha"}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover>
+                                            <FormLabel className="text-[10px] uppercase font-bold text-muted-foreground">Sesión {i + 1}</FormLabel>
+                                            <Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant="outline" className="w-full h-9 text-xs">{field.value ? format(toDate(field.value), "PPP", { locale: es }) : "Elegir Fecha"}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover>
                                         </FormItem>
                                     )} />
                                 ))}
@@ -532,17 +538,17 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                     )}
 
                     <div className="space-y-4">
-                        <FormLabel className="text-primary font-bold uppercase tracking-wider flex items-center gap-2"><Clock className="h-4 w-4" /> Clases Prácticas</FormLabel>
+                        <FormLabel className="text-primary font-black text-[10px] uppercase tracking-widest flex items-center gap-2"><Clock className="h-3 w-3" /> Clases Prácticas</FormLabel>
                         <div className="grid grid-cols-1 gap-4">
                             {practicalFields.map((field, i) => (
                                 <div key={field.id} className="space-y-2">
-                                    <p className="text-[10px] font-bold text-muted-foreground uppercase">Clase #{i + 1} {watchType === 'Curso Mixto' ? '(Auto)' : ''}</p>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">CLASE #{i + 1} {watchType === 'Curso Mixto' ? '(AUTO)' : ''}</p>
                                     <ClassRow index={i} namePrefix="practicalClassSchedules" vehicles={carVehicles} form={form} occupancyData={availabilityData} />
                                 </div>
                             ))}
                             {watchType === 'Curso Mixto' && motoPracticalFields.map((field, i) => (
                                 <div key={field.id} className="space-y-2">
-                                    <p className="text-[10px] font-bold text-orange-600 uppercase">Clase #{i + 1} (Moto)</p>
+                                    <p className="text-[9px] font-black text-orange-600 uppercase tracking-tighter">CLASE #{i + 1} (MOTO)</p>
                                     <ClassRow index={i} namePrefix="motoPracticalClassSchedules" vehicles={motoVehicles} form={form} occupancyData={availabilityData} />
                                 </div>
                             ))}
@@ -554,47 +560,47 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
 
         {watchType === 'Ampliaciones' && (
             <Card className="shadow-md">
-                <CardHeader className="bg-slate-50/50 border-b"><CardTitle className="text-lg">Sesión Teórica (Ampliación)</CardTitle></CardHeader>
+                <CardHeader className="bg-slate-50/50 border-b py-3 px-6"><CardTitle className="text-base font-bold uppercase">Sesión Teórica (Ampliación)</CardTitle></CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
                     <FormField control={form.control} name="theoreticalClassDate" render={({ field }) => (
-                        <FormItem><FormLabel>Fecha de Clase</FormLabel><Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant="outline" className="w-full h-10">{field.value ? format(toDate(field.value), "PPP", { locale: es }) : "Elegir Fecha"}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover></FormItem>
+                        <FormItem><FormLabel className="text-[10px] uppercase font-bold">Fecha de Clase</FormLabel><Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant="outline" className="w-full h-9 text-xs">{field.value ? format(toDate(field.value), "PPP", { locale: es }) : "Elegir Fecha"}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus /></PopoverContent></FormItem>
                     )} />
                     <FormField control={form.control} name="theoreticalClassTime" render={({ field }) => (
-                        <FormItem><FormLabel>Horario</FormLabel><FormControl><Input placeholder="Ej: 8:00 am" {...field} /></FormControl></FormItem>
+                        <FormItem><FormLabel className="text-[10px] uppercase font-bold">Horario</FormLabel><FormControl><Input placeholder="Ej: 8:00 am" {...field} className="h-9" /></FormControl></FormItem>
                     )} />
                 </CardContent>
             </Card>
         )}
 
-        <Card className="shadow-md">
-            <CardHeader className="bg-slate-50/50 border-b">
+        <Card className="shadow-md border-b-4 border-b-primary/20">
+            <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
                 <div className="flex items-center gap-2">
-                    <DollarSign className="h-6 w-6 text-primary" />
-                    <CardTitle className="text-lg">Información de Pago</CardTitle>
+                    <DollarSign className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base font-bold uppercase tracking-wide">Información de Pago</CardTitle>
                 </div>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-6">
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 pt-6">
                 <FormField control={form.control} name="courseValue" render={({ field }) => (
-                    <FormItem><FormLabel>Valor Total (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl></FormItem>
+                    <FormItem><FormLabel className="text-[10px] uppercase font-bold">Valor Total (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-9" /></FormControl></FormItem>
                 )} />
                 <FormField control={form.control} name="downPayment" render={({ field }) => (
-                    <FormItem><FormLabel>Abono inicial (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl></FormItem>
+                    <FormItem><FormLabel className="text-[10px] uppercase font-bold">Abono inicial (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-9 font-bold text-green-700" /></FormControl></FormItem>
                 )} />
                 <FormField control={form.control} name="balance" render={({ field }) => (
-                    <FormItem><FormLabel>Saldo Pendiente (B/.)</FormLabel><FormControl><Input type="number" step="0.01" className="bg-muted font-bold text-destructive" readOnly {...field} /></FormControl></FormItem>
+                    <FormItem><FormLabel className="text-[10px] uppercase font-bold">Saldo (B/.)</FormLabel><FormControl><Input type="number" step="0.01" className="bg-muted font-black text-destructive h-9" readOnly {...field} /></FormControl></FormItem>
                 )} />
                 <FormField control={form.control} name="paymentDeadline" render={({ field }) => (
-                    <FormItem><FormLabel>Límite para Cancelar</FormLabel><Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant="outline" className="w-full h-10">{field.value ? format(toDate(field.value), "dd/MM/yyyy") : "Fecha"}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover></FormItem>
+                    <FormItem><FormLabel className="text-[10px] uppercase font-bold">Límite Saldo</FormLabel><Popover modal={true}><PopoverTrigger asChild><FormControl><Button variant="outline" className="w-full h-9 text-xs">{field.value ? format(toDate(field.value), "dd/MM/yy") : "Fecha"}</Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value || undefined} onSelect={field.onChange} initialFocus /></PopoverContent></FormItem>
                 )} />
                 <FormField control={form.control} name="paymentType" render={({ field }) => (
-                    <FormItem><FormLabel>Método de Pago</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="cash">Efectivo</SelectItem><SelectItem value="debit">Tarjeta Débito</SelectItem><SelectItem value="credit">Tarjeta Crédito</SelectItem><SelectItem value="bac">BAC</SelectItem><SelectItem value="general">General</SelectItem><SelectItem value="cheques">Cheque</SelectItem></SelectContent></Select></FormItem>
+                    <FormItem><FormLabel className="text-[10px] uppercase font-bold">Método</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-9"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="cash">Efectivo</SelectItem><SelectItem value="debit">Tarjeta Débito</SelectItem><SelectItem value="credit">Tarjeta Crédito</SelectItem><SelectItem value="bac">BAC</SelectItem><SelectItem value="general">General</SelectItem><SelectItem value="cheques">Cheque</SelectItem></Select></FormControl></FormItem>
                 )} />
             </CardContent>
         </Card>
 
         <div className="flex justify-end gap-4">
             <Button type="button" variant="outline" onClick={() => router.back()} disabled={isSaving}>Cancelar</Button>
-            <Button type="submit" size="lg" className="px-12" disabled={isSaving}>
+            <Button type="submit" size="lg" className="px-12 h-12 text-base font-bold shadow-lg" disabled={isSaving}>
                 {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 {initialContract ? 'Actualizar Contrato' : 'Generar Contrato'}
             </Button>

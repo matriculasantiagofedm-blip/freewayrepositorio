@@ -310,7 +310,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
         console.error(e);
         toast({ variant: 'destructive', title: 'Error al procesar el contrato' }); 
     } finally {
-        setIsSubmitting(false); 
+        setIsSubmitting(false);
     }
   };
 

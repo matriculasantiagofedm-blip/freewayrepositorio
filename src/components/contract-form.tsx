@@ -45,8 +45,6 @@ import { useDb, useUser } from './firebase-provider';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useToast } from '@/hooks/use-toast';
 import type { Contract, ContractType, VehicleName } from '@/lib/types';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 const instructors: string[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon'];
 const carVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark'];

@@ -647,3 +647,6 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
     </Form>
   );
 }
+
+// Ensure the functions and hooks are properly exported and the closing braces are in place.
+import { Label } from './ui/label';

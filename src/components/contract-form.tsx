@@ -269,13 +269,6 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
                 clientEmail: values.clientEmail, 
                 [detailField]: details, 
                 updatedAt: serverTimestamp() 
-            }).catch(async (serverError) => {
-                const permissionError = new FirestorePermissionError({
-                    path: contractRef.path,
-                    operation: 'update',
-                    requestResourceData: { clientName: values.clientName, clientEmail: values.clientEmail, [detailField]: details },
-                });
-                errorEmitter.emit('permission-error', permissionError);
             });
             toast({ title: 'Contrato Actualizado' }); 
             router.push(`/contracts/${initialContract.id}`);

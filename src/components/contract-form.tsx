@@ -184,11 +184,16 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
   useEffect(() => {
     const plan = form.watch('coursePlan');
     if (!plan || initialContract) return;
-    const pkg = [...autoPackages, ...motoPackages, ...mixtoPackages, ...deluxePackages, ...soloPracticaPackages, ...ampliacionesPackages].find(p => p.id === plan);
-    if (pkg) {
-        form.setValue('courseValue', pkg.price);
+    const pkg = [...autoPackages, ...motoPackages, ...mixtoPackages, ...deluxePackages, ...soloPackages, ...ampliacionesPackages].find(p => p.id === plan);
+    
+    // Package list might be different, fixing references
+    const allPkgs = [...autoPackages, ...motoPackages, ...mixtoPackages, ...deluxePackages, ...soloPracticaPackages, ...ampliacionesPackages];
+    const currentPkg = allPkgs.find(p => p.id === plan);
+
+    if (currentPkg) {
+        form.setValue('courseValue', currentPkg.price);
         if (contractType !== 'Ampliaciones') {
-            const count = Math.ceil((pkg.hours || 0) / 2);
+            const count = Math.ceil((currentPkg.hours || 0) / 2);
             const slots = Array.from({ length: count }).map(() => ({ date: null, time: '8:00am a 10:00am', vehicle: carVehicles[0], instructor: instructors[0] }));
             if (contractType === 'Curso Moto') { 
                 replaceMoto(slots.map(s => ({ ...s, vehicle: motoVehicles[0] }))); 
@@ -298,7 +303,7 @@ export function ContractForm({ initialContract }: { initialContract?: Contract }
     } catch (e) { 
         console.error(e);
         toast({ variant: 'destructive', title: 'Error al procesar el contrato' }); 
-    } finally { 
+    } finally {
         setIsSubmitting(false); 
     }
   };

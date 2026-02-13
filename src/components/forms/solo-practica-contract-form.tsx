@@ -138,7 +138,6 @@ export function SoloPracticaContractForm({ initialContract }: { initialContract?
                 </div>
             </CardHeader>
             <CardContent className="grid grid-cols-12 gap-x-4 gap-y-3 pt-6">
-                {/* FILA 1: NOMBRE (8) Y EMAIL (4) */}
                 <div className="col-span-12 md:col-span-8">
                     <FormField control={form.control} name="clientName" render={({ field }) => (
                         <FormItem>
@@ -155,8 +154,6 @@ export function SoloPracticaContractForm({ initialContract }: { initialContract?
                         </FormItem>
                     )} />
                 </div>
-
-                {/* FILA 2: TIPO ID (2), NUMERO (4) Y TELEFONO (6) */}
                 <div className="col-span-4 md:col-span-2">
                     <FormField control={form.control} name="idType" render={({ field }) => (
                         <FormItem>
@@ -187,8 +184,6 @@ export function SoloPracticaContractForm({ initialContract }: { initialContract?
                         </FormItem>
                     )} />
                 </div>
-
-                {/* FILA 3: DIRECCION (12) */}
                 <div className="col-span-12">
                     <FormField control={form.control} name="studentAddress" render={({ field }) => (
                         <FormItem>

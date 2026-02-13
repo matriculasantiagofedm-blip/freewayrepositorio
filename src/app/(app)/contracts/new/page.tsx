@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useSearchParams } from 'next/navigation';
 import { AutoContractForm } from '@/components/forms/auto-contract-form';
+import { MotoContractForm } from '@/components/forms/moto-contract-form';
 
 function NewContractPageContent() {
     const searchParams = useSearchParams();
@@ -20,6 +21,8 @@ function NewContractPageContent() {
         switch (contractType) {
             case 'Curso Auto':
                 return <AutoContractForm />;
+            case 'Curso Moto':
+                return <MotoContractForm />;
             default:
                 return (
                     <div className="p-12 text-center border-2 border-dashed rounded-lg">

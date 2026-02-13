@@ -59,6 +59,7 @@ export default function DashboardPage() {
 
   const contractTypes = [
     { name: 'Curso Auto', href: '/contracts/new?type=Curso Auto', icon: Car, color: 'text-blue-600', bgColor: 'bg-blue-50' },
+    { name: 'Curso Moto', href: '/contracts/new?type=Curso Moto', icon: Bike, color: 'text-orange-600', bgColor: 'bg-orange-50' },
   ];
 
   const actionGroups = [
@@ -111,7 +112,6 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* NUEVA SECCIÓN: CREACIÓN RÁPIDA DE CONTRATOS */}
       <div className="space-y-4">
         <h2 className="text-xl font-bold font-headline text-slate-800 border-b pb-2">Registrar Nuevo Trámite</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

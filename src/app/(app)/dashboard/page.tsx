@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -6,12 +7,13 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useCollection } from '@/hooks/use-firestore';
 import { cn, toDate } from '@/lib/utils';
-import { collection, orderBy, query, where } from 'firebase/firestore';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import type { Contract } from '@/lib/types';
 import { Car, Bike, Plus, Repeat, Dumbbell, CalendarCheck, UserPlus, ArrowRight, Clock } from 'lucide-react';
-import { isToday } from 'date-fns';
+import { isToday, format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 const getBalance = (contract: Contract): number => {
     const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
@@ -29,39 +31,57 @@ export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const { role } = useCurrentRole();
 
-  // Query para contratos activos/completados
+  // Query optimizada: Traemos los contratos para procesar estadísticas en memoria
+  // Esto evita problemas de índices compuestos en Firestore para el prototipo
   const contractsQuery = useMemo(() => {
     if (!db || !user) return null;
-    return query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed', 'expired']), orderBy('createdAt', 'desc'));
+    return collection(db, 'contracts');
   }, [db, user]);
 
   // Query para contratos en borrador (Pre-inscripciones Web)
   const draftsQuery = useMemo(() => {
     if (!db || !user) return null;
-    return query(collection(db, 'contracts'), where('status', '==', 'draft'), orderBy('createdAt', 'desc'));
+    return query(collection(db, 'contracts'), where('status', '==', 'draft'));
   }, [db, user]);
 
-  const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
+  const { data: allContracts, isLoading } = useCollection<Contract>(contractsQuery);
   const { data: drafts, isLoading: isDraftsLoading } = useCollection<Contract>(draftsQuery);
 
-  const activeContractsCount = contracts?.filter((c) => c.status === 'active').length || 0;
-  const todayContracts = contracts?.filter((c) => isToday(toDate(c.createdAt))).length || 0;
-  const overdueContracts = contracts?.filter(isOverdue) || [];
-  const overdueCount = overdueContracts.length;
-  const overdueTotalAmount = overdueContracts.reduce((sum, contract) => sum + getBalance(contract), 0);
+  // Procesamiento de estadísticas en memoria
+  const statsValues = useMemo(() => {
+    if (!allContracts) return { active: 0, today: 0, overdue: 0, overdueAmount: 0 };
+    
+    const active = allContracts.filter(c => c.status === 'active').length;
+    const today = allContracts.filter(c => isToday(toDate(c.createdAt))).length;
+    const overdueList = allContracts.filter(isOverdue);
+    const overdueCount = overdueList.length;
+    const overdueSum = overdueList.reduce((sum, c) => sum + getBalance(c), 0);
+
+    return {
+        active,
+        today,
+        overdue: overdueCount,
+        overdueAmount: overdueSum
+    };
+  }, [allContracts]);
 
   const stats = [
-    { title: 'Contratos Activos', value: isLoading || isUserLoading ? '...' : activeContractsCount, href: '/contracts', adminOnly: true },
+    { 
+        title: 'Contratos Activos', 
+        value: isLoading || isUserLoading ? '...' : statsValues.active, 
+        href: '/contracts', 
+        adminOnly: true 
+    },
     { 
         title: 'Trámites de Hoy', 
-        value: isLoading || isUserLoading ? '...' : todayContracts, 
+        value: isLoading || isUserLoading ? '...' : statsValues.today, 
         href: '/contracts?filter=today',
         highlight: true
     },
     { 
         title: 'Contratos por Cobrar', 
-        value: isLoading || isUserLoading ? '...' : overdueCount, 
-        secondaryValue: isLoading || isUserLoading ? '...' : `B/. ${overdueTotalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 
+        value: isLoading || isUserLoading ? '...' : statsValues.overdue, 
+        secondaryValue: isLoading || isUserLoading ? '' : `B/. ${statsValues.overdueAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 
         href: '/contracts?filter=overdue' 
     },
   ];
@@ -186,8 +206,8 @@ export default function DashboardPage() {
                                 <Plus className="h-4 w-4" />
                             </div>
                         </CardContent>
-                    </Card>
-                </Link>
+                    </Link>
+                </Card>
             ))}
         </div>
       </div>

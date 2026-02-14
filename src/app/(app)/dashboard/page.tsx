@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -40,8 +41,8 @@ export default function DashboardPage() {
   const statsValues = useMemo(() => {
     if (!allContracts) return { active: 0, today: 0, overdue: 0, overdueAmount: 0, drafts: [] as Contract[] };
     
-    const active = allContracts.filter(c => c.status === 'active').length;
-    const today = allContracts.filter(c => isToday(toDate(c.createdAt))).length;
+    const active = allContracts.filter(c => c.status === 'active' || c.status === 'completed').length;
+    const todayCount = allContracts.filter(c => isToday(toDate(c.createdAt))).length;
     const overdueList = allContracts.filter(isOverdue);
     const overdueCount = overdueList.length;
     const overdueSum = overdueList.reduce((sum, c) => sum + getBalance(c), 0);
@@ -49,7 +50,7 @@ export default function DashboardPage() {
 
     return {
         active,
-        today,
+        today: todayCount,
         overdue: overdueCount,
         overdueAmount: overdueSum,
         drafts: draftsList
@@ -138,7 +139,7 @@ export default function DashboardPage() {
               </div>
             </div>
             <Button asChild variant="outline" size="sm" className="bg-white border-amber-200 text-amber-700 hover:bg-amber-50">
-              <Link href="/contracts?status=draft">Ver Todas</Link>
+              <Link href="/contracts">Ver Todas</Link>
             </Button>
           </CardHeader>
           <CardContent className="p-4 space-y-2">

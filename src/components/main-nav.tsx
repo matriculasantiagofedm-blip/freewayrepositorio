@@ -28,6 +28,11 @@ const navLinks = [
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
   },
   {
+    href: '/enroll',
+    label: 'Inscripción Web',
+    roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+  },
+  {
     label: 'Operaciones',
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     children: [

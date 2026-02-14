@@ -1,4 +1,3 @@
-
 'use client';
 import { collection, query, orderBy } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
@@ -13,7 +12,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/badge';
+import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { format, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';

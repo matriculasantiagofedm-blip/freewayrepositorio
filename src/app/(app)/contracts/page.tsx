@@ -69,18 +69,6 @@ function AllContractsContent() {
     });
   }, [allContracts, searchTerm, filter]);
 
-  if (role && role !== 'Administrador' && filter !== 'overdue' && filter !== 'today') {
-    return (
-      <div className="p-12 text-center border-2 border-dashed rounded-lg">
-        <h3 className="text-lg font-semibold">Acceso Restringido</h3>
-        <p className="text-muted-foreground">No tienes permisos para ver el listado global de contratos.</p>
-        <Button asChild className="mt-4"><Link href="/dashboard">Volver al Panel</Link></Button>
-      </div>
-    );
-  }
-
-  const isAdmin = role === 'Administrador';
-
   const getTitle = () => {
       if (filter === 'overdue') return 'Contratos por Cobrar (Saldos)';
       if (filter === 'today') return 'Trámites Realizados Hoy';
@@ -121,7 +109,7 @@ function AllContractsContent() {
                 <TableHead>Certificado</TableHead>
                 <TableHead>Fecha de Registro</TableHead>
                 <TableHead className="text-right">Saldo (B/.)</TableHead>
-                {isAdmin && <TableHead className="text-right">Acciones</TableHead>}
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -165,19 +153,17 @@ function AllContractsContent() {
                       <TableCell className={cn("text-right font-bold", getBalance(contract) > 0 ? "text-destructive" : "text-green-600")}>
                           {getBalance(contract).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       </TableCell>
-                      {isAdmin && (
-                        <TableCell className="text-right">
-                          <Button asChild variant="ghost" size="icon">
-                            <Link href={`/contracts/${contract.id}`}><Eye className="h-4 w-4" /></Link>
-                          </Button>
-                        </TableCell>
-                      )}
+                      <TableCell className="text-right">
+                        <Button asChild variant="ghost" size="icon">
+                          <Link href={`/contracts/${contract.id}`}><Eye className="h-4 w-4" /></Link>
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   );
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={isAdmin ? 8 : 7} className="h-32 text-center text-muted-foreground italic">
+                  <TableCell colSpan={8} className="h-32 text-center text-muted-foreground italic">
                     {searchTerm ? "No se encontraron contratos con ese criterio." : "No hay trámites registrados para el filtro seleccionado."}
                   </TableCell>
                 </TableRow>

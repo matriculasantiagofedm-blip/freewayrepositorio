@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -62,8 +61,7 @@ export default function DashboardPage() {
         title: 'Contratos Activos', 
         value: isContractsLoading || isUserLoading ? '...' : statsValues.active, 
         href: '/contracts', 
-        icon: ShieldCheck,
-        adminOnly: true 
+        icon: ShieldCheck
     },
     { 
         title: 'Trámites de Hoy', 
@@ -80,11 +78,6 @@ export default function DashboardPage() {
         href: '/contracts?filter=overdue' 
     },
   ];
-
-  const visibleStats = stats.filter(stat => {
-    if (stat.adminOnly && role !== 'Administrador') return false;
-    return true;
-  });
 
   const contractTypes = [
     { name: 'Curso Auto', href: '/contracts/new?type=Curso Auto', icon: Car, color: 'text-blue-600', bgColor: 'bg-blue-50' },
@@ -165,7 +158,7 @@ export default function DashboardPage() {
 
       {/* ESTADÍSTICAS RÁPIDAS */}
       <div className="grid gap-4 md:grid-cols-3">
-        {visibleStats.map((stat) => (
+        {stats.map((stat) => (
             <Link key={stat.title} href={stat.href} className="no-underline">
                 <Card className={cn(
                     "hover:shadow-md transition-all border-slate-200",

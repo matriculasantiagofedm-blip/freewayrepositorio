@@ -1,4 +1,3 @@
-
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ClipboardPenLine, ListChecks, Award, Gauge, FileText, Banknote, CalendarClock, ScrollText, GraduationCap } from 'lucide-react';
@@ -36,7 +35,7 @@ export default function ReportsPage() {
       description: 'Ver, buscar y filtrar todos los contratos activos y pasados.',
       href: '/contracts',
       icon: FileText,
-      roles: ['Administrador'],
+      roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     },
     {
       title: 'Reporte de Caja Diario',

@@ -166,8 +166,21 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
     resolver: zodResolver(motoContractSchema),
     defaultValues: isEdit ? {
       ...contract.autoMotoDetails,
-      clientName: contract.clientName,
-      clientEmail: contract.clientEmail,
+      clientName: contract.clientName || '',
+      clientEmail: contract.clientEmail || '',
+      idType: contract.autoMotoDetails?.idType || 'C.I.P.',
+      studentIdNumber: contract.autoMotoDetails?.studentIdNumber || '',
+      studentAddress: contract.autoMotoDetails?.studentAddress || '',
+      studentPhone1: contract.autoMotoDetails?.studentPhone1 || '',
+      studentPhone2: contract.autoMotoDetails?.studentPhone2 || '',
+      licenseCategory: contract.autoMotoDetails?.licenseCategory || 'A, B',
+      vehicleTransmission: 'Moto',
+      coursePlan: contract.autoMotoDetails?.coursePlan || '',
+      additionalService: (contract.autoMotoDetails as any)?.additionalService || 'Ninguno',
+      courseValue: contract.autoMotoDetails?.courseValue || 0,
+      downPayment: contract.autoMotoDetails?.downPayment || 0,
+      paymentType: contract.autoMotoDetails?.paymentType || 'cash',
+      theoreticalClassSchedule: (contract.autoMotoDetails?.theoreticalClassSchedule as any) || 'Sabados 3:00 pm a 5:00 pm',
       paymentDeadline: toDate(contract.autoMotoDetails?.paymentDeadline),
       theoreticalClassDates: (contract.autoMotoDetails?.theoreticalClassDates || []).map(d => toDate(d)),
       practicalClassSchedules: (contract.autoMotoDetails?.motoPracticalClassSchedules || []).map(s => ({
@@ -295,7 +308,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
           });
 
         toast({ title: 'Moto Actualizada' });
-        router.push(`/contracts/${contract.id}`);
+        setTimeout(() => router.push(`/contracts/${contract.id}`), 500);
       } else {
         await runTransaction(db, async (transaction) => {
           const counterRef = doc(db, 'counters', 'contracts_folio');
@@ -412,7 +425,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
                     <FormItem className="flex flex-col"><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Límite para Cancelar Saldo</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("w-full h-10 pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(toDate(field.value), "PPP", { locale: es }) : <span>Elegir fecha</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={toDate(field.value)} onSelect={field.onChange} initialFocus /></PopoverContent></Popover></FormItem>
                 )} />
                 <FormField control={form.control} name="paymentType" render={({ field }) => (
-                    <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Método de Pago</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="cash">Efectivo</SelectItem><SelectItem value="debit">Tarjeta Débito</SelectItem><SelectItem value="credit">Tarjeta Crédito</SelectItem><SelectItem value="bac">BAC</SelectItem><SelectItem value="general">General</SelectItem><SelectItem value="cheques">Cheque</SelectItem></SelectContent></Select></FormItem>
+                    <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Método de Pago</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}><FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="cash">Efectivo</SelectItem><SelectItem value="debit">Tarjeta Débito</SelectItem><SelectItem value="credit">Tarjeta Crédito</SelectItem><SelectItem value="bac">BAC</SelectItem><SelectItem value="general">General</SelectItem><SelectItem value="cheques">Cheque</SelectItem></SelectContent></Select></FormItem>
                 )} />
             </div>
           </CardContent>
@@ -506,7 +519,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
 
         <div className="flex justify-end gap-4">
           <Button type="button" variant="outline" size="lg" onClick={() => router.back()}>Cancelar</Button>
-          <Button type="submit" size="lg" disabled={isSaving} className={cn("min-w-[200px]", isEdit ? "bg-green-600 hover:bg-green-700" : "bg-orange-600 hover:bg-orange-700")}>
+          <Button type="submit" size="lg" disabled={isSaving} className={cn("min-w-[220px]", isEdit ? "bg-green-600 hover:bg-green-700" : "bg-orange-600 hover:bg-orange-700")}>
             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : isEdit ? <RefreshCw className="mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />}
             {isEdit ? 'Actualizar Moto' : 'Guardar Contrato de Moto'}
           </Button>

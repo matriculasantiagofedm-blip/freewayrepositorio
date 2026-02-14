@@ -168,8 +168,21 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
     resolver: zodResolver(autoContractSchema),
     defaultValues: isEdit ? {
       ...contract.autoMotoDetails,
-      clientName: contract.clientName,
-      clientEmail: contract.clientEmail,
+      clientName: contract.clientName || '',
+      clientEmail: contract.clientEmail || '',
+      idType: contract.autoMotoDetails?.idType || 'C.I.P.',
+      studentIdNumber: contract.autoMotoDetails?.studentIdNumber || '',
+      studentAddress: contract.autoMotoDetails?.studentAddress || '',
+      studentPhone1: contract.autoMotoDetails?.studentPhone1 || '',
+      studentPhone2: contract.autoMotoDetails?.studentPhone2 || '',
+      licenseCategory: contract.autoMotoDetails?.licenseCategory || 'A, C',
+      vehicleTransmission: contract.autoMotoDetails?.vehicleTransmission || 'Automático',
+      coursePlan: contract.autoMotoDetails?.coursePlan || '',
+      additionalService: (contract.autoMotoDetails as any)?.additionalService || 'Ninguno',
+      courseValue: contract.autoMotoDetails?.courseValue || 0,
+      downPayment: contract.autoMotoDetails?.downPayment || 0,
+      paymentType: contract.autoMotoDetails?.paymentType || 'cash',
+      theoreticalClassSchedule: (contract.autoMotoDetails?.theoreticalClassSchedule as any) || 'Sabados 3:00 pm a 5:00 pm',
       paymentDeadline: toDate(contract.autoMotoDetails?.paymentDeadline),
       theoreticalClassDates: (contract.autoMotoDetails?.theoreticalClassDates || []).map(d => toDate(d)),
       practicalClassSchedules: (contract.autoMotoDetails?.practicalClassSchedules || []).map(s => ({
@@ -312,7 +325,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
           });
 
         toast({ title: 'Contrato Actualizado' });
-        router.push(`/contracts/${contract.id}`);
+        setTimeout(() => router.push(`/contracts/${contract.id}`), 500);
       } else {
         await runTransaction(db, async (transaction) => {
           const counterRef = doc(db, 'counters', 'contracts_folio');
@@ -394,7 +407,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
                 <FormField control={form.control} name="idType" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Tipo ID</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                       <FormControl><SelectTrigger className="h-9"><SelectValue /></SelectTrigger></FormControl>
                       <SelectContent><SelectItem value="C.I.P.">C.I.P.</SelectItem><SelectItem value="Pasaporte">Pasaporte</SelectItem></SelectContent>
                     </Select>
@@ -461,7 +474,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
               <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Transmisión</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                     <FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent><SelectItem value="Automático">Automático</SelectItem><SelectItem value="Manual">Manual</SelectItem></SelectContent>
                   </Select>
@@ -520,7 +533,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
               <FormField control={form.control} name="paymentType" render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Método de Pago (Abono)</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
                     <FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent>
                       <SelectItem value="cash">Efectivo</SelectItem>
@@ -649,7 +662,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
 
         <div className="flex justify-end gap-4">
           <Button type="button" variant="outline" size="lg" onClick={() => router.back()}>Cancelar</Button>
-          <Button type="submit" size="lg" disabled={isSaving} className={cn("min-w-[200px]", isEdit ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700")}>
+          <Button type="submit" size="lg" disabled={isSaving} className={cn("min-w-[220px]", isEdit ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700")}>
             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : isEdit ? <RefreshCw className="mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />}
             {isEdit ? 'Actualizar Contrato' : 'Guardar Contrato de Auto'}
           </Button>

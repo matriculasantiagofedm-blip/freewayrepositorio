@@ -1,3 +1,4 @@
+
 'use client';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, updateDoc, deleteDoc, serverTimestamp, Timestamp, runTransaction, getDoc } from 'firebase/firestore';
@@ -5,7 +6,7 @@ import type { Contract } from '@/lib/types';
 import { ContractView } from '@/components/contract-view';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ChevronLeft, Printer, Loader2, CheckCircle2, CalendarIcon, Phone, Trash2, AlertCircle, Edit, Zap } from 'lucide-react';
+import { ChevronLeft, Printer, Loader2, CheckCircle2, CalendarIcon, Phone, Trash2, AlertCircle, Edit, Zap, AlertTriangle } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -132,7 +133,7 @@ export default function ContractDetailPage() {
     handleCertDataChange('licenseType', newVal);
   };
   
-  const canGenerateCertificate = contract && (['Curso Auto', 'Curso Moto', 'Curso Deluxe', 'Curso Mixto', 'Ampliaciones'].includes(contract.type)) && contract.status !== 'draft';
+  const canGenerateCertificate = contract && (['Curso Auto', 'Curso Moto', 'Curso Mixto', 'Curso Deluxe', 'Ampliaciones'].includes(contract.type)) && contract.status !== 'draft';
 
   const handleOpenCertificateModal = () => {
     if (!contract) return;
@@ -193,10 +194,6 @@ export default function ContractDetailPage() {
             certificateLastName: certificateData.lastName,
             certificateSecondLastName: certificateData.secondLastName,
             certificateMarriedLastName: certificateData.marriedLastName,
-            certificateMiddleName: certificateData.middleName,
-            certificateLastName: certificateData.lastName,
-            certificateSecondLastName: certificateData.secondLastName,
-            certificateMarriedLastName: certificateData.marriedLastName,
             certificateLicenseType: finalLicenseType,
             certificateCip: certificateData.cip,
             certificateIdType: certificateData.idType,
@@ -247,7 +244,7 @@ export default function ContractDetailPage() {
         const counterDoc = await transaction.get(counterRef);
         let nextFolio = counterDoc.exists() ? counterDoc.data().count + 1 : 1;
         
-        transaction.update(counterRef, { count: nextFolio });
+        transaction.set(counterRef, { count: nextFolio }, { merge: true });
         transaction.update(contractRef, {
           status: 'active',
           folioNumber: nextFolio,
@@ -437,7 +434,7 @@ export default function ContractDetailPage() {
       </div>
       
       {contract?.status === 'draft' && (
-        <div className="bg-amber-100 border-l-4 border-amber-500 p-4 print-hide">
+        <div className="bg-amber-100 border-l-4 border-amber-500 p-4 print-hide rounded-r-lg">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-amber-600" />
             <p className="font-bold text-amber-900 uppercase text-sm">Este trámite es una pre-inscripción web pendiente de pago y activación.</p>

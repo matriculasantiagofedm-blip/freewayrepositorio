@@ -1,3 +1,4 @@
+
 'use client';
 
 /**
@@ -133,10 +134,10 @@ export function AmpliacionesContractForm() {
     setIsSaving(true);
     try {
       await runTransaction(db, async (transaction) => {
-        // UNIFICACIÓN: Usamos el contador global 'contracts_folio'
         const counterRef = doc(db, 'counters', 'contracts_folio');
         const counterDoc = await transaction.get(counterRef);
         let nextFolio = counterDoc.exists() ? counterDoc.data().count + 1 : 1;
+        
         transaction.set(counterRef, { count: nextFolio }, { merge: true });
 
         const clientRef = doc(collection(db, 'clients'));
@@ -167,7 +168,7 @@ export function AmpliacionesContractForm() {
           }
         });
       });
-      toast({ title: 'Guardado', description: 'El contrato de ampliación se ha registrado con la numeración global de folios.' });
+      toast({ title: 'Guardado', description: 'El contrato de ampliación se ha registrado exitosamente.' });
       router.push('/dashboard');
     } catch (error) {
       console.error("Error al guardar ampliación:", error);

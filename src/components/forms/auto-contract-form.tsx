@@ -1,3 +1,4 @@
+
 'use client';
 
 /**
@@ -160,7 +161,7 @@ export function AutoContractForm() {
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
 
-  const activeContractsQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'contracts'), where('status', '==', 'active')) : null, [db, user]);
+  const activeContractsQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed'])) : null, [db, user]);
   const manualEntriesQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'manual_schedules')) : null, [db, user]);
   
   const { data: allContracts } = useCollection<any>(activeContractsQuery);
@@ -243,7 +244,6 @@ export function AutoContractForm() {
     if (watchPlan) {
       let price = PLAN_PRICES[watchPlan] || 0;
       
-      // Lógica de Precios Especiales por Servicios Añadidos
       if (watchAdditional === 'Basico Moto 10Hrs' && watchPlan === 'Curso Auto Básico (8 Hrs)') {
         price = 290.00;
       } else if (watchAdditional === 'Ya se manejar Moto') {
@@ -264,14 +264,12 @@ export function AutoContractForm() {
     }
   }, [watchPlan, watchAdditional, replacePractical, form]);
 
-  // Bloquear "Basico Moto 10Hrs" si no es Plan Básico Auto
   useEffect(() => {
     if (watchAdditional === 'Basico Moto 10Hrs' && watchPlan !== 'Curso Auto Básico (8 Hrs)') {
       form.setValue('additionalService', 'Ninguno');
     }
   }, [watchPlan, watchAdditional, form]);
 
-  // Sincronizar categorías de licencia según servicio adicional
   useEffect(() => {
     const currentCategory = form.getValues('licenseCategory');
     const isMotoAdded = watchAdditional !== 'Ninguno';
@@ -300,13 +298,9 @@ export function AutoContractForm() {
       await runTransaction(db, async (transaction) => {
         const counterRef = doc(db, 'counters', 'contracts_folio');
         const counterDoc = await transaction.get(counterRef);
-        let nextFolio = 1;
-        if (counterDoc.exists()) {
-          nextFolio = counterDoc.data().count + 1;
-          transaction.update(counterRef, { count: nextFolio });
-        } else {
-          transaction.set(counterRef, { count: nextFolio });
-        }
+        let nextFolio = counterDoc.exists() ? counterDoc.data().count + 1 : 1;
+        
+        transaction.set(counterRef, { count: nextFolio }, { merge: true });
 
         const clientRef = doc(collection(db, 'clients'));
         transaction.set(clientRef, {
@@ -362,8 +356,6 @@ export function AutoContractForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-5xl mx-auto pb-20">
-        
-        {/* FICHA TÉCNICA (12 COLUMNAS) */}
         <Card className="border-t-4 border-t-blue-600 shadow-sm">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -436,7 +428,6 @@ export function AutoContractForm() {
           </CardContent>
         </Card>
 
-        {/* CONFIGURACIÓN Y TEORÍA */}
         <Card className="shadow-sm">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -517,7 +508,6 @@ export function AutoContractForm() {
           </CardContent>
         </Card>
 
-        {/* PLAN DE PAGOS Y SALDO */}
         <Card className="shadow-sm">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -551,9 +541,6 @@ export function AutoContractForm() {
                       </SelectItem>
                     </SelectContent>
                   </Select>
-                  {watchPlan !== 'Curso Auto Básico (8 Hrs)' && field.value === 'Basico Moto 10Hrs' && (
-                    <p className="text-[9px] text-destructive font-bold uppercase mt-1">Solo aplica con Plan Básico Auto</p>
-                  )}
                 </FormItem>
               )} />
 
@@ -601,7 +588,6 @@ export function AutoContractForm() {
           </CardContent>
         </Card>
 
-        {/* AGENDA PRÁCTICA SINCRONIZADA */}
         <Card className="shadow-sm">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -689,7 +675,7 @@ export function AutoContractForm() {
 
                       <FormField control={form.control} name={`practicalClassSchedules.${index}.instructor`} render={({ field: f }) => (
                         <FormItem>
-                          <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Instructor (Opcional)</FormLabel>
+                          <FormLabel className="text-[10px] font-bold uppercase text-blue-600">Instructor (Opcional)</FormLabel>
                           <Select onValueChange={f.onChange} value={f.value}>
                             <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Instructor..." /></SelectTrigger></FormControl>
                             <SelectContent>{INSTRUCTORS.map(i => <SelectItem key={i} value={i} className="text-xs">{i}</SelectItem>)}</SelectContent>

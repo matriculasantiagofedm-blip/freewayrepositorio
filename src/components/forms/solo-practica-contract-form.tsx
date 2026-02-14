@@ -1,3 +1,4 @@
+
 'use client';
 
 /**
@@ -146,7 +147,7 @@ export function SoloPracticaContractForm() {
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
 
-  const activeContractsQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'contracts'), where('status', '==', 'active')) : null, [db, user]);
+  const activeContractsQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed'])) : null, [db, user]);
   const manualEntriesQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'manual_schedules')) : null, [db, user]);
   
   const { data: allContracts } = useCollection<any>(activeContractsQuery);
@@ -222,11 +223,9 @@ export function SoloPracticaContractForm() {
 
   useEffect(() => {
     if (watchPlan) {
-      // Asignar precio automático
       const price = PLAN_PRICES[watchPlan] || 0;
       form.setValue('courseValue', price);
 
-      // Generar clases prácticas correspondientes
       const count = PLAN_PRACTICAL_COUNTS[watchPlan] || 0;
       const current = form.getValues('practicalClassSchedules') || [];
       const newSchedules = Array.from({ length: count }, (_, i) => current[i] || { 
@@ -247,13 +246,9 @@ export function SoloPracticaContractForm() {
       await runTransaction(db, async (transaction) => {
         const counterRef = doc(db, 'counters', 'contracts_folio');
         const counterDoc = await transaction.get(counterRef);
-        let nextFolio = 1;
-        if (counterDoc.exists()) {
-          nextFolio = counterDoc.data().count + 1;
-          transaction.update(counterRef, { count: nextFolio });
-        } else {
-          transaction.set(counterRef, { count: nextFolio });
-        }
+        let nextFolio = counterDoc.exists() ? counterDoc.data().count + 1 : 1;
+        
+        transaction.set(counterRef, { count: nextFolio }, { merge: true });
 
         const clientRef = doc(collection(db, 'clients'));
         transaction.set(clientRef, {
@@ -307,8 +302,6 @@ export function SoloPracticaContractForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-5xl mx-auto pb-20">
-        
-        {/* SECCIÓN 1: DATOS DEL ESTUDIANTE (12 COLUMNAS) */}
         <Card className="border-t-4 border-t-emerald-600 shadow-sm">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -381,7 +374,6 @@ export function SoloPracticaContractForm() {
           </CardContent>
         </Card>
 
-        {/* SECCIÓN 2: PLAN Y COBRO */}
         <Card className="shadow-sm">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -483,7 +475,6 @@ export function SoloPracticaContractForm() {
           </CardContent>
         </Card>
 
-        {/* SECCIÓN 3: AGENDA PRÁCTICA SINCRONIZADA */}
         <Card className="shadow-sm">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -571,7 +562,7 @@ export function SoloPracticaContractForm() {
 
                       <FormField control={form.control} name={`practicalClassSchedules.${index}.instructor`} render={({ field: f }) => (
                         <FormItem>
-                          <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Instructor Asignado</FormLabel>
+                          <FormLabel className="text-[10px] font-bold uppercase text-blue-600">Instructor Asignado</FormLabel>
                           <Select onValueChange={f.onChange} value={f.value}>
                             <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Elegir..." /></SelectTrigger></FormControl>
                             <SelectContent>{INSTRUCTORS.map(i => <SelectItem key={i} value={i} className="text-xs">{i}</SelectItem>)}</SelectContent>

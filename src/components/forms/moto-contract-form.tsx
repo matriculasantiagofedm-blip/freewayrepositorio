@@ -1,3 +1,4 @@
+
 'use client';
 
 /**
@@ -162,7 +163,7 @@ export function MotoContractForm() {
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
 
-  const activeContractsQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'contracts'), where('status', '==', 'active')) : null, [db, user]);
+  const activeContractsQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed'])) : null, [db, user]);
   const manualEntriesQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'manual_schedules')) : null, [db, user]);
   
   const { data: allContracts } = useCollection<any>(activeContractsQuery);
@@ -241,12 +242,10 @@ export function MotoContractForm() {
   const watchPlan = form.watch('coursePlan');
   const watchAdditional = form.watch('additionalService');
 
-  // Lógica de Precios y Agenda
   useEffect(() => {
     if (watchPlan) {
       let price = PLAN_PRICES[watchPlan] || 0;
       
-      // Aplicar reglas de combo auto
       if (watchAdditional === 'Basico Auto') {
         price = 290.00;
       } else if (watchAdditional === 'Ya se manejar Auto') {
@@ -267,17 +266,14 @@ export function MotoContractForm() {
     }
   }, [watchPlan, watchAdditional, replacePractical, form]);
 
-  // Sincronizar categorías de licencia según servicio adicional
   useEffect(() => {
     const isAutoAdded = watchAdditional !== 'Ninguno';
     if (isAutoAdded) {
-      // Si se añade auto, mostrar categorías combinadas
       const current = form.getValues('licenseCategory');
       if (current === 'A, B') {
         form.setValue('licenseCategory', 'A, B, C');
       }
     } else {
-      // Revertir a categoría de moto pura
       form.setValue('licenseCategory', 'A, B');
     }
   }, [watchAdditional, form]);
@@ -297,13 +293,9 @@ export function MotoContractForm() {
       await runTransaction(db, async (transaction) => {
         const counterRef = doc(db, 'counters', 'contracts_folio');
         const counterDoc = await transaction.get(counterRef);
-        let nextFolio = 1;
-        if (counterDoc.exists()) {
-          nextFolio = counterDoc.data().count + 1;
-          transaction.update(counterRef, { count: nextFolio });
-        } else {
-          transaction.set(counterRef, { count: nextFolio });
-        }
+        let nextFolio = counterDoc.exists() ? counterDoc.data().count + 1 : 1;
+        
+        transaction.set(counterRef, { count: nextFolio }, { merge: true });
 
         const clientRef = doc(collection(db, 'clients'));
         transaction.set(clientRef, {
@@ -359,8 +351,6 @@ export function MotoContractForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-5xl mx-auto pb-20">
-        
-        {/* FICHA TÉCNICA (12 COLUMNAS) */}
         <Card className="border-t-4 border-t-orange-600 shadow-md">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -433,7 +423,6 @@ export function MotoContractForm() {
           </CardContent>
         </Card>
 
-        {/* CONFIGURACIÓN Y TEORÍA */}
         <Card className="shadow-md">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -511,7 +500,6 @@ export function MotoContractForm() {
           </CardContent>
         </Card>
 
-        {/* PLAN DE PAGOS Y SALDO */}
         <Card className="shadow-md">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -590,7 +578,6 @@ export function MotoContractForm() {
           </CardContent>
         </Card>
 
-        {/* AGENDA PRÁCTICA SINCRONIZADA */}
         <Card className="shadow-md">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -678,7 +665,7 @@ export function MotoContractForm() {
 
                       <FormField control={form.control} name={`practicalClassSchedules.${index}.instructor`} render={({ field: f }) => (
                         <FormItem>
-                          <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Instructor (Moto)</FormLabel>
+                          <FormLabel className="text-[10px] font-bold uppercase text-blue-600">Instructor (Moto)</FormLabel>
                           <Select onValueChange={f.onChange} value={f.value}>
                             <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Instructor..." /></SelectTrigger></FormControl>
                             <SelectContent>{INSTRUCTORS.map(i => <SelectItem key={i} value={i} className="text-xs">{i}</SelectItem>)}</SelectContent>

@@ -1,16 +1,16 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useCollection } from '@/hooks/use-firestore';
 import { cn, toDate } from '@/lib/utils';
-import { collection, orderBy, query } from 'firebase/firestore';
+import { collection, orderBy, query, where } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import type { Contract } from '@/lib/types';
-import { Car, Bike, Plus, Repeat, Dumbbell, CalendarCheck } from 'lucide-react';
+import { Car, Bike, Plus, Repeat, Dumbbell, CalendarCheck, UserPlus, ArrowRight, Clock } from 'lucide-react';
 import { isToday } from 'date-fns';
 
 const getBalance = (contract: Contract): number => {
@@ -29,22 +29,29 @@ export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const { role } = useCurrentRole();
 
-  // Query para estadísticas generales
+  // Query para contratos activos/completados
   const contractsQuery = useMemo(() => {
     if (!db || !user) return null;
-    return query(collection(db, 'contracts'), orderBy('createdAt', 'desc'));
+    return query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed', 'expired']), orderBy('createdAt', 'desc'));
+  }, [db, user]);
+
+  // Query para contratos en borrador (Pre-inscripciones Web)
+  const draftsQuery = useMemo(() => {
+    if (!db || !user) return null;
+    return query(collection(db, 'contracts'), where('status', '==', 'draft'), orderBy('createdAt', 'desc'));
   }, [db, user]);
 
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
+  const { data: drafts, isLoading: isDraftsLoading } = useCollection<Contract>(draftsQuery);
 
-  const activeContracts = contracts?.filter((c) => c.status === 'active').length || 0;
+  const activeContractsCount = contracts?.filter((c) => c.status === 'active').length || 0;
   const todayContracts = contracts?.filter((c) => isToday(toDate(c.createdAt))).length || 0;
   const overdueContracts = contracts?.filter(isOverdue) || [];
   const overdueCount = overdueContracts.length;
   const overdueTotalAmount = overdueContracts.reduce((sum, contract) => sum + getBalance(contract), 0);
 
   const stats = [
-    { title: 'Contratos Activos', value: isLoading || isUserLoading ? '...' : activeContracts, href: '/contracts', adminOnly: true },
+    { title: 'Contratos Activos', value: isLoading || isUserLoading ? '...' : activeContractsCount, href: '/contracts', adminOnly: true },
     { 
         title: 'Trámites de Hoy', 
         value: isLoading || isUserLoading ? '...' : todayContracts, 
@@ -103,6 +110,43 @@ export default function DashboardPage() {
         <p className="text-muted-foreground">Gestión unificada de Freeway Escuela de Manejo</p>
       </div>
 
+      {/* BANDEJA DE PRE-INSCRIPCIONES (SOLO ADMIN/VENTAS) */}
+      {!isDraftsLoading && drafts && drafts.length > 0 && (
+        <Card className="border-amber-200 bg-amber-50/30">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between">
+            <div className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-amber-600" />
+              <div>
+                <CardTitle className="text-amber-900 text-base">Nuevas Solicitudes Web</CardTitle>
+                <CardDescription className="text-amber-700/70 text-xs">Hay {drafts.length} estudiantes esperando activación de contrato.</CardDescription>
+              </div>
+            </div>
+            <Button asChild variant="outline" size="sm" className="bg-white border-amber-200 text-amber-700">
+              <Link href="/contracts?status=draft">Ver Todas</Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {drafts.slice(0, 3).map(draft => (
+              <div key={draft.id} className="bg-white p-3 rounded-lg border border-amber-100 flex items-center justify-between group hover:border-amber-300 transition-all shadow-sm">
+                <div className="flex flex-col">
+                  <span className="font-bold text-sm uppercase">{draft.clientName}</span>
+                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-bold">
+                    <Clock className="h-3 w-3" /> 
+                    {format(toDate(draft.createdAt), "d 'de' MMMM", { locale: es })}
+                    <span className="bg-amber-100 text-amber-800 px-1.5 rounded">{draft.autoMotoDetails?.coursePlan}</span>
+                  </div>
+                </div>
+                <Button asChild size="sm" variant="ghost" className="text-amber-600 group-hover:bg-amber-50">
+                  <Link href={`/contracts/${draft.id}`}>
+                    Revisar <ArrowRight className="ml-2 h-3 w-3" />
+                  </Link>
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {/* ESTADÍSTICAS */}
       <div className="grid gap-4 md:grid-cols-3">
         {visibleStats.map((stat) => (
@@ -128,7 +172,7 @@ export default function DashboardPage() {
 
       {/* NUEVO TRÁMITE */}
       <div className="space-y-4">
-        <h2 className="text-xl font-bold font-headline text-slate-800 border-b pb-2">Registrar Nuevo Trámite</h2>
+        <h2 className="text-xl font-bold font-headline text-slate-800 border-b pb-2 uppercase tracking-tighter">Registrar Nuevo Trámite Presencial</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {contractTypes.map((type) => (
                 <Link key={type.name} href={type.href} className="no-underline group">
@@ -150,7 +194,7 @@ export default function DashboardPage() {
 
       {/* OPERACIONES RÁPIDAS */}
       <div className="space-y-8">
-        <h2 className="text-xl font-bold font-headline text-slate-800 border-b pb-2">Operaciones Rápidas</h2>
+        <h2 className="text-xl font-bold font-headline text-slate-800 border-b pb-2 uppercase tracking-tighter">Operaciones Rápidas</h2>
         {actionGroups.map((group) => {
           const visibleActions = group.actions.filter(action => action.roles.includes(role || ''));
           if (visibleActions.length === 0) return null;

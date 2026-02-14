@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { GanttChart, ShieldCheck, Loader2, LogIn } from 'lucide-react';
+import { GanttChart, ShieldCheck, Loader2, LogIn, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 import { useFirebase } from '@/components/firebase-provider';
 import { signInAnonymously } from 'firebase/auth';
@@ -24,16 +24,10 @@ export default function Home() {
     setError('');
 
     try {
-      // Intentar firmar anónimamente para tener un UID de Firebase
       if (!auth.currentUser) {
         await signInAnonymously(auth);
       }
 
-      // Claves de acceso mapeadas a los roles en FirebaseProvider
-      // Administrador: Ayax/2022
-      // Ventas: ventas123
-      // Ventas Externas: ventasext123
-      
       const validKeys = ['ventas123', 'ventasext123', 'Ayax/2022'];
       
       if (validKeys.includes(accessKey)) {
@@ -87,51 +81,63 @@ export default function Home() {
             </CardFooter>
           </Card>
         ) : (
-          <Card className="shadow-2xl border-none">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold flex items-center gap-2">
-                <LogIn className="h-5 w-5 text-primary" />
-                Ingreso al Sistema
-              </CardTitle>
-              <CardDescription>Introduce tu contraseña de acceso por rol.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleAccess} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="key" className="text-slate-700">Contraseña de Acceso</Label>
-                  <Input 
-                    id="key" 
-                    type="password" 
-                    placeholder="••••••••" 
-                    className="h-12 text-lg tracking-widest"
-                    value={accessKey}
-                    onChange={(e) => setAccessKey(e.target.value)}
-                    required
-                  />
-                </div>
-                {error && (
-                  <p className="text-sm text-destructive font-medium bg-destructive/10 p-3 rounded-md border border-destructive/20 animate-in shake-in duration-300">
-                    {error}
-                  </p>
-                )}
-                <Button type="submit" className="w-full h-12 text-base font-semibold shadow-lg" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Validando...
-                    </>
-                  ) : (
-                    'Entrar'
+          <div className="space-y-4">
+            <Card className="shadow-2xl border-none">
+              <CardHeader className="space-y-1">
+                <CardTitle className="text-2xl font-bold flex items-center gap-2">
+                  <LogIn className="h-5 w-5 text-primary" />
+                  Ingreso al Sistema
+                </CardTitle>
+                <CardDescription>Introduce tu contraseña de acceso por rol.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleAccess} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="key" className="text-slate-700">Contraseña de Acceso</Label>
+                    <Input 
+                      id="key" 
+                      type="password" 
+                      placeholder="••••••••" 
+                      className="h-12 text-lg tracking-widest"
+                      value={accessKey}
+                      onChange={(e) => setAccessKey(e.target.value)}
+                      required
+                    />
+                  </div>
+                  {error && (
+                    <p className="text-sm text-destructive font-medium bg-destructive/10 p-3 rounded-md border border-destructive/20 animate-in shake-in duration-300">
+                      {error}
+                    </p>
                   )}
-                </Button>
-              </form>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-4 text-center">
-              <p className="text-xs text-muted-foreground">
-                Sistema de gestión administrativa interno.
-              </p>
-            </CardFooter>
-          </Card>
+                  <Button type="submit" className="w-full h-12 text-base font-semibold shadow-lg" disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Validando...
+                      </>
+                    ) : (
+                      'Entrar'
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
+              <CardFooter className="flex flex-col gap-4 text-center">
+                <p className="text-xs text-muted-foreground">
+                  Sistema de gestión administrativa interno.
+                </p>
+              </CardFooter>
+            </Card>
+
+            <div className="text-center">
+              <p className="text-sm text-slate-500 mb-4">¿Eres un nuevo estudiante?</p>
+              <Button asChild variant="outline" className="w-full h-12 border-primary text-primary hover:bg-primary/5 font-bold">
+                <Link href="/enroll">
+                  <UserPlus className="mr-2 h-5 w-5" />
+                  Inscribirme Ahora
+                </Link>
+              </Button>
+            </div>
+          </div>
         )}
 
         <p className="text-center text-xs text-muted-foreground">

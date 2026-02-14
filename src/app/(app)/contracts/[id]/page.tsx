@@ -1,11 +1,11 @@
 'use client';
 import { useParams, useRouter } from 'next/navigation';
-import { doc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, serverTimestamp, Timestamp, runTransaction, getDoc } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { ContractView } from '@/components/contract-view';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ChevronLeft, Printer, Loader2, CheckCircle2, CalendarIcon, Phone, Trash2, AlertCircle, Edit } from 'lucide-react';
+import { ChevronLeft, Printer, Loader2, CheckCircle2, CalendarIcon, Phone, Trash2, AlertCircle, Edit, Zap } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -91,6 +91,7 @@ export default function ContractDetailPage() {
   });
 
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isActivating, setIsActivating] = useState(false);
   const [lastFolio, setLastFolio] = useState<string | null>(null);
 
   useEffect(() => {
@@ -131,7 +132,7 @@ export default function ContractDetailPage() {
     handleCertDataChange('licenseType', newVal);
   };
   
-  const canGenerateCertificate = contract && (['Curso Auto', 'Curso Moto', 'Curso Deluxe', 'Curso Mixto', 'Ampliaciones'].includes(contract.type));
+  const canGenerateCertificate = contract && (['Curso Auto', 'Curso Moto', 'Curso Deluxe', 'Curso Mixto', 'Ampliaciones'].includes(contract.type)) && contract.status !== 'draft';
 
   const handleOpenCertificateModal = () => {
     if (!contract) return;
@@ -192,6 +193,10 @@ export default function ContractDetailPage() {
             certificateLastName: certificateData.lastName,
             certificateSecondLastName: certificateData.secondLastName,
             certificateMarriedLastName: certificateData.marriedLastName,
+            certificateMiddleName: certificateData.middleName,
+            certificateLastName: certificateData.lastName,
+            certificateSecondLastName: certificateData.secondLastName,
+            certificateMarriedLastName: certificateData.marriedLastName,
             certificateLicenseType: finalLicenseType,
             certificateCip: certificateData.cip,
             certificateIdType: certificateData.idType,
@@ -233,6 +238,32 @@ export default function ContractDetailPage() {
     window.open(`/print-contract/${contractId}`, '_blank');
   };
 
+  const handleActivateContract = async () => {
+    if (!db || !contract || !contractRef) return;
+    setIsActivating(true);
+    try {
+      await runTransaction(db, async (transaction) => {
+        const counterRef = doc(db, 'counters', 'contracts_folio');
+        const counterDoc = await transaction.get(counterRef);
+        let nextFolio = counterDoc.exists() ? counterDoc.data().count + 1 : 1;
+        
+        transaction.update(counterRef, { count: nextFolio });
+        transaction.update(contractRef, {
+          status: 'active',
+          folioNumber: nextFolio,
+          title: `${contract.type} - Folio ${nextFolio}`,
+          activatedAt: serverTimestamp(),
+          activatedBy: role
+        });
+      });
+      toast({ title: 'Contrato Activado', description: 'El trámite web ha sido validado y activado oficialmente.' });
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo activar el contrato.' });
+    } finally {
+      setIsActivating(false);
+    }
+  };
+
   const handleAnnulContract = async () => {
     if (!contractRef || !contract) return;
     setIsGenerating(true);
@@ -252,10 +283,10 @@ export default function ContractDetailPage() {
     setIsGenerating(true);
     try {
       await deleteDoc(contractRef);
-      toast({ title: 'Contrato Eliminado', description: `Folio ${contract.folioNumber} ha sido eliminado permanentemente.` });
+      toast({ title: 'Contrato Eliminado', description: `Registro eliminado permanentemente.` });
       router.push('/contracts');
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo eliminar el contrato.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo eliminar.' });
     } finally {
       setIsGenerating(false);
     }
@@ -326,7 +357,13 @@ export default function ContractDetailPage() {
                 </Button>
             </div>
             <div className="flex items-center gap-2">
-              {role === 'Administrador' && (
+              {contract?.status === 'draft' && (
+                <Button onClick={handleActivateContract} disabled={isActivating} className="bg-green-600 hover:bg-green-700 animate-pulse">
+                  {isActivating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Zap className="h-4 w-4 mr-2" />}
+                  Activar y Confirmar Pago
+                </Button>
+              )}
+              {role === 'Administrador' && contract?.status !== 'draft' && (
                 <Button variant="outline" asChild>
                     <Link href={`/contracts/${contractId}/edit`}>
                         <Edit className="mr-2 h-4 w-4" />
@@ -383,7 +420,7 @@ export default function ContractDetailPage() {
                       <AlertDialogTitle className="text-destructive">¡ADVERTENCIA: ACCIÓN IRREVERSIBLE!</AlertDialogTitle>
                       <AlertDialogDescription>
                         {contract ? (
-                            <>¿Deseas eliminar definitivamente el Folio <span className="font-bold">{contract.folioNumber}</span>? Esta acción borrará el registro de la base de datos y de todos los reportes. Úsalo solo para corregir duplicados.</>
+                            <>¿Deseas eliminar definitivamente este registro? Esta acción borrará el documento de la base de datos.</>
                         ) : 'Cargando...'}
                       </AlertDialogDescription>
                     </AlertDialogHeader>
@@ -399,6 +436,15 @@ export default function ContractDetailPage() {
             </div>
       </div>
       
+      {contract?.status === 'draft' && (
+        <div className="bg-amber-100 border-l-4 border-amber-500 p-4 print-hide">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-600" />
+            <p className="font-bold text-amber-900 uppercase text-sm">Este trámite es una pre-inscripción web pendiente de pago y activación.</p>
+          </div>
+        </div>
+      )}
+
       {(isLoading || isUserLoading) && <p className="print-hide">Cargando contrato...</p>}
       {error && <p className="text-destructive print-hide">Error: {error.message}</p>}
       {contract && <ContractView contract={contract} />}

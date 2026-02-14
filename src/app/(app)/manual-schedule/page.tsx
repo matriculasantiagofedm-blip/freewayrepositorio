@@ -51,6 +51,10 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: TimeSlot } = {
     '10:00am a 12:00pm': '10am-12pm',
     '1:00pm a 3:00pm': '1pm-3pm',
     '3:00pm a 5:00pm': '3pm-5pm',
+    '08:00am a 10:00am': '8am-10am',
+    '10:00am a 12:00pm': '10am-12pm',
+    '01:00pm a 03:00pm': '1pm-3pm',
+    '03:00pm a 05:00pm': '3pm-5pm',
 };
 
 const SLOT_TO_TIME_STRING_MAP: { [key: string]: string } = {
@@ -160,8 +164,8 @@ export default function ManualSchedulePage() {
             const isEval = (details?.coursePlan === 'evaluacion-estacionamiento' || details?.coursePlan === 'moto-evaluacion-estacionamiento');
             const processSlots = (slots: any[]) => {
                 slots.forEach(s => {
-                    const slotId = TIME_STRING_TO_SLOT_MAP[s.time] || s.time;
-                    processEntry(s.date, slotId, s.vehicle, c.clientName, isEval);
+                    const slotIdVal = TIME_STRING_TO_SLOT_MAP[s.time] || s.time;
+                    processEntry(s.date, slotIdVal, s.vehicle, c.clientName, isEval);
                 });
             };
             if (c.autoMotoDetails?.practicalClassSchedules) processSlots(c.autoMotoDetails.practicalClassSchedules);
@@ -190,7 +194,8 @@ export default function ManualSchedulePage() {
             const results: Contract[] = [];
             allContracts?.forEach(c => {
                 const details = c.autoMotoDetails || c.deluxeDetails;
-                if (details?.studentIdNumber === searchId.trim()) {
+                const studentIdNum = details?.studentIdNumber || '';
+                if (studentIdNum === searchId.trim()) {
                     results.push(c);
                 }
             });
@@ -219,7 +224,7 @@ export default function ManualSchedulePage() {
         if (schedules.length > 0) {
             const mapped = schedules.map((s: any, i: number) => ({
                 date: toDate(s.date),
-                timeSlot: TIME_STRING_TO_SLOT_MAP[s.time] || '8am-10am',
+                timeSlot: TIME_STRING_TO_SLOT_MAP[s.time] || s.time,
                 vehicle: s.vehicle || '',
                 instructor: s.instructor || '',
                 classNumber: i + 1,
@@ -438,6 +443,7 @@ export default function ManualSchedulePage() {
 
                                     if (isValidDate && watchTime) {
                                         const dateKey = format(dObj, 'yyyy-MM-dd');
+                                        const slotId = watchTime; // FIX: slotId was undefined
                                         if (watchVehicle) conflictStudents = availabilityData.vehicleOccupancy[`${dateKey}|${watchTime}|${watchVehicle}`] || [];
                                         capacity = getGlobalCapacity(dObj, watchTime);
                                         isFull = (availabilityData.globalCounts[`${dateKey}|${slotId}`] || 0) >= capacity;
@@ -466,7 +472,7 @@ export default function ManualSchedulePage() {
                                                 <FormItem>
                                                     <Popover>
                                                         <PopoverTrigger asChild>
-                                                            <FormControl><Button variant="outline" className={cn("w-full h-9 text-xs", (holiday || isSunday) && "border-amber-400")}>{f.value ? format(toDate(f.value), "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-3 w-3 opacity-50" /></Button></FormControl>
+                                                            <FormControl><Button variant="outline" className={cn("w-full h-9 text-xs", (holiday || isSunday) && "border-amber-400")}>{f.value ? format(toDate(f.value), "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
                                                         </PopoverTrigger>
                                                         <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={f.value} onSelect={f.onChange} initialFocus /></PopoverContent>
                                                     </Popover>

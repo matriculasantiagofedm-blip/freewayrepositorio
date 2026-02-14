@@ -29,9 +29,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, addDoc, serverTimestamp, deleteDoc, doc, query, orderBy, Timestamp, where, getDocs, updateDoc } from 'firebase/firestore';
-import type { ManualSchedule, VehicleName, InstructorName, Contract, TimeSlot } from '@/lib/types';
+import type { ManualSchedule, VehicleName, InstructorName, Contract, TimeSlot, ClassStatus } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CalendarIcon, PlusCircle, Trash2, CalendarClock, X, AlertTriangle, Search, UserCheck, RefreshCw, Save, Landmark, Ban, Edit2 } from 'lucide-react';
+import { Loader2, CalendarIcon, PlusCircle, Trash2, CalendarClock, X, AlertTriangle, Search, UserCheck, RefreshCw, Save, Landmark, Ban, Edit2, ShieldAlert } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -67,6 +67,7 @@ const classEntrySchema = z.object({
   instructor: z.string().min(1, 'Instructor requerido'),
   classNumber: z.coerce.number().min(1, 'Mínimo 1'),
   classType: z.enum(['Práctica', 'Teórica']).default('Práctica'),
+  status: z.enum(['scheduled', 'missed', 'completed']).default('scheduled'),
 });
 
 const manualScheduleSchema = z.object({
@@ -110,13 +111,14 @@ export default function ManualSchedulePage() {
     const [foundContracts, setFoundContracts] = useState<Contract[]>([]);
     const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
     const [editingManualEntryId, setEditingManualEntryId] = useState<string | null>(null);
+    const [hasMissedClasses, setHasMissedClasses] = useState(false);
 
     const form = useForm<FormValues>({
         resolver: zodResolver(manualScheduleSchema),
         defaultValues: {
             studentName: '',
             coursePlan: '',
-            classes: [{ date: new Date(), timeSlot: '8am-10am', vehicle: '', instructor: '', classNumber: 1, classType: 'Práctica' }],
+            classes: [{ date: new Date(), timeSlot: '8am-10am', vehicle: '', instructor: '', classNumber: 1, classType: 'Práctica', status: 'scheduled' }],
         },
     });
 
@@ -183,6 +185,7 @@ export default function ManualSchedulePage() {
         if (!db || !searchId.trim()) return;
         setIsSearching(true);
         setFoundContracts([]);
+        setHasMissedClasses(false);
         try {
             const results: Contract[] = [];
             allContracts?.forEach(c => {
@@ -205,8 +208,14 @@ export default function ManualSchedulePage() {
         setEditingManualEntryId(null);
         form.setValue('studentName', contract.clientName);
         form.setValue('coursePlan', contract.type);
+        
         const details = contract.autoMotoDetails || contract.deluxeDetails;
         const schedules = details?.practicalClassSchedules || details?.motoPracticalClassSchedules || (details as any)?.classSchedules || [];
+        
+        // Verificar si tiene inasistencias previas
+        const missed = schedules.some((s: any) => s.status === 'missed');
+        setHasMissedClasses(missed);
+
         if (schedules.length > 0) {
             const mapped = schedules.map((s: any, i: number) => ({
                 date: toDate(s.date),
@@ -215,16 +224,18 @@ export default function ManualSchedulePage() {
                 instructor: s.instructor || '',
                 classNumber: i + 1,
                 classType: 'Práctica' as const,
+                status: s.status || 'scheduled',
             }));
             replace(mapped);
         } else {
-            replace([{ date: new Date(), timeSlot: '8am-10am', vehicle: '', instructor: '', classNumber: 1, classType: 'Práctica' }]);
+            replace([{ date: new Date(), timeSlot: '8am-10am', vehicle: '', instructor: '', classNumber: 1, classType: 'Práctica', status: 'scheduled' }]);
         }
     };
 
     const loadManualEntryForEdit = (entry: ManualSchedule) => {
         setSelectedContract(null);
         setEditingManualEntryId(entry.id);
+        setHasMissedClasses(entry.status === 'missed');
         form.reset({
             studentName: entry.studentName,
             coursePlan: entry.coursePlan || '',
@@ -235,6 +246,7 @@ export default function ManualSchedulePage() {
                 instructor: entry.instructor,
                 classNumber: entry.classNumber,
                 classType: entry.classType,
+                status: entry.status || 'scheduled',
             }]
         });
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -247,17 +259,18 @@ export default function ManualSchedulePage() {
             await deleteDoc(doc(db, 'manual_schedules', id));
             toast({ title: 'Registro eliminado' });
         } catch (e) {
-            toast({ variant: 'destructive', title: 'Error al eliminar' });
+            toast({ variant: 'destructive', description: 'Error al eliminar' });
         }
     };
 
     const resetSelection = () => {
         setSelectedContract(null);
         setEditingManualEntryId(null);
+        setHasMissedClasses(false);
         form.reset({
             studentName: '',
             coursePlan: '',
-            classes: [{ date: new Date(), timeSlot: '8am-10am', vehicle: '', instructor: '', classNumber: 1, classType: 'Práctica' }],
+            classes: [{ date: new Date(), timeSlot: '8am-10am', vehicle: '', instructor: '', classNumber: 1, classType: 'Práctica', status: 'scheduled' }],
         });
     };
 
@@ -271,7 +284,8 @@ export default function ManualSchedulePage() {
                     date: Timestamp.fromDate(c.date),
                     time: SLOT_TO_TIME_STRING_MAP[c.timeSlot] || c.timeSlot,
                     vehicle: c.vehicle,
-                    instructor: c.instructor
+                    instructor: c.instructor,
+                    status: c.status || 'scheduled'
                 }));
                 const updateData: any = {};
                 if (selectedContract.type === 'Curso Deluxe') updateData['deluxeDetails.classSchedules'] = mappedSchedules;
@@ -356,6 +370,16 @@ export default function ManualSchedulePage() {
                 </CardContent>
             </Card>
 
+            {hasMissedClasses && (
+                <div className="bg-red-600 text-white p-4 rounded-lg flex items-center gap-4 animate-bounce shadow-lg border-2 border-red-800">
+                    <ShieldAlert className="h-10 w-10 shrink-0" />
+                    <div>
+                        <p className="font-black text-lg uppercase leading-tight tracking-tighter">ALERTA: EL ESTUDIANTE TIENE INASISTENCIAS PREVIAS</p>
+                        <p className="text-xs font-bold opacity-90">No se permite la re-agenda hasta que la inasistencia sea verificada y/o el cargo de B/. 20.00 sea pagado en recepción.</p>
+                    </div>
+                </div>
+            )}
+
             <Card className="shadow-md">
                 <CardHeader>
                     <CardTitle>
@@ -401,6 +425,7 @@ export default function ManualSchedulePage() {
                                     const watchDate = form.watch(`classes.${index}.date`);
                                     const watchTime = form.watch(`classes.${index}.timeSlot`);
                                     const watchVehicle = form.watch(`classes.${index}.vehicle`);
+                                    const watchStatus = form.watch(`classes.${index}.status`);
                                     
                                     const dObj = toDate(watchDate);
                                     const isValidDate = !isNaN(dObj.getTime());
@@ -415,14 +440,18 @@ export default function ManualSchedulePage() {
                                         const dateKey = format(dObj, 'yyyy-MM-dd');
                                         if (watchVehicle) conflictStudents = availabilityData.vehicleOccupancy[`${dateKey}|${watchTime}|${watchVehicle}`] || [];
                                         capacity = getGlobalCapacity(dObj, watchTime);
-                                        isFull = (availabilityData.globalCounts[`${dateKey}|${watchTime}`] || 0) >= capacity;
+                                        isFull = (availabilityData.globalCounts[`${dateKey}|${slotId}`] || 0) >= capacity;
                                     }
 
                                     const hasConflict = conflictStudents.length > 0;
 
                                     return (
-                                        <div key={field.id} className={cn("grid grid-cols-1 md:grid-cols-6 lg:grid-cols-7 gap-3 p-4 border rounded-xl bg-slate-50/50 items-end relative", (hasConflict || isFull || holiday || isSunday) && "border-amber-500 bg-amber-50/30")}>
+                                        <div key={field.id} className={cn(
+                                            "grid grid-cols-1 md:grid-cols-6 lg:grid-cols-8 gap-3 p-4 border rounded-xl items-end relative",
+                                            watchStatus === 'missed' ? "border-red-600 bg-red-50/50" : (hasConflict || isFull || holiday || isSunday) ? "border-amber-500 bg-amber-50/30" : "bg-slate-50/50"
+                                        )}>
                                             <div className="absolute -top-2 right-2 flex gap-1 z-10">
+                                                {watchStatus === 'missed' && <div className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">INASISTENCIA</div>}
                                                 {isSunday && <div className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">DOMINGO</div>}
                                                 {holiday && !isSunday && <div className="bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">FERIADO</div>}
                                                 {hasConflict && !holiday && !isSunday && <div className="bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">OCUPADO</div>}
@@ -483,6 +512,19 @@ export default function ManualSchedulePage() {
                                                     </Select>
                                                 </FormItem>
                                             )} />
+
+                                            <FormField control={form.control} name={`classes.${index}.status`} render={({ field: f }) => (
+                                                <FormItem>
+                                                    <Select onValueChange={f.onChange} value={f.value}>
+                                                        <FormControl><SelectTrigger className={cn("h-9 text-[10px] font-bold uppercase", f.value === 'missed' ? 'bg-red-600 text-white' : '')}><SelectValue /></SelectTrigger></FormControl>
+                                                        <SelectContent>
+                                                            <SelectItem value="scheduled" className="text-xs">Programada</SelectItem>
+                                                            <SelectItem value="missed" className="text-xs">No Asistió</SelectItem>
+                                                            <SelectItem value="completed" className="text-xs">Completada</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </FormItem>
+                                            )} />
                                         </div>
                                     );
                                 })}
@@ -490,13 +532,13 @@ export default function ManualSchedulePage() {
 
                             <div className="flex flex-col sm:flex-row gap-3 pt-2">
                                 {!editingManualEntryId && (
-                                    <Button type="button" variant="outline" onClick={() => append({ date: new Date(), timeSlot: '8am-10am', vehicle: '', instructor: '', classNumber: fields.length + 1, classType: 'Práctica' })} className="h-11 px-6 border-dashed border-2">
+                                    <Button type="button" variant="outline" onClick={() => append({ date: new Date(), timeSlot: '8am-10am', vehicle: '', instructor: '', classNumber: fields.length + 1, classType: 'Práctica', status: 'scheduled' })} className="h-11 px-6 border-dashed border-2">
                                         <PlusCircle className="mr-2 h-4 w-4" /> Añadir Clase
                                     </Button>
                                 )}
-                                <Button type="submit" disabled={isSaving} className="h-11 px-8 font-bold flex-1 sm:flex-none">
+                                <Button type="submit" disabled={isSaving || hasMissedClasses} className={cn("h-11 px-8 font-bold flex-1 sm:flex-none", hasMissedClasses && "bg-slate-400 cursor-not-allowed")}>
                                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                    {selectedContract ? 'Actualizar Agenda' : editingManualEntryId ? 'Actualizar Registro' : 'Guardar Manual'}
+                                    {hasMissedClasses ? 'BLOQUEADO POR INASISTENCIA' : selectedContract ? 'Actualizar Agenda' : editingManualEntryId ? 'Actualizar Registro' : 'Guardar Manual'}
                                 </Button>
                             </div>
                         </form>
@@ -519,7 +561,7 @@ export default function ManualSchedulePage() {
                                     <TableRow>
                                         <TableHead className="font-bold text-[10px] uppercase">Fecha</TableHead>
                                         <TableHead className="font-bold text-[10px] uppercase">Estudiante</TableHead>
-                                        <TableHead className="font-bold text-[10px] uppercase">Plan</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase">Estado</TableHead>
                                         <TableHead className="font-bold text-[10px] uppercase">Turno</TableHead>
                                         <TableHead className="font-bold text-[10px] uppercase">Vehículo</TableHead>
                                         <TableHead className="font-bold text-[10px] uppercase">Instructor</TableHead>
@@ -533,7 +575,13 @@ export default function ManualSchedulePage() {
                                         <TableRow key={entry.id}>
                                             <TableCell className="text-xs font-medium">{!isNaN(entryDate.getTime()) ? format(entryDate, 'dd/MM/yyyy') : '---'}</TableCell>
                                             <TableCell className="text-xs font-bold uppercase">{entry.studentName}</TableCell>
-                                            <TableCell className="text-xs text-muted-foreground">{entry.coursePlan || '---'}</TableCell>
+                                            <TableCell>
+                                                {entry.status === 'missed' ? (
+                                                    <span className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm">INASISTENCIA</span>
+                                                ) : (
+                                                    <span className="text-[10px] font-bold opacity-50 uppercase">{entry.status === 'completed' ? 'Completada' : 'Programada'}</span>
+                                                )}
+                                            </TableCell>
                                             <TableCell className="text-xs">{timeSlots.find(t => t.id === entry.timeSlot)?.label || entry.timeSlot}</TableCell>
                                             <TableCell className="text-xs">{entry.vehicle}</TableCell>
                                             <TableCell className="text-xs">{entry.instructor}</TableCell>

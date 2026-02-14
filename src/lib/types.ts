@@ -25,6 +25,16 @@ export type ContractType =
   | 'Curso Solo Practica'
   | 'Ampliaciones';
 
+export type ClassStatus = 'scheduled' | 'missed' | 'completed';
+
+export interface PracticalClassSlot {
+  date?: any;
+  time?: string;
+  vehicle?: VehicleName;
+  instructor?: InstructorName;
+  status?: ClassStatus;
+}
+
 export interface DeluxeContractDetails {
   idType?: string;
   studentIdNumber: string;
@@ -38,7 +48,7 @@ export interface DeluxeContractDetails {
   licenseCategory?: string;
   theoreticalClassSchedule?: string;
   theoreticalClasses?: any[];
-  classSchedules?: { date?: any; time?: string; vehicle?: VehicleName; instructor?: InstructorName; }[];
+  classSchedules?: PracticalClassSlot[];
   paymentType?: string;
   instructor?: InstructorName;
   courseValue?: number;
@@ -64,8 +74,8 @@ export interface AutoMotoContractDetails {
   licenseCategory?: string;
   theoreticalClassSchedule?: string;
   theoreticalClassDates?: any[];
-  practicalClassSchedules?: { date?: any; time?: string; vehicle?: VehicleName; instructor?: InstructorName; }[];
-  motoPracticalClassSchedules?: { date?: any; time?: string; vehicle?: VehicleName; instructor?: InstructorName; }[];
+  practicalClassSchedules?: PracticalClassSlot[];
+  motoPracticalClassSchedules?: PracticalClassSlot[];
   paidInFull?: boolean;
   paymentType?: string;
   instructor?: InstructorName;
@@ -130,6 +140,7 @@ export interface ManualSchedule {
   instructor: string;
   classNumber: number;
   classType: 'Práctica' | 'Teórica';
+  status?: ClassStatus;
   userId: string;
   createdAt: any;
 }

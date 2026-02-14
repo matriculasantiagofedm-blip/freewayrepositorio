@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
 import { useDb, useUser } from '@/components/firebase-provider';
-import type { Contract, TimeSlot, ManualSchedule } from '@/lib/types';
+import type { Contract, TimeSlot, ManualSchedule, ClassStatus } from '@/lib/types';
 import {
   Table,
   TableBody,
@@ -13,14 +13,18 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, ChevronLeft, ChevronRight, User, Car, Bike, ShieldCheck, Timer, Landmark, Ban } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, User, Car, Bike, ShieldCheck, Timer, Landmark, Ban, AlertCircle, CheckCircle2, MessageSquare } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addDays, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
-import { Separator } from '@/components/ui/separator';
-import { isPanamaHoliday } from '@/lib/holidays';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 const TIME_SLOTS: { id: TimeSlot; label: string }[] = [
     { id: '8am-10am', label: '08:00 - 10:00' },
@@ -30,25 +34,20 @@ const TIME_SLOTS: { id: TimeSlot; label: string }[] = [
 ];
 
 const TIME_STRING_TO_SLOT_MAP: { [key: string]: TimeSlot } = {
-    '8:00am a 10:00am': '8am-10am',
+    '08:00am a 10:00am': '8am-10am',
     '10:00am a 12:00pm': '10am-12pm',
-    '1:00pm a 3:00pm': '1pm-3pm',
-    '3:00pm a 5:00pm': '3pm-5pm',
+    '01:00pm a 03:00pm': '1pm-3pm',
+    '03:00pm a 05:00pm': '3pm-5pm',
 };
 
 const getGlobalCapacity = (date: Date, slotId: string) => {
-    const day = date.getDay(); // 0: Dom, 1: Lun, 2: Mar, 3: Mie, 4: Jue, 5: Vie, 6: Sab
-    if (day === 0) return 0; // Domingo capacidad 0
-    
-    // Lógica: 8-10am -> Lunes 3, Martes-Viernes 2.
+    const day = date.getDay();
+    if (day === 0) return 0;
     if (slotId === '8am-10am') {
         if (day === 1) return 3;
         if (day >= 2 && day <= 5) return 2;
     }
-    
-    // Sábados 3-5pm -> 2 vehículos
     if (day === 6 && slotId === '3pm-5pm') return 2;
-    
     return 3;
 };
 
@@ -64,12 +63,14 @@ const vehicleColors: Record<string, string> = {
 export default function VehicleScheduleReportPage() {
   const db = useDb();
   const { user } = useUser();
+  const { toast } = useToast();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [weeklyAssignments, setWeeklyAssignments] = useState<Map<string, any[]>>(new Map());
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const contractsQuery = useMemoQuery(() => {
     if (!db || !user) return null;
-    return query(collection(db, 'contracts'), where('status', '==', 'active'));
+    return query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed']));
   }, [db, user]);
 
   const manualEntriesQuery = useMemoQuery(() => {
@@ -88,13 +89,13 @@ export default function VehicleScheduleReportPage() {
     const weekInterval = { start: startOfDay(weekStart), end: endOfWeek(currentDate, { weekStartsOn: 1 }) };
     const newWeeklyAssignments = new Map<string, any[]>();
 
-    const add = (name: string, date: any, slot: TimeSlot, vehicle: string, instructor: string, isEval = false, num = 1) => {
+    const add = (id: string, name: string, date: any, slot: TimeSlot, vehicle: string, instructor: string, status: ClassStatus = 'scheduled', isEval = false, num = 1, type: 'contract' | 'manual' = 'contract', slotIndex?: number, subType?: 'auto' | 'moto') => {
         if (!date) return;
         const d = toDate(date);
         if (isNaN(d.getTime()) || !isWithinInterval(d, weekInterval)) return;
         const key = format(d, 'yyyy-MM-dd');
         const dayArr = newWeeklyAssignments.get(key) || [];
-        dayArr.push({ name, slot, vehicle, instructor, isEval, num });
+        dayArr.push({ id, name, slot, vehicle, instructor, status, isEval, num, type, slotIndex, subType });
         newWeeklyAssignments.set(key, dayArr);
     };
 
@@ -102,24 +103,75 @@ export default function VehicleScheduleReportPage() {
         const d = c.autoMotoDetails || c.deluxeDetails;
         const isEval = (d?.coursePlan === 'evaluacion-estacionamiento' || d?.coursePlan === 'moto-evaluacion-estacionamiento');
         
-        const proc = (arr: any[]) => arr.forEach((s, i) => {
+        const proc = (arr: any[], subType: 'auto' | 'moto' = 'auto') => arr.forEach((s, i) => {
             const slotId = TIME_STRING_TO_SLOT_MAP[s.time] || s.time;
-            add(c.clientName, s.date, slotId, s.vehicle, s.instructor, isEval, i + 1);
+            add(c.id, c.clientName, s.date, slotId, s.vehicle, s.instructor, s.status || 'scheduled', isEval, i + 1, 'contract', i, subType);
         });
 
-        if (c.autoMotoDetails?.practicalClassSchedules) proc(c.autoMotoDetails.practicalClassSchedules);
-        if (c.autoMotoDetails?.motoPracticalClassSchedules) proc(c.autoMotoDetails.motoPracticalClassSchedules);
-        if (c.deluxeDetails?.classSchedules) proc(c.deluxeDetails.classSchedules);
+        if (c.autoMotoDetails?.practicalClassSchedules) proc(c.autoMotoDetails.practicalClassSchedules, 'auto');
+        if (c.autoMotoDetails?.motoPracticalClassSchedules) proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');
+        if (c.deluxeDetails?.classSchedules) proc(c.deluxeDetails.classSchedules, 'auto');
     });
 
     manualEntries?.forEach(e => {
         if (e.classType === 'Práctica') {
-            add(e.studentName, e.date, e.timeSlot, e.vehicle, e.instructor, false, e.classNumber);
+            add(e.id, e.studentName, e.date, e.timeSlot, e.vehicle, e.instructor, e.status || 'scheduled', false, e.classNumber, 'manual');
         }
     });
 
     setWeeklyAssignments(newWeeklyAssignments);
   }, [contracts, manualEntries, weekStart, currentDate]);
+
+  const handleUpdateStatus = async (item: any, newStatus: ClassStatus) => {
+    if (!db || isUpdating) return;
+    setIsUpdating(true);
+    try {
+        if (item.type === 'contract') {
+            const contractRef = doc(db, 'contracts', item.id);
+            const contract = contracts?.find(c => c.id === item.id);
+            if (!contract) return;
+
+            const updateData: any = {};
+            let schedules: any[] = [];
+
+            if (item.subType === 'moto') {
+                schedules = [...(contract.autoMotoDetails?.motoPracticalClassSchedules || [])];
+                if (schedules[item.slotIndex]) {
+                    schedules[item.slotIndex].status = newStatus;
+                    updateData['autoMotoDetails.motoPracticalClassSchedules'] = schedules;
+                }
+            } else if (contract.type === 'Curso Deluxe') {
+                schedules = [...(contract.deluxeDetails?.classSchedules || [])];
+                if (schedules[item.slotIndex]) {
+                    schedules[item.slotIndex].status = newStatus;
+                    updateData['deluxeDetails.classSchedules'] = schedules;
+                }
+            } else {
+                schedules = [...(contract.autoMotoDetails?.practicalClassSchedules || [])];
+                if (schedules[item.slotIndex]) {
+                    schedules[item.slotIndex].status = newStatus;
+                    updateData['autoMotoDetails.practicalClassSchedules'] = schedules;
+                }
+            }
+
+            await updateDoc(contractRef, updateData);
+        } else {
+            const manualRef = doc(db, 'manual_schedules', item.id);
+            await updateDoc(manualRef, { status: newStatus });
+        }
+        toast({ title: 'Estado actualizado', description: `La clase ha sido marcada como ${newStatus === 'missed' ? 'No Asistió' : newStatus === 'completed' ? 'Completada' : 'Programada'}.` });
+    } catch (e) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo actualizar el estado.' });
+    } finally {
+        setIsUpdating(false);
+    }
+  };
+
+  const handleNotifyWhatsApp = (item: any) => {
+    const text = `Hola ${item.name}, te saludamos de Freeway Escuela de Manejo. Te informamos que tu clase práctica programada para el día ${format(toDate(currentDate), 'dd/MM')} a las ${item.slot} ha sido marcada como NO ASISTIÓ. Según el contrato firmado, la inasistencia conlleva la pérdida de la clase. Para reprogramarla, se requiere un pago de recargo de B/. 20.00. Quedamos a tu disposición para cualquier consulta.`;
+    const encoded = encodeURIComponent(text);
+    window.open(`https://wa.me/?text=${encoded}`, '_blank');
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -175,16 +227,47 @@ export default function VehicleScheduleReportPage() {
                             )}
                             <div className="flex flex-col gap-1.5 h-full pt-5">
                                 {assignments.map((a, i) => (
-                                    <div key={i} className={cn("p-2 rounded border text-[10px] shadow-sm leading-tight", a.isEval ? "bg-purple-50 border-purple-200" : (vehicleColors[a.vehicle] || 'bg-gray-100 border-gray-200'))}>
-                                        <p className="truncate font-black uppercase mb-0.5">{a.name}</p>
-                                        <p className="truncate text-[8px] font-bold text-muted-foreground uppercase mb-1 flex items-center gap-1">
-                                            <User className="h-2.5 w-2.5" /> {a.instructor || 'SIN ASIGNAR'}
-                                        </p>
-                                        <div className="flex justify-between font-bold text-[9px] opacity-80 border-t border-black/10 pt-1 mt-1">
-                                            <span>{a.vehicle}</span>
-                                            <span>{a.isEval ? '10m' : `#${a.num}`}</span>
-                                        </div>
-                                    </div>
+                                    <Popover key={i}>
+                                        <PopoverTrigger asChild>
+                                            <div className={cn(
+                                                "p-2 rounded border text-[10px] shadow-sm cursor-pointer hover:shadow-md transition-all relative", 
+                                                a.status === 'missed' ? "bg-red-600 border-red-700 text-white" : 
+                                                a.status === 'completed' ? "bg-green-100 border-green-300 text-green-800" :
+                                                a.isEval ? "bg-purple-50 border-purple-200" : (vehicleColors[a.vehicle] || 'bg-gray-100 border-gray-200')
+                                            )}>
+                                                {a.status === 'missed' && <AlertCircle className="absolute -top-1 -right-1 h-3 w-3 text-white fill-red-600" />}
+                                                <p className="truncate font-black uppercase mb-0.5">{a.name}</p>
+                                                <p className={cn("truncate text-[8px] font-bold uppercase mb-1 flex items-center gap-1", a.status === 'missed' ? 'text-white/80' : 'text-muted-foreground')}>
+                                                    <User className="h-2.5 w-2.5" /> {a.instructor || 'SIN ASIGNAR'}
+                                                </p>
+                                                <div className={cn("flex justify-between font-bold text-[9px] border-t pt-1 mt-1", a.status === 'missed' ? 'border-white/20 opacity-90' : 'border-black/10 opacity-80')}>
+                                                    <span>{a.vehicle}</span>
+                                                    <span>{a.isEval ? '10m' : `#${a.num}`}</span>
+                                                </div>
+                                            </div>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-56 p-3">
+                                            <div className="space-y-3">
+                                                <p className="text-xs font-bold uppercase text-slate-500">Gestión de Clase</p>
+                                                <div className="grid gap-2">
+                                                    <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2" onClick={() => handleUpdateStatus(a, 'completed')}>
+                                                        <CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> Marcar Completada
+                                                    </Button>
+                                                    <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-red-600 hover:bg-red-50" onClick={() => handleUpdateStatus(a, 'missed')}>
+                                                        <AlertCircle className="h-3.5 w-3.5" /> No Asistió
+                                                    </Button>
+                                                    <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2" onClick={() => handleUpdateStatus(a, 'scheduled')}>
+                                                        <Timer className="h-3.5 w-3.5 text-blue-600" /> Restablecer Programada
+                                                    </Button>
+                                                    {a.status === 'missed' && (
+                                                        <Button variant="secondary" size="sm" className="h-8 w-full text-[10px] font-black uppercase gap-2 bg-green-600 text-white hover:bg-green-700" onClick={() => handleNotifyWhatsApp(a)}>
+                                                            <MessageSquare className="h-3.5 w-3.5" /> Notificar WhatsApp
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
                                 ))}
                             </div>
                         </TableCell>

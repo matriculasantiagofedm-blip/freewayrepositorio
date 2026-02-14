@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -25,11 +24,6 @@ const navLinks = [
   {
     href: '/clients',
     label: 'Clientes',
-    roles: ['Administrador', 'Ventas', 'Ventas Externas'],
-  },
-  {
-    href: '/enroll',
-    label: 'Inscripción Web',
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
   },
   {
@@ -135,6 +129,11 @@ const navLinks = [
           roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
     ]
+  },
+  {
+    href: '/enroll',
+    label: 'Inscripción Web',
+    roles: ['Administrador'],
   },
 ];
 

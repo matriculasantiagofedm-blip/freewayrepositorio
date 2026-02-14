@@ -329,7 +329,6 @@ export function AutoContractForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-5xl mx-auto pb-20">
-        {/* Renderizado de campos igual que antes, solo cambia la lógica de sumisión */}
         <Card className="border-t-4 border-t-blue-600 shadow-sm">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -447,6 +446,93 @@ export function AutoContractForm() {
                 </FormItem>
               )} />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* AGENDA DE CLASES PRÁCTICAS */}
+        <Card className="shadow-sm">
+          <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-blue-600" />
+              <CardTitle className="text-sm font-bold uppercase tracking-wider">Agenda de Clases Prácticas</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            {!watchPlan ? (
+              <p className="text-center text-muted-foreground italic py-4">Seleccione un plan de curso para programar las clases.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {practicalFields.map((field, index) => {
+                  const watchDate = form.watch(`practicalClassSchedules.${index}.date`);
+                  const watchTime = form.watch(`practicalClassSchedules.${index}.time`);
+                  
+                  const dObj = toDate(watchDate);
+                  const isValidDate = !isNaN(dObj.getTime());
+                  const holiday = isValidDate ? isPanamaHoliday(dObj) : null;
+                  const isSunday = isValidDate && dObj.getDay() === 0;
+                  
+                  const slotId = TIME_STRING_TO_SLOT_MAP[watchTime] || watchTime;
+                  const dateKey = isValidDate ? format(dObj, 'yyyy-MM-dd') : '';
+                  const occupancy = availabilityData.globalCounts[`${dateKey}|${slotId}`] || 0;
+                  const capacity = isValidDate ? getGlobalCapacity(dObj, slotId) : 3;
+                  const isFull = occupancy >= capacity;
+
+                  return (
+                    <div key={field.id} className={cn(
+                      "p-4 border rounded-xl space-y-3 bg-white relative",
+                      (isFull || holiday || isSunday) ? "border-amber-500 bg-amber-50/10" : "border-slate-200"
+                    )}>
+                      <div className="absolute -top-2 right-3 flex gap-1 z-10">
+                          {isSunday && <div className="bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Domingo</div>}
+                          {holiday && !isSunday && <div className="bg-orange-500 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Feriado</div>}
+                          {isFull && !holiday && !isSunday && <div className="bg-amber-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Lleno</div>}
+                      </div>
+
+                      <div className="flex gap-4">
+                        <FormField control={form.control} name={`practicalClassSchedules.${index}.date`} render={({ field: f }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="text-[10px] font-black uppercase text-slate-500">Clase {index + 1}</FormLabel>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(f.value, "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={f.value} onSelect={f.onChange} initialFocus /></PopoverContent>
+                            </Popover>
+                          </FormItem>
+                        )} />
+                        <FormField control={form.control} name={`practicalClassSchedules.${index}.time`} render={({ field: f }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="text-[10px] font-black uppercase text-slate-500">Horario</FormLabel>
+                            <Select onValueChange={f.onChange} value={f.value}>
+                              <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
+                              <SelectContent>{TIME_OPTIONS.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent>
+                            </Select>
+                          </FormItem>
+                        )} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <FormField control={form.control} name={`practicalClassSchedules.${index}.vehicle`} render={({ field: f }) => (
+                          <FormItem>
+                            <Select onValueChange={f.onChange} value={f.value}>
+                              <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
+                              <SelectContent>{VEHICLES.map(v => <SelectItem key={v} value={v} className="text-[10px]">{v}</SelectItem>)}</SelectContent>
+                            </Select>
+                          </FormItem>
+                        )} />
+                        <FormField control={form.control} name={`practicalClassSchedules.${index}.instructor`} render={({ field: f }) => (
+                          <FormItem>
+                            <Select onValueChange={f.onChange} value={f.value}>
+                              <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
+                              <SelectContent>{INSTRUCTORS.map(i => <SelectItem key={i} value={i} className="text-[10px]">{i}</SelectItem>)}</SelectContent>
+                            </Select>
+                          </FormItem>
+                        )} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
 

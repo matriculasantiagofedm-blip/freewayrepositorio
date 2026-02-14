@@ -2,13 +2,19 @@
 import type { Contract, ContractType } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { AutoMotoContractTemplate } from './auto-moto-contract';
+import { AmpliacionesContractTemplate } from './ampliaciones-contract';
 
 export function ContractView({ contract, type }: { contract: Contract, type?: ContractType }) {
 
   const renderContractTemplate = () => {
     const contractType = type || contract.type;
     switch(contractType) {
+      case 'Ampliaciones':
+        return <AmpliacionesContractTemplate contract={contract} />;
       case 'Curso Solo Practica':
+      case 'Curso Auto':
+      case 'Curso Moto':
+      case 'Curso Mixto':
         return <AutoMotoContractTemplate contract={contract} />;
       default:
         return (

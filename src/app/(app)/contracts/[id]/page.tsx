@@ -242,7 +242,11 @@ export default function ContractDetailPage() {
       await runTransaction(db, async (transaction) => {
         const counterRef = doc(db, 'counters', 'contracts_folio');
         const counterDoc = await transaction.get(counterRef);
-        let nextFolio = counterDoc.exists() ? counterDoc.data().count + 1 : 1;
+        
+        // UNIFICACIÓN: El próximo folio debe ser al menos 18
+        let nextFolio = counterDoc.exists() 
+            ? Math.max(counterDoc.data().count + 1, 18) 
+            : 18;
         
         transaction.set(counterRef, { count: nextFolio }, { merge: true });
         transaction.update(contractRef, {
@@ -253,7 +257,7 @@ export default function ContractDetailPage() {
           activatedBy: role
         });
       });
-      toast({ title: 'Contrato Activado', description: 'El trámite web ha sido validado y activado oficialmente.' });
+      toast({ title: 'Contrato Activado', description: `El trámite web ha sido activado con el Folio ${contract.folioNumber}.` });
     } catch (e) {
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo activar el contrato.' });
     } finally {

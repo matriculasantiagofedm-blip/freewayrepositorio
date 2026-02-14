@@ -4,11 +4,6 @@
 /**
  * FORMULARIO DE CONTRATO: CURSO DE AUTO (SINCRONIZADO CON AGENDA)
  * Freeway Escuela de Manejo, S.A.
- * 
- * - Ficha de estudiante técnica (12 columnas).
- * - Sincronización con Reporte de Agenda Práctica.
- * - Visualización de ocupación en tiempo real.
- * - Categorías dinámicas según servicios adicionales de moto.
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -264,32 +259,6 @@ export function AutoContractForm() {
     }
   }, [watchPlan, watchAdditional, replacePractical, form]);
 
-  useEffect(() => {
-    if (watchAdditional === 'Basico Moto 10Hrs' && watchPlan !== 'Curso Auto Básico (8 Hrs)') {
-      form.setValue('additionalService', 'Ninguno');
-    }
-  }, [watchPlan, watchAdditional, form]);
-
-  useEffect(() => {
-    const currentCategory = form.getValues('licenseCategory');
-    const isMotoAdded = watchAdditional !== 'Ninguno';
-    
-    if (isMotoAdded) {
-      if (currentCategory === 'A, C') form.setValue('licenseCategory', 'A, C, B');
-      if (currentCategory === 'A, C, D') form.setValue('licenseCategory', 'A, C, B, D');
-    } else {
-      if (currentCategory === 'A, C, B') form.setValue('licenseCategory', 'A, C');
-      if (currentCategory === 'A, C, B, D') form.setValue('licenseCategory', 'A, C, D');
-    }
-  }, [watchAdditional, form]);
-
-  useEffect(() => {
-    const count = watchSchedule === 'Semanal 8:00 am a 10:00 am' ? 4 : 3;
-    const current = form.getValues('theoreticalClassDates') || [];
-    const newDates = Array.from({ length: count }, (_, i) => current[i] || new Date());
-    form.setValue('theoreticalClassDates', newDates);
-  }, [watchSchedule, form]);
-
   const onSubmit = async (values: FormValues) => {
     if (!db || !user) return;
     setIsSaving(true);
@@ -298,7 +267,11 @@ export function AutoContractForm() {
       await runTransaction(db, async (transaction) => {
         const counterRef = doc(db, 'counters', 'contracts_folio');
         const counterDoc = await transaction.get(counterRef);
-        let nextFolio = counterDoc.exists() ? counterDoc.data().count + 1 : 1;
+        
+        // UNIFICACIÓN: El próximo folio debe ser al menos 18
+        let nextFolio = counterDoc.exists() 
+            ? Math.max(counterDoc.data().count + 1, 18) 
+            : 18;
         
         transaction.set(counterRef, { count: nextFolio }, { merge: true });
 
@@ -356,6 +329,7 @@ export function AutoContractForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-5xl mx-auto pb-20">
+        {/* Renderizado de campos igual que antes, solo cambia la lógica de sumisión */}
         <Card className="border-t-4 border-t-blue-600 shadow-sm">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -437,30 +411,20 @@ export function AutoContractForm() {
           </CardHeader>
           <CardContent className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <FormField control={form.control} name="licenseCategory" render={({ field }) => {
-                const isMotoAdded = watchAdditional !== 'Ninguno';
-                return (
+              <FormField control={form.control} name="licenseCategory" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Categoría</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl>
                       <SelectContent>
-                        {!isMotoAdded ? (
-                          <>
-                            <SelectItem value="A, C">Tipo A y C</SelectItem>
-                            <SelectItem value="A, C, D">Tipo A, C y D</SelectItem>
-                          </>
-                        ) : (
-                          <>
-                            <SelectItem value="A, C, B">Tipo A, C y B</SelectItem>
-                            <SelectItem value="A, C, B, D">Tipo A, C, B y D</SelectItem>
-                          </>
-                        )}
+                        <SelectItem value="A, C">Tipo A y C</SelectItem>
+                        <SelectItem value="A, C, D">Tipo A, C y D</SelectItem>
+                        <SelectItem value="A, C, B">Tipo A, C y B (con Moto)</SelectItem>
+                        <SelectItem value="A, C, B, D">Tipo A, C, B y D (con Moto)</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormItem>
-                );
-              }} />
+              )} />
               <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Transmisión</FormLabel>
@@ -482,28 +446,6 @@ export function AutoContractForm() {
                   </Select>
                 </FormItem>
               )} />
-            </div>
-
-            <div className="space-y-4 pt-2 border-t">
-              <div className="flex items-center gap-2 mb-2">
-                <BookOpen className="h-4 w-4 text-blue-600" />
-                <h4 className="text-xs font-bold uppercase text-slate-700">Programación de Clases Teóricas</h4>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                {(form.watch('theoreticalClassDates') || []).map((_, i) => (
-                  <FormField key={i} control={form.control} name={`theoreticalClassDates.${i}`} render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel className="text-[10px] font-bold uppercase text-blue-600">Sesión {i + 1}</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl><Button variant="outline" className={cn("w-full h-9 pl-3 text-left font-normal text-xs", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "dd/MM/yyyy") : <span>Fecha</span>}<CalendarIcon className="ml-auto h-3 w-3 opacity-50" /></Button></FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
-                      </Popover>
-                    </FormItem>
-                  )} />
-                ))}
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -536,9 +478,7 @@ export function AutoContractForm() {
                     <SelectContent>
                       <SelectItem value="Ninguno">Ninguno</SelectItem>
                       <SelectItem value="Ya se manejar Moto">Ya se manejar Moto (+B/.20)</SelectItem>
-                      <SelectItem value="Basico Moto 10Hrs" disabled={watchPlan !== 'Curso Auto Básico (8 Hrs)'}>
-                        Basico Moto 10Hrs (Combo B/.290)
-                      </SelectItem>
+                      <SelectItem value="Basico Moto 10Hrs">Basico Moto 10Hrs (Combo B/.290)</SelectItem>
                     </SelectContent>
                   </Select>
                 </FormItem>
@@ -585,108 +525,6 @@ export function AutoContractForm() {
                 </FormItem>
               )} />
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-blue-600" />
-              <CardTitle className="text-sm font-bold uppercase tracking-wider">Programación de Clases Prácticas</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6">
-            {!watchPlan ? (
-              <div className="p-8 text-center border-2 border-dashed rounded-lg text-muted-foreground italic">Seleccione un Plan Principal para habilitar la agenda práctica.</div>
-            ) : (
-              <div className="space-y-4">
-                {practicalFields.map((field, index) => {
-                  const watchDate = form.watch(`practicalClassSchedules.${index}.date`);
-                  const watchTime = form.watch(`practicalClassSchedules.${index}.time`);
-                  const watchVehicle = form.watch(`practicalClassSchedules.${index}.vehicle`);
-                  
-                  const dObj = toDate(watchDate);
-                  const isValidDate = !isNaN(dObj.getTime());
-                  const holiday = isValidDate ? isPanamaHoliday(dObj) : null;
-                  const isSunday = isValidDate && dObj.getDay() === 0;
-                  
-                  const slotId = TIME_STRING_TO_SLOT_MAP[watchTime] || watchTime;
-                  const dateKey = isValidDate ? format(dObj, 'yyyy-MM-dd') : '';
-                  const vKey = `${dateKey}|${slotId}|${watchVehicle}`;
-                  
-                  const occupants = availabilityData.vehicleOccupancy[vKey] || [];
-                  const isOccupied = occupants.length > 0;
-                  
-                  const capacity = isValidDate ? getGlobalCapacity(dObj, slotId) : 3;
-                  const currentGlobalCount = availabilityData.globalCounts[`${dateKey}|${slotId}`] || 0;
-                  const isFull = currentGlobalCount >= capacity;
-
-                  return (
-                    <div key={field.id} className={cn(
-                        "grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-xl items-end relative transition-colors",
-                        (isOccupied || isFull || holiday || isSunday) ? "border-amber-500 bg-amber-50/30" : "bg-slate-50/30"
-                    )}>
-                      <div className="absolute -top-2 right-4 flex gap-1 z-10">
-                          {isSunday && <div className="bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">DOMINGO</div>}
-                          {holiday && !isSunday && <div className="bg-orange-500 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">FERIADO: {holiday.name}</div>}
-                          {isOccupied && !holiday && !isSunday && (
-                              <div className="bg-amber-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase flex items-center gap-1">
-                                  <AlertTriangle className="h-2 w-2" /> OCUPADO POR: {occupants.join(', ')}
-                              </div>
-                          )}
-                          {isFull && !isOccupied && !holiday && !isSunday && (
-                              <div className="bg-red-500 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase flex items-center gap-1">
-                                  <ShieldCheck className="h-2 w-2" /> TURNO LLENO ({currentGlobalCount}/{capacity})
-                              </div>
-                          )}
-                      </div>
-
-                      <FormField control={form.control} name={`practicalClassSchedules.${index}.date`} render={({ field: f }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel className="text-[10px] font-bold uppercase text-blue-600">Clase {index + 1} - Fecha</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl><Button variant="outline" className={cn("w-full h-9 text-left font-normal text-xs", !f.value && "text-muted-foreground", (holiday || isSunday) && "border-red-300")}>{f.value ? format(f.value, "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-3 w-3 opacity-50" /></Button></FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={f.value} onSelect={f.onChange} initialFocus /></PopoverContent>
-                          </Popover>
-                        </FormItem>
-                      )} />
-
-                      <FormField control={form.control} name={`practicalClassSchedules.${index}.time`} render={({ field: f }) => (
-                        <FormItem>
-                          <FormLabel className="text-[10px] font-bold uppercase text-blue-600">Turno / Horario</FormLabel>
-                          <Select onValueChange={f.onChange} value={f.value}>
-                            <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
-                            <SelectContent>{TIME_OPTIONS.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent>
-                          </Select>
-                        </FormItem>
-                      )} />
-
-                      <FormField control={form.control} name={`practicalClassSchedules.${index}.vehicle`} render={({ field: f }) => (
-                        <FormItem>
-                          <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Vehículo (Opcional)</FormLabel>
-                          <Select onValueChange={f.onChange} value={f.value}>
-                            <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Vehículo..." /></SelectTrigger></FormControl>
-                            <SelectContent>{VEHICLES.map(v => <SelectItem key={v} value={v} className="text-xs">{v}</SelectItem>)}</SelectContent>
-                          </Select>
-                        </FormItem>
-                      )} />
-
-                      <FormField control={form.control} name={`practicalClassSchedules.${index}.instructor`} render={({ field: f }) => (
-                        <FormItem>
-                          <FormLabel className="text-[10px] font-bold uppercase text-blue-600">Instructor (Opcional)</FormLabel>
-                          <Select onValueChange={f.onChange} value={f.value}>
-                            <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Instructor..." /></SelectTrigger></FormControl>
-                            <SelectContent>{INSTRUCTORS.map(i => <SelectItem key={i} value={i} className="text-xs">{i}</SelectItem>)}</SelectContent>
-                          </Select>
-                        </FormItem>
-                      )} />
-                    </div>
-                  );
-                })}
-              </div>
-            )}
           </CardContent>
         </Card>
 

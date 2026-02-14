@@ -3,8 +3,7 @@
 
 /**
  * FORMULARIO DE CONTRATO: AMPLIACIONES DE LICENCIA
- * Título: AmpliacionesContractForm
- * Identificación: Gestiona trámites de categorías adicionales compartiendo la numeración global de folios.
+ * Freeway Escuela de Manejo, S.A.
  */
 
 import { useState, useEffect } from 'react';
@@ -136,7 +135,11 @@ export function AmpliacionesContractForm() {
       await runTransaction(db, async (transaction) => {
         const counterRef = doc(db, 'counters', 'contracts_folio');
         const counterDoc = await transaction.get(counterRef);
-        let nextFolio = counterDoc.exists() ? counterDoc.data().count + 1 : 1;
+        
+        // UNIFICACIÓN: El próximo folio debe ser al menos 18
+        let nextFolio = counterDoc.exists() 
+            ? Math.max(counterDoc.data().count + 1, 18) 
+            : 18;
         
         transaction.set(counterRef, { count: nextFolio }, { merge: true });
 
@@ -187,127 +190,36 @@ export function AmpliacionesContractForm() {
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
               <UserCircle className="h-5 w-5 text-amber-600" />
-              <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-700">Ficha Estudiantil (Ampliación)</CardTitle>
+              <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-700">Ficha (Ampliación)</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="p-6">
             <div className="grid grid-cols-12 gap-4">
               <div className="col-span-12 md:col-span-8">
                 <FormField control={form.control} name="clientName" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Nombre Completo</FormLabel>
-                    <FormControl><Input placeholder="Nombre del alumno..." {...field} className="h-9 uppercase font-bold" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Nombre</FormLabel><FormControl><Input placeholder="Nombre..." {...field} className="h-9 uppercase font-bold" /></FormControl><FormMessage /></FormItem>
                 )} />
               </div>
               <div className="col-span-12 md:col-span-4">
                 <FormField control={form.control} name="clientEmail" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Correo Electrónico</FormLabel>
-                    <FormControl><Input type="email" placeholder="ejemplo@correo.com" {...field} className="h-9" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Email</FormLabel><FormControl><Input type="email" placeholder="ejemplo@correo.com" {...field} className="h-9" /></FormControl></FormItem>
                 )} />
               </div>
-              <div className="col-span-4 md:col-span-2">
-                <FormField control={form.control} name="idType" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Tipo ID</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl><SelectTrigger className="h-9"><SelectValue /></SelectTrigger></FormControl>
-                      <SelectContent><SelectItem value="C.I.P.">C.I.P.</SelectItem><SelectItem value="Pasaporte">Pasaporte</SelectItem></SelectContent>
-                    </Select>
-                  </FormItem>
-                )} />
-              </div>
-              <div className="col-span-8 md:col-span-4">
+              <div className="col-span-12 md:col-span-6">
                 <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Número de Identificación</FormLabel>
-                    <FormControl><Input placeholder="Ej: 8-000-000" {...field} className="h-9 font-mono" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Cédula</FormLabel><FormControl><Input placeholder="8-000-000" {...field} className="h-9 font-mono" /></FormControl></FormItem>
                 )} />
               </div>
               <div className="col-span-12 md:col-span-6">
                 <FormField control={form.control} name="studentPhone1" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Teléfonos de Contacto</FormLabel>
-                    <div className="flex gap-2">
-                      <FormControl><Input placeholder="Principal" {...field} className="h-9" /></FormControl>
-                      <Input placeholder="Secundario" onChange={(e) => form.setValue('studentPhone2', e.target.value)} className="h-9" />
-                    </div>
-                    <FormMessage />
-                  </FormItem>
+                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Teléfono</FormLabel><FormControl><Input placeholder="6000-0000" {...field} className="h-9" /></FormControl></FormItem>
                 )} />
               </div>
               <div className="col-span-12">
                 <FormField control={form.control} name="studentAddress" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Dirección Residencial</FormLabel>
-                    <FormControl><Input placeholder="Ubicación completa..." {...field} className="h-9 uppercase" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Dirección</FormLabel><FormControl><Input placeholder="Ubicación..." {...field} className="h-9 uppercase" /></FormControl></FormItem>
                 )} />
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
-            <div className="flex items-center gap-2">
-              <Repeat className="h-5 w-5 text-amber-600" />
-              <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-700">Detalles de la Ampliación</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6 space-y-8">
-            <div className="space-y-4">
-              <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Seleccionar Categorías Destino</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2">
-                {LICENSE_CATEGORIES.map(cat => {
-                  const isSelected = form.watch('licenseCategory').includes(cat);
-                  const price = CATEGORY_PRICES[cat];
-                  return (
-                    <Button key={cat} type="button" variant={isSelected ? "default" : "outline"} className={cn("h-16 flex flex-col gap-1 font-black transition-all", isSelected && "bg-amber-600 hover:bg-amber-700 scale-105 shadow-md")} onClick={() => toggleCategory(cat)}>
-                      <span className="text-lg">{cat}</span>
-                      <span className="text-[9px] font-bold opacity-80">B/. {price.toFixed(2)}</span>
-                    </Button>
-                  );
-                })}
-              </div>
-              <div className="flex items-center gap-2 mt-2">
-                <span className="text-[10px] font-bold uppercase text-muted-foreground">Trámite actual:</span>
-                <span className="text-sm font-black text-amber-700">{form.watch('licenseCategory') || 'Ninguno'}</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t">
-              <FormField control={form.control} name="theoreticalClassDate" render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> Fecha Clase Teórica</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl><Button variant="outline" className={cn("w-full h-10 pl-3 text-left font-normal text-xs", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP", { locale: es }) : <span>Elegir fecha</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="theoreticalClassTime" render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Horario Clase Teórica</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="Sabatino 3:00 pm a 5:00 pm">Sabatino 3:00 pm a 5:00 pm</SelectItem>
-                      <SelectItem value="Semanal 8:00 am a 10:00 am">Semanal 8:00 am a 10:00 am</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )} />
             </div>
           </CardContent>
         </Card>
@@ -316,7 +228,7 @@ export function AmpliacionesContractForm() {
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-amber-600" />
-              <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-700">Gestión de Cobro</CardTitle>
+              <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-700">Valores y Pagos</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="p-6 space-y-6">
@@ -329,21 +241,13 @@ export function AmpliacionesContractForm() {
               )} />
               <div className="flex flex-col gap-1.5"><Label className="text-[10px] font-bold uppercase text-muted-foreground">Saldo</Label><div className="flex items-center h-10 px-4 bg-red-50 rounded-md border border-red-100"><span className="text-lg font-black text-red-900">B/. {currentBalance.toFixed(2)}</span></div></div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
-              <FormField control={form.control} name="paymentType" render={({ field }) => (
-                <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Método de Pago</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="cash">Efectivo</SelectItem><SelectItem value="debit">Tarjeta Débito</SelectItem><SelectItem value="credit">Tarjeta Crédito</SelectItem><SelectItem value="bac">BAC</SelectItem><SelectItem value="general">General</SelectItem><SelectItem value="cheques">Cheque</SelectItem></SelectContent></Select></FormItem>
-              )} />
-              <FormField control={form.control} name="paymentDeadline" render={({ field }) => (
-                <FormItem className="flex flex-col"><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Límite para Saldo</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("w-full h-10 pl-3 text-left font-normal text-xs", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover></FormItem>
-              )} />
-            </div>
           </CardContent>
         </Card>
 
         <div className="flex justify-end gap-4">
           <Button type="button" variant="outline" size="lg" onClick={() => router.back()}>Cancelar</Button>
           <Button type="submit" size="lg" disabled={isSaving} className="min-w-[220px] bg-amber-600 hover:bg-amber-700">
-            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Guardar Registro
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Guardar Ampliación
           </Button>
         </div>
       </form>

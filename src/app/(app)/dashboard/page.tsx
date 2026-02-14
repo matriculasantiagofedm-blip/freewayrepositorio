@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useCollection } from '@/hooks/use-firestore';
 import { cn, toDate } from '@/lib/utils';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import type { Contract } from '@/lib/types';
@@ -18,70 +17,64 @@ import { es } from 'date-fns/locale';
 const getBalance = (contract: Contract): number => {
     const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
     return details?.balance || 0;
-}
+};
 
 const isOverdue = (contract: Contract): boolean => {
     if (contract.status !== 'active') return false;
     const balance = getBalance(contract);
     return balance > 0;
-}
+};
 
 export default function DashboardPage() {
   const db = useDb();
   const { user, isUserLoading } = useUser();
   const { role } = useCurrentRole();
 
-  // Query optimizada: Traemos los contratos para procesar estadísticas en memoria
-  // Esto evita problemas de índices compuestos en Firestore para el prototipo
+  // Consulta centralizada de contratos para estadísticas
   const contractsQuery = useMemo(() => {
     if (!db || !user) return null;
     return collection(db, 'contracts');
   }, [db, user]);
 
-  // Query para contratos en borrador (Pre-inscripciones Web)
-  const draftsQuery = useMemo(() => {
-    if (!db || !user) return null;
-    return query(collection(db, 'contracts'), where('status', '==', 'draft'));
-  }, [db, user]);
+  const { data: allContracts, isLoading: isContractsLoading } = useCollection<Contract>(contractsQuery);
 
-  const { data: allContracts, isLoading } = useCollection<Contract>(contractsQuery);
-  const { data: drafts, isLoading: isDraftsLoading } = useCollection<Contract>(draftsQuery);
-
-  // Procesamiento de estadísticas en memoria
+  // Procesamiento de datos para los contadores del Dashboard
   const statsValues = useMemo(() => {
-    if (!allContracts) return { active: 0, today: 0, overdue: 0, overdueAmount: 0 };
+    if (!allContracts) return { active: 0, today: 0, overdue: 0, overdueAmount: 0, drafts: [] as Contract[] };
     
     const active = allContracts.filter(c => c.status === 'active').length;
     const today = allContracts.filter(c => isToday(toDate(c.createdAt))).length;
     const overdueList = allContracts.filter(isOverdue);
     const overdueCount = overdueList.length;
     const overdueSum = overdueList.reduce((sum, c) => sum + getBalance(c), 0);
+    const draftsList = allContracts.filter(c => c.status === 'draft');
 
     return {
         active,
         today,
         overdue: overdueCount,
-        overdueAmount: overdueSum
+        overdueAmount: overdueSum,
+        drafts: draftsList
     };
   }, [allContracts]);
 
   const stats = [
     { 
         title: 'Contratos Activos', 
-        value: isLoading || isUserLoading ? '...' : statsValues.active, 
+        value: isContractsLoading || isUserLoading ? '...' : statsValues.active, 
         href: '/contracts', 
         adminOnly: true 
     },
     { 
         title: 'Trámites de Hoy', 
-        value: isLoading || isUserLoading ? '...' : statsValues.today, 
+        value: isContractsLoading || isUserLoading ? '...' : statsValues.today, 
         href: '/contracts?filter=today',
         highlight: true
     },
     { 
         title: 'Contratos por Cobrar', 
-        value: isLoading || isUserLoading ? '...' : statsValues.overdue, 
-        secondaryValue: isLoading || isUserLoading ? '' : `B/. ${statsValues.overdueAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 
+        value: isContractsLoading || isUserLoading ? '...' : statsValues.overdue, 
+        secondaryValue: isContractsLoading || isUserLoading ? '' : `B/. ${statsValues.overdueAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 
         href: '/contracts?filter=overdue' 
     },
   ];
@@ -130,15 +123,17 @@ export default function DashboardPage() {
         <p className="text-muted-foreground">Gestión unificada de Freeway Escuela de Manejo</p>
       </div>
 
-      {/* BANDEJA DE PRE-INSCRIPCIONES (SOLO ADMIN/VENTAS) */}
-      {!isDraftsLoading && drafts && drafts.length > 0 && (
+      {/* BANDEJA DE PRE-INSCRIPCIONES (DRAFTS) */}
+      {!isContractsLoading && statsValues.drafts.length > 0 && (
         <Card className="border-amber-200 bg-amber-50/30">
           <CardHeader className="pb-3 flex flex-row items-center justify-between">
             <div className="flex items-center gap-2">
-              <UserPlus className="h-5 w-5 text-amber-600" />
+              <div className="bg-amber-100 p-2 rounded-full">
+                <UserPlus className="h-5 w-5 text-amber-600" />
+              </div>
               <div>
                 <CardTitle className="text-amber-900 text-base">Nuevas Solicitudes Web</CardTitle>
-                <CardDescription className="text-amber-700/70 text-xs">Hay {drafts.length} estudiantes esperando activación de contrato.</CardDescription>
+                <CardDescription className="text-amber-700/70 text-xs">Hay {statsValues.drafts.length} estudiantes esperando activación.</CardDescription>
               </div>
             </div>
             <Button asChild variant="outline" size="sm" className="bg-white border-amber-200 text-amber-700">
@@ -146,14 +141,14 @@ export default function DashboardPage() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-2">
-            {drafts.slice(0, 3).map(draft => (
+            {statsValues.drafts.slice(0, 3).map(draft => (
               <div key={draft.id} className="bg-white p-3 rounded-lg border border-amber-100 flex items-center justify-between group hover:border-amber-300 transition-all shadow-sm">
                 <div className="flex flex-col">
                   <span className="font-bold text-sm uppercase">{draft.clientName}</span>
                   <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-bold">
                     <Clock className="h-3 w-3" /> 
                     {format(toDate(draft.createdAt), "d 'de' MMMM", { locale: es })}
-                    <span className="bg-amber-100 text-amber-800 px-1.5 rounded">{draft.autoMotoDetails?.coursePlan}</span>
+                    <span className="bg-amber-100 text-amber-800 px-1.5 rounded">{draft.type}</span>
                   </div>
                 </div>
                 <Button asChild size="sm" variant="ghost" className="text-amber-600 group-hover:bg-amber-50">
@@ -167,7 +162,7 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {/* ESTADÍSTICAS */}
+      {/* ESTADÍSTICAS RÁPIDAS */}
       <div className="grid gap-4 md:grid-cols-3">
         {visibleStats.map((stat) => (
             <Link key={stat.title} href={stat.href} className="no-underline">
@@ -190,9 +185,9 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* NUEVO TRÁMITE */}
+      {/* NUEVO TRÁMITE PRESENCIAL */}
       <div className="space-y-4">
-        <h2 className="text-xl font-bold font-headline text-slate-800 border-b pb-2 uppercase tracking-tighter">Registrar Nuevo Trámite Presencial</h2>
+        <h2 className="text-xl font-bold font-headline text-slate-800 border-b pb-2 uppercase tracking-tighter">Registrar Nuevo Trámite</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {contractTypes.map((type) => (
                 <Link key={type.name} href={type.href} className="no-underline group">
@@ -206,13 +201,13 @@ export default function DashboardPage() {
                                 <Plus className="h-4 w-4" />
                             </div>
                         </CardContent>
-                    </Link>
-                </Card>
+                    </Card>
+                </Link>
             ))}
         </div>
       </div>
 
-      {/* OPERACIONES RÁPIDAS */}
+      {/* ACCIONES POR ROL */}
       <div className="space-y-8">
         <h2 className="text-xl font-bold font-headline text-slate-800 border-b pb-2 uppercase tracking-tighter">Operaciones Rápidas</h2>
         {actionGroups.map((group) => {
@@ -229,9 +224,7 @@ export default function DashboardPage() {
                   {visibleActions.map((action) => (
                       <Card key={action.name} className={cn("transition-all hover:shadow-md border-slate-200", action.bgColor)}>
                           <CardContent className="p-4 flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                  <span className={cn("font-bold text-sm", action.textColor)}>{action.name}</span>
-                              </div>
+                              <span className={cn("font-bold text-sm", action.textColor)}>{action.name}</span>
                               <Button asChild size="sm" variant="ghost" className="bg-white/50 hover:bg-white h-8"><Link href={action.href}>Entrar</Link></Button>
                           </CardContent>
                       </Card>

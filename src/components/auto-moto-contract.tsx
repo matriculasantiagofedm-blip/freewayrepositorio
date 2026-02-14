@@ -58,14 +58,23 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
       <p className="text-justify mb-3 text-[8.5pt]">Ambas partes convienen celebrar este contrato en el cual la empresa se compromete a brindar al cliente, un servicio de capacitación y adiestramiento teórico y práctico relacionado con el aprendizaje de conducción de vehículos a motor. El mismo se regirá bajo los términos y condiciones que se detallan en las siguientes cláusulas:</p>
 
       <div className="space-y-3">
-        <section>
-          <p className="text-justify">
-            <span className="font-bold uppercase">CLÁUSULA PRIMERA - VALOR Y FORMA DE PAGO:</span> 
-            El estudiante ha efectuado un abono por la suma de B/. <Value>{(details?.downPayment || 0).toFixed(2)}</Value>, quedando un saldo pendiente de B/. <Value>{(details?.balance || 0).toFixed(2)}</Value>, el cual se compromete a cancelar en su totalidad el día <Value>{formatDateStr(paymentDeadline)}</Value>. El valor total del curso es de B/. <Value>{(details?.courseValue || 0).toFixed(2)}</Value>. Para la inscripción, EL ESTUDIANTE deberá abonar el 50% del valor total como reserva de su cupo y horario. El 50% restante deberá cancelarse antes de iniciar la primera clase práctica. En caso de incumplimiento en los pagos, EL ESTUDIANTE no podrá continuar el curso.
-          </p>
+        {/* CLAUSULA PRIMERA REESTRUCTURADA VISUALMENTE */}
+        <section className="border border-slate-200 p-3 rounded-sm bg-slate-50/20">
+          <h4 className="font-bold uppercase mb-2 border-b border-slate-200 pb-1 text-[9.5pt]">CLÁUSULA PRIMERA - VALOR Y FORMA DE PAGO</h4>
+          <div className="space-y-3 text-justify leading-relaxed">
+            <p>
+              EL ESTUDIANTE ha efectuado un <span className="font-bold">ABONO</span> por la suma de <Value>B/. {(details?.downPayment || 0).toFixed(2)}</Value>, 
+              quedando un <span className="font-bold">SALDO PENDIENTE</span> de <Value>B/. {(details?.balance || 0).toFixed(2)}</Value>, 
+              el cual se compromete a cancelar en su totalidad el día <span className="font-bold underline">{formatDateStr(paymentDeadline)}</span>.
+            </p>
+            
+            <p>
+              El <span className="font-bold">VALOR TOTAL</span> del curso es de <Value>B/. {(details?.courseValue || 0).toFixed(2)}</Value>. Para la inscripción, EL ESTUDIANTE deberá abonar el 50% del valor total como reserva de su cupo y horario. El 50% restante deberá cancelarse antes de iniciar la primera clase práctica. En caso de incumplimiento en los pagos, EL ESTUDIANTE no podrá continuar el curso.
+            </p>
+          </div>
         </section>
 
-        <section className="border border-gray-200 p-3 rounded-sm bg-slate-50/30">
+        <section className="border border-gray-200 p-3 rounded-sm">
           <h4 className="font-bold uppercase mb-2 border-b border-gray-200 pb-1">CLÁUSULA SEGUNDA - DETALLES DEL CURSO</h4>
           <div className="grid grid-cols-2 gap-x-4 text-[8.5pt]">
             <div className="space-y-1.5">

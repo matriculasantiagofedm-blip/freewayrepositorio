@@ -53,7 +53,8 @@ import {
   Bike, 
   CreditCard, 
   Clock,
-  RefreshCw
+  RefreshCw,
+  BookOpen
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useDb, useUser } from '@/components/firebase-provider';
@@ -257,6 +258,17 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
 
   const watchPlan = form.watch('coursePlan');
   const watchAdditional = form.watch('additionalService');
+  const watchTheorySchedule = form.watch('theoreticalClassSchedule');
+
+  // Actualizar número de fechas teóricas según horario elegido
+  useEffect(() => {
+    if (watchTheorySchedule && !isEdit) {
+      const count = watchTheorySchedule === 'Semanal 8:00 am a 10:00 am' ? 4 : 3;
+      const current = form.getValues('theoreticalClassDates') || [];
+      const newDates = Array.from({ length: count }, (_, i) => current[i] || new Date());
+      form.setValue('theoreticalClassDates', newDates);
+    }
+  }, [watchTheorySchedule, form, isEdit]);
 
   useEffect(() => {
     if (watchPlan && !isEdit) {
@@ -355,6 +367,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
   };
 
   const currentBalance = form.watch('courseValue') - form.watch('downPayment');
+  const theoryDates = form.watch('theoreticalClassDates') || [];
 
   return (
     <Form {...form}>
@@ -394,6 +407,80 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
                 )} />
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-md">
+          <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
+            <div className="flex items-center gap-2">
+              <Bike className="h-5 w-5 text-orange-600" />
+              <CardTitle className="text-sm font-bold uppercase tracking-wider">Configuración del Curso y Teoría</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <FormField control={form.control} name="licenseCategory" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Categoría</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="A, B">Tipo A y B</SelectItem>
+                        <SelectItem value="A, B, C">Tipo A, B y C</SelectItem>
+                        <SelectItem value="A, B, C, D">Tipo A, B, C y D</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+              )} />
+              <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Vehículo</FormLabel>
+                  <FormControl><Input value="Motocicleta" readOnly className="h-10 bg-muted/30 font-bold" /></FormControl>
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="theoreticalClassSchedule" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Horario de Teoría</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="Sabados 3:00 pm a 5:00 pm">Sábados 3:00 pm a 5:00 pm</SelectItem>
+                      <SelectItem value="Semanal 8:00 am a 10:00 am">Semanal 8:00 am a 10:00 am</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )} />
+            </div>
+
+            {watchTheorySchedule && (
+              <div className="space-y-4 pt-4 border-t">
+                <Label className="text-xs font-bold uppercase text-slate-700 flex items-center gap-2">
+                  <BookOpen className="h-3 w-3" /> Programación de Sesiones Teóricas
+                </Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  {theoryDates.map((_, i) => (
+                    <FormField key={i} control={form.control} name={`theoreticalClassDates.${i}`} render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel className="text-[10px] font-black uppercase text-slate-500">Sesión {i + 1}</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button variant="outline" className={cn("h-9 text-left font-normal text-xs", !field.value && "text-muted-foreground")}>
+                                {field.value ? format(toDate(field.value), "dd/MM/yyyy") : <span>Elegir</span>}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar mode="single" selected={toDate(field.value)} onSelect={field.onChange} initialFocus />
+                          </PopoverContent>
+                        </Popover>
+                      </FormItem>
+                    )} />
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

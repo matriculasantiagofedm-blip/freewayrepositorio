@@ -55,7 +55,8 @@ import {
   Package,
   Clock,
   Plus,
-  RefreshCw
+  RefreshCw,
+  BookOpen
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useDb, useUser } from '@/components/firebase-provider';
@@ -259,6 +260,17 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
 
   const watchPlan = form.watch('coursePlan');
   const watchAdditional = form.watch('additionalService');
+  const watchTheorySchedule = form.watch('theoreticalClassSchedule');
+
+  // Actualizar número de fechas teóricas según horario elegido
+  useEffect(() => {
+    if (watchTheorySchedule && !isEdit) {
+      const count = watchTheorySchedule === 'Semanal 8:00 am a 10:00 am' ? 4 : 3;
+      const current = form.getValues('theoreticalClassDates') || [];
+      const newDates = Array.from({ length: count }, (_, i) => current[i] || new Date());
+      form.setValue('theoreticalClassDates', newDates);
+    }
+  }, [watchTheorySchedule, form, isEdit]);
 
   useEffect(() => {
     if (watchPlan && !isEdit) {
@@ -372,6 +384,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
   };
 
   const currentBalance = form.watch('courseValue') - form.watch('downPayment');
+  const theoryDates = form.watch('theoreticalClassDates') || [];
 
   return (
     <Form {...form}>
@@ -493,6 +506,36 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
                 </FormItem>
               )} />
             </div>
+
+            {watchTheorySchedule && (
+              <div className="space-y-4 pt-4 border-t">
+                <Label className="text-xs font-bold uppercase text-slate-700 flex items-center gap-2">
+                  <BookOpen className="h-3 w-3" /> Programación de Sesiones Teóricas
+                </Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                  {theoryDates.map((_, i) => (
+                    <FormField key={i} control={form.control} name={`theoreticalClassDates.${i}`} render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel className="text-[10px] font-black uppercase text-slate-500">Sesión {i + 1}</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button variant="outline" className={cn("h-9 text-left font-normal text-xs", !field.value && "text-muted-foreground")}>
+                                {field.value ? format(toDate(field.value), "dd/MM/yyyy") : <span>Elegir</span>}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar mode="single" selected={toDate(field.value)} onSelect={field.onChange} initialFocus />
+                          </PopoverContent>
+                        </Popover>
+                      </FormItem>
+                    )} />
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -564,9 +607,9 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
                   <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Fecha Límite para Saldo</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <FormControl><Button variant="outline" className={cn("w-full h-10 pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP", { locale: es }) : <span>Elegir fecha</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
+                      <FormControl><Button variant="outline" className={cn("w-full h-10 pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(toDate(field.value), "PPP", { locale: es }) : <span>Elegir fecha</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                    <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={toDate(field.value)} onSelect={field.onChange} initialFocus /></PopoverContent>
                   </Popover>
                 </FormItem>
               )} />

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -7,22 +6,12 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useCollection } from '@/hooks/use-firestore';
 import { cn, toDate } from '@/lib/utils';
-import { collection, orderBy, query, limit } from 'firebase/firestore';
+import { collection, orderBy, query } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import type { Contract } from '@/lib/types';
-import { Car, Bike, Plus, History, Repeat, Dumbbell, Eye, FileText, CalendarCheck, Loader2 } from 'lucide-react';
-import { format, isToday } from 'date-fns';
-import { es } from 'date-fns/locale';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import { Car, Bike, Plus, Repeat, Dumbbell, CalendarCheck } from 'lucide-react';
+import { isToday } from 'date-fns';
 
 const getBalance = (contract: Contract): number => {
     const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
@@ -46,14 +35,7 @@ export default function DashboardPage() {
     return query(collection(db, 'contracts'), orderBy('createdAt', 'desc'));
   }, [db, user]);
 
-  // Query para los 10 contratos más recientes (Acceso rápido ampliado)
-  const recentContractsQuery = useMemo(() => {
-    if (!db || !user) return null;
-    return query(collection(db, 'contracts'), orderBy('createdAt', 'desc'), limit(10));
-  }, [db, user]);
-
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
-  const { data: recentContracts, isLoading: isLoadingRecent } = useCollection<Contract>(recentContractsQuery);
 
   const activeContracts = contracts?.filter((c) => c.status === 'active').length || 0;
   const todayContracts = contracts?.filter((c) => isToday(toDate(c.createdAt))).length || 0;
@@ -142,78 +124,6 @@ export default function DashboardPage() {
                 </Card>
             </Link>
         ))}
-      </div>
-
-      {/* REGISTROS RECIENTES */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between border-b pb-2">
-            <h2 className="text-xl font-bold font-headline text-slate-800 flex items-center gap-2">
-                <History className="h-5 w-5 text-primary" />
-                Historial Reciente de Trámites
-            </h2>
-            <Button variant="ghost" size="sm" asChild>
-                <Link href="/contracts" className="text-xs font-bold uppercase text-primary">Ver todos los contratos</Link>
-            </Button>
-        </div>
-        
-        <Card className="border-slate-200 shadow-sm overflow-hidden">
-            <Table>
-                <TableHeader className="bg-slate-50">
-                    <TableRow>
-                        <TableHead className="text-[10px] font-bold uppercase">Folio</TableHead>
-                        <TableHead className="text-[10px] font-bold uppercase">Estudiante</TableHead>
-                        <TableHead className="text-[10px] font-bold uppercase">Tipo de Trámite</TableHead>
-                        <TableHead className="text-[10px] font-bold uppercase">Fecha de Registro</TableHead>
-                        <TableHead className="text-[10px] font-bold uppercase text-right">Acción</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {isLoadingRecent ? (
-                        <TableRow><TableCell colSpan={5} className="text-center py-8"><Loader2 className="animate-spin h-5 w-5 mx-auto opacity-20" /></TableCell></TableRow>
-                    ) : recentContracts && recentContracts.length > 0 ? (
-                        recentContracts.map((contract) => {
-                            const contractDate = toDate(contract.createdAt);
-                            const todayLabel = isToday(contractDate);
-                            
-                            return (
-                                <TableRow key={contract.id} className="group hover:bg-slate-50/50">
-                                    <TableCell className="font-black text-primary text-xs">
-                                        {String(contract.folioNumber || '').padStart(6, '0')}
-                                    </TableCell>
-                                    <TableCell className="font-bold uppercase text-[11px]">{contract.clientName}</TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline" className={cn(
-                                            "text-[9px] font-black uppercase tracking-tighter",
-                                            contract.type === 'Ampliaciones' ? "bg-amber-50 text-amber-700 border-amber-200" :
-                                            contract.type === 'Curso Auto' ? "bg-blue-50 text-blue-700 border-blue-200" :
-                                            contract.type === 'Curso Moto' ? "bg-orange-50 text-orange-700 border-orange-200" :
-                                            "bg-slate-50 text-slate-700"
-                                        )}>
-                                            {contract.type}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-[10px] text-muted-foreground">
-                                        <div className="flex items-center gap-2">
-                                            {format(contractDate, 'dd/MM/yyyy HH:mm', { locale: es })}
-                                            {todayLabel && (
-                                                <Badge className="bg-primary hover:bg-primary text-[8px] h-4 px-1 animate-pulse">HOY</Badge>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity" asChild>
-                                            <Link href={`/contracts/${contract.id}`}><Eye className="h-4 w-4" /></Link>
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            );
-                        })
-                    ) : (
-                        <TableRow><TableCell colSpan={5} className="text-center py-12 text-muted-foreground italic text-xs">No se han realizado trámites recientemente.</TableCell></TableRow>
-                    )}
-                </TableBody>
-            </Table>
-        </Card>
       </div>
 
       {/* NUEVO TRÁMITE */}

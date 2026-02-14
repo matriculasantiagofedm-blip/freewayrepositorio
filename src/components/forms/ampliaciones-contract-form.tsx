@@ -2,7 +2,8 @@
 
 /**
  * FORMULARIO DE CONTRATO: AMPLIACIONES DE LICENCIA
- * Ubicación de guardado: Colección 'contracts' en Firestore.
+ * Título: AmpliacionesContractForm
+ * Identificación: Gestiona trámites de categorías adicionales compartiendo la numeración global de folios.
  */
 
 import { useState, useEffect } from 'react';
@@ -132,6 +133,7 @@ export function AmpliacionesContractForm() {
     setIsSaving(true);
     try {
       await runTransaction(db, async (transaction) => {
+        // UNIFICACIÓN: Usamos el contador global 'contracts_folio'
         const counterRef = doc(db, 'counters', 'contracts_folio');
         const counterDoc = await transaction.get(counterRef);
         let nextFolio = counterDoc.exists() ? counterDoc.data().count + 1 : 1;
@@ -146,9 +148,8 @@ export function AmpliacionesContractForm() {
         const contractRef = doc(collection(db, 'contracts'));
         const balance = values.courseValue - values.downPayment;
 
-        // AQUÍ SE GUARDA EN LA COLECCIÓN 'contracts'
         transaction.set(contractRef, {
-          title: `Ampliación ${values.licenseCategory}`,
+          title: `Contrato de Ampliación - Folio ${nextFolio}`,
           clientName: values.clientName,
           clientEmail: values.clientEmail,
           clientId: clientRef.id,
@@ -166,10 +167,11 @@ export function AmpliacionesContractForm() {
           }
         });
       });
-      toast({ title: 'Guardado', description: 'El contrato de ampliación se ha registrado en la base de datos.' });
+      toast({ title: 'Guardado', description: 'El contrato de ampliación se ha registrado con la numeración global de folios.' });
       router.push('/dashboard');
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo guardar el registro.' });
+      console.error("Error al guardar ampliación:", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo procesar el registro.' });
     } finally {
       setIsSaving(false);
     }

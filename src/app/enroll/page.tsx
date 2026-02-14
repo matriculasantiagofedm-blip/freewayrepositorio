@@ -2,12 +2,13 @@
 'use client';
 
 /**
- * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN CON DISPONIBILIDAD Y TEORÍA
+ * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN CON DISPONIBILIDAD, TEORÍA Y PAGOS
  * Esta página permite a prospectos:
  * 1. Ingresar sus datos personales.
  * 2. Elegir su horario de capacitación TEÓRICA.
  * 3. Consultar disponibilidad de clases PRÁCTICAS en tiempo real.
- * 4. Crear un registro en estado "draft" (borrador).
+ * 4. Seleccionar método de pago (Yappy, Tarjeta o Sucursal).
+ * 5. Crear un registro en estado "draft" (borrador).
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -38,6 +39,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import {
   Select,
@@ -49,6 +51,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Loader2, 
@@ -62,7 +65,11 @@ import {
   GanttChart,
   ShieldCheck,
   Ban,
-  BookOpen
+  BookOpen,
+  CreditCard,
+  Building2,
+  QrCode,
+  Smartphone
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useDb, useFirebase } from '@/components/firebase-provider';
@@ -122,6 +129,7 @@ const enrollmentSchema = z.object({
     date: z.date({ required_error: 'Fecha requerida' }),
     time: z.string().min(1, 'Hora requerida'),
   })).min(1, 'Debe elegir su horario'),
+  paymentMethod: z.enum(['yappy', 'credit_card', 'in_office'], { required_error: "Seleccione un método de pago" }),
 });
 
 type FormValues = z.infer<typeof enrollmentSchema>;
@@ -194,6 +202,7 @@ export default function PublicEnrollmentPage() {
       theoreticalClassSchedule: 'Sabados 3:00 pm a 5:00 pm',
       theoreticalClassDates: [],
       practicalClassSchedules: [],
+      paymentMethod: 'in_office',
     },
   });
 
@@ -204,6 +213,7 @@ export default function PublicEnrollmentPage() {
 
   const watchPlan = form.watch('coursePlan');
   const watchTheorySchedule = form.watch('theoreticalClassSchedule');
+  const watchPaymentMethod = form.watch('paymentMethod');
 
   // Actualizar conteo de clases prácticas según el plan
   useEffect(() => {
@@ -252,6 +262,7 @@ export default function PublicEnrollmentPage() {
               ...s,
               date: Timestamp.fromDate(s.date)
             })),
+            paymentType: values.paymentMethod === 'credit_card' ? 'credit' : values.paymentMethod === 'yappy' ? 'cash' : 'cash',
             courseValue: 0,
             downPayment: 0,
             balance: 0,
@@ -277,7 +288,11 @@ export default function PublicEnrollmentPage() {
             <CheckCircle2 className="h-10 w-10 text-green-600" />
           </div>
           <h1 className="text-2xl font-black text-slate-900 mb-2">¡Solicitud Recibida!</h1>
-          <p className="text-slate-600 mb-8">Registramos tu pre-inscripción. Acércate a nuestra sucursal para realizar el pago inicial y activar tu curso.</p>
+          <p className="text-slate-600 mb-8">
+            {watchPaymentMethod === 'in_office' 
+              ? 'Registramos tu pre-inscripción. Acércate a nuestra sucursal para realizar el pago inicial y activar tu curso.' 
+              : 'Registramos tu solicitud. Estaremos verificando tu pago para activar tu curso a la brevedad.'}
+          </p>
           <Button asChild className="w-full h-12 text-lg font-bold">
             <Link href="/">Volver al Inicio</Link>
           </Button>
@@ -297,8 +312,8 @@ export default function PublicEnrollmentPage() {
 
       <main className="p-4 md:p-8 max-w-4xl mx-auto space-y-8">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-black text-slate-900 font-headline uppercase tracking-tight">Inscripción Online Freeway</h1>
-          <p className="text-slate-500 font-medium">Completa tus datos y propón tu horario. Verifica la disponibilidad en tiempo real.</p>
+          <h1 className="text-3xl font-black text-slate-900 font-headline uppercase tracking-tight text-center sm:text-left">Inscripción Online Freeway</h1>
+          <p className="text-slate-500 font-medium text-center sm:text-left">Completa tus datos y propón tu horario. Verifica la disponibilidad en tiempo real.</p>
         </div>
 
         <Form {...form}>
@@ -311,28 +326,28 @@ export default function PublicEnrollmentPage() {
               <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField control={form.control} name="clientName" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase">Nombre Completo</FormLabel>
+                    <FormLabel className="text-xs font-bold uppercase text-muted-foreground">Nombre Completo</FormLabel>
                     <FormControl><Input placeholder="Como aparece en su cédula" {...field} className="h-11 uppercase font-bold" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="clientEmail" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase">Correo Electrónico</FormLabel>
+                    <FormLabel className="text-xs font-bold uppercase text-muted-foreground">Correo Electrónico</FormLabel>
                     <FormControl><Input type="email" placeholder="Para recibir su contrato" {...field} className="h-11" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase">Cédula o Pasaporte</FormLabel>
+                    <FormLabel className="text-xs font-bold uppercase text-muted-foreground">Cédula o Pasaporte</FormLabel>
                     <FormControl><Input placeholder="0-000-000" {...field} className="h-11 font-mono" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="studentPhone1" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-xs font-bold uppercase">Celular / WhatsApp</FormLabel>
+                    <FormLabel className="text-xs font-bold uppercase text-muted-foreground">Celular / WhatsApp</FormLabel>
                     <FormControl><Input placeholder="6000-0000" {...field} className="h-11" /></FormControl>
                     <FormMessage />
                   </FormItem>
@@ -340,7 +355,7 @@ export default function PublicEnrollmentPage() {
                 <div className="md:col-span-2">
                   <FormField control={form.control} name="studentAddress" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase">Dirección de Domicilio</FormLabel>
+                      <FormLabel className="text-xs font-bold uppercase text-muted-foreground">Dirección de Domicilio</FormLabel>
                       <FormControl><Input placeholder="Ubicación completa..." {...field} className="h-11" /></FormControl>
                       <FormMessage />
                     </FormItem>
@@ -360,7 +375,7 @@ export default function PublicEnrollmentPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField control={form.control} name="coursePlan" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase">Paquete de Manejo Deseado</FormLabel>
+                      <FormLabel className="text-xs font-bold uppercase text-muted-foreground">Paquete de Manejo Deseado</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl><SelectTrigger className="h-11"><SelectValue placeholder="Selecciona un plan..." /></SelectTrigger></FormControl>
                         <SelectContent>
@@ -372,7 +387,7 @@ export default function PublicEnrollmentPage() {
                   )} />
                   <FormField control={form.control} name="theoreticalClassSchedule" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase">Horario de Teoría</FormLabel>
+                      <FormLabel className="text-xs font-bold uppercase text-muted-foreground">Horario de Teoría</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl><SelectTrigger className="h-11"><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent>
@@ -386,7 +401,7 @@ export default function PublicEnrollmentPage() {
                 </div>
 
                 <div className="space-y-4 pt-4 border-t">
-                  <Label className="text-sm font-bold uppercase">Seleccione las fechas de sus sesiones teóricas:</Label>
+                  <Label className="text-sm font-bold uppercase text-slate-700">Seleccione las fechas de sus sesiones teóricas:</Label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                     {(form.watch('theoreticalClassDates') || []).map((_, i) => (
                       <FormField key={i} control={form.control} name={`theoreticalClassDates.${i}`} render={({ field }) => (
@@ -417,7 +432,7 @@ export default function PublicEnrollmentPage() {
                 <div className="flex flex-col gap-1">
                   <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
                     <FormItem className="max-w-xs">
-                      <FormLabel className="text-xs font-bold uppercase">Tipo de Auto</FormLabel>
+                      <FormLabel className="text-xs font-bold uppercase text-muted-foreground">Tipo de Auto</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger className="h-11"><SelectValue /></SelectTrigger></FormControl>
                         <SelectContent><SelectItem value="Automático">Automático</SelectItem><SelectItem value="Manual">Sincrónico (Manual)</SelectItem></SelectContent>
@@ -496,19 +511,143 @@ export default function PublicEnrollmentPage() {
               </CardContent>
             </Card>
 
+            {/* 4. MÉTODO DE PAGO */}
+            <Card className="shadow-lg border-none">
+              <CardHeader className="bg-emerald-600 text-white">
+                <CardTitle className="text-lg font-bold uppercase flex items-center gap-2">
+                    <CreditCard className="h-5 w-5" /> 4. Método de Pago de Reserva
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                <FormField
+                  control={form.control}
+                  name="paymentMethod"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel className="text-sm font-bold uppercase text-slate-700">Seleccione cómo desea realizar su pago inicial:</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                        >
+                          <FormItem>
+                            <FormControl>
+                              <RadioGroupItem value="yappy" className="sr-only" />
+                            </FormControl>
+                            <FormLabel className={cn(
+                              "flex flex-col items-center justify-between rounded-xl border-2 border-slate-100 bg-white p-4 hover:bg-slate-50 hover:border-emerald-200 cursor-pointer transition-all",
+                              field.value === 'yappy' && "border-emerald-500 bg-emerald-50/30 ring-1 ring-emerald-500"
+                            )}>
+                              <Smartphone className={cn("h-8 w-8 mb-2", field.value === 'yappy' ? "text-emerald-600" : "text-slate-400")} />
+                              <span className="font-bold text-sm uppercase">Yappy</span>
+                              <span className="text-[10px] text-muted-foreground text-center mt-1">Pago móvil inmediato</span>
+                            </FormLabel>
+                          </FormItem>
+
+                          <FormItem>
+                            <FormControl>
+                              <RadioGroupItem value="credit_card" className="sr-only" />
+                            </FormControl>
+                            <FormLabel className={cn(
+                              "flex flex-col items-center justify-between rounded-xl border-2 border-slate-100 bg-white p-4 hover:bg-slate-50 hover:border-blue-200 cursor-pointer transition-all",
+                              field.value === 'credit_card' && "border-blue-500 bg-blue-50/30 ring-1 ring-blue-500"
+                            )}>
+                              <CreditCard className={cn("h-8 w-8 mb-2", field.value === 'credit_card' ? "text-blue-600" : "text-slate-400")} />
+                              <span className="font-bold text-sm uppercase">Tarjeta Online</span>
+                              <span className="text-[10px] text-muted-foreground text-center mt-1">Visa o Mastercard</span>
+                            </FormLabel>
+                          </FormItem>
+
+                          <FormItem>
+                            <FormControl>
+                              <RadioGroupItem value="in_office" className="sr-only" />
+                            </FormControl>
+                            <FormLabel className={cn(
+                              "flex flex-col items-center justify-between rounded-xl border-2 border-slate-100 bg-white p-4 hover:bg-slate-50 hover:border-amber-200 cursor-pointer transition-all",
+                              field.value === 'in_office' && "border-amber-500 bg-amber-50/30 ring-1 ring-amber-500"
+                            )}>
+                              <Building2 className={cn("h-8 w-8 mb-2", field.value === 'in_office' ? "text-amber-600" : "text-slate-400")} />
+                              <span className="font-bold text-sm uppercase">En Sucursal</span>
+                              <span className="text-[10px] text-muted-foreground text-center mt-1">Efectivo o punto físico</span>
+                            </FormLabel>
+                          </FormItem>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="mt-6">
+                  {watchPaymentMethod === 'yappy' && (
+                    <div className="p-6 bg-slate-50 border rounded-2xl animate-in fade-in slide-in-from-top-2">
+                      <div className="flex flex-col sm:flex-row gap-6 items-center">
+                        <div className="bg-white p-4 rounded-xl border-2 border-emerald-100 shadow-sm">
+                          <QrCode className="h-32 w-32 text-slate-900" />
+                        </div>
+                        <div className="space-y-3 flex-1">
+                          <h4 className="font-black text-emerald-700 uppercase tracking-tight">Instrucciones de Yappy:</h4>
+                          <ul className="text-sm space-y-2 text-slate-600">
+                            <li className="flex items-center gap-2"><span className="h-5 w-5 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center text-[10px] font-bold">1</span> Buscar en el directorio: <strong>@freeway_escuela</strong></li>
+                            <li className="flex items-center gap-2"><span className="h-5 w-5 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center text-[10px] font-bold">2</span> Enviar monto de reserva (B/. 50.00)</li>
+                            <li className="flex items-center gap-2"><span className="h-5 w-5 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center text-[10px] font-bold">3</span> <strong>IMPORTANTE:</strong> Incluir su nombre completo en el comentario.</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {watchPaymentMethod === 'credit_card' && (
+                    <div className="p-6 bg-blue-50 border-2 border-blue-100 rounded-2xl animate-in fade-in slide-in-from-top-2 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-blue-100 p-2 rounded-full"><ShieldCheck className="h-5 w-5 text-blue-600" /></div>
+                        <h4 className="font-black text-blue-800 uppercase tracking-tight">Pago Seguro con Tarjeta:</h4>
+                      </div>
+                      <p className="text-sm text-blue-700 font-medium">Al finalizar la inscripción, serás redirigido a nuestra pasarela de pagos segura para completar la reserva de B/. 50.00.</p>
+                      <div className="flex gap-2 opacity-50 grayscale">
+                        <div className="h-8 w-12 bg-white border rounded"></div>
+                        <div className="h-8 w-12 bg-white border rounded"></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {watchPaymentMethod === 'in_office' && (
+                    <div className="p-6 bg-amber-50 border-2 border-amber-100 rounded-2xl animate-in fade-in slide-in-from-top-2 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-amber-100 p-2 rounded-full"><Building2 className="h-5 w-5 text-amber-600" /></div>
+                        <h4 className="font-black text-amber-800 uppercase tracking-tight">Pago en Oficina:</h4>
+                      </div>
+                      <p className="text-sm text-amber-700 font-medium">Puedes completar tu inscripción en nuestra sucursal de Costa Verde. Ten en cuenta que los horarios propuestos solo se confirmarán una vez realizado el pago.</p>
+                      <p className="text-[10px] text-amber-600 uppercase font-black">Horario: Lunes a Sábados 8:00 AM - 5:00 PM</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
             <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-xl">
                 <div className="flex gap-3">
                     <ShieldCheck className="h-5 w-5 text-blue-600 shrink-0" />
                     <div className="text-xs text-blue-800 space-y-1">
-                        <p className="font-bold uppercase">Nota Importante:</p>
-                        <p>Esta es una solicitud de pre-inscripción. Los horarios seleccionados quedarán reservados únicamente al momento de efectuar el pago inicial en nuestra sucursal. Los turnos están sujetos a disponibilidad al momento de la activación final.</p>
+                        <p className="font-bold uppercase">Nota de Compromiso:</p>
+                        <p>Al enviar este formulario, usted declara que los datos suministrados son verídicos. La reserva de horarios está sujeta a la validación del pago inicial.</p>
                     </div>
                 </div>
             </div>
 
-            <Button type="submit" disabled={isSaving || !watchPlan} className="w-full h-14 text-xl font-black shadow-xl uppercase tracking-widest bg-blue-600 hover:bg-blue-700">
-              {isSaving ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Save className="mr-2 h-6 w-6" />}
-              Finalizar Pre-Inscripción
+            <Button type="submit" disabled={isSaving || !watchPlan} className="w-full h-16 text-xl font-black shadow-xl uppercase tracking-widest bg-blue-600 hover:bg-blue-700">
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                  Procesando solicitud...
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-6 w-6" />
+                  Finalizar Pre-Inscripción
+                </>
+              )}
             </Button>
           </form>
         </Form>

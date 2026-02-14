@@ -2,7 +2,6 @@
 import type { Contract } from '@/lib/types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Card, CardContent } from './ui/card';
 import { cn, toDate } from '@/lib/utils';
 
 const Line = ({ children, className }: { children?: React.ReactNode, className?: string }) => (
@@ -92,25 +91,15 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
 
             <div className="mt-2">
                 <p className="font-bold">4. Horario para clases prácticas (Fecha y Hora):</p>
-                <div className="border border-black mt-1">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-slate-50 border-b border-black">
-                                <th className="p-1 border-r border-black text-[9pt] font-bold">Clase</th>
-                                <th className="p-1 border-r border-black text-[9pt] font-bold">Fecha</th>
-                                <th className="p-1 text-[9pt] font-bold">Hora</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {(details?.practicalClassSchedules || details?.motoPracticalClassSchedules || []).map((s, index) => (
-                                <tr key={index} className="border-b border-black last:border-0">
-                                    <td className="p-1 border-r border-black font-bold">○ Clase {index + 1}:</td>
-                                    <td className="p-1 border-r border-black">{formatDateStr(s.date)}</td>
-                                    <td className="p-1">{s.time || '---'}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                <div className="mt-1 pl-4 space-y-1">
+                    {(details?.practicalClassSchedules || details?.motoPracticalClassSchedules || []).map((s, index) => (
+                        <div key={index} className="flex items-center gap-x-4">
+                            <span className="font-bold min-w-[80px]">○ Clase {index + 1}:</span>
+                            <Line className="min-w-[100px] border-dotted">{formatDateStr(s.date)}</Line>
+                            <span className="font-bold">Hora:</span>
+                            <Line className="min-w-[150px] border-dotted">{s.time || '---'}</Line>
+                        </div>
+                    ))}
                 </div>
             </div>
           </div>

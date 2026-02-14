@@ -2,11 +2,12 @@
 'use client';
 
 /**
- * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN CON DISPONIBILIDAD
+ * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN CON DISPONIBILIDAD Y TEORÍA
  * Esta página permite a prospectos:
  * 1. Ingresar sus datos personales.
- * 2. Consultar disponibilidad en tiempo real (Libre/Ocupado).
- * 3. Crear un registro en estado "draft" (borrador).
+ * 2. Elegir su horario de capacitación TEÓRICA.
+ * 3. Consultar disponibilidad de clases PRÁCTICAS en tiempo real.
+ * 4. Crear un registro en estado "draft" (borrador).
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -60,7 +61,8 @@ import {
   CheckCircle2,
   GanttChart,
   ShieldCheck,
-  Ban
+  Ban,
+  BookOpen
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useDb, useFirebase } from '@/components/firebase-provider';
@@ -114,6 +116,8 @@ const enrollmentSchema = z.object({
   studentPhone1: z.string().min(7, 'Teléfono requerido'),
   vehicleTransmission: z.enum(['Automático', 'Manual']).default('Automático'),
   coursePlan: z.string({ required_error: "Seleccione un plan" }),
+  theoreticalClassSchedule: z.enum(['Sabados 3:00 pm a 5:00 pm', 'Semanal 8:00 am a 10:00 am'], { required_error: "Seleccione un horario teórico" }),
+  theoreticalClassDates: z.array(z.date()).min(3, 'Seleccione las fechas de sus sesiones teóricas'),
   practicalClassSchedules: z.array(z.object({
     date: z.date({ required_error: 'Fecha requerida' }),
     time: z.string().min(1, 'Hora requerida'),
@@ -187,6 +191,8 @@ export default function PublicEnrollmentPage() {
       studentPhone1: '',
       vehicleTransmission: 'Automático',
       coursePlan: '',
+      theoreticalClassSchedule: 'Sabados 3:00 pm a 5:00 pm',
+      theoreticalClassDates: [],
       practicalClassSchedules: [],
     },
   });
@@ -197,7 +203,9 @@ export default function PublicEnrollmentPage() {
   });
 
   const watchPlan = form.watch('coursePlan');
+  const watchTheorySchedule = form.watch('theoreticalClassSchedule');
 
+  // Actualizar conteo de clases prácticas según el plan
   useEffect(() => {
     if (watchPlan) {
       const count = PLAN_PRACTICAL_COUNTS[watchPlan] || 0;
@@ -209,6 +217,16 @@ export default function PublicEnrollmentPage() {
       replacePractical(newSchedules);
     }
   }, [watchPlan, replacePractical, form]);
+
+  // Actualizar número de fechas teóricas según horario elegido
+  useEffect(() => {
+    if (watchTheorySchedule) {
+      const count = watchTheorySchedule === 'Semanal 8:00 am a 10:00 am' ? 4 : 3;
+      const current = form.getValues('theoreticalClassDates') || [];
+      const newDates = Array.from({ length: count }, (_, i) => current[i] || new Date());
+      form.setValue('theoreticalClassDates', newDates);
+    }
+  }, [watchTheorySchedule, form]);
 
   const onSubmit = async (values: FormValues) => {
     if (!db || !auth.currentUser) return;
@@ -229,6 +247,7 @@ export default function PublicEnrollmentPage() {
           autoMotoDetails: {
             ...values,
             licenseCategory: 'A, C',
+            theoreticalClassDates: values.theoreticalClassDates.map(d => Timestamp.fromDate(d)),
             practicalClassSchedules: values.practicalClassSchedules.map(s => ({
               ...s,
               date: Timestamp.fromDate(s.date)
@@ -284,6 +303,7 @@ export default function PublicEnrollmentPage() {
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 pb-20">
+            {/* 1. INFORMACIÓN PERSONAL */}
             <Card className="shadow-lg border-none overflow-hidden">
               <CardHeader className="bg-primary text-white">
                 <CardTitle className="text-lg font-bold uppercase">1. Información Personal</CardTitle>
@@ -329,15 +349,18 @@ export default function PublicEnrollmentPage() {
               </CardContent>
             </Card>
 
+            {/* 2. CAPACITACIÓN TEÓRICA */}
             <Card className="shadow-lg border-none">
-              <CardHeader className="bg-slate-900 text-white">
-                <CardTitle className="text-lg font-bold uppercase">2. Selección de Horarios</CardTitle>
+              <CardHeader className="bg-slate-800 text-white">
+                <CardTitle className="text-lg font-bold uppercase flex items-center gap-2">
+                    <BookOpen className="h-5 w-5" /> 2. Capacitación Teórica
+                </CardTitle>
               </CardHeader>
-              <CardContent className="p-6 space-y-8">
+              <CardContent className="p-6 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField control={form.control} name="coursePlan" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase">Paquete Deseado</FormLabel>
+                      <FormLabel className="text-xs font-bold uppercase">Paquete de Manejo Deseado</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl><SelectTrigger className="h-11"><SelectValue placeholder="Selecciona un plan..." /></SelectTrigger></FormControl>
                         <SelectContent>
@@ -347,8 +370,53 @@ export default function PublicEnrollmentPage() {
                       <FormMessage />
                     </FormItem>
                   )} />
-                  <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
+                  <FormField control={form.control} name="theoreticalClassSchedule" render={({ field }) => (
                     <FormItem>
+                      <FormLabel className="text-xs font-bold uppercase">Horario de Teoría</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl><SelectTrigger className="h-11"><SelectValue /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          <SelectItem value="Sabados 3:00 pm a 5:00 pm">Sábados 3:00 pm a 5:00 pm</SelectItem>
+                          <SelectItem value="Semanal 8:00 am a 10:00 am">Semanal 8:00 am a 10:00 am</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+
+                <div className="space-y-4 pt-4 border-t">
+                  <Label className="text-sm font-bold uppercase">Seleccione las fechas de sus sesiones teóricas:</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                    {(form.watch('theoreticalClassDates') || []).map((_, i) => (
+                      <FormField key={i} control={form.control} name={`theoreticalClassDates.${i}`} render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel className="text-[10px] font-black uppercase text-slate-500">Sesión {i + 1}</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl><Button variant="outline" className={cn("h-10 text-left font-normal text-xs", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "dd/MM/yyyy") : <span>Elegir</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent>
+                          </Popover>
+                        </FormItem>
+                      )} />
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 3. SECCIÓN DE HORARIOS PRÁCTICOS */}
+            <Card className="shadow-lg border-none">
+              <CardHeader className="bg-blue-600 text-white">
+                <CardTitle className="text-lg font-bold uppercase flex items-center gap-2">
+                    <Car className="h-5 w-5" /> 3. Propuesta de Agenda Práctica
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-8">
+                <div className="flex flex-col gap-1">
+                  <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
+                    <FormItem className="max-w-xs">
                       <FormLabel className="text-xs font-bold uppercase">Tipo de Auto</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger className="h-11"><SelectValue /></SelectTrigger></FormControl>
@@ -359,12 +427,7 @@ export default function PublicEnrollmentPage() {
                 </div>
 
                 <div className="space-y-4 pt-4 border-t">
-                  <div className="flex flex-col gap-1">
-                    <Label className="text-sm font-bold uppercase flex items-center gap-2">
-                        <Clock className="h-4 w-4" /> Propuesta de Agenda Práctica
-                    </Label>
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold italic">Seleccione sus clases. El sistema le indicará si el turno está disponible.</p>
-                  </div>
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold italic">Seleccione sus clases prácticas. El sistema le indicará si el turno está disponible.</p>
                   
                   {!watchPlan ? (
                     <div className="p-12 text-center border-2 border-dashed rounded-xl bg-slate-50 text-slate-400 font-bold uppercase text-xs">Debe elegir un paquete de manejo arriba para programar sus horas</div>
@@ -407,7 +470,7 @@ export default function PublicEnrollmentPage() {
 
                             <FormField control={form.control} name={`practicalClassSchedules.${index}.date`} render={({ field: f }) => (
                               <FormItem className="flex flex-col">
-                                <FormLabel className="text-[10px] font-black uppercase text-slate-500">Clase {index + 1}</FormLabel>
+                                <FormLabel className="text-[10px] font-black uppercase text-slate-500">Clase Práctica {index + 1}</FormLabel>
                                 <Popover>
                                   <PopoverTrigger asChild>
                                     <FormControl><Button variant="outline" className={cn("h-10 text-left font-normal text-xs", !f.value && "text-muted-foreground")}>{f.value ? format(f.value, "PPP", { locale: es }) : "Elegir día"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
@@ -438,7 +501,7 @@ export default function PublicEnrollmentPage() {
                     <ShieldCheck className="h-5 w-5 text-blue-600 shrink-0" />
                     <div className="text-xs text-blue-800 space-y-1">
                         <p className="font-bold uppercase">Nota Importante:</p>
-                        <p>Esta es una solicitud de pre-inscripción. Los horarios seleccionados quedarán reservados únicamente al momento de efectuar el pago inicial en nuestra sucursal. Los turnos están sujetos a disponibilidad al momento de la activación.</p>
+                        <p>Esta es una solicitud de pre-inscripción. Los horarios seleccionados quedarán reservados únicamente al momento de efectuar el pago inicial en nuestra sucursal. Los turnos están sujetos a disponibilidad al momento de la activación final.</p>
                     </div>
                 </div>
             </div>

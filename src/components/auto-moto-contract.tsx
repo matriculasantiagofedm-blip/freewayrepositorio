@@ -48,7 +48,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
         La empresa <Value>FREEWAY ESCUELA DE MANEJO S.A.</Value>, con ubicación en La Chorrera, Vía Interamericana, Costa Verde, PH Green Plaza, Local #20, debidamente inscrita RUC <Value>155628022-2-2016 DV 2</Value>, en adelante denominada LA EMPRESA. Entre <Line>{contract.clientName}</Line>, identificado con <Value>{details?.idType || 'C.I.P.'} N.°</Value> <Line>{details?.studentIdNumber}</Line>, con domicilio en <Line>{details?.studentAddress}</Line>, teléfonos: <Line>{details?.studentPhone1} / {details?.studentPhone2 || '---'}</Line>, correo electrónico: <Line>{contract.clientEmail}</Line>, en adelante denominado EL ESTUDIANTE.
       </div>
 
-      <h2 className="text-center font-bold text-[11pt] mb-2">DECLARAN:</h2>
+      <h2 className="text-center font-bold text-[11pt] mb-2 uppercase italic underline">Declaran:</h2>
       <p className="text-justify mb-4">
         Ambas partes convienen celebrar este contrato en el cual la empresa se compromete a brindar al cliente, un servicio de capacitación y adiestramiento teórico y práctico relacionado con el aprendizaje de conducción de vehículos a motor. El mismo se regirá bajo los términos y condiciones que se detallan en las siguientes cláusulas:
       </p>
@@ -130,29 +130,32 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
             <p><span className="font-bold uppercase">CLÁUSULA SÉPTIMA - ACOMPAÑANTES Y ACCESO:</span> No se permite la presencia de acompañantes, niños o mascotas durante las clases.</p>
             <p><span className="font-bold uppercase">CLÁUSULA OCTAVA - CONDICIONES DE APTITUD:</span> EL ESTUDIANTE declara estar en pleno uso de sus facultades físicas y mentales.</p>
             <p><span className="font-bold uppercase">CLÁUSULA NOVENA - CANCELACIÓN DEL CONTRATO:</span> No habrá devolución de dinero bajo ninguna circunstancia.</p>
-            <p><span className="font-bold uppercase">CLÁUSULA DÉCIMA - CERTIFICACIÓN:</span> Se entregará únicamente al completar el curso y estar paz y salvo.</p>
+            <p><span className="font-bold uppercase">CLÁUSULA DÉCIMA - CERTIFICACIÓN:</span> El certificado de aprobación del curso será entregado únicamente si EL ESTUDIANTE: Está paz y salvo en sus pagos y ha completado la totalidad del curso teórico y práctico.</p>
+            <p><span className="font-bold uppercase">CLÁUSULA DÉCIMA PRIMERA - VIGENCIA DEL CURSO:</span> Si EL ESTUDIANTE no establece contacto para finalizar su curso en un plazo de tres (3) meses desde la fecha de inicio, se entenderá que renuncia a continuar, sin derecho a devolución del dinero ni a reclamos posteriores.</p>
+            
+            <section className="pt-2">
+                <h3 className="font-bold uppercase">CLÁUSULA DÉCIMA SEGUNDA - ACEPTACIÓN</h3>
+                <p className="text-justify leading-relaxed">
+                    En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los <Value>{!isNaN(creationDate.getTime()) ? format(creationDate, 'd', { locale: es }) : '---'}</Value> días del mes de <Value>{!isNaN(creationDate.getTime()) ? format(creationDate, 'MMMM', { locale: es }) : '---'}</Value>, de <Value>{!isNaN(creationDate.getTime()) ? format(creationDate, 'yyyy', { locale: es }) : '---'}</Value>, a las <Value>{!isNaN(creationDate.getTime()) ? format(creationDate, 'HH:mm', { locale: es }) : '---'}</Value>.
+                </p>
+            </section>
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="mt-12 text-center">
-        <p className="text-[10pt] mb-12">
-            Suscrito en Panamá, el <Value>{!isNaN(creationDate.getTime()) ? format(creationDate, 'd', { locale: es }) : '---'}</Value> de <Value>{!isNaN(creationDate.getTime()) ? format(creationDate, 'LLLL', { locale: es }) : '---'}</Value> de <Value>{!isNaN(creationDate.getTime()) ? format(creationDate, 'yyyy', { locale: es }) : '---'}</Value>.
-        </p>
-        <div className="flex justify-around px-12">
-            <div className="text-center w-[250px]">
-                <div className="border-t border-black mb-1"></div>
-                <p className="font-bold">Por la Empresa</p>
-            </div>
-            <div className="text-center w-[250px]">
-                <div className="border-t border-black mb-1"></div>
-                <p className="font-bold">El Estudiante</p>
-                <p className="text-[8pt]">ID: {details?.studentIdNumber}</p>
-            </div>
-        </div>
+      {/* Signatures */}
+      <div className="mt-20 flex justify-between px-12">
+          <div className="text-center w-[250px] flex flex-col items-center">
+              <div className="w-full border-t border-black mb-1"></div>
+              <p className="text-[9pt] font-bold">Por la Empresa</p>
+          </div>
+          <div className="text-center w-[250px] flex flex-col items-center">
+              <div className="w-full border-t border-black mb-1"></div>
+              <p className="text-[9pt] font-bold">El Cliente</p>
+              <p className="text-[8pt]">N° de identificación: <Value>{details?.studentIdNumber}</Value></p>
+          </div>
       </div>
 
-      <div className="mt-8 text-right text-[8pt] text-gray-500 italic">
+      <div className="mt-12 text-center text-[8pt] text-gray-500 italic">
         Confeccionado por: {contract.createdBy || 'Sistema'}
       </div>
     </div>

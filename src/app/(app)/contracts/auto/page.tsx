@@ -5,21 +5,22 @@ import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
-import { useDb } from '@/components/firebase-provider';
+import { useDb, useUser } from '@/components/firebase-provider';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 
 export default function ContractsAutoPage() {
   const db = useDb();
+  const { user } = useUser();
 
   const contractsQuery = useMemoQuery(() => {
-    if (!db) return null;
+    if (!db || !user) return null;
     // Desbloqueo total: Se eliminan filtros de usuario para ver todos los contratos de este tipo
     return query(
       collection(db, 'contracts'),
       where('type', '==', 'Curso Auto'),
       orderBy('folioNumber', 'desc')
     );
-  }, [db]);
+  }, [db, user]);
 
   const { data: autoContracts, isLoading } = useCollection<Contract>(contractsQuery);
 

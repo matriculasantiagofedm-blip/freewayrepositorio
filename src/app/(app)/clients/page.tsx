@@ -15,19 +15,20 @@ import {
 import { Button } from '@/components/ui/button';
 import { Eye, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { useDb } from '@/components/firebase-provider';
+import { useDb, useUser } from '@/components/firebase-provider';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 
 export default function ClientsPage() {
   const db = useDb();
+  const { user } = useUser();
   const { role } = useCurrentRole();
   const [searchTerm, setSearchTerm] = useState('');
 
   // DESBLOQUEO TOTAL: Todos los roles operativos ven el listado completo de clientes
   const clientsQuery = useMemoQuery(() => {
-    if (!db || !role || (role !== 'Administrador' && role !== 'Ventas' && role !== 'Ventas Externas')) return null;
+    if (!db || !user || !role || (role !== 'Administrador' && role !== 'Ventas' && role !== 'Ventas Externas')) return null;
     return collection(db, 'clients');
-  }, [db, role]);
+  }, [db, user, role]);
 
   const { data: clients, isLoading } = useCollection<Client>(clientsQuery);
 

@@ -19,9 +19,9 @@ export default function ClientDetailPage() {
   const clientId = Array.isArray(id) ? id[0] : id;
 
   const clientRef = useMemoDoc(() => {
-    if (!db || !clientId) return null;
+    if (!db || !clientId || !user) return null;
     return doc(db, `clients`, clientId);
-  }, [db, clientId]);
+  }, [db, clientId, user]);
 
   const contractsQuery = useMemoQuery(() => {
     if (!db || !user || !role) return null;

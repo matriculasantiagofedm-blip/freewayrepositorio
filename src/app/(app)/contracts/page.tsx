@@ -20,7 +20,7 @@ import { cn, toDate } from '@/lib/utils';
 import { Eye, Search, CheckCircle, XCircle } from 'lucide-react';
 import { useState, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useDb } from '@/components/firebase-provider';
+import { useDb, useUser } from '@/components/firebase-provider';
 import { useCollection } from '@/hooks/use-firestore';
 
 const getBalance = (contract: Contract): number => {
@@ -36,15 +36,16 @@ const isOverdue = (contract: Contract): boolean => {
 
 function AllContractsContent() {
   const db = useDb();
+  const { user } = useUser();
   const { role } = useCurrentRole();
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const filter = searchParams.get('filter');
 
   const contractsQuery = useMemo(() => {
-    if (!db) return null;
+    if (!db || !user) return null;
     return query(collection(db, 'contracts'), orderBy('folioNumber', 'desc'));
-  }, [db]);
+  }, [db, user]);
 
   const { data: allContracts, isLoading } = useCollection<Contract>(contractsQuery);
 

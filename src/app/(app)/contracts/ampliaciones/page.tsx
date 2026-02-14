@@ -11,21 +11,23 @@ import Link from 'next/link';
 import { ChevronLeft, Repeat, Plus } from 'lucide-react';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
-import { useDb } from '@/components/firebase-provider';
+import { useDb, useUser } from '@/components/firebase-provider';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
+import { cn } from '@/lib/utils';
 
 export default function ContractsAmpliacionesPage() {
   const db = useDb();
+  const { user } = useUser();
 
   // AQUÍ ES DONDE SE RECUPERAN LOS CONTRATOS GUARDADOS
   const contractsQuery = useMemoQuery(() => {
-    if (!db) return null;
+    if (!db || !user) return null;
     return query(
       collection(db, 'contracts'),
       where('type', '==', 'Ampliaciones'),
       orderBy('folioNumber', 'desc')
     );
-  }, [db]);
+  }, [db, user]);
 
   const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
 

@@ -55,6 +55,8 @@ import { cn, toDate } from '@/lib/utils';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import type { Contract } from '@/lib/types';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const LICENSE_CATEGORIES = ['B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];
 
@@ -142,23 +144,34 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
     setIsSaving(true);
     try {
       const balance = values.courseValue - values.downPayment;
+      const { clientName, clientEmail, ...detailsOnly } = values;
 
       if (isEdit) {
         const contractRef = doc(db, 'contracts', contract.id);
-        await updateDoc(contractRef, {
-          clientName: values.clientName,
-          clientEmail: values.clientEmail,
+        const updateData = {
+          clientName: clientName,
+          clientEmail: clientEmail,
           status: balance <= 0 ? 'completed' : contract.status,
           ampliacionesDetails: {
-            ...values,
-            paymentDeadline: Timestamp.fromDate(values.paymentDeadline),
-            theoreticalClassDate: Timestamp.fromDate(values.theoreticalClassDate),
+            ...detailsOnly,
+            paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null,
+            theoreticalClassDate: values.theoreticalClassDate ? Timestamp.fromDate(values.theoreticalClassDate) : null,
             balance: balance,
           },
           updatedAt: serverTimestamp(),
           updatedBy: role || 'Sistema',
-        });
-        toast({ title: 'Ampliación Actualizada', description: 'Cambios guardados con éxito.' });
+        };
+
+        updateDoc(contractRef, updateData)
+          .catch(async (error) => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: contractRef.path,
+              operation: 'update',
+              requestResourceData: updateData
+            }));
+          });
+
+        toast({ title: 'Ampliación Actualizada' });
         router.push(`/contracts/${contract.id}`);
       } else {
         await runTransaction(db, async (transaction) => {
@@ -169,15 +182,15 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
 
           const clientRef = doc(collection(db, 'clients'));
           transaction.set(clientRef, {
-            name: values.clientName, email: values.clientEmail, idNumber: values.studentIdNumber,
+            name: clientName, email: clientEmail, idNumber: values.studentIdNumber,
             phone: values.studentPhone1, createdAt: serverTimestamp(), userId: user.uid,
           });
 
           const contractRef = doc(collection(db, 'contracts'));
           transaction.set(contractRef, {
             title: `Contrato de Ampliación - Folio ${nextFolio}`,
-            clientName: values.clientName,
-            clientEmail: values.clientEmail,
+            clientName: clientName,
+            clientEmail: clientEmail,
             clientId: clientRef.id,
             folioNumber: nextFolio,
             type: 'Ampliaciones',
@@ -186,19 +199,19 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
             createdBy: role || 'Sistema',
             createdAt: serverTimestamp(),
             ampliacionesDetails: {
-              ...values,
-              paymentDeadline: Timestamp.fromDate(values.paymentDeadline),
-              theoreticalClassDate: Timestamp.fromDate(values.theoreticalClassDate),
+              ...detailsOnly,
+              paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null,
+              theoreticalClassDate: values.theoreticalClassDate ? Timestamp.fromDate(values.theoreticalClassDate) : null,
               balance: balance,
             }
           });
         });
-        toast({ title: 'Guardado', description: 'El contrato de ampliación se ha registrado exitosamente.' });
+        toast({ title: 'Ampliación Guardada' });
         router.push('/dashboard');
       }
     } catch (error) {
       console.error("Error al guardar ampliación:", error);
-      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo procesar el registro.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo guardar.' });
     } finally {
       setIsSaving(false);
     }

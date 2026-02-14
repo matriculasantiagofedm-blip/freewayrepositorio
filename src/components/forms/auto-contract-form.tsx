@@ -63,6 +63,8 @@ import { useCurrentRole } from '@/hooks/use-current-role';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { isPanamaHoliday } from '@/lib/holidays';
 import type { Contract } from '@/lib/types';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const AUTO_PLANS = [
   "Curso Auto Básico (8 Hrs)",
@@ -221,7 +223,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
     });
 
     allContracts?.forEach(c => {
-        if (isEdit && c.id === contract.id) return; // Excluir el contrato que estamos editando
+        if (isEdit && c.id === contract.id) return;
         const details = c.autoMotoDetails || c.deluxeDetails;
         const processSlots = (slots: any[]) => {
             slots.forEach(s => {
@@ -275,6 +277,8 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
 
     try {
       const balance = values.courseValue - values.downPayment;
+      const { clientName, clientEmail, ...detailsOnly } = values;
+
       const formattedTheoryDates = (values.theoreticalClassDates || []).map(d => Timestamp.fromDate(d));
       const formattedPracticalSchedules = (values.practicalClassSchedules || []).map(s => ({
         ...s,
@@ -283,21 +287,31 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
 
       if (isEdit) {
         const contractRef = doc(db, 'contracts', contract.id);
-        await updateDoc(contractRef, {
-          clientName: values.clientName,
-          clientEmail: values.clientEmail,
-          status: balance <= 0 ? 'completed' : contract.status,
+        const updateData = {
+          clientName: clientName,
+          clientEmail: clientEmail,
+          status: balance <= 0 ? 'completed' : (contract.status === 'draft' ? 'active' : contract.status),
           autoMotoDetails: {
-            ...values,
-            paymentDeadline: Timestamp.fromDate(values.paymentDeadline),
+            ...detailsOnly,
+            paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null,
             theoreticalClassDates: formattedTheoryDates,
             practicalClassSchedules: formattedPracticalSchedules,
             balance: balance,
           },
           updatedAt: serverTimestamp(),
           updatedBy: role || 'Sistema',
-        });
-        toast({ title: 'Contrato Actualizado', description: 'Los cambios se han guardado exitosamente.' });
+        };
+
+        updateDoc(contractRef, updateData)
+          .catch(async (error) => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: contractRef.path,
+              operation: 'update',
+              requestResourceData: updateData
+            }));
+          });
+
+        toast({ title: 'Contrato Actualizado' });
         router.push(`/contracts/${contract.id}`);
       } else {
         await runTransaction(db, async (transaction) => {
@@ -308,15 +322,15 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
 
           const clientRef = doc(collection(db, 'clients'));
           transaction.set(clientRef, {
-            name: values.clientName, email: values.clientEmail, idNumber: values.studentIdNumber,
+            name: clientName, email: clientEmail, idNumber: values.studentIdNumber,
             phone: values.studentPhone1, createdAt: serverTimestamp(), userId: user.uid,
           });
 
           const contractRef = doc(collection(db, 'contracts'));
           transaction.set(contractRef, {
             title: `Curso de Auto - Folio ${nextFolio}`,
-            clientName: values.clientName,
-            clientEmail: values.clientEmail,
+            clientName: clientName,
+            clientEmail: clientEmail,
             clientId: clientRef.id,
             folioNumber: nextFolio,
             type: 'Curso Auto',
@@ -325,20 +339,20 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
             createdBy: role || 'Sistema',
             createdAt: serverTimestamp(),
             autoMotoDetails: {
-              ...values,
-              paymentDeadline: Timestamp.fromDate(values.paymentDeadline),
+              ...detailsOnly,
+              paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null,
               theoreticalClassDates: formattedTheoryDates,
               practicalClassSchedules: formattedPracticalSchedules,
               balance: balance,
             }
           });
         });
-        toast({ title: 'Contrato Creado', description: 'El registro de auto se ha guardado exitosamente.' });
+        toast({ title: 'Contrato Creado' });
         router.push('/dashboard');
       }
     } catch (error: any) {
       console.error("Error saving contract:", error);
-      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo procesar la operación.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo guardar.' });
     } finally {
       setIsSaving(false);
     }

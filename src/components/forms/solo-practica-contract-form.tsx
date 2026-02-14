@@ -60,6 +60,8 @@ import { useCurrentRole } from '@/hooks/use-current-role';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { isPanamaHoliday } from '@/lib/holidays';
 import type { Contract } from '@/lib/types';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const PRACTICE_PLANS = ["Basico 8 Hrs", "Plus 10 Hrs", "Premium 12 Hrs"];
 const PLAN_PRICES: Record<string, number> = { "Basico 8 Hrs": 123.00, "Plus 10 Hrs": 135.00, "Premium 12 Hrs": 160.00 };
@@ -216,24 +218,35 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
 
     try {
       const balance = values.courseValue - values.downPayment;
+      const { clientName, clientEmail, ...detailsOnly } = values;
       const formattedPracticalSchedules = (values.practicalClassSchedules || []).map(s => ({ ...s, date: Timestamp.fromDate(s.date) }));
 
       if (isEdit) {
         const contractRef = doc(db, 'contracts', contract.id);
-        await updateDoc(contractRef, {
-          clientName: values.clientName,
-          clientEmail: values.clientEmail,
+        const updateData = {
+          clientName: clientName,
+          clientEmail: clientEmail,
           status: balance <= 0 ? 'completed' : contract.status,
           autoMotoDetails: {
-            ...values,
-            paymentDeadline: Timestamp.fromDate(values.paymentDeadline),
+            ...detailsOnly,
+            paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null,
             practicalClassSchedules: formattedPracticalSchedules,
             balance: balance,
           },
           updatedAt: serverTimestamp(),
           updatedBy: role || 'Sistema',
-        });
-        toast({ title: 'Práctica Actualizada', description: 'Registro guardado.' });
+        };
+
+        updateDoc(contractRef, updateData)
+          .catch(async (error) => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: contractRef.path,
+              operation: 'update',
+              requestResourceData: updateData
+            }));
+          });
+
+        toast({ title: 'Práctica Actualizada' });
         router.push(`/contracts/${contract.id}`);
       } else {
         await runTransaction(db, async (transaction) => {
@@ -244,15 +257,15 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
 
           const clientRef = doc(collection(db, 'clients'));
           transaction.set(clientRef, {
-            name: values.clientName, email: values.clientEmail, idNumber: values.studentIdNumber,
+            name: clientName, email: clientEmail, idNumber: values.studentIdNumber,
             phone: values.studentPhone1, createdAt: serverTimestamp(), userId: user.uid,
           });
 
           const contractRef = doc(collection(db, 'contracts'));
           transaction.set(contractRef, {
             title: `Solo Práctica - Folio ${nextFolio}`,
-            clientName: values.clientName,
-            clientEmail: values.clientEmail,
+            clientName: clientName,
+            clientEmail: clientEmail,
             clientId: clientRef.id,
             folioNumber: nextFolio,
             type: 'Curso Solo Practica',
@@ -261,19 +274,19 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
             createdBy: role || 'Sistema',
             createdAt: serverTimestamp(),
             autoMotoDetails: {
-              ...values,
-              paymentDeadline: Timestamp.fromDate(values.paymentDeadline),
+              ...detailsOnly,
+              paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null,
               practicalClassSchedules: formattedPracticalSchedules,
               balance: balance,
             }
           });
         });
-        toast({ title: 'Trámite Registrado', description: 'El contrato de solo práctica se ha guardado correctamente.' });
+        toast({ title: 'Práctica Guardada' });
         router.push('/dashboard');
       }
     } catch (error: any) {
       console.error("Error saving contract:", error);
-      toast({ variant: 'destructive', title: 'Error', description: 'Fallo al procesar el registro.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo guardar.' });
     } finally {
       setIsSaving(false);
     }

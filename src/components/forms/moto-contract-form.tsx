@@ -61,6 +61,8 @@ import { useCurrentRole } from '@/hooks/use-current-role';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { isPanamaHoliday } from '@/lib/holidays';
 import type { Contract } from '@/lib/types';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const MOTO_PLANS = [
   "Curso Moto Básico (8 Hrs)",
@@ -261,26 +263,38 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
 
     try {
       const balance = values.courseValue - values.downPayment;
+      const { clientName, clientEmail, ...detailsOnly } = values;
+
       const formattedTheoryDates = (values.theoreticalClassDates || []).map(d => Timestamp.fromDate(d));
       const formattedPracticalSchedules = (values.practicalClassSchedules || []).map(s => ({ ...s, date: Timestamp.fromDate(s.date) }));
 
       if (isEdit) {
         const contractRef = doc(db, 'contracts', contract.id);
-        await updateDoc(contractRef, {
-          clientName: values.clientName,
-          clientEmail: values.clientEmail,
-          status: balance <= 0 ? 'completed' : contract.status,
+        const updateData = {
+          clientName: clientName,
+          clientEmail: clientEmail,
+          status: balance <= 0 ? 'completed' : (contract.status === 'draft' ? 'active' : contract.status),
           autoMotoDetails: {
-            ...values,
-            paymentDeadline: Timestamp.fromDate(values.paymentDeadline),
+            ...detailsOnly,
+            paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null,
             theoreticalClassDates: formattedTheoryDates,
             motoPracticalClassSchedules: formattedPracticalSchedules,
             balance: balance,
           },
           updatedAt: serverTimestamp(),
           updatedBy: role || 'Sistema',
-        });
-        toast({ title: 'Moto Actualizada', description: 'Registro guardado correctamente.' });
+        };
+
+        updateDoc(contractRef, updateData)
+          .catch(async (error) => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: contractRef.path,
+              operation: 'update',
+              requestResourceData: updateData
+            }));
+          });
+
+        toast({ title: 'Moto Actualizada' });
         router.push(`/contracts/${contract.id}`);
       } else {
         await runTransaction(db, async (transaction) => {
@@ -291,15 +305,15 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
 
           const clientRef = doc(collection(db, 'clients'));
           transaction.set(clientRef, {
-            name: values.clientName, email: values.clientEmail, idNumber: values.studentIdNumber,
+            name: clientName, email: clientEmail, idNumber: values.studentIdNumber,
             phone: values.studentPhone1, createdAt: serverTimestamp(), userId: user.uid,
           });
 
           const contractRef = doc(collection(db, 'contracts'));
           transaction.set(contractRef, {
             title: `Curso de Moto - Folio ${nextFolio}`,
-            clientName: values.clientName,
-            clientEmail: values.clientEmail,
+            clientName: clientName,
+            clientEmail: clientEmail,
             clientId: clientRef.id,
             folioNumber: nextFolio,
             type: 'Curso Moto',
@@ -308,15 +322,15 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
             createdBy: role || 'Sistema',
             createdAt: serverTimestamp(),
             autoMotoDetails: {
-              ...values,
-              paymentDeadline: Timestamp.fromDate(values.paymentDeadline),
+              ...detailsOnly,
+              paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null,
               theoreticalClassDates: formattedTheoryDates,
               motoPracticalClassSchedules: formattedPracticalSchedules,
               balance: balance,
             }
           });
         });
-        toast({ title: 'Contrato Creado', description: 'El registro de moto se ha guardado exitosamente.' });
+        toast({ title: 'Contrato Creado' });
         router.push('/dashboard');
       }
     } catch (error: any) {
@@ -353,7 +367,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
               </div>
               <div className="col-span-12 md:col-span-6">
                 <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Cédula / Pasaporte</FormLabel><FormControl><Input placeholder="Ej: 8-000-000" {...field} className="h-9 font-mono" readOnly={isEdit} /></FormControl></FormItem>
+                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Cédula / Pasaporte</FormLabel><FormControl><Input placeholder="Ej: 8-000-000" {...field} className="h-9 font-mono" readOnly={isEdit} /></FormControl><FormMessage /></FormItem>
                 )} />
               </div>
               <div className="col-span-12 md:col-span-6">

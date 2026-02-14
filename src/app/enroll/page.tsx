@@ -1,14 +1,15 @@
+
 'use client';
 
 /**
- * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN
- * Esta página es accesible sin contraseña y permite a prospectos:
+ * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN CON DISPONIBILIDAD
+ * Esta página permite a prospectos:
  * 1. Ingresar sus datos personales.
- * 2. Proponer sus horarios de clases prácticas.
- * 3. Crear un registro en estado "draft" (borrador) que no afecta agendas oficiales.
+ * 2. Consultar disponibilidad en tiempo real (Libre/Ocupado).
+ * 3. Crear un registro en estado "draft" (borrador).
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -22,8 +23,7 @@ import {
   serverTimestamp, 
   Timestamp,
   query,
-  where,
-  getDocs
+  where
 } from 'firebase/firestore';
 import { signInAnonymously } from 'firebase/auth';
 
@@ -58,11 +58,15 @@ import {
   Clock,
   AlertTriangle,
   CheckCircle2,
-  GanttChart
+  GanttChart,
+  ShieldCheck,
+  Ban
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useDb, useFirebase } from '@/components/firebase-provider';
 import Link from 'next/link';
+import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
+import { isPanamaHoliday } from '@/lib/holidays';
 
 const AUTO_PLANS = [
   "Curso Auto Básico (8 Hrs)",
@@ -82,6 +86,24 @@ const TIME_OPTIONS = [
   "01:00pm a 03:00pm",
   "03:00pm a 05:00pm"
 ];
+
+const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
+    '08:00am a 10:00am': '8am-10am',
+    '10:00am a 12:00pm': '10am-12pm',
+    '01:00pm a 03:00pm': '1pm-3pm',
+    '03:00pm a 05:00pm': '3pm-5pm',
+};
+
+const getGlobalCapacity = (date: Date, slotId: string) => {
+    const day = date.getDay(); 
+    if (day === 0) return 0; 
+    if (slotId === '8am-10am') {
+        if (day === 1) return 3;
+        if (day >= 2 && day <= 5) return 2;
+    }
+    if (day === 6 && slotId === '3pm-5pm') return 2;
+    return 3;
+};
 
 const enrollmentSchema = z.object({
   clientName: z.string().min(3, 'El nombre es requerido'),
@@ -106,6 +128,47 @@ export default function PublicEnrollmentPage() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  // Carga de datos para disponibilidad
+  const activeContractsQuery = useMemoQuery(() => (db && auth.currentUser) ? query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed'])) : null, [db, auth.currentUser]);
+  const manualEntriesQuery = useMemoQuery(() => (db && auth.currentUser) ? query(collection(db, 'manual_schedules')) : null, [db, auth.currentUser]);
+  
+  const { data: allContracts } = useCollection<any>(activeContractsQuery);
+  const { data: allManualEntries } = useCollection<any>(manualEntriesQuery);
+
+  const availabilityData = useMemo(() => {
+    const globalCounts: Record<string, number> = {};
+    
+    const processEntry = (date: any, slotString: string) => {
+        if (!date || !slotString) return;
+        const dObj = toDate(date);
+        if (isNaN(dObj.getTime())) return;
+
+        const dateKey = format(dObj, 'yyyy-MM-dd');
+        const slotId = TIME_STRING_TO_SLOT_MAP[slotString] || slotString;
+        const sKey = `${dateKey}|${slotId}`;
+        globalCounts[sKey] = (globalCounts[sKey] || 0) + 1;
+    };
+
+    allManualEntries?.forEach(entry => {
+        if (entry.classType === 'Teórica') return;
+        processEntry(entry.date, entry.timeSlot);
+    });
+
+    allContracts?.forEach(c => {
+        const details = c.autoMotoDetails || c.deluxeDetails;
+        const processSlots = (slots: any[]) => {
+            slots.forEach(s => {
+                processEntry(s.date, s.time);
+            });
+        };
+        if (c.autoMotoDetails?.practicalClassSchedules) processSlots(c.autoMotoDetails.practicalClassSchedules);
+        if (c.autoMotoDetails?.motoPracticalClassSchedules) processSlots(c.autoMotoDetails.motoPracticalClassSchedules);
+        if (c.deluxeDetails?.classSchedules) processSlots(c.deluxeDetails.classSchedules);
+    });
+
+    return { globalCounts };
+  }, [allContracts, allManualEntries]);
 
   useEffect(() => {
     if (auth && !auth.currentUser) {
@@ -215,28 +278,28 @@ export default function PublicEnrollmentPage() {
 
       <main className="p-4 md:p-8 max-w-4xl mx-auto space-y-8">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-black text-slate-900 font-headline uppercase tracking-tight">Formulario de Inscripción Online</h1>
-          <p className="text-slate-500 font-medium">Completa tus datos y propón tu horario para clases prácticas.</p>
+          <h1 className="text-3xl font-black text-slate-900 font-headline uppercase tracking-tight">Inscripción Online Freeway</h1>
+          <p className="text-slate-500 font-medium">Completa tus datos y propón tu horario. Verifica la disponibilidad en tiempo real.</p>
         </div>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 pb-20">
             <Card className="shadow-lg border-none overflow-hidden">
               <CardHeader className="bg-primary text-white">
-                <CardTitle className="text-lg font-bold uppercase">Datos Personales</CardTitle>
+                <CardTitle className="text-lg font-bold uppercase">1. Información Personal</CardTitle>
               </CardHeader>
               <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField control={form.control} name="clientName" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase">Nombre Completo</FormLabel>
-                    <FormControl><Input placeholder="Nombre y Apellidos" {...field} className="h-11 uppercase font-bold" /></FormControl>
+                    <FormControl><Input placeholder="Como aparece en su cédula" {...field} className="h-11 uppercase font-bold" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="clientEmail" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase">Correo Electrónico</FormLabel>
-                    <FormControl><Input type="email" placeholder="Para enviarte notificaciones" {...field} className="h-11" /></FormControl>
+                    <FormControl><Input type="email" placeholder="Para recibir su contrato" {...field} className="h-11" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -258,7 +321,7 @@ export default function PublicEnrollmentPage() {
                   <FormField control={form.control} name="studentAddress" render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-bold uppercase">Dirección de Domicilio</FormLabel>
-                      <FormControl><Input placeholder="Provincia, Distrito, Calle y Casa..." {...field} className="h-11" /></FormControl>
+                      <FormControl><Input placeholder="Ubicación completa..." {...field} className="h-11" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
@@ -268,13 +331,13 @@ export default function PublicEnrollmentPage() {
 
             <Card className="shadow-lg border-none">
               <CardHeader className="bg-slate-900 text-white">
-                <CardTitle className="text-lg font-bold uppercase">Elección de Curso y Horario</CardTitle>
+                <CardTitle className="text-lg font-bold uppercase">2. Selección de Horarios</CardTitle>
               </CardHeader>
               <CardContent className="p-6 space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField control={form.control} name="coursePlan" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase">Paquete de Manejo</FormLabel>
+                      <FormLabel className="text-xs font-bold uppercase">Paquete Deseado</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl><SelectTrigger className="h-11"><SelectValue placeholder="Selecciona un plan..." /></SelectTrigger></FormControl>
                         <SelectContent>
@@ -286,57 +349,103 @@ export default function PublicEnrollmentPage() {
                   )} />
                   <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-xs font-bold uppercase">Transmisión</FormLabel>
+                      <FormLabel className="text-xs font-bold uppercase">Tipo de Auto</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger className="h-11"><SelectValue /></SelectTrigger></FormControl>
-                        <SelectContent><SelectItem value="Automático">Automático</SelectItem><SelectItem value="Manual">Manual</SelectItem></SelectContent>
+                        <SelectContent><SelectItem value="Automático">Automático</SelectItem><SelectItem value="Manual">Sincrónico (Manual)</SelectItem></SelectContent>
                       </Select>
                     </FormItem>
                   )} />
                 </div>
 
                 <div className="space-y-4 pt-4 border-t">
-                  <Label className="text-sm font-bold uppercase flex items-center gap-2">
-                    <Clock className="h-4 w-4" /> Propuesta de Horario Práctico
-                  </Label>
-                  <p className="text-xs text-muted-foreground italic">Elige las fechas que mejor te convengan. Sujeto a confirmación.</p>
+                  <div className="flex flex-col gap-1">
+                    <Label className="text-sm font-bold uppercase flex items-center gap-2">
+                        <Clock className="h-4 w-4" /> Propuesta de Agenda Práctica
+                    </Label>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold italic">Seleccione sus clases. El sistema le indicará si el turno está disponible.</p>
+                  </div>
                   
                   {!watchPlan ? (
-                    <div className="p-12 text-center border-2 border-dashed rounded-xl bg-slate-50 text-slate-400 font-bold uppercase text-xs">Selecciona un paquete arriba para elegir horas</div>
+                    <div className="p-12 text-center border-2 border-dashed rounded-xl bg-slate-50 text-slate-400 font-bold uppercase text-xs">Debe elegir un paquete de manejo arriba para programar sus horas</div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {practicalFields.map((field, index) => (
-                        <div key={field.id} className="p-4 border rounded-2xl space-y-3 bg-white border-slate-200">
-                          <FormField control={form.control} name={`practicalClassSchedules.${index}.date`} render={({ field: f }) => (
-                            <FormItem className="flex flex-col">
-                              <FormLabel className="text-[10px] font-black uppercase text-slate-500">Clase {index + 1}</FormLabel>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <FormControl><Button variant="outline" className="h-10 text-left font-normal text-xs">{f.value ? format(f.value, "PPP", { locale: es }) : "Elegir día"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={f.value} onSelect={f.onChange} initialFocus disabled={(date) => date < new Date() || date.getDay() === 0} /></PopoverContent>
-                              </Popover>
-                            </FormItem>
-                          )} />
-                          <FormField control={form.control} name={`practicalClassSchedules.${index}.time`} render={({ field: f }) => (
-                            <FormItem>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl><SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger></FormControl>
-                                <SelectContent>{TIME_OPTIONS.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent>
-                              </Select>
-                            </FormItem>
-                          )} />
-                        </div>
-                      ))}
+                      {practicalFields.map((field, index) => {
+                        const watchDate = form.watch(`practicalClassSchedules.${index}.date`);
+                        const watchTime = form.watch(`practicalClassSchedules.${index}.time`);
+                        
+                        const dObj = toDate(watchDate);
+                        const isValidDate = !isNaN(dObj.getTime());
+                        const holiday = isValidDate ? isPanamaHoliday(dObj) : null;
+                        const isSunday = isValidDate && dObj.getDay() === 0;
+                        
+                        const slotId = TIME_STRING_TO_SLOT_MAP[watchTime] || watchTime;
+                        const dateKey = isValidDate ? format(dObj, 'yyyy-MM-dd') : '';
+                        const occupancy = availabilityData.globalCounts[`${dateKey}|${slotId}`] || 0;
+                        const capacity = isValidDate ? getGlobalCapacity(dObj, slotId) : 3;
+                        const isFull = occupancy >= capacity;
+
+                        return (
+                          <div key={field.id} className={cn(
+                            "p-4 border rounded-2xl space-y-3 bg-white transition-colors relative",
+                            (isFull || holiday || isSunday) ? "border-amber-500 bg-amber-50/10" : "border-slate-200"
+                          )}>
+                            <div className="absolute -top-2 right-3 flex gap-1 z-10">
+                                {isSunday && <div className="bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Cerrado Domingos</div>}
+                                {holiday && !isSunday && <div className="bg-orange-500 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Feriado</div>}
+                                {isFull && !holiday && !isSunday && (
+                                    <div className="bg-amber-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase flex items-center gap-1">
+                                        <Ban className="h-2 w-2" /> Turno Lleno
+                                    </div>
+                                )}
+                                {!isFull && !holiday && !isSunday && isValidDate && watchTime && (
+                                    <div className="bg-green-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase flex items-center gap-1">
+                                        <CheckCircle2 className="h-2 w-2" /> Disponible
+                                    </div>
+                                )}
+                            </div>
+
+                            <FormField control={form.control} name={`practicalClassSchedules.${index}.date`} render={({ field: f }) => (
+                              <FormItem className="flex flex-col">
+                                <FormLabel className="text-[10px] font-black uppercase text-slate-500">Clase {index + 1}</FormLabel>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <FormControl><Button variant="outline" className={cn("h-10 text-left font-normal text-xs", !f.value && "text-muted-foreground")}>{f.value ? format(f.value, "PPP", { locale: es }) : "Elegir día"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={f.value} onSelect={f.onChange} initialFocus disabled={(date) => date < new Date() || date.getDay() === 0} /></PopoverContent>
+                                </Popover>
+                              </FormItem>
+                            )} />
+                            <FormField control={form.control} name={`practicalClassSchedules.${index}.time`} render={({ field: f }) => (
+                              <FormItem>
+                                <Select onValueChange={f.onChange} value={f.value}>
+                                  <FormControl><SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger></FormControl>
+                                  <SelectContent>{TIME_OPTIONS.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent>
+                                </Select>
+                              </FormItem>
+                            )} />
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
               </CardContent>
             </Card>
 
+            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-xl">
+                <div className="flex gap-3">
+                    <ShieldCheck className="h-5 w-5 text-blue-600 shrink-0" />
+                    <div className="text-xs text-blue-800 space-y-1">
+                        <p className="font-bold uppercase">Nota Importante:</p>
+                        <p>Esta es una solicitud de pre-inscripción. Los horarios seleccionados quedarán reservados únicamente al momento de efectuar el pago inicial en nuestra sucursal. Los turnos están sujetos a disponibilidad al momento de la activación.</p>
+                    </div>
+                </div>
+            </div>
+
             <Button type="submit" disabled={isSaving || !watchPlan} className="w-full h-14 text-xl font-black shadow-xl uppercase tracking-widest bg-blue-600 hover:bg-blue-700">
               {isSaving ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Save className="mr-2 h-6 w-6" />}
-              Enviar Solicitud
+              Finalizar Pre-Inscripción
             </Button>
           </form>
         </Form>

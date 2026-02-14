@@ -26,6 +26,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { isPanamaHoliday } from '@/lib/holidays';
+import { useCurrentRole } from '@/hooks/use-current-role';
 
 const TIME_SLOTS: { id: TimeSlot; label: string }[] = [
     { id: '8am-10am', label: '08:00 - 10:00' },
@@ -65,6 +66,7 @@ export default function VehicleScheduleReportPage() {
   const db = useDb();
   const { user } = useUser();
   const { toast } = useToast();
+  const { role } = useCurrentRole();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [weeklyAssignments, setWeeklyAssignments] = useState<Map<string, any[]>>(new Map());
   const [isUpdating, setIsUpdating] = useState(false);
@@ -257,9 +259,13 @@ export default function VehicleScheduleReportPage() {
                                                     <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-red-600 hover:bg-red-50" onClick={() => handleUpdateStatus(a, 'missed')}>
                                                         <AlertCircle className="h-3.5 w-3.5" /> No Asistió
                                                     </Button>
-                                                    <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2" onClick={() => handleUpdateStatus(a, 'scheduled')}>
-                                                        <Timer className="h-3.5 w-3.5 text-blue-600" /> Restablecer Programada
-                                                    </Button>
+                                                    
+                                                    {role === 'Administrador' && (
+                                                        <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2" onClick={() => handleUpdateStatus(a, 'scheduled')}>
+                                                            <Timer className="h-3.5 w-3.5 text-blue-600" /> Restablecer Programada
+                                                        </Button>
+                                                    )}
+
                                                     {a.status === 'missed' && (
                                                         <Button variant="secondary" size="sm" className="h-8 w-full text-[10px] font-black uppercase gap-2 bg-green-600 text-white hover:bg-green-700" onClick={() => handleNotifyWhatsApp(a)}>
                                                             <MessageSquare className="h-3.5 w-3.5" /> Notificar WhatsApp

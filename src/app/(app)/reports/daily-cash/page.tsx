@@ -99,8 +99,6 @@ export default function DailyCashReportPage() {
       const fetchedTransactions: Transaction[] = [];
 
       try {
-        const isAdmin = role === 'Administrador';
-
         const createDateQuery = (collName: string) => {
             const baseRef = collection(db, collName);
             const dateField = (collName === 'contracts') ? 'createdAt' : 'paymentDate';
@@ -124,13 +122,10 @@ export default function DailyCashReportPage() {
             getDocs(createDateQuery('book_sale_payments'))
         ]);
 
-        const filterByRole = (snapshot: any) => {
-            if (isAdmin) return snapshot.docs;
-            // Garantizar que Ventas Externas y otros vean sus propios contratos
-            return snapshot.docs.filter((doc: any) => doc.data().createdBy === role);
-        }
+        // Se procesan todos los documentos sin filtrar por rol de usuario actual
+        // para que la caja sea global y refleje el trabajo de todo el equipo.
 
-        filterByRole(contractsSnapshot).forEach((doc: any) => {
+        contractsSnapshot.docs.forEach((doc: any) => {
             const contract = { id: doc.id, ...doc.data() } as Contract;
             if (contract.status === 'expired') return;
 
@@ -138,13 +133,12 @@ export default function DailyCashReportPage() {
             let amount: number = 0;
             let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
             
-            let studentId = contract.autoMotoDetails?.studentIdNumber || contract.deluxeDetails?.studentIdNumber || contract.ampliacionesDetails?.studentIdNumber || '';
+            let studentId = contract.autoMotoDetails?.studentIdNumber || contract.deluxeDetails?.studentIdNumber || contract.ampliacionesDetails?.studentIdNumber || contract.studentIdNumber || '';
 
             if (contract.type === 'Curso Deluxe') {
                 paymentType = contract.deluxeDetails?.paymentType || 'cash';
                 amount = 15.00;
             } else {
-                // Captura abonos de cualquier tipo de contrato (Auto, Moto, Mixto, Solo Práctica, Ampliación)
                 const details = contract.autoMotoDetails || contract.ampliacionesDetails;
                 paymentType = details?.paymentType || 'cash';
                 amount = details?.downPayment || 0;
@@ -171,7 +165,7 @@ export default function DailyCashReportPage() {
             }
         });
 
-        filterByRole(cancellationSnapshot).forEach((doc: any) => {
+        cancellationSnapshot.docs.forEach((doc: any) => {
             const payment = doc.data() as Payment;
             const amount = payment.amount || 0;
             const pType = payment.paymentType || 'cash';
@@ -196,12 +190,12 @@ export default function DailyCashReportPage() {
             });
         });
 
-        filterByRole(updateSnapshot).forEach((doc: any) => {
+        updateSnapshot.docs.forEach((doc: any) => {
             const payment = doc.data() as Payment;
             const amount = payment.amount || 0;
             const pType = payment.paymentType || 'cash';
 
-            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
+            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, Sedan: 0, general: 0, cheques: 0 };
             if (paymentColumns.hasOwnProperty(pType)) {
                 paymentColumns[pType] = amount;
             } else {
@@ -221,7 +215,7 @@ export default function DailyCashReportPage() {
             });
         });
 
-        filterByRole(bookSaleSnapshot).forEach((doc: any) => {
+        bookSaleSnapshot.docs.forEach((doc: any) => {
             const payment = doc.data() as BookSalePayment;
             const amount = payment.amount || 0;
             const pType = payment.paymentType || 'cash';
@@ -261,11 +255,11 @@ export default function DailyCashReportPage() {
   }, [db, reportDate, user, role, isUserLoading, isRoleLoading]);
 
   const filteredTransactions = useMemo(() => {
-    if (role !== 'Administrador' || sellerFilter === 'all') {
+    if (sellerFilter === 'all') {
       return transactions;
     }
     return transactions.filter(t => t.createdBy === sellerFilter);
-  }, [transactions, sellerFilter, role]);
+  }, [transactions, sellerFilter]);
 
   const transactionTotals = useMemo(() => {
     return filteredTransactions.reduce(
@@ -427,17 +421,16 @@ export default function DailyCashReportPage() {
             <p className="text-xs text-muted-foreground">Ingresos registrados en el sistema para la fecha seleccionada.</p>
         </div>
         <div className="flex items-center gap-2">
-            {isAdmin && (
-              <Select value={sellerFilter} onValueChange={setSellerFilter}>
-                  <SelectTrigger className="w-[180px] h-9 text-xs"><SelectValue placeholder="Vendedor..." /></SelectTrigger>
-                  <SelectContent>
-                      <SelectItem value="all">Todos los Vendedores</SelectItem>
-                      <SelectItem value="Administrador">Administrador</SelectItem>
-                      <SelectItem value="Ventas">Ventas</SelectItem>
-                      <SelectItem value="Ventas Externas">Ventas Externas</SelectItem>
-                  </SelectContent>
-              </Select>
-            )}
+            <Select value={sellerFilter} onValueChange={setSellerFilter}>
+                <SelectTrigger className="w-[180px] h-9 text-xs"><SelectValue placeholder="Vendedor..." /></SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">Todos los Vendedores</SelectItem>
+                    <SelectItem value="Administrador">Administrador</SelectItem>
+                    <SelectItem value="Ventas">Ventas</SelectItem>
+                    <SelectItem value="Ventas Externas">Ventas Externas</SelectItem>
+                    <SelectItem value="Web Publica">Inscripción Web</SelectItem>
+                </SelectContent>
+            </Select>
             <Popover>
                 <PopoverTrigger asChild>
                 <Button variant={"outline"} className={cn("w-[220px] h-9 justify-start text-left font-normal text-xs", !reportDate && "text-muted-foreground")}>

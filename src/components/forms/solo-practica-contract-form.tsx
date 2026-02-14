@@ -2,7 +2,7 @@
 
 /**
  * FORMULARIO DE CONTRATO: CURSO DE SOLO PRÁCTICA
- * Freeway Escuela de Manejo, S.A.
+ * Soporta creación y edición.
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -19,7 +19,8 @@ import {
   serverTimestamp, 
   Timestamp,
   query,
-  where
+  where,
+  updateDoc
 } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
@@ -49,17 +50,16 @@ import {
   CalendarIcon, 
   Save, 
   UserCircle, 
-  Dumbbell, 
   CreditCard, 
   Clock,
-  Package,
-  Car
+  RefreshCw
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { isPanamaHoliday } from '@/lib/holidays';
+import type { Contract } from '@/lib/types';
 
 const PRACTICE_PLANS = ["Basico 8 Hrs", "Plus 10 Hrs", "Premium 12 Hrs"];
 const PLAN_PRICES: Record<string, number> = { "Basico 8 Hrs": 123.00, "Plus 10 Hrs": 135.00, "Premium 12 Hrs": 160.00 };
@@ -118,13 +118,14 @@ const soloPracticaSchema = z.object({
 
 type FormValues = z.infer<typeof soloPracticaSchema>;
 
-export function SoloPracticaContractForm() {
+export function SoloPracticaContractForm({ contract }: { contract?: Contract }) {
   const db = useDb();
   const { user } = useUser();
   const { role } = useCurrentRole();
   const { toast } = useToast();
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
+  const isEdit = !!contract;
 
   const activeContractsQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed'])) : null, [db, user]);
   const manualEntriesQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'manual_schedules')) : null, [db, user]);
@@ -134,7 +135,16 @@ export function SoloPracticaContractForm() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(soloPracticaSchema),
-    defaultValues: {
+    defaultValues: isEdit ? {
+      ...contract.autoMotoDetails,
+      clientName: contract.clientName,
+      clientEmail: contract.clientEmail,
+      paymentDeadline: toDate(contract.autoMotoDetails?.paymentDeadline),
+      practicalClassSchedules: (contract.autoMotoDetails?.practicalClassSchedules || []).map(s => ({
+        ...s,
+        date: toDate(s.date)
+      })),
+    } : {
       clientName: '', clientEmail: '', idType: 'C.I.P.', studentIdNumber: '',
       studentAddress: '', studentPhone1: '', vehicleType: 'Auto',
       vehicleTransmission: 'Automático', coursePlan: '', courseValue: 0,
@@ -169,6 +179,7 @@ export function SoloPracticaContractForm() {
     });
 
     allContracts?.forEach(c => {
+        if (isEdit && c.id === contract.id) return;
         const details = c.autoMotoDetails || c.deluxeDetails;
         const processSlots = (slots: any[]) => {
             slots.forEach(s => {
@@ -187,64 +198,79 @@ export function SoloPracticaContractForm() {
     });
 
     return { vehicleOccupancy, globalCounts };
-  }, [allContracts, allManualEntries]);
+  }, [allContracts, allManualEntries, isEdit, contract?.id]);
 
   const watchPlan = form.watch('coursePlan');
 
   useEffect(() => {
-    if (watchPlan) {
+    if (watchPlan && !isEdit) {
       form.setValue('courseValue', PLAN_PRICES[watchPlan] || 0);
       const count = PLAN_PRACTICAL_COUNTS[watchPlan] || 0;
       replacePractical(Array.from({ length: count }, () => ({ date: new Date(), time: '08:00am a 10:00am', vehicle: '', instructor: '' })));
     }
-  }, [watchPlan, replacePractical, form]);
+  }, [watchPlan, replacePractical, form, isEdit]);
 
   const onSubmit = async (values: FormValues) => {
     if (!db || !user) return;
     setIsSaving(true);
 
     try {
-      await runTransaction(db, async (transaction) => {
-        const counterRef = doc(db, 'counters', 'contracts_folio');
-        const counterDoc = await transaction.get(counterRef);
-        
-        let nextFolio = counterDoc.exists() 
-            ? Math.max(counterDoc.data().count + 1, 18) 
-            : 18;
-        
-        transaction.set(counterRef, { count: nextFolio }, { merge: true });
+      const balance = values.courseValue - values.downPayment;
+      const formattedPracticalSchedules = (values.practicalClassSchedules || []).map(s => ({ ...s, date: Timestamp.fromDate(s.date) }));
 
-        const clientRef = doc(collection(db, 'clients'));
-        transaction.set(clientRef, {
-          name: values.clientName, email: values.clientEmail, idNumber: values.studentIdNumber,
-          phone: values.studentPhone1, createdAt: serverTimestamp(), userId: user.uid,
-        });
-
-        const contractRef = doc(collection(db, 'contracts'));
-        const balance = values.courseValue - values.downPayment;
-
-        transaction.set(contractRef, {
-          title: `Solo Práctica - Folio ${nextFolio}`,
+      if (isEdit) {
+        const contractRef = doc(db, 'contracts', contract.id);
+        await updateDoc(contractRef, {
           clientName: values.clientName,
           clientEmail: values.clientEmail,
-          clientId: clientRef.id,
-          folioNumber: nextFolio,
-          type: 'Curso Solo Practica',
-          status: balance <= 0 ? 'completed' : 'active',
-          userId: user.uid,
-          createdBy: role || 'Sistema',
-          createdAt: serverTimestamp(),
+          status: balance <= 0 ? 'completed' : contract.status,
           autoMotoDetails: {
             ...values,
             paymentDeadline: Timestamp.fromDate(values.paymentDeadline),
-            practicalClassSchedules: (values.practicalClassSchedules || []).map(s => ({ ...s, date: Timestamp.fromDate(s.date) })),
+            practicalClassSchedules: formattedPracticalSchedules,
             balance: balance,
-          }
+          },
+          updatedAt: serverTimestamp(),
+          updatedBy: role || 'Sistema',
         });
-      });
+        toast({ title: 'Práctica Actualizada', description: 'Registro guardado.' });
+        router.push(`/contracts/${contract.id}`);
+      } else {
+        await runTransaction(db, async (transaction) => {
+          const counterRef = doc(db, 'counters', 'contracts_folio');
+          const counterDoc = await transaction.get(counterRef);
+          let nextFolio = counterDoc.exists() ? Math.max(counterDoc.data().count + 1, 18) : 18;
+          transaction.set(counterRef, { count: nextFolio }, { merge: true });
 
-      toast({ title: 'Trámite Registrado', description: 'El contrato de solo práctica se ha guardado correctamente.' });
-      router.push('/dashboard');
+          const clientRef = doc(collection(db, 'clients'));
+          transaction.set(clientRef, {
+            name: values.clientName, email: values.clientEmail, idNumber: values.studentIdNumber,
+            phone: values.studentPhone1, createdAt: serverTimestamp(), userId: user.uid,
+          });
+
+          const contractRef = doc(collection(db, 'contracts'));
+          transaction.set(contractRef, {
+            title: `Solo Práctica - Folio ${nextFolio}`,
+            clientName: values.clientName,
+            clientEmail: values.clientEmail,
+            clientId: clientRef.id,
+            folioNumber: nextFolio,
+            type: 'Curso Solo Practica',
+            status: balance <= 0 ? 'completed' : 'active',
+            userId: user.uid,
+            createdBy: role || 'Sistema',
+            createdAt: serverTimestamp(),
+            autoMotoDetails: {
+              ...values,
+              paymentDeadline: Timestamp.fromDate(values.paymentDeadline),
+              practicalClassSchedules: formattedPracticalSchedules,
+              balance: balance,
+            }
+          });
+        });
+        toast({ title: 'Trámite Registrado', description: 'El contrato de solo práctica se ha guardado correctamente.' });
+        router.push('/dashboard');
+      }
     } catch (error: any) {
       console.error("Error saving contract:", error);
       toast({ variant: 'destructive', title: 'Error', description: 'Fallo al procesar el registro.' });
@@ -274,7 +300,7 @@ export function SoloPracticaContractForm() {
               </div>
               <div className="col-span-12 md:col-span-4">
                 <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">ID</FormLabel><FormControl><Input placeholder="8-000-000" {...field} className="h-9 font-mono" /></FormControl></FormItem>
+                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">ID</FormLabel><FormControl><Input placeholder="8-000-000" {...field} className="h-9 font-mono" readOnly={isEdit} /></FormControl></FormItem>
                 )} />
               </div>
               <div className="col-span-12">
@@ -299,7 +325,7 @@ export function SoloPracticaContractForm() {
                 <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Paquete</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-10"><SelectValue placeholder="Elegir..." /></SelectTrigger></FormControl><SelectContent>{PRACTICE_PLANS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent></Select></FormItem>
               )} />
               <FormField control={form.control} name="courseValue" render={({ field }) => (
-                <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Valor (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold bg-muted/30" readOnly /></FormControl></FormItem>
+                <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Valor (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold bg-muted/30" readOnly={!isEdit} /></FormControl></FormItem>
               )} />
               <FormField control={form.control} name="downPayment" render={({ field }) => (
                 <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Abono (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold text-green-600" /></FormControl></FormItem>
@@ -309,7 +335,7 @@ export function SoloPracticaContractForm() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
                 <FormField control={form.control} name="paymentDeadline" render={({ field }) => (
-                    <FormItem className="flex flex-col"><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Límite para Saldo</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("w-full h-10 pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP", { locale: es }) : <span>Elegir fecha</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus /></PopoverContent></Popover></FormItem>
+                    <FormItem className="flex flex-col"><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Límite para Saldo</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("w-full h-10 pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(toDate(field.value), "PPP", { locale: es }) : <span>Elegir fecha</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={toDate(field.value)} onSelect={field.onChange} initialFocus /></PopoverContent></Popover></FormItem>
                 )} />
                 <FormField control={form.control} name="paymentType" render={({ field }) => (
                     <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Método de Pago</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="cash">Efectivo</SelectItem><SelectItem value="debit">Tarjeta Débito</SelectItem><SelectItem value="credit">Tarjeta Crédito</SelectItem><SelectItem value="bac">BAC</SelectItem><SelectItem value="general">General</SelectItem><SelectItem value="cheques">Cheque</SelectItem></SelectContent></Select></FormItem>
@@ -318,7 +344,6 @@ export function SoloPracticaContractForm() {
           </CardContent>
         </Card>
 
-        {/* AGENDA DE CLASES PRÁCTICAS SOLO PRÁCTICA ABAJO DE VALORES */}
         <Card className="shadow-sm">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -363,9 +388,9 @@ export function SoloPracticaContractForm() {
                             <FormLabel className="text-[10px] font-black uppercase text-slate-500">Sesión {index + 1}</FormLabel>
                             <Popover>
                               <PopoverTrigger asChild>
-                                <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(f.value, "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
+                                <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
                               </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={f.value} onSelect={f.onChange} initialFocus /></PopoverContent>
+                              <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={toDate(f.value)} onSelect={f.onChange} initialFocus /></PopoverContent>
                             </Popover>
                           </FormItem>
                         )} />
@@ -407,9 +432,9 @@ export function SoloPracticaContractForm() {
 
         <div className="flex justify-end gap-4">
           <Button type="button" variant="outline" size="lg" onClick={() => router.back()}>Cancelar</Button>
-          <Button type="submit" size="lg" disabled={isSaving} className="min-w-[220px] bg-emerald-600 hover:bg-emerald-700">
-            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-            Guardar Solo Práctica
+          <Button type="submit" size="lg" disabled={isSaving} className={cn("min-w-[220px]", isEdit ? "bg-green-600 hover:bg-green-700" : "bg-emerald-600 hover:bg-emerald-700")}>
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : isEdit ? <RefreshCw className="mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />}
+            {isEdit ? 'Actualizar Práctica' : 'Guardar Solo Práctica'}
           </Button>
         </div>
       </form>

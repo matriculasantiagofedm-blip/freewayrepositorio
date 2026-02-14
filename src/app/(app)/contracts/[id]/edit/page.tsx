@@ -8,8 +8,12 @@ import type { Contract } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useCurrentRole } from '@/hooks/use-current-role';
+import { AutoContractForm } from '@/components/forms/auto-contract-form';
+import { MotoContractForm } from '@/components/forms/moto-contract-form';
+import { AmpliacionesContractForm } from '@/components/forms/ampliaciones-contract-form';
+import { SoloPracticaContractForm } from '@/components/forms/solo-practica-contract-form';
 
 export default function EditContractPage() {
   const { id } = useParams();
@@ -23,9 +27,29 @@ export default function EditContractPage() {
 
   if (isLoading || isUserLoading || isRoleLoading) return <div className="p-24 text-center"><Loader2 className="animate-spin h-12 w-12 mx-auto" /></div>;
 
-  if (role !== 'Administrador') return <div className="p-12 text-center">Acceso restringido.</div>;
+  if (role !== 'Administrador') return <div className="p-12 text-center">Acceso restringido. Solo el Administrador puede editar registros.</div>;
 
   if (error || !contract) return <div className="p-8 text-center">Error: Contrato no encontrado.</div>;
+
+  const renderForm = () => {
+    switch (contract.type) {
+        case 'Curso Auto':
+        case 'Curso Mixto':
+            return <AutoContractForm contract={contract} />;
+        case 'Curso Moto':
+            return <MotoContractForm contract={contract} />;
+        case 'Ampliaciones':
+            return <AmpliacionesContractForm contract={contract} />;
+        case 'Curso Solo Practica':
+            return <SoloPracticaContractForm contract={contract} />;
+        default:
+            return (
+                <div className="p-12 text-center border-2 border-dashed rounded-lg">
+                    <p className="text-muted-foreground">No hay formularios de edición activos para el tipo: {contract.type}</p>
+                </div>
+            );
+    }
+  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -37,11 +61,12 @@ export default function EditContractPage() {
             </div>
         </div>
         <Card className="max-w-5xl mx-auto w-full shadow-lg">
-            <CardHeader><CardTitle className="text-2xl font-bold">Edición de Documento</CardTitle></CardHeader>
-            <CardContent>
-                <div className="p-12 text-center border-2 border-dashed rounded-lg">
-                    <p className="text-muted-foreground">La edición para el tipo de contrato <strong>{contract.type}</strong> ha sido deshabilitada.</p>
-                </div>
+            <CardHeader className="border-b bg-slate-50/50">
+                <CardTitle className="text-xl font-bold">Edición de Documento</CardTitle>
+                <CardDescription>Estás modificando un registro existente. Los cambios afectarán la impresión del contrato.</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+                {renderForm()}
             </CardContent>
         </Card>
     </div>

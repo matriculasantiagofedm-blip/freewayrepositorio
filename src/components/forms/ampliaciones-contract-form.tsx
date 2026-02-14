@@ -1,9 +1,8 @@
-
 'use client';
 
 /**
  * FORMULARIO DE CONTRATO: AMPLIACIONES DE LICENCIA
- * Freeway Escuela de Manejo, S.A.
+ * Soporta creación y edición.
  */
 
 import { useState, useEffect } from 'react';
@@ -18,7 +17,8 @@ import {
   doc, 
   runTransaction, 
   serverTimestamp, 
-  Timestamp 
+  Timestamp,
+  updateDoc
 } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
@@ -48,13 +48,13 @@ import {
   CalendarIcon, 
   Save, 
   UserCircle, 
-  Repeat, 
-  CreditCard, 
-  Clock
+  CreditCard,
+  RefreshCw
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, toDate } from '@/lib/utils';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useCurrentRole } from '@/hooks/use-current-role';
+import type { Contract } from '@/lib/types';
 
 const LICENSE_CATEGORIES = ['B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];
 
@@ -89,17 +89,24 @@ const ampliacionesSchema = z.object({
 
 type FormValues = z.infer<typeof ampliacionesSchema>;
 
-export function AmpliacionesContractForm() {
+export function AmpliacionesContractForm({ contract }: { contract?: Contract }) {
   const db = useDb();
   const { user } = useUser();
   const { role } = useCurrentRole();
   const { toast } = useToast();
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
+  const isEdit = !!contract;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(ampliacionesSchema),
-    defaultValues: {
+    defaultValues: isEdit ? {
+      ...contract.ampliacionesDetails,
+      clientName: contract.clientName,
+      clientEmail: contract.clientEmail,
+      paymentDeadline: toDate(contract.ampliacionesDetails?.paymentDeadline),
+      theoreticalClassDate: toDate(contract.ampliacionesDetails?.theoreticalClassDate),
+    } : {
       clientName: '', clientEmail: '', idType: 'C.I.P.', studentIdNumber: '',
       studentAddress: '', studentPhone1: '', licenseCategory: '',
       courseValue: 0, downPayment: 0, paymentType: 'cash',
@@ -110,16 +117,18 @@ export function AmpliacionesContractForm() {
   const watchCategories = form.watch('licenseCategory');
 
   useEffect(() => {
-    const categories = watchCategories ? watchCategories.split(', ').filter(c => c) : [];
-    if (categories.length === 0) { form.setValue('courseValue', 0); return; }
-    const sortedKey = [...categories].sort().join(', ');
-    if (COMBINATION_PRICES[sortedKey]) {
-      form.setValue('courseValue', COMBINATION_PRICES[sortedKey]);
-    } else {
-      const total = categories.reduce((sum, cat) => sum + (CATEGORY_PRICES[cat] || 0), 0);
-      form.setValue('courseValue', total);
+    if (!isEdit) {
+        const categories = watchCategories ? watchCategories.split(', ').filter(c => c) : [];
+        if (categories.length === 0) { form.setValue('courseValue', 0); return; }
+        const sortedKey = [...categories].sort().join(', ');
+        if (COMBINATION_PRICES[sortedKey]) {
+          form.setValue('courseValue', COMBINATION_PRICES[sortedKey]);
+        } else {
+          const total = categories.reduce((sum, cat) => sum + (CATEGORY_PRICES[cat] || 0), 0);
+          form.setValue('courseValue', total);
+        }
     }
-  }, [watchCategories, form]);
+  }, [watchCategories, form, isEdit]);
 
   const toggleCategory = (category: string) => {
     const current = form.getValues('licenseCategory');
@@ -132,47 +141,61 @@ export function AmpliacionesContractForm() {
     if (!db || !user) return;
     setIsSaving(true);
     try {
-      await runTransaction(db, async (transaction) => {
-        const counterRef = doc(db, 'counters', 'contracts_folio');
-        const counterDoc = await transaction.get(counterRef);
-        
-        // UNIFICACIÓN: El próximo folio debe ser al menos 18
-        let nextFolio = counterDoc.exists() 
-            ? Math.max(counterDoc.data().count + 1, 18) 
-            : 18;
-        
-        transaction.set(counterRef, { count: nextFolio }, { merge: true });
+      const balance = values.courseValue - values.downPayment;
 
-        const clientRef = doc(collection(db, 'clients'));
-        transaction.set(clientRef, {
-          name: values.clientName, email: values.clientEmail, idNumber: values.studentIdNumber,
-          phone: values.studentPhone1, createdAt: serverTimestamp(), userId: user.uid,
-        });
-
-        const contractRef = doc(collection(db, 'contracts'));
-        const balance = values.courseValue - values.downPayment;
-
-        transaction.set(contractRef, {
-          title: `Contrato de Ampliación - Folio ${nextFolio}`,
+      if (isEdit) {
+        const contractRef = doc(db, 'contracts', contract.id);
+        await updateDoc(contractRef, {
           clientName: values.clientName,
           clientEmail: values.clientEmail,
-          clientId: clientRef.id,
-          folioNumber: nextFolio,
-          type: 'Ampliaciones',
-          status: balance <= 0 ? 'completed' : 'active',
-          userId: user.uid,
-          createdBy: role || 'Sistema',
-          createdAt: serverTimestamp(),
+          status: balance <= 0 ? 'completed' : contract.status,
           ampliacionesDetails: {
             ...values,
             paymentDeadline: Timestamp.fromDate(values.paymentDeadline),
             theoreticalClassDate: Timestamp.fromDate(values.theoreticalClassDate),
             balance: balance,
-          }
+          },
+          updatedAt: serverTimestamp(),
+          updatedBy: role || 'Sistema',
         });
-      });
-      toast({ title: 'Guardado', description: 'El contrato de ampliación se ha registrado exitosamente.' });
-      router.push('/dashboard');
+        toast({ title: 'Ampliación Actualizada', description: 'Cambios guardados con éxito.' });
+        router.push(`/contracts/${contract.id}`);
+      } else {
+        await runTransaction(db, async (transaction) => {
+          const counterRef = doc(db, 'counters', 'contracts_folio');
+          const counterDoc = await transaction.get(counterRef);
+          let nextFolio = counterDoc.exists() ? Math.max(counterDoc.data().count + 1, 18) : 18;
+          transaction.set(counterRef, { count: nextFolio }, { merge: true });
+
+          const clientRef = doc(collection(db, 'clients'));
+          transaction.set(clientRef, {
+            name: values.clientName, email: values.clientEmail, idNumber: values.studentIdNumber,
+            phone: values.studentPhone1, createdAt: serverTimestamp(), userId: user.uid,
+          });
+
+          const contractRef = doc(collection(db, 'contracts'));
+          transaction.set(contractRef, {
+            title: `Contrato de Ampliación - Folio ${nextFolio}`,
+            clientName: values.clientName,
+            clientEmail: values.clientEmail,
+            clientId: clientRef.id,
+            folioNumber: nextFolio,
+            type: 'Ampliaciones',
+            status: balance <= 0 ? 'completed' : 'active',
+            userId: user.uid,
+            createdBy: role || 'Sistema',
+            createdAt: serverTimestamp(),
+            ampliacionesDetails: {
+              ...values,
+              paymentDeadline: Timestamp.fromDate(values.paymentDeadline),
+              theoreticalClassDate: Timestamp.fromDate(values.theoreticalClassDate),
+              balance: balance,
+            }
+          });
+        });
+        toast({ title: 'Guardado', description: 'El contrato de ampliación se ha registrado exitosamente.' });
+        router.push('/dashboard');
+      }
     } catch (error) {
       console.error("Error al guardar ampliación:", error);
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo procesar el registro.' });
@@ -207,7 +230,7 @@ export function AmpliacionesContractForm() {
               </div>
               <div className="col-span-12 md:col-span-6">
                 <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Cédula</FormLabel><FormControl><Input placeholder="8-000-000" {...field} className="h-9 font-mono" /></FormControl></FormItem>
+                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Cédula</FormLabel><FormControl><Input placeholder="8-000-000" {...field} className="h-9 font-mono" readOnly={isEdit} /></FormControl></FormItem>
                 )} />
               </div>
               <div className="col-span-12 md:col-span-6">
@@ -234,7 +257,7 @@ export function AmpliacionesContractForm() {
           <CardContent className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
               <FormField control={form.control} name="courseValue" render={({ field }) => (
-                <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Valor (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 font-black text-amber-900 bg-amber-50/30" /></FormControl></FormItem>
+                <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Valor (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 font-black text-amber-900 bg-amber-50/30" readOnly={!isEdit} /></FormControl></FormItem>
               )} />
               <FormField control={form.control} name="downPayment" render={({ field }) => (
                 <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Abono (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold text-green-600" /></FormControl></FormItem>
@@ -246,8 +269,9 @@ export function AmpliacionesContractForm() {
 
         <div className="flex justify-end gap-4">
           <Button type="button" variant="outline" size="lg" onClick={() => router.back()}>Cancelar</Button>
-          <Button type="submit" size="lg" disabled={isSaving} className="min-w-[220px] bg-amber-600 hover:bg-amber-700">
-            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Guardar Ampliación
+          <Button type="submit" size="lg" disabled={isSaving} className={cn("min-w-[220px]", isEdit ? "bg-green-600 hover:bg-green-700" : "bg-amber-600 hover:bg-amber-700")}>
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : isEdit ? <RefreshCw className="mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />}
+            {isEdit ? 'Actualizar Ampliación' : 'Guardar Ampliación'}
           </Button>
         </div>
       </form>

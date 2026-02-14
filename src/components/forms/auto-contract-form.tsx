@@ -2,7 +2,7 @@
 
 /**
  * FORMULARIO DE CONTRATO: CURSO DE AUTO (SINCRONIZADO CON AGENDA)
- * Freeway Escuela de Manejo, S.A.
+ * Soporta creación y edición de registros existentes.
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -19,7 +19,8 @@ import {
   serverTimestamp, 
   Timestamp,
   query,
-  where
+  where,
+  updateDoc
 } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
@@ -51,18 +52,17 @@ import {
   UserCircle, 
   Car, 
   CreditCard, 
-  BookOpen,
   Package,
   Clock,
-  AlertTriangle,
-  ShieldCheck,
-  Plus
+  Plus,
+  RefreshCw
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { isPanamaHoliday } from '@/lib/holidays';
+import type { Contract } from '@/lib/types';
 
 const AUTO_PLANS = [
   "Curso Auto Básico (8 Hrs)",
@@ -147,13 +147,14 @@ const autoContractSchema = z.object({
 
 type FormValues = z.infer<typeof autoContractSchema>;
 
-export function AutoContractForm() {
+export function AutoContractForm({ contract }: { contract?: Contract }) {
   const db = useDb();
   const { user } = useUser();
   const { role } = useCurrentRole();
   const { toast } = useToast();
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
+  const isEdit = !!contract;
 
   const activeContractsQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed'])) : null, [db, user]);
   const manualEntriesQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'manual_schedules')) : null, [db, user]);
@@ -163,7 +164,17 @@ export function AutoContractForm() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(autoContractSchema),
-    defaultValues: {
+    defaultValues: isEdit ? {
+      ...contract.autoMotoDetails,
+      clientName: contract.clientName,
+      clientEmail: contract.clientEmail,
+      paymentDeadline: toDate(contract.autoMotoDetails?.paymentDeadline),
+      theoreticalClassDates: (contract.autoMotoDetails?.theoreticalClassDates || []).map(d => toDate(d)),
+      practicalClassSchedules: (contract.autoMotoDetails?.practicalClassSchedules || []).map(s => ({
+        ...s,
+        date: toDate(s.date)
+      })),
+    } : {
       clientName: '',
       clientEmail: '',
       idType: 'C.I.P.',
@@ -210,6 +221,7 @@ export function AutoContractForm() {
     });
 
     allContracts?.forEach(c => {
+        if (isEdit && c.id === contract.id) return; // Excluir el contrato que estamos editando
         const details = c.autoMotoDetails || c.deluxeDetails;
         const processSlots = (slots: any[]) => {
             slots.forEach(s => {
@@ -228,13 +240,13 @@ export function AutoContractForm() {
     });
 
     return { vehicleOccupancy, globalCounts };
-  }, [allContracts, allManualEntries]);
+  }, [allContracts, allManualEntries, isEdit, contract?.id]);
 
   const watchPlan = form.watch('coursePlan');
   const watchAdditional = form.watch('additionalService');
 
   useEffect(() => {
-    if (watchPlan) {
+    if (watchPlan && !isEdit) {
       let price = PLAN_PRICES[watchPlan] || 0;
       
       if (watchAdditional === 'Basico Moto 10Hrs' && watchPlan === 'Curso Auto Básico (8 Hrs)') {
@@ -255,67 +267,78 @@ export function AutoContractForm() {
       });
       replacePractical(newSchedules);
     }
-  }, [watchPlan, watchAdditional, replacePractical, form]);
+  }, [watchPlan, watchAdditional, replacePractical, form, isEdit]);
 
   const onSubmit = async (values: FormValues) => {
     if (!db || !user) return;
     setIsSaving(true);
 
     try {
-      await runTransaction(db, async (transaction) => {
-        const counterRef = doc(db, 'counters', 'contracts_folio');
-        const counterDoc = await transaction.get(counterRef);
-        
-        let nextFolio = counterDoc.exists() 
-            ? Math.max(counterDoc.data().count + 1, 18) 
-            : 18;
-        
-        transaction.set(counterRef, { count: nextFolio }, { merge: true });
+      const balance = values.courseValue - values.downPayment;
+      const formattedTheoryDates = (values.theoreticalClassDates || []).map(d => Timestamp.fromDate(d));
+      const formattedPracticalSchedules = (values.practicalClassSchedules || []).map(s => ({
+        ...s,
+        date: Timestamp.fromDate(s.date)
+      }));
 
-        const clientRef = doc(collection(db, 'clients'));
-        transaction.set(clientRef, {
-          name: values.clientName,
-          email: values.clientEmail,
-          idNumber: values.studentIdNumber,
-          phone: values.studentPhone1,
-          createdAt: serverTimestamp(),
-          userId: user.uid,
-        });
-
-        const contractRef = doc(collection(db, 'contracts'));
-        const balance = values.courseValue - values.downPayment;
-        const formattedTheoryDates = (values.theoreticalClassDates || []).map(d => Timestamp.fromDate(d));
-        const formattedPracticalSchedules = (values.practicalClassSchedules || []).map(s => ({
-          ...s,
-          date: Timestamp.fromDate(s.date)
-        }));
-
-        transaction.set(contractRef, {
-          title: `Curso de Auto - Folio ${nextFolio}`,
+      if (isEdit) {
+        const contractRef = doc(db, 'contracts', contract.id);
+        await updateDoc(contractRef, {
           clientName: values.clientName,
           clientEmail: values.clientEmail,
-          clientId: clientRef.id,
-          folioNumber: nextFolio,
-          type: 'Curso Auto',
-          status: balance <= 0 ? 'completed' : 'active',
-          userId: user.uid,
-          createdBy: role || 'Sistema',
-          createdAt: serverTimestamp(),
+          status: balance <= 0 ? 'completed' : contract.status,
           autoMotoDetails: {
             ...values,
             paymentDeadline: Timestamp.fromDate(values.paymentDeadline),
             theoreticalClassDates: formattedTheoryDates,
             practicalClassSchedules: formattedPracticalSchedules,
             balance: balance,
-          }
+          },
+          updatedAt: serverTimestamp(),
+          updatedBy: role || 'Sistema',
         });
-      });
+        toast({ title: 'Contrato Actualizado', description: 'Los cambios se han guardado exitosamente.' });
+        router.push(`/contracts/${contract.id}`);
+      } else {
+        await runTransaction(db, async (transaction) => {
+          const counterRef = doc(db, 'counters', 'contracts_folio');
+          const counterDoc = await transaction.get(counterRef);
+          let nextFolio = counterDoc.exists() ? Math.max(counterDoc.data().count + 1, 18) : 18;
+          transaction.set(counterRef, { count: nextFolio }, { merge: true });
 
-      toast({ title: 'Contrato Creado', description: 'El registro de auto se ha guardado exitosamente.' });
-      router.push('/dashboard');
+          const clientRef = doc(collection(db, 'clients'));
+          transaction.set(clientRef, {
+            name: values.clientName, email: values.clientEmail, idNumber: values.studentIdNumber,
+            phone: values.studentPhone1, createdAt: serverTimestamp(), userId: user.uid,
+          });
+
+          const contractRef = doc(collection(db, 'contracts'));
+          transaction.set(contractRef, {
+            title: `Curso de Auto - Folio ${nextFolio}`,
+            clientName: values.clientName,
+            clientEmail: values.clientEmail,
+            clientId: clientRef.id,
+            folioNumber: nextFolio,
+            type: 'Curso Auto',
+            status: balance <= 0 ? 'completed' : 'active',
+            userId: user.uid,
+            createdBy: role || 'Sistema',
+            createdAt: serverTimestamp(),
+            autoMotoDetails: {
+              ...values,
+              paymentDeadline: Timestamp.fromDate(values.paymentDeadline),
+              theoreticalClassDates: formattedTheoryDates,
+              practicalClassSchedules: formattedPracticalSchedules,
+              balance: balance,
+            }
+          });
+        });
+        toast({ title: 'Contrato Creado', description: 'El registro de auto se ha guardado exitosamente.' });
+        router.push('/dashboard');
+      }
     } catch (error: any) {
       console.error("Error saving contract:", error);
-      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo guardar el contrato.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo procesar la operación.' });
     } finally {
       setIsSaving(false);
     }
@@ -368,7 +391,7 @@ export function AutoContractForm() {
                 <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Número de Identificación</FormLabel>
-                    <FormControl><Input placeholder="Ej: 8-000-000" {...field} className="h-9 font-mono" /></FormControl>
+                    <FormControl><Input placeholder="Ej: 8-000-000" {...field} className="h-9 font-mono" readOnly={isEdit} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -379,7 +402,7 @@ export function AutoContractForm() {
                     <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Teléfonos de Contacto</FormLabel>
                     <div className="flex gap-2">
                       <FormControl><Input placeholder="Principal" {...field} className="h-9" /></FormControl>
-                      <Input placeholder="Secundario" onChange={(e) => form.setValue('studentPhone2', e.target.value)} className="h-9" />
+                      <Input placeholder="Secundario" value={form.watch('studentPhone2') || ''} onChange={(e) => form.setValue('studentPhone2', e.target.value)} className="h-9" />
                     </div>
                     <FormMessage />
                   </FormItem>
@@ -500,7 +523,7 @@ export function AutoContractForm() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
               <FormField control={form.control} name="courseValue" render={({ field }) => (
-                <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Valor del Contrato (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold bg-muted/30" readOnly /></FormControl></FormItem>
+                <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Valor del Contrato (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold bg-muted/30" readOnly={!isEdit} /></FormControl></FormItem>
               )} />
               <FormField control={form.control} name="downPayment" render={({ field }) => (
                 <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Abono Inicial (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold text-green-600" /></FormControl></FormItem>
@@ -524,7 +547,6 @@ export function AutoContractForm() {
           </CardContent>
         </Card>
 
-        {/* AGENDA DE CLASES PRÁCTICAS ABAJO DE PLAN Y COBRO */}
         <Card className="shadow-sm">
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
@@ -569,9 +591,9 @@ export function AutoContractForm() {
                             <FormLabel className="text-[10px] font-black uppercase text-slate-500">Clase {index + 1}</FormLabel>
                             <Popover>
                               <PopoverTrigger asChild>
-                                <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(f.value, "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
+                                <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
                               </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={f.value} onSelect={f.onChange} initialFocus /></PopoverContent>
+                              <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={toDate(f.value)} onSelect={f.onChange} initialFocus /></PopoverContent>
                             </Popover>
                           </FormItem>
                         )} />
@@ -613,9 +635,9 @@ export function AutoContractForm() {
 
         <div className="flex justify-end gap-4">
           <Button type="button" variant="outline" size="lg" onClick={() => router.back()}>Cancelar</Button>
-          <Button type="submit" size="lg" disabled={isSaving} className="min-w-[200px] bg-blue-600 hover:bg-blue-700">
-            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-            Guardar Contrato de Auto
+          <Button type="submit" size="lg" disabled={isSaving} className={cn("min-w-[200px]", isEdit ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700")}>
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : isEdit ? <RefreshCw className="mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />}
+            {isEdit ? 'Actualizar Contrato' : 'Guardar Contrato de Auto'}
           </Button>
         </div>
       </form>

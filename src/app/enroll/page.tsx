@@ -1,8 +1,7 @@
-
 'use client';
 
 /**
- * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN CON DISPONIBILIDAD, TEORÍA Y PAGOS
+ * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN CON ENLACE DE PAGO YAPPY DINÁMICO
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -97,6 +96,8 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
     '01:00pm a 03:00pm': '1pm-3pm',
     '03:00pm a 05:00pm': '3pm-5pm',
 };
+
+const RESERVATION_FEE = 50.00;
 
 const getGlobalCapacity = (date: Date, slotId: string) => {
     const day = date.getDay(); 
@@ -349,7 +350,11 @@ export default function PublicEnrollmentPage() {
                         <div className="bg-white p-4 rounded-xl border-2 border-emerald-100 shadow-sm"><QrCode className="h-32 w-32 text-slate-900" /></div>
                         <div className="space-y-4 flex-1">
                           <h4 className="font-black text-emerald-700 uppercase tracking-tight">Instrucciones de Yappy:</h4>
-                          <p className="text-sm text-slate-600">Haz clic en el botón inferior para realizar tu abono de reserva de forma inmediata y segura.</p>
+                          <div className="bg-emerald-100/50 p-3 rounded-lg border border-emerald-200">
+                            <p className="text-xs font-bold text-emerald-800 uppercase">Monto a abonar para reserva:</p>
+                            <p className="text-2xl font-black text-emerald-900">B/. {RESERVATION_FEE.toFixed(2)}</p>
+                          </div>
+                          <p className="text-sm text-slate-600 italic">Al hacer clic abajo, se abrirá Yappy. Por favor, asegúrate de completar la transferencia por el monto indicado.</p>
                           <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700 font-bold h-12 shadow-md">
                             <a href="https://link.yappy.com.pa/stc/dgXr5v%2BGA2xDgGKBkz%2BnBhSk16Vdr9BZvaim7nGhYrA%3D" target="_blank" rel="noopener noreferrer">
                               <Smartphone className="mr-2 h-5 w-5" /> Abrir Yappy para Pagar
@@ -359,8 +364,8 @@ export default function PublicEnrollmentPage() {
                       </div>
                     </div>
                   )}
-                  {watchPaymentMethod === 'credit_card' && <div className="p-6 bg-blue-50 border-2 border-blue-100 rounded-2xl space-y-4"><div className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-blue-600" /><h4 className="font-black text-blue-800 uppercase tracking-tight">Pago Seguro:</h4></div><p className="text-sm text-blue-700">Serás contactado para completar el cobro de B/. 50.00 por tarjeta.</p></div>}
-                  {watchPaymentMethod === 'in_office' && <div className="p-6 bg-amber-50 border-2 border-amber-100 rounded-2xl space-y-4"><div className="flex items-center gap-3"><Building2 className="h-5 w-5 text-amber-600" /><h4 className="font-black text-amber-800 uppercase tracking-tight">Pago en Sucursal:</h4></div><p className="text-sm text-amber-700">Acércate a Costa Verde para validar tu cupo. Horario: Lunes a Sábados 8AM - 5PM.</p></div>}
+                  {watchPaymentMethod === 'credit_card' && <div className="p-6 bg-blue-50 border-2 border-blue-100 rounded-2xl space-y-4"><div className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-blue-600" /><h4 className="font-black text-blue-800 uppercase tracking-tight">Pago Seguro:</h4></div><p className="text-sm text-blue-700">Serás contactado para completar el cobro de B/. {RESERVATION_FEE.toFixed(2)} por tarjeta.</p></div>}
+                  {watchPaymentMethod === 'in_office' && <div className="p-6 bg-amber-50 border-2 border-amber-100 rounded-2xl space-y-4"><div className="flex items-center gap-3"><Building2 className="h-5 w-5 text-amber-600" /><h4 className="font-black text-amber-800 uppercase tracking-tight">Pago en Sucursal:</h4></div><p className="text-sm text-amber-700">Acércate a Costa Verde para validar tu cupo y realizar tu abono de B/. {RESERVATION_FEE.toFixed(2)}.</p></div>}
                 </div>
               </CardContent>
             </Card>

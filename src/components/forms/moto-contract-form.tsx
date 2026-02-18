@@ -1,8 +1,8 @@
-
 'use client';
 
 /**
- * FORMULARIO DE CONTRATO: CURSO DE MOTO (CORREGIDO)
+ * FORMULARIO DE CONTRATO: CURSO DE MOTO
+ * Corrige errores de sintaxis y revierte teléfono opcional.
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -195,31 +195,25 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
   const { fields: practicalFields, replace: replacePractical } = useFieldArray({ control: form.control, name: "practicalClassSchedules" });
 
   const availabilityData = useMemo(() => {
-    const vehicleOccupancy: Record<string, string[]> = {};
     const globalCounts: Record<string, number> = {};
-    const processEntry = (date: any, slotString: string, vehicle: string, name: string) => {
-        if (!date || !slotString || !vehicle) return;
+    const processEntry = (date: any, slotString: string) => {
+        if (!date || !slotString) return;
         const dObj = toDate(date);
         if (isNaN(dObj.getTime())) return;
         const dateKey = format(dObj, 'yyyy-MM-dd');
         const slotId = TIME_STRING_TO_SLOT_MAP[slotString] || slotString;
-        const vKey = `${dateKey}|${slotId}|${vehicle}`;
-        if (!vehicleOccupancy[vKey]) vehicleOccupancy[vKey] = [];
-        if (!vehicleOccupancy[vKey].includes(name)) vehicleOccupancy[vKey].push(name);
+        const sKey = `${dateKey}|${slotId}`;
+        globalCounts[sKey] = (globalCounts[sKey] || 0) + 1;
     };
-    allManualEntries?.forEach(entry => { if (entry.classType !== 'Teórica') processEntry(entry.date, entry.timeSlot, entry.vehicle, entry.studentName); });
+    allManualEntries?.forEach(entry => { if (entry.classType !== 'Teórica') processEntry(entry.date, entry.timeSlot); });
     allContracts?.forEach(c => {
         if (isEdit && c.id === contract?.id) return;
-        const proc = (arr: any[]) => arr.forEach(s => processEntry(s.date, s.time, s.vehicle, c.clientName));
+        const proc = (arr: any[]) => arr.forEach(s => processEntry(s.date, s.time));
         if (c.autoMotoDetails?.practicalClassSchedules) proc(c.autoMotoDetails.practicalClassSchedules);
         if (c.autoMotoDetails?.motoPracticalClassSchedules) proc(c.autoMotoDetails.motoPracticalClassSchedules);
         if (c.deluxeDetails?.classSchedules) proc(c.deluxeDetails.classSchedules);
     });
-    Object.keys(vehicleOccupancy).forEach(vKey => {
-        const [dateKey, slotId] = vKey.split('|');
-        globalCounts[`${dateKey}|${slotId}`] = (globalCounts[`${dateKey}|${slotId}`] || 0) + 1;
-    });
-    return { vehicleOccupancy, globalCounts };
+    return { globalCounts };
   }, [allContracts, allManualEntries, isEdit, contract?.id]);
 
   const watchPlan = form.watch('coursePlan');

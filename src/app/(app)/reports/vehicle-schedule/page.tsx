@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -103,11 +104,10 @@ export default function VehicleScheduleReportPage() {
         const key = format(d, 'yyyy-MM-dd');
         const dayArr = newWeeklyAssignments.get(key) || [];
         
-        // DEDUPLICACIÓN ESTRICTA: Evita que el mismo estudiante aparezca duplicado en el mismo turno por tener datos en múltiples campos
+        // DEDUPLICACIÓN ESTRICTA: Un estudiante solo puede tener UNA entrada por turno por día en este reporte
         const isDup = dayArr.some(existing => 
             existing.id === id && 
-            existing.slot === slot &&
-            existing.num === num
+            existing.slot === slot
         );
         if (isDup) return;
 
@@ -124,7 +124,6 @@ export default function VehicleScheduleReportPage() {
             add(c.id, c.clientName, s.date, slotId, s.vehicle, s.instructor, s.status || 'scheduled', isEval, i + 1, 'contract', i, subType);
         });
 
-        // LÓGICA DE PRIORIDAD PARA EVITAR DUPLICADOS DE MOTO
         if (c.type === 'Curso Moto') {
             if (c.autoMotoDetails?.motoPracticalClassSchedules && c.autoMotoDetails.motoPracticalClassSchedules.length > 0) {
                 proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');

@@ -1,8 +1,9 @@
+
 'use client';
 
 /**
  * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN AUTOMÁTICA
- * Actualizado con pago por Tarjeta y Yappy (Azul #004fb9).
+ * Integración con Yappy (Azul) y Pago con Tarjeta (Cubo).
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -394,9 +395,11 @@ export default function PublicEnrollmentPage() {
                     <TabsContent value="credit_card" className="m-0 space-y-6">
                       <div className="space-y-4">
                         <h4 className="font-black text-primary uppercase tracking-tight">Pago con Tarjeta:</h4>
-                        <p className="text-xs text-slate-600 font-medium">Realiza tu pago seguro en nuestro portal de procesamiento y luego ingresa tu número de comprobante.</p>
-                        <Button className="w-full font-bold h-12 shadow-md" variant="default" onClick={(e) => { e.preventDefault(); toast({ description: "Redirigiendo a pasarela segura..." }) }}>
-                          <CreditCard className="mr-2 h-5 w-5" /> Pagar con Tarjeta
+                        <p className="text-xs text-slate-600 font-medium">Realiza tu pago seguro en nuestro portal de procesamiento Cubo y luego ingresa tu número de comprobante.</p>
+                        <Button asChild className="w-full font-bold h-12 shadow-md">
+                          <a href="https://pago.cubopago.com/freeway-escuela-de-manejo" target="_blank" rel="noopener noreferrer">
+                            <CreditCard className="mr-2 h-5 w-5" /> Pagar con Tarjeta
+                          </a>
                         </Button>
                       </div>
                     </TabsContent>

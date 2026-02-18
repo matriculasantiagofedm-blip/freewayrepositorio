@@ -1,3 +1,4 @@
+
 'use client';
 import type { Contract } from '@/lib/types';
 import { format } from 'date-fns';

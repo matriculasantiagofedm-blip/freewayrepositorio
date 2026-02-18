@@ -106,7 +106,7 @@ export default function VehicleScheduleReportPage() {
         // Evitar duplicados por id, fecha y turno
         const isDup = dayArr.some(existing => 
             existing.id === id && 
-            format(toDate(existing.date), 'HH:mm') === format(d, 'HH:mm') && 
+            format(toDate(existing.date), 'yyyy-MM-dd HH:mm') === format(d, 'yyyy-MM-dd HH:mm') && 
             existing.slot === slot &&
             existing.subType === subType
         );
@@ -125,6 +125,7 @@ export default function VehicleScheduleReportPage() {
             add(c.id, c.clientName, s.date, slotId, s.vehicle, s.instructor, s.status || 'scheduled', isEval, i + 1, 'contract', i, subType);
         });
 
+        // Lógica selectiva para evitar duplicados en moto
         if (c.type === 'Curso Moto') {
             if (c.autoMotoDetails?.motoPracticalClassSchedules && c.autoMotoDetails.motoPracticalClassSchedules.length > 0) {
                 proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');

@@ -197,7 +197,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
     setIsSaving(true);
     try {
       const balance = values.courseValue - values.downPayment;
-      const { clientName, clientEmail, practicalClassSchedules, ...detailsOnly } = values;
+      const { clientName, clientEmail, ...detailsOnly } = values;
       const formattedTheoryDates = (values.theoreticalClassDates || []).map(d => Timestamp.fromDate(d));
       const formattedPracticalSchedules = (values.practicalClassSchedules || []).map(s => ({ ...s, date: Timestamp.fromDate(s.date) }));
 

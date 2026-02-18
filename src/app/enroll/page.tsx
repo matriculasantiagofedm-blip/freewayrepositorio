@@ -1,7 +1,8 @@
 'use client';
 
 /**
- * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN CON VALIDACIÓN DE PAGO
+ * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN AUTOMÁTICA
+ * Procesa el pago y genera el Folio de Contrato sin intervención humana.
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -10,7 +11,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useRouter } from 'next/navigation';
 import { 
   collection, 
   doc, 
@@ -56,7 +56,6 @@ import {
   ShieldCheck,
   BookOpen,
   CreditCard,
-  Building2,
   Smartphone,
   Hash
 } from 'lucide-react';
@@ -131,7 +130,7 @@ export default function PublicEnrollmentPage() {
   const { auth } = useFirebase();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [submittedFolio, setSubmittedFolio] = useState<number | null>(null);
 
   const activeContractsQuery = useMemoQuery(() => (db && auth.currentUser) ? query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed'])) : null, [db, auth.currentUser]);
   const manualEntriesQuery = useMemoQuery(() => (db && auth.currentUser) ? query(collection(db, 'manual_schedules')) : null, [db, auth.currentUser]);
@@ -169,7 +168,7 @@ export default function PublicEnrollmentPage() {
     defaultValues: {
       clientName: '', clientEmail: '', idType: 'C.I.P.', studentIdNumber: '', studentAddress: '', studentPhone1: '',
       vehicleTransmission: 'Automático', coursePlan: '', theoreticalClassSchedule: 'Sabados 3:00 pm a 5:00 pm',
-      theoreticalClassDates: [], practicalClassSchedules: [], paymentMethod: 'in_office', paymentReference: '',
+      theoreticalClassDates: [], practicalClassSchedules: [], paymentMethod: 'yappy', paymentReference: '',
     },
   });
 
@@ -200,37 +199,73 @@ export default function PublicEnrollmentPage() {
         toast({ variant: 'destructive', title: 'Falta Referencia', description: 'Por favor, ingresa el número de confirmación de Yappy.' });
         return;
     }
+    
     setIsSaving(true);
     try {
+      let finalFolio = 0;
       await runTransaction(db, async (transaction) => {
+        // 1. Obtener y actualizar el Folio global
+        const counterRef = doc(db, 'counters', 'contracts_folio');
+        const counterDoc = await transaction.get(counterRef);
+        let nextFolio = counterDoc.exists() ? Math.max(counterDoc.data().count + 1, 18) : 18;
+        transaction.set(counterRef, { count: nextFolio }, { merge: true });
+        finalFolio = nextFolio;
+
+        // 2. Crear Cliente
+        const clientRef = doc(collection(db, 'clients'));
+        transaction.set(clientRef, {
+          name: values.clientName, email: values.clientEmail, idNumber: values.studentIdNumber,
+          phone: values.studentPhone1, createdAt: serverTimestamp(), userId: auth.currentUser?.uid,
+        });
+
+        // 3. Crear Contrato Activo directamente
         const contractRef = doc(collection(db, 'contracts'));
         transaction.set(contractRef, {
-          title: `Pre-inscripción Web: ${values.clientName}`,
-          clientName: values.clientName, clientEmail: values.clientEmail, type: 'Curso Auto', status: 'draft',
-          userId: auth.currentUser?.uid, createdBy: 'Web Publica', createdAt: serverTimestamp(),
+          title: `Curso de Auto - Folio ${nextFolio}`,
+          clientName: values.clientName, 
+          clientEmail: values.clientEmail, 
+          clientId: clientRef.id,
+          folioNumber: nextFolio,
+          type: 'Curso Auto', 
+          status: 'active',
+          userId: auth.currentUser?.uid, 
+          createdBy: 'Inscripción Automática Web', 
+          createdAt: serverTimestamp(),
           paymentReference: values.paymentReference || 'N/A',
           autoMotoDetails: {
-            ...values, licenseCategory: 'A, C',
+            ...values, 
+            licenseCategory: 'A, C',
             theoreticalClassDates: values.theoreticalClassDates.map(d => Timestamp.fromDate(d)),
             practicalClassSchedules: values.practicalClassSchedules.map(s => ({ ...s, date: Timestamp.fromDate(s.date) })),
             paymentType: values.paymentMethod === 'yappy' ? 'yappy' : 'cash', 
-            courseValue: 0, downPayment: values.paymentMethod === 'in_office' ? 0 : RESERVATION_FEE, balance: 0,
+            courseValue: 0, 
+            downPayment: RESERVATION_FEE, 
+            balance: 0,
+            paymentDeadline: serverTimestamp()
           }
         });
       });
-      setSubmitted(true);
-      toast({ title: 'Solicitud Enviada' });
-    } catch (error) { toast({ variant: 'destructive', title: 'Error' }); } finally { setIsSaving(false); }
+      
+      setSubmittedFolio(finalFolio);
+      toast({ title: '¡Inscripción Exitosa!', description: `Se ha generado el Folio ${finalFolio}` });
+    } catch (error) { 
+      console.error(error);
+      toast({ variant: 'destructive', title: 'Error en el procesamiento' }); 
+    } finally { setIsSaving(false); }
   };
 
-  if (submitted) {
+  if (submittedFolio) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
         <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-green-100 flex flex-col items-center">
           <div className="h-20 w-20 bg-green-100 rounded-full flex items-center justify-center mb-6"><CheckCircle2 className="h-10 w-10 text-green-600" /></div>
-          <h1 className="text-2xl font-black text-slate-900 mb-2">¡Solicitud Recibida!</h1>
-          <p className="text-slate-600 mb-8">{watchPaymentMethod === 'in_office' ? 'Registramos tu pre-inscripción. Acércate a nuestra sucursal para realizar el pago inicial y activar tu curso.' : 'Registramos tu solicitud. Estaremos verificando tu pago para activar tu curso a la brevedad.'}</p>
-          <Button asChild className="w-full h-12 text-lg font-bold"><Link href="/">Volver al Inicio</Link></Button>
+          <h1 className="text-2xl font-black text-slate-900 mb-2">¡Inscripción Completada!</h1>
+          <div className="bg-blue-50 p-4 rounded-2xl mb-6 w-full border border-blue-100">
+            <p className="text-[10px] font-black uppercase text-blue-600 tracking-widest mb-1">Tu Folio Oficial es:</p>
+            <p className="text-4xl font-black text-blue-900">{String(submittedFolio).padStart(6, '0')}</p>
+          </div>
+          <p className="text-slate-600 mb-8 font-medium">Tu cupo ha sido reservado automáticamente. Hemos enviado el contrato a tu correo electrónico.</p>
+          <Button asChild className="w-full h-12 text-lg font-bold"><Link href="/">Finalizar</Link></Button>
         </div>
       </div>
     );
@@ -243,8 +278,8 @@ export default function PublicEnrollmentPage() {
       </header>
       <main className="p-4 md:p-8 max-w-4xl mx-auto space-y-8">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-black text-slate-900 font-headline uppercase tracking-tight">Inscripción Online Freeway</h1>
-          <p className="text-slate-500 font-medium">Completa tus datos, elige tu horario y confirma tu pago para reservar tu cupo.</p>
+          <h1 className="text-3xl font-black text-slate-900 font-headline uppercase tracking-tight">Inscripción Directa Freeway</h1>
+          <p className="text-slate-500 font-medium">Automatiza tu ingreso: paga, valida y obtén tu folio al instante.</p>
         </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 pb-20">
@@ -252,10 +287,10 @@ export default function PublicEnrollmentPage() {
               <CardHeader className="bg-primary text-white"><CardTitle className="text-lg font-bold uppercase">1. Información Personal</CardTitle></CardHeader>
               <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField control={form.control} name="clientName" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Nombre Completo</FormLabel><FormControl><Input placeholder="Como aparece en su cédula" {...field} className="h-11 uppercase font-bold" /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Nombre Completo</FormLabel><FormControl><Input placeholder="Nombre..." {...field} className="h-11 uppercase font-bold" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="clientEmail" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Email</FormLabel><FormControl><Input type="email" placeholder="Para recibir su contrato" {...field} className="h-11" /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Email</FormLabel><FormControl><Input type="email" placeholder="ejemplo@correo.com" {...field} className="h-11" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
                   <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Cédula / ID</FormLabel><FormControl><Input placeholder="0-000-000" {...field} className="h-11" /></FormControl><FormMessage /></FormItem>
@@ -330,64 +365,45 @@ export default function PublicEnrollmentPage() {
             </Card>
 
             <Card className="shadow-lg border-none">
-              <CardHeader className="bg-emerald-600 text-white"><CardTitle className="text-lg font-bold uppercase flex items-center gap-2"><CreditCard className="h-5 w-5" /> 4. Pago de Reserva (B/. 50.00)</CardTitle></CardHeader>
+              <CardHeader className="bg-emerald-600 text-white"><CardTitle className="text-lg font-bold uppercase flex items-center gap-2"><CreditCard className="h-5 w-5" /> 4. Pago Automatizado (B/. 50.00)</CardTitle></CardHeader>
               <CardContent className="p-6 space-y-6">
-                <FormField control={form.control} name="paymentMethod" render={({ field }) => (
-                  <FormItem className="space-y-3">
-                    <FormLabel className="text-sm font-bold uppercase text-slate-700">Seleccione su forma de pago:</FormLabel>
-                    <FormControl>
-                      <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <FormItem><FormControl><RadioGroupItem value="yappy" className="sr-only" /></FormControl><FormLabel className={cn("flex flex-col items-center p-4 border-2 rounded-xl cursor-pointer transition-all", field.value === 'yappy' ? "border-emerald-500 bg-emerald-50/30 ring-1 ring-emerald-500" : "border-slate-100")}><Smartphone className={cn("h-8 w-8 mb-2", field.value === 'yappy' ? "text-emerald-600" : "text-slate-400")} /><span className="font-bold text-sm uppercase">Yappy</span></FormLabel></FormItem>
-                        <FormItem><FormControl><RadioGroupItem value="credit_card" className="sr-only" /></FormControl><FormLabel className={cn("flex flex-col items-center p-4 border-2 rounded-xl cursor-pointer transition-all", field.value === 'credit_card' ? "border-blue-500 bg-blue-50/30 ring-1 ring-blue-500" : "border-slate-100")}><CreditCard className={cn("h-8 w-8 mb-2", field.value === 'credit_card' ? "text-blue-600" : "text-slate-400")} /><span className="font-bold text-sm uppercase">Tarjeta</span></FormLabel></FormItem>
-                        <FormItem><FormControl><RadioGroupItem value="in_office" className="sr-only" /></FormControl><FormLabel className={cn("flex flex-col items-center p-4 border-2 rounded-xl cursor-pointer transition-all", field.value === 'in_office' ? "border-amber-500 bg-amber-50/30 ring-1 ring-amber-500" : "border-slate-100")}><Building2 className={cn("h-8 w-8 mb-2", field.value === 'in_office' ? "text-amber-600" : "text-slate-400")} /><span className="font-bold text-sm uppercase">Sucursal</span></FormLabel></FormItem>
-                      </RadioGroup>
-                    </FormControl>
-                  </FormItem>
-                )} />
+                <div className="p-6 bg-slate-50 border rounded-2xl space-y-6">
+                  <div className="flex flex-col gap-6">
+                    <div className="space-y-4">
+                      <h4 className="font-black text-emerald-700 uppercase tracking-tight">Instrucciones de Activación Inmediata:</h4>
+                      <ol className="text-xs space-y-2 text-emerald-800 font-medium list-decimal pl-4">
+                          <li>Haz clic en el botón inferior para realizar tu pago de reserva.</li>
+                          <li>Al completar la transacción, **copia el número de confirmación**.</li>
+                          <li>Ingresa el número abajo para que el sistema genere tu Folio automáticamente.</li>
+                      </ol>
+                      
+                      <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700 font-bold h-12 shadow-md">
+                        <a href="https://link.yappy.com.pa/stc/dgXr5v%2BGA2xDgGKBkz%2BnBhSk16Vdr9BZvaim7nGhYrA%3D" target="_blank" rel="noopener noreferrer">
+                          <Smartphone className="mr-2 h-5 w-5" /> Pagar B/. {RESERVATION_FEE.toFixed(2)} con Yappy
+                        </a>
+                      </Button>
 
-                <div className="mt-6">
-                  {watchPaymentMethod === 'yappy' && (
-                    <div className="p-6 bg-slate-50 border rounded-2xl space-y-6">
-                      <div className="flex flex-col gap-6">
-                        <div className="space-y-4">
-                          <h4 className="font-black text-emerald-700 uppercase tracking-tight">Instrucciones:</h4>
-                          <ol className="text-xs space-y-2 text-emerald-800 font-medium list-decimal pl-4">
-                              <li>Haz clic en el botón inferior para pagar con Yappy.</li>
-                              <li>Una vez realizado el pago, **regresa a esta página**.</li>
-                              <li>Ingresa el **Número de Confirmación** de tu pago abajo.</li>
-                          </ol>
-                          
-                          <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700 font-bold h-12 shadow-md">
-                            <a href="https://link.yappy.com.pa/stc/dgXr5v%2BGA2xDgGKBkz%2BnBhSk16Vdr9BZvaim7nGhYrA%3D" target="_blank" rel="noopener noreferrer">
-                              <Smartphone className="mr-2 h-5 w-5" /> Pagar B/. {RESERVATION_FEE.toFixed(2)} con Yappy
-                            </a>
-                          </Button>
-
-                          <div className="pt-4 border-t border-emerald-100">
-                            <FormField control={form.control} name="paymentReference" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="text-sm font-black text-slate-900 uppercase flex items-center gap-2">
-                                        <Hash className="h-4 w-4" /> Número de Confirmación de Yappy
-                                    </FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Ej: 12345678" {...field} className="h-12 text-xl font-mono tracking-widest border-2 border-emerald-500 focus:ring-emerald-500" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                          </div>
-                        </div>
+                      <div className="pt-4 border-t border-emerald-100">
+                        <FormField control={form.control} name="paymentReference" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-sm font-black text-slate-900 uppercase flex items-center gap-2">
+                                    <Hash className="h-4 w-4" /> Número de Confirmación de Yappy
+                                </FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Ingresa los dígitos de confirmación..." {...field} className="h-12 text-xl font-mono tracking-widest border-2 border-emerald-500 focus:ring-emerald-500" />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
                       </div>
                     </div>
-                  )}
-                  {watchPaymentMethod === 'credit_card' && <div className="p-6 bg-blue-50 border-2 border-blue-100 rounded-2xl space-y-4"><div className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-blue-600" /><h4 className="font-black text-blue-800 uppercase tracking-tight">Pago Seguro:</h4></div><p className="text-sm text-blue-700">Serás contactado por WhatsApp/Teléfono para completar el cobro de B/. {RESERVATION_FEE.toFixed(2)} mediante un enlace de pago seguro.</p></div>}
-                  {watchPaymentMethod === 'in_office' && <div className="p-6 bg-amber-50 border-2 border-amber-100 rounded-2xl space-y-4"><div className="flex items-center gap-3"><Building2 className="h-5 w-5 text-amber-600" /><h4 className="font-black text-amber-800 uppercase tracking-tight">Pago en Sucursal:</h4></div><p className="text-sm text-amber-700">Tu solicitud quedará guardada como borrador. Acércate a nuestra sucursal en Costa Verde para validar tu cupo y realizar tu abono de B/. {RESERVATION_FEE.toFixed(2)}.</p></div>}
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Button type="submit" disabled={isSaving || !watchPlan} className="w-full h-16 text-xl font-black shadow-xl uppercase tracking-widest bg-blue-600 hover:bg-blue-700">
-              {isSaving ? <><Loader2 className="mr-2 h-6 w-6 animate-spin" /> Procesando...</> : <><Save className="mr-2 h-6 w-6" /> Finalizar Inscripción</>}
+            <Button type="submit" disabled={isSaving || !watchPlan || !form.watch('paymentReference')} className="w-full h-16 text-xl font-black shadow-xl uppercase tracking-widest bg-blue-600 hover:bg-blue-700">
+              {isSaving ? <><Loader2 className="mr-2 h-6 w-6 animate-spin" /> Validando Transacción...</> : <><ShieldCheck className="mr-2 h-6 w-6" /> Activar Inscripción Ahora</>}
             </Button>
           </form>
         </Form>

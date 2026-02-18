@@ -1,4 +1,3 @@
-
 'use client';
 
 /**
@@ -478,7 +477,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
                           <PopoverTrigger asChild>
                             <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : 'Fecha'}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={toDate(f.value)} onSelect={f.onChange} initialFocus /></PopoverContent>
+                          <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={toDate(f.value)} onSelect={field.onChange} initialFocus /></PopoverContent>
                         </Popover>
                       </FormItem>
                     )} />

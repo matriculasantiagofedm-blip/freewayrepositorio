@@ -1,10 +1,9 @@
-
 'use client';
 
 /**
  * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN AUTOMÁTICA
- * Integración con Yappy (Azul) y Pago con Tarjeta (Verde Cubo).
- * El proceso es 100% automático: Valida referencia y genera Folio real.
+ * Proceso 100% automático: Genera Folio real al validar referencia.
+ * Identidad visual: Yappy (Azul) y Cubo (Verde).
  */
 
 import { useState, useEffect, useMemo } from 'react';

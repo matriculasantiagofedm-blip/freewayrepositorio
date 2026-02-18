@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -121,7 +120,6 @@ export default function VehicleScheduleReportPage() {
         });
 
         if (c.type === 'Curso Moto') {
-            // Priorizamos motoPracticalClassSchedules si existe
             if (c.autoMotoDetails?.motoPracticalClassSchedules) {
                 proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');
             } else if (c.autoMotoDetails?.practicalClassSchedules) {

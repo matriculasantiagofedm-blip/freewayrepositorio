@@ -2,7 +2,7 @@
 
 /**
  * FORMULARIO DE CONTRATO: CURSO DE MOTO
- * Corrige errores de sintaxis y revierte teléfono opcional.
+ * Corrige errores de sintaxis y elimina duplicidad de horarios en la base de datos.
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -244,7 +244,8 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
     setIsSaving(true);
     try {
       const balance = values.courseValue - values.downPayment;
-      const { clientName, clientEmail, ...detailsOnly } = values;
+      // IMPORTANTE: Excluimos practicalClassSchedules de detailsOnly para evitar duplicidad
+      const { clientName, clientEmail, practicalClassSchedules, ...detailsOnly } = values;
       const formattedTheoryDates = (values.theoreticalClassDates || []).map(d => Timestamp.fromDate(d));
       const formattedPracticalSchedules = (values.practicalClassSchedules || []).map(s => ({ ...s, date: Timestamp.fromDate(s.date) }));
 
@@ -253,7 +254,13 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
         const updateData = {
           clientName, clientEmail,
           status: balance <= 0 ? 'completed' : (contract.status === 'draft' ? 'active' : contract.status),
-          autoMotoDetails: { ...detailsOnly, paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null, theoreticalClassDates: formattedTheoryDates, motoPracticalClassSchedules: formattedPracticalSchedules, balance },
+          autoMotoDetails: { 
+            ...detailsOnly, 
+            paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null, 
+            theoreticalClassDates: formattedTheoryDates, 
+            motoPracticalClassSchedules: formattedPracticalSchedules, 
+            balance 
+          },
           updatedAt: serverTimestamp(), updatedBy: role || 'Sistema',
         };
         await updateDoc(contractRef, updateData);
@@ -268,7 +275,25 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
           const clientRef = doc(collection(db, 'clients'));
           transaction.set(clientRef, { name: clientName, email: clientEmail, idNumber: values.studentIdNumber, phone: values.studentPhone1, createdAt: serverTimestamp(), userId: user.uid });
           const contractRef = doc(collection(db, 'contracts'));
-          transaction.set(contractRef, { title: `Curso de Moto - Folio ${nextFolio}`, clientName, clientEmail, clientId: clientRef.id, folioNumber: nextFolio, type: 'Curso Moto', status: balance <= 0 ? 'completed' : 'active', userId: user.uid, createdBy: role || 'Sistema', createdAt: serverTimestamp(), autoMotoDetails: { ...detailsOnly, paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null, theoreticalClassDates: formattedTheoryDates, motoPracticalClassSchedules: formattedPracticalSchedules, balance } });
+          transaction.set(contractRef, { 
+            title: `Curso de Moto - Folio ${nextFolio}`, 
+            clientName, 
+            clientEmail, 
+            clientId: clientRef.id, 
+            folioNumber: nextFolio, 
+            type: 'Curso Moto', 
+            status: balance <= 0 ? 'completed' : 'active', 
+            userId: user.uid, 
+            createdBy: role || 'Sistema', 
+            createdAt: serverTimestamp(), 
+            autoMotoDetails: { 
+              ...detailsOnly, 
+              paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null, 
+              theoreticalClassDates: formattedTheoryDates, 
+              motoPracticalClassSchedules: formattedPracticalSchedules, 
+              balance 
+            } 
+          });
         });
         toast({ title: 'Contrato Creado' });
         router.push('/dashboard');
@@ -363,7 +388,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
                 <div key={field.id} className="p-4 border rounded-xl space-y-3 bg-white border-slate-200">
                   <div className="flex gap-4">
                     <FormField control={form.control} name={`practicalClassSchedules.${index}.date`} render={({ field: f }) => (
-                      <FormItem className="flex-1"><FormLabel className="text-[10px] font-black uppercase text-slate-500">Sesión {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className="h-9 w-full text-xs text-left">{f.value ? format(toDate(f.value), "dd/MM/yy") : 'Fecha'}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={toDate(f.value)} onSelect={f.onChange} initialFocus /></PopoverContent></Popover></FormItem>
+                      <FormItem className="flex-1"><FormLabel className="text-[10px] font-black uppercase text-slate-500">Sesión {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : 'Fecha'}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={toDate(f.value)} onSelect={f.onChange} initialFocus /></PopoverContent></Popover></FormItem>
                     )} />
                     <FormField control={form.control} name={`practicalClassSchedules.${index}.time`} render={({ field: f }) => (
                       <FormItem className="flex-1"><FormLabel className="text-[10px] font-black uppercase text-slate-500">Horario</FormLabel><Select onValueChange={f.onChange} value={f.value}><FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl><SelectContent>{TIME_OPTIONS.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent></Select></FormItem>
@@ -371,10 +396,10 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <FormField control={form.control} name={`practicalClassSchedules.${index}.vehicle`} render={({ field: f }) => (
-                      <FormItem><Select onValueChange={f.onChange} value={f.value}><FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl><SelectContent>{VEHICLES_MOTO.map(v => <SelectItem key={v} value={v} className="text-[10px]">{v}</SelectItem>)}</SelectContent></Select></FormItem>
+                      <FormItem><Select onValueChange={f.onChange} value={f.value}><FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl><SelectContent>{VEHICLES_MOTO.map(v => <SelectItem key={v} value={v} className="text-[10px]">{v}</SelectItem>)}</SelectContent></FormItem>
                     )} />
                     <FormField control={form.control} name={`practicalClassSchedules.${index}.instructor`} render={({ field: f }) => (
-                      <FormItem><Select onValueChange={f.onChange} value={f.value}><FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl><SelectContent>{INSTRUCTORS.map(i => <SelectItem key={i} value={i} className="text-[10px]">{i}</SelectItem>)}</SelectContent></Select></FormItem>
+                      <FormItem><Select onValueChange={f.onChange} value={f.value}><FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl><SelectContent>{INSTRUCTORS.map(i => <SelectItem key={i} value={i} className="text-[10px]">{i}</SelectItem>)}</SelectContent></FormItem>
                     )} />
                   </div>
                 </div>

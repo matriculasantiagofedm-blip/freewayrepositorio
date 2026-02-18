@@ -350,6 +350,10 @@ export default function PublicEnrollmentPage() {
                         <div className="bg-white p-4 rounded-xl border-2 border-emerald-100 shadow-sm"><QrCode className="h-32 w-32 text-slate-900" /></div>
                         <div className="space-y-4 flex-1">
                           <h4 className="font-black text-emerald-700 uppercase tracking-tight">Instrucciones de Yappy:</h4>
+                          <ul className="text-xs space-y-1 text-emerald-800 font-medium">
+                              <li>1. Buscar en el Directorio: <strong>Freeway</strong></li>
+                              <li>2. Incluir en comentario: <strong>Nombre del alumno</strong></li>
+                          </ul>
                           <div className="bg-emerald-100/50 p-3 rounded-lg border border-emerald-200">
                             <p className="text-xs font-bold text-emerald-800 uppercase">Monto a abonar para reserva:</p>
                             <p className="text-2xl font-black text-emerald-900">B/. {RESERVATION_FEE.toFixed(2)}</p>

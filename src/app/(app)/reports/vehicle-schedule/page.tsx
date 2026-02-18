@@ -111,9 +111,18 @@ export default function VehicleScheduleReportPage() {
             add(c.id, c.clientName, s.date, slotId, s.vehicle, s.instructor, s.status || 'scheduled', isEval, i + 1, 'contract', i, subType);
         });
 
-        if (c.autoMotoDetails?.practicalClassSchedules) proc(c.autoMotoDetails.practicalClassSchedules, 'auto');
-        if (c.autoMotoDetails?.motoPracticalClassSchedules) proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');
-        if (c.deluxeDetails?.classSchedules) proc(c.deluxeDetails.classSchedules, 'auto');
+        // Lógica robusta para evitar duplicidad según el tipo de contrato
+        if (c.type === 'Curso Moto') {
+            if (c.autoMotoDetails?.motoPracticalClassSchedules) proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');
+        } else if (c.type === 'Curso Deluxe') {
+            if (c.deluxeDetails?.classSchedules) proc(c.deluxeDetails.classSchedules, 'auto');
+        } else if (c.type === 'Curso Mixto') {
+            if (c.autoMotoDetails?.practicalClassSchedules) proc(c.autoMotoDetails.practicalClassSchedules, 'auto');
+            if (c.autoMotoDetails?.motoPracticalClassSchedules) proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');
+        } else {
+            // Curso Auto o Solo Practica
+            if (c.autoMotoDetails?.practicalClassSchedules) proc(c.autoMotoDetails.practicalClassSchedules, 'auto');
+        }
     });
 
     manualEntries?.forEach(e => {

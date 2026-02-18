@@ -31,7 +31,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
   };
 
   const isSoloPractica = contract.type === 'Curso Solo Practica';
-  const isMoto = contract.type === 'Curso Moto' || details?.vehicleTransmission === 'Moto';
+  const isMoto = contract.type === 'Curso Moto' || details?.vehicleTransmission === 'Moto' || details?.vehicleTransmission === 'Motocicleta';
 
   return (
     <div className="max-w-[8.5in] mx-auto bg-white p-10 font-serif text-[9pt] leading-[1.2] text-black print:p-0 print:m-0">

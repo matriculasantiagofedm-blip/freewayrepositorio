@@ -130,14 +130,14 @@ export default function DailyCashReportPage() {
             let amount: number = 0;
             let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
             
-            let studentId = contract.autoMotoDetails?.studentIdNumber || contract.deluxeDetails?.studentIdNumber || contract.ampliacionesDetails?.studentIdNumber || contract.studentIdNumber || '';
+            const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
+            let studentId = details?.studentIdNumber || contract.studentIdNumber || '';
 
             if (contract.type === 'Curso Deluxe') {
                 paymentType = contract.deluxeDetails?.paymentType || 'cash';
                 amount = 15.00;
             } else {
-                const details = contract.autoMotoDetails || contract.ampliacionesDetails;
-                paymentType = details?.paymentType || 'cash';
+                paymentType = (details as any)?.paymentType || 'cash';
                 amount = details?.downPayment || 0;
             }
 

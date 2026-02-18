@@ -127,7 +127,6 @@ const motoContractSchema = z.object({
   studentIdNumber: z.string().min(5, 'ID requerido'),
   studentAddress: z.string().min(5, 'Dirección requerida'),
   studentPhone1: z.string().min(7, 'Teléfono requerido'),
-  studentPhone2: z.string().optional(),
   licenseCategory: z.string().min(1, 'Categoría requerida'),
   vehicleTransmission: z.enum(['Moto']).default('Moto'),
   coursePlan: z.string({ required_error: "Seleccione un plan" }),
@@ -173,7 +172,6 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
       studentIdNumber: contract.autoMotoDetails?.studentIdNumber || '',
       studentAddress: contract.autoMotoDetails?.studentAddress || '',
       studentPhone1: contract.autoMotoDetails?.studentPhone1 || '',
-      studentPhone2: contract.autoMotoDetails?.studentPhone2 || '',
       licenseCategory: contract.autoMotoDetails?.licenseCategory || 'A, B',
       vehicleTransmission: 'Moto',
       coursePlan: contract.autoMotoDetails?.coursePlan || '',
@@ -195,7 +193,6 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
       studentIdNumber: '',
       studentAddress: '',
       studentPhone1: '',
-      studentPhone2: '',
       licenseCategory: 'A, B',
       vehicleTransmission: 'Moto',
       coursePlan: '',
@@ -310,16 +307,9 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
           updatedBy: role || 'Sistema',
         };
 
-        updateDoc(contractRef, updateData).catch(error => {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: contractRef.path,
-                operation: 'update',
-                requestResourceData: updateData
-            }));
-        });
-
+        await updateDoc(contractRef, updateData);
         toast({ title: 'Moto Actualizada' });
-        setTimeout(() => router.push(`/contracts/${contract.id}`), 500);
+        router.push(`/contracts/${contract.id}`);
       } else {
         await runTransaction(db, async (transaction) => {
           const counterRef = doc(db, 'counters', 'contracts_folio');
@@ -396,17 +386,9 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
                 )} />
               </div>
               <div className="col-span-12 md:col-span-6">
-                <div className="space-y-2">
-                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Teléfonos de Contacto</FormLabel>
-                  <div className="grid grid-cols-2 gap-2">
-                    <FormField control={form.control} name="studentPhone1" render={({ field }) => (
-                      <FormItem><FormControl><Input placeholder="Principal" {...field} className="h-9" /></FormControl><FormMessage /></FormItem>
-                    )} />
-                    <FormField control={form.control} name="studentPhone2" render={({ field }) => (
-                      <FormItem><FormControl><Input placeholder="Opcional" {...field} className="h-9" /></FormControl><FormMessage /></FormItem>
-                    )} />
-                  </div>
-                </div>
+                <FormField control={form.control} name="studentPhone1" render={({ field }) => (
+                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Teléfono de Contacto</FormLabel><FormControl><Input placeholder="6000-0000" {...field} className="h-9" /></FormControl><FormMessage /></FormItem>
+                )} />
               </div>
               <div className="col-span-12">
                 <FormField control={form.control} name="studentAddress" render={({ field }) => (

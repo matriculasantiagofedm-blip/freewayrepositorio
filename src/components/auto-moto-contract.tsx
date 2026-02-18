@@ -31,6 +31,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
   };
 
   const isSoloPractica = contract.type === 'Curso Solo Practica';
+  const isMoto = contract.type === 'Curso Moto' || details?.vehicleTransmission === 'Moto';
 
   return (
     <div className="max-w-[8.5in] mx-auto bg-white p-10 font-serif text-[9pt] leading-[1.2] text-black print:p-0 print:m-0">
@@ -78,13 +79,13 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
           <div className="grid grid-cols-2 gap-x-4 text-[8.5pt]">
             <div className="space-y-1.5">
                 <p>1. Categoría de licencia a aplicar: 
-                    A, B <Checkbox checked={details?.licenseCategory?.includes('A') && details?.licenseCategory?.includes('B')} />
-                    A, C <Checkbox checked={details?.licenseCategory?.includes('A') && details?.licenseCategory?.includes('C')} /> 
-                    A, C, D <Checkbox checked={details?.licenseCategory?.includes('D')} />
+                    A, B <Checkbox checked={details?.licenseCategory === 'A, B'} />
+                    A, C <Checkbox checked={details?.licenseCategory === 'A, C'} /> 
+                    A, C, D <Checkbox checked={details?.licenseCategory === 'A, C, D'} />
                 </p>
                 <p>2. Transmisión del vehículo: 
-                    Automático <Checkbox checked={details?.vehicleTransmission === 'Automático'} /> 
-                    Manual <Checkbox checked={details?.vehicleTransmission === 'Manual' || details?.vehicleTransmission === 'Moto'} />
+                    Automático <Checkbox checked={details?.vehicleTransmission === 'Automático' && !isMoto} /> 
+                    Manual <Checkbox checked={details?.vehicleTransmission === 'Manual' || isMoto} />
                 </p>
                 {!isSoloPractica && (
                     <p>3. Horario para clases teóricas: <span className="font-semibold underline uppercase">{details?.theoreticalClassSchedule || 'PENDIENTE'}</span></p>

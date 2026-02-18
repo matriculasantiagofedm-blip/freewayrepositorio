@@ -2,7 +2,7 @@
 
 /**
  * FORMULARIO DE CONTRATO: CURSO DE MOTO (SINCRONIZADO CON AGENDA)
- * Soporta creación y edición.
+ * Soporta creación y edición de registros existentes.
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -236,7 +236,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
     });
 
     allContracts?.forEach(c => {
-        if (isEdit && c.id === contract.id) return;
+        if (isEdit && c.id === contract?.id) return;
         const details = c.autoMotoDetails || c.deluxeDetails;
         const processSlots = (slots: any[]) => {
             slots.forEach(s => {
@@ -261,7 +261,6 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
   const watchAdditional = form.watch('additionalService');
   const watchTheorySchedule = form.watch('theoreticalClassSchedule');
 
-  // Actualizar número de fechas teóricas según horario elegido
   useEffect(() => {
     if (watchTheorySchedule && !isEdit) {
       const count = watchTheorySchedule === 'Semanal 8:00 am a 10:00 am' ? 4 : 3;
@@ -294,7 +293,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
       const formattedTheoryDates = (values.theoreticalClassDates || []).map(d => Timestamp.fromDate(d));
       const formattedPracticalSchedules = (values.practicalClassSchedules || []).map(s => ({ ...s, date: Timestamp.fromDate(s.date) }));
 
-      if (isEdit) {
+      if (isEdit && contract) {
         const contractRef = doc(db, 'contracts', contract.id);
         const updateData = {
           clientName: clientName,
@@ -311,15 +310,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
           updatedBy: role || 'Sistema',
         };
 
-        updateDoc(contractRef, updateData)
-          .catch(async (error) => {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-              path: contractRef.path,
-              operation: 'update',
-              requestResourceData: updateData
-            }));
-          });
-
+        await updateDoc(contractRef, updateData);
         toast({ title: 'Moto Actualizada' });
         setTimeout(() => router.push(`/contracts/${contract.id}`), 500);
       } else {
@@ -398,16 +389,17 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
                 )} />
               </div>
               <div className="col-span-12 md:col-span-6">
-                <FormField control={form.control} name="studentPhone1" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Teléfonos de Contacto</FormLabel>
-                    <div className="flex gap-2">
-                      <FormControl><Input placeholder="Principal" {...field} className="h-9" /></FormControl>
-                      <Input placeholder="Secundario (Opcional)" value={form.watch('studentPhone2') || ''} onChange={(e) => form.setValue('studentPhone2', e.target.value)} className="h-9" />
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+                <div className="space-y-2">
+                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Teléfonos de Contacto</FormLabel>
+                  <div className="grid grid-cols-2 gap-2">
+                    <FormField control={form.control} name="studentPhone1" render={({ field }) => (
+                      <FormItem><FormControl><Input placeholder="Principal" {...field} className="h-9" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="studentPhone2" render={({ field }) => (
+                      <FormItem><FormControl><Input placeholder="Opcional" {...field} className="h-9" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                  </div>
+                </div>
               </div>
               <div className="col-span-12">
                 <FormField control={form.control} name="studentAddress" render={({ field }) => (

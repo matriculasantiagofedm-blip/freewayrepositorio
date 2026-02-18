@@ -125,6 +125,7 @@ export default function VehicleScheduleReportPage() {
         });
 
         if (c.type === 'Curso Moto') {
+            // Priorizamos motoPracticalClassSchedules para evitar duplicidad si existen ambos
             if (c.autoMotoDetails?.motoPracticalClassSchedules && c.autoMotoDetails.motoPracticalClassSchedules.length > 0) {
                 proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');
             } else if (c.autoMotoDetails?.practicalClassSchedules) {

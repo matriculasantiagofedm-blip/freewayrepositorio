@@ -3,7 +3,7 @@
 
 /**
  * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN AUTOMÁTICA
- * Integración con Yappy (Azul) y Pago con Tarjeta (Cubo).
+ * Integración con Yappy (Azul) y Pago con Tarjeta (Verde Cubo).
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -372,7 +372,7 @@ export default function PublicEnrollmentPage() {
                 <Tabs value={watchPaymentMethod} onValueChange={(v: any) => form.setValue('paymentMethod', v)} className="w-full">
                   <TabsList className="grid w-full grid-cols-2 h-14 bg-slate-100 rounded-xl p-1">
                     <TabsTrigger value="yappy" className="rounded-lg data-[state=active]:bg-[#004fb9] data-[state=active]:text-white font-bold gap-2"><Smartphone className="h-4 w-4" /> Yappy</TabsTrigger>
-                    <TabsTrigger value="credit_card" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white font-bold gap-2"><CreditCard className="h-4 w-4" /> Tarjeta</TabsTrigger>
+                    <TabsTrigger value="credit_card" className="rounded-lg data-[state=active]:bg-green-600 data-[state=active]:text-white font-bold gap-2"><CreditCard className="h-4 w-4" /> Tarjeta</TabsTrigger>
                   </TabsList>
                   
                   <div className="mt-6 p-6 bg-slate-50 border rounded-2xl space-y-6">
@@ -394,9 +394,9 @@ export default function PublicEnrollmentPage() {
 
                     <TabsContent value="credit_card" className="m-0 space-y-6">
                       <div className="space-y-4">
-                        <h4 className="font-black text-primary uppercase tracking-tight">Pago con Tarjeta:</h4>
+                        <h4 className="font-black text-green-700 uppercase tracking-tight">Pago con Tarjeta:</h4>
                         <p className="text-xs text-slate-600 font-medium">Realiza tu pago seguro en nuestro portal de procesamiento y luego ingresa tu número de comprobante.</p>
-                        <Button asChild className="w-full font-bold h-12 shadow-md">
+                        <Button asChild className="w-full bg-green-600 hover:bg-green-700 font-bold h-12 shadow-md">
                           <a href="https://link.cubopago.com/m_JPusnlxKnM" target="_blank" rel="noopener noreferrer">
                             <CreditCard className="mr-2 h-5 w-5" /> Pagar con Tarjeta
                           </a>

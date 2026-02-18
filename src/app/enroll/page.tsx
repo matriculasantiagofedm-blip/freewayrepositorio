@@ -2,8 +2,7 @@
 
 /**
  * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN AUTOMÁTICA
- * Procesa el pago y genera el Folio de Contrato sin intervención humana.
- * Incluye validación automática de duplicados de referencia Yappy.
+ * Actualizado con colores de marca Yappy (Azul #004fb9) y validación automática.
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -118,7 +117,7 @@ const enrollmentSchema = z.object({
     date: z.date({ required_error: 'Fecha requerida' }),
     time: z.string().min(1, 'Hora requerida'),
   })).min(1, 'Debe elegir su horario'),
-  paymentMethod: z.enum(['yappy', 'credit_card', 'in_office'], { required_error: "Seleccione un método de pago" }),
+  paymentMethod: z.enum(['yappy', 'credit_card', 'in_office']).default('yappy'),
   paymentReference: z.string().min(6, 'Ingresa el número de confirmación completo').regex(/^\d+$/, 'Solo se permiten números'),
 });
 
@@ -196,37 +195,29 @@ export default function PublicEnrollmentPage() {
     
     setIsSaving(true);
     try {
-      // 1. VALIDACIÓN ANTI-FRAUDE: Verificar si el número de confirmación ya existe
       const qCheck = query(collection(db, 'contracts'), where('paymentReference', '==', values.paymentReference));
       const snapCheck = await getDocs(qCheck);
       
       if (!snapCheck.empty) {
-        toast({ 
-          variant: 'destructive', 
-          title: 'Referencia Duplicada', 
-          description: 'Este número de confirmación ya ha sido validado anteriormente. Si crees que es un error, contáctanos.' 
-        });
+        toast({ variant: 'destructive', title: 'Referencia Duplicada', description: 'Este número de confirmación ya ha sido validado anteriormente.' });
         setIsSaving(false);
         return;
       }
 
       let finalFolio = 0;
       await runTransaction(db, async (transaction) => {
-        // 2. Obtener y actualizar el Folio global
         const counterRef = doc(db, 'counters', 'contracts_folio');
         const counterDoc = await transaction.get(counterRef);
         let nextFolio = counterDoc.exists() ? Math.max(counterDoc.data().count + 1, 18) : 18;
         transaction.set(counterRef, { count: nextFolio }, { merge: true });
         finalFolio = nextFolio;
 
-        // 3. Crear Cliente
         const clientRef = doc(collection(db, 'clients'));
         transaction.set(clientRef, {
           name: values.clientName, email: values.clientEmail, idNumber: values.studentIdNumber,
           phone: values.studentPhone1, createdAt: serverTimestamp(), userId: auth.currentUser?.uid,
         });
 
-        // 4. Crear Contrato Activo directamente
         const contractRef = doc(collection(db, 'contracts'));
         transaction.set(contractRef, {
           title: `Curso de Auto - Folio ${nextFolio}`,
@@ -372,33 +363,33 @@ export default function PublicEnrollmentPage() {
               </CardContent>
             </Card>
 
-            <Card className="shadow-lg border-none">
-              <CardHeader className="bg-emerald-600 text-white"><CardTitle className="text-lg font-bold uppercase flex items-center gap-2"><CreditCard className="h-5 w-5" /> 4. Pago Automatizado</CardTitle></CardHeader>
+            <Card className="shadow-lg border-none overflow-hidden">
+              <CardHeader className="bg-[#004fb9] text-white"><CardTitle className="text-lg font-bold uppercase flex items-center gap-2"><CreditCard className="h-5 w-5" /> 4. Pago Automatizado</CardTitle></CardHeader>
               <CardContent className="p-6 space-y-6">
                 <div className="p-6 bg-slate-50 border rounded-2xl space-y-6">
                   <div className="flex flex-col gap-6">
                     <div className="space-y-4">
-                      <h4 className="font-black text-emerald-700 uppercase tracking-tight">Instrucciones de Activación Inmediata:</h4>
-                      <ol className="text-xs space-y-2 text-emerald-800 font-medium list-decimal pl-4">
+                      <h4 className="font-black text-[#004fb9] uppercase tracking-tight">Instrucciones de Activación Inmediata:</h4>
+                      <ol className="text-xs space-y-2 text-slate-700 font-medium list-decimal pl-4">
                           <li>Haz clic en el botón inferior para realizar tu pago de reserva.</li>
                           <li>Al completar la transacción, **copia el número de confirmación**.</li>
                           <li>Ingresa el número abajo para que el sistema genere tu Folio automáticamente.</li>
                       </ol>
                       
-                      <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700 font-bold h-12 shadow-md">
+                      <Button asChild className="w-full bg-[#004fb9] hover:bg-[#003a8c] font-bold h-12 shadow-md">
                         <a href="https://link.yappy.com.pa/stc/dgXr5v%2BGA2xDgGKBkz%2BnBhSk16Vdr9BZvaim7nGhYrA%3D" target="_blank" rel="noopener noreferrer">
                           <Smartphone className="mr-2 h-5 w-5" /> Pagar con Yappy
                         </a>
                       </Button>
 
-                      <div className="pt-4 border-t border-emerald-100">
+                      <div className="pt-4 border-t border-slate-200">
                         <FormField control={form.control} name="paymentReference" render={({ field }) => (
                             <FormItem>
                                 <FormLabel className="text-sm font-black text-slate-900 uppercase flex items-center gap-2">
-                                    <Hash className="h-4 w-4" /> Número de Confirmación de Yappy
+                                    <Hash className="h-4 w-4 text-[#004fb9]" /> Número de Confirmación de Yappy
                                 </FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Ingresa los dígitos de confirmación..." {...field} className="h-12 text-xl font-mono tracking-widest border-2 border-emerald-500 focus:ring-emerald-500" />
+                                    <Input placeholder="Ingresa los dígitos de confirmación..." {...field} className="h-12 text-xl font-mono tracking-widest border-2 border-[#004fb9] focus:ring-[#004fb9]" />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

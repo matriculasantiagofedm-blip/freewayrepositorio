@@ -2,7 +2,7 @@
 
 /**
  * FORMULARIO DE CONTRATO: CURSO DE MOTO
- * Corrige errores de sintaxis y asegura el cierre de bloques antes del return.
+ * Corrige errores de sintaxis y asegura la estabilidad del componente.
  */
 
 import { useState, useEffect } from 'react';

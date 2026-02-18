@@ -97,18 +97,18 @@ export default function VehicleScheduleReportPage() {
     const newWeeklyAssignments = new Map<string, any[]>();
 
     const add = (id: string, name: string, date: any, slot: TimeSlot, vehicle: string, instructor: string, status: ClassStatus = 'scheduled', isEval = false, num = 1, type: 'contract' | 'manual' = 'contract', slotIndex?: number, subType?: 'auto' | 'moto') => {
-        if (!date) return;
+        if (!date || !vehicle) return;
         const d = toDate(date);
         if (isNaN(d.getTime()) || !isWithinInterval(d, weekInterval)) return;
         const key = format(d, 'yyyy-MM-dd');
         const dayArr = newWeeklyAssignments.get(key) || [];
         
-        // Evitar duplicados absolutos por ID de contrato, fecha, turno y tipo de vehículo
+        // Evitar duplicados por ID de contrato, fecha, turno y tipo de vehículo
         const isDup = dayArr.some(existing => 
             existing.id === id && 
-            format(toDate(existing.date), 'yyyy-MM-dd HH:mm') === format(d, 'yyyy-MM-dd HH:mm') && 
             existing.slot === slot &&
-            existing.subType === subType
+            existing.subType === subType &&
+            existing.num === num
         );
         if (isDup) return;
 
@@ -125,7 +125,6 @@ export default function VehicleScheduleReportPage() {
             add(c.id, c.clientName, s.date, slotId, s.vehicle, s.instructor, s.status || 'scheduled', isEval, i + 1, 'contract', i, subType);
         });
 
-        // REGLA PARA MOTO: Si es curso moto, priorizamos motoPracticalClassSchedules para evitar duplicados
         if (c.type === 'Curso Moto') {
             if (c.autoMotoDetails?.motoPracticalClassSchedules && c.autoMotoDetails.motoPracticalClassSchedules.length > 0) {
                 proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');

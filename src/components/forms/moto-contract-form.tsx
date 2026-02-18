@@ -195,6 +195,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
       studentIdNumber: '',
       studentAddress: '',
       studentPhone1: '',
+      studentPhone2: '',
       licenseCategory: 'A, B',
       vehicleTransmission: 'Moto',
       coursePlan: '',
@@ -398,7 +399,14 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
               </div>
               <div className="col-span-12 md:col-span-6">
                 <FormField control={form.control} name="studentPhone1" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Teléfono</FormLabel><FormControl><Input placeholder="6000-0000" {...field} className="h-9" /></FormControl></FormItem>
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Teléfonos de Contacto</FormLabel>
+                    <div className="flex gap-2">
+                      <FormControl><Input placeholder="Principal" {...field} className="h-9" /></FormControl>
+                      <Input placeholder="Secundario (Opcional)" value={form.watch('studentPhone2') || ''} onChange={(e) => form.setValue('studentPhone2', e.target.value)} className="h-9" />
+                    </div>
+                    <FormMessage />
+                  </FormItem>
                 )} />
               </div>
               <div className="col-span-12">
@@ -512,7 +520,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
                     <FormItem className="flex flex-col"><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Límite para Cancelar Saldo</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("w-full h-10 pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(toDate(field.value), "PPP", { locale: es }) : <span>Elegir fecha</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={toDate(field.value)} onSelect={field.onChange} initialFocus /></PopoverContent></Popover></FormItem>
                 )} />
                 <FormField control={form.control} name="paymentType" render={({ field }) => (
-                    <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Método de Pago</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}><FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="cash">Efectivo</SelectItem><SelectItem value="debit">Tarjeta Débito</SelectItem><SelectItem value="credit">Tarjeta Crédito</SelectItem><SelectItem value="bac">BAC</SelectItem><SelectItem value="general">General</SelectItem><SelectItem value="cheques">Cheque</SelectItem></SelectContent></Select></FormItem>
+                    <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Método de Pago</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}><FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="cash">Efectivo</SelectItem><SelectItem value="debit">Tarjeta Débito</SelectItem><SelectItem value="credit">Tarjeta Crédito</SelectItem><SelectItem value="bac">BAC</SelectItem><SelectItem value="general">General</SelectItem><SelectItem value="cheques">Cheque</SelectItem></Select></FormItem>
                 )} />
             </div>
           </CardContent>

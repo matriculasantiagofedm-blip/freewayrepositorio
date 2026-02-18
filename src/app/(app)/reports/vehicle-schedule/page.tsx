@@ -103,11 +103,10 @@ export default function VehicleScheduleReportPage() {
         const key = format(d, 'yyyy-MM-dd');
         const dayArr = newWeeklyAssignments.get(key) || [];
         
-        // Evitar duplicados por ID de contrato, fecha, turno y tipo de vehículo
+        // DEDUPLICACIÓN ESTRICTA: Evita que el mismo estudiante aparezca duplicado en el mismo turno por tener datos en múltiples campos
         const isDup = dayArr.some(existing => 
             existing.id === id && 
             existing.slot === slot &&
-            existing.subType === subType &&
             existing.num === num
         );
         if (isDup) return;
@@ -125,6 +124,7 @@ export default function VehicleScheduleReportPage() {
             add(c.id, c.clientName, s.date, slotId, s.vehicle, s.instructor, s.status || 'scheduled', isEval, i + 1, 'contract', i, subType);
         });
 
+        // LÓGICA DE PRIORIDAD PARA EVITAR DUPLICADOS DE MOTO
         if (c.type === 'Curso Moto') {
             if (c.autoMotoDetails?.motoPracticalClassSchedules && c.autoMotoDetails.motoPracticalClassSchedules.length > 0) {
                 proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');

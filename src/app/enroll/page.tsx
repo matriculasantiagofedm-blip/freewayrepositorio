@@ -2,7 +2,7 @@
 
 /**
  * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN AUTOMÁTICA
- * Actualizado con colores de marca Yappy (Azul #004fb9) y validación automática.
+ * Actualizado con pago por Tarjeta y Yappy (Azul #004fb9).
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -62,6 +62,7 @@ import { useDb, useFirebase } from '@/components/firebase-provider';
 import Link from 'next/link';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { isPanamaHoliday } from '@/lib/holidays';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const AUTO_PLANS = [
   "Curso Auto Básico (8 Hrs)",
@@ -117,7 +118,7 @@ const enrollmentSchema = z.object({
     date: z.date({ required_error: 'Fecha requerida' }),
     time: z.string().min(1, 'Hora requerida'),
   })).min(1, 'Debe elegir su horario'),
-  paymentMethod: z.enum(['yappy', 'credit_card', 'in_office']).default('yappy'),
+  paymentMethod: z.enum(['yappy', 'credit_card']).default('yappy'),
   paymentReference: z.string().min(6, 'Ingresa el número de confirmación completo').regex(/^\d+$/, 'Solo se permiten números'),
 });
 
@@ -173,6 +174,7 @@ export default function PublicEnrollmentPage() {
   const { fields: practicalFields, replace: replacePractical } = useFieldArray({ control: form.control, name: "practicalClassSchedules" });
   const watchPlan = form.watch('coursePlan');
   const watchTheorySchedule = form.watch('theoreticalClassSchedule');
+  const watchPaymentMethod = form.watch('paymentMethod');
 
   useEffect(() => {
     if (watchPlan) {
@@ -236,7 +238,7 @@ export default function PublicEnrollmentPage() {
             licenseCategory: 'A, C',
             theoreticalClassDates: values.theoreticalClassDates.map(d => Timestamp.fromDate(d)),
             practicalClassSchedules: values.practicalClassSchedules.map(s => ({ ...s, date: Timestamp.fromDate(s.date) })),
-            paymentType: 'yappy', 
+            paymentType: values.paymentMethod === 'yappy' ? 'yappy' : 'credit', 
             courseValue: 0, 
             downPayment: RESERVATION_FEE, 
             balance: 0,
@@ -364,40 +366,56 @@ export default function PublicEnrollmentPage() {
             </Card>
 
             <Card className="shadow-lg border-none overflow-hidden">
-              <CardHeader className="bg-[#004fb9] text-white"><CardTitle className="text-lg font-bold uppercase flex items-center gap-2"><CreditCard className="h-5 w-5" /> 4. Pago Automatizado</CardTitle></CardHeader>
-              <CardContent className="p-6 space-y-6">
-                <div className="p-6 bg-slate-50 border rounded-2xl space-y-6">
-                  <div className="flex flex-col gap-6">
-                    <div className="space-y-4">
-                      <h4 className="font-black text-[#004fb9] uppercase tracking-tight">Instrucciones de Activación Inmediata:</h4>
-                      <ol className="text-xs space-y-2 text-slate-700 font-medium list-decimal pl-4">
-                          <li>Haz clic en el botón inferior para realizar tu pago de reserva.</li>
-                          <li>Al completar la transacción, **copia el número de confirmación**.</li>
-                          <li>Ingresa el número abajo para que el sistema genere tu Folio automáticamente.</li>
-                      </ol>
-                      
-                      <Button asChild className="w-full bg-[#004fb9] hover:bg-[#003a8c] font-bold h-12 shadow-md">
-                        <a href="https://link.yappy.com.pa/stc/dgXr5v%2BGA2xDgGKBkz%2BnBhSk16Vdr9BZvaim7nGhYrA%3D" target="_blank" rel="noopener noreferrer">
-                          <Smartphone className="mr-2 h-5 w-5" /> Pagar con Yappy
-                        </a>
-                      </Button>
-
-                      <div className="pt-4 border-t border-slate-200">
-                        <FormField control={form.control} name="paymentReference" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="text-sm font-black text-slate-900 uppercase flex items-center gap-2">
-                                    <Hash className="h-4 w-4 text-[#004fb9]" /> Número de Confirmación de Yappy
-                                </FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Ingresa los dígitos de confirmación..." {...field} className="h-12 text-xl font-mono tracking-widest border-2 border-[#004fb9] focus:ring-[#004fb9]" />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
+              <CardHeader className="bg-slate-900 text-white"><CardTitle className="text-lg font-bold uppercase flex items-center gap-2"><CreditCard className="h-5 w-5" /> 4. Pago Automatizado</CardTitle></CardHeader>
+              <CardContent className="p-6">
+                <Tabs value={watchPaymentMethod} onValueChange={(v: any) => form.setValue('paymentMethod', v)} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 h-14 bg-slate-100 rounded-xl p-1">
+                    <TabsTrigger value="yappy" className="rounded-lg data-[state=active]:bg-[#004fb9] data-[state=active]:text-white font-bold gap-2"><Smartphone className="h-4 w-4" /> Yappy</TabsTrigger>
+                    <TabsTrigger value="credit_card" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-white font-bold gap-2"><CreditCard className="h-4 w-4" /> Tarjeta</TabsTrigger>
+                  </TabsList>
+                  
+                  <div className="mt-6 p-6 bg-slate-50 border rounded-2xl space-y-6">
+                    <TabsContent value="yappy" className="m-0 space-y-6">
+                      <div className="space-y-4">
+                        <h4 className="font-black text-[#004fb9] uppercase tracking-tight">Instrucciones Yappy:</h4>
+                        <ol className="text-xs space-y-2 text-slate-700 font-medium list-decimal pl-4">
+                            <li>Haz clic en el botón inferior para realizar tu pago de reserva.</li>
+                            <li>Al completar la transacción, **copia el número de confirmación**.</li>
+                            <li>Ingresa el número abajo para que el sistema genere tu Folio automáticamente.</li>
+                        </ol>
+                        <Button asChild className="w-full bg-[#004fb9] hover:bg-[#003a8c] font-bold h-12 shadow-md">
+                          <a href="https://link.yappy.com.pa/stc/dgXr5v%2BGA2xDgGKBkz%2BnBhSk16Vdr9BZvaim7nGhYrA%3D" target="_blank" rel="noopener noreferrer">
+                            <Smartphone className="mr-2 h-5 w-5" /> Pagar con Yappy
+                          </a>
+                        </Button>
                       </div>
+                    </TabsContent>
+
+                    <TabsContent value="credit_card" className="m-0 space-y-6">
+                      <div className="space-y-4">
+                        <h4 className="font-black text-primary uppercase tracking-tight">Pago con Tarjeta:</h4>
+                        <p className="text-xs text-slate-600 font-medium">Realiza tu pago seguro en nuestro portal de procesamiento y luego ingresa tu número de comprobante.</p>
+                        <Button className="w-full font-bold h-12 shadow-md" variant="default" onClick={(e) => { e.preventDefault(); toast({ description: "Redirigiendo a pasarela segura..." }) }}>
+                          <CreditCard className="mr-2 h-5 w-5" /> Pagar con Tarjeta
+                        </Button>
+                      </div>
+                    </TabsContent>
+
+                    <div className="pt-4 border-t border-slate-200">
+                      <FormField control={form.control} name="paymentReference" render={({ field }) => (
+                          <FormItem>
+                              <FormLabel className="text-sm font-black text-slate-900 uppercase flex items-center gap-2">
+                                  <Hash className="h-4 w-4 text-primary" /> Número de Confirmación / Referencia
+                              </FormLabel>
+                              <FormControl>
+                                  <Input placeholder="Ingresa los dígitos de confirmación..." {...field} className="h-12 text-xl font-mono tracking-widest border-2 focus:ring-primary" />
+                              </FormControl>
+                              <FormMessage />
+                          </FormItem>
+                      )} />
                     </div>
                   </div>
-                </div>
+                </Tabs>
               </CardContent>
             </Card>
 

@@ -70,7 +70,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
           <div className="grid grid-cols-2 gap-x-4 text-[8.5pt]">
             <div className="space-y-1.5">
                 <p>1. Categoría de licencia a aplicar: 
-                    A, B <Checkbox checked={details?.licenseCategory === 'A, B' || isMoto} />
+                    A, B <Checkbox checked={details?.licenseCategory?.includes('B') || isMoto} />
                     A, C <Checkbox checked={details?.licenseCategory === 'A, C' && !isMoto} /> 
                     A, C, D <Checkbox checked={details?.licenseCategory === 'A, C, D' && !isMoto} />
                 </p>

@@ -114,11 +114,15 @@ export default function VehicleScheduleReportPage() {
         const d = c.autoMotoDetails || c.deluxeDetails;
         const isEval = (d?.coursePlan === 'evaluacion-estacionamiento' || d?.coursePlan === 'moto-evaluacion-estacionamiento');
         
-        const proc = (arr: any[], subType: 'auto' | 'moto' = 'auto') => arr.forEach((s, i) => {
-            const slotId = TIME_STRING_TO_SLOT_MAP[s.time] || s.time as TimeSlot;
-            add(c.id, c.clientName, s.date, slotId, s.vehicle, s.instructor, s.status || 'scheduled', isEval, i + 1, 'contract', i, subType);
-        });
+        const proc = (arr: any[], subType: 'auto' | 'moto' = 'auto') => {
+            if (!Array.isArray(arr)) return;
+            arr.forEach((s, i) => {
+                const slotId = TIME_STRING_TO_SLOT_MAP[s.time] || s.time as TimeSlot;
+                add(c.id, c.clientName, s.date, slotId, s.vehicle, s.instructor, s.status || 'scheduled', isEval, i + 1, 'contract', i, subType);
+            });
+        };
 
+        // Prioridad Moto si es curso de moto para evitar duplicidad de arrays vacíos o redundantes
         if (c.type === 'Curso Moto') {
             if (c.autoMotoDetails?.motoPracticalClassSchedules) {
                 proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');

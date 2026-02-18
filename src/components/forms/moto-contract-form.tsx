@@ -62,8 +62,6 @@ import { useCurrentRole } from '@/hooks/use-current-role';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { isPanamaHoliday } from '@/lib/holidays';
 import type { Contract } from '@/lib/types';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 const MOTO_PLANS = [
   "Curso Moto Básico (8 Hrs)",

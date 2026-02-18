@@ -343,15 +343,6 @@ export default function DailyCashReportPage() {
     );
   }
 
-  if (!role || (role !== 'Administrador' && role !== 'Ventas' && role !== 'Ventas Externas')) {
-    return (
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
-          <h3 className="mt-4 text-lg font-semibold text-foreground">Acceso Restringido</h3>
-          <Button asChild className="mt-4"><Link href="/dashboard">Volver al Panel</Link></Button>
-        </div>
-      );
-  }
-
   const isAdmin = role === 'Administrador';
 
   return (
@@ -362,7 +353,7 @@ export default function DailyCashReportPage() {
                 size: letter landscape; 
                 margin: 5mm; 
             }
-            header, footer, nav, aside, .print-hide { 
+            header, footer, nav, async, .print-hide { 
                 display: none !important; 
             }
             body { 
@@ -434,27 +425,12 @@ export default function DailyCashReportPage() {
         </div>
       </div>
 
-      {error && (
-          <Alert variant="destructive" className="max-w-2xl mx-auto print-hide">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error de Sistema</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-          </Alert>
-      )}
-
       <div className="print-container space-y-4">
         <div className="p-2 text-center font-bold text-lg border-b-2 border-black mb-4 uppercase">
             CONTROL DE CAJA - {format(reportDate, "EEEE d 'DE' LLLL 'DE' yyyy", { locale: es })}
         </div>
 
-        {isLoading && !error && (
-            <div className="flex flex-col items-center justify-center py-12 gap-4 print-hide">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-sm text-muted-foreground">Consultando base de datos...</p>
-            </div>
-        )}
-
-        {!isLoading && !error && (
+        {!isLoading && (
             <div className="space-y-4 animate-in fade-in-50 duration-500">
                 <div className="overflow-x-auto border border-black rounded-sm">
                     <Table className="min-w-full text-[10px] border-collapse">

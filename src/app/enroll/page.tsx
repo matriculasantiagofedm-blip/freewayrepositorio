@@ -57,7 +57,8 @@ import {
   CreditCard,
   Smartphone,
   Hash,
-  Car
+  Car,
+  Info
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useDb, useFirebase } from '@/components/firebase-provider';
@@ -65,6 +66,15 @@ import Link from 'next/link';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { isPanamaHoliday } from '@/lib/holidays';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const AUTO_PLANS = [
   "Curso Auto Básico (8 Hrs)",
@@ -132,6 +142,7 @@ export default function PublicEnrollmentPage() {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [submittedFolio, setSubmittedFolio] = useState<number | null>(null);
+  const [showCuboModal, setShowCuboModal] = useState(false);
 
   const activeContractsQuery = useMemoQuery(() => (db && auth.currentUser) ? query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed'])) : null, [db, auth.currentUser]);
   const manualEntriesQuery = useMemoQuery(() => (db && auth.currentUser) ? query(collection(db, 'manual_schedules')) : null, [db, auth.currentUser]);
@@ -255,6 +266,10 @@ export default function PublicEnrollmentPage() {
       console.error(error);
       toast({ variant: 'destructive', title: 'Error en el procesamiento' }); 
     } finally { setIsSaving(false); }
+  };
+
+  const handleOpenCubo = () => {
+    window.open("https://link.cubopago.com/m_JPusnlxKnM", "_blank");
   };
 
   if (submittedFolio) {
@@ -381,7 +396,7 @@ export default function PublicEnrollmentPage() {
                       <div className="space-y-4">
                         <h4 className="font-black text-[#004fb9] uppercase tracking-tight">Instrucciones Yappy:</h4>
                         <ol className="text-xs space-y-2 text-slate-700 font-medium list-decimal pl-4">
-                            <li>Haz clic en el botón inferior para realizar tu pago de reserva (**B/. 50.00**).</li>
+                            <li>Haz clic en el botón inferior para realizar tu pago de reserva.</li>
                             <li>Al completar la transacción en tu App, **copia el número de confirmación**.</li>
                             <li>Ingresa el número abajo para que el sistema valide tu pago.</li>
                         </ol>
@@ -397,14 +412,12 @@ export default function PublicEnrollmentPage() {
                       <div className="space-y-4">
                         <h4 className="font-black text-green-700 uppercase tracking-tight">Pago con Tarjeta (Cubo):</h4>
                         <ol className="text-xs space-y-2 text-slate-700 font-medium list-decimal pl-4">
-                            <li>Haz clic en el botón inferior para pagar de forma segura (**B/. 50.00**).</li>
+                            <li>Haz clic en el botón inferior para pagar de forma segura.</li>
                             <li>Al finalizar, copia el **Número de comprobante** que genera Cubo.</li>
                             <li>Ingresa dicho número abajo para activar tu contrato.</li>
                         </ol>
-                        <Button asChild className="w-full bg-green-600 hover:bg-green-700 font-bold h-12 shadow-md">
-                          <a href="https://link.cubopago.com/m_JPusnlxKnM" target="_blank" rel="noopener noreferrer">
-                            <CreditCard className="mr-2 h-5 w-5" /> Pagar con Tarjeta
-                          </a>
+                        <Button type="button" onClick={() => setShowCuboModal(true)} className="w-full bg-green-600 hover:bg-green-700 font-bold h-12 shadow-md">
+                          <CreditCard className="mr-2 h-5 w-5" /> Pagar con Tarjeta
                         </Button>
                       </div>
                     </TabsContent>
@@ -433,6 +446,33 @@ export default function PublicEnrollmentPage() {
           </form>
         </Form>
       </main>
+
+      <AlertDialog open={showCuboModal} onOpenChange={setShowCuboModal}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <div className="mx-auto bg-green-100 p-3 rounded-full w-fit mb-2">
+              <Info className="h-8 w-8 text-green-600" />
+            </div>
+            <AlertDialogTitle className="text-center text-xl font-black uppercase text-slate-900">Instrucciones de Comprobante</AlertDialogTitle>
+            <AlertDialogDescription className="text-center space-y-4 pt-2">
+              <p className="font-medium text-slate-700">Para finalizar tu inscripción, el sistema te pedirá el <span className="font-bold text-green-700">Número de Comprobante</span>.</p>
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-left text-xs space-y-2">
+                <p className="font-bold text-slate-900">¿Dónde encontrarlo?</p>
+                <ul className="list-disc pl-4 space-y-1 text-slate-600">
+                  <li>En la pantalla de <span className="font-bold">"Pago Exitoso"</span> al finalizar la transacción en Cubo.</li>
+                  <li>En el <span className="font-bold">correo electrónico</span> de confirmación que te enviará Cubo.</li>
+                </ul>
+              </div>
+              <p className="text-xs text-muted-foreground italic">Por favor, cópialo antes de cerrar la pestaña de pago.</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={handleOpenCubo} className="w-full h-12 bg-green-600 hover:bg-green-700 font-bold uppercase tracking-wider">
+              Entendido, ir a pagar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

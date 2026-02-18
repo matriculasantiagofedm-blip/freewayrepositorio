@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -40,6 +41,10 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: TimeSlot } = {
     '10:00am a 12:00pm': '10am-12pm',
     '01:00pm a 03:00pm': '1pm-3pm',
     '03:00pm a 05:00pm': '3pm-5pm',
+    '8am-10am': '8am-10am',
+    '10am-12pm': '10am-12pm',
+    '1pm-3pm': '1pm-3pm',
+    '3pm-5pm': '3pm-5pm'
 };
 
 const getGlobalCapacity = (date: Date, slotId: string) => {
@@ -98,7 +103,16 @@ export default function VehicleScheduleReportPage() {
         if (isNaN(d.getTime()) || !isWithinInterval(d, weekInterval)) return;
         const key = format(d, 'yyyy-MM-dd');
         const dayArr = newWeeklyAssignments.get(key) || [];
-        dayArr.push({ id, name, slot, vehicle, instructor, status, isEval, num, type, slotIndex, subType });
+        
+        // Evitar duplicados por id, fecha y turno (especialmente para motos)
+        const isDup = dayArr.some(existing => 
+            existing.id === id && 
+            format(toDate(existing.date), 'HH:mm') === format(d, 'HH:mm') && 
+            existing.slot === slot
+        );
+        if (isDup) return;
+
+        dayArr.push({ id, name, date: d, slot, vehicle, instructor, status, isEval, num, type, slotIndex, subType });
         newWeeklyAssignments.set(key, dayArr);
     };
 
@@ -107,11 +121,12 @@ export default function VehicleScheduleReportPage() {
         const isEval = (d?.coursePlan === 'evaluacion-estacionamiento' || d?.coursePlan === 'moto-evaluacion-estacionamiento');
         
         const proc = (arr: any[], subType: 'auto' | 'moto' = 'auto') => arr.forEach((s, i) => {
-            const slotId = TIME_STRING_TO_SLOT_MAP[s.time] || s.time;
+            const slotId = TIME_STRING_TO_SLOT_MAP[s.time] || s.time as TimeSlot;
             add(c.id, c.clientName, s.date, slotId, s.vehicle, s.instructor, s.status || 'scheduled', isEval, i + 1, 'contract', i, subType);
         });
 
         if (c.type === 'Curso Moto') {
+            // En cursos de moto, solo procesar motoPracticalClassSchedules si existe, de lo contrario practicalClassSchedules
             if (c.autoMotoDetails?.motoPracticalClassSchedules && c.autoMotoDetails.motoPracticalClassSchedules.length > 0) {
                 proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');
             } else if (c.autoMotoDetails?.practicalClassSchedules) {

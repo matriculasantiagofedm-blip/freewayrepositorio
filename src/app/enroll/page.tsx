@@ -1,3 +1,4 @@
+
 'use client';
 
 /**
@@ -33,7 +34,7 @@ import {
   FormLabel,
   FormMessage,
   FormDescription,
-} from '@/form-form';
+} from '@/components/ui/form';
 import {
   Select,
   SelectContent,
@@ -368,7 +369,7 @@ export default function PublicEnrollmentPage() {
                     </div>
                   )}
                   {watchPaymentMethod === 'credit_card' && <div className="p-6 bg-blue-50 border-2 border-blue-100 rounded-2xl space-y-4"><div className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-blue-600" /><h4 className="font-black text-blue-800 uppercase tracking-tight">Pago Seguro:</h4></div><p className="text-sm text-blue-700">Serás contactado para completar el cobro de B/. {RESERVATION_FEE.toFixed(2)} por tarjeta.</p></div>}
-                  {watchPaymentMethod === 'in_office' && <div className="p-6 bg-amber-50 border-2 border-amber-100 rounded-2xl space-y-4"><div className="flex items-center gap-3"><Building2 className="h-5 w-5 text-amber-600" /><h4 className="font-black text-amber-800 uppercase tracking-tight">Pago en Sucursal:</h4></div><p className="text-sm text-amber-700">Acércate a Costa Verde para validar tu cupo y realizar tu abono de B/. {RESERVATION_FEE.toFixed(2)}.</p></div>}
+                  {watchPaymentMethod === 'in_office' && <div className="p-6 bg-amber-50 border-2 border-amber-100 rounded-2xl space-y-4"><div className="flex items-center gap-3"><Building2 className="h-5 w-5 text-amber-600" /><h4 className="font-black text-amber-800 uppercase tracking-tight">Pago en Sucursal:</h4></div><p className="text-sm text-amber-700">Acércate a nuestra sucursal para validar tu cupo y realizar tu abono de B/. {RESERVATION_FEE.toFixed(2)}.</p></div>}
                 </div>
               </CardContent>
             </Card>

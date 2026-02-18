@@ -2,10 +2,10 @@
 
 /**
  * FORMULARIO DE CONTRATO: CURSO DE MOTO
- * Corrige errores de sintaxis y ajusta lógica de sesiones teóricas.
+ * Corrige errores de sintaxis y asegura el cierre de bloques antes del return.
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,8 +18,6 @@ import {
   runTransaction, 
   serverTimestamp, 
   Timestamp,
-  query,
-  where,
   updateDoc
 } from 'firebase/firestore';
 

@@ -3,6 +3,7 @@
 /**
  * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN AUTOMÁTICA
  * Procesa el pago y genera el Folio de Contrato sin intervención humana.
+ * Incluye validación automática de duplicados de referencia Yappy.
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -18,7 +19,8 @@ import {
   serverTimestamp, 
   Timestamp,
   query,
-  where
+  where,
+  getDocs
 } from 'firebase/firestore';
 import { signInAnonymously } from 'firebase/auth';
 
@@ -43,21 +45,18 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Loader2, 
   CalendarIcon, 
-  Save, 
-  UserCircle, 
-  Car, 
   CheckCircle2,
   GanttChart,
   ShieldCheck,
   BookOpen,
   CreditCard,
   Smartphone,
-  Hash
+  Hash,
+  Car
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useDb, useFirebase } from '@/components/firebase-provider';
@@ -120,7 +119,7 @@ const enrollmentSchema = z.object({
     time: z.string().min(1, 'Hora requerida'),
   })).min(1, 'Debe elegir su horario'),
   paymentMethod: z.enum(['yappy', 'credit_card', 'in_office'], { required_error: "Seleccione un método de pago" }),
-  paymentReference: z.string().optional(),
+  paymentReference: z.string().min(6, 'Ingresa el número de confirmación completo').regex(/^\d+$/, 'Solo se permiten números'),
 });
 
 type FormValues = z.infer<typeof enrollmentSchema>;
@@ -175,7 +174,6 @@ export default function PublicEnrollmentPage() {
   const { fields: practicalFields, replace: replacePractical } = useFieldArray({ control: form.control, name: "practicalClassSchedules" });
   const watchPlan = form.watch('coursePlan');
   const watchTheorySchedule = form.watch('theoreticalClassSchedule');
-  const watchPaymentMethod = form.watch('paymentMethod');
 
   useEffect(() => {
     if (watchPlan) {
@@ -195,30 +193,40 @@ export default function PublicEnrollmentPage() {
 
   const onSubmit = async (values: FormValues) => {
     if (!db || !auth.currentUser) return;
-    if (values.paymentMethod === 'yappy' && !values.paymentReference) {
-        toast({ variant: 'destructive', title: 'Falta Referencia', description: 'Por favor, ingresa el número de confirmación de Yappy.' });
-        return;
-    }
     
     setIsSaving(true);
     try {
+      // 1. VALIDACIÓN ANTI-FRAUDE: Verificar si el número de confirmación ya existe
+      const qCheck = query(collection(db, 'contracts'), where('paymentReference', '==', values.paymentReference));
+      const snapCheck = await getDocs(qCheck);
+      
+      if (!snapCheck.empty) {
+        toast({ 
+          variant: 'destructive', 
+          title: 'Referencia Duplicada', 
+          description: 'Este número de confirmación ya ha sido validado anteriormente. Si crees que es un error, contáctanos.' 
+        });
+        setIsSaving(false);
+        return;
+      }
+
       let finalFolio = 0;
       await runTransaction(db, async (transaction) => {
-        // 1. Obtener y actualizar el Folio global
+        // 2. Obtener y actualizar el Folio global
         const counterRef = doc(db, 'counters', 'contracts_folio');
         const counterDoc = await transaction.get(counterRef);
         let nextFolio = counterDoc.exists() ? Math.max(counterDoc.data().count + 1, 18) : 18;
         transaction.set(counterRef, { count: nextFolio }, { merge: true });
         finalFolio = nextFolio;
 
-        // 2. Crear Cliente
+        // 3. Crear Cliente
         const clientRef = doc(collection(db, 'clients'));
         transaction.set(clientRef, {
           name: values.clientName, email: values.clientEmail, idNumber: values.studentIdNumber,
           phone: values.studentPhone1, createdAt: serverTimestamp(), userId: auth.currentUser?.uid,
         });
 
-        // 3. Crear Contrato Activo directamente
+        // 4. Crear Contrato Activo directamente
         const contractRef = doc(collection(db, 'contracts'));
         transaction.set(contractRef, {
           title: `Curso de Auto - Folio ${nextFolio}`,
@@ -229,15 +237,15 @@ export default function PublicEnrollmentPage() {
           type: 'Curso Auto', 
           status: 'active',
           userId: auth.currentUser?.uid, 
-          createdBy: 'Inscripción Automática Web', 
+          createdBy: 'Web Pública', 
           createdAt: serverTimestamp(),
-          paymentReference: values.paymentReference || 'N/A',
+          paymentReference: values.paymentReference,
           autoMotoDetails: {
             ...values, 
             licenseCategory: 'A, C',
             theoreticalClassDates: values.theoreticalClassDates.map(d => Timestamp.fromDate(d)),
             practicalClassSchedules: values.practicalClassSchedules.map(s => ({ ...s, date: Timestamp.fromDate(s.date) })),
-            paymentType: values.paymentMethod === 'yappy' ? 'yappy' : 'cash', 
+            paymentType: 'yappy', 
             courseValue: 0, 
             downPayment: RESERVATION_FEE, 
             balance: 0,
@@ -264,8 +272,8 @@ export default function PublicEnrollmentPage() {
             <p className="text-[10px] font-black uppercase text-blue-600 tracking-widest mb-1">Tu Folio Oficial es:</p>
             <p className="text-4xl font-black text-blue-900">{String(submittedFolio).padStart(6, '0')}</p>
           </div>
-          <p className="text-slate-600 mb-8 font-medium">Tu cupo ha sido reservado automáticamente. Hemos enviado el contrato a tu correo electrónico.</p>
-          <Button asChild className="w-full h-12 text-lg font-bold"><Link href="/">Finalizar</Link></Button>
+          <p className="text-slate-600 mb-8 font-medium">Tu cupo ha sido reservado automáticamente. Por favor guarda tu número de folio.</p>
+          <Button asChild className="w-full h-12 text-lg font-bold"><Link href="/">Volver al Inicio</Link></Button>
         </div>
       </div>
     );

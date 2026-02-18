@@ -590,8 +590,7 @@ export default function PublicEnrollmentPage() {
                           <h4 className="font-black text-emerald-700 uppercase tracking-tight">Instrucciones de Yappy:</h4>
                           <ul className="text-sm space-y-2 text-slate-600">
                             <li className="flex items-center gap-2"><span className="h-5 w-5 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center text-[10px] font-bold">1</span> Buscar en el directorio: <strong>@freeway_escuela</strong></li>
-                            <li className="flex items-center gap-2"><span className="h-5 w-5 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center text-[10px] font-bold">2</span> Enviar monto de reserva (B/. 50.00)</li>
-                            <li className="flex items-center gap-2"><span className="h-5 w-5 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center text-[10px] font-bold">3</span> <strong>IMPORTANTE:</strong> Incluir su nombre completo en el comentario.</li>
+                            <li className="flex items-center gap-2"><span className="h-5 w-5 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center text-[10px] font-bold">2</span> <strong>IMPORTANTE:</strong> Incluir su nombre completo en el comentario.</li>
                           </ul>
                         </div>
                       </div>

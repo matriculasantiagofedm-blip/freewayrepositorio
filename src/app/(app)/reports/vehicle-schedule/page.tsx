@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -14,7 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, ChevronLeft, ChevronRight, User, Car, Bike, ShieldCheck, Timer, Landmark, Ban, AlertCircle, CheckCircle2, MessageSquare } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, User, AlertCircle, CheckCircle2, MessageSquare, Timer, ShieldCheck } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addDays, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
@@ -104,11 +103,12 @@ export default function VehicleScheduleReportPage() {
         const key = format(d, 'yyyy-MM-dd');
         const dayArr = newWeeklyAssignments.get(key) || [];
         
-        // Evitar duplicados por id, fecha y turno (especialmente para motos)
+        // Evitar duplicados por id, fecha y turno
         const isDup = dayArr.some(existing => 
             existing.id === id && 
             format(toDate(existing.date), 'HH:mm') === format(d, 'HH:mm') && 
-            existing.slot === slot
+            existing.slot === slot &&
+            existing.subType === subType
         );
         if (isDup) return;
 
@@ -126,7 +126,6 @@ export default function VehicleScheduleReportPage() {
         });
 
         if (c.type === 'Curso Moto') {
-            // En cursos de moto, solo procesar motoPracticalClassSchedules si existe, de lo contrario practicalClassSchedules
             if (c.autoMotoDetails?.motoPracticalClassSchedules && c.autoMotoDetails.motoPracticalClassSchedules.length > 0) {
                 proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');
             } else if (c.autoMotoDetails?.practicalClassSchedules) {
@@ -252,7 +251,7 @@ export default function VehicleScheduleReportPage() {
                             )}
                             <div className="flex flex-col gap-1.5 h-full pt-5">
                                 {assignments.map((a, i) => (
-                                    <Popover key={i}>
+                                    <Popover key={`${a.id}-${i}`}>
                                         <PopoverTrigger asChild>
                                             <div className={cn(
                                                 "p-2 rounded border text-[10px] shadow-sm cursor-pointer hover:shadow-md transition-all relative", 

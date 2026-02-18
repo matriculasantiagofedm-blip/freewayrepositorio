@@ -1,4 +1,3 @@
-
 'use client';
 
 /**
@@ -60,7 +59,6 @@ import {
 import { cn, toDate } from '@/lib/utils';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useCurrentRole } from '@/hooks/use-current-role';
-import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import type { Contract } from '@/lib/types';
 
 const MOTO_PLANS = [

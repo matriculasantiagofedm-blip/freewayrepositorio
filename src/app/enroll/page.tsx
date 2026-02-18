@@ -1,8 +1,7 @@
-
 'use client';
 
 /**
- * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN CON ENLACE DE PAGO YAPPY DINÁMICO
+ * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN CON VALIDACIÓN DE PAGO
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -33,7 +32,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from '@/components/ui/form';
 import {
   Select,
@@ -42,7 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -53,18 +51,14 @@ import {
   Save, 
   UserCircle, 
   Car, 
-  Clock,
-  AlertTriangle,
   CheckCircle2,
   GanttChart,
   ShieldCheck,
-  Ban,
   BookOpen,
   CreditCard,
   Building2,
-  QrCode,
   Smartphone,
-  ExternalLink
+  Hash
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useDb, useFirebase } from '@/components/firebase-provider';
@@ -127,6 +121,7 @@ const enrollmentSchema = z.object({
     time: z.string().min(1, 'Hora requerida'),
   })).min(1, 'Debe elegir su horario'),
   paymentMethod: z.enum(['yappy', 'credit_card', 'in_office'], { required_error: "Seleccione un método de pago" }),
+  paymentReference: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof enrollmentSchema>;
@@ -174,7 +169,7 @@ export default function PublicEnrollmentPage() {
     defaultValues: {
       clientName: '', clientEmail: '', idType: 'C.I.P.', studentIdNumber: '', studentAddress: '', studentPhone1: '',
       vehicleTransmission: 'Automático', coursePlan: '', theoreticalClassSchedule: 'Sabados 3:00 pm a 5:00 pm',
-      theoreticalClassDates: [], practicalClassSchedules: [], paymentMethod: 'in_office',
+      theoreticalClassDates: [], practicalClassSchedules: [], paymentMethod: 'in_office', paymentReference: '',
     },
   });
 
@@ -201,6 +196,10 @@ export default function PublicEnrollmentPage() {
 
   const onSubmit = async (values: FormValues) => {
     if (!db || !auth.currentUser) return;
+    if (values.paymentMethod === 'yappy' && !values.paymentReference) {
+        toast({ variant: 'destructive', title: 'Falta Referencia', description: 'Por favor, ingresa el número de confirmación de Yappy.' });
+        return;
+    }
     setIsSaving(true);
     try {
       await runTransaction(db, async (transaction) => {
@@ -209,11 +208,13 @@ export default function PublicEnrollmentPage() {
           title: `Pre-inscripción Web: ${values.clientName}`,
           clientName: values.clientName, clientEmail: values.clientEmail, type: 'Curso Auto', status: 'draft',
           userId: auth.currentUser?.uid, createdBy: 'Web Publica', createdAt: serverTimestamp(),
+          paymentReference: values.paymentReference || 'N/A',
           autoMotoDetails: {
             ...values, licenseCategory: 'A, C',
             theoreticalClassDates: values.theoreticalClassDates.map(d => Timestamp.fromDate(d)),
             practicalClassSchedules: values.practicalClassSchedules.map(s => ({ ...s, date: Timestamp.fromDate(s.date) })),
-            paymentType: 'cash', courseValue: 0, downPayment: 0, balance: 0,
+            paymentType: values.paymentMethod === 'yappy' ? 'yappy' : 'cash', 
+            courseValue: 0, downPayment: values.paymentMethod === 'in_office' ? 0 : RESERVATION_FEE, balance: 0,
           }
         });
       });
@@ -243,7 +244,7 @@ export default function PublicEnrollmentPage() {
       <main className="p-4 md:p-8 max-w-4xl mx-auto space-y-8">
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-black text-slate-900 font-headline uppercase tracking-tight">Inscripción Online Freeway</h1>
-          <p className="text-slate-500 font-medium">Completa tus datos y propón tu horario. Verifica la disponibilidad en tiempo real.</p>
+          <p className="text-slate-500 font-medium">Completa tus datos, elige tu horario y confirma tu pago para reservar tu cupo.</p>
         </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 pb-20">
@@ -329,11 +330,11 @@ export default function PublicEnrollmentPage() {
             </Card>
 
             <Card className="shadow-lg border-none">
-              <CardHeader className="bg-emerald-600 text-white"><CardTitle className="text-lg font-bold uppercase flex items-center gap-2"><CreditCard className="h-5 w-5" /> 4. Método de Pago de Reserva</CardTitle></CardHeader>
+              <CardHeader className="bg-emerald-600 text-white"><CardTitle className="text-lg font-bold uppercase flex items-center gap-2"><CreditCard className="h-5 w-5" /> 4. Pago de Reserva (B/. 50.00)</CardTitle></CardHeader>
               <CardContent className="p-6 space-y-6">
                 <FormField control={form.control} name="paymentMethod" render={({ field }) => (
                   <FormItem className="space-y-3">
-                    <FormLabel className="text-sm font-bold uppercase text-slate-700">Seleccione su forma de pago inicial:</FormLabel>
+                    <FormLabel className="text-sm font-bold uppercase text-slate-700">Seleccione su forma de pago:</FormLabel>
                     <FormControl>
                       <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <FormItem><FormControl><RadioGroupItem value="yappy" className="sr-only" /></FormControl><FormLabel className={cn("flex flex-col items-center p-4 border-2 rounded-xl cursor-pointer transition-all", field.value === 'yappy' ? "border-emerald-500 bg-emerald-50/30 ring-1 ring-emerald-500" : "border-slate-100")}><Smartphone className={cn("h-8 w-8 mb-2", field.value === 'yappy' ? "text-emerald-600" : "text-slate-400")} /><span className="font-bold text-sm uppercase">Yappy</span></FormLabel></FormItem>
@@ -347,29 +348,40 @@ export default function PublicEnrollmentPage() {
                 <div className="mt-6">
                   {watchPaymentMethod === 'yappy' && (
                     <div className="p-6 bg-slate-50 border rounded-2xl space-y-6">
-                      <div className="flex flex-col sm:flex-row gap-6 items-center">
-                        <div className="bg-white p-4 rounded-xl border-2 border-emerald-100 shadow-sm"><QrCode className="h-32 w-32 text-slate-900" /></div>
-                        <div className="space-y-4 flex-1">
-                          <h4 className="font-black text-emerald-700 uppercase tracking-tight">Instrucciones de Yappy:</h4>
-                          <ul className="text-xs space-y-1 text-emerald-800 font-medium">
-                              <li>1. Haga clic en el botón de abajo para abrir Yappy.</li>
-                          </ul>
-                          <div className="bg-emerald-100/50 p-3 rounded-lg border border-emerald-200">
-                            <p className="text-xs font-bold text-emerald-800 uppercase">Monto a abonar para reserva:</p>
-                            <p className="text-2xl font-black text-emerald-900">B/. {RESERVATION_FEE.toFixed(2)}</p>
-                          </div>
-                          <p className="text-sm text-slate-600 italic">Al finalizar, regrese aquí y presione "Finalizar Inscripción".</p>
+                      <div className="flex flex-col gap-6">
+                        <div className="space-y-4">
+                          <h4 className="font-black text-emerald-700 uppercase tracking-tight">Instrucciones:</h4>
+                          <ol className="text-xs space-y-2 text-emerald-800 font-medium list-decimal pl-4">
+                              <li>Haz clic en el botón inferior para pagar con Yappy.</li>
+                              <li>Una vez realizado el pago, **regresa a esta página**.</li>
+                              <li>Ingresa el **Número de Confirmación** de tu pago abajo.</li>
+                          </ol>
+                          
                           <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700 font-bold h-12 shadow-md">
                             <a href="https://link.yappy.com.pa/stc/dgXr5v%2BGA2xDgGKBkz%2BnBhSk16Vdr9BZvaim7nGhYrA%3D" target="_blank" rel="noopener noreferrer">
                               <Smartphone className="mr-2 h-5 w-5" /> Pagar B/. {RESERVATION_FEE.toFixed(2)} con Yappy
                             </a>
                           </Button>
+
+                          <div className="pt-4 border-t border-emerald-100">
+                            <FormField control={form.control} name="paymentReference" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-sm font-black text-slate-900 uppercase flex items-center gap-2">
+                                        <Hash className="h-4 w-4" /> Número de Confirmación de Yappy
+                                    </FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Ej: 12345678" {...field} className="h-12 text-xl font-mono tracking-widest border-2 border-emerald-500 focus:ring-emerald-500" />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                          </div>
                         </div>
                       </div>
                     </div>
                   )}
-                  {watchPaymentMethod === 'credit_card' && <div className="p-6 bg-blue-50 border-2 border-blue-100 rounded-2xl space-y-4"><div className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-blue-600" /><h4 className="font-black text-blue-800 uppercase tracking-tight">Pago Seguro:</h4></div><p className="text-sm text-blue-700">Serás contactado para completar el cobro de B/. {RESERVATION_FEE.toFixed(2)} por tarjeta.</p></div>}
-                  {watchPaymentMethod === 'in_office' && <div className="p-6 bg-amber-50 border-2 border-amber-100 rounded-2xl space-y-4"><div className="flex items-center gap-3"><Building2 className="h-5 w-5 text-amber-600" /><h4 className="font-black text-amber-800 uppercase tracking-tight">Pago en Sucursal:</h4></div><p className="text-sm text-amber-700">Acércate a nuestra sucursal para validar tu cupo y realizar tu abono de B/. {RESERVATION_FEE.toFixed(2)}.</p></div>}
+                  {watchPaymentMethod === 'credit_card' && <div className="p-6 bg-blue-50 border-2 border-blue-100 rounded-2xl space-y-4"><div className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-blue-600" /><h4 className="font-black text-blue-800 uppercase tracking-tight">Pago Seguro:</h4></div><p className="text-sm text-blue-700">Serás contactado por WhatsApp/Teléfono para completar el cobro de B/. {RESERVATION_FEE.toFixed(2)} mediante un enlace de pago seguro.</p></div>}
+                  {watchPaymentMethod === 'in_office' && <div className="p-6 bg-amber-50 border-2 border-amber-100 rounded-2xl space-y-4"><div className="flex items-center gap-3"><Building2 className="h-5 w-5 text-amber-600" /><h4 className="font-black text-amber-800 uppercase tracking-tight">Pago en Sucursal:</h4></div><p className="text-sm text-amber-700">Tu solicitud quedará guardada como borrador. Acércate a nuestra sucursal en Costa Verde para validar tu cupo y realizar tu abono de B/. {RESERVATION_FEE.toFixed(2)}.</p></div>}
                 </div>
               </CardContent>
             </Card>

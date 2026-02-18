@@ -1,8 +1,9 @@
+
 'use client';
 
 /**
  * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN AUTOMÁTICA
- * Proceso 100% automático: Genera Folio real al validar referencia.
+ * Proceso 100% automático con validación de referencia anti-fraude.
  * Identidad visual: Yappy (Azul #004fb9) y Cubo (Verde #16a34a).
  */
 
@@ -162,7 +163,7 @@ export default function PublicEnrollmentPage() {
     };
     allManualEntries?.forEach(entry => { if (entry.classType !== 'Teórica') processEntry(entry.date, entry.timeSlot); });
     allContracts?.forEach(c => {
-        const proc = (arr: any[]) => arr.forEach(s => processEntry(s.date, s.time));
+        const proc = (arr: any[]) => arr?.forEach(s => processEntry(s.date, s.time));
         if (c.autoMotoDetails?.practicalClassSchedules) proc(c.autoMotoDetails.practicalClassSchedules);
         if (c.autoMotoDetails?.motoPracticalClassSchedules) proc(c.autoMotoDetails.motoPracticalClassSchedules);
         if (c.deluxeDetails?.classSchedules) proc(c.deluxeDetails.classSchedules);
@@ -194,7 +195,7 @@ export default function PublicEnrollmentPage() {
       const current = form.getValues('practicalClassSchedules') || [];
       replacePractical(Array.from({ length: count }, (_, i) => current[i] || { date: new Date(), time: '08:00am a 10:00am' }));
     }
-  }, [watchPlan, replacePractical, form]);
+  }, [watchPlan, replacePractical]);
 
   useEffect(() => {
     if (watchTheorySchedule) {
@@ -209,7 +210,6 @@ export default function PublicEnrollmentPage() {
     
     setIsSaving(true);
     try {
-      // VALIDACIÓN ANTI-FRAUDE: Bloquear si la referencia ya existe
       const qCheck = query(collection(db, 'contracts'), where('paymentReference', '==', values.paymentReference));
       const snapCheck = await getDocs(qCheck);
       

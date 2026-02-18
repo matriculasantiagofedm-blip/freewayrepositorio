@@ -1,3 +1,4 @@
+
 'use client';
 
 /**
@@ -182,7 +183,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
       const current = form.getValues('theoreticalClassDates') || [];
       form.setValue('theoreticalClassDates', Array.from({ length: count }, (_, i) => current[i] || new Date()));
     }
-  }, [watchTheorySchedule, form, isEdit]);
+  }, [watchTheorySchedule, isEdit, form]);
 
   useEffect(() => {
     if (watchPlan && !isEdit) {
@@ -198,7 +199,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
         instructor: '' 
       })));
     }
-  }, [watchPlan, watchAdditional, replacePractical, form, isEdit]);
+  }, [watchPlan, watchAdditional, isEdit, replacePractical, form]);
 
   const onSubmit = async (values: FormValues) => {
     if (!db || !user) return;
@@ -258,7 +259,10 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
         toast({ title: 'Contrato Creado' });
         router.push('/dashboard');
       }
-    } catch (error) { toast({ variant: 'destructive', title: 'Error' }); } finally { setIsSaving(false); }
+    } catch (error) { 
+      console.error(error);
+      toast({ variant: 'destructive', title: 'Error al guardar' }); 
+    } finally { setIsSaving(false); }
   };
 
   return (

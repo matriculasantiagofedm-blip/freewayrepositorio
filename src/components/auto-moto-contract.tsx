@@ -58,7 +58,6 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
       <p className="text-justify mb-3 text-[8.5pt]">Ambas partes convienen celebrar este contrato en el cual la empresa se compromete a brindar al cliente, un servicio de capacitación y adiestramiento teórico y práctico relacionado con el aprendizaje de conducción de vehículos a motor. El mismo se regirá bajo los términos y condiciones que se detallan en las siguientes cláusulas:</p>
 
       <div className="space-y-3">
-        {/* CLAUSULA PRIMERA REESTRUCTURADA VISUALMENTE */}
         <section className="border border-slate-200 p-3 rounded-sm bg-slate-50/20">
           <h4 className="font-bold uppercase mb-2 border-b border-slate-200 pb-1 text-[9.5pt]">CLÁUSULA PRIMERA - VALOR Y FORMA DE PAGO</h4>
           <div className="space-y-3 text-justify leading-relaxed">
@@ -79,12 +78,13 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
           <div className="grid grid-cols-2 gap-x-4 text-[8.5pt]">
             <div className="space-y-1.5">
                 <p>1. Categoría de licencia a aplicar: 
+                    A, B <Checkbox checked={details?.licenseCategory?.includes('A') && details?.licenseCategory?.includes('B')} />
                     A, C <Checkbox checked={details?.licenseCategory?.includes('A') && details?.licenseCategory?.includes('C')} /> 
                     A, C, D <Checkbox checked={details?.licenseCategory?.includes('D')} />
                 </p>
                 <p>2. Transmisión del vehículo: 
                     Automático <Checkbox checked={details?.vehicleTransmission === 'Automático'} /> 
-                    Manual <Checkbox checked={details?.vehicleTransmission === 'Manual'} />
+                    Manual <Checkbox checked={details?.vehicleTransmission === 'Manual' || details?.vehicleTransmission === 'Moto'} />
                 </p>
                 {!isSoloPractica && (
                     <p>3. Horario para clases teóricas: <span className="font-semibold underline uppercase">{details?.theoreticalClassSchedule || 'PENDIENTE'}</span></p>

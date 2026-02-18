@@ -122,9 +122,6 @@ export default function DailyCashReportPage() {
             getDocs(createDateQuery('book_sale_payments'))
         ]);
 
-        // Se procesan todos los documentos sin filtrar por rol de usuario actual
-        // para que la caja sea global y refleje el trabajo de todo el equipo.
-
         contractsSnapshot.docs.forEach((doc: any) => {
             const contract = { id: doc.id, ...doc.data() } as Contract;
             if (contract.status === 'expired') return;
@@ -195,7 +192,7 @@ export default function DailyCashReportPage() {
             const amount = payment.amount || 0;
             const pType = payment.paymentType || 'cash';
 
-            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, Sedan: 0, general: 0, cheques: 0 };
+            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
             if (paymentColumns.hasOwnProperty(pType)) {
                 paymentColumns[pType] = amount;
             } else {

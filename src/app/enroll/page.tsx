@@ -395,9 +395,9 @@ export default function PublicEnrollmentPage() {
                     <TabsContent value="credit_card" className="m-0 space-y-6">
                       <div className="space-y-4">
                         <h4 className="font-black text-primary uppercase tracking-tight">Pago con Tarjeta:</h4>
-                        <p className="text-xs text-slate-600 font-medium">Realiza tu pago seguro en nuestro portal de procesamiento Cubo y luego ingresa tu número de comprobante.</p>
+                        <p className="text-xs text-slate-600 font-medium">Realiza tu pago seguro en nuestro portal de procesamiento y luego ingresa tu número de comprobante.</p>
                         <Button asChild className="w-full font-bold h-12 shadow-md">
-                          <a href="https://pago.cubopago.com/freeway-escuela-de-manejo" target="_blank" rel="noopener noreferrer">
+                          <a href="https://link.cubopago.com/m_JPusnlxKnM" target="_blank" rel="noopener noreferrer">
                             <CreditCard className="mr-2 h-5 w-5" /> Pagar con Tarjeta
                           </a>
                         </Button>

@@ -310,7 +310,14 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
           updatedBy: role || 'Sistema',
         };
 
-        await updateDoc(contractRef, updateData);
+        updateDoc(contractRef, updateData).catch(error => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: contractRef.path,
+                operation: 'update',
+                requestResourceData: updateData
+            }));
+        });
+
         toast({ title: 'Moto Actualizada' });
         setTimeout(() => router.push(`/contracts/${contract.id}`), 500);
       } else {

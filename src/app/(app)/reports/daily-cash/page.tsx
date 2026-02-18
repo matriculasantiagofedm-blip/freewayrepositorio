@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Trash2, Printer, CalendarIcon, Loader2, AlertCircle } from 'lucide-react';
+import { Trash2, Printer, CalendarIcon, Loader2, AlertCircle, User } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -142,11 +142,8 @@ export default function DailyCashReportPage() {
             }
 
             if(amount > 0) {
-                if (paymentColumns.hasOwnProperty(paymentType)) {
-                    paymentColumns[paymentType] = amount;
-                } else {
-                    paymentColumns['cash'] = amount;
-                }
+                const pKey = paymentType && paymentColumns.hasOwnProperty(paymentType) ? paymentType : 'cash';
+                paymentColumns[pKey] = amount;
 
                 fetchedTransactions.push({
                     id: contract.id,
@@ -168,11 +165,8 @@ export default function DailyCashReportPage() {
             const pType = payment.paymentType || 'cash';
             
             let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
-            if (paymentColumns.hasOwnProperty(pType)) {
-                paymentColumns[pType] = amount;
-            } else {
-                paymentColumns['cash'] = amount;
-            }
+            const pKey = pType && paymentColumns.hasOwnProperty(pType) ? pType : 'cash';
+            paymentColumns[pKey] = amount;
 
             fetchedTransactions.push({
                 id: doc.id,
@@ -193,11 +187,8 @@ export default function DailyCashReportPage() {
             const pType = payment.paymentType || 'cash';
 
             let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
-            if (paymentColumns.hasOwnProperty(pType)) {
-                paymentColumns[pType] = amount;
-            } else {
-                paymentColumns['cash'] = amount;
-            }
+            const pKey = pType && paymentColumns.hasOwnProperty(pType) ? pType : 'cash';
+            paymentColumns[pKey] = amount;
 
             fetchedTransactions.push({
                 id: doc.id,
@@ -218,11 +209,8 @@ export default function DailyCashReportPage() {
             const pType = payment.paymentType || 'cash';
 
             let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
-            if (paymentColumns.hasOwnProperty(pType)) {
-                paymentColumns[pType] = amount;
-            } else {
-                paymentColumns['cash'] = amount;
-            }
+            const pKey = pType && paymentColumns.hasOwnProperty(pType) ? pType : 'cash';
+            paymentColumns[pKey] = amount;
 
             fetchedTransactions.push({
                 id: doc.id,
@@ -477,6 +465,7 @@ export default function DailyCashReportPage() {
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black min-w-[70px]">Cédula</TableHead>
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black min-w-[120px]">Nombre del cliente</TableHead>
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black min-w-[120px]">Servicio</TableHead>
+                        <TableHead className="border-r border-black p-1 text-center font-bold text-black">Vendedor</TableHead>
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black">Monto</TableHead>
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black min-w-[80px]">Tipo Pago</TableHead>
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black">Efectivo</TableHead>
@@ -495,6 +484,7 @@ export default function DailyCashReportPage() {
                             <TableCell className="border-r border-black p-1">{transaction.cedula}</TableCell>
                             <TableCell className="border-r border-black p-1 truncate max-w-[150px] uppercase">{transaction.clientName}</TableCell>
                             <TableCell className="border-r border-black p-1 uppercase">{transaction.service}</TableCell>
+                            <TableCell className="border-r border-black p-1 text-[8px] uppercase">{transaction.createdBy}</TableCell>
                             <TableCell className="border-r border-black p-0">
                                 <Input 
                                     type="number" 
@@ -532,10 +522,10 @@ export default function DailyCashReportPage() {
                         </TableRow>
                         ))}
                         {isDataLoaded && filteredTransactions.length === 0 && (
-                            <TableRow><TableCell colSpan={13} className="text-center text-muted-foreground p-8 italic">No hay movimientos registrados para este día.</TableCell></TableRow>
+                            <TableRow><TableCell colSpan={14} className="text-center text-muted-foreground p-8 italic">No hay movimientos registrados para este día.</TableCell></TableRow>
                         )}
                         <TableRow className="font-bold bg-slate-100 hover:bg-slate-100 border-t border-black">
-                            <TableCell colSpan={7} className="text-right p-1 pr-4 border-r border-black uppercase font-bold">TOTALES POR CATEGORÍA:</TableCell>
+                            <TableCell colSpan={8} className="text-right p-1 pr-4 border-r border-black uppercase font-bold">TOTALES POR CATEGORÍA:</TableCell>
                             <TableCell className="border-r border-black p-1 text-right">{transactionTotals.cash.toFixed(2)}</TableCell>
                             <TableCell className="border-r border-black p-1 text-right">{transactionTotals.debit.toFixed(2)}</TableCell>
                             <TableCell className="border-r border-black p-1 text-right">{transactionTotals.credit.toFixed(2)}</TableCell>

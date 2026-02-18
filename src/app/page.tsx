@@ -128,14 +128,18 @@ export default function Home() {
               </CardFooter>
             </Card>
 
-            <div className="text-center">
-              <p className="text-sm text-slate-500 mb-4">¿Eres un nuevo estudiante?</p>
-              <Button asChild variant="outline" className="w-full h-12 border-primary text-primary hover:bg-primary/5 font-bold">
+            <div className="text-center space-y-4">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+                <div className="relative flex justify-center text-xs uppercase"><span className="bg-slate-50 px-2 text-muted-foreground">Opciones para Estudiantes</span></div>
+              </div>
+              <Button asChild variant="outline" className="w-full h-14 border-blue-600 text-blue-600 hover:bg-blue-50 font-black text-lg shadow-sm border-2">
                 <Link href="/enroll">
-                  <UserPlus className="mr-2 h-5 w-5" />
-                  Inscribirme Ahora
+                  <UserPlus className="mr-2 h-6 w-6" />
+                  INSCRIBIRME ONLINE AHORA
                 </Link>
               </Button>
+              <p className="text-[10px] text-muted-foreground uppercase font-bold">Inscripción rápida 100% automática con Yappy o Tarjeta</p>
             </div>
           </div>
         )}

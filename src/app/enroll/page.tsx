@@ -3,7 +3,7 @@
 /**
  * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN AUTOMÁTICA
  * Proceso 100% automático: Genera Folio real al validar referencia.
- * Identidad visual: Yappy (Azul) y Cubo (Verde).
+ * Identidad visual: Yappy (Azul #004fb9) y Cubo (Verde #16a34a).
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -130,7 +130,7 @@ const enrollmentSchema = z.object({
     time: z.string().min(1, 'Hora requerida'),
   })).min(1, 'Debe elegir su horario'),
   paymentMethod: z.enum(['yappy', 'credit_card']).default('yappy'),
-  paymentReference: z.string().min(6, 'Ingresa el número de confirmación completo').regex(/^\d+$/, 'Solo se permiten números'),
+  paymentReference: z.string().min(6, 'Ingresa el número de referencia completo').regex(/^\d+$/, 'Solo se permiten números'),
 });
 
 type FormValues = z.infer<typeof enrollmentSchema>;
@@ -209,6 +209,7 @@ export default function PublicEnrollmentPage() {
     
     setIsSaving(true);
     try {
+      // VALIDACIÓN ANTI-FRAUDE: Bloquear si la referencia ya existe
       const qCheck = query(collection(db, 'contracts'), where('paymentReference', '==', values.paymentReference));
       const snapCheck = await getDocs(qCheck);
       

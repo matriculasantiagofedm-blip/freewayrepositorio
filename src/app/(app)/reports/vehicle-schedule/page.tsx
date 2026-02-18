@@ -122,8 +122,8 @@ export default function VehicleScheduleReportPage() {
             });
         };
 
-        // Prioridad Moto si es curso de moto para evitar duplicidad de arrays vacíos o redundantes
         if (c.type === 'Curso Moto') {
+            // Priorizar el array de moto si existe, sino el estándar
             if (c.autoMotoDetails?.motoPracticalClassSchedules) {
                 proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');
             } else if (c.autoMotoDetails?.practicalClassSchedules) {

@@ -373,7 +373,7 @@ export default function PublicEnrollmentPage() {
             </Card>
 
             <Card className="shadow-lg border-none">
-              <CardHeader className="bg-emerald-600 text-white"><CardTitle className="text-lg font-bold uppercase flex items-center gap-2"><CreditCard className="h-5 w-5" /> 4. Pago Automatizado (B/. 50.00)</CardTitle></CardHeader>
+              <CardHeader className="bg-emerald-600 text-white"><CardTitle className="text-lg font-bold uppercase flex items-center gap-2"><CreditCard className="h-5 w-5" /> 4. Pago Automatizado</CardTitle></CardHeader>
               <CardContent className="p-6 space-y-6">
                 <div className="p-6 bg-slate-50 border rounded-2xl space-y-6">
                   <div className="flex flex-col gap-6">
@@ -387,7 +387,7 @@ export default function PublicEnrollmentPage() {
                       
                       <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700 font-bold h-12 shadow-md">
                         <a href="https://link.yappy.com.pa/stc/dgXr5v%2BGA2xDgGKBkz%2BnBhSk16Vdr9BZvaim7nGhYrA%3D" target="_blank" rel="noopener noreferrer">
-                          <Smartphone className="mr-2 h-5 w-5" /> Pagar B/. {RESERVATION_FEE.toFixed(2)} con Yappy
+                          <Smartphone className="mr-2 h-5 w-5" /> Pagar con Yappy
                         </a>
                       </Button>
 

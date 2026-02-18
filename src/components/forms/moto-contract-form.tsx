@@ -62,6 +62,8 @@ import { useCurrentRole } from '@/hooks/use-current-role';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { isPanamaHoliday } from '@/lib/holidays';
 import type { Contract } from '@/lib/types';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const MOTO_PLANS = [
   "Curso Moto Básico (8 Hrs)",
@@ -273,7 +275,12 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
 
       form.setValue('courseValue', price);
       const count = PLAN_PRACTICAL_COUNTS[watchPlan] || 0;
-      replacePractical(Array.from({ length: count }, () => ({ date: new Date(), time: '08:00am a 10:00am', vehicle: 'Moto Roja', instructor: '' })));
+      replacePractical(Array.from({ length: count }, () => ({ 
+        date: new Date(), 
+        time: '08:00am a 10:00am', 
+        vehicle: 'Moto Roja', 
+        instructor: '' 
+      })));
     }
   }, [watchPlan, watchAdditional, replacePractical, form, isEdit]);
 
@@ -286,7 +293,10 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
       const { clientName, clientEmail, ...detailsOnly } = values;
 
       const formattedTheoryDates = (values.theoreticalClassDates || []).map(d => Timestamp.fromDate(d));
-      const formattedPracticalSchedules = (values.practicalClassSchedules || []).map(s => ({ ...s, date: Timestamp.fromDate(s.date) }));
+      const formattedPracticalSchedules = (values.practicalClassSchedules || []).map(s => ({ 
+        ...s, 
+        date: Timestamp.fromDate(s.date) 
+      }));
 
       if (isEdit && contract) {
         const contractRef = doc(db, 'contracts', contract.id);
@@ -305,7 +315,15 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
           updatedBy: role || 'Sistema',
         };
 
-        await updateDoc(contractRef, updateData);
+        updateDoc(contractRef, updateData)
+          .catch(async (error) => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: contractRef.path,
+              operation: 'update',
+              requestResourceData: updateData
+            }));
+          });
+
         toast({ title: 'Moto Actualizada' });
         router.push(`/contracts/${contract.id}`);
       } else {
@@ -353,8 +371,8 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
     }
   };
 
-  const currentBalance = form.watch('courseValue') - form.watch('downPayment');
   const theoryDates = form.watch('theoreticalClassDates') || [];
+  const currentBalance = form.watch('courseValue') - form.watch('downPayment');
 
   return (
     <Form {...form}>
@@ -370,27 +388,45 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
             <div className="grid grid-cols-12 gap-4">
               <div className="col-span-12 md:col-span-8">
                 <FormField control={form.control} name="clientName" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Nombre Completo</FormLabel><FormControl><Input placeholder="Nombre..." {...field} className="h-9 uppercase font-bold" /></FormControl><FormMessage /></FormItem>
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Nombre Completo</FormLabel>
+                    <FormControl><Input placeholder="Nombre..." {...field} className="h-9 uppercase font-bold" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )} />
               </div>
               <div className="col-span-12 md:col-span-4">
                 <FormField control={form.control} name="clientEmail" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Email</FormLabel><FormControl><Input type="email" placeholder="ejemplo@correo.com" {...field} className="h-9" /></FormControl></FormItem>
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Email</FormLabel>
+                    <FormControl><Input type="email" placeholder="ejemplo@correo.com" {...field} className="h-9" /></FormControl>
+                  </FormItem>
                 )} />
               </div>
               <div className="col-span-12 md:col-span-6">
                 <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Cédula / Pasaporte</FormLabel><FormControl><Input placeholder="Ej: 8-000-000" {...field} className="h-9 font-mono" readOnly={isEdit} /></FormControl><FormMessage /></FormItem>
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Cédula / Pasaporte</FormLabel>
+                    <FormControl><Input placeholder="Ej: 8-000-000" {...field} className="h-9 font-mono" readOnly={isEdit} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )} />
               </div>
               <div className="col-span-12 md:col-span-6">
                 <FormField control={form.control} name="studentPhone1" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Teléfono de Contacto</FormLabel><FormControl><Input placeholder="6000-0000" {...field} className="h-9" /></FormControl><FormMessage /></FormItem>
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Teléfono de Contacto</FormLabel>
+                    <FormControl><Input placeholder="6000-0000" {...field} className="h-9" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )} />
               </div>
               <div className="col-span-12">
                 <FormField control={form.control} name="studentAddress" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Dirección</FormLabel><FormControl><Input placeholder="Ubicación completa..." {...field} className="h-9 uppercase" /></FormControl></FormItem>
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Dirección</FormLabel>
+                    <FormControl><Input placeholder="Ubicación completa..." {...field} className="h-9 uppercase" /></FormControl>
+                  </FormItem>
                 )} />
               </div>
             </div>

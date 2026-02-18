@@ -2,7 +2,7 @@
 
 /**
  * FORMULARIO DE CONTRATO: CURSO DE MOTO
- * Corrige errores de sintaxis y elimina duplicidad de horarios en la base de datos.
+ * Corrige errores de sintaxis y asegura el guardado correcto en motoPracticalClassSchedules.
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -244,7 +244,6 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
     setIsSaving(true);
     try {
       const balance = values.courseValue - values.downPayment;
-      // IMPORTANTE: Excluimos practicalClassSchedules de detailsOnly para evitar duplicidad
       const { clientName, clientEmail, practicalClassSchedules, ...detailsOnly } = values;
       const formattedTheoryDates = (values.theoreticalClassDates || []).map(d => Timestamp.fromDate(d));
       const formattedPracticalSchedules = (values.practicalClassSchedules || []).map(s => ({ ...s, date: Timestamp.fromDate(s.date) }));
@@ -312,19 +311,19 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
           <CardContent className="p-6">
             <div className="grid grid-cols-12 gap-4">
               <div className="col-span-12 md:col-span-8"><FormField control={form.control} name="clientName" render={({ field }) => (
-                <FormItem><FormLabel className="text-[10px] font-bold uppercase">Nombre Completo</FormLabel><FormControl><Input placeholder="Nombre..." {...field} className="h-9 uppercase font-bold" /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Nombre Completo</FormLabel><FormControl><Input placeholder="Nombre..." {...field} className="h-9 uppercase font-bold" /></FormControl><FormMessage /></FormItem>
               )} /></div>
               <div className="col-span-12 md:col-span-4"><FormField control={form.control} name="clientEmail" render={({ field }) => (
-                <FormItem><FormLabel className="text-[10px] font-bold uppercase">Email</FormLabel><FormControl><Input type="email" placeholder="ejemplo@correo.com" {...field} className="h-9" /></FormControl></FormItem>
+                <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Email</FormLabel><FormControl><Input type="email" placeholder="ejemplo@correo.com" {...field} className="h-9" /></FormControl></FormItem>
               )} /></div>
               <div className="col-span-12 md:col-span-6"><FormField control={form.control} name="studentIdNumber" render={({ field }) => (
-                <FormItem><FormLabel className="text-[10px] font-bold uppercase">ID</FormLabel><FormControl><Input placeholder="8-000-000" {...field} className="h-9 font-mono" readOnly={isEdit} /></FormControl></FormItem>
+                <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Cédula / Pasaporte</FormLabel><FormControl><Input placeholder="Ej: 8-000-000" {...field} className="h-9 font-mono" readOnly={isEdit} /></FormControl><FormMessage /></FormItem>
               )} /></div>
               <div className="col-span-12 md:col-span-6"><FormField control={form.control} name="studentPhone1" render={({ field }) => (
-                <FormItem><FormLabel className="text-[10px] font-bold uppercase">Teléfono</FormLabel><FormControl><Input placeholder="6000-0000" {...field} className="h-9" /></FormControl></FormItem>
+                <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Teléfono de Contacto</FormLabel><FormControl><Input placeholder="6000-0000" {...field} className="h-9" /></FormControl><FormMessage /></FormItem>
               )} /></div>
               <div className="col-span-12"><FormField control={form.control} name="studentAddress" render={({ field }) => (
-                <FormItem><FormLabel className="text-[10px] font-bold uppercase">Dirección</FormLabel><FormControl><Input placeholder="Ubicación..." {...field} className="h-9 uppercase" /></FormControl></FormItem>
+                <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Dirección</FormLabel><FormControl><Input placeholder="Ubicación completa..." {...field} className="h-9 uppercase" /></FormControl></FormItem>
               )} /></div>
             </div>
           </CardContent>

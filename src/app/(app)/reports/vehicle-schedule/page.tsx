@@ -111,16 +111,18 @@ export default function VehicleScheduleReportPage() {
             add(c.id, c.clientName, s.date, slotId, s.vehicle, s.instructor, s.status || 'scheduled', isEval, i + 1, 'contract', i, subType);
         });
 
-        // Lógica robusta para evitar duplicidad según el tipo de contrato
         if (c.type === 'Curso Moto') {
-            if (c.autoMotoDetails?.motoPracticalClassSchedules) proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');
+            if (c.autoMotoDetails?.motoPracticalClassSchedules && c.autoMotoDetails.motoPracticalClassSchedules.length > 0) {
+                proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');
+            } else if (c.autoMotoDetails?.practicalClassSchedules) {
+                proc(c.autoMotoDetails.practicalClassSchedules, 'moto');
+            }
         } else if (c.type === 'Curso Deluxe') {
             if (c.deluxeDetails?.classSchedules) proc(c.deluxeDetails.classSchedules, 'auto');
         } else if (c.type === 'Curso Mixto') {
             if (c.autoMotoDetails?.practicalClassSchedules) proc(c.autoMotoDetails.practicalClassSchedules, 'auto');
             if (c.autoMotoDetails?.motoPracticalClassSchedules) proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');
         } else {
-            // Curso Auto o Solo Practica
             if (c.autoMotoDetails?.practicalClassSchedules) proc(c.autoMotoDetails.practicalClassSchedules, 'auto');
         }
     });
@@ -171,18 +173,17 @@ export default function VehicleScheduleReportPage() {
             const manualRef = doc(db, 'manual_schedules', item.id);
             await updateDoc(manualRef, { status: newStatus });
         }
-        toast({ title: 'Estado actualizado', description: `La clase ha sido marcada como ${newStatus === 'missed' ? 'No Asistió' : newStatus === 'completed' ? 'Completada' : 'Programada'}.` });
+        toast({ title: 'Estado actualizado' });
     } catch (e) {
-        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo actualizar el estado.' });
+        toast({ variant: 'destructive', title: 'Error' });
     } finally {
         setIsUpdating(false);
     }
   };
 
   const handleNotifyWhatsApp = (item: any) => {
-    const text = `Hola ${item.name}, te saludamos de Freeway Escuela de Manejo. Te informamos que tu clase práctica programada para el día ${format(toDate(currentDate), 'dd/MM')} a las ${item.slot} ha sido marcada como NO ASISTIÓ. Según el contrato firmado, la inasistencia conlleva la pérdida de la clase. Para reprogramarla, se requiere un pago de recargo de B/. 20.00. Quedamos a tu disposición para cualquier consulta.`;
-    const encoded = encodeURIComponent(text);
-    window.open(`https://wa.me/?text=${encoded}`, '_blank');
+    const text = `Hola ${item.name}, te informamos que tu clase práctica a las ${item.slot} ha sido marcada como NO ASISTIÓ. Según el contrato, requiere un pago de recargo de B/. 20.00 para reprogramarla.`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   return (
@@ -221,15 +222,12 @@ export default function VehicleScheduleReportPage() {
                     <TableCell className="border bg-muted/10 text-center text-[10px] font-bold">{slot.label}</TableCell>
                     {days.map(day => {
                         const dateKey = format(day, 'yyyy-MM-dd');
-                        const holiday = isPanamaHoliday(day);
-                        const isSunday = day.getDay() === 0;
                         const assignments = weeklyAssignments.get(dateKey)?.filter(a => a.slot === slot.id) || [];
-                        
                         const cap = getGlobalCapacity(day, slot.id);
                         const count = new Set(assignments.map(a => a.vehicle)).size;
 
                         return (
-                        <TableCell key={day.toISOString()} className={cn("border p-1.5 align-top relative", isSunday && "bg-red-50/20", holiday && !isSunday && "bg-amber-50/20")}>
+                        <TableCell key={day.toISOString()} className={cn("border p-1.5 align-top relative", day.getDay() === 0 && "bg-red-50/20")}>
                             {cap > 0 && (
                                 <div className="absolute top-1 right-1 z-10">
                                     <div className={cn("px-1 py-0.5 rounded text-[9px] font-black border bg-white", count >= cap ? "text-red-600 border-red-200" : "text-slate-500")}>
@@ -268,13 +266,11 @@ export default function VehicleScheduleReportPage() {
                                                     <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-red-600 hover:bg-red-50" onClick={() => handleUpdateStatus(a, 'missed')}>
                                                         <AlertCircle className="h-3.5 w-3.5" /> No Asistió
                                                     </Button>
-                                                    
                                                     {role === 'Administrador' && (
                                                         <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2" onClick={() => handleUpdateStatus(a, 'scheduled')}>
                                                             <Timer className="h-3.5 w-3.5 text-blue-600" /> Restablecer Programada
                                                         </Button>
                                                     )}
-
                                                     {a.status === 'missed' && (
                                                         <Button variant="secondary" size="sm" className="h-8 w-full text-[10px] font-black uppercase gap-2 bg-green-600 text-white hover:bg-green-700" onClick={() => handleNotifyWhatsApp(a)}>
                                                             <MessageSquare className="h-3.5 w-3.5" /> Notificar WhatsApp

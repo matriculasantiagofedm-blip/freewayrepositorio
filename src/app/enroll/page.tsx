@@ -33,7 +33,7 @@ import {
   FormLabel,
   FormMessage,
   FormDescription,
-} from '@/components/ui/form';
+} from '@/form-form';
 import {
   Select,
   SelectContent,
@@ -250,19 +250,19 @@ export default function PublicEnrollmentPage() {
               <CardHeader className="bg-primary text-white"><CardTitle className="text-lg font-bold uppercase">1. Información Personal</CardTitle></CardHeader>
               <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField control={form.control} name="clientName" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase">Nombre Completo</FormLabel><FormControl><Input placeholder="Como aparece en su cédula" {...field} className="h-11 uppercase font-bold" /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Nombre Completo</FormLabel><FormControl><Input placeholder="Como aparece en su cédula" {...field} className="h-11 uppercase font-bold" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="clientEmail" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase">Email</FormLabel><FormControl><Input type="email" placeholder="Para recibir su contrato" {...field} className="h-11" /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Email</FormLabel><FormControl><Input type="email" placeholder="Para recibir su contrato" {...field} className="h-11" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase">Cédula / ID</FormLabel><FormControl><Input placeholder="0-000-000" {...field} className="h-11" /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Cédula / ID</FormLabel><FormControl><Input placeholder="0-000-000" {...field} className="h-11" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="studentPhone1" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase">Celular</FormLabel><FormControl><Input placeholder="6000-0000" {...field} className="h-11" /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Celular</FormLabel><FormControl><Input placeholder="6000-0000" {...field} className="h-11" /></FormControl><FormMessage /></FormItem>
                 )} />
                 <div className="md:col-span-2"><FormField control={form.control} name="studentAddress" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase">Dirección</FormLabel><FormControl><Input placeholder="Ubicación..." {...field} className="h-11" /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Dirección</FormLabel><FormControl><Input placeholder="Ubicación..." {...field} className="h-11" /></FormControl><FormMessage /></FormItem>
                 )} /></div>
               </CardContent>
             </Card>
@@ -351,17 +351,16 @@ export default function PublicEnrollmentPage() {
                         <div className="space-y-4 flex-1">
                           <h4 className="font-black text-emerald-700 uppercase tracking-tight">Instrucciones de Yappy:</h4>
                           <ul className="text-xs space-y-1 text-emerald-800 font-medium">
-                              <li>1. Buscar en el Directorio: <strong>Freeway</strong></li>
-                              <li>2. Incluir en comentario: <strong>Nombre del alumno</strong></li>
+                              <li>1. Haga clic en el botón de abajo para abrir Yappy.</li>
                           </ul>
                           <div className="bg-emerald-100/50 p-3 rounded-lg border border-emerald-200">
                             <p className="text-xs font-bold text-emerald-800 uppercase">Monto a abonar para reserva:</p>
                             <p className="text-2xl font-black text-emerald-900">B/. {RESERVATION_FEE.toFixed(2)}</p>
                           </div>
-                          <p className="text-sm text-slate-600 italic">Al hacer clic abajo, se abrirá Yappy. Por favor, asegúrate de completar la transferencia por el monto indicado.</p>
+                          <p className="text-sm text-slate-600 italic">Al finalizar, regrese aquí y presione "Finalizar Inscripción".</p>
                           <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700 font-bold h-12 shadow-md">
                             <a href="https://link.yappy.com.pa/stc/dgXr5v%2BGA2xDgGKBkz%2BnBhSk16Vdr9BZvaim7nGhYrA%3D" target="_blank" rel="noopener noreferrer">
-                              <Smartphone className="mr-2 h-5 w-5" /> Abrir Yappy para Pagar
+                              <Smartphone className="mr-2 h-5 w-5" /> Pagar B/. {RESERVATION_FEE.toFixed(2)} con Yappy
                             </a>
                           </Button>
                         </div>

@@ -130,11 +130,6 @@ const navLinks = [
       },
     ]
   },
-  {
-    href: '/enroll',
-    label: 'Inscripción Web',
-    roles: ['Administrador'],
-  },
 ];
 
 function HoverDropdownMenu({ link, visibleChildren, pathname, linkClass }: any) {

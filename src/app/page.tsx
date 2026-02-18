@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { GanttChart, ShieldCheck, Loader2, LogIn, UserPlus } from 'lucide-react';
+import { GanttChart, ShieldCheck, Loader2, LogIn, UserPlus, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useFirebase } from '@/components/firebase-provider';
 import { signInAnonymously } from 'firebase/auth';
@@ -61,6 +61,34 @@ export default function Home() {
           </p>
         </div>
 
+        {/* SECCIÓN PÚBLICA PARA ESTUDIANTES (FUERA DEL PASSWORD) */}
+        {!role && (
+          <div className="space-y-4">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+              <div className="relative flex justify-center text-xs uppercase"><span className="bg-slate-50 px-2 text-muted-foreground font-black tracking-widest">Portal del Estudiante</span></div>
+            </div>
+            
+            <Card className="border-2 border-blue-600 bg-blue-50/30 overflow-hidden shadow-xl">
+              <CardContent className="p-6 text-center space-y-4">
+                  <div className="bg-blue-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto">
+                    <UserPlus className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="font-black text-blue-900 text-lg uppercase leading-tight">¿Deseas Inscribirte?</h3>
+                    <p className="text-xs text-blue-700 font-medium">Inscripción 100% automática. Paga con Yappy o Tarjeta y obtén tu folio al instante.</p>
+                  </div>
+                  <Button asChild className="w-full h-14 bg-blue-600 hover:bg-blue-700 font-black text-lg shadow-lg uppercase tracking-wider group">
+                      <Link href="/enroll">
+                          Inscribirme Ahora
+                          <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                      </Link>
+                  </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {role ? (
           <Card className="border-green-200 bg-green-50/50 shadow-lg">
             <CardHeader className="text-center">
@@ -82,18 +110,23 @@ export default function Home() {
           </Card>
         ) : (
           <div className="space-y-4">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+              <div className="relative flex justify-center text-xs uppercase"><span className="bg-slate-50 px-2 text-muted-foreground font-black tracking-widest">Acceso Administrativo</span></div>
+            </div>
+
             <Card className="shadow-2xl border-none">
               <CardHeader className="space-y-1">
                 <CardTitle className="text-2xl font-bold flex items-center gap-2">
                   <LogIn className="h-5 w-5 text-primary" />
-                  Ingreso al Sistema
+                  Ingreso Interno
                 </CardTitle>
-                <CardDescription>Introduce tu contraseña de acceso por rol.</CardDescription>
+                <CardDescription>Solo personal autorizado de Freeway.</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleAccess} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="key" className="text-slate-700">Contraseña de Acceso</Label>
+                    <Label htmlFor="key" className="text-slate-700">Contraseña de Rol</Label>
                     <Input 
                       id="key" 
                       type="password" 
@@ -116,35 +149,16 @@ export default function Home() {
                         Validando...
                       </>
                     ) : (
-                      'Entrar'
+                      'Entrar al Sistema'
                     )}
                   </Button>
                 </form>
               </CardContent>
-              <CardFooter className="flex flex-col gap-4 text-center">
-                <p className="text-xs text-muted-foreground">
-                  Sistema de gestión administrativa interno.
-                </p>
-              </CardFooter>
             </Card>
-
-            <div className="text-center space-y-4">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-                <div className="relative flex justify-center text-xs uppercase"><span className="bg-slate-50 px-2 text-muted-foreground">Opciones para Estudiantes</span></div>
-              </div>
-              <Button asChild variant="outline" className="w-full h-14 border-blue-600 text-blue-600 hover:bg-blue-50 font-black text-lg shadow-sm border-2">
-                <Link href="/enroll">
-                  <UserPlus className="mr-2 h-6 w-6" />
-                  INSCRIBIRME ONLINE AHORA
-                </Link>
-              </Button>
-              <p className="text-[10px] text-muted-foreground uppercase font-bold">Inscripción rápida 100% automática con Yappy o Tarjeta</p>
-            </div>
           </div>
         )}
 
-        <p className="text-center text-xs text-muted-foreground">
+        <p className="text-center text-[10px] text-muted-foreground uppercase font-bold tracking-widest">
           © {new Date().getFullYear()} Freeway Escuela de Manejo, S.A.
         </p>
       </div>

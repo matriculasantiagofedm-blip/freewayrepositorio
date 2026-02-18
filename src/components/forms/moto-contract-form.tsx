@@ -3,7 +3,7 @@
 
 /**
  * FORMULARIO DE CONTRATO: CURSO DE MOTO
- * Corrige errores de sintaxis y asegura la estabilidad del componente.
+ * Sincronizado con agenda semanal y validado para producción.
  */
 
 import { useState, useEffect } from 'react';

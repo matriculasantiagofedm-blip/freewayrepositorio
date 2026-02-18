@@ -104,7 +104,7 @@ export default function VehicleScheduleReportPage() {
         const key = format(d, 'yyyy-MM-dd');
         const dayArr = newWeeklyAssignments.get(key) || [];
         
-        // DEDUPLICACIÓN ESTRICTA: Evita que el mismo alumno aparezca duplicado en el mismo turno
+        // DEDUPLICACIÓN ESTRICTA POR ID Y TURNO
         if (dayArr.some(existing => existing.id === id && existing.slot === slot)) return;
 
         dayArr.push({ id, name, date: d, slot, vehicle, instructor, status, isEval, num, type, slotIndex, subType });
@@ -121,7 +121,6 @@ export default function VehicleScheduleReportPage() {
         });
 
         if (c.type === 'Curso Moto') {
-            // En motos priorizamos la lista de agenda de motos
             if (c.autoMotoDetails?.motoPracticalClassSchedules) proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');
             else if (c.autoMotoDetails?.practicalClassSchedules) proc(c.autoMotoDetails.practicalClassSchedules, 'moto');
         } else if (c.type === 'Curso Deluxe') {

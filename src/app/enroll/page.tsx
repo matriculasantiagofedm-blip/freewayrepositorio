@@ -4,7 +4,7 @@
 /**
  * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN AUTOMÁTICA
  * Integración con Yappy (Azul) y Pago con Tarjeta (Verde Cubo).
- * Instrucciones mejoradas para el número de comprobante.
+ * El proceso es 100% automático: Valida referencia y genera Folio real.
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -381,8 +381,8 @@ export default function PublicEnrollmentPage() {
                       <div className="space-y-4">
                         <h4 className="font-black text-[#004fb9] uppercase tracking-tight">Instrucciones Yappy:</h4>
                         <ol className="text-xs space-y-2 text-slate-700 font-medium list-decimal pl-4">
-                            <li>Haz clic en el botón inferior para realizar tu pago de reserva.</li>
-                            <li>Al completar la transacción, **copia el número de confirmación**.</li>
+                            <li>Haz clic en el botón inferior para realizar tu pago de reserva (**B/. 50.00**).</li>
+                            <li>Al completar la transacción en tu App, **copia el número de confirmación**.</li>
                             <li>Ingresa el número abajo para que el sistema valide tu pago.</li>
                         </ol>
                         <Button asChild className="w-full bg-[#004fb9] hover:bg-[#003a8c] font-bold h-12 shadow-md">
@@ -397,7 +397,7 @@ export default function PublicEnrollmentPage() {
                       <div className="space-y-4">
                         <h4 className="font-black text-green-700 uppercase tracking-tight">Pago con Tarjeta (Cubo):</h4>
                         <ol className="text-xs space-y-2 text-slate-700 font-medium list-decimal pl-4">
-                            <li>Haz clic en el botón inferior para pagar de forma segura.</li>
+                            <li>Haz clic en el botón inferior para pagar de forma segura (**B/. 50.00**).</li>
                             <li>Al finalizar, copia el **Número de comprobante** que genera Cubo.</li>
                             <li>Ingresa dicho número abajo para activar tu contrato.</li>
                         </ol>

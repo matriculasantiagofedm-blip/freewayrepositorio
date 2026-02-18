@@ -104,6 +104,7 @@ const motoContractSchema = z.object({
   studentIdNumber: z.string().min(5, 'ID requerido'),
   studentAddress: z.string().min(5, 'Dirección requerida'),
   studentPhone1: z.string().min(7, 'Teléfono requerido'),
+  studentPhone2: z.string().optional(),
   licenseCategory: z.string().min(1, 'Categoría requerida'),
   vehicleTransmission: z.enum(['Moto']).default('Moto'),
   coursePlan: z.string({ required_error: "Seleccione un plan" }),
@@ -143,6 +144,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
       studentIdNumber: contract.autoMotoDetails?.studentIdNumber || '',
       studentAddress: contract.autoMotoDetails?.studentAddress || '',
       studentPhone1: contract.autoMotoDetails?.studentPhone1 || '',
+      studentPhone2: contract.autoMotoDetails?.studentPhone2 || '',
       licenseCategory: contract.autoMotoDetails?.licenseCategory || 'A, B',
       vehicleTransmission: 'Moto',
       coursePlan: contract.autoMotoDetails?.coursePlan || '',
@@ -164,7 +166,10 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
     },
   });
 
-  const { fields: practicalFields, replace: replacePractical } = useFieldArray({ control: form.control, name: "practicalClassSchedules" });
+  const { fields: practicalFields, replace: replacePractical } = useFieldArray({ 
+    control: form.control, 
+    name: "practicalClassSchedules" 
+  });
 
   const watchPlan = form.watch('coursePlan');
   const watchAdditional = form.watch('additionalService');
@@ -187,7 +192,12 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
       else if (watchAdditional === 'Ya se manejar Auto') price += 20.00;
       form.setValue('courseValue', price);
       const count = PLAN_PRACTICAL_COUNTS[watchPlan] || 0;
-      replacePractical(Array.from({ length: count }, () => ({ date: new Date(), time: '08:00am a 10:00am', vehicle: 'Moto Roja', instructor: '' })));
+      replacePractical(Array.from({ length: count }, () => ({ 
+        date: new Date(), 
+        time: '08:00am a 10:00am', 
+        vehicle: 'Moto Roja', 
+        instructor: '' 
+      })));
     }
   }, [watchPlan, watchAdditional, replacePractical, form, isEdit]);
 

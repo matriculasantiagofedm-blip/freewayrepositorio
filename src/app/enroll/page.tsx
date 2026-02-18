@@ -4,6 +4,7 @@
 /**
  * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN AUTOMÁTICA
  * Integración con Yappy (Azul) y Pago con Tarjeta (Verde Cubo).
+ * Instrucciones mejoradas para el número de comprobante.
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -382,7 +383,7 @@ export default function PublicEnrollmentPage() {
                         <ol className="text-xs space-y-2 text-slate-700 font-medium list-decimal pl-4">
                             <li>Haz clic en el botón inferior para realizar tu pago de reserva.</li>
                             <li>Al completar la transacción, **copia el número de confirmación**.</li>
-                            <li>Ingresa el número abajo para que el sistema genere tu Folio automáticamente.</li>
+                            <li>Ingresa el número abajo para que el sistema valide tu pago.</li>
                         </ol>
                         <Button asChild className="w-full bg-[#004fb9] hover:bg-[#003a8c] font-bold h-12 shadow-md">
                           <a href="https://link.yappy.com.pa/stc/dgXr5v%2BGA2xDgGKBkz%2BnBhSk16Vdr9BZvaim7nGhYrA%3D" target="_blank" rel="noopener noreferrer">
@@ -394,8 +395,12 @@ export default function PublicEnrollmentPage() {
 
                     <TabsContent value="credit_card" className="m-0 space-y-6">
                       <div className="space-y-4">
-                        <h4 className="font-black text-green-700 uppercase tracking-tight">Pago con Tarjeta:</h4>
-                        <p className="text-xs text-slate-600 font-medium">Realiza tu pago seguro en nuestro portal de procesamiento y luego ingresa tu número de comprobante.</p>
+                        <h4 className="font-black text-green-700 uppercase tracking-tight">Pago con Tarjeta (Cubo):</h4>
+                        <ol className="text-xs space-y-2 text-slate-700 font-medium list-decimal pl-4">
+                            <li>Haz clic en el botón inferior para pagar de forma segura.</li>
+                            <li>Al finalizar, copia el **Número de comprobante** que genera Cubo.</li>
+                            <li>Ingresa dicho número abajo para activar tu contrato.</li>
+                        </ol>
                         <Button asChild className="w-full bg-green-600 hover:bg-green-700 font-bold h-12 shadow-md">
                           <a href="https://link.cubopago.com/m_JPusnlxKnM" target="_blank" rel="noopener noreferrer">
                             <CreditCard className="mr-2 h-5 w-5" /> Pagar con Tarjeta
@@ -408,10 +413,10 @@ export default function PublicEnrollmentPage() {
                       <FormField control={form.control} name="paymentReference" render={({ field }) => (
                           <FormItem>
                               <FormLabel className="text-sm font-black text-slate-900 uppercase flex items-center gap-2">
-                                  <Hash className="h-4 w-4 text-primary" /> Número de Confirmación / Referencia
+                                  <Hash className="h-4 w-4 text-primary" /> Número de Confirmación / Comprobante
                               </FormLabel>
                               <FormControl>
-                                  <Input placeholder="Ingresa los dígitos de confirmación..." {...field} className="h-12 text-xl font-mono tracking-widest border-2 focus:ring-primary" />
+                                  <Input placeholder="Ingresa los dígitos aquí..." {...field} className="h-12 text-xl font-mono tracking-widest border-2 focus:ring-primary" />
                               </FormControl>
                               <FormMessage />
                           </FormItem>

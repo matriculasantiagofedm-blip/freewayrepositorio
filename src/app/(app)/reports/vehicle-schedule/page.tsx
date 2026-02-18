@@ -104,12 +104,8 @@ export default function VehicleScheduleReportPage() {
         const key = format(d, 'yyyy-MM-dd');
         const dayArr = newWeeklyAssignments.get(key) || [];
         
-        // DEDUPLICACIÓN ESTRICTA: Un estudiante solo puede tener UNA entrada por turno por día en este reporte
-        const isDup = dayArr.some(existing => 
-            existing.id === id && 
-            existing.slot === slot
-        );
-        if (isDup) return;
+        // DEDUPLICACIÓN ESTRICTA: Evita que el mismo alumno aparezca duplicado en el mismo turno
+        if (dayArr.some(existing => existing.id === id && existing.slot === slot)) return;
 
         dayArr.push({ id, name, date: d, slot, vehicle, instructor, status, isEval, num, type, slotIndex, subType });
         newWeeklyAssignments.set(key, dayArr);
@@ -125,12 +121,9 @@ export default function VehicleScheduleReportPage() {
         });
 
         if (c.type === 'Curso Moto') {
-            // Priorizamos motoPracticalClassSchedules para evitar duplicidad si existen ambos
-            if (c.autoMotoDetails?.motoPracticalClassSchedules && c.autoMotoDetails.motoPracticalClassSchedules.length > 0) {
-                proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');
-            } else if (c.autoMotoDetails?.practicalClassSchedules) {
-                proc(c.autoMotoDetails.practicalClassSchedules, 'moto');
-            }
+            // En motos priorizamos la lista de agenda de motos
+            if (c.autoMotoDetails?.motoPracticalClassSchedules) proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');
+            else if (c.autoMotoDetails?.practicalClassSchedules) proc(c.autoMotoDetails.practicalClassSchedules, 'moto');
         } else if (c.type === 'Curso Deluxe') {
             if (c.deluxeDetails?.classSchedules) proc(c.deluxeDetails.classSchedules, 'auto');
         } else if (c.type === 'Curso Mixto') {

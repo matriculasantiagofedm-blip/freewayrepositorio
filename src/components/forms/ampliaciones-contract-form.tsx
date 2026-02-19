@@ -2,7 +2,7 @@
 
 /**
  * FORMULARIO DE CONTRATO: AMPLIACIONES DE LICENCIA
- * Soporta creación y edición.
+ * Reintegra botones de selección por letras y lógica de precios por combinación.
  */
 
 import { useState, useEffect } from 'react';
@@ -49,14 +49,13 @@ import {
   Save, 
   UserCircle, 
   CreditCard,
-  RefreshCw
+  RefreshCw,
+  Tag
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import type { Contract } from '@/lib/types';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 const LICENSE_CATEGORIES = ['B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];
 
@@ -66,10 +65,17 @@ const CATEGORY_PRICES: Record<string, number> = {
 };
 
 const COMBINATION_PRICES: Record<string, number> = {
-  'D, E1': 85.00, 'E1, E2': 75.00, 'E1, E2, E3': 85.00,
-  'E1, E2, E3, F': 95.00, 'D, E1, E2, E3, F': 150.00,
-  'B, E1, E2, E3, F': 150.00, 'B, D': 85.00, 'B, E1': 85.00,
-  'E2, E3': 85.00, 'B, F': 85.00, 'B, D, E1, E2, E3, F': 200.00
+  'D, E1': 85.00,
+  'E1, E2': 75.00,
+  'E1, E2, E3': 85.00,
+  'E1, E2, E3, F': 95.00,
+  'D, E1, E2, E3, F': 150.00,
+  'B, E1, E2, E3, F': 150.00,
+  'B, D': 85.00,
+  'B, E1': 85.00,
+  'E2, E3': 85.00,
+  'B, F': 85.00,
+  'B, D, E1, E2, E3, F': 200.00
 };
 
 const ampliacionesSchema = z.object({
@@ -121,11 +127,18 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
   useEffect(() => {
     if (!isEdit) {
         const categories = watchCategories ? watchCategories.split(', ').filter(c => c) : [];
-        if (categories.length === 0) { form.setValue('courseValue', 0); return; }
+        if (categories.length === 0) {
+          form.setValue('courseValue', 0);
+          return;
+        }
+        
+        // Ordenar alfabéticamente para buscar en COMBINATION_PRICES
         const sortedKey = [...categories].sort().join(', ');
+        
         if (COMBINATION_PRICES[sortedKey]) {
           form.setValue('courseValue', COMBINATION_PRICES[sortedKey]);
         } else {
+          // Si no es una combinación exacta, sumar los precios individuales
           const total = categories.reduce((sum, cat) => sum + (CATEGORY_PRICES[cat] || 0), 0);
           form.setValue('courseValue', total);
         }
@@ -135,7 +148,17 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
   const toggleCategory = (category: string) => {
     const current = form.getValues('licenseCategory');
     const categories = current ? current.split(', ').filter(c => c) : [];
-    let newCategories = categories.includes(category) ? categories.filter(c => c !== category) : [...categories, category].sort();
+    
+    let newCategories: string[];
+    if (categories.includes(category)) {
+      newCategories = categories.filter(c => c !== category);
+    } else {
+      newCategories = [...categories, category];
+    }
+    
+    // Mantener orden alfabético
+    newCategories.sort();
+    
     form.setValue('licenseCategory', newCategories.join(', '), { shouldValidate: true });
   };
 
@@ -148,7 +171,7 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
 
       if (isEdit) {
         const contractRef = doc(db, 'contracts', contract.id);
-        const updateData = {
+        await updateDoc(contractRef, {
           clientName: clientName,
           clientEmail: clientEmail,
           status: balance <= 0 ? 'completed' : contract.status,
@@ -160,17 +183,7 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
           },
           updatedAt: serverTimestamp(),
           updatedBy: role || 'Sistema',
-        };
-
-        updateDoc(contractRef, updateData)
-          .catch(async (error) => {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-              path: contractRef.path,
-              operation: 'update',
-              requestResourceData: updateData
-            }));
-          });
-
+        });
         toast({ title: 'Ampliación Actualizada' });
         router.push(`/contracts/${contract.id}`);
       } else {
@@ -211,13 +224,14 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
       }
     } catch (error) {
       console.error("Error al guardar ampliación:", error);
-      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo guardar.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo guardar el registro.' });
     } finally {
       setIsSaving(false);
     }
   };
 
   const currentBalance = form.watch('courseValue') - form.watch('downPayment');
+  const selectedList = watchCategories ? watchCategories.split(', ').filter(c => c) : [];
 
   return (
     <Form {...form}>
@@ -226,36 +240,96 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
               <UserCircle className="h-5 w-5 text-amber-600" />
-              <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-700">Ficha (Ampliación)</CardTitle>
+              <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-700">Ficha del Estudiante (Ampliación)</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="p-6">
             <div className="grid grid-cols-12 gap-4">
               <div className="col-span-12 md:col-span-8">
                 <FormField control={form.control} name="clientName" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Nombre</FormLabel><FormControl><Input placeholder="Nombre..." {...field} className="h-9 uppercase font-bold" /></FormControl><FormMessage /></FormItem>
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Nombre Completo</FormLabel>
+                    <FormControl><Input placeholder="Nombre..." {...field} className="h-9 uppercase font-bold" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )} />
               </div>
               <div className="col-span-12 md:col-span-4">
                 <FormField control={form.control} name="clientEmail" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Email</FormLabel><FormControl><Input type="email" placeholder="ejemplo@correo.com" {...field} className="h-9" /></FormControl></FormItem>
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Email</FormLabel>
+                    <FormControl><Input type="email" placeholder="ejemplo@correo.com" {...field} className="h-9" /></FormControl>
+                  </FormItem>
                 )} />
               </div>
               <div className="col-span-12 md:col-span-6">
                 <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Cédula</FormLabel><FormControl><Input placeholder="8-000-000" {...field} className="h-9 font-mono" readOnly={isEdit} /></FormControl></FormItem>
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Cédula / ID</FormLabel>
+                    <FormControl><Input placeholder="8-000-000" {...field} className="h-9 font-mono" readOnly={isEdit} /></FormControl>
+                  </FormItem>
                 )} />
               </div>
               <div className="col-span-12 md:col-span-6">
                 <FormField control={form.control} name="studentPhone1" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Teléfono</FormLabel><FormControl><Input placeholder="6000-0000" {...field} className="h-9" /></FormControl></FormItem>
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Teléfono Principal</FormLabel>
+                    <FormControl><Input placeholder="6000-0000" {...field} className="h-9" /></FormControl>
+                  </FormItem>
                 )} />
               </div>
               <div className="col-span-12">
                 <FormField control={form.control} name="studentAddress" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Dirección</FormLabel><FormControl><Input placeholder="Ubicación..." {...field} className="h-9 uppercase" /></FormControl></FormItem>
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Dirección</FormLabel>
+                    <FormControl><Input placeholder="Ubicación..." {...field} className="h-9 uppercase" /></FormControl>
+                  </FormItem>
                 )} />
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
+            <div className="flex items-center gap-2">
+              <Tag className="h-5 w-5 text-amber-600" />
+              <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-700">Selección de Categorías</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <Label className="text-xs font-black uppercase text-slate-500">Haz clic en las letras correspondientes:</Label>
+              <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+                {LICENSE_CATEGORIES.map(cat => {
+                  const isSelected = selectedList.includes(cat);
+                  return (
+                    <Button 
+                      key={cat} 
+                      type="button"
+                      variant={isSelected ? "default" : "outline"}
+                      className={cn(
+                        "h-12 text-lg font-black transition-all",
+                        isSelected ? "bg-amber-600 text-white hover:bg-amber-700" : "hover:border-amber-400 hover:bg-amber-50"
+                      )}
+                      onClick={() => toggleCategory(cat)}
+                    >
+                      {cat}
+                    </Button>
+                  );
+                })}
+              </div>
+              <FormField control={form.control} name="licenseCategory" render={({ field }) => (
+                <FormItem>
+                  <FormControl><Input {...field} readOnly className="hidden" /></FormControl>
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {selectedList.length > 0 ? selectedList.map(c => (
+                      <span key={c} className="bg-amber-100 text-amber-800 text-[10px] font-black px-2 py-0.5 rounded uppercase border border-amber-200">Tipo {c}</span>
+                    )) : <span className="text-xs italic text-muted-foreground">Ninguna categoría seleccionada</span>}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )} />
             </div>
           </CardContent>
         </Card>
@@ -270,13 +344,98 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
           <CardContent className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
               <FormField control={form.control} name="courseValue" render={({ field }) => (
-                <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Valor (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 font-black text-amber-900 bg-amber-50/30" readOnly={!isEdit} /></FormControl></FormItem>
+                <FormItem>
+                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Valor Total (B/.)</FormLabel>
+                  <FormControl><Input type="number" step="0.01" {...field} className="h-10 font-black text-amber-900 bg-amber-50/30" readOnly={!isEdit} /></FormControl>
+                </FormItem>
               )} />
               <FormField control={form.control} name="downPayment" render={({ field }) => (
-                <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Abono (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold text-green-600" /></FormControl></FormItem>
+                <FormItem>
+                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Abono Inicial (B/.)</FormLabel>
+                  <FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold text-green-600" /></FormControl>
+                </FormItem>
               )} />
-              <div className="flex flex-col gap-1.5"><Label className="text-[10px] font-bold uppercase text-muted-foreground">Saldo</Label><div className="flex items-center h-10 px-4 bg-red-50 rounded-md border border-red-100"><span className="text-lg font-black text-red-900">B/. {currentBalance.toFixed(2)}</span></div></div>
+              <div className="flex flex-col gap-1.5">
+                <Label className="text-[10px] font-bold uppercase text-muted-foreground">Saldo Pendiente</Label>
+                <div className="flex items-center h-10 px-4 bg-red-50 rounded-md border border-red-100">
+                  <span className="text-lg font-black text-red-900">B/. {currentBalance.toFixed(2)}</span>
+                </div>
+              </div>
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
+              <FormField control={form.control} name="paymentDeadline" render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Fecha Límite para Saldo</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button variant="outline" className={cn("w-full h-10 pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                          {field.value ? format(toDate(field.value), "PPP", { locale: es }) : <span>Seleccionar día</span>}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={toDate(field.value)} onSelect={field.onChange} initialFocus /></PopoverContent>
+                  </Popover>
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="paymentType" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Método de Pago</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="cash">Efectivo</SelectItem>
+                      <SelectItem value="debit">Tarjeta Débito</SelectItem>
+                      <SelectItem value="credit">Tarjeta Crédito</SelectItem>
+                      <SelectItem value="bac">BAC</SelectItem>
+                      <SelectItem value="general">General</SelectItem>
+                      <SelectItem value="cheques">Cheque</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
+            <div className="flex items-center gap-2">
+              <CalendarIcon className="h-5 w-5 text-amber-600" />
+              <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-700">Programación de Teoría</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField control={form.control} name="theoreticalClassDate" render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Fecha de Clase</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button variant="outline" className={cn("w-full h-10 pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                        {field.value ? format(toDate(field.value), "PPP", { locale: es }) : <span>Elegir fecha</span>}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={toDate(field.value)} onSelect={field.onChange} initialFocus /></PopoverContent>
+                </Popover>
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="theoreticalClassTime" render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Horario Seleccionado</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl>
+                  <SelectContent>
+                    <SelectItem value="Semanal 8:00 am a 10:00 am">Semanal 8:00 am a 10:00 am</SelectItem>
+                    <SelectItem value="Sabados 3:00 pm a 5:00 pm">Sábados 3:00 pm a 5:00 pm</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )} />
           </CardContent>
         </Card>
 

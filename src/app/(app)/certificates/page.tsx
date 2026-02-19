@@ -128,9 +128,9 @@ function CertificatesContent() {
 
     try {
       const contractsRef = collection(db, 'contracts');
-      const q1 = query(contractsRef, where('autoMotoDetails.studentIdNumber', '==', studentIdNumber));
-      const q2 = query(contractsRef, where('ampliacionesDetails.studentIdNumber', '==', studentIdNumber));
-      const q3 = query(contractsRef, where('deluxeDetails.studentIdNumber', '==', studentIdNumber));
+      const q1 = query(contractsRef, where('autoMotoDetails.studentIdNumber', '==', studentIdNumber.trim()));
+      const q2 = query(contractsRef, where('ampliacionesDetails.studentIdNumber', '==', studentIdNumber.trim()));
+      const q3 = query(contractsRef, where('deluxeDetails.studentIdNumber', '==', studentIdNumber.trim()));
 
       const [snapshot1, snapshot2, snapshot3] = await Promise.all([getDocs(q1), getDocs(q2), getDocs(q3)]);
       const contractsMap = new Map<string, Contract>();
@@ -179,7 +179,7 @@ function CertificatesContent() {
     setCertificateData({
       folio: suggestedFolio,
       clientName: contract.clientName || '',
-      cip: studentIdNumber || details?.studentIdNumber || '',
+      cip: details?.studentIdNumber || '',
       idType: details?.idType || 'C.I.P.',
       licenseType: (details as any)?.licenseCategory || '',
       address: details?.studentAddress || '',
@@ -276,7 +276,6 @@ function CertificatesContent() {
             const contractRef = doc(db, 'contracts', selectedContract.id);
             await updateDoc(contractRef, sharedData);
         } else {
-            // Persistir impresión manual para el reporte
             const manualRef = doc(collection(db, 'contracts'));
             await setDoc(manualRef, {
                 ...sharedData,
@@ -368,7 +367,7 @@ function CertificatesContent() {
   return (
     <div className="flex flex-col gap-8">
         <div className="flex justify-between items-center">
-            <h1 className="font-headline text-3xl font-bold">Módulo de Impresión de Certificados</h1>
+            <h1 className="font-headline text-3xl font-bold">Impresión de Certificados</h1>
             {role === 'Administrador' && (
                 <Button onClick={handleOpenManualModal} variant="outline" className="border-primary text-primary hover:bg-primary/5">
                     <PlusCircle className="mr-2 h-4 w-4" />
@@ -379,8 +378,11 @@ function CertificatesContent() {
         
         <Card className="max-w-2xl mx-auto w-full shadow-md border-slate-200">
             <CardHeader>
-                <CardTitle>Búsqueda de Estudiante</CardTitle>
-                <CardDescription>Introduce la cédula o pasaporte para encontrar contratos activos y emitir su certificado.</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                    <Search className="h-5 w-5 text-primary" />
+                    Búsqueda de Estudiante por Cédula
+                </CardTitle>
+                <CardDescription>Introduce la cédula o pasaporte para encontrar contratos y emitir su certificado con información precargada.</CardDescription>
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleSearch} className="flex items-center gap-2">
@@ -388,11 +390,11 @@ function CertificatesContent() {
                         placeholder="Cédula (Ej: 8-000-000)" 
                         value={studentIdNumber} 
                         onChange={(e) => setStudentIdNumber(e.target.value)} 
-                        className="h-11"
+                        className="h-11 font-bold tracking-widest"
                     />
                     <Button type="submit" disabled={isLoading} size="lg" className="px-8">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        Buscar
+                        Buscar Registro
                     </Button>
                 </form>
             </CardContent>
@@ -400,7 +402,7 @@ function CertificatesContent() {
 
         {searched && !isLoading && foundContracts && (
             <div className="grid gap-4 max-w-4xl mx-auto w-full">
-                <h2 className="text-xl font-bold text-slate-800">Contratos Encontrados</h2>
+                <h2 className="text-xl font-bold text-slate-800">Resultados Encontrados</h2>
                 {foundContracts.map(contract => (
                     <Card key={contract.id} className="animate-in fade-in-50 border-l-4 border-l-primary">
                         <CardContent className="p-6 flex flex-col md:flex-row justify-between items-center gap-4">

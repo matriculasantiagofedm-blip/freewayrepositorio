@@ -10,7 +10,7 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, setDoc, Timestamp } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Printer, CheckCircle2, PlusCircle, FileText, Repeat, CalendarIcon, Phone, AlertCircle, RefreshCw } from 'lucide-react';
+import { Loader2, Search, Printer, CheckCircle2, PlusCircle, FileText, Repeat, CalendarIcon, Phone, AlertCircle, RefreshCw, UserPlus } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import {
   Dialog,
@@ -70,6 +70,10 @@ function CertificatesContent() {
   const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
   const [manualType, setManualType] = useState<'primera-vez' | 'ampliaciones'>('primera-vez');
   
+  // Estado para búsqueda interna en el modal manual
+  const [searchIdInternal, setSearchIdInternal] = useState('');
+  const [isInternalLoading, setIsInternalLoading] = useState(false);
+
   const [certificateData, setCertificateData] = useState({
     folio: '',
     clientName: '',
@@ -105,18 +109,8 @@ function CertificatesContent() {
     }
   }, [searchParams, role]);
 
-  useEffect(() => {
-    if (!selectedContract && manualType === 'primera-vez') {
-        const current = certificateData.licenseType.split(',').map(p => p.trim()).filter(p => p);
-        const filtered = current.filter(cat => FIRST_TIME_CATEGORIES.includes(cat));
-        if (filtered.length !== current.length) {
-            setCertificateData(prev => ({ ...prev, licenseType: filtered.join(', ') }));
-        }
-    }
-  }, [manualType, selectedContract, certificateData.licenseType]);
-
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!studentIdNumber.trim() || !db) {
       toast({ variant: 'destructive', title: 'Error', description: 'Introduce una cédula para buscar.' });
       return;
@@ -154,14 +148,38 @@ function CertificatesContent() {
     }
   };
 
-  const handleOpenCertificateModal = (contract: Contract) => {
-    setSelectedContract(contract);
-    const isAmpliacion = contract.type === 'Ampliaciones';
-    setManualType(isAmpliacion ? 'ampliaciones' : 'primera-vez');
-    
-    const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
-    const suggestedFolio = getNextFolio(lastFolio);
+  const handleInternalSearch = async () => {
+    if (!searchIdInternal.trim() || !db) return;
+    setIsInternalLoading(true);
+    try {
+        const contractsRef = collection(db, 'contracts');
+        const q1 = query(contractsRef, where('autoMotoDetails.studentIdNumber', '==', searchIdInternal.trim()));
+        const q2 = query(contractsRef, where('ampliacionesDetails.studentIdNumber', '==', searchIdInternal.trim()));
+        const q3 = query(contractsRef, where('deluxeDetails.studentIdNumber', '==', searchIdInternal.trim()));
+        const [s1, s2, s3] = await Promise.all([getDocs(q1), getDocs(q2), getDocs(q3)]);
+        
+        let foundData: Contract | null = null;
+        [s1, s2, s3].forEach(snap => {
+            if (!snap.empty && !foundData) {
+                foundData = { id: snap.docs[0].id, ...snap.docs[0].data() } as Contract;
+            }
+        });
 
+        if (foundData) {
+            populateCertificateFromContract(foundData);
+            toast({ title: 'Datos Importados', description: `Se cargó la información de ${(foundData as Contract).clientName}` });
+        } else {
+            toast({ variant: 'destructive', title: 'No encontrado', description: 'No se halló un contrato para esa cédula.' });
+        }
+    } catch (e) {
+        toast({ variant: 'destructive', title: 'Error en búsqueda' });
+    } finally {
+        setIsInternalLoading(false);
+    }
+  };
+
+  const populateCertificateFromContract = (contract: Contract) => {
+    const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
     const nameParts = (contract.clientName || '').split(' ').filter(p => p);
     let firstName = '', middleName = '', lastName = '', secondLastName = '';
     if (nameParts.length > 0) firstName = nameParts[0];
@@ -176,8 +194,8 @@ function CertificatesContent() {
         secondLastName = nameParts[3];
     }
 
-    setCertificateData({
-      folio: suggestedFolio,
+    setCertificateData(prev => ({
+      ...prev,
       clientName: contract.clientName || '',
       cip: details?.studentIdNumber || '',
       idType: details?.idType || 'C.I.P.',
@@ -189,11 +207,17 @@ function CertificatesContent() {
       middleName,
       lastName,
       secondLastName,
-      marriedLastName: '',
-      issueDate: new Date(),
-      isCorrection: false,
-      isUpdate: false,
-    });
+    }));
+  };
+
+  const handleOpenCertificateModal = (contract: Contract) => {
+    setSelectedContract(contract);
+    const isAmpliacion = contract.type === 'Ampliaciones';
+    setManualType(isAmpliacion ? 'ampliaciones' : 'primera-vez');
+    
+    const suggestedFolio = getNextFolio(lastFolio);
+    populateCertificateFromContract(contract);
+    setCertificateData(prev => ({ ...prev, folio: suggestedFolio, issueDate: new Date() }));
     setIsCertificateModalOpen(true);
   };
 
@@ -221,6 +245,7 @@ function CertificatesContent() {
       isCorrection: false,
       isUpdate: false,
     });
+    setSearchIdInternal('');
     setIsCertificateModalOpen(true);
   };
 
@@ -382,7 +407,7 @@ function CertificatesContent() {
                     <Search className="h-5 w-5 text-primary" />
                     Búsqueda de Estudiante por Cédula
                 </CardTitle>
-                <CardDescription>Introduce la cédula o pasaporte para encontrar contratos y emitir su certificado con información precargada.</CardDescription>
+                <CardDescription>Introduce la cédula para encontrar contratos activos y emitir su certificado con información precargada.</CardDescription>
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleSearch} className="flex items-center gap-2">
@@ -420,13 +445,6 @@ function CertificatesContent() {
             </div>
         )}
 
-        {searched && !isLoading && !foundContracts && (
-            <div className="text-center p-16 border-2 border-dashed rounded-xl max-w-2xl mx-auto w-full bg-slate-50">
-                <p className="text-slate-500 font-medium text-lg">No se encontraron contratos activos o completados para la cédula ingresada.</p>
-                {role === 'Administrador' && <p className="text-slate-400 text-sm mt-2">Puedes usar el botón superior para una generación manual en blanco.</p>}
-            </div>
-        )}
-
         <Dialog open={isCertificateModalOpen} onOpenChange={handleCloseModal}>
             <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
                 <DialogHeader>
@@ -436,14 +454,41 @@ function CertificatesContent() {
                 
                 <div className="flex-1 overflow-y-auto pr-4 py-4 space-y-6">
                     {!selectedContract && (
-                        <div className="space-y-3 bg-slate-100 p-4 rounded-xl border">
-                            <Label className="text-xs font-bold uppercase tracking-wider text-slate-600">Tipo de Trámite Manual</Label>
-                            <Tabs value={manualType} onValueChange={(v: any) => setManualType(v)} className="w-full">
-                                <TabsList className="grid w-full grid-cols-2 h-12">
-                                    <TabsTrigger value="primera-vez" className="gap-2"><FileText className="h-4 w-4" /> Primera Vez</TabsTrigger>
-                                    <TabsTrigger value="ampliaciones" className="gap-2"><Repeat className="h-4 w-4" /> Ampliaciones</TabsTrigger>
-                                </TabsList>
-                            </Tabs>
+                        <div className="space-y-4">
+                            {/* BUSCADOR INTERNO PARA MANUAL */}
+                            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 space-y-3">
+                                <Label className="text-xs font-black uppercase text-blue-700 flex items-center gap-2">
+                                    <Search className="h-3.5 w-3.5" /> ¿Importar datos de estudiante existente?
+                                </Label>
+                                <div className="flex gap-2">
+                                    <Input 
+                                        placeholder="Introduce Cédula..." 
+                                        value={searchIdInternal} 
+                                        onChange={(e) => setSearchIdInternal(e.target.value)}
+                                        className="bg-white h-10 text-sm font-bold tracking-widest"
+                                        onKeyDown={(e) => e.key === 'Enter' && handleInternalSearch()}
+                                    />
+                                    <Button 
+                                        type="button" 
+                                        variant="secondary" 
+                                        onClick={handleInternalSearch}
+                                        disabled={isInternalLoading}
+                                        className="bg-blue-600 text-white hover:bg-blue-700"
+                                    >
+                                        {isInternalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Buscar e Importar"}
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3 bg-slate-100 p-4 rounded-xl border">
+                                <Label className="text-xs font-bold uppercase tracking-wider text-slate-600">Tipo de Trámite Manual</Label>
+                                <Tabs value={manualType} onValueChange={(v: any) => setManualType(v)} className="w-full">
+                                    <TabsList className="grid w-full grid-cols-2 h-12">
+                                        <TabsTrigger value="primera-vez" className="gap-2"><FileText className="h-4 w-4" /> Primera Vez</TabsTrigger>
+                                        <TabsTrigger value="ampliaciones" className="gap-2"><Repeat className="h-4 w-4" /> Ampliaciones</TabsTrigger>
+                                    </TabsList>
+                                </Tabs>
+                            </div>
                         </div>
                     )}
 

@@ -194,7 +194,7 @@ export default function PublicEnrollmentPage() {
       const current = form.getValues('practicalClassSchedules') || [];
       replacePractical(Array.from({ length: count }, (_, i) => current[i] || { date: new Date(), time: '08:00am a 10:00am' }));
     }
-  }, [watchPlan, replacePractical]);
+  }, [watchPlan, replacePractical, form]);
 
   useEffect(() => {
     if (watchTheorySchedule) {
@@ -281,7 +281,7 @@ export default function PublicEnrollmentPage() {
             <p className="text-[10px] font-black uppercase text-blue-600 tracking-widest mb-1">Tu Folio Oficial es:</p>
             <p className="text-4xl font-black text-blue-900">{String(submittedFolio).padStart(6, '0')}</p>
           </div>
-          <p className="text-slate-600 mb-8 font-medium">Tu cupo ha sido reservado automáticamente. Por favor guarda tu número de folio.</p>
+          <p className="text-slate-600 mb-8 font-medium">Tu cupo ha sido reservado automáticamente. Por favor guarda tu número de folio para el día de inicio.</p>
           <Button asChild className="w-full h-12 text-lg font-bold"><Link href="/">Volver al Inicio</Link></Button>
         </div>
       </div>
@@ -295,8 +295,8 @@ export default function PublicEnrollmentPage() {
       </header>
       <main className="p-4 md:p-8 max-w-4xl mx-auto space-y-8">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-black text-slate-900 font-headline uppercase tracking-tight">Inscripción Directa Freeway</h1>
-          <p className="text-slate-500 font-medium">Automatiza tu ingreso: paga, valida y obtén tu folio al instante.</p>
+          <h1 className="text-3xl font-black text-slate-900 font-headline uppercase tracking-tight">Inscripción Online Directa</h1>
+          <p className="text-slate-500 font-medium">Automatiza tu ingreso: elige tu horario, paga y obtén tu folio oficial al instante.</p>
         </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 pb-20">
@@ -382,12 +382,12 @@ export default function PublicEnrollmentPage() {
             </Card>
 
             <Card className="shadow-lg border-none overflow-hidden">
-              <CardHeader className="bg-slate-900 text-white"><CardTitle className="text-lg font-bold uppercase flex items-center gap-2"><CreditCard className="h-5 w-5" /> 4. Pago Automatizado</CardTitle></CardHeader>
+              <CardHeader className="bg-slate-900 text-white"><CardTitle className="text-lg font-bold uppercase flex items-center gap-2"><CreditCard className="h-5 w-5" /> 4. Pago de Reserva Automatizado</CardTitle></CardHeader>
               <CardContent className="p-6">
                 <Tabs value={watchPaymentMethod} onValueChange={(v: any) => form.setValue('paymentMethod', v)} className="w-full">
                   <TabsList className="grid w-full grid-cols-2 h-14 bg-slate-100 rounded-xl p-1">
                     <TabsTrigger value="yappy" className="rounded-lg data-[state=active]:bg-[#004fb9] data-[state=active]:text-white font-bold gap-2"><Smartphone className="h-4 w-4" /> Yappy</TabsTrigger>
-                    <TabsTrigger value="credit_card" className="rounded-lg data-[state=active]:bg-green-600 data-[state=active]:text-white font-bold gap-2"><CreditCard className="h-4 w-4" /> Tarjeta</TabsTrigger>
+                    <TabsTrigger value="credit_card" className="rounded-lg data-[state=active]:bg-[#16a34a] data-[state=active]:text-white font-bold gap-2"><CreditCard className="h-4 w-4" /> Tarjeta</TabsTrigger>
                   </TabsList>
                   
                   <div className="mt-6 p-6 bg-slate-50 border rounded-2xl space-y-6">
@@ -397,7 +397,7 @@ export default function PublicEnrollmentPage() {
                         <ol className="text-xs space-y-2 text-slate-700 font-medium list-decimal pl-4">
                             <li>Haz clic en el botón inferior para realizar tu pago de reserva.</li>
                             <li>Al completar la transacción en tu App, **copia el número de confirmación**.</li>
-                            <li>Ingresa el número abajo para que el sistema valide tu pago.</li>
+                            <li>Ingresa el número abajo para que el sistema valide tu inscripción.</li>
                         </ol>
                         <Button asChild className="w-full bg-[#004fb9] hover:bg-[#003a8c] font-bold h-12 shadow-md">
                           <a href="https://link.yappy.com.pa/stc/dgXr5v%2BGA2xDgGKBkz%2BnBhSk16Vdr9BZvaim7nGhYrA%3D" target="_blank" rel="noopener noreferrer">
@@ -409,13 +409,13 @@ export default function PublicEnrollmentPage() {
 
                     <TabsContent value="credit_card" className="m-0 space-y-6">
                       <div className="space-y-4">
-                        <h4 className="font-black text-green-700 uppercase tracking-tight">Pago con Tarjeta (Cubo):</h4>
+                        <h4 className="font-black text-[#16a34a] uppercase tracking-tight">Pago con Tarjeta (Cubo):</h4>
                         <ol className="text-xs space-y-2 text-slate-700 font-medium list-decimal pl-4">
                             <li>Haz clic en el botón inferior para pagar de forma segura.</li>
                             <li>Al finalizar, copia el **Número de comprobante** que genera Cubo.</li>
-                            <li>Ingresa dicho número abajo para activar tu contrato.</li>
+                            <li>Ingresa dicho número abajo para activar tu folio.</li>
                         </ol>
-                        <Button type="button" onClick={() => setShowCuboModal(true)} className="w-full bg-green-600 hover:bg-green-700 font-bold h-12 shadow-md">
+                        <Button type="button" onClick={() => setShowCuboModal(true)} className="w-full bg-[#16a34a] hover:bg-[#11823b] font-bold h-12 shadow-md">
                           <CreditCard className="mr-2 h-5 w-5" /> Pagar con Tarjeta
                         </Button>
                       </div>
@@ -440,7 +440,7 @@ export default function PublicEnrollmentPage() {
             </Card>
 
             <Button type="submit" disabled={isSaving || !watchPlan || !form.watch('paymentReference')} className="w-full h-16 text-xl font-black shadow-xl uppercase tracking-widest bg-blue-600 hover:bg-blue-700">
-              {isSaving ? <><Loader2 className="mr-2 h-6 w-6 animate-spin" /> Validando Transacción...</> : <><ShieldCheck className="mr-2 h-6 w-6" /> Activar Inscripción Ahora</>}
+              {isSaving ? <><Loader2 className="mr-2 h-6 w-6 animate-spin" /> Validando...</> : <><ShieldCheck className="mr-2 h-6 w-6" /> Finalizar Inscripción Ahora</>}
             </Button>
           </form>
         </Form>
@@ -452,17 +452,17 @@ export default function PublicEnrollmentPage() {
             <div className="mx-auto bg-green-100 p-3 rounded-full w-fit mb-2">
               <Info className="h-8 w-8 text-green-600" />
             </div>
-            <AlertDialogTitle className="text-center text-xl font-black uppercase text-slate-900">Instrucciones de Comprobante</AlertDialogTitle>
+            <AlertDialogTitle className="text-center text-xl font-black uppercase text-slate-900">Instrucciones del Pago</AlertDialogTitle>
             <AlertDialogDescription className="text-center space-y-4 pt-2">
-              <p className="font-medium text-slate-700">Para finalizar tu inscripción, el sistema te pedirá el <span className="font-bold text-green-700">Número de Comprobante</span>.</p>
+              <p className="font-medium text-slate-700">Para finalizar tu inscripción, el sistema te pedirá el <span className="font-bold text-green-700">Número de Comprobante</span> de Cubo.</p>
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-left text-xs space-y-2">
                 <p className="font-bold text-slate-900">¿Dónde encontrarlo?</p>
                 <ul className="list-disc pl-4 space-y-1 text-slate-600">
-                  <li>En la pantalla de <span className="font-bold">"Pago Exitoso"</span> al finalizar la transacción en Cubo.</li>
+                  <li>En la pantalla de <span className="font-bold">"Pago Exitoso"</span> al finalizar la transacción.</li>
                   <li>En el <span className="font-bold">correo electrónico</span> de confirmación que te enviará Cubo.</li>
                 </ul>
               </div>
-              <p className="text-xs text-muted-foreground italic">Por favor, cópialo antes de cerrar la pestaña de pago.</p>
+              <p className="text-xs text-muted-foreground italic">Por favor, cópialo antes de cerrar la pestaña de pago para pegarlo en esta página.</p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

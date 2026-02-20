@@ -56,7 +56,7 @@ export default function Home() {
           <h1 className="font-headline text-4xl font-bold tracking-tight text-slate-900">
             Contract<span className="text-primary">Time</span>
           </h1>
-          <p className="text-lg font-medium text-slate-600">
+          <p className="text-lg font-medium text-slate-600 uppercase tracking-tighter">
             Freeway Escuela de Manejo, S.A.
           </p>
         </div>
@@ -76,7 +76,7 @@ export default function Home() {
                   <UserPlus className="h-6 w-6 text-blue-600" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="font-black text-blue-900 text-lg uppercase leading-tight">¿Deseas Inscribirte?</h3>
+                  <h3 className="font-black text-blue-900 text-lg uppercase leading-tight tracking-tighter">¿Deseas Inscribirte?</h3>
                   <p className="text-xs text-blue-700 font-medium">Proceso 100% automático. Elige tu horario, paga y obtén tu folio al instante.</p>
                 </div>
                 <Button asChild className="w-full h-14 bg-blue-600 hover:bg-blue-700 font-black text-lg shadow-lg uppercase tracking-wider group">
@@ -114,7 +114,7 @@ export default function Home() {
             <div className="relative">
               <div className="absolute inset-0 flex items-center"><span className="w-full border-t opacity-50" /></div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-slate-50 px-2 text-muted-foreground font-bold tracking-widest">Acceso Interno</span>
+                <span className="bg-slate-50 px-2 text-muted-foreground font-bold tracking-widest">Acceso Personal</span>
               </div>
             </div>
 

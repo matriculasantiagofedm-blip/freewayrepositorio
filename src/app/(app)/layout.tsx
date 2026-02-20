@@ -8,19 +8,19 @@ import { Button } from '@/components/ui/button';
 import { useFirebase } from '@/components/firebase-provider';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { cn } from '@/lib/utils';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { role, isLoading } = useFirebase();
   const router = useRouter();
 
   /**
-   * GUARDIA DE SEGURIDAD (OTRA SECCIÓN)
-   * Si el usuario no tiene un rol administrativo asignado, se le deniega el acceso
-   * a las rutas internas y se le envía al portal de inicio.
+   * GUARDIA DE SEGURIDAD ADMINISTRATIVA
+   * Este efecto protege todas las rutas internas de la carpeta (app).
+   * Si no hay un rol detectado (clave de acceso), redirige al inicio público.
    */
   useEffect(() => {
     if (!isLoading && !role) {
+      console.warn("Acceso no autorizado detectado. Redirigiendo al portal público.");
       router.push('/');
     }
   }, [role, isLoading, router]);

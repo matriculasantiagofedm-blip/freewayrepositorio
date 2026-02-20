@@ -1,28 +1,28 @@
 /**
- * Firestore Security Rules for ContractTime
+ * Firestore Security Rules for Freeway Escuela de Manejo
  *
- * Se ha diseñado un modelo híbrido para permitir la operación pública:
- * 1. PÚBLICO (Inscripción Online): Permite el envío de nuevos contratos y clientes.
- * 2. PRIVADO (Administración): El acceso a lectura y gestión queda para usuarios con clave de rol.
+ * Modelo de Seguridad Perimetral:
+ * 1. PÚBLICO (Inscripción): Permite CREAR documentos (envío de formularios).
+ * 2. PRIVADO (Administración): El acceso a LECTURA y GESTIÓN requiere autenticación.
  */
 
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /** Verifica si el usuario ha iniciado sesión (incluye sesión anónima de alumnos) */
+    /** Verifica si el usuario tiene una sesión activa (incluye anónima para alumnos) */
     function isSignedIn() {
       return request.auth != null;
     }
 
     /** 
-     * REGLAS PARA CONTRATOS (Sección de Inscripción y Gestión)
-     * El público necesita poder CREAR documentos aquí.
+     * REGLAS PARA CONTRATOS
+     * Permite que el público envíe su inscripción (create).
+     * El acceso a leer la lista completa queda restringido por la lógica de la App.
      */
     match /contracts/{contractId} {
       allow create: if isSignedIn();
-      // Solo permitimos lectura/escritura general si están autenticados.
-      // La protección contra el público para no leer la lista se maneja en el código UI y Layout.
+      // La protección de lectura se refuerza en el Layout de la aplicación
       allow read, write: if isSignedIn();
     }
 
@@ -35,23 +35,19 @@ service cloud.firestore {
     }
 
     /**
-     * CONTADORES (Necesario para generar folios en tiempo real durante la inscripción)
+     * CONTADORES (Necesario para que el alumno reciba su folio al instante)
      */
     match /counters/{counterId} {
       allow read, write: if isSignedIn();
     }
 
     /** 
-     * REGLA GLOBAL PARA RESTO DE COLECCIONES (Reportes, Mantenimiento, Pagos)
-     * Estas siguen requiriendo inicio de sesión administrativo.
+     * REGLA GLOBAL PARA RESTO DE COLECCIONES (Pagos, Mantenimiento, Agenda)
      */
     match /{collectionName}/{docId} {
       allow read, write: if isSignedIn();
     }
 
-    /** 
-     * Soporte para subcolecciones (si existieran)
-     */
     match /{path=**} {
       allow read, write: if isSignedIn();
     }

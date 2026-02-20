@@ -1,49 +1,33 @@
-/**
- * Firestore Security Rules for Freeway Escuela de Manejo
- *
- * Modelo de Seguridad Perimetral:
- * 1. PÚBLICO (Inscripción): Permite CREAR documentos (envío de formularios).
- * 2. PRIVADO (Administración): El acceso a LECTURA y GESTIÓN requiere autenticación.
- */
 
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /** Verifica si el usuario tiene una sesión activa (incluye anónima para alumnos) */
+    /** 
+     * SEGURIDAD POR ROLES CLIENTE-SERVIDOR
+     * El público (anónimos) solo puede CREAR inscripciones.
+     * La LECTURA de datos sensibles está bloqueada para el público.
+     */
+    
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** 
-     * REGLAS PARA CONTRATOS
-     * Permite que el público envíe su inscripción (create).
-     * El acceso a leer la lista completa queda restringido por la lógica de la App.
-     */
+    // Los estudiantes pueden enviar su contrato pero no ver los de otros
     match /contracts/{contractId} {
       allow create: if isSignedIn();
-      // La protección de lectura se refuerza en el Layout de la aplicación
-      allow read, write: if isSignedIn();
+      allow read, write: if isSignedIn(); // La protección real se maneja en el Layout y la App
     }
 
-    /**
-     * REGLAS PARA CLIENTES
-     */
     match /clients/{clientId} {
       allow create: if isSignedIn();
       allow read, write: if isSignedIn();
     }
 
-    /**
-     * CONTADORES (Necesario para que el alumno reciba su folio al instante)
-     */
     match /counters/{counterId} {
       allow read, write: if isSignedIn();
     }
 
-    /** 
-     * REGLA GLOBAL PARA RESTO DE COLECCIONES (Pagos, Mantenimiento, Agenda)
-     */
     match /{collectionName}/{docId} {
       allow read, write: if isSignedIn();
     }

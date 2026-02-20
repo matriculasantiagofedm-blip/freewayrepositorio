@@ -17,7 +17,7 @@ import { Loader2, ChevronLeft, ChevronRight, User, AlertCircle, Fuel, MessageSqu
 import { format, startOfWeek, endOfWeek, addDays, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/(app)/reports/vehicle-schedule/Card'; // Note: Card is usually from components/ui/card, ensuring consistency
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -29,6 +29,9 @@ import { isPanamaHoliday } from '@/lib/holidays';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+
+// Re-importing UI components if needed, assuming local components are preferred
+import { Card as UICard, CardHeader, CardTitle } from '@/components/ui/card';
 
 const TIME_SLOTS: { id: TimeSlot; label: string }[] = [
     { id: '8am-10am', label: '08:00 - 10:00' },
@@ -42,10 +45,6 @@ const SLOT_ORDER: Record<string, number> = {
     '10am-12pm': 2,
     '1pm-3pm': 3,
     '3pm-5pm': 4,
-    '08:00am a 10:00am': 1,
-    '10:00am a 12:00pm': 2,
-    '01:00pm a 03:00pm': 3,
-    '03:00pm a 05:00pm': 4,
 };
 
 const TIME_STRING_TO_SLOT_MAP: { [key: string]: TimeSlot } = {
@@ -138,7 +137,7 @@ export default function VehicleScheduleReportPage() {
         if (e.classType === 'Práctica') processAny(e.id, e.studentName, e.date, e.timeSlot, e.vehicle, e.instructor, e.status || 'scheduled', false, 'manual');
     });
 
-    // 2. Ordenar cronológicamente y asignar indicador de gasolina cada 5 clases por vehículo
+    // 2. Ordenar cronológicamente y asignar indicador de gasolina cada 5 clases DESPUÉS de un refuel
     allSessionsFlat.sort((a, b) => {
         if (a.date.getTime() !== b.date.getTime()) return a.date.getTime() - b.date.getTime();
         return (SLOT_ORDER[a.slot] || 0) - (SLOT_ORDER[b.slot] || 0);
@@ -146,10 +145,19 @@ export default function VehicleScheduleReportPage() {
 
     const vehicleCounters: Record<string, number> = {};
     allSessionsFlat.forEach(s => {
-        if (!vehicleCounters[s.vehicle]) vehicleCounters[s.vehicle] = 0;
+        if (vehicleCounters[s.vehicle] === undefined) vehicleCounters[s.vehicle] = 0;
+        
         vehicleCounters[s.vehicle]++;
-        if (vehicleCounters[s.vehicle] % 5 === 0) {
+        s.fuelCycleCount = vehicleCounters[s.vehicle]; 
+
+        // Marcar sugerencia si llegamos a la 5ta clase sin haber repostado en el camino
+        if (s.fuelCycleCount >= 5 && s.status !== 'refueled' && s.status !== 'missed') {
             s.suggestedFuel = true;
+        }
+
+        // REINICIO DE CICLO: Si esta clase se marcó como gasolina, el contador vuelve a 0 para las siguientes
+        if (s.status === 'refueled') {
+            vehicleCounters[s.vehicle] = 0;
         }
     });
 
@@ -237,7 +245,7 @@ export default function VehicleScheduleReportPage() {
       <div className="flex justify-between items-center">
         <div>
             <h1 className="font-headline text-3xl font-bold">Agenda Práctica Semanal</h1>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Control de Flota y Ciclos de Combustible (Cada 5 Clases)</p>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Control de Flota y Ciclos de Combustible (Reinicio en Carga)</p>
         </div>
         <div className="flex items-center gap-2 bg-background border p-1 rounded-md">
             <Button variant="ghost" size="icon" onClick={() => setCurrentDate(subDays(currentDate, 7))}><ChevronLeft className="h-4 w-4" /></Button>
@@ -245,7 +253,7 @@ export default function VehicleScheduleReportPage() {
             <Button variant="ghost" size="icon" onClick={() => setCurrentDate(addDays(currentDate, 7))}><ChevronRight className="h-4 w-4" /></Button>
         </div>
       </div>
-      <Card className="border-none shadow-none bg-transparent">
+      <UICard className="border-none shadow-none bg-transparent">
         <CardContent className="p-0 overflow-x-auto">
             <Table className="min-w-[1000px] border-collapse table-fixed w-full">
                 <TableHeader>
@@ -312,8 +320,11 @@ export default function VehicleScheduleReportPage() {
                                                     <User className="h-2.5 w-2.5" /> {a.instructor || 'SIN ASIGNAR'}
                                                 </p>
                                                 <div className={cn("flex justify-between font-bold text-[9px] border-t pt-1 mt-1", a.status === 'missed' ? 'border-current opacity-40' : 'border-black/10 opacity-80')}>
-                                                    <span>{a.vehicle}</span>
-                                                    <span>{a.isEval ? '10m' : `#${a.slotIndex !== undefined ? a.slotIndex + 1 : 'M'}`}</span>
+                                                    <span className="flex items-center gap-1">
+                                                        {a.vehicle}
+                                                        <span className="text-[7px] text-muted-foreground opacity-60">({a.fuelCycleCount}/5)</span>
+                                                    </span>
+                                                    <span className="font-black">{a.isEval ? '10m' : `#${a.slotIndex !== undefined ? a.slotIndex + 1 : 'M'}`}</span>
                                                 </div>
                                                 
                                                 {a.suggestedFuel && a.status !== 'refueled' && (
@@ -355,7 +366,7 @@ export default function VehicleScheduleReportPage() {
                 </TableBody>
             </Table>
         </CardContent>
-      </Card>
+      </UICard>
     </div>
   );
 }

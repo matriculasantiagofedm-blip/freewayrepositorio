@@ -17,7 +17,7 @@ import { Loader2, ChevronLeft, ChevronRight, User, AlertCircle, Fuel, MessageSqu
 import { format, startOfWeek, endOfWeek, addDays, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
-import { Card, CardContent } from '@/(app)/reports/vehicle-schedule/Card'; // Note: Card is usually from components/ui/card, ensuring consistency
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -29,9 +29,6 @@ import { isPanamaHoliday } from '@/lib/holidays';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-
-// Re-importing UI components if needed, assuming local components are preferred
-import { Card as UICard, CardHeader, CardTitle } from '@/components/ui/card';
 
 const TIME_SLOTS: { id: TimeSlot; label: string }[] = [
     { id: '8am-10am', label: '08:00 - 10:00' },
@@ -107,7 +104,6 @@ export default function VehicleScheduleReportPage() {
     if (!contracts && !manualEntries) return;
     const weekInterval = { start: startOfDay(weekStart), end: endOfWeek(currentDate, { weekStartsOn: 1 }) };
     
-    // 1. Recolectar TODAS las sesiones de la base de datos para cálculo de gasolina
     const allSessionsFlat: any[] = [];
 
     const processAny = (id: string, name: string, date: any, slotString: string, vehicle: string, instructor: string, status: ClassStatus = 'scheduled', isEval = false, type: 'contract' | 'manual' = 'contract', slotIndex?: number, subType?: 'auto' | 'moto') => {
@@ -137,31 +133,35 @@ export default function VehicleScheduleReportPage() {
         if (e.classType === 'Práctica') processAny(e.id, e.studentName, e.date, e.timeSlot, e.vehicle, e.instructor, e.status || 'scheduled', false, 'manual');
     });
 
-    // 2. Ordenar cronológicamente y asignar indicador de gasolina cada 5 clases DESPUÉS de un refuel
+    // Ordenar todas las clases cronológicamente para el cálculo de gasolina
     allSessionsFlat.sort((a, b) => {
         if (a.date.getTime() !== b.date.getTime()) return a.date.getTime() - b.date.getTime();
         return (SLOT_ORDER[a.slot] || 0) - (SLOT_ORDER[b.slot] || 0);
     });
 
+    // Lógica de ciclos de combustible
     const vehicleCounters: Record<string, number> = {};
     allSessionsFlat.forEach(s => {
         if (vehicleCounters[s.vehicle] === undefined) vehicleCounters[s.vehicle] = 0;
         
-        vehicleCounters[s.vehicle]++;
+        if (s.status !== 'missed') {
+            vehicleCounters[s.vehicle]++;
+        }
+        
         s.fuelCycleCount = vehicleCounters[s.vehicle]; 
 
-        // Marcar sugerencia si llegamos a la 5ta clase sin haber repostado en el camino
+        // Alerta a la quinta clase después del último reinicio
         if (s.fuelCycleCount >= 5 && s.status !== 'refueled' && s.status !== 'missed') {
             s.suggestedFuel = true;
         }
 
-        // REINICIO DE CICLO: Si esta clase se marcó como gasolina, el contador vuelve a 0 para las siguientes
+        // Si se marca como gasolina, el siguiente contador empieza de 0
         if (s.status === 'refueled') {
             vehicleCounters[s.vehicle] = 0;
         }
     });
 
-    // 3. Filtrar solo las de la semana actual para el mapa visual
+    // Filtrar para la vista semanal actual
     const newWeeklyAssignments = new Map<string, any[]>();
     allSessionsFlat.forEach(s => {
         if (isWithinInterval(s.date, weekInterval)) {
@@ -253,7 +253,7 @@ export default function VehicleScheduleReportPage() {
             <Button variant="ghost" size="icon" onClick={() => setCurrentDate(addDays(currentDate, 7))}><ChevronRight className="h-4 w-4" /></Button>
         </div>
       </div>
-      <UICard className="border-none shadow-none bg-transparent">
+      <Card className="border-none shadow-none bg-transparent">
         <CardContent className="p-0 overflow-x-auto">
             <Table className="min-w-[1000px] border-collapse table-fixed w-full">
                 <TableHeader>
@@ -303,12 +303,10 @@ export default function VehicleScheduleReportPage() {
                                             )}>
                                                 {a.status === 'missed' && <AlertCircle className="absolute -top-1 -right-1 h-3 w-3 text-white fill-red-600" />}
                                                 
-                                                {/* ICONO DE GASOLINA (CONFIRMADO) */}
                                                 {a.status === 'refueled' && (
                                                     <Fuel className="absolute -top-2 -right-2 h-5 w-5 text-white fill-sky-600 drop-shadow-sm z-20" />
                                                 )}
 
-                                                {/* ALERTA DE GASOLINA (SUGERIDO POR CICLO DE 5) */}
                                                 {a.suggestedFuel && a.status !== 'refueled' && a.status !== 'missed' && (
                                                     <div className="absolute -top-2 -right-2 z-20 bg-white rounded-full p-0.5 shadow-sm border border-amber-500 animate-bounce">
                                                         <AlertTriangle className="h-4 w-4 text-amber-600 fill-amber-100" />
@@ -366,7 +364,7 @@ export default function VehicleScheduleReportPage() {
                 </TableBody>
             </Table>
         </CardContent>
-      </UICard>
+      </Card>
     </div>
   );
 }

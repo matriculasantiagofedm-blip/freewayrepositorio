@@ -2,6 +2,7 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { GanttChart, UserPlus, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
@@ -57,9 +58,4 @@ export default function Home() {
       </div>
     </main>
   );
-}
-
-function Button({ asChild, className, children }: any) {
-    const Comp = asChild ? 'div' : 'button';
-    return <Comp className={className}>{children}</Comp>;
 }

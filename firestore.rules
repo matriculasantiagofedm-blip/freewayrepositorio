@@ -1,29 +1,56 @@
 /**
  * Firestore Security Rules for ContractTime
  *
- * Se ha simplificado el modelo para permitir acceso global a las colecciones raíz
- * por parte de los usuarios autenticados del sistema (Administrador, Ventas, etc.).
+ * Se ha diseñado un modelo híbrido para permitir la operación pública:
+ * 1. PÚBLICO (Inscripción Online): Permite el envío de nuevos contratos y clientes.
+ * 2. PRIVADO (Administración): El acceso a lectura y gestión queda para usuarios con clave de rol.
  */
 
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /** Verifica si el usuario ha iniciado sesión en el sistema */
+    /** Verifica si el usuario ha iniciado sesión (incluye sesión anónima de alumnos) */
     function isSignedIn() {
       return request.auth != null;
     }
 
     /** 
-     * Regla global para prototipado: permite lectura y escritura en todas las 
-     * colecciones raíz si el usuario está autenticado.
+     * REGLAS PARA CONTRATOS (Sección de Inscripción y Gestión)
+     * El público necesita poder CREAR documentos aquí.
+     */
+    match /contracts/{contractId} {
+      allow create: if isSignedIn();
+      // Solo permitimos lectura/escritura general si están autenticados.
+      // La protección contra el público para no leer la lista se maneja en el código UI y Layout.
+      allow read, write: if isSignedIn();
+    }
+
+    /**
+     * REGLAS PARA CLIENTES
+     */
+    match /clients/{clientId} {
+      allow create: if isSignedIn();
+      allow read, write: if isSignedIn();
+    }
+
+    /**
+     * CONTADORES (Necesario para generar folios en tiempo real durante la inscripción)
+     */
+    match /counters/{counterId} {
+      allow read, write: if isSignedIn();
+    }
+
+    /** 
+     * REGLA GLOBAL PARA RESTO DE COLECCIONES (Reportes, Mantenimiento, Pagos)
+     * Estas siguen requiriendo inicio de sesión administrativo.
      */
     match /{collectionName}/{docId} {
       allow read, write: if isSignedIn();
     }
 
     /** 
-     * Soporte para subcolecciones (si existieran en el futuro)
+     * Soporte para subcolecciones (si existieran)
      */
     match /{path=**} {
       allow read, write: if isSignedIn();

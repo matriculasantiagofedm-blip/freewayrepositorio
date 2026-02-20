@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -27,6 +28,8 @@ import {
 } from '@/components/ui/popover';
 import { isPanamaHoliday } from '@/lib/holidays';
 import { useCurrentRole } from '@/hooks/use-current-role';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 const TIME_SLOTS: { id: TimeSlot; label: string }[] = [
     { id: '8am-10am', label: '08:00 - 10:00' },
@@ -103,7 +106,6 @@ export default function VehicleScheduleReportPage() {
         const key = format(d, 'yyyy-MM-dd');
         const dayArr = newWeeklyAssignments.get(key) || [];
         
-        // DEDUPLICACIÓN ESTRICTA: No añadir si ya existe el mismo estudiante en el mismo turno
         if (dayArr.some(existing => existing.id === id && existing.slot === slot)) return;
 
         dayArr.push({ id, name, date: d, slot, vehicle, instructor, status, isEval, num, type, slotIndex, subType });
@@ -123,7 +125,6 @@ export default function VehicleScheduleReportPage() {
         };
 
         if (c.type === 'Curso Moto') {
-            // Priorizar el array de moto si existe, sino el estándar
             if (c.autoMotoDetails?.motoPracticalClassSchedules) {
                 proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');
             } else if (c.autoMotoDetails?.practicalClassSchedules) {
@@ -148,48 +149,63 @@ export default function VehicleScheduleReportPage() {
     setWeeklyAssignments(newWeeklyAssignments);
   }, [contracts, manualEntries, weekStart, currentDate]);
 
-  const handleUpdateStatus = async (item: any, newStatus: ClassStatus) => {
+  const handleUpdateStatus = (item: any, newStatus: ClassStatus) => {
     if (!db || isUpdating) return;
+    
     setIsUpdating(true);
-    try {
-        if (item.type === 'contract') {
-            const contractRef = doc(db, 'contracts', item.id);
-            const contract = contracts?.find(c => c.id === item.id);
-            if (!contract) return;
+    const updateData: any = {};
 
-            const updateData: any = {};
-            let schedules: any[] = [];
-
-            if (item.subType === 'moto') {
-                schedules = [...(contract.autoMotoDetails?.motoPracticalClassSchedules || [])];
-                if (schedules[item.slotIndex]) {
-                    schedules[item.slotIndex].status = newStatus;
-                    updateData['autoMotoDetails.motoPracticalClassSchedules'] = schedules;
-                }
-            } else if (contract.type === 'Curso Deluxe') {
-                schedules = [...(contract.deluxeDetails?.classSchedules || [])];
-                if (schedules[item.slotIndex]) {
-                    schedules[item.slotIndex].status = newStatus;
-                    updateData['deluxeDetails.classSchedules'] = schedules;
-                }
-            } else {
-                schedules = [...(contract.autoMotoDetails?.practicalClassSchedules || [])];
-                if (schedules[item.slotIndex]) {
-                    schedules[item.slotIndex].status = newStatus;
-                    updateData['autoMotoDetails.practicalClassSchedules'] = schedules;
-                }
-            }
-
-            await updateDoc(contractRef, updateData);
-        } else {
-            const manualRef = doc(db, 'manual_schedules', item.id);
-            await updateDoc(manualRef, { status: newStatus });
+    if (item.type === 'contract') {
+        const contractRef = doc(db, 'contracts', item.id);
+        const contract = contracts?.find(c => c.id === item.id);
+        if (!contract) {
+            setIsUpdating(false);
+            return;
         }
-        toast({ title: 'Estado actualizado' });
-    } catch (e) {
-        toast({ variant: 'destructive', title: 'Error' });
-    } finally {
-        setIsUpdating(false);
+
+        let schedules: any[] = [];
+        let fieldPath = '';
+
+        if (item.subType === 'moto') {
+            schedules = [...(contract.autoMotoDetails?.motoPracticalClassSchedules || [])];
+            fieldPath = 'autoMotoDetails.motoPracticalClassSchedules';
+        } else if (contract.type === 'Curso Deluxe') {
+            schedules = [...(contract.deluxeDetails?.classSchedules || [])];
+            fieldPath = 'deluxeDetails.classSchedules';
+        } else {
+            schedules = [...(contract.autoMotoDetails?.practicalClassSchedules || [])];
+            fieldPath = 'autoMotoDetails.practicalClassSchedules';
+        }
+
+        if (schedules[item.slotIndex]) {
+            schedules[item.slotIndex].status = newStatus;
+            updateData[fieldPath] = schedules;
+            
+            updateDoc(contractRef, updateData)
+                .then(() => toast({ title: 'Estado actualizado' }))
+                .catch(async (err) => {
+                    errorEmitter.emit('permission-error', new FirestorePermissionError({
+                        path: contractRef.path,
+                        operation: 'update',
+                        requestResourceData: updateData
+                    }));
+                })
+                .finally(() => setIsUpdating(false));
+        } else {
+            setIsUpdating(false);
+        }
+    } else {
+        const manualRef = doc(db, 'manual_schedules', item.id);
+        updateDoc(manualRef, { status: newStatus })
+            .then(() => toast({ title: 'Estado actualizado' }))
+            .catch(async (err) => {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: manualRef.path,
+                    operation: 'update',
+                    requestResourceData: { status: newStatus }
+                }));
+            })
+            .finally(() => setIsUpdating(false));
     }
   };
 

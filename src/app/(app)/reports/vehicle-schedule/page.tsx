@@ -269,17 +269,15 @@ export default function VehicleScheduleReportPage() {
                                             <div className={cn(
                                                 "p-2 rounded border text-[10px] shadow-sm cursor-pointer hover:shadow-md transition-all relative", 
                                                 a.status === 'missed' ? "bg-red-600 border-red-700 text-white" : 
-                                                a.status === 'refueled' ? "bg-sky-100 border-sky-300 text-sky-800" :
-                                                a.status === 'completed' ? "bg-green-100 border-green-300 text-green-800" :
                                                 a.isEval ? "bg-purple-50 border-purple-200" : (vehicleColors[a.vehicle] || 'bg-gray-100 border-gray-200')
                                             )}>
                                                 {a.status === 'missed' && <AlertCircle className="absolute -top-1 -right-1 h-3 w-3 text-white fill-red-600" />}
-                                                {a.status === 'refueled' && <Fuel className="absolute -top-1 -right-1 h-3 w-3 text-white fill-sky-600" />}
+                                                {a.status === 'refueled' && <Fuel className="absolute -top-2 -right-2 h-5 w-5 text-white fill-sky-600 drop-shadow-sm" />}
                                                 <p className="truncate font-black uppercase mb-0.5">{a.name}</p>
-                                                <p className={cn("truncate text-[8px] font-bold uppercase mb-1 flex items-center gap-1", (a.status === 'missed' || a.status === 'refueled') ? 'text-inherit opacity-80' : 'text-muted-foreground')}>
+                                                <p className={cn("truncate text-[8px] font-bold uppercase mb-1 flex items-center gap-1", a.status === 'missed' ? 'text-inherit opacity-80' : 'text-muted-foreground')}>
                                                     <User className="h-2.5 w-2.5" /> {a.instructor || 'SIN ASIGNAR'}
                                                 </p>
-                                                <div className={cn("flex justify-between font-bold text-[9px] border-t pt-1 mt-1", (a.status === 'missed' || a.status === 'refueled') ? 'border-current opacity-40' : 'border-black/10 opacity-80')}>
+                                                <div className={cn("flex justify-between font-bold text-[9px] border-t pt-1 mt-1", a.status === 'missed' ? 'border-current opacity-40' : 'border-black/10 opacity-80')}>
                                                     <span>{a.vehicle}</span>
                                                     <span>{a.isEval ? '10m' : `#${a.num}`}</span>
                                                 </div>

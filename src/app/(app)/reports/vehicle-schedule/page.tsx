@@ -17,7 +17,7 @@ import { Loader2, ChevronLeft, ChevronRight, User, AlertCircle, Fuel, MessageSqu
 import { format, startOfWeek, endOfWeek, addDays, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -133,17 +133,19 @@ export default function VehicleScheduleReportPage() {
         if (e.classType === 'Práctica') processAny(e.id, e.studentName, e.date, e.timeSlot, e.vehicle, e.instructor, e.status || 'scheduled', false, 'manual');
     });
 
-    // Ordenar todas las clases cronológicamente para el cálculo de gasolina
+    // LOGICA DE MARCACION DE GAS:
+    // 1. Ordenamos todas las sesiones por vehículo cronológicamente
     allSessionsFlat.sort((a, b) => {
         if (a.date.getTime() !== b.date.getTime()) return a.date.getTime() - b.date.getTime();
         return (SLOT_ORDER[a.slot] || 0) - (SLOT_ORDER[b.slot] || 0);
     });
 
-    // Lógica de ciclos de combustible
+    // 2. Calculamos los ciclos de 5 clases con reinicio manual
     const vehicleCounters: Record<string, number> = {};
     allSessionsFlat.forEach(s => {
         if (vehicleCounters[s.vehicle] === undefined) vehicleCounters[s.vehicle] = 0;
         
+        // Sumamos al contador si la clase no fue perdida
         if (s.status !== 'missed') {
             vehicleCounters[s.vehicle]++;
         }
@@ -155,13 +157,13 @@ export default function VehicleScheduleReportPage() {
             s.suggestedFuel = true;
         }
 
-        // Si se marca como gasolina, el siguiente contador empieza de 0
+        // SI SE MARCÓ COMO GASOLINA: El ciclo se reinicia a 0 para las próximas clases
         if (s.status === 'refueled') {
             vehicleCounters[s.vehicle] = 0;
         }
     });
 
-    // Filtrar para la vista semanal actual
+    // 3. Filtramos solo para los días de la semana actual que se visualiza
     const newWeeklyAssignments = new Map<string, any[]>();
     allSessionsFlat.forEach(s => {
         if (isWithinInterval(s.date, weekInterval)) {
@@ -301,12 +303,15 @@ export default function VehicleScheduleReportPage() {
                                                 a.status === 'missed' ? "bg-red-600 border-red-700 text-white" : 
                                                 a.isEval ? "bg-purple-50 border-purple-200" : (vehicleColors[a.vehicle] || 'bg-gray-100 border-gray-200')
                                             )}>
+                                                {/* Icono de Inasistencia */}
                                                 {a.status === 'missed' && <AlertCircle className="absolute -top-1 -right-1 h-3 w-3 text-white fill-red-600" />}
                                                 
+                                                {/* Icono de Gasolina CONFIRMADA */}
                                                 {a.status === 'refueled' && (
                                                     <Fuel className="absolute -top-2 -right-2 h-5 w-5 text-white fill-sky-600 drop-shadow-sm z-20" />
                                                 )}
 
+                                                {/* Alerta de Gasolina SUGERIDA (Ciclo 5) */}
                                                 {a.suggestedFuel && a.status !== 'refueled' && a.status !== 'missed' && (
                                                     <div className="absolute -top-2 -right-2 z-20 bg-white rounded-full p-0.5 shadow-sm border border-amber-500 animate-bounce">
                                                         <AlertTriangle className="h-4 w-4 text-amber-600 fill-amber-100" />
@@ -320,8 +325,10 @@ export default function VehicleScheduleReportPage() {
                                                 <div className={cn("flex justify-between font-bold text-[9px] border-t pt-1 mt-1", a.status === 'missed' ? 'border-current opacity-40' : 'border-black/10 opacity-80')}>
                                                     <span className="flex items-center gap-1">
                                                         {a.vehicle}
+                                                        {/* Contador de ciclo de gasolina */}
                                                         <span className="text-[7px] text-muted-foreground opacity-60">({a.fuelCycleCount}/5)</span>
                                                     </span>
+                                                    {/* Restauración del número de clase */}
                                                     <span className="font-black">{a.isEval ? '10m' : `#${a.slotIndex !== undefined ? a.slotIndex + 1 : 'M'}`}</span>
                                                 </div>
                                                 

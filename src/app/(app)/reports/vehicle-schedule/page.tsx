@@ -106,20 +106,48 @@ export default function VehicleScheduleReportPage() {
     
     const allSessionsFlat: any[] = [];
 
-    const processAny = (id: string, name: string, date: any, slotString: string, vehicle: string, instructor: string, status: ClassStatus = 'scheduled', isEval = false, type: 'contract' | 'manual' = 'contract', slotIndex?: number, subType?: 'auto' | 'moto') => {
+    const processAny = (
+        id: string, 
+        name: string, 
+        date: any, 
+        slotString: string, 
+        vehicle: string, 
+        instructor: string, 
+        status: ClassStatus = 'scheduled', 
+        isEval = false, 
+        type: 'contract' | 'manual' = 'contract', 
+        displayClassNumber: number | string, 
+        slotIndex?: number, 
+        subType?: 'auto' | 'moto'
+    ) => {
         if (!date || !vehicle) return;
         const d = toDate(date);
         if (isNaN(d.getTime())) return;
         const slotId = TIME_STRING_TO_SLOT_MAP[slotString] || slotString as TimeSlot;
         
-        allSessionsFlat.push({ id, name, date: d, slot: slotId, vehicle, instructor, status, isEval, type, slotIndex, subType });
+        allSessionsFlat.push({ 
+            id, 
+            name, 
+            date: d, 
+            slot: slotId, 
+            vehicle, 
+            instructor, 
+            status, 
+            isEval, 
+            type, 
+            displayClassNumber, 
+            slotIndex, 
+            subType 
+        });
     };
 
     contracts?.forEach(c => {
         const d = c.autoMotoDetails || c.deluxeDetails;
         const isEval = (d?.coursePlan === 'evaluacion-estacionamiento' || d?.coursePlan === 'moto-evaluacion-estacionamiento');
         const proc = (arr: any[], subType: 'auto' | 'moto' = 'auto') => {
-            arr?.forEach((s, i) => processAny(c.id, c.clientName, s.date, s.time, s.vehicle, s.instructor, s.status || 'scheduled', isEval, 'contract', i, subType));
+            arr?.forEach((s, i) => {
+                processAny(c.id, c.clientName, s.date, s.time, s.vehicle, s.instructor, s.status || 'scheduled', isEval, 'contract', i + 1, i, subType);
+            });
         };
         if (c.type === 'Curso Moto') proc(c.autoMotoDetails?.motoPracticalClassSchedules || c.autoMotoDetails?.practicalClassSchedules || [], 'moto');
         else if (c.type === 'Curso Deluxe') proc(c.deluxeDetails?.classSchedules || [], 'auto');
@@ -130,40 +158,36 @@ export default function VehicleScheduleReportPage() {
     });
 
     manualEntries?.forEach(e => {
-        if (e.classType === 'Práctica') processAny(e.id, e.studentName, e.date, e.timeSlot, e.vehicle, e.instructor, e.status || 'scheduled', false, 'manual');
+        if (e.classType === 'Práctica') {
+            processAny(e.id, e.studentName, e.date, e.timeSlot, e.vehicle, e.instructor, e.status || 'scheduled', false, 'manual', e.classNumber);
+        }
     });
 
     // LOGICA DE MARCACION DE GAS:
-    // 1. Ordenamos todas las sesiones por vehículo cronológicamente
     allSessionsFlat.sort((a, b) => {
         if (a.date.getTime() !== b.date.getTime()) return a.date.getTime() - b.date.getTime();
         return (SLOT_ORDER[a.slot] || 0) - (SLOT_ORDER[b.slot] || 0);
     });
 
-    // 2. Calculamos los ciclos de 5 clases con reinicio manual
     const vehicleCounters: Record<string, number> = {};
     allSessionsFlat.forEach(s => {
         if (vehicleCounters[s.vehicle] === undefined) vehicleCounters[s.vehicle] = 0;
         
-        // Sumamos al contador si la clase no fue perdida
         if (s.status !== 'missed') {
             vehicleCounters[s.vehicle]++;
         }
         
         s.fuelCycleCount = vehicleCounters[s.vehicle]; 
 
-        // Alerta a la quinta clase después del último reinicio
         if (s.fuelCycleCount >= 5 && s.status !== 'refueled' && s.status !== 'missed') {
             s.suggestedFuel = true;
         }
 
-        // SI SE MARCÓ COMO GASOLINA: El ciclo se reinicia a 0 para las próximas clases
         if (s.status === 'refueled') {
             vehicleCounters[s.vehicle] = 0;
         }
     });
 
-    // 3. Filtramos solo para los días de la semana actual que se visualiza
     const newWeeklyAssignments = new Map<string, any[]>();
     allSessionsFlat.forEach(s => {
         if (isWithinInterval(s.date, weekInterval)) {
@@ -247,7 +271,7 @@ export default function VehicleScheduleReportPage() {
       <div className="flex justify-between items-center">
         <div>
             <h1 className="font-headline text-3xl font-bold">Agenda Práctica Semanal</h1>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Control de Flota y Ciclos de Combustible (Reinicio en Carga)</p>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Control de Flota y Ciclos de Combustible</p>
         </div>
         <div className="flex items-center gap-2 bg-background border p-1 rounded-md">
             <Button variant="ghost" size="icon" onClick={() => setCurrentDate(subDays(currentDate, 7))}><ChevronLeft className="h-4 w-4" /></Button>
@@ -303,15 +327,9 @@ export default function VehicleScheduleReportPage() {
                                                 a.status === 'missed' ? "bg-red-600 border-red-700 text-white" : 
                                                 a.isEval ? "bg-purple-50 border-purple-200" : (vehicleColors[a.vehicle] || 'bg-gray-100 border-gray-200')
                                             )}>
-                                                {/* Icono de Inasistencia */}
+                                                {/* Iconos de Estado */}
                                                 {a.status === 'missed' && <AlertCircle className="absolute -top-1 -right-1 h-3 w-3 text-white fill-red-600" />}
-                                                
-                                                {/* Icono de Gasolina CONFIRMADA */}
-                                                {a.status === 'refueled' && (
-                                                    <Fuel className="absolute -top-2 -right-2 h-5 w-5 text-white fill-sky-600 drop-shadow-sm z-20" />
-                                                )}
-
-                                                {/* Alerta de Gasolina SUGERIDA (Ciclo 5) */}
+                                                {a.status === 'refueled' && <Fuel className="absolute -top-2 -right-2 h-5 w-5 text-white fill-sky-600 drop-shadow-sm z-20" />}
                                                 {a.suggestedFuel && a.status !== 'refueled' && a.status !== 'missed' && (
                                                     <div className="absolute -top-2 -right-2 z-20 bg-white rounded-full p-0.5 shadow-sm border border-amber-500 animate-bounce">
                                                         <AlertTriangle className="h-4 w-4 text-amber-600 fill-amber-100" />
@@ -322,14 +340,16 @@ export default function VehicleScheduleReportPage() {
                                                 <p className={cn("truncate text-[8px] font-bold uppercase mb-1 flex items-center gap-1", a.status === 'missed' ? 'text-inherit opacity-80' : 'text-muted-foreground')}>
                                                     <User className="h-2.5 w-2.5" /> {a.instructor || 'SIN ASIGNAR'}
                                                 </p>
+                                                
                                                 <div className={cn("flex justify-between font-bold text-[9px] border-t pt-1 mt-1", a.status === 'missed' ? 'border-current opacity-40' : 'border-black/10 opacity-80')}>
                                                     <span className="flex items-center gap-1">
                                                         {a.vehicle}
-                                                        {/* Contador de ciclo de gasolina */}
                                                         <span className="text-[7px] text-muted-foreground opacity-60">({a.fuelCycleCount}/5)</span>
                                                     </span>
-                                                    {/* Restauración del número de clase */}
-                                                    <span className="font-black">{a.isEval ? '10m' : `#${a.slotIndex !== undefined ? a.slotIndex + 1 : 'M'}`}</span>
+                                                    {/* NUMERO DE CLASE DEL ESTUDIANTE */}
+                                                    <span className="font-black text-primary">
+                                                        {a.isEval ? '10m' : `#${a.displayClassNumber}`}
+                                                    </span>
                                                 </div>
                                                 
                                                 {a.suggestedFuel && a.status !== 'refueled' && (

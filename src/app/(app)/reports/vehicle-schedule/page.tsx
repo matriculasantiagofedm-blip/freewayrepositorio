@@ -163,7 +163,7 @@ export default function VehicleScheduleReportPage() {
         }
     });
 
-    // ORDENAMIENTO CRONOLÓGICO PARA CÁLCULO DE CICLOS
+    // Ordenamiento cronológico para el cálculo de ciclos
     allSessionsFlat.sort((a, b) => {
         if (a.date.getTime() !== b.date.getTime()) return a.date.getTime() - b.date.getTime();
         return (SLOT_ORDER[a.slot] || 0) - (SLOT_ORDER[b.slot] || 0);

@@ -163,7 +163,7 @@ export default function VehicleScheduleReportPage() {
         }
     });
 
-    // LOGICA DE MARCACION DE GAS:
+    // ORDENAMIENTO CRONOLÓGICO PARA CÁLCULO DE CICLOS
     allSessionsFlat.sort((a, b) => {
         if (a.date.getTime() !== b.date.getTime()) return a.date.getTime() - b.date.getTime();
         return (SLOT_ORDER[a.slot] || 0) - (SLOT_ORDER[b.slot] || 0);
@@ -173,18 +173,18 @@ export default function VehicleScheduleReportPage() {
     allSessionsFlat.forEach(s => {
         if (vehicleCounters[s.vehicle] === undefined) vehicleCounters[s.vehicle] = 0;
         
-        if (s.status !== 'missed') {
+        if (s.status === 'refueled') {
+            // El usuario solicitó que la clase donde marcó gasolina sea la PRIMERA del nuevo ciclo
+            vehicleCounters[s.vehicle] = 1;
+        } else if (s.status !== 'missed') {
             vehicleCounters[s.vehicle]++;
         }
         
         s.fuelCycleCount = vehicleCounters[s.vehicle]; 
 
-        if (s.fuelCycleCount >= 5 && s.status !== 'refueled' && s.status !== 'missed') {
+        // Alerta a la quinta clase (incluyendo la de la carga original como #1)
+        if (s.fuelCycleCount >= 5 && s.status !== 'missed') {
             s.suggestedFuel = true;
-        }
-
-        if (s.status === 'refueled') {
-            vehicleCounters[s.vehicle] = 0;
         }
     });
 
@@ -346,14 +346,14 @@ export default function VehicleScheduleReportPage() {
                                                         {a.vehicle}
                                                         <span className="text-[7px] text-muted-foreground opacity-60">({a.fuelCycleCount}/5)</span>
                                                     </span>
-                                                    {/* NUMERO DE CLASE DEL ESTUDIANTE */}
-                                                    <span className="font-black text-primary">
+                                                    {/* NUMERO DE CLASE DEL ESTUDIANTE - VISIBLE EN LA ESQUINA */}
+                                                    <span className="font-black text-primary bg-white/50 px-1 rounded">
                                                         {a.isEval ? '10m' : `#${a.displayClassNumber}`}
                                                     </span>
                                                 </div>
                                                 
-                                                {a.suggestedFuel && a.status !== 'refueled' && (
-                                                    <div className="mt-1 bg-amber-500/10 text-amber-700 text-[7px] font-black text-center py-0.5 rounded border border-amber-200 uppercase">Gasolina Requerida</div>
+                                                {a.suggestedFuel && a.status !== 'refueled' && a.status !== 'missed' && (
+                                                    <div className="mt-1 bg-amber-500 text-white text-[7px] font-black text-center py-0.5 rounded border border-amber-600 uppercase shadow-sm">Gasolina Requerida</div>
                                                 )}
                                             </div>
                                         </PopoverTrigger>

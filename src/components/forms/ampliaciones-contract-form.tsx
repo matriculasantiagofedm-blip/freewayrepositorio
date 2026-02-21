@@ -262,14 +262,32 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
                   </FormItem>
                 )} />
               </div>
-              <div className="col-span-12 md:col-span-6">
-                <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
+              
+              {/* RESTAURACIÓN DE TIPO ID Y NÚMERO */}
+              <div className="col-span-4 md:col-span-2">
+                <FormField control={form.control} name="idType" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Cédula / ID</FormLabel>
-                    <FormControl><Input placeholder="8-000-000" {...field} className="h-9 font-mono" readOnly={isEdit} /></FormControl>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Tipo ID</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                      <FormControl><SelectTrigger className="h-9"><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="C.I.P.">C.I.P.</SelectItem>
+                        <SelectItem value="Pasaporte">Pasaporte</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </FormItem>
                 )} />
               </div>
+              <div className="col-span-8 md:col-span-4">
+                <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Número de Identificación</FormLabel>
+                    <FormControl><Input placeholder="Ej: 8-000-000" {...field} className="h-9 font-mono" readOnly={isEdit} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+
               <div className="col-span-12 md:col-span-6">
                 <FormField control={form.control} name="studentPhone1" render={({ field }) => (
                   <FormItem>

@@ -13,7 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, ChevronLeft, ChevronRight, User, AlertCircle, Fuel, MessageSquare, Timer, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, User, AlertCircle, Fuel, MessageSquare, Timer, ShieldCheck } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addDays, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
@@ -168,23 +168,6 @@ export default function VehicleScheduleReportPage() {
         return (SLOT_ORDER[a.slot] || 0) - (SLOT_ORDER[b.slot] || 0);
     });
 
-    const vehicleCounters: Record<string, number> = {};
-    allSessionsFlat.forEach(s => {
-        if (vehicleCounters[s.vehicle] === undefined) vehicleCounters[s.vehicle] = 0;
-        
-        if (s.status === 'refueled') {
-            vehicleCounters[s.vehicle] = 1;
-        } else if (s.status !== 'missed') {
-            vehicleCounters[s.vehicle]++;
-        }
-        
-        s.fuelCycleCount = vehicleCounters[s.vehicle]; 
-
-        if (s.fuelCycleCount >= 5 && s.status !== 'missed') {
-            s.suggestedFuel = true;
-        }
-    });
-
     const newWeeklyAssignments = new Map<string, any[]>();
     allSessionsFlat.forEach(s => {
         if (isWithinInterval(s.date, weekInterval)) {
@@ -268,7 +251,7 @@ export default function VehicleScheduleReportPage() {
       <div className="flex justify-between items-center">
         <div>
             <h1 className="font-headline text-3xl font-bold">Agenda Práctica Semanal</h1>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Control de Flota y Ciclos de Combustible</p>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Control de Flota y Sesiones de Estudiantes</p>
         </div>
         <div className="flex items-center gap-2 bg-background border p-1 rounded-md">
             <Button variant="ghost" size="icon" onClick={() => setCurrentDate(subDays(currentDate, 7))}><ChevronLeft className="h-4 w-4" /></Button>
@@ -326,11 +309,6 @@ export default function VehicleScheduleReportPage() {
                                             )}>
                                                 {a.status === 'missed' && <AlertCircle className="absolute -top-1 -right-1 h-3 w-3 text-white fill-red-600" />}
                                                 {a.status === 'refueled' && <Fuel className="absolute -top-2 -right-2 h-5 w-5 text-white fill-sky-600 drop-shadow-sm z-20" />}
-                                                {a.suggestedFuel && a.status !== 'refueled' && a.status !== 'missed' && (
-                                                    <div className="absolute -top-2 -right-2 z-20 bg-white rounded-full p-0.5 shadow-sm border border-amber-500 animate-bounce">
-                                                        <AlertTriangle className="h-4 w-4 text-amber-600 fill-amber-100" />
-                                                    </div>
-                                                )}
 
                                                 <p className="truncate font-black uppercase mb-0.5">{a.name}</p>
                                                 <p className={cn("truncate text-[8px] font-bold uppercase mb-1 flex items-center gap-1", a.status === 'missed' ? 'text-inherit opacity-80' : 'text-muted-foreground')}>
@@ -340,16 +318,11 @@ export default function VehicleScheduleReportPage() {
                                                 <div className={cn("flex justify-between font-bold text-[9px] border-t pt-1 mt-1", a.status === 'missed' ? 'border-current opacity-40' : 'border-black/10 opacity-80')}>
                                                     <span className="flex items-center gap-1">
                                                         {a.vehicle}
-                                                        <span className="text-[7px] text-muted-foreground opacity-60">({a.fuelCycleCount}/5)</span>
                                                     </span>
                                                     <span className="font-black text-primary bg-white/50 px-1 rounded">
                                                         {a.isEval ? '10m' : `#${a.displayClassNumber}`}
                                                     </span>
                                                 </div>
-                                                
-                                                {a.suggestedFuel && a.status !== 'refueled' && a.status !== 'missed' && (
-                                                    <div className="mt-1 bg-amber-500 text-white text-[7px] font-black text-center py-0.5 rounded border border-amber-600 uppercase shadow-sm">Gasolina Requerida</div>
-                                                )}
                                             </div>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-56 p-3">

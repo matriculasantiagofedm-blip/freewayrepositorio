@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -169,24 +168,6 @@ export default function VehicleScheduleReportPage() {
         return (SLOT_ORDER[a.slot] || 0) - (SLOT_ORDER[b.slot] || 0);
     });
 
-    // LÓGICA DINÁMICA DE GASOLINA: Ciclo de 5 sesiones activado por "refueled"
-    const vehicleCycles: Record<string, number> = {};
-    allSessionsFlat.forEach(s => {
-        const v = s.vehicle;
-        if (s.status === 'refueled') {
-            vehicleCycles[v] = 1; // La clase marcada es la número 1
-        } else if (vehicleCycles[v] !== undefined && vehicleCycles[v] > 0 && s.status !== 'missed') {
-            vehicleCycles[v]++;
-        }
-        
-        if (vehicleCycles[v]) {
-            s.cycleCount = vehicleCycles[v];
-            if (vehicleCycles[v] === 5) {
-                s.suggestedFuel = true; // Alerta exactamente en la quinta
-            }
-        }
-    });
-
     const newWeeklyAssignments = new Map<string, any[]>();
     allSessionsFlat.forEach(s => {
         if (isWithinInterval(s.date, weekInterval)) {
@@ -326,13 +307,6 @@ export default function VehicleScheduleReportPage() {
                                                 a.status === 'missed' ? "bg-red-600 border-red-700 text-white" : 
                                                 a.isEval ? "bg-purple-50 border-purple-200" : (vehicleColors[a.vehicle] || 'bg-gray-100 border-gray-200')
                                             )}>
-                                                {/* ALERTA DE GASOLINA REQUERIDA (EN LA 5TA CLASE DEL CICLO) */}
-                                                {a.suggestedFuel && a.status !== 'refueled' && (
-                                                    <div className="absolute -top-2 -left-2 bg-amber-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full shadow-lg border border-white animate-pulse z-30">
-                                                        GASOLINA REQUERIDA
-                                                    </div>
-                                                )}
-
                                                 {a.status === 'missed' && <AlertCircle className="absolute -top-1 -right-1 h-3 w-3 text-white fill-red-600" />}
                                                 {a.status === 'refueled' && <Fuel className="absolute -top-2 -right-2 h-5 w-5 text-white fill-sky-600 drop-shadow-sm z-20" />}
 
@@ -343,11 +317,10 @@ export default function VehicleScheduleReportPage() {
                                                 
                                                 <div className={cn("flex justify-between font-bold text-[9px] border-t pt-1 mt-1", a.status === 'missed' ? 'border-current opacity-40' : 'border-black/10 opacity-80')}>
                                                     <span className="flex items-center gap-1 text-[8px]">
-                                                        {a.vehicle} {a.cycleCount ? `(${a.cycleCount}/5)` : ''}
+                                                        {a.vehicle}
                                                     </span>
                                                 </div>
 
-                                                {/* NÚMERO DE CLASE DEL ESTUDIANTE - RESTAURADO Y MÁS GRANDE */}
                                                 <div className="absolute bottom-1 right-1 bg-primary text-white text-[10px] font-black px-1.5 py-0.5 rounded shadow-sm">
                                                     #{a.displayClassNumber}
                                                 </div>

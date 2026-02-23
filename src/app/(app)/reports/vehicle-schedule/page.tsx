@@ -163,7 +163,6 @@ export default function VehicleScheduleReportPage() {
         }
     });
 
-    // Ordenamiento cronológico para el cálculo de ciclos
     allSessionsFlat.sort((a, b) => {
         if (a.date.getTime() !== b.date.getTime()) return a.date.getTime() - b.date.getTime();
         return (SLOT_ORDER[a.slot] || 0) - (SLOT_ORDER[b.slot] || 0);
@@ -174,7 +173,6 @@ export default function VehicleScheduleReportPage() {
         if (vehicleCounters[s.vehicle] === undefined) vehicleCounters[s.vehicle] = 0;
         
         if (s.status === 'refueled') {
-            // El usuario solicitó que la clase donde marcó gasolina sea la PRIMERA del nuevo ciclo
             vehicleCounters[s.vehicle] = 1;
         } else if (s.status !== 'missed') {
             vehicleCounters[s.vehicle]++;
@@ -182,7 +180,6 @@ export default function VehicleScheduleReportPage() {
         
         s.fuelCycleCount = vehicleCounters[s.vehicle]; 
 
-        // Alerta a la quinta clase (incluyendo la de la carga original como #1)
         if (s.fuelCycleCount >= 5 && s.status !== 'missed') {
             s.suggestedFuel = true;
         }
@@ -327,7 +324,6 @@ export default function VehicleScheduleReportPage() {
                                                 a.status === 'missed' ? "bg-red-600 border-red-700 text-white" : 
                                                 a.isEval ? "bg-purple-50 border-purple-200" : (vehicleColors[a.vehicle] || 'bg-gray-100 border-gray-200')
                                             )}>
-                                                {/* Iconos de Estado */}
                                                 {a.status === 'missed' && <AlertCircle className="absolute -top-1 -right-1 h-3 w-3 text-white fill-red-600" />}
                                                 {a.status === 'refueled' && <Fuel className="absolute -top-2 -right-2 h-5 w-5 text-white fill-sky-600 drop-shadow-sm z-20" />}
                                                 {a.suggestedFuel && a.status !== 'refueled' && a.status !== 'missed' && (
@@ -346,7 +342,6 @@ export default function VehicleScheduleReportPage() {
                                                         {a.vehicle}
                                                         <span className="text-[7px] text-muted-foreground opacity-60">({a.fuelCycleCount}/5)</span>
                                                     </span>
-                                                    {/* NUMERO DE CLASE DEL ESTUDIANTE - VISIBLE EN LA ESQUINA */}
                                                     <span className="font-black text-primary bg-white/50 px-1 rounded">
                                                         {a.isEval ? '10m' : `#${a.displayClassNumber}`}
                                                     </span>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -13,7 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, ChevronLeft, ChevronRight, User, AlertCircle, Fuel, MessageSquare, Timer, ShieldCheck } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, User, AlertCircle, Fuel, MessageSquare, Timer, ShieldCheck, Landmark, Ban } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addDays, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
@@ -168,6 +169,20 @@ export default function VehicleScheduleReportPage() {
         return (SLOT_ORDER[a.slot] || 0) - (SLOT_ORDER[b.slot] || 0);
     });
 
+    // LÓGICA DINÁMICA DE GASOLINA: Solo cuenta si hubo un evento de 'refueled' previo
+    const vehicleCycles: Record<string, number> = {};
+    allSessionsFlat.forEach(s => {
+        const v = s.vehicle;
+        if (s.status === 'refueled') {
+            vehicleCycles[v] = 1; // Reinicia el ciclo a la clase 1
+        } else if (vehicleCycles[v] !== undefined && vehicleCycles[v] > 0 && s.status !== 'missed') {
+            vehicleCycles[v]++;
+            if (vehicleCycles[v] === 5) {
+                s.suggestedFuel = true; // Alerta en la 5ta clase después de cargar
+            }
+        }
+    });
+
     const newWeeklyAssignments = new Map<string, any[]>();
     allSessionsFlat.forEach(s => {
         if (isWithinInterval(s.date, weekInterval)) {
@@ -307,6 +322,13 @@ export default function VehicleScheduleReportPage() {
                                                 a.status === 'missed' ? "bg-red-600 border-red-700 text-white" : 
                                                 a.isEval ? "bg-purple-50 border-purple-200" : (vehicleColors[a.vehicle] || 'bg-gray-100 border-gray-200')
                                             )}>
+                                                {/* ALERTA DE GASOLINA (SOLO SI FUE SUGERIDA Y NO SE HA MARCADO COMO RECARGADA) */}
+                                                {a.suggestedFuel && a.status !== 'refueled' && (
+                                                    <div className="absolute -top-2 -left-2 bg-amber-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full shadow-lg border border-white animate-pulse z-30">
+                                                        GASOLINA REQUERIDA
+                                                    </div>
+                                                )}
+
                                                 {a.status === 'missed' && <AlertCircle className="absolute -top-1 -right-1 h-3 w-3 text-white fill-red-600" />}
                                                 {a.status === 'refueled' && <Fuel className="absolute -top-2 -right-2 h-5 w-5 text-white fill-sky-600 drop-shadow-sm z-20" />}
 
@@ -341,7 +363,7 @@ export default function VehicleScheduleReportPage() {
                                                         </Button>
                                                     )}
                                                     {a.status === 'missed' && (
-                                                        <Button variant="secondary" size="sm" className="h-8 w-full text-[10px] font-black uppercase gap-2 bg-green-600 text-white hover:bg-green-700" onClick={() => handleNotifyWhatsApp(a)}>
+                                                        <Button variant="secondary" size="sm" className="h-8 w-full text-[10px] font-black uppercase gap-2 bg-green-600 text-white hover:bg-green-700" onClick={() => handleNotifyWhatsApp(item)}>
                                                             <MessageSquare className="h-3.5 w-3.5" /> Notificar WhatsApp
                                                         </Button>
                                                     )}

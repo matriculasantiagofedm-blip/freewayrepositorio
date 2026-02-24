@@ -10,7 +10,7 @@ import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
 import { Timestamp } from 'firebase/firestore';
 import { signInAnonymously } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
-import { Printer } from 'lucide-react';
+import { Printer, Loader2 } from 'lucide-react';
 
 function CertificatePrintContent() {
   const { id } = useParams();
@@ -27,7 +27,7 @@ function CertificatePrintContent() {
     return doc(db, 'contracts', contractId);
   }, [db, contractId, isManual]);
 
-  const { data: contract, isLoading: isContractLoading, error } = useDoc<Contract>(contractRef);
+  const { data: contract, isLoading: isContractLoading } = useDoc<Contract>(contractRef);
 
   const [certificate, setCertificate] = useState<Certificate | null>(null);
 
@@ -98,14 +98,11 @@ function CertificatePrintContent() {
       };
       setCertificate(certificateData);
 
+      // En Android, la impresión automática causa fallos. 
+      // Solo marcamos como listo para que el usuario pulse el botón.
       const timer = setTimeout(() => {
         setIsReady(true);
-        try {
-            window.print();
-        } catch (e) {
-            console.error("Print error", e);
-        }
-      }, 4000); // 4 segundos para certificados pesados en tablet
+      }, 3000);
       
       return () => clearTimeout(timer);
     }
@@ -125,6 +122,10 @@ function CertificatePrintContent() {
     return false;
   }, [certificate, isManual, searchParams]);
 
+  const handleManualPrint = () => {
+    window.print();
+  };
+
   if (!isManual && isContractLoading) {
     return <div className="flex items-center justify-center h-screen bg-white font-black text-blue-600 animate-pulse uppercase tracking-widest">Generando Gráficos...</div>;
   }
@@ -139,20 +140,22 @@ function CertificatePrintContent() {
           }
         `}</style>
 
-        <div className="print-ui-element p-4 bg-white border-b sticky top-0 z-[200] flex flex-col gap-3">
+        <div className="print-ui-element p-4 bg-white border-b sticky top-0 z-[200] flex flex-col gap-3 shadow-md">
             {!isReady ? (
-                <div className="bg-blue-600 text-white p-4 rounded-xl text-center font-black uppercase text-sm animate-pulse shadow-lg">
-                    Procesando Certificado... Espere el diálogo de la tablet.
+                <div className="bg-amber-500 text-white p-4 rounded-xl text-center font-black uppercase text-sm animate-pulse flex items-center justify-center gap-3">
+                    <Loader2 className="animate-spin h-5 w-5" />
+                    Preparando Certificado para Tablet...
                 </div>
             ) : (
                 <Button 
-                    onClick={() => window.print()} 
-                    className="h-16 text-lg font-black bg-green-600 hover:bg-green-700 shadow-xl uppercase tracking-wider"
+                    onClick={handleManualPrint} 
+                    className="h-20 text-xl font-black bg-blue-600 hover:bg-blue-700 shadow-2xl uppercase tracking-widest border-4 border-blue-400 animate-bounce"
                 >
-                    <Printer className="mr-3 h-6 w-6" />
-                    PULSAR AQUÍ PARA IMPRIMIR CERTIFICADO
+                    <Printer className="mr-4 h-8 w-8" />
+                    PULSAR AQUÍ PARA IMPRIMIR
                 </Button>
             )}
+            <p className="text-[10px] text-center text-slate-500 font-bold uppercase">No cerrar esta pestaña hasta que la impresión finalice</p>
         </div>
 
         {shouldUseAmpliacionTemplate ? (
@@ -166,7 +169,7 @@ function CertificatePrintContent() {
 
 export default function CertificatePrintIdPage() {
   return (
-    <Suspense fallback={<div className="flex h-screen items-center justify-center font-bold">MOTOR DE CERTIFICADOS...</div>}>
+    <Suspense fallback={<div className="flex h-screen items-center justify-center font-bold">CARGANDO MOTOR DE IMPRESIÓN...</div>}>
       <CertificatePrintContent />
     </Suspense>
   );

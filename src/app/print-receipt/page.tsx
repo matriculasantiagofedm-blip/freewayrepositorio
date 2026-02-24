@@ -4,7 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, Suspense, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Printer } from 'lucide-react';
+import { Printer, Loader2 } from 'lucide-react';
 
 function ReceiptContent() {
     const searchParams = useSearchParams();
@@ -21,16 +21,14 @@ function ReceiptContent() {
     useEffect(() => {
         const timer = setTimeout(() => {
           setIsReady(true);
-          // Intento de impresión automática con delay para Android
-          try {
-            window.print();
-          } catch (e) {
-            console.error("Auto-print failed", e);
-          }
-        }, 3000); 
+        }, 2000); 
     
         return () => clearTimeout(timer);
       }, []);
+
+    const handleManualPrint = () => {
+        window.print();
+    };
 
     return (
         <div className="w-full max-w-2xl mx-auto p-4 md:p-8 font-sans bg-white">
@@ -51,20 +49,18 @@ function ReceiptContent() {
             
             <div className="print-ui-element space-y-4 mb-8">
                 {!isReady ? (
-                    <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center text-blue-800 text-sm font-bold animate-pulse">
-                        PREPARANDO RECIBO PARA LA TABLET... POR FAVOR ESPERE.
+                    <div className="bg-amber-500 border border-amber-600 p-4 rounded-xl text-center text-white text-sm font-bold animate-pulse flex items-center justify-center gap-3">
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        PREPARANDO RECIBO...
                     </div>
                 ) : (
                     <div className="flex flex-col gap-3">
-                        <div className="bg-green-50 border border-green-200 p-4 rounded-xl text-center text-green-800 text-sm font-bold">
-                            LISTO PARA IMPRIMIR
-                        </div>
                         <Button 
-                            onClick={() => window.print()} 
+                            onClick={handleManualPrint} 
                             size="lg" 
-                            className="w-full h-16 text-lg font-black uppercase shadow-xl bg-blue-600 hover:bg-blue-700 animate-bounce"
+                            className="w-full h-20 text-xl font-black uppercase shadow-2xl bg-blue-600 hover:bg-blue-700 border-4 border-blue-400 animate-bounce"
                         >
-                            <Printer className="mr-3 h-6 w-6" />
+                            <Printer className="mr-4 h-8 w-8" />
                             PULSAR AQUÍ PARA IMPRIMIR
                         </Button>
                     </div>

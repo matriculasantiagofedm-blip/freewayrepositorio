@@ -9,7 +9,7 @@ import { useDb, useFirebase, useUser } from '@/components/firebase-provider';
 import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
 import { signInAnonymously } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
-import { Printer } from 'lucide-react';
+import { Printer, Loader2 } from 'lucide-react';
 
 function PrintContractContent() {
   const { id } = useParams();
@@ -37,15 +37,14 @@ function PrintContractContent() {
     if (contract && !isLoading) {
       const timer = setTimeout(() => {
         setIsReady(true);
-        try {
-            window.print();
-        } catch (e) {
-            console.error("Print failed", e);
-        }
-      }, 3500); // Aumentamos a 3.5s para contratos largos en tablet
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, [contract, isLoading]);
+
+  const handleManualPrint = () => {
+    window.print();
+  };
 
   if (isLoading || isUserLoading) {
     return <div className="flex h-screen items-center justify-center bg-white font-bold animate-pulse text-blue-600">CARGANDO DOCUMENTO...</div>;
@@ -79,20 +78,22 @@ function PrintContractContent() {
           }
         `}</style>
 
-      <div className="print-ui-element p-4 sticky top-0 z-[100] bg-slate-50 border-b shadow-sm space-y-2">
+      <div className="print-ui-element p-4 sticky top-0 z-[100] bg-slate-50 border-b shadow-lg space-y-2">
         {!isReady ? (
-            <div className="bg-amber-100 border border-amber-300 p-3 rounded-lg text-center text-amber-800 text-xs font-black uppercase">
-                Renderizando contrato para Tablet... Espere el diálogo de impresión.
+            <div className="bg-amber-500 border border-amber-600 p-4 rounded-lg text-center text-white text-sm font-black uppercase animate-pulse flex items-center justify-center gap-3">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Renderizando contrato para Tablet...
             </div>
         ) : (
             <Button 
-                onClick={() => window.print()} 
-                className="w-full h-14 text-lg font-black uppercase bg-blue-600 hover:bg-blue-700 shadow-lg"
+                onClick={handleManualPrint} 
+                className="w-full h-20 text-xl font-black uppercase bg-blue-600 hover:bg-blue-700 shadow-xl border-4 border-blue-400 animate-bounce"
             >
-                <Printer className="mr-3 h-6 w-6" />
-                RE-INTENTAR IMPRESIÓN (PULSAR AQUÍ)
+                <Printer className="mr-4 h-8 w-8" />
+                PULSAR AQUÍ PARA IMPRIMIR
             </Button>
         )}
+        <p className="text-[10px] text-center text-slate-500 font-bold uppercase">Asegúrate de que la impresora esté encendida</p>
       </div>
 
       <ContractView contract={contract} />

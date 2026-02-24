@@ -40,12 +40,15 @@ export default function DashboardPage() {
   const statsValues = useMemo(() => {
     if (!allContracts) return { active: 0, today: 0, overdue: 0, overdueAmount: 0, drafts: [] as Contract[] };
     
-    const active = allContracts.filter(c => c.status === 'active' || c.status === 'completed').length;
-    const todayCount = allContracts.filter(c => isToday(toDate(c.createdAt))).length;
-    const overdueList = allContracts.filter(isOverdue);
+    // EXCLUSIÓN DE CERTIFICADOS: Solo contamos contratos de cursos reales (isManualPrint !== true)
+    const filteredContracts = allContracts.filter(c => !c.isManualPrint);
+
+    const active = filteredContracts.filter(c => c.status === 'active' || c.status === 'completed').length;
+    const todayCount = filteredContracts.filter(c => isToday(toDate(c.createdAt))).length;
+    const overdueList = filteredContracts.filter(isOverdue);
     const overdueCount = overdueList.length;
     const overdueSum = overdueList.reduce((sum, c) => sum + getBalance(c), 0);
-    const draftsList = allContracts.filter(c => c.status === 'draft');
+    const draftsList = filteredContracts.filter(c => c.status === 'draft');
 
     return {
         active,

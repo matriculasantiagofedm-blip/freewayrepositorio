@@ -52,6 +52,9 @@ function AllContractsContent() {
   const filteredContracts = useMemo(() => {
     if (!allContracts) return [];
     return allContracts.filter((contract) => {
+      // EXCLUSIÓN DE CERTIFICADOS MANUALES: Estos no son "Trámites" operativos del día
+      if (contract.isManualPrint) return false;
+
       const folio = String(contract.folioNumber || '').padStart(6, '0');
       const client = contract.clientName?.toLowerCase() || '';
       const type = contract.type?.toLowerCase() || '';

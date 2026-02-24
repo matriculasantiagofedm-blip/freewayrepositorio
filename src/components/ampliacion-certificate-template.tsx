@@ -36,55 +36,55 @@ function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate 
     
     return (
         <div className="w-full min-h-screen flex items-center justify-center bg-white print:block print:h-auto break-after-page">
-            <div className="w-[10.5in] h-[8in] bg-white text-black font-serif mx-auto print:m-0 relative flex items-center justify-center p-8">
-                {/* UNICO MARCO DEL CERTIFICADO */}
-                <div className="w-full h-full border-[4px] border-black flex flex-col p-10 relative overflow-hidden">
+            {/* Margen asimétrico: pl-24 para aumentar izquierdo, pr-4 para reducir derecho */}
+            <div className="w-[10.5in] h-[8in] bg-white text-black font-serif mx-auto print:m-0 relative flex items-center justify-center pl-24 pr-4 py-8">
+                <div className="w-full h-full border-[4px] border-black flex flex-col p-8 relative overflow-hidden">
                     
-                    <header className="flex w-full flex-col items-center justify-center relative pt-4">
-                        <h2 className="text-[10pt] font-bold tracking-tight mb-1 uppercase">FREEWAY ESCUELA DE MANEJO S.A.</h2>
-                        <h1 className="text-[28pt] font-black tracking-[0.15em] leading-none mb-1 text-black">FREEWAY</h1>
-                        <p className="text-[13pt] tracking-[0.4em] font-semibold text-black uppercase">Escuela de Manejo</p>
-                        <p className="text-[10pt] italic mt-1">Casa Matriz Chorrera</p>
+                    <header className="flex w-full flex-col items-center justify-center relative pt-2">
+                        <h2 className="text-[7.5pt] font-bold tracking-tight mb-1 uppercase">FREEWAY ESCUELA DE MANEJO S.A.</h2>
+                        <h1 className="text-[21pt] font-black tracking-[0.15em] leading-none mb-1 text-black">FREEWAY</h1>
+                        <p className="text-[9.75pt] tracking-[0.4em] font-semibold text-black uppercase">Escuela de Manejo</p>
+                        <p className="text-[7.5pt] italic mt-1">Casa Matriz Chorrera</p>
 
                         <div className="absolute top-0 right-0 text-center">
-                            <p className="text-[22pt] font-black mb-1">{getHighestLicenseType(certificate.licenseType)}</p>
-                            <p className="text-[9pt] font-bold border-t border-black pt-1">{folioNum} / {folioYear}</p>
+                            <p className="text-[16.5pt] font-black mb-1">{getHighestLicenseType(certificate.licenseType)}</p>
+                            <p className="text-[6.75pt] font-bold border-t border-black pt-1">{folioNum} / {folioYear}</p>
                         </div>
                     </header>
 
-                    <main className="flex-grow flex flex-col items-center justify-center text-center px-12 mt-2">
-                        <p className="text-[10pt] uppercase tracking-[0.2em] mb-6 font-medium">Otorga el presente Certificado a:</p>
+                    <main className="flex-grow flex flex-col items-center justify-center text-center px-8 mt-1">
+                        <p className="text-[7.5pt] uppercase tracking-[0.2em] mb-4 font-medium">Otorga el presente Certificado a:</p>
 
-                        <div className="mb-6 w-full">
-                            <p className="font-black text-[20pt] tracking-tighter leading-none mb-3 uppercase">
+                        <div className="mb-4 w-full">
+                            <p className="font-black text-[15pt] tracking-tighter leading-none mb-2 uppercase">
                                 {certificate.clientName}
                             </p>
-                            <p className="font-bold text-[17pt] tracking-widest">{certificate.idType || 'C.I.P.'} &nbsp; {certificate.cip}</p>
+                            <p className="font-bold text-[12.75pt] tracking-widest">{certificate.idType || 'C.I.P.'} &nbsp; {certificate.cip}</p>
                         </div>
 
-                        <div className="text-[13pt] leading-relaxed max-w-4xl mx-auto py-4 px-8 border border-dashed border-black/20 rounded-xl">
+                        <div className="text-[9.75pt] leading-relaxed max-w-3xl mx-auto py-3 px-6 border border-dashed border-black/20 rounded-xl">
                             <p>
                                 Por haber aprobado el curso de capacitación <span className="font-black">TEÓRICO Y PRÁCTICO</span>, para optar por la licencia de
                                 conducir tipo <span className="font-black">{getLicenseTypeText(certificate.licenseType)}</span> con una duración de <span className="font-black">80</span> horas, en cumplimiento de la Ley 146 del 15 de Abril de 2020, acápite a.
                             </p>
                         </div>
 
-                        <div className="text-[9pt] mx-auto mt-8 max-w-2xl font-bold opacity-80">
+                        <div className="text-[6.75pt] mx-auto mt-6 max-w-xl font-bold opacity-80">
                             <p>
                                 Reconocida por la Autoridad del Tránsito y Transporte Terrestre, Resuelto N°380 (04 de diciembre de 2000) Resolución AL-325
                             </p>
                         </div>
                         
-                        <div className="text-center mt-6 font-bold text-[7.5pt] italic">
+                        <div className="text-center mt-4 font-bold text-[5.6pt] italic">
                             <p>***Dado en la república de Panamá, a los {formattedDay} días del mes de {formattedMonth} de {formattedYear}***</p>
                         </div>
                     </main>
                     
-                    <footer className="w-full flex justify-end pt-2 pr-12 pb-2">
-                        <div className="text-center w-72">
+                    <footer className="w-full flex justify-end pt-1 pr-8 pb-1">
+                        <div className="text-center w-56">
                             <div className="w-full border-t border-black mb-1"></div>
-                            <p className="text-[10pt] italic font-bold">Lic. Ayax Ortega</p>
-                            <p className="text-[8pt] uppercase font-black tracking-widest opacity-60">Representante Legal</p>
+                            <p className="text-[7.5pt] italic font-bold">Lic. Ayax Ortega</p>
+                            <p className="text-[6pt] uppercase font-black tracking-widest opacity-60">Representante Legal</p>
                         </div>
                     </footer>
                 </div>
@@ -101,8 +101,9 @@ function CertificateBackAmpliacion({ certificate }: { certificate: Certificate }
     
     return (
         <div className="w-full min-h-screen flex items-center justify-center bg-white print:block print:h-auto">
-            <div className="w-[10.5in] h-[8in] p-16 bg-white text-black font-sans text-[14pt] flex flex-col justify-start mx-auto print:m-0 flex items-center justify-center">
-                <div className="space-y-10 pt-12 w-full">
+            {/* Margen asimétrico también en el reverso */}
+            <div className="w-[10.5in] h-[8in] p-12 pl-24 pr-4 bg-white text-black font-sans text-[10.5pt] flex flex-col justify-start mx-auto print:m-0 flex items-center justify-center">
+                <div className="space-y-8 pt-8 w-full">
                     <p className="flex gap-4">Yo, <span className="font-black flex-1 uppercase">{certificate.clientName}</span></p>
                     <p>Número de Documento ({certificate.idType || 'C.I.P.'}): <span className="font-black">{certificate.cip}</span></p>
                     <p className="flex gap-4">Resido en: <span className="font-black flex-1 uppercase">{details?.studentAddress || ''}</span></p>
@@ -110,28 +111,28 @@ function CertificateBackAmpliacion({ certificate }: { certificate: Certificate }
                         Teléfono residencial: <span className="font-black">{details?.studentPhone1 || ''}</span> &nbsp; &nbsp; 
                         Celular: <span className="font-black">{details?.studentPhone2 || ''}</span>
                     </p>
-                    <p><span className="font-bold uppercase tracking-widest">TIPO DE LICENCIAS:</span> <span className="font-black">{certificate.licenseType}</span></p>
+                    <p><span className="font-bold uppercase tracking-widest text-[9pt]">TIPO DE LICENCIAS:</span> <span className="font-black">{certificate.licenseType}</span></p>
                     <p>Este certificado tiene validez hasta el <span className="font-black">{formattedExpiryDate}</span></p>
                     
-                    <div className="pt-12 space-y-12 mt-16">
+                    <div className="pt-8 space-y-8 mt-12">
                         <div className="flex gap-x-12">
-                            <div className="flex flex-col gap-2 flex-1">
-                                <span className="text-[8pt] font-black uppercase text-slate-400">Primer Nombre</span>
-                                <span className="font-black text-[17pt]">{certificate.firstName?.toUpperCase() || ''}</span>
+                            <div className="flex flex-col gap-1 flex-1">
+                                <span className="text-[6pt] font-black uppercase text-slate-400">Primer Nombre</span>
+                                <span className="font-black text-[12.75pt]">{certificate.firstName?.toUpperCase() || ''}</span>
                             </div>
-                            <div className="flex flex-col gap-2 flex-1">
-                                <span className="text-[8pt] font-black uppercase text-slate-400">Segundo Nombre</span>
-                                <span className="font-black text-[17pt]">{certificate.middleName?.toUpperCase() || ''}</span>
+                            <div className="flex flex-col gap-1 flex-1">
+                                <span className="text-[6pt] font-black uppercase text-slate-400">Segundo Nombre</span>
+                                <span className="font-black text-[12.75pt]">{certificate.middleName?.toUpperCase() || ''}</span>
                             </div>
                         </div>
                         <div className="flex gap-x-12">
-                            <div className="flex flex-col gap-2 flex-1">
-                                <span className="text-[8pt] font-black uppercase text-slate-400">Primer Apellido</span>
-                                <span className="font-black text-[17pt]">{certificate.lastName?.toUpperCase() || ''}</span>
+                            <div className="flex flex-col gap-1 flex-1">
+                                <span className="text-[6pt] font-black uppercase text-slate-400">Primer Apellido</span>
+                                <span className="font-black text-[12.75pt]">{certificate.lastName?.toUpperCase() || ''}</span>
                             </div>
-                            <div className="flex flex-col gap-2 flex-1">
-                                <span className="text-[8pt] font-black uppercase text-slate-400">Segundo Apellido</span>
-                                <span className="font-black text-[17pt]">{certificate.secondLastName?.toUpperCase() || ''}</span>
+                            <div className="flex flex-col gap-1 flex-1">
+                                <span className="text-[6pt] font-black uppercase text-slate-400">Segundo Apellido</span>
+                                <span className="font-black text-[12.75pt]">{certificate.secondLastName?.toUpperCase() || ''}</span>
                             </div>
                         </div>
                     </div>

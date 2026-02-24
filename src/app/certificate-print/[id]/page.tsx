@@ -13,8 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Printer, Loader2, AlertCircle } from 'lucide-react';
 
 /**
- * PÁGINA DE IMPRESIÓN OPTIMIZADA PARA TABLET Y CANON TS3600
- * Fuerza dimensiones de papel Carta y escala precisa.
+ * PÁGINA DE IMPRESIÓN RE-OPTIMIZADA PARA EVITAR CRASHES EN ANDROID
  */
 
 function CertificatePrintContent() {
@@ -103,7 +102,6 @@ function CertificatePrintContent() {
       };
       setCertificate(certificateData);
 
-      // Tiempo de espera para que la tablet procese las fuentes y marcos antes de permitir imprimir
       const timer = setTimeout(() => {
         setIsReady(true);
       }, 5000);
@@ -135,7 +133,7 @@ function CertificatePrintContent() {
   }
 
   return (
-    <div className="print:p-0 print:m-0 bg-white min-h-screen">
+    <div className="bg-white min-h-screen">
         <style jsx global>{`
           @media print {
             @page { 
@@ -149,21 +147,29 @@ function CertificatePrintContent() {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
                 overflow: visible !important;
+                min-height: auto !important;
+                height: auto !important;
             }
             .print-ui-element { display: none !important; }
             * { box-shadow: none !important; text-shadow: none !important; transition: none !important; }
+            .certificate-page-container {
+                display: block !important;
+                width: 11in !important;
+                height: 8.5in !important;
+                overflow: hidden !important;
+            }
           }
         `}</style>
 
         <div className="print-ui-element p-6 bg-white border-b flex flex-col gap-4 shadow-sm sticky top-0 z-[200]">
             <div className="flex items-center gap-2 text-blue-800 bg-blue-50 p-3 rounded-lg border border-blue-100">
                 <AlertCircle className="h-5 w-5" />
-                <p className="text-xs font-bold uppercase">Impresión Tablet (Canon TS3600): Espera a que el sistema se estabilice</p>
+                <p className="text-xs font-bold uppercase">Aviso: Si el error persiste, reinicia la tablet y la impresora.</p>
             </div>
             {!isReady ? (
                 <div className="bg-slate-100 text-slate-500 p-6 rounded-xl text-center font-black uppercase text-lg flex items-center justify-center gap-3 border-2 border-slate-200">
                     <Loader2 className="animate-spin h-6 w-6" />
-                    Cargando Fuentes y Marcos (5s)...
+                    Optimizando para Tablet (5s)...
                 </div>
             ) : (
                 <Button 
@@ -171,12 +177,12 @@ function CertificatePrintContent() {
                     className="h-24 text-2xl font-black bg-blue-600 hover:bg-blue-700 shadow-xl uppercase tracking-widest border-4 border-blue-400"
                 >
                     <Printer className="mr-4 h-8 w-8" />
-                    ENVIAR A CANON TS3600
+                    IMPRIMIR EN CANON
                 </Button>
             )}
         </div>
 
-        <div className="flex flex-col items-center justify-center w-full bg-white print:block">
+        <div className="flex flex-col items-center justify-center w-full bg-white print:block print:m-0 print:p-0">
             {shouldUseAmpliacionTemplate ? (
               <AmpliacionCertificateTemplate certificate={certificate} />
             ) : (
@@ -189,7 +195,7 @@ function CertificatePrintContent() {
 
 export default function CertificatePrintIdPage() {
   return (
-    <Suspense fallback={<div className="flex h-screen items-center justify-center font-bold">CARGANDO MOTOR...</div>}>
+    <Suspense fallback={<div className="flex h-screen items-center justify-center font-bold">CARGANDO...</div>}>
       <CertificatePrintContent />
     </Suspense>
   );

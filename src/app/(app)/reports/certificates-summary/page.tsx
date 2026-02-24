@@ -66,7 +66,7 @@ export default function CertificatesSummaryReportPage() {
       );
       
       const contractsSnap = await getDocs(qContracts);
-      const results: DiplomaRow[] = [];
+      const uniqueDiplomasMap = new Map<string, DiplomaRow>();
 
       contractsSnap.forEach((doc) => {
         const data = doc.data() as any;
@@ -81,7 +81,7 @@ export default function CertificatesSummaryReportPage() {
         const sLName = data.certificateSecondLastName || splitName(data.clientName).sLName;
         const mLastName = data.certificateMarriedLastName || '';
         
-        results.push({
+        const row: DiplomaRow = {
           index: 0,
           folio: rawFolio,
           idNumber: data.certificateCip || data.autoMotoDetails?.studentIdNumber || data.deluxeDetails?.studentIdNumber || data.ampliacionesDetails?.studentIdNumber || '',
@@ -95,8 +95,15 @@ export default function CertificatesSummaryReportPage() {
           isCorrection: !!data.isCorrection,
           isUpdate: !!data.isUpdate,
           isAmpliacion: data.type === 'Ampliaciones' || (data.isManualPrint && data.type === 'Ampliaciones')
-        });
+        };
+
+        // Si el folio ya existe, no lo sobreescribimos (mantenemos solo uno)
+        if (!uniqueDiplomasMap.has(rawFolio)) {
+            uniqueDiplomasMap.set(rawFolio, row);
+        }
       });
+
+      const results = Array.from(uniqueDiplomasMap.values());
 
       const sorted = results
         .sort((a, b) => a.folio.localeCompare(b.folio, undefined, { numeric: true }))

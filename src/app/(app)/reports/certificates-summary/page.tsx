@@ -72,8 +72,8 @@ export default function CertificatesSummaryReportPage() {
         const data = doc.data() as any;
         const rawFolio = data.certificateFolio || '';
         
-        // Exclusión de folio de prueba 0004 y similares si es necesario
-        if (!rawFolio || rawFolio.includes('0004')) return;
+        // Exclusión de folios de prueba o folios específicos no deseados
+        if (!rawFolio || rawFolio.includes('0004') || rawFolio.includes('0001')) return;
 
         const fName = data.certificateFirstName || splitName(data.clientName).fName;
         const mName = data.certificateMiddleName || splitName(data.clientName).mName;

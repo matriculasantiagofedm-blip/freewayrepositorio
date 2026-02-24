@@ -10,9 +10,7 @@ import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
 import { signInAnonymously } from 'firebase/auth';
 
 /**
- * Página de impresión de contrato.
- * DESBLOQUEADA: Acceso universal.
- * Asegura sesión anónima para evitar errores de permisos en Firestore.
+ * Página de impresión de contrato optimizada para dispositivos móviles.
  */
 function PrintContractContent() {
   const { id } = useParams();
@@ -37,9 +35,10 @@ function PrintContractContent() {
 
   useEffect(() => {
     if (contract && !isLoading) {
+      // Incrementamos a 2500ms para asegurar renderizado completo en tablet
       const timer = setTimeout(() => {
         window.print();
-      }, 1200);
+      }, 2500);
       return () => clearTimeout(timer);
     }
   }, [contract, isLoading]);
@@ -81,8 +80,12 @@ function PrintContractContent() {
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
             }
+            .mobile-print-hint { display: none !important; }
           }
         `}</style>
+      <div className="mobile-print-hint bg-slate-100 p-2 text-center text-[10px] uppercase font-bold text-slate-500">
+        Preparando contrato para impresión... Por favor espere.
+      </div>
       <ContractView contract={contract} />
     </div>
   );

@@ -16,20 +16,15 @@ function ReceiptContent() {
     const amount = searchParams.get('amount');
 
     useEffect(() => {
-        // Automatically trigger print dialog
+        // Aumentamos el delay a 2500ms para tablets Android (evita crash de la cola de impresión)
         const timer = setTimeout(() => {
           window.print();
-        }, 500); // Small delay to ensure content renders
+        }, 2500); 
 
-        const handleAfterPrint = () => {
-          // Some browsers need a moment before closing is allowed.
-          setTimeout(() => window.close(), 100);
-        };
-        window.addEventListener('afterprint', handleAfterPrint);
+        // IMPORTANTE: Eliminamos window.close() ya que en Android causa que el Spooler de impresión se detenga
     
         return () => {
             clearTimeout(timer);
-            window.removeEventListener('afterprint', handleAfterPrint);
         }
       }, []);
 
@@ -45,7 +40,15 @@ function ReceiptContent() {
                     -webkit-print-color-adjust: exact !important;
                     print-color-adjust: exact !important;
                 }
+                @media print {
+                    .print-instruction { display: none; }
+                }
             `}</style>
+            
+            <div className="print-instruction bg-blue-50 border border-blue-200 p-4 rounded-lg mb-6 text-center text-blue-800 text-sm font-medium animate-pulse">
+                Preparando documento para impresión... Por favor espere.
+            </div>
+
             <Card className="shadow-none border">
                 <CardHeader className="text-center space-y-2">
                     <p className="text-sm">RUC: 155628022-2-2016 DV 2</p>

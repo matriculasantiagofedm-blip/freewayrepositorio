@@ -11,8 +11,7 @@ import { Timestamp } from 'firebase/firestore';
 import { signInAnonymously } from 'firebase/auth';
 
 /**
- * Motor de impresión de certificados.
- * Soporta generación manual (id === 'manual').
+ * Motor de impresión de certificados optimizado para tablets.
  */
 function CertificatePrintContent() {
   const { id } = useParams();
@@ -59,7 +58,6 @@ function CertificatePrintContent() {
       
       if (!folio || !clientName || !cip || !licenseType || !courseName || !issueDateStr) return;
 
-      // Crear objeto de contrato dummy para modo manual
       const effectiveContract: any = contract || {
           id: 'manual',
           clientId: 'manual',
@@ -100,9 +98,10 @@ function CertificatePrintContent() {
       };
       setCertificate(certificateData);
 
+      // Incrementamos a 2500ms para dar tiempo a la tablet de procesar los gráficos pesados
       const timer = setTimeout(() => {
         window.print();
-      }, 1500);
+      }, 2500);
       
       return () => clearTimeout(timer);
     }
@@ -110,29 +109,15 @@ function CertificatePrintContent() {
 
   const shouldUseAmpliacionTemplate = useMemo(() => {
     if (!certificate || !certificate.licenseType) return false;
-    
     const type = certificate.licenseType.trim();
     const manualType = searchParams.get('manualType');
-
-    // REGLA 0: Si es trámite manual de "Primera Vez", siempre usamos Estándar (36h)
     if (isManual && manualType === 'primera-vez') return false;
-
-    // REGLA 1: Las tipo E siempre utilizan el formato AMPLIACIÓN (80h)
     if (['E1', 'E2', 'E3'].some(l => type.includes(l))) return true;
-
-    // REGLA 2: Si el contrato es de "Ampliaciones" o Trámite Manual de Ampliaciones
     if (certificate.contract?.type === 'Ampliaciones' || (isManual && manualType === 'ampliaciones')) {
-        // Las letras B, C, D y F en ampliación usan el formato ESTÁNDAR (36h)
         if (['B', 'C', 'D', 'F'].includes(type)) return false;
-        
-        // La letra A en ampliación utiliza el formato AMPLIACIÓN (80h)
         if (type === 'A') return true;
-
-        // Por defecto para ampliaciones desconocidas con más de una letra, usamos 80h
         return true;
     }
-    
-    // REGLA 3: Cursos regulares (Auto, Moto, Deluxe, Mixto) siempre usan ESTÁNDAR (36h)
     return false;
   }, [certificate, isManual, searchParams]);
 
@@ -153,8 +138,12 @@ function CertificatePrintContent() {
           @media print {
             @page { size: letter landscape; margin: 0; }
             body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; background-color: white !important; }
+            .loading-banner { display: none !important; }
           }
         `}</style>
+        <div className="loading-banner bg-amber-500 text-white p-2 text-center text-xs font-bold uppercase tracking-widest sticky top-0 z-[100]">
+            Procesando gráficos... No cierre esta pestaña hasta que aparezca el diálogo de impresión.
+        </div>
         {shouldUseAmpliacionTemplate ? (
           <AmpliacionCertificateTemplate certificate={certificate} />
         ) : (

@@ -10,7 +10,7 @@ import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
 import { Timestamp } from 'firebase/firestore';
 import { signInAnonymously } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
-import { Printer, Loader2 } from 'lucide-react';
+import { Printer, Loader2, AlertCircle } from 'lucide-react';
 
 function CertificatePrintContent() {
   const { id } = useParams();
@@ -98,7 +98,6 @@ function CertificatePrintContent() {
       };
       setCertificate(certificateData);
 
-      // Tiempo de espera extendido a 5 segundos para estabilizar la tablet
       const timer = setTimeout(() => {
         setIsReady(true);
       }, 5000);
@@ -134,41 +133,47 @@ function CertificatePrintContent() {
         <style jsx global>{`
           @media print {
             @page { size: letter landscape; margin: 0; }
-            body { background-color: white !important; }
+            body { background-color: white !important; margin: 0 !important; padding: 0 !important; }
             .print-ui-element { display: none !important; }
+            * { box-shadow: none !important; text-shadow: none !important; transition: none !important; }
           }
         `}</style>
 
-        <div className="print-ui-element p-4 bg-white border-b sticky top-0 z-[200] flex flex-col gap-3 shadow-md">
+        <div className="print-ui-element p-6 bg-white border-b flex flex-col gap-4">
+            <div className="flex items-center gap-2 text-blue-800 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                <AlertCircle className="h-5 w-5" />
+                <p className="text-xs font-bold uppercase">Optimizando para Tablet: Espera a que el botón se active</p>
+            </div>
             {!isReady ? (
-                <div className="bg-amber-500 text-white p-4 rounded-xl text-center font-black uppercase text-sm animate-pulse flex items-center justify-center gap-3">
-                    <Loader2 className="animate-spin h-5 w-5" />
-                    Estabilizando sistema de impresión (Espera 5s)...
+                <div className="bg-slate-200 text-slate-500 p-6 rounded-xl text-center font-black uppercase text-lg flex items-center justify-center gap-3 border-2 border-slate-300">
+                    <Loader2 className="animate-spin h-6 w-6" />
+                    Estabilizando sistema (5s)...
                 </div>
             ) : (
                 <Button 
                     onClick={handleManualPrint} 
-                    className="h-20 text-xl font-black bg-blue-600 hover:bg-blue-700 shadow-2xl uppercase tracking-widest border-4 border-blue-400"
+                    className="h-24 text-2xl font-black bg-blue-600 hover:bg-blue-700 shadow-xl uppercase tracking-widest border-4 border-blue-400"
                 >
                     <Printer className="mr-4 h-8 w-8" />
-                    IMPRIMIR CERTIFICADO
+                    IMPRIMIR AHORA
                 </Button>
             )}
-            <p className="text-[10px] text-center text-slate-500 font-bold uppercase">No cerrar esta pestaña hasta que la impresión finalice</p>
         </div>
 
-        {shouldUseAmpliacionTemplate ? (
-          <AmpliacionCertificateTemplate certificate={certificate} />
-        ) : (
-          <CertificateTemplate certificate={certificate} />
-        )}
+        <div className="print:block">
+            {shouldUseAmpliacionTemplate ? (
+              <AmpliacionCertificateTemplate certificate={certificate} />
+            ) : (
+              <CertificateTemplate certificate={certificate} />
+            )}
+        </div>
     </div>
   );
 }
 
 export default function CertificatePrintIdPage() {
   return (
-    <Suspense fallback={<div className="flex h-screen items-center justify-center font-bold">CARGANDO MOTOR DE IMPRESIÓN...</div>}>
+    <Suspense fallback={<div className="flex h-screen items-center justify-center font-bold">CARGANDO MOTOR...</div>}>
       <CertificatePrintContent />
     </Suspense>
   );

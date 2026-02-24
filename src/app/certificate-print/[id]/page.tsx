@@ -129,7 +129,7 @@ function CertificatePrintContent() {
   }
 
   return (
-    <div className="print:p-0 print:m-0 print:bg-white bg-slate-100 min-h-screen">
+    <div className="print:p-0 print:m-0 bg-white min-h-screen">
         <style jsx global>{`
           @media print {
             @page { size: letter landscape; margin: 0; }
@@ -139,13 +139,13 @@ function CertificatePrintContent() {
           }
         `}</style>
 
-        <div className="print-ui-element p-6 bg-white border-b flex flex-col gap-4">
+        <div className="print-ui-element p-6 bg-white border-b flex flex-col gap-4 shadow-sm">
             <div className="flex items-center gap-2 text-blue-800 bg-blue-50 p-3 rounded-lg border border-blue-100">
                 <AlertCircle className="h-5 w-5" />
                 <p className="text-xs font-bold uppercase">Optimizando para Tablet: Espera a que el botón se active</p>
             </div>
             {!isReady ? (
-                <div className="bg-slate-200 text-slate-500 p-6 rounded-xl text-center font-black uppercase text-lg flex items-center justify-center gap-3 border-2 border-slate-300">
+                <div className="bg-slate-100 text-slate-500 p-6 rounded-xl text-center font-black uppercase text-lg flex items-center justify-center gap-3 border-2 border-slate-200">
                     <Loader2 className="animate-spin h-6 w-6" />
                     Estabilizando sistema (5s)...
                 </div>
@@ -160,7 +160,7 @@ function CertificatePrintContent() {
             )}
         </div>
 
-        <div className="print:block">
+        <div className="flex flex-col items-center justify-center w-full bg-white">
             {shouldUseAmpliacionTemplate ? (
               <AmpliacionCertificateTemplate certificate={certificate} />
             ) : (

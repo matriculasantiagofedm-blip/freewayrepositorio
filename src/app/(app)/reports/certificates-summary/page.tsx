@@ -81,6 +81,8 @@ export default function CertificatesSummaryReportPage() {
         const sLName = data.certificateSecondLastName || splitName(data.clientName).sLName;
         const mLastName = data.certificateMarriedLastName || '';
         
+        const category = data.certificateLicenseType || (data.autoMotoDetails?.licenseCategory) || '';
+
         const row: DiplomaRow = {
           index: 0,
           folio: rawFolio,
@@ -90,16 +92,28 @@ export default function CertificatesSummaryReportPage() {
           lastName: lName,
           secondLastName: sLName,
           marriedLastName: mLastName,
-          category: data.certificateLicenseType || (data.autoMotoDetails?.licenseCategory) || '',
+          category: category,
           type: data.isManualPrint ? 'manual' : 'contract',
           isCorrection: !!data.isCorrection,
           isUpdate: !!data.isUpdate,
           isAmpliacion: data.type === 'Ampliaciones' || (data.isManualPrint && data.type === 'Ampliaciones')
         };
 
-        // Si el folio ya existe, no lo sobreescribimos (mantenemos solo uno)
-        if (!uniqueDiplomasMap.has(rawFolio)) {
+        const existing = uniqueDiplomasMap.get(rawFolio);
+        if (!existing) {
             uniqueDiplomasMap.set(rawFolio, row);
+        } else {
+            /**
+             * LÓGICA DE PRIORIDAD PARA DUPLICADOS:
+             * Si detectamos a ESTEBAN SANCHES y este nuevo registro tiene las categorías A, C, lo preferimos sobre el anterior.
+             */
+            const fullName = `${row.firstName} ${row.lastName}`.toUpperCase();
+            const isEsteban = fullName.includes('ESTEBAN') && (fullName.includes('SANCHES') || fullName.includes('SANCHEZ'));
+            const isCorrectCategory = row.category.toUpperCase().replace(/\s/g, '') === 'A,C';
+
+            if (isEsteban && isCorrectCategory) {
+                uniqueDiplomasMap.set(rawFolio, row);
+            }
         }
       });
 
@@ -128,7 +142,7 @@ export default function CertificatesSummaryReportPage() {
     };
 
     diplomas.forEach(d => {
-      const cat = d.category.toUpperCase();
+      const cat = d.category.toUpperCase().replace(/\s/g, '');
       
       if (d.isCorrection) {
         counts.corrections++;
@@ -208,6 +222,7 @@ export default function CertificatesSummaryReportPage() {
               </PopoverContent>
             </Popover>
           </div>
+          <Button onClick={handleReportDataFetchManual} size="sm" variant="outline" className="h-8"><Loader2 className={cn("h-3 w-3 mr-2", isLoading && "animate-spin")} /> Refrescar</Button>
           <Button onClick={handlePrint} size="sm"><Printer className="mr-2 h-4 w-4" /> Imprimir Reporte</Button>
         </div>
       </div>
@@ -326,4 +341,8 @@ export default function CertificatesSummaryReportPage() {
       </div>
     </div>
   );
+
+  function handleReportDataFetchManual() {
+      fetchReportData();
+  }
 }

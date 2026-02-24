@@ -34,7 +34,6 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import type { Contract, Payment, Transaction, BookSalePayment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const initialBillQuantities: { [key: string]: number } = {
   '100.00': 0,
@@ -347,13 +346,13 @@ export default function DailyCashReportPage() {
 
   return (
     <div className="space-y-6 rounded-lg print:bg-white min-h-screen pb-12">
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @media print {
             @page { 
                 size: letter landscape; 
-                margin: 5mm; 
+                margin: 10mm; 
             }
-            header, footer, nav, async, .print-hide { 
+            header, footer, nav, aside, .print-hide { 
                 display: none !important; 
             }
             body { 
@@ -362,21 +361,25 @@ export default function DailyCashReportPage() {
                 background-color: white !important; 
                 margin: 0 !important;
                 padding: 0 !important;
+                overflow: visible !important;
             }
             .print-container {
                 width: 100% !important;
+                max-width: none !important;
                 margin: 0 !important;
                 padding: 0 !important;
             }
             table {
                 border-collapse: collapse !important;
                 width: 100% !important;
+                border: 1px solid black !important;
             }
             th, td {
                 border: 1px solid black !important;
                 color: black !important;
+                padding: 4px !important;
             }
-            .bg-muted\/50 {
+            .bg-muted\\/50 {
                 background-color: #f1f5f9 !important;
             }
             .bg-slate-800 {
@@ -384,16 +387,20 @@ export default function DailyCashReportPage() {
                 color: white !important;
             }
             input {
-                border: none !important;
-                background: transparent !important;
-                padding: 0 !important;
+                display: none !important;
+            }
+            .print-show-val {
+                display: block !important;
             }
         }
-      `}</style>
+        .print-show-val {
+            display: none;
+        }
+      `}} />
       
       <div className="flex justify-between items-center print-hide">
         <div className='flex flex-col'>
-            <h1 className="text-2xl font-bold font-headline">Reporte de Caja Diario</h1>
+            <h1 className="text-2xl font-bold font-headline text-slate-900">Reporte de Caja Diario</h1>
             <p className="text-xs text-muted-foreground">Ingresos registrados en el sistema para la fecha seleccionada.</p>
         </div>
         <div className="flex items-center gap-2">
@@ -404,7 +411,7 @@ export default function DailyCashReportPage() {
                     <SelectItem value="Administrador">Administrador</SelectItem>
                     <SelectItem value="Ventas">Ventas</SelectItem>
                     <SelectItem value="Ventas Externas">Ventas Externas</SelectItem>
-                    <SelectItem value="Web Publica">Inscripción Web</SelectItem>
+                    <SelectItem value="Web Pública">Inscripción Web</SelectItem>
                 </SelectContent>
             </Select>
             <Popover>
@@ -418,7 +425,7 @@ export default function DailyCashReportPage() {
                 <Calendar mode="single" selected={reportDate} onSelect={(date) => setReportDate(date || new Date())} initialFocus />
                 </PopoverContent>
             </Popover>
-            <Button size="sm" onClick={handlePrint} className="bg-primary hover:bg-primary/90">
+            <Button size="sm" onClick={handlePrint} className="bg-primary hover:bg-primary/90 font-bold">
                 <Printer className="mr-2 h-4 w-4" /> 
                 Imprimir Reporte
             </Button>
@@ -436,10 +443,10 @@ export default function DailyCashReportPage() {
                     <Table className="min-w-full text-[10px] border-collapse">
                     <TableHeader>
                         <TableRow className="bg-muted/50 hover:bg-muted/50">
-                        <TableHead className="border-r border-black p-1 text-center font-bold text-black">#</TableHead>
-                        <TableHead className="border-r border-black p-1 text-center font-bold text-black min-w-[60px]">Contrato</TableHead>
+                        <TableHead className="border-r border-black p-1 text-center font-bold text-black w-6">#</TableHead>
+                        <TableHead className="border-r border-black p-1 text-center font-bold text-black min-w-[60px]">Folio</TableHead>
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black min-w-[70px]">Cédula</TableHead>
-                        <TableHead className="border-r border-black p-1 text-center font-bold text-black min-w-[120px]">Nombre del cliente</TableHead>
+                        <TableHead className="border-r border-black p-1 text-center font-bold text-black min-w-[120px]">Cliente</TableHead>
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black min-w-[120px]">Servicio</TableHead>
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black">Vendedor</TableHead>
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black">Monto</TableHead>
@@ -458,35 +465,39 @@ export default function DailyCashReportPage() {
                             <TableCell className="border-r border-black p-1 text-center">{index + 1}</TableCell>
                             <TableCell className="border-r border-black p-1 font-bold">{transaction.contrato}</TableCell>
                             <TableCell className="border-r border-black p-1">{transaction.cedula}</TableCell>
-                            <TableCell className="border-r border-black p-1 truncate max-w-[150px] uppercase">{transaction.clientName}</TableCell>
+                            <TableCell className="border-r border-black p-1 truncate max-w-[150px] uppercase font-medium">{transaction.clientName}</TableCell>
                             <TableCell className="border-r border-black p-1 uppercase">{transaction.service}</TableCell>
                             <TableCell className="border-r border-black p-1 text-[8px] uppercase">{transaction.createdBy}</TableCell>
-                            <TableCell className="border-r border-black p-0">
+                            <TableCell className="border-r border-black p-0 text-right pr-1">
+                                <span className="print-show-val">{transaction.amount.toFixed(2)}</span>
                                 <Input 
                                     type="number" 
                                     value={transaction.amount} 
                                     onChange={e => handleTransactionChange(index, 'amount', e.target.value)} 
                                     disabled={!isAdmin}
-                                    className="w-full h-7 border-none rounded-none text-[10px] p-1 text-center focus-visible:ring-0 disabled:opacity-100" 
+                                    className="w-full h-7 border-none rounded-none text-[10px] p-1 text-right focus-visible:ring-0 disabled:opacity-100 print:hidden" 
                                 />
                             </TableCell>
                             <TableCell className="border-r border-black p-0 text-center">
+                                <span className="print-show-val uppercase">{paymentTypes.find(p => p.value === transaction.paymentType)?.label || transaction.paymentType}</span>
                                 {isAdmin ? (
-                                    <Select 
-                                        value={transaction.paymentType} 
-                                        onValueChange={v => handleTransactionChange(index, 'paymentType', v)}
-                                    >
-                                        <SelectTrigger className="h-7 w-full border-none rounded-none text-[9px] uppercase px-1 focus:ring-0">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {paymentTypes.map(pt => (
-                                                <SelectItem key={pt.value} value={pt.value} className="text-[9px]">{pt.label}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <div className="print:hidden">
+                                        <Select 
+                                            value={transaction.paymentType} 
+                                            onValueChange={v => handleTransactionChange(index, 'paymentType', v)}
+                                        >
+                                            <SelectTrigger className="h-7 w-full border-none rounded-none text-[9px] uppercase px-1 focus:ring-0">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {paymentTypes.map(pt => (
+                                                    <SelectItem key={pt.value} value={pt.value} className="text-[9px]">{pt.label}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 ) : (
-                                    <span className="text-[9px] uppercase px-1">{paymentTypes.find(p => p.value === transaction.paymentType)?.label || transaction.paymentType}</span>
+                                    <span className="text-[9px] uppercase px-1 print:hidden">{paymentTypes.find(p => p.value === transaction.paymentType)?.label || transaction.paymentType}</span>
                                 )}
                             </TableCell>
                             <TableCell className="border-r border-black p-1 text-right bg-muted/20">{transaction.cash > 0 ? transaction.cash.toFixed(2) : '-'}</TableCell>
@@ -522,7 +533,10 @@ export default function DailyCashReportPage() {
                                 <TableBody>
                                     {Object.keys(billQuantities).map(bill => (
                                         <TableRow key={bill} className="h-7 hover:bg-transparent">
-                                            <TableCell className="border-r border-black p-0"><Input type="number" value={billQuantities[bill] || ''} onChange={e => handleCashChange('bill', bill, e.target.value)} className="w-full h-7 border-none rounded-none text-[10px] p-1 text-center" /></TableCell>
+                                            <TableCell className="border-r border-black p-0">
+                                                <span className="print-show-val text-center w-full">{billQuantities[bill] || '0'}</span>
+                                                <Input type="number" value={billQuantities[bill] || ''} onChange={e => handleCashChange('bill', bill, e.target.value)} className="w-full h-7 border-none rounded-none text-[10px] p-1 text-center focus:ring-0 print:hidden" />
+                                            </TableCell>
                                             <TableCell className="border-r border-black p-1 text-right">{currencyFormatter.format(parseFloat(bill))}</TableCell>
                                             <TableCell className="p-1 text-right font-semibold">{currencyFormatter.format(parseFloat(bill) * (billQuantities[bill] || 0))}</TableCell>
                                         </TableRow>
@@ -535,7 +549,10 @@ export default function DailyCashReportPage() {
                                 <TableBody>
                                     {Object.keys(coinQuantities).map(coin => (
                                         <TableRow key={coin} className="h-7 hover:bg-transparent">
-                                            <TableCell className="border-r border-black p-0"><Input type="number" value={coinQuantities[coin] || ''} onChange={e => handleCashChange('coin', coin, e.target.value)} className="w-full h-7 border-none rounded-none text-[10px] p-1 text-center" /></TableCell>
+                                            <TableCell className="border-r border-black p-0">
+                                                <span className="print-show-val text-center w-full">{coinQuantities[coin] || '0'}</span>
+                                                <Input type="number" value={coinQuantities[coin] || ''} onChange={e => handleCashChange('coin', coin, e.target.value)} className="w-full h-7 border-none rounded-none text-[10px] p-1 text-center focus:ring-0 print:hidden" />
+                                            </TableCell>
                                             <TableCell className="border-r border-black p-1 text-right">{currencyFormatter.format(parseFloat(coin))}</TableCell>
                                             <TableCell className="p-1 text-right font-semibold">{currencyFormatter.format(parseFloat(coin) * (coinQuantities[coin] || 0))}</TableCell>
                                         </TableRow>
@@ -566,14 +583,20 @@ export default function DailyCashReportPage() {
                             <TableBody>
                                 {expenses.map((expense, index) => (
                                     <TableRow key={index} className="hover:bg-transparent">
-                                        <TableCell className="border-r border-black p-0"><Input placeholder="Descripción..." value={expense.description} onChange={e => handleExpenseChange(index, 'description', e.target.value)} className="w-full h-7 border-none rounded-none text-[10px] p-1" /></TableCell>
-                                        <TableCell className="border-r border-black p-0 w-20"><Input type="number" value={expense.amount || ''} onChange={e => handleExpenseChange(index, 'amount', e.target.value)} className="w-full h-7 border-none rounded-none text-[10px] p-1 text-right" /></TableCell>
+                                        <TableCell className="border-r border-black p-0">
+                                            <span className="print-show-val px-1">{expense.description || '-'}</span>
+                                            <Input placeholder="Descripción..." value={expense.description} onChange={e => handleExpenseChange(index, 'description', e.target.value)} className="w-full h-7 border-none rounded-none text-[10px] p-1 focus:ring-0 print:hidden" />
+                                        </TableCell>
+                                        <TableCell className="border-r border-black p-0 w-20">
+                                            <span className="print-show-val text-right px-1 w-full">{expense.amount > 0 ? expense.amount.toFixed(2) : '0.00'}</span>
+                                            <Input type="number" value={expense.amount || ''} onChange={e => handleExpenseChange(index, 'amount', e.target.value)} className="w-full h-7 border-none rounded-none text-[10px] p-1 text-right focus:ring-0 print:hidden" />
+                                        </TableCell>
                                         <TableCell className="p-0 border-black border-l w-7 text-center print-hide">
                                             <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => removeExpenseRow(index)}><Trash2 className="h-3 w-3"/></Button>
                                         </TableCell>
                                     </TableRow>
                                 ))}
-                                <TableRow className="hover:bg-transparent print-hide"><TableCell colSpan={3} className="p-1"><Button variant="outline" className="h-6 text-[9px] w-full" onClick={addExpenseRow}>+ Añadir Gasto</Button></TableCell></TableRow>
+                                <TableRow className="hover:bg-transparent print-hide"><TableCell colSpan={3} className="p-1"><Button variant="outline" className="h-6 text-[9px] w-full border-dashed" onClick={addExpenseRow}>+ Añadir Gasto</Button></TableCell></TableRow>
                                 <TableRow className="font-bold bg-red-50 border-t border-black"><TableCell className="border-r border-black p-1 uppercase">TOTAL GASTOS</TableCell><TableCell colSpan={2} className="p-1 text-right text-red-700">{currencyFormatter.format(totalExpenses)}</TableCell></TableRow>
                             </TableBody>
                         </Table>

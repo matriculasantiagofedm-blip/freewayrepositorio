@@ -35,15 +35,11 @@ function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate 
     const { num: folioNum, year: folioYear } = getFolioParts(certificate.folio);
     
     return (
-        <div className="w-[11in] h-[8.5in] p-8 bg-white text-black font-serif mx-auto print:m-0">
+        <div className="w-[11in] h-[8.5in] p-8 bg-white text-black font-serif mx-auto print:m-0 print:p-8">
             <div className="w-full h-full border-[3px] border-black flex flex-col p-8 relative overflow-hidden">
                 
-                {/* Barra Diagonal Amarilla y Negra */}
-                <div className="absolute top-[-10px] left-[-10px] w-72 h-8 z-10">
-                    <div className="w-full h-full bg-yellow-400 print:[-webkit-print-color-adjust:exact] print:[color-adjust:exact]" style={{
-                        backgroundImage: 'repeating-linear-gradient(45deg, #fbbf24, #fbbf24 15px, #000 15px, #000 30px)'
-                    }}></div>
-                </div>
+                {/* Barra Simplificada para Android Spooler */}
+                <div className="absolute top-0 left-0 w-64 h-6 bg-yellow-400 border-b border-black print:[-webkit-print-color-adjust:exact]"></div>
 
                 <header className="flex w-full flex-col items-center justify-center relative pt-2">
                     <h2 className="text-xl font-bold tracking-tight mb-2">FREEWAY ESCUELA DE MANEJO S.A.</h2>
@@ -51,7 +47,6 @@ function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate 
                     <p className="text-2xl tracking-[0.5em] font-semibold text-black uppercase">Escuela de Manejo</p>
                     <p className="text-2xl italic mt-2">Casa Matriz Chorrera</p>
 
-                    {/* Folio y Categoría */}
                     <div className="absolute top-0 right-0 flex flex-col items-center gap-2">
                         <div className="text-center">
                             <p className="text-5xl font-bold mb-1">{getHighestLicenseType(certificate.licenseType)}</p>
@@ -137,7 +132,7 @@ function CertificateBackAmpliacion({ certificate }: { certificate: Certificate }
 export function AmpliacionCertificateTemplate({ certificate }: { certificate: Certificate | null }) {
   if (!certificate) return null;
   return (
-    <div className="bg-gray-100 min-h-screen py-8 print:p-0 print:bg-white">
+    <div className="bg-white min-h-screen py-8 print:p-0 print:py-0">
       <CertificateFrontAmpliacion certificate={certificate} />
       <div className="h-16 print:hidden"></div>
       <CertificateBackAmpliacion certificate={certificate} />

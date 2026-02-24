@@ -21,7 +21,7 @@ function ReceiptContent() {
     useEffect(() => {
         const timer = setTimeout(() => {
           setIsReady(true);
-        }, 2000); 
+        }, 4000); 
     
         return () => clearTimeout(timer);
       }, []);
@@ -51,17 +51,17 @@ function ReceiptContent() {
                 {!isReady ? (
                     <div className="bg-amber-500 border border-amber-600 p-4 rounded-xl text-center text-white text-sm font-bold animate-pulse flex items-center justify-center gap-3">
                         <Loader2 className="h-5 w-5 animate-spin" />
-                        PREPARANDO RECIBO...
+                        PREPARANDO RECIBO (Espera 4s)...
                     </div>
                 ) : (
                     <div className="flex flex-col gap-3">
                         <Button 
                             onClick={handleManualPrint} 
                             size="lg" 
-                            className="w-full h-20 text-xl font-black uppercase shadow-2xl bg-blue-600 hover:bg-blue-700 border-4 border-blue-400 animate-bounce"
+                            className="w-full h-20 text-xl font-black uppercase shadow-2xl bg-blue-600 hover:bg-blue-700 border-4 border-blue-400"
                         >
                             <Printer className="mr-4 h-8 w-8" />
-                            PULSAR AQUÍ PARA IMPRIMIR
+                            IMPRIMIR RECIBO
                         </Button>
                     </div>
                 )}

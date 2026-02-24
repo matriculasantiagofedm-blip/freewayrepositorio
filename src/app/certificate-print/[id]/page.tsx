@@ -98,11 +98,10 @@ function CertificatePrintContent() {
       };
       setCertificate(certificateData);
 
-      // En Android, la impresión automática causa fallos. 
-      // Solo marcamos como listo para que el usuario pulse el botón.
+      // Tiempo de espera extendido a 5 segundos para estabilizar la tablet
       const timer = setTimeout(() => {
         setIsReady(true);
-      }, 3000);
+      }, 5000);
       
       return () => clearTimeout(timer);
     }
@@ -127,7 +126,7 @@ function CertificatePrintContent() {
   };
 
   if (!isManual && isContractLoading) {
-    return <div className="flex items-center justify-center h-screen bg-white font-black text-blue-600 animate-pulse uppercase tracking-widest">Generando Gráficos...</div>;
+    return <div className="flex items-center justify-center h-screen bg-white font-black text-blue-600 animate-pulse uppercase tracking-widest">Preparando Gráficos...</div>;
   }
 
   return (
@@ -144,15 +143,15 @@ function CertificatePrintContent() {
             {!isReady ? (
                 <div className="bg-amber-500 text-white p-4 rounded-xl text-center font-black uppercase text-sm animate-pulse flex items-center justify-center gap-3">
                     <Loader2 className="animate-spin h-5 w-5" />
-                    Preparando Certificado para Tablet...
+                    Estabilizando sistema de impresión (Espera 5s)...
                 </div>
             ) : (
                 <Button 
                     onClick={handleManualPrint} 
-                    className="h-20 text-xl font-black bg-blue-600 hover:bg-blue-700 shadow-2xl uppercase tracking-widest border-4 border-blue-400 animate-bounce"
+                    className="h-20 text-xl font-black bg-blue-600 hover:bg-blue-700 shadow-2xl uppercase tracking-widest border-4 border-blue-400"
                 >
                     <Printer className="mr-4 h-8 w-8" />
-                    PULSAR AQUÍ PARA IMPRIMIR
+                    IMPRIMIR CERTIFICADO
                 </Button>
             )}
             <p className="text-[10px] text-center text-slate-500 font-bold uppercase">No cerrar esta pestaña hasta que la impresión finalice</p>

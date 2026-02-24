@@ -37,7 +37,7 @@ function PrintContractContent() {
     if (contract && !isLoading) {
       const timer = setTimeout(() => {
         setIsReady(true);
-      }, 3000);
+      }, 5000);
       return () => clearTimeout(timer);
     }
   }, [contract, isLoading]);
@@ -82,15 +82,15 @@ function PrintContractContent() {
         {!isReady ? (
             <div className="bg-amber-500 border border-amber-600 p-4 rounded-lg text-center text-white text-sm font-black uppercase animate-pulse flex items-center justify-center gap-3">
                 <Loader2 className="h-5 w-5 animate-spin" />
-                Renderizando contrato para Tablet...
+                Estabilizando contrato para Tablet (Espera 5s)...
             </div>
         ) : (
             <Button 
                 onClick={handleManualPrint} 
-                className="w-full h-20 text-xl font-black uppercase bg-blue-600 hover:bg-blue-700 shadow-xl border-4 border-blue-400 animate-bounce"
+                className="w-full h-20 text-xl font-black uppercase bg-blue-600 hover:bg-blue-700 shadow-xl border-4 border-blue-400"
             >
                 <Printer className="mr-4 h-8 w-8" />
-                PULSAR AQUÍ PARA IMPRIMIR
+                IMPRIMIR CONTRATO
             </Button>
         )}
         <p className="text-[10px] text-center text-slate-500 font-bold uppercase">Asegúrate de que la impresora esté encendida</p>

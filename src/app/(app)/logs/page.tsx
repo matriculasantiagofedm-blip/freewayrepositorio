@@ -69,15 +69,33 @@ export default function LogsPage() {
     }
   };
 
+  const getInstructorName = (contract: Contract) => {
+    const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
+    
+    // 1. Prioridad: Instructor asignado al contrato directamente
+    if (details?.instructor) return details.instructor;
+
+    // 2. Secundario: Buscar instructor en las clases prácticas programadas
+    const schedules = 
+        contract.autoMotoDetails?.practicalClassSchedules || 
+        contract.autoMotoDetails?.motoPracticalClassSchedules || 
+        contract.deluxeDetails?.classSchedules || 
+        [];
+    
+    const sessionWithInstructor = schedules.find((s: any) => s.instructor);
+    if (sessionWithInstructor) return sessionWithInstructor.instructor;
+
+    return 'PENDIENTE';
+  };
+
   const handlePrintLog = (contract: Contract, logType: string) => {
-    // Intentar obtener instructor de diferentes posibles ubicaciones en el contrato
-    const instructor = contract.autoMotoDetails?.instructor || contract.deluxeDetails?.instructor || '';
+    const instructor = getInstructorName(contract);
     
     const params = new URLSearchParams({
         name: contract.clientName || '',
         id: contract.autoMotoDetails?.studentIdNumber || contract.deluxeDetails?.studentIdNumber || contract.ampliacionesDetails?.studentIdNumber || '',
         type: logType,
-        instructor: instructor
+        instructor: instructor === 'PENDIENTE' ? '' : instructor
     });
     window.open(`/print-log/${contract.id}?${params.toString()}`, '_blank');
   };
@@ -149,7 +167,7 @@ export default function LogsPage() {
                     const hoursLabel = recommended.split('-').pop()?.replace('h', '') + 'h';
                     const planName = (contract.autoMotoDetails as any)?.coursePlan || 'Plan no especificado';
                     const transmission = (contract.autoMotoDetails as any)?.vehicleTransmission || 'Manual';
-                    const instructor = contract.autoMotoDetails?.instructor || contract.deluxeDetails?.instructor || 'Pendiente';
+                    const instructor = getInstructorName(contract);
 
                     return (
                         <Card key={contract.id} className="border-l-4 border-l-primary overflow-hidden">
@@ -163,7 +181,12 @@ export default function LogsPage() {
                                     </div>
                                     <p className="text-xl font-black text-slate-900 uppercase tracking-tight">{contract.clientName}</p>
                                     <p className="text-sm text-muted-foreground font-medium uppercase mb-1">{contract.type} — <span className="text-primary font-black">{planName}</span></p>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase">Instructor: <span className="text-slate-600">{instructor}</span></p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase">Instructor:</p>
+                                        <Badge variant="secondary" className={cn("text-[9px] font-black uppercase", instructor === 'PENDIENTE' ? "bg-red-50 text-red-600" : "bg-slate-100 text-slate-700")}>
+                                            {instructor}
+                                        </Badge>
+                                    </div>
                                 </div>
                                 <div className="flex flex-col gap-3 items-end w-full md:w-auto">
                                     <Button 

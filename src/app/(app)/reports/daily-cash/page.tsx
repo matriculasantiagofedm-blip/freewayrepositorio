@@ -356,7 +356,7 @@ export default function DailyCashReportPage() {
           letterRendering: true,
           logging: false,
           backgroundColor: '#ffffff',
-          width: 1135 // Reduced from 1250 to increase visual size by ~10%
+          width: 945 // Reduced from 1135 to increase visual size by ~20% more
         },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
         pagebreak: { mode: 'avoid-all' }

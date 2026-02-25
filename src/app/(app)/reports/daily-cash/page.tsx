@@ -190,7 +190,7 @@ export default function DailyCashReportPage() {
             const amount = payment.amount || 0;
             const pType = payment.paymentType || 'cash';
 
-            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
+            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, presidential: 0, general: 0, cheques: 0 };
             const pKey = pType && paymentColumns.hasOwnProperty(pType) ? pType : 'cash';
             paymentColumns[pKey] = amount;
 
@@ -212,7 +212,7 @@ export default function DailyCashReportPage() {
             const amount = payment.amount || 0;
             const pType = payment.paymentType || 'cash';
 
-            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
+            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, presidential: 0, general: 0, cheques: 0 };
             const pKey = pType && paymentColumns.hasOwnProperty(pType) ? pType : 'cash';
             paymentColumns[pKey] = amount;
 
@@ -346,7 +346,7 @@ export default function DailyCashReportPage() {
       const html2pdf = (await import('html2pdf.js')).default;
       
       const opt = {
-        margin: [0.1, 0.1], // Márgenes simétricos para centrado
+        margin: [0.1, 0.4, 0.1, 0.1], // Margen izquierdo aumentado un 20% (0.4 vs 0.1)
         filename: `Reporte_Caja_Freeway_${format(reportDate, 'dd-MM-yyyy')}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
@@ -354,7 +354,7 @@ export default function DailyCashReportPage() {
           useCORS: true, 
           letterRendering: true,
           logging: false,
-          width: 1350 // Tamaño optimizado para 30% más grande
+          width: 1350 // Tamaño optimizado para el aumento del 30% solicitado
         },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' },
         pagebreak: { mode: 'avoid-all' }

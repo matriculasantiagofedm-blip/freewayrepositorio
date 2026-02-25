@@ -510,15 +510,15 @@ export default function DailyCashReportPage() {
         </div>
       </div>
 
-      <div id="report-to-export" className="print-container space-y-4 bg-white p-2">
+      <div id="report-to-export" className="print-container bg-white p-2">
         <div className="p-2 text-center font-bold text-lg border-b-2 border-black mb-4 uppercase flex flex-col">
             <span className="text-black">FREEWAY ESCUELA DE MANEJO</span>
             <span className="text-sm text-black">CONTROL DE CAJA - {format(reportDate, "EEEE d 'DE' LLLL 'DE' yyyy", { locale: es })}</span>
         </div>
 
         {!isLoading && (
-            <div className="space-y-4 animate-in fade-in-50 duration-500">
-                <div className="overflow-x-auto border border-black rounded-sm">
+            <div className="animate-in fade-in-50 duration-500">
+                <div className="overflow-x-auto border border-black rounded-sm mb-0">
                     <Table className="min-w-full text-[9px] border-collapse">
                     <TableHeader>
                         <TableRow className="bg-muted/50 hover:bg-muted/50">
@@ -577,7 +577,7 @@ export default function DailyCashReportPage() {
                     </Table>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-0 pt-0">
                     <div className="md:col-span-2 space-y-4">
                         <h3 className="font-bold text-center text-[10px] uppercase tracking-wider bg-slate-100 border border-black p-1 text-black">Desglose de Efectivo Físico</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

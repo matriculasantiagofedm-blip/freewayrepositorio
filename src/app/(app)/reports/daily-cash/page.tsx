@@ -132,12 +132,14 @@ export default function DailyCashReportPage() {
 
             let paymentType: string = 'cash';
             let amount: number = 0;
+            let concept: string = '';
             let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
             
             const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
             let studentId = details?.studentIdNumber || contract.studentIdNumber || '';
 
             if (contract.type === 'Curso Deluxe') {
+                concept = 'Matrícula Deluxe';
                 paymentType = contract.deluxeDetails?.paymentType || 'cash';
                 amount = 15.00;
             } else {
@@ -151,8 +153,6 @@ export default function DailyCashReportPage() {
             if(amount > 0) {
                 const pKey = paymentType && paymentColumns.hasOwnProperty(paymentType) ? paymentType : 'cash';
                 paymentColumns[pKey] = amount;
-
-                let concept = contract.type === 'Curso Deluxe' ? 'Matrícula Deluxe' : `Abono ${contract.type}`;
 
                 fetchedTransactions.push({
                     id: contract.id,
@@ -179,7 +179,7 @@ export default function DailyCashReportPage() {
 
             fetchedTransactions.push({
                 id: doc.id,
-                contrato: String(payment.cancellationFolio || '').padStart(6, '0'),
+                contrato: String(payment.cancellation_folio || payment.cancellationFolio || '').padStart(6, '0'),
                 cedula: payment.studentIdNumber || '',
                 clientName: payment.clientName || '',
                 service: 'Abono/Cancelación de Saldo',
@@ -195,7 +195,7 @@ export default function DailyCashReportPage() {
             const amount = payment.amount || 0;
             const pType = payment.paymentType || 'cash';
 
-            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
+            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, font-bold: 0, general: 0, cheques: 0 };
             const pKey = pType && paymentColumns.hasOwnProperty(pType) ? pType : 'cash';
             paymentColumns[pKey] = amount;
 
@@ -360,7 +360,7 @@ export default function DailyCashReportPage() {
           letterRendering: true,
           logging: false,
           backgroundColor: '#ffffff',
-          width: 820 // Reduced further to increase visual size by ~15% more
+          width: 820
         },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
         pagebreak: { mode: 'avoid-all' }
@@ -527,6 +527,7 @@ export default function DailyCashReportPage() {
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black w-20">Cédula</TableHead>
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black min-w-[120px]">Cliente</TableHead>
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black min-w-[120px]">Servicio</TableHead>
+                        <TableHead className="border-r border-black p-1 text-center font-bold text-black w-16">Vendedor</TableHead>
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black">Monto</TableHead>
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black">Efectivo</TableHead>
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black">T.Débito</TableHead>
@@ -544,6 +545,7 @@ export default function DailyCashReportPage() {
                             <TableCell className="border-r border-black p-1 text-black">{transaction.cedula}</TableCell>
                             <TableCell className="border-r border-black p-1 truncate max-w-[150px] uppercase font-medium text-black">{transaction.clientName}</TableCell>
                             <TableCell className="border-r border-black p-1 uppercase text-[8px] text-black">{transaction.service}</TableCell>
+                            <TableCell className="border-r border-black p-1 text-center text-black truncate max-w-[80px]">{transaction.createdBy}</TableCell>
                             <TableCell className="border-r border-black p-0 text-right pr-1 text-black">
                                 <span className={cn(isDownloading ? "block" : "print-show-val")}>{transaction.amount.toFixed(2)}</span>
                                 {!isDownloading && (
@@ -565,7 +567,7 @@ export default function DailyCashReportPage() {
                         </TableRow>
                         ))}
                         <TableRow className="font-bold bg-slate-100 hover:bg-slate-100 border-t border-black h-8">
-                            <TableCell colSpan={6} className="text-right p-1 pr-4 border-r border-black uppercase text-black">TOTALES POR CATEGORÍA:</TableCell>
+                            <TableCell colSpan={7} className="text-right p-1 pr-4 border-r border-black uppercase text-black">TOTALES POR CATEGORÍA:</TableCell>
                             <TableCell className="border-r border-black p-1 text-right text-black">{transactionTotals.cash.toFixed(2)}</TableCell>
                             <TableCell className="border-r border-black p-1 text-right text-black">{transactionTotals.debit.toFixed(2)}</TableCell>
                             <TableCell className="border-r border-black p-1 text-right text-black">{transactionTotals.credit.toFixed(2)}</TableCell>

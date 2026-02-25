@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Trash2, Printer, CalendarIcon, Loader2, AlertCircle, User, CheckCircle2 } from 'lucide-react';
+import { Trash2, Printer, CalendarIcon, Loader2, AlertCircle, User, CheckCircle2, Download } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -84,6 +84,7 @@ export default function DailyCashReportPage() {
   const [error, setError] = useState<string | null>(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [sellerFilter, setSellerFilter] = useState('all');
 
   useEffect(() => {
@@ -335,13 +336,42 @@ export default function DailyCashReportPage() {
   const addExpenseRow = () => {
     setExpenses([...expenses, { description: '', amount: 0 }]);
   };
-  const removeExpenseRow = (index: number) => {
-    setExpenses(expenses.filter((_, i) => i !== index));
-  }
   
   const handlePrint = () => {
     window.print();
   }
+
+  const handleDownloadPdf = async () => {
+    const element = document.getElementById('report-to-export');
+    if (!element) return;
+
+    setIsDownloading(true);
+    try {
+      // @ts-ignore - html2pdf might not have types
+      const html2pdf = (await import('html2pdf.js')).default;
+      
+      const opt = {
+        margin: [0.3, 0.3],
+        filename: `Reporte_Caja_Freeway_${format(reportDate, 'dd-MM-yyyy')}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+          scale: 2, 
+          useCORS: true, 
+          letterRendering: true,
+          logging: false
+        },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
+      };
+
+      await html2pdf().from(element).set(opt).save();
+      toast({ title: "PDF Generado", description: "El reporte se ha descargado correctamente." });
+    } catch (err) {
+      console.error("Error generating PDF:", err);
+      toast({ variant: "destructive", title: "Error", description: "No se pudo generar el PDF." });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   if (isUserLoading || isRoleLoading) {
     return (
@@ -439,33 +469,47 @@ export default function DailyCashReportPage() {
         <div className="bg-white p-4 border-2 border-dashed rounded-xl flex flex-col gap-4 shadow-sm">
             <div className="flex items-center gap-3 text-blue-800 bg-blue-50 p-3 rounded-lg border border-blue-100">
                 <AlertCircle className="h-5 w-5" />
-                <p className="text-xs font-bold uppercase">Optimización de Spooler: Estabilizando reporte para impresión PDF.</p>
+                <p className="text-xs font-bold uppercase">Optimización para Tablet: Si la impresión directa falla, usa el botón de Descargar PDF.</p>
             </div>
             
             {!isReady ? (
                 <div className="bg-slate-100 text-slate-500 p-8 rounded-xl text-center font-black uppercase text-lg flex items-center justify-center gap-3 border-2 border-slate-200 animate-pulse">
                     <Loader2 className="animate-spin h-6 w-6" />
-                    Preparando PDF (4s)...
+                    Preparando Contenido (4s)...
                 </div>
             ) : (
-                <Button 
-                    onClick={handlePrint} 
-                    className={cn(
-                        "font-black shadow-xl uppercase tracking-widest border-4",
-                        isMobile ? "h-24 text-2xl bg-blue-600 hover:bg-blue-700 border-blue-400" : "h-14 text-lg"
-                    )}
-                >
-                    <Printer className="mr-4 h-8 w-8" />
-                    IMPRIMIR REPORTE EN CANON
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <Button 
+                        onClick={handlePrint} 
+                        className={cn(
+                            "flex-1 font-black shadow-xl uppercase tracking-widest border-4",
+                            isMobile ? "h-24 text-2xl bg-blue-600 hover:bg-blue-700 border-blue-400" : "h-14 text-lg"
+                        )}
+                    >
+                        <Printer className="mr-4 h-8 w-8" />
+                        IMPRIMIR EN CANON
+                    </Button>
+                    <Button 
+                        onClick={handleDownloadPdf} 
+                        disabled={isDownloading}
+                        variant="outline"
+                        className={cn(
+                            "flex-1 font-black shadow-lg uppercase tracking-widest border-4 border-green-600 text-green-700 hover:bg-green-50",
+                            isMobile ? "h-24 text-2xl" : "h-14 text-lg"
+                        )}
+                    >
+                        {isDownloading ? <Loader2 className="animate-spin mr-4 h-8 w-8" /> : <Download className="mr-4 h-8 w-8" />}
+                        DESCARGAR EN PDF
+                    </Button>
+                </div>
             )}
         </div>
       </div>
 
-      <div className="print-container space-y-4">
+      <div id="report-to-export" className="print-container space-y-4 bg-white p-2">
         <div className="p-2 text-center font-bold text-lg border-b-2 border-black mb-4 uppercase flex flex-col">
-            <span>FREEWAY ESCUELA DE MANEJO</span>
-            <span className="text-sm">CONTROL DE CAJA - {format(reportDate, "EEEE d 'DE' LLLL 'DE' yyyy", { locale: es })}</span>
+            <span className="text-black">FREEWAY ESCUELA DE MANEJO</span>
+            <span className="text-sm text-black">CONTROL DE CAJA - {format(reportDate, "EEEE d 'DE' LLLL 'DE' yyyy", { locale: es })}</span>
         </div>
 
         {!isLoading && (
@@ -491,37 +535,39 @@ export default function DailyCashReportPage() {
                     <TableBody>
                         {filteredTransactions.map((transaction, index) => (
                         <TableRow key={transaction.id} className="hover:bg-transparent h-7">
-                            <TableCell className="border-r border-black p-1 text-center">{index + 1}</TableCell>
-                            <TableCell className="border-r border-black p-1 font-bold">{transaction.contrato}</TableCell>
-                            <TableCell className="border-r border-black p-1">{transaction.cedula}</TableCell>
-                            <TableCell className="border-r border-black p-1 truncate max-w-[150px] uppercase font-medium">{transaction.clientName}</TableCell>
-                            <TableCell className="border-r border-black p-1 uppercase text-[8px]">{transaction.service}</TableCell>
-                            <TableCell className="border-r border-black p-0 text-right pr-1">
-                                <span className="print-show-val">{transaction.amount.toFixed(2)}</span>
-                                <Input 
-                                    type="number" 
-                                    value={transaction.amount} 
-                                    onChange={e => handleTransactionChange(index, 'amount', e.target.value)} 
-                                    disabled={!isAdmin}
-                                    className="w-full h-7 border-none rounded-none text-[10px] p-1 text-right focus-visible:ring-0 disabled:opacity-100 print:hidden" 
-                                />
+                            <TableCell className="border-r border-black p-1 text-center text-black">{index + 1}</TableCell>
+                            <TableCell className="border-r border-black p-1 font-bold text-black">{transaction.contrato}</TableCell>
+                            <TableCell className="border-r border-black p-1 text-black">{transaction.cedula}</TableCell>
+                            <TableCell className="border-r border-black p-1 truncate max-w-[150px] uppercase font-medium text-black">{transaction.clientName}</TableCell>
+                            <TableCell className="border-r border-black p-1 uppercase text-[8px] text-black">{transaction.service}</TableCell>
+                            <TableCell className="border-r border-black p-0 text-right pr-1 text-black">
+                                <span className={cn(isDownloading ? "block" : "print-show-val")}>{transaction.amount.toFixed(2)}</span>
+                                {!isDownloading && (
+                                    <Input 
+                                        type="number" 
+                                        value={transaction.amount} 
+                                        onChange={e => handleTransactionChange(index, 'amount', e.target.value)} 
+                                        disabled={!isAdmin}
+                                        className="w-full h-7 border-none rounded-none text-[10px] p-1 text-right focus-visible:ring-0 disabled:opacity-100 print:hidden" 
+                                    />
+                                )}
                             </TableCell>
-                            <TableCell className="border-r border-black p-1 text-right bg-muted/10">{transaction.cash > 0 ? transaction.cash.toFixed(2) : '-'}</TableCell>
-                            <TableCell className="border-r border-black p-1 text-right bg-muted/10">{transaction.debit > 0 ? transaction.debit.toFixed(2) : '-'}</TableCell>
-                            <TableCell className="border-r border-black p-1 text-right bg-muted/10">{transaction.credit > 0 ? transaction.credit.toFixed(2) : '-'}</TableCell>
-                            <TableCell className="border-r border-black p-1 text-right bg-muted/10">{transaction.bac > 0 ? transaction.bac.toFixed(2) : '-'}</TableCell>
-                            <TableCell className="border-r border-black p-1 text-right bg-muted/10">{transaction.general > 0 ? transaction.general.toFixed(2) : '-'}</TableCell>
-                            <TableCell className="p-1 text-right bg-muted/10">{transaction.cheques > 0 ? transaction.cheques.toFixed(2) : '-'}</TableCell>
+                            <TableCell className="border-r border-black p-1 text-right text-black">{transaction.cash > 0 ? transaction.cash.toFixed(2) : '-'}</TableCell>
+                            <TableCell className="border-r border-black p-1 text-right text-black">{transaction.debit > 0 ? transaction.debit.toFixed(2) : '-'}</TableCell>
+                            <TableCell className="border-r border-black p-1 text-right text-black">{transaction.credit > 0 ? transaction.credit.toFixed(2) : '-'}</TableCell>
+                            <TableCell className="border-r border-black p-1 text-right text-black">{transaction.bac > 0 ? transaction.bac.toFixed(2) : '-'}</TableCell>
+                            <TableCell className="border-r border-black p-1 text-right text-black">{transaction.general > 0 ? transaction.general.toFixed(2) : '-'}</TableCell>
+                            <TableCell className="p-1 text-right text-black">{transaction.cheques > 0 ? transaction.cheques.toFixed(2) : '-'}</TableCell>
                         </TableRow>
                         ))}
                         <TableRow className="font-bold bg-slate-100 hover:bg-slate-100 border-t border-black h-8">
-                            <TableCell colSpan={6} className="text-right p-1 pr-4 border-r border-black uppercase">TOTALES POR CATEGORÍA:</TableCell>
-                            <TableCell className="border-r border-black p-1 text-right">{transactionTotals.cash.toFixed(2)}</TableCell>
-                            <TableCell className="border-r border-black p-1 text-right">{transactionTotals.debit.toFixed(2)}</TableCell>
-                            <TableCell className="border-r border-black p-1 text-right">{transactionTotals.credit.toFixed(2)}</TableCell>
-                            <TableCell className="border-r border-black p-1 text-right">{transactionTotals.bac.toFixed(2)}</TableCell>
-                            <TableCell className="border-r border-black p-1 text-right">{transactionTotals.general.toFixed(2)}</TableCell>
-                            <TableCell className="p-1 text-right">{transactionTotals.cheques.toFixed(2)}</TableCell>
+                            <TableCell colSpan={6} className="text-right p-1 pr-4 border-r border-black uppercase text-black">TOTALES POR CATEGORÍA:</TableCell>
+                            <TableCell className="border-r border-black p-1 text-right text-black">{transactionTotals.cash.toFixed(2)}</TableCell>
+                            <TableCell className="border-r border-black p-1 text-right text-black">{transactionTotals.debit.toFixed(2)}</TableCell>
+                            <TableCell className="border-r border-black p-1 text-right text-black">{transactionTotals.credit.toFixed(2)}</TableCell>
+                            <TableCell className="border-r border-black p-1 text-right text-black">{transactionTotals.bac.toFixed(2)}</TableCell>
+                            <TableCell className="border-r border-black p-1 text-right text-black">{transactionTotals.general.toFixed(2)}</TableCell>
+                            <TableCell className="p-1 text-right text-black">{transactionTotals.cheques.toFixed(2)}</TableCell>
                         </TableRow>
                     </TableBody>
                     </Table>
@@ -529,22 +575,24 @@ export default function DailyCashReportPage() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
                     <div className="md:col-span-2 space-y-4">
-                        <h3 className="font-bold text-center text-[10px] uppercase tracking-wider bg-slate-100 border border-black p-1">Desglose de Efectivo Físico</h3>
+                        <h3 className="font-bold text-center text-[10px] uppercase tracking-wider bg-slate-100 border border-black p-1 text-black">Desglose de Efectivo Físico</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <Table className="text-[9px] border border-black">
                                 <TableHeader className="bg-slate-50"><TableRow><TableHead className="border-r border-black p-1 font-bold text-black h-6">Cant.</TableHead><TableHead className="border-r border-black p-1 font-bold text-black h-6 text-right">Billetes</TableHead><TableHead className="p-1 font-bold text-black h-6 text-right">Monto</TableHead></TableRow></TableHeader>
                                 <TableBody>
                                     {Object.keys(billQuantities).map(bill => (
                                         <TableRow key={bill} className="h-6 hover:bg-transparent">
-                                            <TableCell className="border-r border-black p-0">
-                                                <span className="print-show-val text-center w-full">{billQuantities[bill] || '0'}</span>
-                                                <Input type="number" value={billQuantities[bill] || ''} onChange={e => handleCashChange('bill', bill, e.target.value)} className="w-full h-6 border-none rounded-none text-[10px] p-1 text-center focus:ring-0 print:hidden" />
+                                            <TableCell className="border-r border-black p-0 text-black">
+                                                <span className={cn(isDownloading ? "block text-center" : "print-show-val text-center w-full")}>{billQuantities[bill] || '0'}</span>
+                                                {!isDownloading && (
+                                                    <Input type="number" value={billQuantities[bill] || ''} onChange={e => handleCashChange('bill', bill, e.target.value)} className="w-full h-6 border-none rounded-none text-[10px] p-1 text-center focus:ring-0 print:hidden" />
+                                                )}
                                             </TableCell>
-                                            <TableCell className="border-r border-black p-1 text-right">{currencyFormatter.format(parseFloat(bill))}</TableCell>
-                                            <TableCell className="p-1 text-right font-semibold">{currencyFormatter.format(parseFloat(bill) * (billQuantities[bill] || 0))}</TableCell>
+                                            <TableCell className="border-r border-black p-1 text-right text-black">{currencyFormatter.format(parseFloat(bill))}</TableCell>
+                                            <TableCell className="p-1 text-right font-semibold text-black">{currencyFormatter.format(parseFloat(bill) * (billQuantities[bill] || 0))}</TableCell>
                                         </TableRow>
                                     ))}
-                                    <TableRow className="font-bold bg-slate-50"><TableCell colSpan={2} className="text-right p-1 border-r border-black uppercase">SUB-TOTAL</TableCell><TableCell className="p-1 text-right">{currencyFormatter.format(cashBreakdownTotals.billTotal)}</TableCell></TableRow>
+                                    <TableRow className="font-bold bg-slate-50"><TableCell colSpan={2} className="text-right p-1 border-r border-black uppercase text-black">SUB-TOTAL</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(cashBreakdownTotals.billTotal)}</TableCell></TableRow>
                                 </TableBody>
                             </Table>
                             <Table className="text-[9px] border border-black">
@@ -552,31 +600,33 @@ export default function DailyCashReportPage() {
                                 <TableBody>
                                     {Object.keys(coinQuantities).map(coin => (
                                         <TableRow key={coin} className="h-6 hover:bg-transparent">
-                                            <TableCell className="border-r border-black p-0">
-                                                <span className="print-show-val text-center w-full">{coinQuantities[coin] || '0'}</span>
-                                                <Input type="number" value={coinQuantities[coin] || ''} onChange={e => handleCashChange('coin', coin, e.target.value)} className="w-full h-6 border-none rounded-none text-[10px] p-1 text-center focus:ring-0 print:hidden" />
+                                            <TableCell className="border-r border-black p-0 text-black">
+                                                <span className={cn(isDownloading ? "block text-center" : "print-show-val text-center w-full")}>{coinQuantities[coin] || '0'}</span>
+                                                {!isDownloading && (
+                                                    <Input type="number" value={coinQuantities[coin] || ''} onChange={e => handleCashChange('coin', coin, e.target.value)} className="w-full h-6 border-none rounded-none text-[10px] p-1 text-center focus:ring-0 print:hidden" />
+                                                )}
                                             </TableCell>
-                                            <TableCell className="border-r border-black p-1 text-right">{currencyFormatter.format(parseFloat(coin))}</TableCell>
-                                            <TableCell className="p-1 text-right font-semibold">{currencyFormatter.format(parseFloat(coin) * (coinQuantities[coin] || 0))}</TableCell>
+                                            <TableCell className="border-r border-black p-1 text-right text-black">{currencyFormatter.format(parseFloat(coin))}</TableCell>
+                                            <TableCell className="p-1 text-right font-semibold text-black">{currencyFormatter.format(parseFloat(coin) * (coinQuantities[coin] || 0))}</TableCell>
                                         </TableRow>
                                     ))}
-                                    <TableRow className="font-bold bg-slate-50"><TableCell colSpan={2} className="text-right p-1 border-r border-black uppercase">SUB-TOTAL</TableCell><TableCell className="p-1 text-right">{currencyFormatter.format(cashBreakdownTotals.coinTotal)}</TableCell></TableRow>
+                                    <TableRow className="font-bold bg-slate-50"><TableCell colSpan={2} className="text-right p-1 border-r border-black uppercase text-black">SUB-TOTAL</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(cashBreakdownTotals.coinTotal)}</TableCell></TableRow>
                                 </TableBody>
                             </Table>
                         </div>
-                        <div className="text-right font-bold text-[11px] bg-slate-100 p-2 rounded border border-black uppercase">TOTAL FÍSICO: {currencyFormatter.format(cashBreakdownTotals.total)}</div>
+                        <div className="text-right font-bold text-[11px] bg-slate-100 p-2 rounded border border-black uppercase text-black">TOTAL FÍSICO: {currencyFormatter.format(cashBreakdownTotals.total)}</div>
                     </div>
 
                     <div className="space-y-4">
                         <Table className="text-[9px] border border-black">
                             <TableHeader className="bg-slate-100 border-b border-black"><TableRow><TableHead colSpan={2} className="text-center font-bold p-1 h-6 uppercase text-black">Consolidado Sistema</TableHead></TableRow></TableHeader>
                             <TableBody>
-                                <TableRow className="hover:bg-transparent h-6"><TableCell className="border-r border-black p-1">TOTAL CRÉDITO</TableCell><TableCell className="p-1 text-right">{currencyFormatter.format(transactionTotals.credit)}</TableCell></TableRow>
-                                <TableRow className="hover:bg-transparent h-6"><TableCell className="border-r border-black p-1">TOTAL DÉBITO</TableCell><TableCell className="p-1 text-right">{currencyFormatter.format(transactionTotals.debit)}</TableCell></TableRow>
-                                <TableRow className="hover:bg-transparent h-6"><TableCell className="border-r border-black p-1">BAC</TableCell><TableCell className="p-1 text-right">{currencyFormatter.format(transactionTotals.bac)}</TableCell></TableRow>
-                                <TableRow className="hover:bg-transparent h-6"><TableCell className="border-r border-black p-1">GENERAL</TableCell><TableCell className="p-1 text-right">{currencyFormatter.format(transactionTotals.general)}</TableCell></TableRow>
-                                <TableRow className="hover:bg-transparent h-6"><TableCell className="border-r border-black p-1">CHEQUES</TableCell><TableCell className="p-1 text-right">{currencyFormatter.format(transactionTotals.cheques)}</TableCell></TableRow>
-                                <TableRow className="hover:bg-transparent bg-slate-50 h-6"><TableCell className="border-r border-black p-1 font-bold">TOTAL EFECTIVO (SISTEMA)</TableCell><TableCell className="p-1 text-right font-black">{currencyFormatter.format(transactionTotals.cash)}</TableCell></TableRow>
+                                <TableRow className="hover:bg-transparent h-6"><TableCell className="border-r border-black p-1 text-black">TOTAL CRÉDITO</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(transactionTotals.credit)}</TableCell></TableRow>
+                                <TableRow className="hover:bg-transparent h-6"><TableCell className="border-r border-black p-1 text-black">TOTAL DÉBITO</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(transactionTotals.debit)}</TableCell></TableRow>
+                                <TableRow className="hover:bg-transparent h-6"><TableCell className="border-r border-black p-1 text-black">BAC</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(transactionTotals.bac)}</TableCell></TableRow>
+                                <TableRow className="hover:bg-transparent h-6"><TableCell className="border-r border-black p-1 text-black">GENERAL</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(transactionTotals.general)}</TableCell></TableRow>
+                                <TableRow className="hover:bg-transparent h-6"><TableCell className="border-r border-black p-1 text-black">CHEQUES</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(transactionTotals.cheques)}</TableCell></TableRow>
+                                <TableRow className="hover:bg-transparent bg-slate-50 h-6"><TableCell className="border-r border-black p-1 font-bold text-black">TOTAL EFECTIVO (SISTEMA)</TableCell><TableCell className="p-1 text-right font-black text-black">{currencyFormatter.format(transactionTotals.cash)}</TableCell></TableRow>
                             </TableBody>
                         </Table>
 
@@ -585,30 +635,34 @@ export default function DailyCashReportPage() {
                             <TableBody>
                                 {expenses.map((expense, index) => (
                                     <TableRow key={index} className="hover:bg-transparent h-6">
-                                        <TableCell className="border-r border-black p-0">
-                                            <span className="print-show-val px-1">{expense.description || '-'}</span>
-                                            <Input placeholder="Descripción..." value={expense.description} onChange={e => handleExpenseChange(index, 'description', e.target.value)} className="w-full h-6 border-none rounded-none text-[10px] p-1 focus:ring-0 print:hidden" />
+                                        <TableCell className="border-r border-black p-0 text-black">
+                                            <span className={cn(isDownloading ? "block px-1" : "print-show-val px-1")}>{expense.description || '-'}</span>
+                                            {!isDownloading && (
+                                                <Input placeholder="Descripción..." value={expense.description} onChange={e => handleExpenseChange(index, 'description', e.target.value)} className="w-full h-6 border-none rounded-none text-[10px] p-1 focus:ring-0 print:hidden" />
+                                            )}
                                         </TableCell>
-                                        <TableCell className="p-0 w-20">
-                                            <span className="print-show-val text-right px-1 w-full">{expense.amount > 0 ? expense.amount.toFixed(2) : '0.00'}</span>
-                                            <Input type="number" value={expense.amount || ''} onChange={e => handleExpenseChange(index, 'amount', e.target.value)} className="w-full h-6 border-none rounded-none text-[10px] p-1 text-right focus:ring-0 print:hidden" />
+                                        <TableCell className="p-0 w-20 text-black">
+                                            <span className={cn(isDownloading ? "block text-right px-1" : "print-show-val text-right px-1 w-full")}>{expense.amount > 0 ? expense.amount.toFixed(2) : '0.00'}</span>
+                                            {!isDownloading && (
+                                                <Input type="number" value={expense.amount || ''} onChange={e => handleExpenseChange(index, 'amount', e.target.value)} className="w-full h-6 border-none rounded-none text-[10px] p-1 text-right focus:ring-0 print:hidden" />
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 ))}
-                                <TableRow className="font-bold bg-slate-50 border-t border-black h-6"><TableCell className="border-r border-black p-1 uppercase">TOTAL GASTOS</TableCell><TableCell className="p-1 text-right">{currencyFormatter.format(totalExpenses)}</TableCell></TableRow>
+                                <TableRow className="font-bold bg-slate-50 border-t border-black h-6"><TableCell className="border-r border-black p-1 uppercase text-black">TOTAL GASTOS</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(totalExpenses)}</TableCell></TableRow>
                             </TableBody>
                         </Table>
 
                         <div className="border border-black p-2 bg-slate-100 rounded-sm space-y-1">
-                            <div className="flex justify-between items-center text-[10px] font-bold"><span>EFECTIVO NETO (SISTEMA - GASTOS):</span><span>{currencyFormatter.format(grandTotals.totalEfectivoMenosGastos)}</span></div>
+                            <div className="flex justify-between items-center text-[10px] font-bold text-black"><span>EFECTIVO NETO (SISTEMA - GASTOS):</span><span>{currencyFormatter.format(grandTotals.totalEfectivoMenosGastos)}</span></div>
                             <div className="flex justify-between items-center text-[10px] font-bold"><span>DIFERENCIA / FALTANTE:</span><span className={cn(grandTotals.diferencia < 0 ? "text-red-600" : "text-green-600")}>{currencyFormatter.format(grandTotals.diferencia)}</span></div>
                         </div>
                     </div>
                 </div>
                 
                 <div className="flex justify-around items-center pt-8 print:pt-12">
-                    <div className="text-center w-48 border-t border-black pt-1"><p className="text-[8px] font-bold uppercase">Recibido por</p></div>
-                    <div className="text-center w-48 border-t border-black pt-1"><p className="text-[8px] font-bold uppercase">Entregado por</p></div>
+                    <div className="text-center w-48 border-t border-black pt-1"><p className="text-[8px] font-bold uppercase text-black">Recibido por</p></div>
+                    <div className="text-center w-48 border-t border-black pt-1"><p className="text-[8px] font-bold uppercase text-black">Entregado por</p></div>
                 </div>
             </div>
         )}

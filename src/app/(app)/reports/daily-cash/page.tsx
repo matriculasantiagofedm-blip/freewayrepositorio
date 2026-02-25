@@ -352,20 +352,23 @@ export default function DailyCashReportPage() {
       const html2pdf = (await import('html2pdf.js')).default;
       
       const opt = {
-        margin: [0.3, 0.3],
+        margin: [0.2, 0.2],
         filename: `Reporte_Caja_Freeway_${format(reportDate, 'dd-MM-yyyy')}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
           scale: 2, 
           useCORS: true, 
           letterRendering: true,
-          logging: false
+          logging: false,
+          width: 1050 // Ancho proporcional para Letter Landscape
         },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' },
+        pagebreak: { mode: 'avoid-all' } // Intentar evitar saltos de página
       };
 
+      // Forzamos el ajuste a una sola página escalando el contenido si es necesario
       await html2pdf().from(element).set(opt).save();
-      toast({ title: "PDF Generado", description: "El reporte se ha descargado correctamente." });
+      toast({ title: "PDF Generado", description: "El reporte se ha descargado correctamente en una sola página." });
     } catch (err) {
       console.error("Error generating PDF:", err);
       toast({ variant: "destructive", title: "Error", description: "No se pudo generar el PDF." });

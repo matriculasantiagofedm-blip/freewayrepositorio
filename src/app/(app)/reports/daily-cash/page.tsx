@@ -195,7 +195,7 @@ export default function DailyCashReportPage() {
             const amount = payment.amount || 0;
             const pType = payment.paymentType || 'cash';
 
-            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, font-bold: 0, general: 0, cheques: 0 };
+            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
             const pKey = pType && paymentColumns.hasOwnProperty(pType) ? pType : 'cash';
             paymentColumns[pKey] = amount;
 
@@ -351,7 +351,7 @@ export default function DailyCashReportPage() {
       const html2pdf = (await import('html2pdf.js')).default;
       
       const opt = {
-        margin: [0.3, 0.4, 0.3, 0.3], // Top, Left, Bottom, Right
+        margin: [0.3, 0.8, 0.3, 0.3], // Superior, Izquierdo (aumentado), Inferior, Derecho
         filename: `Reporte_Caja_Freeway_${format(reportDate, 'dd-MM-yyyy')}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
@@ -360,7 +360,7 @@ export default function DailyCashReportPage() {
           letterRendering: true,
           logging: false,
           backgroundColor: '#ffffff',
-          width: 820
+          width: 820 // Ancho reducido para escalar el contenido (~35% más grande)
         },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
         pagebreak: { mode: 'avoid-all' }
@@ -478,7 +478,7 @@ export default function DailyCashReportPage() {
             
             {!isReady ? (
                 <div className="bg-slate-100 text-slate-500 p-8 rounded-xl text-center font-black uppercase text-lg flex items-center justify-center gap-3 border-2 border-slate-200 animate-pulse">
-                    <Loader2 className="animate-spin h-6 w-6" />
+                    <     <Loader2 className="animate-spin h-6 w-6" />
                     Preparando Contenido (4s)...
                 </div>
             ) : (

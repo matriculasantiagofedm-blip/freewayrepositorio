@@ -3,7 +3,7 @@
 import React, { useEffect, Suspense, useState, useMemo } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Printer, Loader2, Download, AlertCircle } from 'lucide-react';
+import { Printer, Loader2, Download, AlertCircle, CheckSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn, toDate } from '@/lib/utils';
 import { useDb } from '@/components/firebase-provider';
@@ -80,6 +80,7 @@ function LogbookContent() {
     };
 
     const getLogTitle = () => {
+        if (type === 'already-know') return 'BITÁCORA - YA SE MANEJAR';
         if (type.startsWith('moto-')) {
             const hours = type.split('-').pop()?.replace('h', '') + ' HORAS';
             return `BITÁCORA-MOTO MANUAL - CLASES PRÁCTICAS-${hours}`;
@@ -110,6 +111,7 @@ function LogbookContent() {
     };
 
     const getClasses = (): LogbookClass[] => {
+        if (type === 'already-know') return [];
         // AUTO AUTOMATICO 12H
         if (type === 'auto-automatic-12h') {
             return [
@@ -361,9 +363,127 @@ function LogbookContent() {
         return []; 
     };
 
+    const AlreadyKnowTemplate = () => {
+        const details = contract?.autoMotoDetails;
+        const isCommercial = details?.licenseCategory === 'A, C, D';
+        const isAutomatic = details?.vehicleTransmission === 'Automático';
+
+        return (
+            <div className="max-w-[8.5in] mx-auto p-12 font-sans text-black bg-white">
+                <div className="text-center mb-8 border-b-2 border-black pb-4">
+                    <h1 className="text-2xl font-black uppercase tracking-widest">FREEWAY ESCUELA DE MANEJO</h1>
+                    <h2 className="text-xl font-bold uppercase mt-1">CLASES PRÁCTICAS - YA SE MANEJAR</h2>
+                </div>
+
+                <div className="space-y-6 text-[11pt]">
+                    <div className="grid grid-cols-1 gap-4">
+                        <div className="flex border-b border-black pb-1">
+                            <span className="font-black w-40">NOMBRE:</span>
+                            <span className="font-bold uppercase flex-1">{name}</span>
+                        </div>
+                        <div className="flex border-b border-black pb-1">
+                            <span className="font-black w-40">CÉDULA / PASS:</span>
+                            <span className="font-bold flex-1">{idNumber}</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-8 py-2">
+                            <span className="font-black w-32">CATEGORÍA:</span>
+                            <div className="flex items-center gap-2">
+                                <div className={cn("w-4 h-4 border border-black flex items-center justify-center", !isCommercial && "bg-black")}><span className="text-white text-[8pt]">{!isCommercial ? 'X' : ''}</span></div>
+                                <span className="text-[10pt] font-bold">A, C (Particular)</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className={cn("w-4 h-4 border border-black flex items-center justify-center", isCommercial && "bg-black")}><span className="text-white text-[8pt]">{isCommercial ? 'X' : ''}</span></div>
+                                <span className="text-[10pt] font-bold">A, C, D (Comercial)</span>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-8 py-2">
+                            <span className="font-black w-32">TRANSMISIÓN:</span>
+                            <div className="flex items-center gap-2">
+                                <div className={cn("w-4 h-4 border border-black flex items-center justify-center", isAutomatic && "bg-black")}><span className="text-white text-[8pt]">{isAutomatic ? 'X' : ''}</span></div>
+                                <span className="text-[10pt] font-bold uppercase">Automática</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className={cn("w-4 h-4 border border-black flex items-center justify-center", !isAutomatic && "bg-black")}><span className="text-white text-[8pt]">{!isAutomatic ? 'X' : ''}</span></div>
+                                <span className="text-[10pt] font-bold uppercase">Manual</span>
+                            </div>
+                        </div>
+
+                        <div className="flex border-b border-black pb-1">
+                            <span className="font-black w-40">HORARIO:</span>
+                            <span className="font-bold flex-1 uppercase">{details?.theoreticalClassSchedule || 'PROGRAMADO'}</span>
+                        </div>
+                        <div className="flex border-b border-black pb-1">
+                            <span className="font-black w-40">INSTRUCTOR:</span>
+                            <span className="font-bold flex-1 uppercase">{generalInstructor}</span>
+                        </div>
+                    </div>
+
+                    <div className="pt-8 space-y-6">
+                        <div className="flex items-center gap-12">
+                            <span className="font-black uppercase">¿USÓ EL CINTURÓN DE SEGURIDAD?</span>
+                            <div className="flex gap-8">
+                                <div className="flex items-center gap-2"><div className="w-5 h-5 border border-black"></div><span className="font-bold">SI</span></div>
+                                <div className="flex items-center gap-2"><div className="w-5 h-5 border border-black"></div><span className="font-bold">NO</span></div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <span className="font-black uppercase underline">OBSERVACIÓN DEL INSTRUCTOR:</span>
+                            <div className="space-y-6 pt-2">
+                                <div className="border-b border-black border-dashed h-4"></div>
+                                <div className="border-b border-black border-dashed h-4"></div>
+                                <div className="border-b border-black border-dashed h-4"></div>
+                                <div className="border-b border-black border-dashed h-4"></div>
+                                <div className="border-b border-black border-dashed h-4"></div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3 pt-4">
+                            <span className="font-black uppercase underline">TIEMPO DE ESTACIONAMIENTO:</span>
+                            <div className="space-y-6 pt-2">
+                                <div className="border-b border-black border-dashed h-4"></div>
+                                <div className="border-b border-black border-dashed h-4"></div>
+                                <div className="border-b border-black border-dashed h-4"></div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-12 pt-6">
+                            <div className="space-y-4">
+                                <span className="font-black uppercase block">¿NECESITA AFIANZAMIENTO?</span>
+                                <div className="flex gap-8">
+                                    <div className="flex items-center gap-2"><div className="w-5 h-5 border border-black"></div><span className="font-bold">SI</span></div>
+                                    <div className="flex items-center gap-2"><div className="w-5 h-5 border border-black"></div><span className="font-bold">NO</span></div>
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <span className="font-black uppercase block text-xs">CANTIDAD DE HORAS RECOMENDADAS:</span>
+                                <div className="border-b-2 border-black h-8"></div>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-center gap-24 pt-12">
+                            <div className="flex items-center gap-3"><div className="w-8 h-8 border-2 border-black"></div><span className="font-black text-lg uppercase tracking-tighter">APROBADO</span></div>
+                            <div className="flex items-center gap-3"><div className="w-8 h-8 border-2 border-black"></div><span className="font-black text-lg uppercase tracking-tighter">REPROBADO</span></div>
+                        </div>
+
+                        <div className="pt-24 flex justify-center">
+                            <div className="w-80 text-center">
+                                <div className="border-t-2 border-black mb-2"></div>
+                                <span className="font-black uppercase text-xs">FIRMA DEL ESTUDIANTE</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     const classes = getClasses();
     const isAuto = !type.startsWith('moto-');
-    const needsEvaluationSection = (isAuto && (type.endsWith('8h') || type.endsWith('10h'))) || (type === 'moto-manual-8h' || type === 'moto-manual-10h');
+    const isAlreadyKnow = type === 'already-know';
+    const needsEvaluationSection = !isAlreadyKnow && ((isAuto && (type.endsWith('8h') || type.endsWith('10h'))) || (type === 'moto-manual-8h' || type === 'moto-manual-10h'));
 
     return (
         <div className="bg-white min-h-screen">
@@ -401,90 +521,94 @@ function LogbookContent() {
             </div>
 
             <div id="log-to-print" className="print-container-wrapper bg-white">
-                <div className="max-w-[8.5in] mx-auto p-10 font-sans text-[9pt] text-black">
-                    {/* HEADER */}
-                    <div className="flex justify-between items-start mb-6">
-                        <div className="flex items-center gap-2">
-                            <div className="flex flex-col">
-                                <span className="font-black text-2xl tracking-tighter leading-none">FW FREEWAY</span>
-                                <span className="text-[7pt] font-bold uppercase tracking-[0.2em] -mt-1">Escuela de Manejo</span>
-                            </div>
-                        </div>
-                        <div className="text-center flex-1">
-                            <h1 className="font-black text-xl uppercase tracking-widest">{getLogTitle()}</h1>
-                        </div>
-                        <div className="w-24"></div>
-                    </div>
-
-                    {/* STUDENT INFO */}
-                    <div className="space-y-4 mb-6">
-                        <div className="flex items-end gap-4">
-                            <div className="flex flex-1 items-end gap-2">
-                                <span className="font-black text-[9pt]">NOMBRE:</span>
-                                <div className="flex-1 border-b-2 border-black px-2 py-0.5 font-bold uppercase text-base h-7 leading-none">{name}</div>
-                            </div>
-                            <div className="flex items-end gap-2 w-1/3">
-                                <span className="font-black text-[9pt]">CÉDULA/PASS:</span>
-                                <div className="flex-1 border-b-2 border-black px-2 py-0.5 font-bold text-base h-7 leading-none">{idNumber}</div>
-                            </div>
-                        </div>
-                        <div className="flex items-end gap-2">
-                            <span className="font-black text-[9pt]">INSTRUCTOR ASIGNADO:</span>
-                            <div className="flex-1 border-b-2 border-black px-2 py-0.5 font-bold uppercase text-base h-7 leading-none">{generalInstructor}</div>
-                        </div>
-                    </div>
-
-                    {/* TABLE */}
-                    <table className="w-full border-2 border-black border-collapse">
-                        <tbody>
-                            {classes.map((cls, idx) => {
-                                const sessionInstructor = getSessionInstructor(idx);
-                                return (
-                                    <React.Fragment key={cls.number}>
-                                        <tr className="border-b-2 border-black h-28">
-                                            <td className="border-r-2 border-black p-2 w-20 text-center font-black text-xs align-middle">Clase N°{cls.number}</td>
-                                            <td className="border-r-2 border-black p-3 align-top leading-tight text-[8pt]">
-                                                <ol className={cn("space-y-0.5 list-decimal pl-4", cls.isEvaluation && "font-bold")}>
-                                                    {cls.content.map((item, cIdx) => (
-                                                        <li key={cIdx} dangerouslySetInnerHTML={{ __html: item.replace('Evaluación práctica:', '<strong>Evaluación práctica:</strong>').replace('Evaluación final del curso básico.', '<strong>Evaluación final del curso básico.</strong>').replace('Repaso integral + evaluación práctica avanzada:', '<strong>Repaso integral + evaluación práctica avanzada:</strong>') }} />
-                                                    ))}
-                                                </ol>
-                                            </td>
-                                            <td className="p-2 align-top text-[7pt] font-bold text-slate-400 uppercase w-44 text-right">Observación</td>
-                                        </tr>
-                                        <tr className="border-b-2 last:border-b-0 border-black h-7 bg-slate-50">
-                                            <td colSpan={2} className="px-3 text-[7.5pt] font-black uppercase">Asistencia del Estudiante: _________________________</td>
-                                            <td className="px-3 text-[7.5pt] font-black uppercase">
-                                                Instructor: <span className="underline ml-1">{sessionInstructor || '_________________________'}</span>
-                                            </td>
-                                        </tr>
-                                    </React.Fragment>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-
-                    {/* EVALUATION SECTION */}
-                    {needsEvaluationSection && (
-                        <div className="mt-6 space-y-4">
-                            <div className="space-y-2">
-                                <h3 className="font-black text-[9pt] uppercase">PUNTOS A MEJORAR SOBRE EL ESTUDIANTE EN SU MANEJO:</h3>
-                                <div className="border-b border-black border-dashed h-7"></div>
-                                <div className="border-b border-black border-dashed h-7"></div>
-                            </div>
-                            <div className="pt-2">
-                                <div className="flex items-end gap-2">
-                                    <span className="font-black text-[9pt] uppercase">NOMBRE DEL INSTRUCTOR:</span>
-                                    <div className="flex-1 border-b border-black border-dashed px-2 font-bold uppercase">{generalInstructor}</div>
+                {isAlreadyKnow ? (
+                    <AlreadyKnowTemplate />
+                ) : (
+                    <div className="max-w-[8.5in] mx-auto p-10 font-sans text-[9pt] text-black">
+                        {/* HEADER */}
+                        <div className="flex justify-between items-start mb-6">
+                            <div className="flex items-center gap-2">
+                                <div className="flex flex-col">
+                                    <span className="font-black text-2xl tracking-tighter leading-none">FW FREEWAY</span>
+                                    <span className="text-[7pt] font-bold uppercase tracking-[0.2em] -mt-1">Escuela de Manejo</span>
                                 </div>
                             </div>
+                            <div className="text-center flex-1">
+                                <h1 className="font-black text-xl uppercase tracking-widest">{getLogTitle()}</h1>
+                            </div>
+                            <div className="w-24"></div>
                         </div>
-                    )}
 
-                    <div className="mt-10 text-[6pt] text-slate-400 font-bold uppercase text-center tracking-widest">
-                        FREEWAY ESCUELA DE MANEJO • DOCUMENTO DE CONTROL INTERNO • PROHIBIDA SU REPRODUCCIÓN SIN AUTORIZACIÓN
+                        {/* STUDENT INFO */}
+                        <div className="space-y-4 mb-6">
+                            <div className="flex items-end gap-4">
+                                <div className="flex flex-1 items-end gap-2">
+                                    <span className="font-black text-[9pt]">NOMBRE:</span>
+                                    <div className="flex-1 border-b-2 border-black px-2 py-0.5 font-bold uppercase text-base h-7 leading-none">{name}</div>
+                                </div>
+                                <div className="flex items-end gap-2 w-1/3">
+                                    <span className="font-black text-[9pt]">CÉDULA/PASS:</span>
+                                    <div className="flex-1 border-b-2 border-black px-2 py-0.5 font-bold text-base h-7 leading-none">{idNumber}</div>
+                                </div>
+                            </div>
+                            <div className="flex items-end gap-2">
+                                <span className="font-black text-[9pt]">INSTRUCTOR ASIGNADO:</span>
+                                <div className="flex-1 border-b-2 border-black px-2 py-0.5 font-bold uppercase text-base h-7 leading-none">{generalInstructor}</div>
+                            </div>
+                        </div>
+
+                        {/* TABLE */}
+                        <table className="w-full border-2 border-black border-collapse">
+                            <tbody>
+                                {classes.map((cls, idx) => {
+                                    const sessionInstructor = getSessionInstructor(idx);
+                                    return (
+                                        <React.Fragment key={cls.number}>
+                                            <tr className="border-b-2 border-black h-28">
+                                                <td className="border-r-2 border-black p-2 w-20 text-center font-black text-xs align-middle">Clase N°{cls.number}</td>
+                                                <td className="border-r-2 border-black p-3 align-top leading-tight text-[8pt]">
+                                                    <ol className={cn("space-y-0.5 list-decimal pl-4", cls.isEvaluation && "font-bold")}>
+                                                        {cls.content.map((item, cIdx) => (
+                                                            <li key={cIdx} dangerouslySetInnerHTML={{ __html: item.replace('Evaluación práctica:', '<strong>Evaluación práctica:</strong>').replace('Evaluación final del curso básico.', '<strong>Evaluación final del curso básico.</strong>').replace('Repaso integral + evaluación práctica avanzada:', '<strong>Repaso integral + evaluación práctica avanzada:</strong>') }} />
+                                                        ))}
+                                                    </ol>
+                                                </td>
+                                                <td className="p-2 align-top text-[7pt] font-bold text-slate-400 uppercase w-44 text-right">Observación</td>
+                                            </tr>
+                                            <tr className="border-b-2 last:border-b-0 border-black h-7 bg-slate-50">
+                                                <td colSpan={2} className="px-3 text-[7.5pt] font-black uppercase">Asistencia del Estudiante: _________________________</td>
+                                                <td className="px-3 text-[7.5pt] font-black uppercase">
+                                                    Instructor: <span className="underline ml-1">{sessionInstructor || '_________________________'}</span>
+                                                </td>
+                                            </tr>
+                                        </React.Fragment>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+
+                        {/* EVALUATION SECTION */}
+                        {needsEvaluationSection && (
+                            <div className="mt-6 space-y-4">
+                                <div className="space-y-2">
+                                    <h3 className="font-black text-[9pt] uppercase">PUNTOS A MEJORAR SOBRE EL ESTUDIANTE EN SU MANEJO:</h3>
+                                    <div className="border-b border-black border-dashed h-7"></div>
+                                    <div className="border-b border-black border-dashed h-7"></div>
+                                </div>
+                                <div className="pt-2">
+                                    <div className="flex items-end gap-2">
+                                        <span className="font-black text-[9pt] uppercase">NOMBRE DEL INSTRUCTOR:</span>
+                                        <div className="flex-1 border-b border-black border-dashed px-2 font-bold uppercase">{generalInstructor}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="mt-10 text-[6pt] text-slate-400 font-bold uppercase text-center tracking-widest">
+                            FREEWAY ESCUELA DE MANEJO • DOCUMENTO DE CONTROL INTERNO • PROHIBIDA SU REPRODUCCIÓN SIN AUTORIZACIÓN
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );

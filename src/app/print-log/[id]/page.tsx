@@ -73,6 +73,42 @@ function LogbookContent() {
     };
 
     const getClasses = (): LogbookClass[] => {
+        // MOTO 8H (Nuevo)
+        if (type === 'moto-manual-8h') {
+            return [
+                { number: 1, content: [
+                    "Presentación del circuito y normas de seguridad.",
+                    "Artículos de seguridad obligatorios.",
+                    "Chequeo rutinario del moto: Llantas, Frenos, Niveles, Luces / direccionales y Sonido del motor",
+                    "Encendido seguro y apagado.",
+                    "Dominio del timón y punto de equilibrio.",
+                    "Aceleración ligera y uso del freno trasero y delantero.",
+                    "Práctica: control a baja velocidad en línea recta."
+                ]},
+                { number: 2, content: [
+                    "Explicación de la caja manual (1 abajo, 2-5 arriba).",
+                    "Salida suave con embrague (punto de fricción).",
+                    "Cambios de 1ra -> 2da -> 1ra dentro del circuito.",
+                    "Frenado progresivo.",
+                    "Práctica: a. Circuito básico (rectas + curvas amplias). b. Control del embrague a baja velocidad."
+                ]},
+                { number: 3, content: [
+                    "Zig Zag: Dominio del timón, Balance con velocidad baja y Uso del embrague en maniobras",
+                    "Circuito en 8: Trazado de curvas cerradas y Mirada anticipada",
+                    "Práctica combinada: Zigzag + curvas en 8 + frenado controlado"
+                ]},
+                { number: 4, content: [
+                    "Cómo cruzar una intersección dentro del circuito.",
+                    "Ceder el paso (simulación de tráfico entre estudiantes).",
+                    "Señalización con direccionales.",
+                    "Retrovisores: revisión constante.",
+                    "Práctica final: Recorrido completo del circuito y Zigzag + 8 + detención + arranque",
+                    "Evaluación final del curso básico."
+                ], isEvaluation: true}
+            ];
+        }
+
+        // MOTO 12H
         if (type === 'moto-manual-12h') {
             return [
                 { number: 1, content: [
@@ -148,7 +184,7 @@ function LogbookContent() {
             ];
         }
 
-        return []; // Fallback empty
+        return []; 
     };
 
     const classes = getClasses();
@@ -228,7 +264,7 @@ function LogbookContent() {
                                         <td className="border-r-2 border-black p-3 align-top leading-tight text-[8pt]">
                                             <ol className={cn("space-y-0.5 list-decimal pl-4", cls.isEvaluation && "font-bold")}>
                                                 {cls.content.map((item, idx) => (
-                                                    <li key={idx} dangerouslySetInnerHTML={{ __html: item.replace('Evaluación práctica:', '<strong>Evaluación práctica:</strong>') }} />
+                                                    <li key={idx} dangerouslySetInnerHTML={{ __html: item.replace('Evaluación práctica:', '<strong>Evaluación práctica:</strong>').replace('Evaluación final del curso básico.', '<strong>Evaluación final del curso básico.</strong>') }} />
                                                 ))}
                                             </ol>
                                         </td>

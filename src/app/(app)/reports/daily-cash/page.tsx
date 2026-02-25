@@ -141,20 +141,25 @@ export default function DailyCashReportPage() {
                 paymentType = contract.deluxeDetails?.paymentType || 'cash';
                 amount = 15.00;
             } else {
-                paymentType = (details as any)?.paymentType || 'cash';
-                amount = details?.downPayment || 0;
+                if (details) {
+                    concept = `Abono ${contract.type}`;
+                    paymentType = (details as any).paymentType || 'cash';
+                    amount = details.downPayment || 0;
+                }
             }
 
             if(amount > 0) {
                 const pKey = paymentType && paymentColumns.hasOwnProperty(paymentType) ? paymentType : 'cash';
                 paymentColumns[pKey] = amount;
 
+                let concept = contract.type === 'Curso Deluxe' ? 'Matrícula Deluxe' : `Abono ${contract.type}`;
+
                 fetchedTransactions.push({
                     id: contract.id,
                     contrato: String(contract.folioNumber || '').padStart(6, '0'),
                     cedula: studentId,
                     clientName: contract.clientName || '',
-                    service: contract.type === 'Curso Deluxe' ? 'Matrícula Deluxe' : `Abono ${contract.type}`,
+                    service: concept,
                     amount: amount,
                     paymentType: paymentType,
                     createdBy: contract.createdBy || 'Sistema',
@@ -168,7 +173,7 @@ export default function DailyCashReportPage() {
             const amount = payment.amount || 0;
             const pType = payment.paymentType || 'cash';
             
-            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bag: 0, general: 0, cheques: 0 };
+            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
             const pKey = pType && paymentColumns.hasOwnProperty(pType) ? pType : 'cash';
             paymentColumns[pKey] = amount;
 
@@ -190,7 +195,7 @@ export default function DailyCashReportPage() {
             const amount = payment.amount || 0;
             const pType = payment.paymentType || 'cash';
 
-            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, presidential: 0, general: 0, cheques: 0 };
+            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
             const pKey = pType && paymentColumns.hasOwnProperty(pType) ? pType : 'cash';
             paymentColumns[pKey] = amount;
 
@@ -212,13 +217,12 @@ export default function DailyCashReportPage() {
             const amount = payment.amount || 0;
             const pType = payment.paymentType || 'cash';
 
-            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, presidential: 0, general: 0, cheques: 0 };
+            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
             const pKey = pType && paymentColumns.hasOwnProperty(pType) ? pType : 'cash';
             paymentColumns[pKey] = amount;
 
             fetchedTransactions.push({
                 id: doc.id,
-                buttonLabel: "Venta de Libros",
                 contrato: String(payment.bookSaleFolio || '').padStart(6, '0'),
                 cedula: payment.studentIdNumber || '',
                 clientName: payment.clientName || '',
@@ -356,7 +360,7 @@ export default function DailyCashReportPage() {
           letterRendering: true,
           logging: false,
           backgroundColor: '#ffffff',
-          width: 945 // Reduced from 1135 to increase visual size by ~20% more
+          width: 820 // Reduced further to increase visual size by ~15% more
         },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
         pagebreak: { mode: 'avoid-all' }

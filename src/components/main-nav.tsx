@@ -33,7 +33,7 @@ const navLinks = [
         {
             href: '/logs',
             label: 'Bitácoras de Control',
-            roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+            roles: ['Administrador', 'Ventas Externas'],
         },
         {
             href: '/certificates',

@@ -13,6 +13,7 @@ import { Loader2, Search, ClipboardList, Printer, Car, Bike, FileCheck } from 'l
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 export default function LogsPage() {
   const db = useDb();
@@ -24,6 +25,22 @@ export default function LogsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [foundContracts, setFoundContracts] = useState<Contract[] | null>(null);
   const [searched, setSearched] = useState(false);
+
+  // RESTRICCIÓN DE SEGURIDAD PARA ROL VENTAS
+  if (role === 'Ventas') {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed rounded-2xl bg-slate-50">
+        <div className="bg-red-100 p-4 rounded-full mb-4">
+            <ClipboardList className="h-10 w-10 text-red-600" />
+        </div>
+        <h3 className="text-xl font-black text-red-900 uppercase tracking-tight">Acceso Restringido</h3>
+        <p className="text-slate-600 mt-2 max-w-sm font-medium">Lo sentimos, el personal de Ventas no tiene permisos para generar o visualizar bitácoras de control.</p>
+        <Button asChild className="mt-8 h-12 px-8 font-bold" variant="default">
+            <Link href="/dashboard">Volver al Panel Principal</Link>
+        </Button>
+      </div>
+    );
+  }
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();

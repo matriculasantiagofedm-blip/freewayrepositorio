@@ -100,7 +100,7 @@ export default function DashboardPage() {
     {
       title: 'Gestión de Trámites y Agenda',
       actions: [
-        { name: 'Bitácoras de Control', href: '/logs', bgColor: 'bg-sky-50', textColor: 'text-sky-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+        { name: 'Bitácoras de Control', href: '/logs', bgColor: 'bg-sky-50', textColor: 'text-sky-600', roles: ['Administrador', 'Ventas Externas'] },
         { name: 'Generar Certificado Manual', href: '/certificates?mode=manual', bgColor: 'bg-amber-50', textColor: 'text-amber-600', roles: ['Administrador'] },
         { name: 'Agenda Manual', href: '/manual-schedule', bgColor: 'bg-rose-50', textColor: 'text-rose-600', roles: ['Administrador'] },
       ]
@@ -194,7 +194,7 @@ export default function DashboardPage() {
                             <div className="bg-white p-3 rounded-2xl mb-2 group-hover:scale-110 transition-transform shadow-sm">
                                 <type.icon className={cn("h-6 w-6", type.color)} />
                             </div>
-                            <span className={cn("font-black text-[10px] uppercase tracking-wider", type.color)}>{type.name}</span>
+                            <span className={cn("font-black text-[10px] uppercase tracking-wider", type.name === 'Ampliaciones' ? 'text-amber-600' : type.color)}>{type.name}</span>
                             <div className="absolute top-2 right-2 opacity-10 group-hover:opacity-100 transition-opacity">
                                 <Plus className="h-4 w-4" />
                             </div>

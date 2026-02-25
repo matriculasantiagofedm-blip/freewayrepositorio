@@ -347,7 +347,8 @@ export default function DailyCashReportPage() {
 
     setIsDownloading(true);
     try {
-      // @ts-ignore - html2pdf might not have types
+      // Dynamic import to avoid SSR issues
+      // @ts-ignore
       const html2pdf = (await import('html2pdf.js')).default;
       
       const opt = {

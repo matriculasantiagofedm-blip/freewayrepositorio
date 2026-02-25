@@ -347,7 +347,6 @@ export default function DailyCashReportPage() {
 
     setIsDownloading(true);
     try {
-      // Importación dinámica para evitar problemas de SSR
       // @ts-ignore
       const html2pdf = (await import('html2pdf.js')).default;
       
@@ -366,7 +365,6 @@ export default function DailyCashReportPage() {
         pagebreak: { mode: 'avoid-all' }
       };
 
-      // Forzamos el ajuste a una sola página
       await html2pdf().from(element).set(opt).save();
       toast({ title: "PDF Generado", description: "El reporte se ha descargado correctamente." });
     } catch (err) {
@@ -469,7 +467,6 @@ export default function DailyCashReportPage() {
             </div>
         </div>
 
-        {/* ÁREA DE IMPRESIÓN OPTIMIZADA PARA TABLET */}
         <div className="bg-white p-4 border-2 border-dashed rounded-xl flex flex-col gap-4 shadow-sm">
             <div className="flex items-center gap-3 text-blue-800 bg-blue-50 p-3 rounded-lg border border-blue-100">
                 <AlertCircle className="h-5 w-5" />
@@ -511,14 +508,14 @@ export default function DailyCashReportPage() {
       </div>
 
       <div id="report-to-export" className="print-container bg-white p-2">
-        <div className="p-2 text-center font-bold text-lg border-b-2 border-black mb-4 uppercase flex flex-col">
+        <div className="p-1 text-center font-bold text-lg border-b-2 border-black mb-1 uppercase flex flex-col">
             <span className="text-black">FREEWAY ESCUELA DE MANEJO</span>
             <span className="text-sm text-black">CONTROL DE CAJA - {format(reportDate, "EEEE d 'DE' LLLL 'DE' yyyy", { locale: es })}</span>
         </div>
 
         {!isLoading && (
-            <div className="animate-in fade-in-50 duration-500">
-                <div className="overflow-x-auto border border-black rounded-sm mb-0">
+            <div className="animate-in fade-in-50 duration-500 space-y-1">
+                <div className="overflow-x-auto border border-black rounded-sm">
                     <Table className="min-w-full text-[9px] border-collapse">
                     <TableHeader>
                         <TableRow className="bg-muted/50 hover:bg-muted/50">
@@ -577,10 +574,10 @@ export default function DailyCashReportPage() {
                     </Table>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-0 pt-0">
-                    <div className="md:col-span-2 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <div className="md:col-span-2 space-y-1">
                         <h3 className="font-bold text-center text-[10px] uppercase tracking-wider bg-slate-100 border border-black p-1 text-black">Desglose de Efectivo Físico</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <Table className="text-[9px] border border-black">
                                 <TableHeader className="bg-slate-50"><TableRow><TableHead className="border-r border-black p-1 font-bold text-black h-6">Cant.</TableHead><TableHead className="border-r border-black p-1 font-bold text-black h-6 text-right">Billetes</TableHead><TableHead className="p-1 font-bold text-black h-6 text-right">Monto</TableHead></TableRow></TableHeader>
                                 <TableBody>
@@ -618,10 +615,10 @@ export default function DailyCashReportPage() {
                                 </TableBody>
                             </Table>
                         </div>
-                        <div className="text-right font-bold text-[11px] bg-slate-100 p-2 rounded border border-black uppercase text-black">TOTAL FÍSICO: {currencyFormatter.format(cashBreakdownTotals.total)}</div>
+                        <div className="text-right font-bold text-[11px] bg-slate-100 p-1 rounded border border-black uppercase text-black">TOTAL FÍSICO: {currencyFormatter.format(cashBreakdownTotals.total)}</div>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                         <Table className="text-[9px] border border-black">
                             <TableHeader className="bg-slate-100 border-b border-black"><TableRow><TableHead colSpan={2} className="text-center font-bold p-1 h-6 uppercase text-black">Consolidado Sistema</TableHead></TableRow></TableHeader>
                             <TableBody>
@@ -657,14 +654,14 @@ export default function DailyCashReportPage() {
                             </TableBody>
                         </Table>
 
-                        <div className="border border-black p-2 bg-slate-100 rounded-sm space-y-1">
-                            <div className="flex justify-between items-center text-[10px] font-bold text-black"><span>EFECTIVO NETO (SISTEMA - GASTOS):</span><span>{currencyFormatter.format(grandTotals.totalEfectivoMenosGastos)}</span></div>
-                            <div className="flex justify-between items-center text-[10px] font-bold"><span>DIFERENCIA / FALTANTE:</span><span className={cn(grandTotals.diferencia < 0 ? "text-red-600" : "text-green-600")}>{currencyFormatter.format(grandTotals.diferencia)}</span></div>
+                        <div className="border border-black p-1 bg-slate-100 rounded-sm space-y-0.5">
+                            <div className="flex justify-between items-center text-[10px] font-bold text-black"><span>EFECTIVO NETO:</span><span>{currencyFormatter.format(grandTotals.totalEfectivoMenosGastos)}</span></div>
+                            <div className="flex justify-between items-center text-[10px] font-bold"><span>DIFERENCIA:</span><span className={cn(grandTotals.diferencia < 0 ? "text-red-600" : "text-green-600")}>{currencyFormatter.format(grandTotals.diferencia)}</span></div>
                         </div>
                     </div>
                 </div>
                 
-                <div className="flex justify-around items-center pt-8 print:pt-12">
+                <div className="flex justify-around items-center pt-4 print:pt-6">
                     <div className="text-center w-48 border-t border-black pt-1"><p className="text-[8px] font-bold uppercase text-black">Recibido por</p></div>
                     <div className="text-center w-48 border-t border-black pt-1"><p className="text-[8px] font-bold uppercase text-black">Entregado por</p></div>
                 </div>

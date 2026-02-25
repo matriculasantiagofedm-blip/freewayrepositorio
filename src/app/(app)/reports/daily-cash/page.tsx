@@ -360,7 +360,7 @@ export default function DailyCashReportPage() {
           useCORS: true, 
           letterRendering: true,
           logging: false,
-          width: 1750 // Aumentamos el ancho virtual para reducir el contenido un 40% al ajustar a página
+          width: 1750 
         },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' },
         pagebreak: { mode: 'avoid-all' }
@@ -368,7 +368,7 @@ export default function DailyCashReportPage() {
 
       // Forzamos el ajuste a una sola página
       await html2pdf().from(element).set(opt).save();
-      toast({ title: "PDF Generado", description: "El reporte se ha descargado con reducción del 40%." });
+      toast({ title: "PDF Generado", description: "El reporte se ha descargado correctamente." });
     } catch (err) {
       console.error("Error generating PDF:", err);
       toast({ variant: "destructive", title: "Error", description: "No se pudo generar el PDF." });
@@ -503,7 +503,7 @@ export default function DailyCashReportPage() {
                         )}
                     >
                         {isDownloading ? <Loader2 className="animate-spin mr-4 h-8 w-8" /> : <Download className="mr-4 h-8 w-8" />}
-                        DESCARGAR EN PDF (Reducido -40%)
+                        DESCARGAR EN PDF
                     </Button>
                 </div>
             )}

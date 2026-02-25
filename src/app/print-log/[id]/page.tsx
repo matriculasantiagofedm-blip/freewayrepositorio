@@ -217,6 +217,40 @@ function LogbookContent() {
             ];
         }
 
+        // MOTO 10H
+        if (type === 'moto-manual-10h') {
+            return [
+                { number: 1, content: [
+                    "Presentación del circuito y normas de seguridad.",
+                    "Chequeo rutinario inicial.",
+                    "Dominio del timón y punto de equilibrio.",
+                    "Uso del freno trasero y delantero.",
+                    "Práctica: control a baja velocidad."
+                ]},
+                { number: 2, content: [
+                    "Caja manual y embrague (punto de fricción).",
+                    "Cambios 1ra -> 2da y reducciones.",
+                    "Frenado progresivo controlado.",
+                    "Práctica: Circuito básico (rectas + curvas)."
+                ]},
+                { number: 3, content: [
+                    "Maniobras: Zig Zag y Circuito en 8.",
+                    "Mirada anticipada y balance del cuerpo.",
+                    "Uso del embrague en maniobras cerradas."
+                ]},
+                { number: 4, content: [
+                    "Intersecciones y ceder el paso.",
+                    "Señalización con direccionales.",
+                    "Uso correcto de retrovisores.",
+                    "Circulación continua en circuito simulado."
+                ]},
+                { number: 5, content: [
+                    "Repaso general de maniobras.",
+                    "Evaluación práctica: Circuito completo, zigzag y 8.",
+                ], isEvaluation: true}
+            ];
+        }
+
         // MOTO 12H
         if (type === 'moto-manual-12h') {
             return [
@@ -298,7 +332,7 @@ function LogbookContent() {
 
     const classes = getClasses();
     const isAuto = !type.startsWith('moto-');
-    const needsEvaluationSection = isAuto && (type.endsWith('8h') || type.endsWith('10h'));
+    const needsEvaluationSection = (isAuto && (type.endsWith('8h') || type.endsWith('10h'))) || (type === 'moto-manual-8h' || type === 'moto-manual-10h');
 
     return (
         <div className="bg-white min-h-screen">
@@ -328,7 +362,7 @@ function LogbookContent() {
                                 <Printer className="mr-2 h-6 w-6" /> Imprimir
                             </Button>
                             <Button onClick={handleDownloadPdf} disabled={isDownloading} className="h-16 text-lg font-black uppercase bg-blue-600 hover:bg-blue-700 shadow-md border-2 border-blue-400">
-                                {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-6 w-6" />} Descargar PDF
+                                {isDownloading ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Download className="mr-2 h-6 w-6" />} Descargar PDF
                             </Button>
                         </div>
                     )}
@@ -388,7 +422,7 @@ function LogbookContent() {
                         </tbody>
                     </table>
 
-                    {/* EVALUATION SECTION (AUTO ONLY) */}
+                    {/* EVALUATION SECTION */}
                     {needsEvaluationSection && (
                         <div className="mt-6 space-y-4">
                             <div className="space-y-2">

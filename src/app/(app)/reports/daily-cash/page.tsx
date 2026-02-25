@@ -346,7 +346,7 @@ export default function DailyCashReportPage() {
       const html2pdf = (await import('html2pdf.js')).default;
       
       const opt = {
-        margin: [0.3, 0.4, 0.3, 0.3], // Margen izquierdo aumentado para mejorar encuadre (0.4)
+        margin: [0.3, 0.4, 0.3, 0.3],
         filename: `Reporte_Caja_Freeway_${format(reportDate, 'dd-MM-yyyy')}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
@@ -354,10 +354,10 @@ export default function DailyCashReportPage() {
           useCORS: true, 
           letterRendering: true,
           logging: false,
-          backgroundColor: '#ffffff', // Fondo blanco limpio
-          width: 1125 // Reducido para que el contenido se vea un 30-40% más grande
+          backgroundColor: '#ffffff',
+          width: 1250 // Slightly larger width to achieve ~10% visual reduction on portrait page
         },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
         pagebreak: { mode: 'avoid-all' }
       };
 
@@ -387,7 +387,7 @@ export default function DailyCashReportPage() {
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
             @page { 
-                size: letter landscape; 
+                size: letter portrait; 
                 margin: 5mm; 
             }
             header, footer, nav, aside, .print-hide { 
@@ -402,7 +402,7 @@ export default function DailyCashReportPage() {
                 overflow: visible !important;
             }
             .print-container {
-                width: 10.5in !important;
+                width: 100% !important;
                 max-width: none !important;
                 margin: 0 auto !important;
                 padding: 0 !important;

@@ -70,10 +70,14 @@ export default function LogsPage() {
   };
 
   const handlePrintLog = (contract: Contract, logType: string) => {
+    // Intentar obtener instructor de diferentes posibles ubicaciones en el contrato
+    const instructor = contract.autoMotoDetails?.instructor || contract.deluxeDetails?.instructor || '';
+    
     const params = new URLSearchParams({
         name: contract.clientName || '',
         id: contract.autoMotoDetails?.studentIdNumber || contract.deluxeDetails?.studentIdNumber || contract.ampliacionesDetails?.studentIdNumber || '',
-        type: logType
+        type: logType,
+        instructor: instructor
     });
     window.open(`/print-log/${contract.id}?${params.toString()}`, '_blank');
   };
@@ -145,6 +149,7 @@ export default function LogsPage() {
                     const hoursLabel = recommended.split('-').pop()?.replace('h', '') + 'h';
                     const planName = (contract.autoMotoDetails as any)?.coursePlan || 'Plan no especificado';
                     const transmission = (contract.autoMotoDetails as any)?.vehicleTransmission || 'Manual';
+                    const instructor = contract.autoMotoDetails?.instructor || contract.deluxeDetails?.instructor || 'Pendiente';
 
                     return (
                         <Card key={contract.id} className="border-l-4 border-l-primary overflow-hidden">
@@ -157,7 +162,8 @@ export default function LogsPage() {
                                         </Badge>
                                     </div>
                                     <p className="text-xl font-black text-slate-900 uppercase tracking-tight">{contract.clientName}</p>
-                                    <p className="text-sm text-muted-foreground font-medium uppercase">{contract.type} — <span className="text-primary font-black">{planName}</span></p>
+                                    <p className="text-sm text-muted-foreground font-medium uppercase mb-1">{contract.type} — <span className="text-primary font-black">{planName}</span></p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase">Instructor: <span className="text-slate-600">{instructor}</span></p>
                                 </div>
                                 <div className="flex flex-col gap-3 items-end w-full md:w-auto">
                                     <Button 

@@ -23,6 +23,7 @@ function LogbookContent() {
     const name = searchParams.get('name') || '';
     const idNumber = searchParams.get('id') || '';
     const type = searchParams.get('type') || 'manual-12h';
+    const instructor = searchParams.get('instructor') || '';
 
     useEffect(() => {
         const timer = setTimeout(() => setIsReady(true), 3000);
@@ -386,14 +387,20 @@ function LogbookContent() {
                     </div>
 
                     {/* STUDENT INFO */}
-                    <div className="flex items-end gap-4 mb-6">
-                        <div className="flex flex-1 items-end gap-2">
-                            <span className="font-black text-[9pt]">NOMBRE:</span>
-                            <div className="flex-1 border-b-2 border-black px-2 py-0.5 font-bold uppercase text-base h-7 leading-none">{name}</div>
+                    <div className="space-y-4 mb-6">
+                        <div className="flex items-end gap-4">
+                            <div className="flex flex-1 items-end gap-2">
+                                <span className="font-black text-[9pt]">NOMBRE:</span>
+                                <div className="flex-1 border-b-2 border-black px-2 py-0.5 font-bold uppercase text-base h-7 leading-none">{name}</div>
+                            </div>
+                            <div className="flex items-end gap-2 w-1/3">
+                                <span className="font-black text-[9pt]">CÉDULA/PASS:</span>
+                                <div className="flex-1 border-b-2 border-black px-2 py-0.5 font-bold text-base h-7 leading-none">{idNumber}</div>
+                            </div>
                         </div>
-                        <div className="flex items-end gap-2 w-1/3">
-                            <span className="font-black text-[9pt]">CÉDULA/PASS:</span>
-                            <div className="flex-1 border-b-2 border-black px-2 py-0.5 font-bold text-base h-7 leading-none">{idNumber}</div>
+                        <div className="flex items-end gap-2">
+                            <span className="font-black text-[9pt]">INSTRUCTOR ASIGNADO:</span>
+                            <div className="flex-1 border-b-2 border-black px-2 py-0.5 font-bold uppercase text-base h-7 leading-none">{instructor}</div>
                         </div>
                     </div>
 
@@ -433,7 +440,7 @@ function LogbookContent() {
                             <div className="pt-2">
                                 <div className="flex items-end gap-2">
                                     <span className="font-black text-[9pt] uppercase">NOMBRE DEL INSTRUCTOR:</span>
-                                    <div className="flex-1 border-b border-black border-dashed"></div>
+                                    <div className="flex-1 border-b border-black border-dashed px-2 font-bold uppercase">{instructor}</div>
                                 </div>
                             </div>
                         </div>

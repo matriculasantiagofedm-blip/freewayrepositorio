@@ -5,8 +5,7 @@ import { useEffect, Suspense, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Printer, Loader2, Download, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 function LogbookContent() {
     const { id } = useParams();
@@ -37,7 +36,7 @@ function LogbookContent() {
             
             const opt = {
                 margin: [0.3, 0.7, 0.3, 0.3], // Top, Left (40% extra), Bottom, Right
-                filename: `Bitacora_${idNumber || 'S-N'}_${name.replace(/\s+/g, '_')}.pdf`,
+                filename: `Bitacora_${type === 'manual-10h' ? '10h' : '12h'}_${idNumber || 'S-N'}_${name.replace(/\s+/g, '_')}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { 
                     scale: 2, 
@@ -107,7 +106,9 @@ function LogbookContent() {
                         </div>
                         <div className="text-center flex-1">
                             <h1 className="font-black text-2xl uppercase tracking-widest">BITÁCORA-MANUAL</h1>
-                            <p className="text-[10pt] font-bold uppercase">CLASES PRÁCTICAS-12 HORAS</p>
+                            <p className="text-[10pt] font-bold uppercase">
+                                {type === 'manual-10h' ? 'CLASES PRÁCTICAS-10 HORAS' : 'CLASES PRÁCTICAS-12 HORAS'}
+                            </p>
                         </div>
                         <div className="w-24"></div>
                     </div>
@@ -128,7 +129,7 @@ function LogbookContent() {
                     <table className="w-full border-2 border-black border-collapse">
                         <tbody>
                             {/* CLASE 1 */}
-                            <tr className="border-b-2 border-black h-40">
+                            <tr className="border-b-2 border-black h-36">
                                 <td className="border-r-2 border-black p-2 w-24 text-center font-black text-sm align-middle">Clase N°1</td>
                                 <td className="border-r-2 border-black p-3 align-top leading-tight text-[9pt]">
                                     <ol className="space-y-0.5 list-decimal pl-4">
@@ -140,7 +141,7 @@ function LogbookContent() {
                                         <li>Arranque en primera marcha y frenado suave.</li>
                                     </ol>
                                 </td>
-                                <td className="p-2 align-top text-xs font-bold text-slate-400 uppercase">Observación</td>
+                                <td className="p-2 align-top text-xs font-bold text-slate-400 uppercase w-48">Observación</td>
                             </tr>
                             <tr className="border-b-2 border-black h-8 bg-slate-50">
                                 <td colSpan={2} className="px-3 text-[8pt] font-black uppercase">Asistencia del Estudiante: _________________________</td>
@@ -148,7 +149,7 @@ function LogbookContent() {
                             </tr>
 
                             {/* CLASE 2 */}
-                            <tr className="border-b-2 border-black h-32">
+                            <tr className="border-b-2 border-black h-28">
                                 <td className="border-r-2 border-black p-2 text-center font-black text-sm align-middle">Clase N°2</td>
                                 <td className="border-r-2 border-black p-3 align-top leading-tight text-[9pt]">
                                     <ol className="space-y-0.5 list-decimal pl-4">
@@ -165,7 +166,7 @@ function LogbookContent() {
                             </tr>
 
                             {/* CLASE 3 */}
-                            <tr className="border-b-2 border-black h-32">
+                            <tr className="border-b-2 border-black h-28">
                                 <td className="border-r-2 border-black p-2 text-center font-black text-sm align-middle">Clase N°3</td>
                                 <td className="border-r-2 border-black p-3 align-top leading-tight text-[9pt]">
                                     <ol className="space-y-0.5 list-decimal pl-4">
@@ -182,7 +183,7 @@ function LogbookContent() {
                             </tr>
 
                             {/* CLASE 4 */}
-                            <tr className="border-b-2 border-black h-32">
+                            <tr className="border-b-2 border-black h-28">
                                 <td className="border-r-2 border-black p-2 text-center font-black text-sm align-middle">Clase N°4</td>
                                 <td className="border-r-2 border-black p-3 align-top leading-tight text-[9pt]">
                                     <ol className="space-y-0.5 list-decimal pl-4">
@@ -198,46 +199,80 @@ function LogbookContent() {
                                 <td className="px-3 text-[8pt] font-black uppercase">Instructor: _________________________</td>
                             </tr>
 
-                            {/* CLASE 5 */}
-                            <tr className="border-b-2 border-black h-32">
-                                <td className="border-r-2 border-black p-2 text-center font-black text-sm align-middle">Clase N°5</td>
-                                <td className="border-r-2 border-black p-3 align-top leading-tight text-[9pt]">
-                                    <ol className="space-y-0.5 list-decimal pl-4">
-                                        <li>Perfeccionamiento de cambios (1ª a 3ª).</li>
-                                        <li>Cruces más complejos (en "T" y 4 vías).</li>
-                                        <li>Maniobras avanzadas de estacionamiento.</li>
-                                    </ol>
-                                </td>
-                                <td className="p-2 align-top text-xs font-bold text-slate-400 uppercase">Observación</td>
-                            </tr>
-                            <tr className="border-b-2 border-black h-8 bg-slate-50">
+                            {/* CLASE 5 (DIFERENTE ENTRE 10H Y 12H) */}
+                            {type === 'manual-10h' ? (
+                                <tr className="border-b-2 border-black h-32">
+                                    <td className="border-r-2 border-black p-2 text-center font-black text-sm align-middle">Clase N°5</td>
+                                    <td className="border-r-2 border-black p-3 align-top leading-tight text-[9pt]">
+                                        <ol className="space-y-0.5 list-decimal pl-4 font-bold">
+                                            <li>Recorrido completo en el circuito.</li>
+                                            <li>Evaluación práctica: arranque en pendiente, estacionamientos e intersecciones.</li>
+                                        </ol>
+                                    </td>
+                                    <td className="p-2 align-top text-xs font-bold text-slate-400 uppercase">Observación</td>
+                                </tr>
+                            ) : (
+                                <tr className="border-b-2 border-black h-28">
+                                    <td className="border-r-2 border-black p-2 text-center font-black text-sm align-middle">Clase N°5</td>
+                                    <td className="border-r-2 border-black p-3 align-top leading-tight text-[9pt]">
+                                        <ol className="space-y-0.5 list-decimal pl-4">
+                                            <li>Perfeccionamiento de cambios (1ª a 3ª).</li>
+                                            <li>Cruces más complejos (en "T" y 4 vías).</li>
+                                            <li>Maniobras avanzadas de estacionamiento.</li>
+                                        </ol>
+                                    </td>
+                                    <td className="p-2 align-top text-xs font-bold text-slate-400 uppercase">Observación</td>
+                                </tr>
+                            )}
+                            
+                            {/* FOOTER CLASE 5 O CONTINUACIÓN 12H */}
+                            <tr className={cn("h-8 bg-slate-50", type === 'manual-12h' && "border-b-2 border-black")}>
                                 <td colSpan={2} className="px-3 text-[8pt] font-black uppercase">Asistencia del Estudiante: _________________________</td>
                                 <td className="px-3 text-[8pt] font-black uppercase">Instructor: _________________________</td>
                             </tr>
 
-                            {/* CLASE 6 */}
-                            <tr className="border-b-2 border-black h-32">
-                                <td className="border-r-2 border-black p-2 text-center font-black text-sm align-middle">Clase N°6</td>
-                                <td className="border-r-2 border-black p-3 align-top leading-tight text-[9pt]">
-                                    <ol className="space-y-0.5 list-decimal pl-4">
-                                        <li>
-                                            <strong>Repaso integral + evaluación avanzada:</strong>
-                                            <ul className="list-disc pl-4 mt-1">
-                                                <li>Arranque en pendiente, dominio de marchas, estacionamientos y cruces.</li>
-                                            </ul>
-                                        </li>
-                                    </ol>
-                                </td>
-                                <td className="p-2 align-top text-xs font-bold text-slate-400 uppercase">Observación</td>
-                            </tr>
-                            <tr className="h-8 bg-slate-50">
-                                <td colSpan={2} className="px-3 text-[8pt] font-black uppercase">Asistencia del Estudiante: _________________________</td>
-                                <td className="px-3 text-[8pt] font-black uppercase">Instructor: _________________________</td>
-                            </tr>
+                            {/* CLASE 6 (SOLO 12H) */}
+                            {type === 'manual-12h' && (
+                                <>
+                                    <tr className="border-b-2 border-black h-28">
+                                        <td className="border-r-2 border-black p-2 text-center font-black text-sm align-middle">Clase N°6</td>
+                                        <td className="border-r-2 border-black p-3 align-top leading-tight text-[9pt]">
+                                            <ol className="space-y-0.5 list-decimal pl-4">
+                                                <li>
+                                                    <strong>Repaso integral + evaluación avanzada:</strong>
+                                                    <ul className="list-disc pl-4 mt-1">
+                                                        <li>Arranque en pendiente, dominio de marchas, estacionamientos y cruces.</li>
+                                                    </ul>
+                                                </li>
+                                            </ol>
+                                        </td>
+                                        <td className="p-2 align-top text-xs font-bold text-slate-400 uppercase">Observación</td>
+                                    </tr>
+                                    <tr className="h-8 bg-slate-50">
+                                        <td colSpan={2} className="px-3 text-[8pt] font-black uppercase">Asistencia del Estudiante: _________________________</td>
+                                        <td className="px-3 text-[8pt] font-black uppercase">Instructor: _________________________</td>
+                                    </tr>
+                                </>
+                            )}
                         </tbody>
                     </table>
 
-                    <div className="mt-8 text-[7pt] text-slate-400 font-bold uppercase text-center tracking-widest">
+                    {/* SECCIÓN PUNTOS A MEJORAR (SOLO 10H) */}
+                    {type === 'manual-10h' && (
+                        <div className="mt-6 space-y-4">
+                            <div className="flex justify-between font-black text-[9pt] uppercase">
+                                <span>ASISTENCIA DEL ESTUDIANTE:</span>
+                                <span>INSTRUCTOR:</span>
+                            </div>
+                            <div className="space-y-2">
+                                <h3 className="font-black text-[10pt] uppercase">PUNTOS A MEJORAR SOBRE EL ESTUDIANTE EN SU MANEJO:</h3>
+                                <div className="border-b-2 border-black border-dashed h-8"></div>
+                                <div className="border-b-2 border-black border-dashed h-8"></div>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="mt-12 text-[7pt] text-slate-400 font-bold uppercase text-center tracking-widest">
                         FREEWAY ESCUELA DE MANEJO • DOCUMENTO DE CONTROL INTERNO • PROHIBIDA SU REPRODUCCIÓN SIN AUTORIZACIÓN
                     </div>
                 </div>

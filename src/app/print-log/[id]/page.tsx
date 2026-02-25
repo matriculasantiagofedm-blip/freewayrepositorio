@@ -1,11 +1,15 @@
 'use client';
 
-import React, { useEffect, Suspense, useState } from 'react';
+import React, { useEffect, Suspense, useState, useMemo } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Printer, Loader2, Download, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+import { cn, toDate } from '@/lib/utils';
+import { useDb } from '@/components/firebase-provider';
+import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
+import { doc } from 'firebase/firestore';
+import type { Contract } from '@/lib/types';
 
 interface LogbookClass {
     number: number;
@@ -17,13 +21,22 @@ function LogbookContent() {
     const { id } = useParams();
     const searchParams = useSearchParams();
     const { toast } = useToast();
+    const db = useDb();
     const [isReady, setIsReady] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
 
+    const contractId = Array.isArray(id) ? id[0] : id;
     const name = searchParams.get('name') || '';
     const idNumber = searchParams.get('id') || '';
     const type = searchParams.get('type') || 'manual-12h';
-    const instructor = searchParams.get('instructor') || '';
+    const generalInstructor = searchParams.get('instructor') || '';
+
+    const contractRef = useMemoDoc(() => {
+        if (!db || !contractId) return null;
+        return doc(db, 'contracts', contractId);
+    }, [db, contractId]);
+
+    const { data: contract, isLoading: isContractLoading } = useDoc<Contract>(contractRef);
 
     useEffect(() => {
         const timer = setTimeout(() => setIsReady(true), 3000);
@@ -77,6 +90,23 @@ function LogbookContent() {
         }
         const hours = type.split('-').pop()?.replace('h', '') + ' HORAS';
         return `BITÁCORA-MANUAL - CLASES PRÁCTICAS-${hours}`;
+    };
+
+    const getSessionInstructor = (index: number) => {
+        if (!contract) return generalInstructor;
+        const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
+        let schedules: any[] = [];
+        
+        if (type.startsWith('moto-')) {
+            schedules = contract.autoMotoDetails?.motoPracticalClassSchedules || [];
+        } else if (contract.type === 'Curso Deluxe') {
+            schedules = contract.deluxeDetails?.classSchedules || [];
+        } else {
+            schedules = contract.autoMotoDetails?.practicalClassSchedules || [];
+        }
+        
+        const sessionInstructor = schedules[index]?.instructor;
+        return sessionInstructor || details?.instructor || generalInstructor;
     };
 
     const getClasses = (): LogbookClass[] => {
@@ -400,32 +430,37 @@ function LogbookContent() {
                         </div>
                         <div className="flex items-end gap-2">
                             <span className="font-black text-[9pt]">INSTRUCTOR ASIGNADO:</span>
-                            <div className="flex-1 border-b-2 border-black px-2 py-0.5 font-bold uppercase text-base h-7 leading-none">{instructor}</div>
+                            <div className="flex-1 border-b-2 border-black px-2 py-0.5 font-bold uppercase text-base h-7 leading-none">{generalInstructor}</div>
                         </div>
                     </div>
 
                     {/* TABLE */}
                     <table className="w-full border-2 border-black border-collapse">
                         <tbody>
-                            {classes.map((cls) => (
-                                <React.Fragment key={cls.number}>
-                                    <tr className="border-b-2 border-black h-28">
-                                        <td className="border-r-2 border-black p-2 w-20 text-center font-black text-xs align-middle">Clase N°{cls.number}</td>
-                                        <td className="border-r-2 border-black p-3 align-top leading-tight text-[8pt]">
-                                            <ol className={cn("space-y-0.5 list-decimal pl-4", cls.isEvaluation && "font-bold")}>
-                                                {cls.content.map((item, idx) => (
-                                                    <li key={idx} dangerouslySetInnerHTML={{ __html: item.replace('Evaluación práctica:', '<strong>Evaluación práctica:</strong>').replace('Evaluación final del curso básico.', '<strong>Evaluación final del curso básico.</strong>').replace('Repaso integral + evaluación práctica avanzada:', '<strong>Repaso integral + evaluación práctica avanzada:</strong>') }} />
-                                                ))}
-                                            </ol>
-                                        </td>
-                                        <td className="p-2 align-top text-[7pt] font-bold text-slate-400 uppercase w-44 text-right">Observación</td>
-                                    </tr>
-                                    <tr className="border-b-2 last:border-b-0 border-black h-7 bg-slate-50">
-                                        <td colSpan={2} className="px-3 text-[7.5pt] font-black uppercase">Asistencia del Estudiante: _________________________</td>
-                                        <td className="px-3 text-[7.5pt] font-black uppercase">Instructor: _________________________</td>
-                                    </tr>
-                                </React.Fragment>
-                            ))}
+                            {classes.map((cls, idx) => {
+                                const sessionInstructor = getSessionInstructor(idx);
+                                return (
+                                    <React.Fragment key={cls.number}>
+                                        <tr className="border-b-2 border-black h-28">
+                                            <td className="border-r-2 border-black p-2 w-20 text-center font-black text-xs align-middle">Clase N°{cls.number}</td>
+                                            <td className="border-r-2 border-black p-3 align-top leading-tight text-[8pt]">
+                                                <ol className={cn("space-y-0.5 list-decimal pl-4", cls.isEvaluation && "font-bold")}>
+                                                    {cls.content.map((item, cIdx) => (
+                                                        <li key={cIdx} dangerouslySetInnerHTML={{ __html: item.replace('Evaluación práctica:', '<strong>Evaluación práctica:</strong>').replace('Evaluación final del curso básico.', '<strong>Evaluación final del curso básico.</strong>').replace('Repaso integral + evaluación práctica avanzada:', '<strong>Repaso integral + evaluación práctica avanzada:</strong>') }} />
+                                                    ))}
+                                                </ol>
+                                            </td>
+                                            <td className="p-2 align-top text-[7pt] font-bold text-slate-400 uppercase w-44 text-right">Observación</td>
+                                        </tr>
+                                        <tr className="border-b-2 last:border-b-0 border-black h-7 bg-slate-50">
+                                            <td colSpan={2} className="px-3 text-[7.5pt] font-black uppercase">Asistencia del Estudiante: _________________________</td>
+                                            <td className="px-3 text-[7.5pt] font-black uppercase">
+                                                Instructor: <span className="underline ml-1">{sessionInstructor || '_________________________'}</span>
+                                            </td>
+                                        </tr>
+                                    </React.Fragment>
+                                );
+                            })}
                         </tbody>
                     </table>
 
@@ -440,7 +475,7 @@ function LogbookContent() {
                             <div className="pt-2">
                                 <div className="flex items-end gap-2">
                                     <span className="font-black text-[9pt] uppercase">NOMBRE DEL INSTRUCTOR:</span>
-                                    <div className="flex-1 border-b border-black border-dashed px-2 font-bold uppercase">{instructor}</div>
+                                    <div className="flex-1 border-b border-black border-dashed px-2 font-bold uppercase">{generalInstructor}</div>
                                 </div>
                             </div>
                         </div>

@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Search, ClipboardList, Printer, Car, Bike } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 export default function LogsPage() {
   const db = useDb();

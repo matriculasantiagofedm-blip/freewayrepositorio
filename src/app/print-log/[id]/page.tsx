@@ -1,7 +1,7 @@
 'use client';
 
+import React, { useEffect, Suspense, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { useEffect, Suspense, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Printer, Loader2, Download, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -183,7 +183,7 @@ function LogbookContent() {
                                 <Printer className="mr-2 h-6 w-6" /> Imprimir
                             </Button>
                             <Button onClick={handleDownloadPdf} disabled={isDownloading} className="h-16 text-lg font-black uppercase bg-blue-600 hover:bg-blue-700 shadow-md border-2 border-blue-400">
-                                {isDownloading ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Download className="mr-2 h-6 w-6" />} Descargar PDF
+                                {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-6 w-6" />} Descargar PDF
                             </Button>
                         </div>
                     )}

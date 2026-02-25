@@ -508,14 +508,14 @@ export default function DailyCashReportPage() {
       </div>
 
       <div id="report-to-export" className="print-container bg-white p-2">
-        <div className="p-1 text-center font-bold text-lg border-b-2 border-black mb-1 uppercase flex flex-col">
+        <div className="p-1 text-center font-bold text-lg border-b-2 border-black mb-0 uppercase flex flex-col">
             <span className="text-black">FREEWAY ESCUELA DE MANEJO</span>
             <span className="text-sm text-black">CONTROL DE CAJA - {format(reportDate, "EEEE d 'DE' LLLL 'DE' yyyy", { locale: es })}</span>
         </div>
 
         {!isLoading && (
-            <div className="animate-in fade-in-50 duration-500 space-y-1">
-                <div className="overflow-x-auto border border-black rounded-sm">
+            <div className="animate-in fade-in-50 duration-500">
+                <div className="overflow-x-auto border border-black border-b-0 rounded-t-sm">
                     <Table className="min-w-full text-[9px] border-collapse">
                     <TableHeader>
                         <TableRow className="bg-muted/50 hover:bg-muted/50">
@@ -574,11 +574,11 @@ export default function DailyCashReportPage() {
                     </Table>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                    <div className="md:col-span-2 space-y-1">
-                        <h3 className="font-bold text-center text-[10px] uppercase tracking-wider bg-slate-100 border border-black p-1 text-black">Desglose de Efectivo Físico</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <Table className="text-[9px] border border-black">
+                <div className="grid grid-cols-1 md:grid-cols-3 border border-black rounded-b-sm">
+                    <div className="md:col-span-2 border-r border-black">
+                        <h3 className="font-bold text-center text-[10px] uppercase tracking-wider bg-slate-100 border-b border-black p-1 text-black">Desglose de Efectivo Físico</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2">
+                            <Table className="text-[9px] border-r border-black border-t-0 border-l-0 border-b-0">
                                 <TableHeader className="bg-slate-50"><TableRow><TableHead className="border-r border-black p-1 font-bold text-black h-6">Cant.</TableHead><TableHead className="border-r border-black p-1 font-bold text-black h-6 text-right">Billetes</TableHead><TableHead className="p-1 font-bold text-black h-6 text-right">Monto</TableHead></TableRow></TableHeader>
                                 <TableBody>
                                     {Object.keys(billQuantities).map(bill => (
@@ -593,10 +593,10 @@ export default function DailyCashReportPage() {
                                             <TableCell className="p-1 text-right font-semibold text-black">{currencyFormatter.format(parseFloat(bill) * (billQuantities[bill] || 0))}</TableCell>
                                         </TableRow>
                                     ))}
-                                    <TableRow className="font-bold bg-slate-50"><TableCell colSpan={2} className="text-right p-1 border-r border-black uppercase text-black">SUB-TOTAL</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(cashBreakdownTotals.billTotal)}</TableCell></TableRow>
+                                    <TableRow className="font-bold bg-slate-50 border-t border-black"><TableCell colSpan={2} className="text-right p-1 border-r border-black uppercase text-black">SUB-TOTAL</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(cashBreakdownTotals.billTotal)}</TableCell></TableRow>
                                 </TableBody>
                             </Table>
-                            <Table className="text-[9px] border border-black">
+                            <Table className="text-[9px] border-none">
                                 <TableHeader className="bg-slate-50"><TableRow><TableHead className="border-r border-black p-1 font-bold text-black h-6">Cant.</TableHead><TableHead className="border-r border-black p-1 font-bold text-black h-6 text-right">Monedas</TableHead><TableHead className="p-1 font-bold text-black h-6 text-right">Monto</TableHead></TableRow></TableHeader>
                                 <TableBody>
                                     {Object.keys(coinQuantities).map(coin => (
@@ -611,15 +611,15 @@ export default function DailyCashReportPage() {
                                             <TableCell className="p-1 text-right font-semibold text-black">{currencyFormatter.format(parseFloat(coin) * (coinQuantities[coin] || 0))}</TableCell>
                                         </TableRow>
                                     ))}
-                                    <TableRow className="font-bold bg-slate-50"><TableCell colSpan={2} className="text-right p-1 border-r border-black uppercase text-black">SUB-TOTAL</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(cashBreakdownTotals.coinTotal)}</TableCell></TableRow>
+                                    <TableRow className="font-bold bg-slate-50 border-t border-black"><TableCell colSpan={2} className="text-right p-1 border-r border-black uppercase text-black">SUB-TOTAL</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(cashBreakdownTotals.coinTotal)}</TableCell></TableRow>
                                 </TableBody>
                             </Table>
                         </div>
-                        <div className="text-right font-bold text-[11px] bg-slate-100 p-1 rounded border border-black uppercase text-black">TOTAL FÍSICO: {currencyFormatter.format(cashBreakdownTotals.total)}</div>
+                        <div className="text-right font-bold text-[11px] bg-slate-100 p-1 border-t border-black uppercase text-black">TOTAL FÍSICO: {currencyFormatter.format(cashBreakdownTotals.total)}</div>
                     </div>
 
-                    <div className="space-y-2">
-                        <Table className="text-[9px] border border-black">
+                    <div className="flex flex-col">
+                        <Table className="text-[9px] border-none border-b border-black">
                             <TableHeader className="bg-slate-100 border-b border-black"><TableRow><TableHead colSpan={2} className="text-center font-bold p-1 h-6 uppercase text-black">Consolidado Sistema</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 <TableRow className="hover:bg-transparent h-6"><TableCell className="border-r border-black p-1 text-black">TOTAL CRÉDITO</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(transactionTotals.credit)}</TableCell></TableRow>
@@ -627,11 +627,11 @@ export default function DailyCashReportPage() {
                                 <TableRow className="hover:bg-transparent h-6"><TableCell className="border-r border-black p-1 text-black">BAC</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(transactionTotals.bac)}</TableCell></TableRow>
                                 <TableRow className="hover:bg-transparent h-6"><TableCell className="border-r border-black p-1 text-black">GENERAL</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(transactionTotals.general)}</TableCell></TableRow>
                                 <TableRow className="hover:bg-transparent h-6"><TableCell className="border-r border-black p-1 text-black">CHEQUES</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(transactionTotals.cheques)}</TableCell></TableRow>
-                                <TableRow className="hover:bg-transparent bg-slate-50 h-6"><TableCell className="border-r border-black p-1 font-bold text-black">TOTAL EFECTIVO (SISTEMA)</TableCell><TableCell className="p-1 text-right font-black text-black">{currencyFormatter.format(transactionTotals.cash)}</TableCell></TableRow>
+                                <TableRow className="hover:bg-transparent bg-slate-50 h-6 border-t border-black"><TableCell className="border-r border-black p-1 font-bold text-black">TOTAL EFECTIVO (SISTEMA)</TableCell><TableCell className="p-1 text-right font-black text-black">{currencyFormatter.format(transactionTotals.cash)}</TableCell></TableRow>
                             </TableBody>
                         </Table>
 
-                        <Table className="text-[9px] border border-black">
+                        <Table className="text-[9px] border-none border-t border-black">
                             <TableHeader className="bg-slate-100 border-b border-black"><TableRow><TableHead colSpan={2} className="text-center font-bold p-1 h-6 uppercase text-black">Gastos Menores</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {expenses.map((expense, index) => (
@@ -654,7 +654,7 @@ export default function DailyCashReportPage() {
                             </TableBody>
                         </Table>
 
-                        <div className="border border-black p-1 bg-slate-100 rounded-sm space-y-0.5">
+                        <div className="border-t border-black p-1 bg-slate-100 space-y-0.5 mt-auto">
                             <div className="flex justify-between items-center text-[10px] font-bold text-black"><span>EFECTIVO NETO:</span><span>{currencyFormatter.format(grandTotals.totalEfectivoMenosGastos)}</span></div>
                             <div className="flex justify-between items-center text-[10px] font-bold"><span>DIFERENCIA:</span><span className={cn(grandTotals.diferencia < 0 ? "text-red-600" : "text-green-600")}>{currencyFormatter.format(grandTotals.diferencia)}</span></div>
                         </div>

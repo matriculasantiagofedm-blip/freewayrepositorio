@@ -34,7 +34,6 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import type { Contract, Payment, Transaction, BookSalePayment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 const initialBillQuantities: { [key: string]: number } = {
   '100.00': 0,
@@ -59,7 +58,7 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
   currency: 'USD',
 });
 
-const paymentTypes = [
+const paymentMethodOptions = [
     { value: 'cash', label: 'Efectivo' },
     { value: 'debit', label: 'T.Débito' },
     { value: 'credit', label: 'T.Crédito' },
@@ -73,7 +72,6 @@ export default function DailyCashReportPage() {
   const db = useDb();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
-  const isMobile = useIsMobile();
   
   const [reportDate, setReportDate] = useState<Date>(new Date());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -90,7 +88,7 @@ export default function DailyCashReportPage() {
   useEffect(() => {
     if (!db || isUserLoading || isRoleLoading || !user || !role) {
         return;
-    };
+    }
 
     const fetchDailyData = async () => {
       setIsLoading(true);
@@ -179,7 +177,7 @@ export default function DailyCashReportPage() {
 
             fetchedTransactions.push({
                 id: doc.id,
-                contrato: String(payment.cancellation_folio || payment.cancellationFolio || '').padStart(6, '0'),
+                contrato: String(payment.cancellationFolio || '').padStart(6, '0'),
                 cedula: payment.studentIdNumber || '',
                 clientName: payment.clientName || '',
                 service: 'Abono/Cancelación de Saldo',
@@ -239,7 +237,7 @@ export default function DailyCashReportPage() {
 
         const timer = setTimeout(() => {
             setIsReady(true);
-        }, 4000);
+        }, 3000);
         return () => clearTimeout(timer);
 
       } catch (err: any) {
@@ -284,39 +282,11 @@ export default function DailyCashReportPage() {
   
   const grandTotals = useMemo(() => {
     const totalFacturado = Object.values(transactionTotals).reduce((sum, val) => sum + val, 0);
-    const totalEfectivoMenosGastos = transactionTotals.cash - totalExpenses;
+    const totalEfectivoMenosGastos = (transactionTotals.cash || 0) - totalExpenses;
     const diferencia = cashBreakdownTotals.total - totalEfectivoMenosGastos;
     return { totalFacturado, totalEfectivoMenosGastos, diferencia };
   }, [transactionTotals, totalExpenses, cashBreakdownTotals.total]);
   
-
-  const handleTransactionChange = (index: number, field: keyof Transaction, value: any) => {
-    const transactionId = filteredTransactions[index].id;
-    const originalIndex = transactions.findIndex(t => t.id === transactionId);
-    if (originalIndex === -1) return;
-
-    const updated = [...transactions];
-    let newTransaction = { ...updated[originalIndex] };
-    
-    if (field === 'amount') {
-        newTransaction.amount = parseFloat(value) || 0;
-    } else if (field === 'paymentType') {
-        newTransaction.paymentType = value;
-    }
-
-    newTransaction.cash = 0; newTransaction.debit = 0; newTransaction.credit = 0;
-    newTransaction.bac = 0; newTransaction.general = 0; newTransaction.cheques = 0;
-    
-    const pType = newTransaction.paymentType;
-    if (pType && newTransaction.hasOwnProperty(pType)) {
-        (newTransaction as any)[pType] = newTransaction.amount;
-    } else {
-        newTransaction.cash = newTransaction.amount;
-    }
-
-    updated[originalIndex] = newTransaction;
-    setTransactions(updated);
-  };
 
   const handleCashChange = (type: 'bill' | 'coin', value: string, quantity: string) => {
     const qty = parseInt(quantity) || 0;
@@ -337,10 +307,6 @@ export default function DailyCashReportPage() {
     setExpenses(updated);
   };
 
-  const handlePrint = () => {
-    window.print();
-  }
-
   const handleDownloadPdf = async () => {
     const element = document.getElementById('report-to-export');
     if (!element) return;
@@ -351,7 +317,7 @@ export default function DailyCashReportPage() {
       const html2pdf = (await import('html2pdf.js')).default;
       
       const opt = {
-        margin: [0.3, 0.8, 0.3, 0.3], // Superior, Izquierdo (aumentado), Inferior, Derecho
+        margin: [0.3, 0.7, 0.3, 0.3], // Top, Left (0.7 is +40% from 0.5), Bottom, Right
         filename: `Reporte_Caja_Freeway_${format(reportDate, 'dd-MM-yyyy')}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
@@ -360,10 +326,9 @@ export default function DailyCashReportPage() {
           letterRendering: true,
           logging: false,
           backgroundColor: '#ffffff',
-          width: 820 // Ancho reducido para escalar el contenido (~35% más grande)
+          width: 750 // Reduced width for larger scale appearance
         },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-        pagebreak: { mode: 'avoid-all' }
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
       };
 
       await html2pdf().from(element).set(opt).save();
@@ -375,17 +340,6 @@ export default function DailyCashReportPage() {
       setIsDownloading(false);
     }
   };
-
-  if (isUserLoading || isRoleLoading) {
-    return (
-        <div className="flex items-center justify-center py-24">
-            <div className="flex flex-col items-center gap-4">
-                <Loader2 className="h-12 w-12 animate-spin text-primary opacity-20" />
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Cargando datos del reporte...</p>
-            </div>
-        </div>
-    );
-  }
 
   const isAdmin = role === 'Administrador';
 
@@ -443,7 +397,7 @@ export default function DailyCashReportPage() {
         <div className="flex justify-between items-center">
             <div className='flex flex-col'>
                 <h1 className="text-2xl font-bold font-headline text-slate-900">Reporte de Caja Diario</h1>
-                <p className="text-xs text-muted-foreground">Ingresos registrados en el sistema.</p>
+                <p className="text-xs text-muted-foreground">Ingresos registrados en el systema.</p>
             </div>
             <div className="flex items-center gap-2">
                 <Select value={sellerFilter} onValueChange={setSellerFilter}>
@@ -459,218 +413,195 @@ export default function DailyCashReportPage() {
                 <Popover>
                     <PopoverTrigger asChild>
                     <Button variant={"outline"} className={cn("w-[220px] h-9 justify-start text-left font-normal text-xs", !reportDate && "text-muted-foreground")}>
-                        <CalendarIcon className="mr-2 h-3 w-3" />
+                        <CalendarIcon className="mr-2 h-4 w-4" />
                         {reportDate ? format(reportDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
                     </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="end">
-                    <Calendar mode="single" selected={reportDate} onSelect={(date) => setReportDate(date || new Date())} initialFocus />
+                    <Calendar
+                        mode="single"
+                        selected={reportDate}
+                        onSelect={(date) => setReportDate(date || new Date())}
+                        initialFocus
+                    />
                     </PopoverContent>
                 </Popover>
+                <Button onClick={handleDownloadPdf} disabled={isDownloading || !isReady} size="sm" className="bg-blue-600 hover:bg-blue-700 h-9 px-4">
+                    {isDownloading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Download className="h-4 w-4 mr-2" />}
+                    Descargar PDF
+                </Button>
             </div>
-        </div>
-
-        <div className="bg-white p-4 border-2 border-dashed rounded-xl flex flex-col gap-4 shadow-sm">
-            <div className="flex items-center gap-3 text-blue-800 bg-blue-50 p-3 rounded-lg border border-blue-100">
-                <AlertCircle className="h-5 w-5" />
-                <p className="text-xs font-bold uppercase">Optimización para Tablet: Si la impresión directa falla, usa el botón de Descargar PDF.</p>
-            </div>
-            
-            {!isReady ? (
-                <div className="bg-slate-100 text-slate-500 p-8 rounded-xl text-center font-black uppercase text-lg flex items-center justify-center gap-3 border-2 border-slate-200 animate-pulse">
-                    <     <Loader2 className="animate-spin h-6 w-6" />
-                    Preparando Contenido (4s)...
-                </div>
-            ) : (
-                <div className="flex flex-col sm:flex-row gap-4">
-                    <Button 
-                        onClick={handlePrint} 
-                        className={cn(
-                            "flex-1 font-black shadow-xl uppercase tracking-widest border-4",
-                            isMobile ? "h-24 text-2xl bg-blue-600 hover:bg-blue-700 border-blue-400" : "h-14 text-lg"
-                        )}
-                    >
-                        <Printer className="mr-4 h-8 w-8" />
-                        IMPRIMIR EN CANON
-                    </Button>
-                    <Button 
-                        onClick={handleDownloadPdf} 
-                        disabled={isDownloading}
-                        variant="outline"
-                        className={cn(
-                            "flex-1 font-black shadow-lg uppercase tracking-widest border-4 border-green-600 text-green-700 hover:bg-green-50",
-                            isMobile ? "h-24 text-2xl" : "h-14 text-lg"
-                        )}
-                    >
-                        {isDownloading ? <Loader2 className="animate-spin mr-4 h-8 w-8" /> : <Download className="mr-4 h-8 w-8" />}
-                        DESCARGAR EN PDF
-                    </Button>
-                </div>
-            )}
         </div>
       </div>
 
-      <div id="report-to-export" className="print-container bg-white p-0 mx-auto w-full max-w-[1100px] border border-black overflow-hidden rounded-sm flex flex-col">
-        <div className="p-2 text-center font-bold text-lg border-b border-black mb-0 uppercase flex flex-col bg-white">
-            <span className="text-black">FREEWAY ESCUELA DE MANEJO</span>
-            <span className="text-sm text-black">CONTROL DE CAJA - {format(reportDate, "EEEE d 'DE' LLLL 'DE' yyyy", { locale: es })}</span>
+      <div id="report-to-export" className="print-container bg-white mx-auto p-0" style={{ maxWidth: '820px' }}>
+        <div className="text-center mb-4 border-b-2 border-black pb-2">
+          <h2 className="text-xl font-black uppercase">FREEWAY ESCUELA DE MANEJO</h2>
+          <p className="text-[10px] font-bold">REPORTE DE CAJA DIARIO - {format(reportDate, "EEEE d 'de' MMMM 'de' yyyy", { locale: es }).toUpperCase()}</p>
         </div>
 
-        {!isLoading && (
-            <div className="animate-in fade-in-50 duration-500">
-                <div className="overflow-x-auto">
-                    <Table className="min-w-full text-[9px] border-collapse border-none">
-                    <TableHeader>
-                        <TableRow className="bg-muted/50 hover:bg-muted/50 border-b border-black">
-                        <TableHead className="border-r border-black p-1 text-center font-bold text-black w-6">#</TableHead>
-                        <TableHead className="border-r border-black p-1 text-center font-bold text-black w-14">Folio</TableHead>
-                        <TableHead className="border-r border-black p-1 text-center font-bold text-black w-20">Cédula</TableHead>
-                        <TableHead className="border-r border-black p-1 text-center font-bold text-black min-w-[120px]">Cliente</TableHead>
-                        <TableHead className="border-r border-black p-1 text-center font-bold text-black min-w-[120px]">Servicio</TableHead>
-                        <TableHead className="border-r border-black p-1 text-center font-bold text-black w-16">Vendedor</TableHead>
-                        <TableHead className="border-r border-black p-1 text-center font-bold text-black">Monto</TableHead>
-                        <TableHead className="border-r border-black p-1 text-center font-bold text-black">Efectivo</TableHead>
-                        <TableHead className="border-r border-black p-1 text-center font-bold text-black">T.Débito</TableHead>
-                        <TableHead className="border-r border-black p-1 text-center font-bold text-black">T.Crédito</TableHead>
-                        <TableHead className="border-r border-black p-1 text-center font-bold text-black">BAC</TableHead>
-                        <TableHead className="border-r border-black p-1 text-center font-bold text-black">General</TableHead>
-                        <TableHead className="p-1 text-center font-bold text-black">Cheques</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {filteredTransactions.map((transaction, index) => (
-                        <TableRow key={transaction.id} className="hover:bg-transparent h-7 border-b border-black last:border-b-0">
-                            <TableCell className="border-r border-black p-1 text-center text-black">{index + 1}</TableCell>
-                            <TableCell className="border-r border-black p-1 font-bold text-black">{transaction.contrato}</TableCell>
-                            <TableCell className="border-r border-black p-1 text-black">{transaction.cedula}</TableCell>
-                            <TableCell className="border-r border-black p-1 truncate max-w-[150px] uppercase font-medium text-black">{transaction.clientName}</TableCell>
-                            <TableCell className="border-r border-black p-1 uppercase text-[8px] text-black">{transaction.service}</TableCell>
-                            <TableCell className="border-r border-black p-1 text-center text-black truncate max-w-[80px]">{transaction.createdBy}</TableCell>
-                            <TableCell className="border-r border-black p-0 text-right pr-1 text-black">
-                                <span className={cn(isDownloading ? "block" : "print-show-val")}>{transaction.amount.toFixed(2)}</span>
-                                {!isDownloading && (
-                                    <Input 
-                                        type="number" 
-                                        value={transaction.amount} 
-                                        onChange={e => handleTransactionChange(index, 'amount', e.target.value)} 
-                                        disabled={!isAdmin}
-                                        className="w-full h-7 border-none rounded-none text-[10px] p-1 text-right focus-visible:ring-0 disabled:opacity-100 print:hidden" 
-                                    />
-                                )}
-                            </TableCell>
-                            <TableCell className="border-r border-black p-1 text-right text-black">{transaction.cash > 0 ? transaction.cash.toFixed(2) : '-'}</TableCell>
-                            <TableCell className="border-r border-black p-1 text-right text-black">{transaction.debit > 0 ? transaction.debit.toFixed(2) : '-'}</TableCell>
-                            <TableCell className="border-r border-black p-1 text-right text-black">{transaction.credit > 0 ? transaction.credit.toFixed(2) : '-'}</TableCell>
-                            <TableCell className="border-r border-black p-1 text-right text-black">{transaction.bac > 0 ? transaction.bac.toFixed(2) : '-'}</TableCell>
-                            <TableCell className="border-r border-black p-1 text-right text-black">{transaction.general > 0 ? transaction.general.toFixed(2) : '-'}</TableCell>
-                            <TableCell className="p-1 text-right text-black">{transaction.cheques > 0 ? transaction.cheques.toFixed(2) : '-'}</TableCell>
-                        </TableRow>
-                        ))}
-                        <TableRow className="font-bold bg-slate-100 hover:bg-slate-100 border-t border-black h-8">
-                            <TableCell colSpan={7} className="text-right p-1 pr-4 border-r border-black uppercase text-black">TOTALES POR CATEGORÍA:</TableCell>
-                            <TableCell className="border-r border-black p-1 text-right text-black">{transactionTotals.cash.toFixed(2)}</TableCell>
-                            <TableCell className="border-r border-black p-1 text-right text-black">{transactionTotals.debit.toFixed(2)}</TableCell>
-                            <TableCell className="border-r border-black p-1 text-right text-black">{transactionTotals.credit.toFixed(2)}</TableCell>
-                            <TableCell className="border-r border-black p-1 text-right text-black">{transactionTotals.bac.toFixed(2)}</TableCell>
-                            <TableCell className="border-r border-black p-1 text-right text-black">{transactionTotals.general.toFixed(2)}</TableCell>
-                            <TableCell className="p-1 text-right text-black">{transactionTotals.cheques.toFixed(2)}</TableCell>
-                        </TableRow>
-                    </TableBody>
-                    </Table>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 border-t border-black">
-                    <div className="md:col-span-2 border-r border-black">
-                        <h3 className="font-bold text-center text-[10px] uppercase tracking-wider bg-slate-100 border-b border-black p-1 text-black">Desglose de Efectivo Físico</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2">
-                            <Table className="text-[9px] border-r border-black border-t-0 border-l-0 border-b-0">
-                                <TableHeader className="bg-slate-50"><TableRow><TableHead className="border-r border-black p-1 font-bold text-black h-6">Cant.</TableHead><TableHead className="border-r border-black p-1 font-bold text-black h-6 text-right">Billetes</TableHead><TableHead className="p-1 font-bold text-black h-6 text-right">Monto</TableHead></TableRow></TableHeader>
-                                <TableBody>
-                                    {Object.keys(billQuantities).map(bill => (
-                                        <TableRow key={bill} className="h-6 hover:bg-transparent border-b border-black last:border-b-0">
-                                            <TableCell className="border-r border-black p-0 text-black text-center">
-                                                <span className={cn(isDownloading ? "block" : "print-show-val")}>{billQuantities[bill] || '0'}</span>
-                                                {!isDownloading && (
-                                                    <Input type="number" value={billQuantities[bill] || ''} onChange={e => handleCashChange('bill', bill, e.target.value)} className="w-full h-6 border-none rounded-none text-[10px] p-1 text-center focus:ring-0 print:hidden" />
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="border-r border-black p-1 text-right text-black">{currencyFormatter.format(parseFloat(bill))}</TableCell>
-                                            <TableCell className="p-1 text-right font-semibold text-black">{currencyFormatter.format(parseFloat(bill) * (billQuantities[bill] || 0))}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                    <TableRow className="font-bold bg-slate-50 border-t border-black"><TableCell colSpan={2} className="text-right p-1 border-r border-black uppercase text-black">SUB-TOTAL</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(cashBreakdownTotals.billTotal)}</TableCell></TableRow>
-                                </TableBody>
-                            </Table>
-                            <Table className="text-[9px] border-none">
-                                <TableHeader className="bg-slate-50"><TableRow><TableHead className="border-r border-black p-1 font-bold text-black h-6">Cant.</TableHead><TableHead className="border-r border-black p-1 font-bold text-black h-6 text-right">Monedas</TableHead><TableHead className="p-1 font-bold text-black h-6 text-right">Monto</TableHead></TableRow></TableHeader>
-                                <TableBody>
-                                    {Object.keys(coinQuantities).map(coin => (
-                                        <TableRow key={coin} className="h-6 hover:bg-transparent border-b border-black last:border-b-0">
-                                            <TableCell className="border-r border-black p-0 text-black text-center">
-                                                <span className={cn(isDownloading ? "block" : "print-show-val")}>{coinQuantities[coin] || '0'}</span>
-                                                {!isDownloading && (
-                                                    <Input type="number" value={coinQuantities[coin] || ''} onChange={e => handleCashChange('coin', coin, e.target.value)} className="w-full h-6 border-none rounded-none text-[10px] p-1 text-center focus:ring-0 print:hidden" />
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="border-r border-black p-1 text-right text-black">{currencyFormatter.format(parseFloat(coin))}</TableCell>
-                                            <TableCell className="p-1 text-right font-semibold text-black">{currencyFormatter.format(parseFloat(coin) * (coinQuantities[coin] || 0))}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                    <TableRow className="font-bold bg-slate-50 border-t border-black"><TableCell colSpan={2} className="text-right p-1 border-r border-black uppercase text-black">SUB-TOTAL</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(cashBreakdownTotals.coinTotal)}</TableCell></TableRow>
-                                </TableBody>
-                            </Table>
+        {isLoading ? (
+          <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin opacity-20" /></div>
+        ) : (
+          <div className="space-y-4">
+            <Table className="border-collapse border border-black">
+              <TableHeader>
+                <TableRow className="bg-slate-100 font-bold border-b-2 border-black">
+                  <TableHead className="text-black p-1 h-auto text-[10px]">Contrato</TableHead>
+                  <TableHead className="text-black p-1 h-auto text-[10px]">Cédula</TableHead>
+                  <TableHead className="text-black p-1 h-auto text-[10px]">Cliente</TableHead>
+                  <TableHead className="text-black p-1 h-auto text-[10px]">Vendedor</TableHead>
+                  <TableHead className="text-black p-1 h-auto text-[10px] text-right">Efectivo</TableHead>
+                  <TableHead className="text-black p-1 h-auto text-[10px] text-right">T.Débito</TableHead>
+                  <TableHead className="text-black p-1 h-auto text-[10px] text-right">T.Crédito</TableHead>
+                  <TableHead className="text-black p-1 h-auto text-[10px] text-right">BAC</TableHead>
+                  <TableHead className="text-black p-1 h-auto text-[10px] text-right">Gral</TableHead>
+                  <TableHead className="text-black p-1 h-auto text-[10px] text-right">Cheque</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredTransactions.map((t) => (
+                  <TableRow key={t.id} className="h-auto border-black">
+                    <TableCell className="p-1 text-[9px] font-bold">{t.contrato}</TableCell>
+                    <TableCell className="p-1 text-[9px] whitespace-nowrap">{t.cedula}</TableCell>
+                    <TableCell className="p-1 text-[9px] uppercase font-medium max-w-[120px] truncate">{t.clientName}</TableCell>
+                    <TableCell className="p-1 text-[9px] uppercase">{t.createdBy}</TableCell>
+                    <TableCell className="p-1 text-[9px] text-right">{t.cash > 0 ? t.cash.toFixed(2) : '-'}</TableCell>
+                    <TableCell className="p-1 text-[9px] text-right">{t.debit > 0 ? t.debit.toFixed(2) : '-'}</TableCell>
+                    <TableCell className="p-1 text-[9px] text-right">{t.credit > 0 ? t.credit.toFixed(2) : '-'}</TableCell>
+                    <TableCell className="p-1 text-[9px] text-right">{t.bac > 0 ? t.bac.toFixed(2) : '-'}</TableCell>
+                    <TableCell className="p-1 text-[9px] text-right">{t.general > 0 ? t.general.toFixed(2) : '-'}</TableCell>
+                    <TableCell className="p-1 text-[9px] text-right">{t.cheques > 0 ? t.cheques.toFixed(2) : '-'}</TableCell>
+                  </TableRow>
+                ))}
+                <TableRow className="bg-slate-50 font-bold border-t-2 border-black h-auto">
+                  <TableCell colSpan={4} className="p-1 text-[10px] text-right uppercase">Totales por Método</TableCell>
+                  <TableCell className="p-1 text-[10px] text-right">{transactionTotals.cash.toFixed(2)}</TableCell>
+                  <TableCell className="p-1 text-[10px] text-right">{transactionTotals.debit.toFixed(2)}</TableCell>
+                  <TableCell className="p-1 text-[10px] text-right">{transactionTotals.credit.toFixed(2)}</TableCell>
+                  <TableCell className="p-1 text-[10px] text-right">{transactionTotals.bac.toFixed(2)}</TableCell>
+                  <TableCell className="p-1 text-[10px] text-right">{transactionTotals.general.toFixed(2)}</TableCell>
+                  <TableCell className="p-1 text-[10px] text-right">{transactionTotals.cheques.toFixed(2)}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="border border-black p-2 rounded-sm space-y-2">
+                <h3 className="text-[10px] font-black uppercase bg-slate-100 p-1 border-b border-black">Desglose de Efectivo</h3>
+                <div className="grid grid-cols-2 gap-x-4">
+                  <div className="space-y-1">
+                    <p className="text-[9px] font-bold border-b mb-1">Billetes</p>
+                    {Object.keys(billQuantities).map(val => (
+                      <div key={val} className="flex justify-between items-center text-[9px]">
+                        <span>B/. {val}:</span>
+                        <div className="flex items-center gap-1">
+                            <Input 
+                                type="number" 
+                                className="h-5 w-10 text-[9px] p-1 border-black print-hide" 
+                                value={billQuantities[val] || ''}
+                                onChange={(e) => handleCashChange('bill', val, e.target.value)}
+                            />
+                            <span className="print-show-val">{billQuantities[val]}</span>
+                            <span className="w-12 text-right">{(parseFloat(val) * (billQuantities[val] || 0)).toFixed(2)}</span>
                         </div>
-                        <div className="text-right font-bold text-[11px] bg-slate-100 p-1 border-t border-black uppercase text-black">TOTAL FÍSICO: {currencyFormatter.format(cashBreakdownTotals.total)}</div>
-                    </div>
-
-                    <div className="flex flex-col">
-                        <Table className="text-[9px] border-none border-b border-black">
-                            <TableHeader className="bg-slate-100 border-b border-black"><TableRow><TableHead colSpan={2} className="text-center font-bold p-1 h-6 uppercase text-black">Consolidado Sistema</TableHead></TableRow></TableHeader>
-                            <TableBody>
-                                <TableRow className="hover:bg-transparent h-6"><TableCell className="border-r border-black p-1 text-black">TOTAL CRÉDITO</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(transactionTotals.credit)}</TableCell></TableRow>
-                                <TableRow className="hover:bg-transparent h-6"><TableCell className="border-r border-black p-1 text-black">TOTAL DÉBITO</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(transactionTotals.debit)}</TableCell></TableRow>
-                                <TableRow className="hover:bg-transparent h-6"><TableCell className="border-r border-black p-1 text-black">BAC</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(transactionTotals.bac)}</TableCell></TableRow>
-                                <TableRow className="hover:bg-transparent h-6"><TableCell className="border-r border-black p-1 text-black">GENERAL</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(transactionTotals.general)}</TableCell></TableRow>
-                                <TableRow className="hover:bg-transparent h-6"><TableCell className="border-r border-black p-1 text-black">CHEQUES</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(transactionTotals.cheques)}</TableCell></TableRow>
-                                <TableRow className="hover:bg-transparent bg-slate-50 h-6 border-t border-black"><TableCell className="border-r border-black p-1 font-bold text-black">TOTAL EFECTIVO (SISTEMA)</TableCell><TableCell className="p-1 text-right font-black text-black">{currencyFormatter.format(transactionTotals.cash)}</TableCell></TableRow>
-                            </TableBody>
-                        </Table>
-
-                        <Table className="text-[9px] border-none border-t-0">
-                            <TableHeader className="bg-slate-100 border-b border-black"><TableRow><TableHead colSpan={2} className="text-center font-bold p-1 h-6 uppercase text-black">Gastos Menores</TableHead></TableRow></TableHeader>
-                            <TableBody>
-                                {expenses.map((expense, index) => (
-                                    <TableRow key={index} className="hover:bg-transparent h-6 border-b border-black last:border-b-0">
-                                        <TableCell className="border-r border-black p-0 text-black">
-                                            <span className={cn(isDownloading ? "block px-1" : "print-show-val px-1")}>{expense.description || '-'}</span>
-                                            {!isDownloading && (
-                                                <Input placeholder="Descripción..." value={expense.description} onChange={e => handleExpenseChange(index, 'description', e.target.value)} className="w-full h-6 border-none rounded-none text-[10px] p-1 focus:ring-0 print:hidden" />
-                                            )}
-                                        </TableCell>
-                                        <TableCell className="p-0 w-20 text-black text-right pr-1">
-                                            <span className={cn(isDownloading ? "block" : "print-show-val")}>{expense.amount > 0 ? expense.amount.toFixed(2) : '0.00'}</span>
-                                            {!isDownloading && (
-                                                <Input type="number" value={expense.amount || ''} onChange={e => handleExpenseChange(index, 'amount', e.target.value)} className="w-full h-6 border-none rounded-none text-[10px] p-1 text-right focus:ring-0 print:hidden" />
-                                            )}
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                                <TableRow className="font-bold bg-slate-50 border-t border-black h-6"><TableCell className="border-r border-black p-1 uppercase text-black">TOTAL GASTOS</TableCell><TableCell className="p-1 text-right text-black">{currencyFormatter.format(totalExpenses)}</TableCell></TableRow>
-                            </TableBody>
-                        </Table>
-
-                        <div className="border-t border-black p-1 bg-slate-100 space-y-0.5 mt-auto">
-                            <div className="flex justify-between items-center text-[10px] font-bold text-black"><span>EFECTIVO NETO:</span><span>{currencyFormatter.format(grandTotals.totalEfectivoMenosGastos)}</span></div>
-                            <div className="flex justify-between items-center text-[10px] font-bold"><span>DIFERENCIA:</span><span className={cn(grandTotals.diferencia < 0 ? "text-red-600" : "text-green-600")}>{currencyFormatter.format(grandTotals.diferencia)}</span></div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="space-y-1 border-l border-black pl-4">
+                    <p className="text-[9px] font-bold border-b mb-1">Monedas</p>
+                    {Object.keys(coinQuantities).map(val => (
+                      <div key={val} className="flex justify-between items-center text-[9px]">
+                        <span>B/. {val}:</span>
+                        <div className="flex items-center gap-1">
+                            <Input 
+                                type="number" 
+                                className="h-5 w-10 text-[9px] p-1 border-black print-hide" 
+                                value={coinQuantities[val] || ''}
+                                onChange={(e) => handleCashChange('coin', val, e.target.value)}
+                            />
+                            <span className="print-show-val">{coinQuantities[val]}</span>
+                            <span className="w-12 text-right">{(parseFloat(val) * (coinQuantities[val] || 0)).toFixed(2)}</span>
                         </div>
-                    </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                
-                <div className="flex justify-around items-center pt-4 pb-4 border-t border-black bg-white">
-                    <div className="text-center w-48 border-t border-black pt-1"><p className="text-[8px] font-bold uppercase text-black">Recibido por</p></div>
-                    <div className="text-center w-48 border-t border-black pt-1"><p className="text-[8px] font-bold uppercase text-black">Entregado por</p></div>
+                <div className="flex justify-between items-center font-bold text-[10px] pt-1 border-t border-black">
+                  <span>TOTAL FÍSICO:</span>
+                  <span>B/. {cashBreakdownTotals.total.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="border border-black p-2 rounded-sm">
+                  <h3 className="text-[10px] font-black uppercase bg-slate-100 p-1 border-b border-black flex justify-between">
+                    <span>Gastos del Día</span>
+                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 print-hide" onClick={() => setExpenses([...expenses, { description: '', amount: 0 }])}>+</Button>
+                  </h3>
+                  <div className="space-y-1 pt-1">
+                    {expenses.map((exp, idx) => (
+                      <div key={idx} className="flex gap-1 items-center">
+                        <Input 
+                            placeholder="Descripción" 
+                            className="h-5 text-[9px] p-1 border-black flex-1 print-hide" 
+                            value={exp.description} 
+                            onChange={(e) => handleExpenseChange(idx, 'description', e.target.value)}
+                        />
+                        <span className="print-show-val flex-1">{exp.description}</span>
+                        <Input 
+                            type="number" 
+                            placeholder="0.00" 
+                            className="h-5 w-16 text-[9px] p-1 border-black print-hide" 
+                            value={exp.amount || ''} 
+                            onChange={(e) => handleExpenseChange(idx, 'amount', e.target.value)}
+                        />
+                        <span className="print-show-val w-16 text-right">{exp.amount.toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-between items-center font-bold text-[10px] pt-1 border-t border-black mt-1">
+                    <span>TOTAL GASTOS:</span>
+                    <span>B/. {totalExpenses.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                <div className="border-2 border-black p-3 bg-slate-50 space-y-1">
+                  <div className="flex justify-between text-[10px]">
+                    <span className="font-bold">Total Facturado:</span>
+                    <span className="font-black">{currencyFormatter.format(grandTotals.totalFacturado)}</span>
+                  </div>
+                  <div className="flex justify-between text-[10px]">
+                    <span>Efectivo en Sistema:</span>
+                    <span>{transactionTotals.cash.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-[10px] text-red-600">
+                    <span>(-) Gastos:</span>
+                    <span>- {totalExpenses.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-[11px] font-black border-t border-black pt-1">
+                    <span>Efectivo Esperado:</span>
+                    <span>B/. {grandTotals.totalEfectivoMenosGastos.toFixed(2)}</span>
+                  </div>
+                  <div className={cn("flex justify-between text-[12px] font-black p-1 rounded-sm mt-1", grandTotals.diferencia === 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")}>
+                    <span>DIFERENCIA:</span>
+                    <span>B/. {grandTotals.diferencia.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-12 pt-12 pb-4">
+                <div className="text-center">
+                    <div className="border-t border-black w-48 mx-auto"></div>
+                    <p className="text-[10px] font-bold uppercase">Firma del Cajero</p>
+                </div>
+                <div className="text-center">
+                    <div className="border-t border-black w-48 mx-auto"></div>
+                    <p className="text-[10px] font-bold uppercase">Firma del Administrador</p>
                 </div>
             </div>
+          </div>
         )}
       </div>
     </div>

@@ -7,6 +7,12 @@ import { Printer, Loader2, Download, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
+interface LogbookClass {
+    number: number;
+    content: string[];
+    isEvaluation?: boolean;
+}
+
 function LogbookContent() {
     const { id } = useParams();
     const searchParams = useSearchParams();
@@ -35,8 +41,8 @@ function LogbookContent() {
             const html2pdf = (await import('html2pdf.js')).default;
             
             const opt = {
-                margin: [0.3, 0.7, 0.3, 0.3], // Top, Left (0.7 es +40% desde 0.5), Bottom, Right
-                filename: `Bitacora_${type.replace('manual-', '')}_${idNumber || 'S-N'}_${name.replace(/\s+/g, '_')}.pdf`,
+                margin: [0.3, 0.7, 0.3, 0.3],
+                filename: `Bitacora_${type}_${idNumber || 'S-N'}_${name.replace(/\s+/g, '_')}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { 
                     scale: 2, 
@@ -60,10 +66,94 @@ function LogbookContent() {
     };
 
     const getLogTitle = () => {
-        if (type === 'manual-8h') return 'CLASES PRÁCTICAS-8 HORAS';
-        if (type === 'manual-10h') return 'CLASES PRÁCTICAS-10 HORAS';
-        return 'CLASES PRÁCTICAS-12 HORAS';
+        const isMoto = type.startsWith('moto-');
+        const vehicle = isMoto ? 'MOTO MANUAL' : 'MANUAL';
+        const hours = type.split('-').pop()?.replace('h', '') + ' HORAS';
+        return `BITÁCORA-${vehicle} - CLASES PRÁCTICAS-${hours}`;
     };
+
+    const getClasses = (): LogbookClass[] => {
+        if (type === 'moto-manual-12h') {
+            return [
+                { number: 1, content: [
+                    "Presentación del circuito y normas de seguridad.",
+                    "Artículos de seguridad obligatorios.",
+                    "Chequeo rutinario del moto: Llantas, Frenos, Niveles, Luces / direccionales y Sonido del motor.",
+                    "Encendido seguro y apagado.",
+                    "Dominio del timón y punto de equilibrio.",
+                    "Aceleración ligera y uso del freno trasero y delantero.",
+                    "Práctica: control a baja velocidad en línea recta."
+                ]},
+                { number: 2, content: [
+                    "Embrague, punto de fricción.",
+                    "Cambios ascendentes y descendentes.",
+                    "Coordinación aceleración-embrague.",
+                    "Práctica: Recorrido usando 1ra-2da-3ra según circuito."
+                ]},
+                { number: 3, content: [
+                    "Zigzag avanzado.",
+                    "Circuito en 8 reducido.",
+                    "Giro cerrado con control del cuerpo.",
+                    "Frenado de emergencia básico."
+                ]},
+                { number: 4, content: [
+                    "Explicación de cruce de intersecciones múltiples.",
+                    "Señalización anticipada.",
+                    "Jerarquía de paso (quién va primero).",
+                    "Simulación de tráfico con los otros estudiantes."
+                ]},
+                { number: 5, content: [
+                    "Circuito con: Zigzag, Circuito 8, Intersecciones, Curvas cerradas y Arranques en puntos amplios.",
+                    "Análisis de errores comunes y práctica reforzada."
+                ]},
+                { number: 6, content: [
+                    "Prueba completa del circuito.",
+                    "Control del moto a baja y media velocidad.",
+                    "Cambios fluidos.",
+                    "Señalización correcta.",
+                    "Dominio total de maniobras.",
+                    "Retroalimentación final."
+                ]}
+            ];
+        }
+
+        // AUTO 12H (Default)
+        if (type === 'manual-12h') {
+            return [
+                { number: 1, content: ["Presentación del vehículo manual.", "Chequeo rutinario.", "Ajuste de asiento y espejos.", "Encendido y funciones básicas.", "Explicación de pedales.", "Arranque en primera y frenado suave."] },
+                { number: 2, content: ["Dominio de la palanca de cambios (1ª a 3ª).", "Giros simples con embrague.", "Estacionamiento de frente."] },
+                { number: 3, content: ["Estacionamientos lateral y reversa.", "Uso de retrovisores.", "Cruces en intersecciones."] },
+                { number: 4, content: ["Dominio de paradas.", "Arranque en pendiente con embrague.", "Frenado de emergencia."] },
+                { number: 5, content: ["Perfeccionamiento de cambios.", "Cruces más complejos.", "Maniobras avanzadas de estacionamiento."] },
+                { number: 6, content: ["Repaso integral.", "Evaluación avanzada: pendiente, dominio de marchas y cruces."] }
+            ];
+        }
+
+        if (type === 'manual-10h') {
+            return [
+                { number: 1, content: ["Presentación del vehículo.", "Chequeo rutinario.", "Encendido y funciones básicas.", "Arranque en primera y frenado."] },
+                { number: 2, content: ["Cambios de 1ª a 3ª.", "Giros y uso de direccionales.", "Estacionamiento de frente."] },
+                { number: 3, content: ["Estacionamiento lateral y reversa.", "Uso de espejos.", "Cruces simples."] },
+                { number: 4, content: ["Dominio de paradas.", "Arranque en pendiente.", "Frenado de emergencia."] },
+                { number: 5, content: ["Recorrido completo en circuito.", "Evaluación práctica final."], isEvaluation: true }
+            ];
+        }
+
+        if (type === 'manual-8h') {
+            return [
+                { number: 1, content: ["Presentación del vehículo.", "Chequeo rutinario.", "Encendido.", "Arranque y frenado."] },
+                { number: 2, content: ["Palanca de cambios.", "Giros.", "Estacionamiento frontal."] },
+                { number: 3, content: ["Estacionamiento reversa/lateral.", "Cruces e intersecciones."] },
+                { number: 4, content: ["Repaso de estacionamientos.", "Cambios hasta 3ª.", "Evaluación práctica final."], isEvaluation: true }
+            ];
+        }
+
+        return []; // Fallback empty
+    };
+
+    const classes = getClasses();
+    const isMoto = type.startsWith('moto-');
+    const needsEvaluationSection = !isMoto && (type === 'manual-8h' || type === 'manual-10h');
 
     return (
         <div className="bg-white min-h-screen">
@@ -101,7 +191,7 @@ function LogbookContent() {
             </div>
 
             <div id="log-to-print" className="print-container-wrapper bg-white">
-                <div className="max-w-[8.5in] mx-auto p-10 font-sans text-[9.5pt] text-black">
+                <div className="max-w-[8.5in] mx-auto p-10 font-sans text-[9pt] text-black">
                     {/* HEADER */}
                     <div className="flex justify-between items-start mb-6">
                         <div className="flex items-center gap-2">
@@ -111,10 +201,7 @@ function LogbookContent() {
                             </div>
                         </div>
                         <div className="text-center flex-1">
-                            <h1 className="font-black text-2xl uppercase tracking-widest">BITÁCORA-MANUAL</h1>
-                            <p className="text-[10pt] font-bold uppercase">
-                                {getLogTitle()}
-                            </p>
+                            <h1 className="font-black text-xl uppercase tracking-widest">{getLogTitle()}</h1>
                         </div>
                         <div className="w-24"></div>
                     </div>
@@ -122,185 +209,58 @@ function LogbookContent() {
                     {/* STUDENT INFO */}
                     <div className="flex items-end gap-4 mb-6">
                         <div className="flex flex-1 items-end gap-2">
-                            <span className="font-black text-[10pt]">NOMBRE:</span>
-                            <div className="flex-1 border-b-2 border-black px-2 py-0.5 font-bold uppercase text-lg h-8 leading-none">{name}</div>
+                            <span className="font-black text-[9pt]">NOMBRE:</span>
+                            <div className="flex-1 border-b-2 border-black px-2 py-0.5 font-bold uppercase text-base h-7 leading-none">{name}</div>
                         </div>
                         <div className="flex items-end gap-2 w-1/3">
-                            <span className="font-black text-[10pt]">CÉDULA/PASS:</span>
-                            <div className="flex-1 border-b-2 border-black px-2 py-0.5 font-bold text-lg h-8 leading-none">{idNumber}</div>
+                            <span className="font-black text-[9pt]">CÉDULA/PASS:</span>
+                            <div className="flex-1 border-b-2 border-black px-2 py-0.5 font-bold text-base h-7 leading-none">{idNumber}</div>
                         </div>
                     </div>
 
                     {/* TABLE */}
                     <table className="w-full border-2 border-black border-collapse">
                         <tbody>
-                            {/* CLASE 1 */}
-                            <tr className="border-b-2 border-black h-32">
-                                <td className="border-r-2 border-black p-2 w-24 text-center font-black text-sm align-middle">Clase N°1</td>
-                                <td className="border-r-2 border-black p-3 align-top leading-tight text-[8.5pt]">
-                                    <ol className="space-y-0.5 list-decimal pl-4">
-                                        <li>Presentación del vehículo manual.</li>
-                                        <li>Chequeo rutinario (luces, líquidos, llantas, frenos).</li>
-                                        <li>Ajuste de asiento, espejos, cinturón de seguridad.</li>
-                                        <li>Encendido y funciones básicas del tablero.</li>
-                                        <li>Explicación de pedales (embrague, freno, acelerador).</li>
-                                        <li>Arranque en primera marcha y frenado suave.</li>
-                                    </ol>
-                                </td>
-                                <td className="p-2 align-top text-[8pt] font-bold text-slate-400 uppercase w-48 text-right">Observación</td>
-                            </tr>
-                            <tr className="border-b-2 border-black h-8 bg-slate-50">
-                                <td colSpan={2} className="px-3 text-[8pt] font-black uppercase">Asistencia del Estudiante: _________________________</td>
-                                <td className="px-3 text-[8pt] font-black uppercase">Instructor: _________________________</td>
-                            </tr>
-
-                            {/* CLASE 2 */}
-                            <tr className="border-b-2 border-black h-24">
-                                <td className="border-r-2 border-black p-2 text-center font-black text-sm align-middle">Clase N°2</td>
-                                <td className="border-r-2 border-black p-3 align-top leading-tight text-[8.5pt]">
-                                    <ol className="space-y-0.5 list-decimal pl-4">
-                                        <li>Dominio de la palanca de cambios (1ª a 3ª).</li>
-                                        <li>Giros simples con embrague y direccionales.</li>
-                                        <li>Primer contacto con estacionamiento de frente.</li>
-                                    </ol>
-                                </td>
-                                <td className="p-2 align-top text-[8pt] font-bold text-slate-400 uppercase text-right">Observación</td>
-                            </tr>
-                            <tr className="border-b-2 border-black h-8 bg-slate-50">
-                                <td colSpan={2} className="px-3 text-[8pt] font-black uppercase">Asistencia del Estudiante: _________________________</td>
-                                <td className="px-3 text-[8pt] font-black uppercase">Instructor: _________________________</td>
-                            </tr>
-
-                            {/* CLASE 3 */}
-                            <tr className="border-b-2 border-black h-24">
-                                <td className="border-r-2 border-black p-2 text-center font-black text-sm align-middle">Clase N°3</td>
-                                <td className="border-r-2 border-black p-3 align-top leading-tight text-[8.5pt]">
-                                    <ol className="space-y-0.5 list-decimal pl-4">
-                                        <li>Estacionamientos lateral y reversa.</li>
-                                        <li>Uso de retrovisores.</li>
-                                        <li>Cruces en intersecciones.</li>
-                                    </ol>
-                                </td>
-                                <td className="p-2 align-top text-[8pt] font-bold text-slate-400 uppercase text-right">Observación</td>
-                            </tr>
-                            <tr className="border-b-2 border-black h-8 bg-slate-50">
-                                <td colSpan={2} className="px-3 text-[8pt] font-black uppercase">Asistencia del Estudiante: _________________________</td>
-                                <td className="px-3 text-[8pt] font-black uppercase">Instructor: _________________________</td>
-                            </tr>
-
-                            {/* CLASE 4 - EVALUACIÓN EN 8H O CONTINUACIÓN EN OTROS */}
-                            {type === 'manual-8h' ? (
-                                <tr className="border-b-2 border-black h-28">
-                                    <td className="border-r-2 border-black p-2 text-center font-black text-sm align-middle">Clase N°4</td>
-                                    <td className="border-r-2 border-black p-3 align-top leading-tight text-[8.5pt]">
-                                        <ol className="space-y-0.5 list-decimal pl-4">
-                                            <li>Repaso de estacionamientos.</li>
-                                            <li>Cambios hasta 3ª marcha con fluidez.</li>
-                                            <li><strong>Evaluación práctica:</strong> arranque, estacionar, giros e intersecciones.</li>
-                                        </ol>
-                                    </td>
-                                    <td className="p-2 align-top text-[8pt] font-bold text-slate-400 uppercase text-right">Observación</td>
-                                </tr>
-                            ) : (
-                                <tr className="border-b-2 border-black h-24">
-                                    <td className="border-r-2 border-black p-2 text-center font-black text-sm align-middle">Clase N°4</td>
-                                    <td className="border-r-2 border-black p-3 align-top leading-tight text-[8.5pt]">
-                                        <ol className="space-y-0.5 list-decimal pl-4">
-                                            <li>Dominio de paradas.</li>
-                                            <li>Arranque en pendiente con embrague.</li>
-                                            <li>Frenado de emergencia.</li>
-                                        </ol>
-                                    </td>
-                                    <td className="p-2 align-top text-[8pt] font-bold text-slate-400 uppercase text-right">Observación</td>
-                                </tr>
-                            )}
-                            <tr className={cn("h-8 bg-slate-50", (type === 'manual-10h' || type === 'manual-12h') && "border-b-2 border-black")}>
-                                <td colSpan={2} className="px-3 text-[8pt] font-black uppercase">Asistencia del Estudiante: _________________________</td>
-                                <td className="px-3 text-[8pt] font-black uppercase">Instructor: _________________________</td>
-                            </tr>
-
-                            {/* CLASE 5 (SOLO 10H Y 12H) */}
-                            {(type === 'manual-10h' || type === 'manual-12h') && (
-                                <>
-                                    {type === 'manual-10h' ? (
-                                        <tr className="border-b-2 border-black h-32">
-                                            <td className="border-r-2 border-black p-2 text-center font-black text-sm align-middle">Clase N°5</td>
-                                            <td className="border-r-2 border-black p-3 align-top leading-tight text-[8.5pt]">
-                                                <ol className="space-y-0.5 list-decimal pl-4 font-bold">
-                                                    <li>Recorrido completo en el circuito.</li>
-                                                    <li>Evaluación práctica: arranque en pendiente, estacionamientos e intersecciones.</li>
-                                                </ol>
-                                            </td>
-                                            <td className="p-2 align-top text-[8pt] font-bold text-slate-400 uppercase text-right">Observación</td>
-                                        </tr>
-                                    ) : (
-                                        <tr className="border-b-2 border-black h-24">
-                                            <td className="border-r-2 border-black p-2 text-center font-black text-sm align-middle">Clase N°5</td>
-                                            <td className="border-r-2 border-black p-3 align-top leading-tight text-[8.5pt]">
-                                                <ol className="space-y-0.5 list-decimal pl-4">
-                                                    <li>Perfeccionamiento de cambios (1ª a 3ª).</li>
-                                                    <li>Cruces más complejos (en "T" y 4 vías).</li>
-                                                    <li>Maniobras avanzadas de estacionamiento.</li>
-                                                </ol>
-                                            </td>
-                                            <td className="p-2 align-top text-[8pt] font-bold text-slate-400 uppercase text-right">Observación</td>
-                                        </tr>
-                                    )}
-                                    <tr className={cn("h-8 bg-slate-50", type === 'manual-12h' && "border-b-2 border-black")}>
-                                        <td colSpan={2} className="px-3 text-[8pt] font-black uppercase">Asistencia del Estudiante: _________________________</td>
-                                        <td className="px-3 text-[8pt] font-black uppercase">Instructor: _________________________</td>
-                                    </tr>
-                                </>
-                            )}
-
-                            {/* CLASE 6 (SOLO 12H) */}
-                            {type === 'manual-12h' && (
-                                <>
+                            {classes.map((cls) => (
+                                <React.Fragment key={cls.number}>
                                     <tr className="border-b-2 border-black h-28">
-                                        <td className="border-r-2 border-black p-2 text-center font-black text-sm align-middle">Clase N°6</td>
-                                        <td className="border-r-2 border-black p-3 align-top leading-tight text-[8.5pt]">
-                                            <ol className="space-y-0.5 list-decimal pl-4">
-                                                <li>
-                                                    <strong>Repaso integral + evaluación avanzada:</strong>
-                                                    <ul className="list-disc pl-4 mt-1">
-                                                        <li>Arranque en pendiente, dominio de marchas, estacionamientos y cruces.</li>
-                                                    </ul>
-                                                </li>
+                                        <td className="border-r-2 border-black p-2 w-20 text-center font-black text-xs align-middle">Clase N°{cls.number}</td>
+                                        <td className="border-r-2 border-black p-3 align-top leading-tight text-[8pt]">
+                                            <ol className={cn("space-y-0.5 list-decimal pl-4", cls.isEvaluation && "font-bold")}>
+                                                {cls.content.map((item, idx) => (
+                                                    <li key={idx} dangerouslySetInnerHTML={{ __html: item.replace('Evaluación práctica:', '<strong>Evaluación práctica:</strong>') }} />
+                                                ))}
                                             </ol>
                                         </td>
-                                        <td className="p-2 align-top text-[8pt] font-bold text-slate-400 uppercase text-right">Observación</td>
+                                        <td className="p-2 align-top text-[7pt] font-bold text-slate-400 uppercase w-44 text-right">Observación</td>
                                     </tr>
-                                    <tr className="h-8 bg-slate-50">
-                                        <td colSpan={2} className="px-3 text-[8pt] font-black uppercase">Asistencia del Estudiante: _________________________</td>
-                                        <td className="px-3 text-[8pt] font-black uppercase">Instructor: _________________________</td>
+                                    <tr className="border-b-2 last:border-b-0 border-black h-7 bg-slate-50">
+                                        <td colSpan={2} className="px-3 text-[7.5pt] font-black uppercase">Asistencia del Estudiante: _________________________</td>
+                                        <td className="px-3 text-[7.5pt] font-black uppercase">Instructor: _________________________</td>
                                     </tr>
-                                </>
-                            )}
+                                </React.Fragment>
+                            ))}
                         </tbody>
                     </table>
 
-                    {/* SECCIÓN EVALUACIÓN FINAL (PARA 8H Y 10H) */}
-                    {(type === 'manual-8h' || type === 'manual-10h') && (
+                    {/* EVALUATION SECTION (AUTO ONLY) */}
+                    {needsEvaluationSection && (
                         <div className="mt-6 space-y-4">
-                            <div className="flex justify-between font-black text-[9pt] uppercase">
-                                <span>ASISTENCIA DEL ESTUDIANTE: ____________________</span>
-                                <span>INSTRUCTOR: ____________________</span>
-                            </div>
                             <div className="space-y-2">
-                                <h3 className="font-black text-[10pt] uppercase">PUNTOS A MEJORAR SOBRE EL ESTUDIANTE EN SU MANEJO:</h3>
-                                <div className="border-b border-black border-dashed h-8"></div>
-                                <div className="border-b border-black border-dashed h-8"></div>
+                                <h3 className="font-black text-[9pt] uppercase">PUNTOS A MEJORAR SOBRE EL ESTUDIANTE EN SU MANEJO:</h3>
+                                <div className="border-b border-black border-dashed h-7"></div>
+                                <div className="border-b border-black border-dashed h-7"></div>
                             </div>
-                            <div className="pt-4">
+                            <div className="pt-2">
                                 <div className="flex items-end gap-2">
-                                    <span className="font-black text-[10pt] uppercase">NOMBRE DEL INSTRUCTOR:</span>
+                                    <span className="font-black text-[9pt] uppercase">NOMBRE DEL INSTRUCTOR:</span>
                                     <div className="flex-1 border-b border-black border-dashed"></div>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    <div className="mt-12 text-[7pt] text-slate-400 font-bold uppercase text-center tracking-widest">
+                    <div className="mt-10 text-[6pt] text-slate-400 font-bold uppercase text-center tracking-widest">
                         FREEWAY ESCUELA DE MANEJO • DOCUMENTO DE CONTROL INTERNO • PROHIBIDA SU REPRODUCCIÓN SIN AUTORIZACIÓN
                     </div>
                 </div>

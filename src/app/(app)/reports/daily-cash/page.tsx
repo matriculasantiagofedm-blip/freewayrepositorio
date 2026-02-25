@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -232,7 +233,6 @@ export default function DailyCashReportPage() {
         setTransactions(fetchedTransactions);
         setIsDataLoaded(true);
 
-        // Estabilización para PDF en Tablet
         const timer = setTimeout(() => {
             setIsReady(true);
         }, 4000);
@@ -333,10 +333,6 @@ export default function DailyCashReportPage() {
     setExpenses(updated);
   };
 
-  const addExpenseRow = () => {
-    setExpenses([...expenses, { description: '', amount: 0 }]);
-  };
-  
   const handlePrint = () => {
     window.print();
   }
@@ -351,7 +347,7 @@ export default function DailyCashReportPage() {
       const html2pdf = (await import('html2pdf.js')).default;
       
       const opt = {
-        margin: [0.1, 0.1],
+        margin: [0.05, 0.05], // Márgenes mínimos
         filename: `Reporte_Caja_Freeway_${format(reportDate, 'dd-MM-yyyy')}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
@@ -507,7 +503,7 @@ export default function DailyCashReportPage() {
         </div>
       </div>
 
-      <div id="report-to-export" className="print-container bg-white p-2">
+      <div id="report-to-export" className="print-container bg-white p-0 mx-auto">
         <div className="p-1 text-center font-bold text-lg border-b-2 border-black mb-0 uppercase flex flex-col">
             <span className="text-black">FREEWAY ESCUELA DE MANEJO</span>
             <span className="text-sm text-black">CONTROL DE CAJA - {format(reportDate, "EEEE d 'DE' LLLL 'DE' yyyy", { locale: es })}</span>
@@ -515,7 +511,7 @@ export default function DailyCashReportPage() {
 
         {!isLoading && (
             <div className="animate-in fade-in-50 duration-500">
-                <div className="overflow-x-auto border border-black border-b-0 rounded-t-sm">
+                <div className="overflow-x-auto border border-black border-b-0">
                     <Table className="min-w-full text-[9px] border-collapse">
                     <TableHeader>
                         <TableRow className="bg-muted/50 hover:bg-muted/50">
@@ -574,7 +570,7 @@ export default function DailyCashReportPage() {
                     </Table>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 border border-black rounded-b-sm">
+                <div className="grid grid-cols-1 md:grid-cols-3 border border-black border-t-0">
                     <div className="md:col-span-2 border-r border-black">
                         <h3 className="font-bold text-center text-[10px] uppercase tracking-wider bg-slate-100 border-b border-black p-1 text-black">Desglose de Efectivo Físico</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2">
@@ -631,7 +627,7 @@ export default function DailyCashReportPage() {
                             </TableBody>
                         </Table>
 
-                        <Table className="text-[9px] border-none border-t border-black">
+                        <Table className="text-[9px] border-none border-t-0">
                             <TableHeader className="bg-slate-100 border-b border-black"><TableRow><TableHead colSpan={2} className="text-center font-bold p-1 h-6 uppercase text-black">Gastos Menores</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {expenses.map((expense, index) => (
@@ -661,7 +657,7 @@ export default function DailyCashReportPage() {
                     </div>
                 </div>
                 
-                <div className="flex justify-around items-center pt-4 print:pt-6">
+                <div className="flex justify-around items-center pt-4 border-t border-black">
                     <div className="text-center w-48 border-t border-black pt-1"><p className="text-[8px] font-bold uppercase text-black">Recibido por</p></div>
                     <div className="text-center w-48 border-t border-black pt-1"><p className="text-[8px] font-bold uppercase text-black">Entregado por</p></div>
                 </div>

@@ -141,7 +141,7 @@ export default function LogsPage() {
                 {foundContracts.map(contract => {
                     const recommended = getRecommendedLogType(contract);
                     const isMoto = recommended.startsWith('moto-');
-                    const isAutomatic = recommended.startsWith('auto-automatic-');
+                    const isAutomatic = recommended.includes('-automatic-');
                     const hoursLabel = recommended.split('-').pop()?.replace('h', '') + 'h';
                     const planName = (contract.autoMotoDetails as any)?.coursePlan || 'Plan no especificado';
                     const transmission = (contract.autoMotoDetails as any)?.vehicleTransmission || 'Manual';

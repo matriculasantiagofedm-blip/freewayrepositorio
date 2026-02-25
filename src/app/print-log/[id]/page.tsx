@@ -79,7 +79,46 @@ function LogbookContent() {
     };
 
     const getClasses = (): LogbookClass[] => {
-        // AUTO AUTOMATICO 10H (Nuevo)
+        // AUTO AUTOMATICO 12H (Nuevo - Según Imagen)
+        if (type === 'auto-automatic-12h') {
+            return [
+                { number: 1, content: [
+                    "Presentación del vehículo automático.",
+                    "Chequeo rutinario (luces, líquidos, llantas, frenos).",
+                    "Ajuste de asiento, espejos, cinturón de seguridad.",
+                    "Encendido y funciones básicas del tablero.",
+                    "Dominio inicial del timón y pedales (acelerador, freno).",
+                    "Práctica de arranque, avance y frenado suave en línea recta."
+                ]},
+                { number: 2, content: [
+                    "Revisión rápida del chequeo rutinario.",
+                    "Dominio de cambios en automático (P, R, N, D).",
+                    "Uso de direccionales.",
+                    "Giros a la derecha e izquierda dentro del circuito.",
+                    "Primer contacto con estacionamiento de frente."
+                ]},
+                { number: 3, content: [
+                    "Estacionamientos de frente, lateral y reversa con mayor dominio.",
+                    "Práctica de giros seguidos + uso de direccionales."
+                ]},
+                { number: 4, content: [
+                    "Estacionamientos bajo presión de tiempo.",
+                    "Mayor control en intersecciones.",
+                    "Práctica de vueltas en U."
+                ]},
+                { number: 5, content: [
+                    "Simulación de recorrido completo con varias maniobras.",
+                    "Uso combinado de estacionamientos y cruces.",
+                    "Dominio de subida y bajada."
+                ]},
+                { number: 6, content: [
+                    "Repaso integral + evaluación práctica avanzada:",
+                    "a. Arranque correcto, uso de direccionales, giros, estacionamientos, cruces, ceder el paso."
+                ], isEvaluation: true}
+            ];
+        }
+
+        // AUTO AUTOMATICO 10H
         if (type === 'auto-automatic-10h') {
             return [
                 { number: 1, content: [
@@ -194,8 +233,8 @@ function LogbookContent() {
             ];
         }
 
-        // AUTO 12H (Default)
-        if (type === 'manual-12h' || type === 'auto-automatic-12h') {
+        // AUTO 12H (Default Manual)
+        if (type === 'manual-12h') {
             return [
                 { number: 1, content: ["Presentación del vehículo.", "Chequeo rutinario.", "Ajuste de asiento y espejos.", "Encendido y funciones básicas.", "Explicación de controles.", "Arranque y frenado suave."] },
                 { number: 2, content: ["Dominio de marchas.", "Giros simples.", "Estacionamiento de frente."] },
@@ -231,6 +270,7 @@ function LogbookContent() {
     const classes = getClasses();
     const isMoto = type.startsWith('moto-');
     const isAuto = !isMoto;
+    // Solo mostramos la sección de evaluación para formatos de auto 8h/10h que no tengan la tabla completa de 6
     const needsEvaluationSection = isAuto && (type.endsWith('8h') || type.endsWith('10h'));
 
     return (
@@ -306,7 +346,7 @@ function LogbookContent() {
                                         <td className="border-r-2 border-black p-3 align-top leading-tight text-[8pt]">
                                             <ol className={cn("space-y-0.5 list-decimal pl-4", cls.isEvaluation && "font-bold")}>
                                                 {cls.content.map((item, idx) => (
-                                                    <li key={idx} dangerouslySetInnerHTML={{ __html: item.replace('Evaluación práctica:', '<strong>Evaluación práctica:</strong>').replace('Evaluación final del curso básico.', '<strong>Evaluación final del curso básico.</strong>') }} />
+                                                    <li key={idx} dangerouslySetInnerHTML={{ __html: item.replace('Evaluación práctica:', '<strong>Evaluación práctica:</strong>').replace('Evaluación final del curso básico.', '<strong>Evaluación final del curso básico.</strong>').replace('Repaso integral + evaluación práctica avanzada:', '<strong>Repaso integral + evaluación práctica avanzada:</strong>') }} />
                                                 ))}
                                             </ol>
                                         </td>
@@ -321,7 +361,7 @@ function LogbookContent() {
                         </tbody>
                     </table>
 
-                    {/* EVALUATION SECTION (AUTO ONLY) */}
+                    {/* EVALUATION SECTION (AUTO ONLY - Only if not 6-class table) */}
                     {needsEvaluationSection && (
                         <div className="mt-6 space-y-4">
                             <div className="space-y-2">

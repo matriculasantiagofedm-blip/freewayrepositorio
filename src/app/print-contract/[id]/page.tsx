@@ -9,14 +9,18 @@ import { useDb, useFirebase, useUser } from '@/components/firebase-provider';
 import { useDoc, useMemoDoc } from '@/hooks/use-firestore';
 import { signInAnonymously } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
-import { Printer, Loader2 } from 'lucide-react';
+import { Printer, Loader2, Download, AlertCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
 
 function PrintContractContent() {
   const { id } = useParams();
   const db = useDb();
   const { auth } = useFirebase();
   const { user, isUserLoading } = useUser();
+  const { toast } = useToast();
   const [isReady, setIsReady] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const contractId = Array.isArray(id) ? id[0] : id;
 
@@ -37,13 +41,47 @@ function PrintContractContent() {
     if (contract && !isLoading) {
       const timer = setTimeout(() => {
         setIsReady(true);
-      }, 5000);
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, [contract, isLoading]);
 
   const handleManualPrint = () => {
     window.print();
+  };
+
+  const handleDownloadPdf = async () => {
+    const element = document.getElementById('contract-to-print');
+    if (!element || !contract) return;
+
+    setIsDownloading(true);
+    try {
+      // @ts-ignore
+      const html2pdf = (await import('html2pdf.js')).default;
+      
+      const opt = {
+        margin: [0.3, 0.7, 0.3, 0.3], // Top, Left (0.7 is +40% from 0.5), Bottom, Right
+        filename: `Contrato_${contract.folioNumber || 'S-N'}_${contract.clientName.replace(/\s+/g, '_')}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+          scale: 2, 
+          useCORS: true, 
+          letterRendering: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          width: 820 
+        },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      await html2pdf().from(element).set(opt).save();
+      toast({ title: "PDF Generado", description: "El contrato se ha descargado correctamente." });
+    } catch (err) {
+      console.error("Error generating PDF:", err);
+      toast({ variant: "destructive", title: "Error", description: "No se pudo generar el PDF." });
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   if (isLoading || isUserLoading) {
@@ -66,37 +104,64 @@ function PrintContractContent() {
   }
 
   return (
-    <div className="bg-white font-serif min-h-screen">
+    <div className="bg-white font-serif min-h-screen pb-10">
         <style jsx global>{`
           @media print {
             @page {
               size: letter portrait;
-              margin: 10mm;
+              margin: 0;
             }
-            body { background-color: white !important; }
+            body { 
+                background-color: white !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
             .print-ui-element { display: none !important; }
+            .print-container-wrapper {
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
           }
         `}</style>
 
-      <div className="print-ui-element p-4 sticky top-0 z-[100] bg-slate-50 border-b shadow-lg space-y-2">
-        {!isReady ? (
-            <div className="bg-amber-500 border border-amber-600 p-4 rounded-lg text-center text-white text-sm font-black uppercase animate-pulse flex items-center justify-center gap-3">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                Estabilizando contrato para Tablet (Espera 5s)...
+      <div className="print-ui-element p-4 sticky top-0 z-[100] bg-slate-50 border-b shadow-lg">
+        <div className="max-w-4xl mx-auto flex flex-col gap-3">
+            <div className="flex items-center gap-2 text-blue-800 bg-blue-50 p-2 rounded-lg border border-blue-100">
+                <AlertCircle className="h-4 w-4" />
+                <p className="text-[10px] font-bold uppercase text-center w-full">Verifique los datos antes de imprimir o descargar.</p>
             </div>
-        ) : (
-            <Button 
-                onClick={handleManualPrint} 
-                className="w-full h-20 text-xl font-black uppercase bg-blue-600 hover:bg-blue-700 shadow-xl border-4 border-blue-400"
-            >
-                <Printer className="mr-4 h-8 w-8" />
-                IMPRIMIR CONTRATO
-            </Button>
-        )}
-        <p className="text-[10px] text-center text-slate-500 font-bold uppercase">Asegúrate de que la impresora esté encendida</p>
+            
+            {!isReady ? (
+                <div className="bg-slate-200 text-slate-500 p-4 rounded-xl text-center font-black uppercase text-sm flex items-center justify-center gap-3">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Preparando visualización (3s)...
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Button 
+                        onClick={handleManualPrint} 
+                        className="h-16 text-lg font-black uppercase bg-slate-800 hover:bg-black shadow-md border-2 border-slate-600"
+                    >
+                        <Printer className="mr-2 h-6 w-6" />
+                        Imprimir
+                    </Button>
+                    <Button 
+                        onClick={handleDownloadPdf} 
+                        disabled={isDownloading}
+                        className="h-16 text-lg font-black uppercase bg-blue-600 hover:bg-blue-700 shadow-md border-2 border-blue-400"
+                    >
+                        {isDownloading ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Download className="mr-2 h-6 w-6" />}
+                        Descargar PDF
+                    </Button>
+                </div>
+            )}
+        </div>
       </div>
 
-      <ContractView contract={contract} />
+      <div id="contract-to-print" className="print-container-wrapper bg-white">
+        <ContractView contract={contract} />
+      </div>
     </div>
   );
 }

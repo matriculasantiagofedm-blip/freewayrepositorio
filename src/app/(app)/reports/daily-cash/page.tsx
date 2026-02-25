@@ -168,7 +168,7 @@ export default function DailyCashReportPage() {
             const amount = payment.amount || 0;
             const pType = payment.paymentType || 'cash';
             
-            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
+            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bag: 0, general: 0, cheques: 0 };
             const pKey = pType && paymentColumns.hasOwnProperty(pType) ? pType : 'cash';
             paymentColumns[pKey] = amount;
 
@@ -346,7 +346,7 @@ export default function DailyCashReportPage() {
       const html2pdf = (await import('html2pdf.js')).default;
       
       const opt = {
-        margin: [0.3, 0.3, 0.3, 0.3], // Margen equilibrado para centrado
+        margin: [0.3, 0.4, 0.3, 0.3], // Margen izquierdo aumentado para mejorar encuadre (0.4)
         filename: `Reporte_Caja_Freeway_${format(reportDate, 'dd-MM-yyyy')}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
@@ -355,7 +355,7 @@ export default function DailyCashReportPage() {
           letterRendering: true,
           logging: false,
           backgroundColor: '#ffffff', // Fondo blanco limpio
-          width: 1350
+          width: 1125 // Reducido para que el contenido se vea un 30-40% más grande
         },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' },
         pagebreak: { mode: 'avoid-all' }
@@ -503,7 +503,7 @@ export default function DailyCashReportPage() {
         </div>
       </div>
 
-      <div id="report-to-export" className="print-container bg-white p-0 mx-auto w-full max-w-[1300px] border border-black overflow-hidden rounded-sm">
+      <div id="report-to-export" className="print-container bg-white p-0 mx-auto w-full max-w-[1100px] border border-black overflow-hidden rounded-sm">
         <div className="p-2 text-center font-bold text-lg border-b border-black mb-0 uppercase flex flex-col bg-white">
             <span className="text-black">FREEWAY ESCUELA DE MANEJO</span>
             <span className="text-sm text-black">CONTROL DE CAJA - {format(reportDate, "EEEE d 'DE' LLLL 'DE' yyyy", { locale: es })}</span>

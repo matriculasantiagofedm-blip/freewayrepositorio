@@ -58,15 +58,6 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
   currency: 'USD',
 });
 
-const paymentMethodOptions = [
-    { value: 'cash', label: 'Efectivo' },
-    { value: 'debit', label: 'T.Débito' },
-    { value: 'credit', label: 'T.Crédito' },
-    { value: 'bac', label: 'BAC' },
-    { value: 'general', label: 'General' },
-    { value: 'cheques', label: 'Cheques' },
-];
-
 export default function DailyCashReportPage() {
   const { role, isLoading: isRoleLoading } = useCurrentRole();
   const db = useDb();
@@ -317,7 +308,7 @@ export default function DailyCashReportPage() {
       const html2pdf = (await import('html2pdf.js')).default;
       
       const opt = {
-        margin: [0.3, 0.7, 0.3, 0.3], // Top, Left (0.7 is +40% from 0.5), Bottom, Right
+        margin: [0.3, 0.7, 0.3, 0.3], // Top, Left (0.7), Bottom, Right
         filename: `Reporte_Caja_Freeway_${format(reportDate, 'dd-MM-yyyy')}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
@@ -326,7 +317,7 @@ export default function DailyCashReportPage() {
           letterRendering: true,
           logging: false,
           backgroundColor: '#ffffff',
-          width: 750 // Reduced width for larger scale appearance
+          width: 820 
         },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
       };
@@ -397,7 +388,7 @@ export default function DailyCashReportPage() {
         <div className="flex justify-between items-center">
             <div className='flex flex-col'>
                 <h1 className="text-2xl font-bold font-headline text-slate-900">Reporte de Caja Diario</h1>
-                <p className="text-xs text-muted-foreground">Ingresos registrados en el systema.</p>
+                <p className="text-xs text-muted-foreground">Ingresos registrados en el sistema.</p>
             </div>
             <div className="flex items-center gap-2">
                 <Select value={sellerFilter} onValueChange={setSellerFilter}>
@@ -450,6 +441,7 @@ export default function DailyCashReportPage() {
                   <TableHead className="text-black p-1 h-auto text-[10px]">Contrato</TableHead>
                   <TableHead className="text-black p-1 h-auto text-[10px]">Cédula</TableHead>
                   <TableHead className="text-black p-1 h-auto text-[10px]">Cliente</TableHead>
+                  <TableHead className="text-black p-1 h-auto text-[10px]">Servicio</TableHead>
                   <TableHead className="text-black p-1 h-auto text-[10px]">Vendedor</TableHead>
                   <TableHead className="text-black p-1 h-auto text-[10px] text-right">Efectivo</TableHead>
                   <TableHead className="text-black p-1 h-auto text-[10px] text-right">T.Débito</TableHead>
@@ -464,7 +456,8 @@ export default function DailyCashReportPage() {
                   <TableRow key={t.id} className="h-auto border-black">
                     <TableCell className="p-1 text-[9px] font-bold">{t.contrato}</TableCell>
                     <TableCell className="p-1 text-[9px] whitespace-nowrap">{t.cedula}</TableCell>
-                    <TableCell className="p-1 text-[9px] uppercase font-medium max-w-[120px] truncate">{t.clientName}</TableCell>
+                    <TableCell className="p-1 text-[9px] uppercase font-medium max-w-[100px] truncate">{t.clientName}</TableCell>
+                    <TableCell className="p-1 text-[9px] italic max-w-[100px] truncate">{t.service}</TableCell>
                     <TableCell className="p-1 text-[9px] uppercase">{t.createdBy}</TableCell>
                     <TableCell className="p-1 text-[9px] text-right">{t.cash > 0 ? t.cash.toFixed(2) : '-'}</TableCell>
                     <TableCell className="p-1 text-[9px] text-right">{t.debit > 0 ? t.debit.toFixed(2) : '-'}</TableCell>
@@ -475,7 +468,7 @@ export default function DailyCashReportPage() {
                   </TableRow>
                 ))}
                 <TableRow className="bg-slate-50 font-bold border-t-2 border-black h-auto">
-                  <TableCell colSpan={4} className="p-1 text-[10px] text-right uppercase">Totales por Método</TableCell>
+                  <TableCell colSpan={5} className="p-1 text-[10px] text-right uppercase">Totales por Método</TableCell>
                   <TableCell className="p-1 text-[10px] text-right">{transactionTotals.cash.toFixed(2)}</TableCell>
                   <TableCell className="p-1 text-[10px] text-right">{transactionTotals.debit.toFixed(2)}</TableCell>
                   <TableCell className="p-1 text-[10px] text-right">{transactionTotals.credit.toFixed(2)}</TableCell>

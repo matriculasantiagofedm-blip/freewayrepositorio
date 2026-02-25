@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -355,7 +354,7 @@ export default function DailyCashReportPage() {
           useCORS: true, 
           letterRendering: true,
           logging: false,
-          width: 1750 
+          width: 1350 // Aumentado un 30% respecto a 1750 (1750 * 0.77 ≈ 1350)
         },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' },
         pagebreak: { mode: 'avoid-all' }

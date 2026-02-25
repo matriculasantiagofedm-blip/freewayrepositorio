@@ -10,7 +10,7 @@ import { collection } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import type { Contract } from '@/lib/types';
-import { Car, Bike, Plus, Repeat, Dumbbell, CalendarCheck, UserPlus, ArrowRight, Clock, ShieldCheck, Wallet } from 'lucide-react';
+import { Car, Bike, Plus, Repeat, Dumbbell, CalendarCheck, UserPlus, ArrowRight, Clock, ShieldCheck, Wallet, ClipboardList } from 'lucide-react';
 import { isToday, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -40,7 +40,6 @@ export default function DashboardPage() {
   const statsValues = useMemo(() => {
     if (!allContracts) return { active: 0, today: 0, overdue: 0, overdueAmount: 0, drafts: [] as Contract[] };
     
-    // EXCLUSIÓN DE CERTIFICADOS: Solo contamos contratos de cursos reales (isManualPrint !== true)
     const filteredContracts = allContracts.filter(c => !c.isManualPrint);
 
     const active = filteredContracts.filter(c => c.status === 'active' || c.status === 'completed').length;
@@ -101,6 +100,7 @@ export default function DashboardPage() {
     {
       title: 'Gestión de Trámites y Agenda',
       actions: [
+        { name: 'Bitácoras de Control', href: '/logs', bgColor: 'bg-sky-50', textColor: 'text-sky-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
         { name: 'Generar Certificado Manual', href: '/certificates?mode=manual', bgColor: 'bg-amber-50', textColor: 'text-amber-600', roles: ['Administrador'] },
         { name: 'Agenda Manual', href: '/manual-schedule', bgColor: 'bg-rose-50', textColor: 'text-rose-600', roles: ['Administrador'] },
       ]
@@ -121,7 +121,6 @@ export default function DashboardPage() {
         <p className="text-muted-foreground font-medium">Gestión unificada de Freeway Escuela de Manejo</p>
       </div>
 
-      {/* BANDEJA DE SOLICITUDES WEB */}
       {!isContractsLoading && statsValues.drafts.length > 0 && (
         <Card className="border-amber-200 bg-amber-50/30 overflow-hidden shadow-sm">
           <CardHeader className="pb-3 border-b border-amber-100 flex flex-row items-center justify-between">
@@ -159,7 +158,6 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {/* ESTADÍSTICAS RÁPIDAS */}
       <div className="grid gap-4 md:grid-cols-3">
         {stats.map((stat) => (
             <Link key={stat.title} href={stat.href} className="no-underline">
@@ -182,7 +180,6 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* REGISTRAR NUEVO TRÁMITE */}
       <div className="space-y-4">
         <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
           <span className="h-px bg-slate-200 flex-1"></span>
@@ -208,7 +205,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ACCIONES POR ROL */}
       <div className="space-y-8">
         <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
           <span className="h-px bg-slate-200 flex-1"></span>

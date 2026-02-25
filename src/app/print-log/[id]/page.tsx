@@ -79,7 +79,7 @@ function LogbookContent() {
     };
 
     const getClasses = (): LogbookClass[] => {
-        // AUTO AUTOMATICO 12H (Nuevo - Según Imagen)
+        // AUTO AUTOMATICO 12H
         if (type === 'auto-automatic-12h') {
             return [
                 { number: 1, content: [
@@ -149,6 +149,35 @@ function LogbookContent() {
                     "Repaso general de estacionamientos e intersecciones.",
                     "Corrección de errores comunes.",
                     "Evaluación práctica: maniobras, estacionamientos, intersecciones."
+                ], isEvaluation: true}
+            ];
+        }
+
+        // AUTO AUTOMATICO 8H
+        if (type === 'auto-automatic-8h') {
+            return [
+                { number: 1, content: [
+                    "Presentación del vehículo automático.",
+                    "Chequeo rutinario (luces, líquidos, llantas, frenos).",
+                    "Ajuste de asiento, espejos, cinturón de seguridad.",
+                    "Encendido y funciones básicas del tablero.",
+                    "Dominio del timón y pedales (acelerador, freno).",
+                    "Práctica de arranque, avance y frenado suave en línea recta."
+                ]},
+                { number: 2, content: [
+                    "Controles de mando y uso de direccionales.",
+                    "Giros a la derecha e izquierda dentro del circuito.",
+                    "Primer contacto con estacionamiento de frente."
+                ]},
+                { number: 3, content: [
+                    "Estacionamientos de frente, lateral y reversa.",
+                    "Uso correcto de los espejos retrovisores.",
+                    "Práctica de cruces e intersecciones simples."
+                ]},
+                { number: 4, content: [
+                    "Repaso general de estacionamientos y giros.",
+                    "Circulación continua en el circuito respetando señales.",
+                    "Evaluación práctica final del curso básico."
                 ], isEvaluation: true}
             ];
         }
@@ -255,7 +284,7 @@ function LogbookContent() {
             ];
         }
 
-        if (type === 'manual-8h' || type === 'auto-automatic-8h') {
+        if (type === 'manual-8h') {
             return [
                 { number: 1, content: ["Presentación del vehículo.", "Chequeo rutinario.", "Encendido.", "Arranque y frenado."] },
                 { number: 2, content: ["Controles de mando.", "Giros.", "Estacionamiento frontal."] },
@@ -268,9 +297,7 @@ function LogbookContent() {
     };
 
     const classes = getClasses();
-    const isMoto = type.startsWith('moto-');
-    const isAuto = !isMoto;
-    // Solo mostramos la sección de evaluación para formatos de auto 8h/10h que no tengan la tabla completa de 6
+    const isAuto = !type.startsWith('moto-');
     const needsEvaluationSection = isAuto && (type.endsWith('8h') || type.endsWith('10h'));
 
     return (
@@ -361,7 +388,7 @@ function LogbookContent() {
                         </tbody>
                     </table>
 
-                    {/* EVALUATION SECTION (AUTO ONLY - Only if not 6-class table) */}
+                    {/* EVALUATION SECTION (AUTO ONLY) */}
                     {needsEvaluationSection && (
                         <div className="mt-6 space-y-4">
                             <div className="space-y-2">

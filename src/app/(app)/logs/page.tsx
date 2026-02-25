@@ -121,12 +121,16 @@ export default function LogsPage() {
                                 <p className="text-xl font-black text-slate-900 uppercase tracking-tight">{contract.clientName}</p>
                                 <p className="text-sm text-muted-foreground font-medium">{contract.type}</p>
                             </div>
-                            <div className="flex flex-col sm:flex-row gap-2">
-                                <Button onClick={() => handlePrintLog(contract, 'manual-10h')} variant="outline" className="border-amber-600 text-amber-700 hover:bg-amber-50 font-bold">
+                            <div className="flex flex-wrap gap-2 justify-end">
+                                <Button onClick={() => handlePrintLog(contract, 'manual-8h')} variant="outline" className="border-emerald-600 text-emerald-700 hover:bg-emerald-50 font-bold h-10 px-4">
+                                    <Printer className="mr-2 h-4 w-4" />
+                                    Bitácora 8h
+                                </Button>
+                                <Button onClick={() => handlePrintLog(contract, 'manual-10h')} variant="outline" className="border-amber-600 text-amber-700 hover:bg-amber-50 font-bold h-10 px-4">
                                     <Printer className="mr-2 h-4 w-4" />
                                     Bitácora 10h
                                 </Button>
-                                <Button onClick={() => handlePrintLog(contract, 'manual-12h')} className="bg-sky-600 hover:bg-sky-700 font-bold">
+                                <Button onClick={() => handlePrintLog(contract, 'manual-12h')} className="bg-sky-600 hover:bg-sky-700 font-bold h-10 px-4">
                                     <Printer className="mr-2 h-4 w-4" />
                                     Bitácora 12h
                                 </Button>

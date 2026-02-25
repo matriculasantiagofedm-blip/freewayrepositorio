@@ -346,7 +346,7 @@ export default function DailyCashReportPage() {
       const html2pdf = (await import('html2pdf.js')).default;
       
       const opt = {
-        margin: [0.05, 0.05], // Márgenes mínimos
+        margin: [0.1, 0.1], // Márgenes simétricos para centrado
         filename: `Reporte_Caja_Freeway_${format(reportDate, 'dd-MM-yyyy')}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
@@ -354,7 +354,7 @@ export default function DailyCashReportPage() {
           useCORS: true, 
           letterRendering: true,
           logging: false,
-          width: 1350 // Aumentado un 30% respecto a 1750 (1750 * 0.77 ≈ 1350)
+          width: 1350 // Tamaño optimizado para 30% más grande
         },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' },
         pagebreak: { mode: 'avoid-all' }
@@ -401,7 +401,7 @@ export default function DailyCashReportPage() {
                 overflow: visible !important;
             }
             .print-container {
-                width: 10in !important;
+                width: 10.5in !important;
                 max-width: none !important;
                 margin: 0 auto !important;
                 padding: 0 !important;
@@ -502,7 +502,7 @@ export default function DailyCashReportPage() {
         </div>
       </div>
 
-      <div id="report-to-export" className="print-container bg-white p-0 mx-auto">
+      <div id="report-to-export" className="print-container bg-white p-0 mx-auto w-full max-w-[1300px]">
         <div className="p-1 text-center font-bold text-lg border-b-2 border-black mb-0 uppercase flex flex-col">
             <span className="text-black">FREEWAY ESCUELA DE MANEJO</span>
             <span className="text-sm text-black">CONTROL DE CAJA - {format(reportDate, "EEEE d 'DE' LLLL 'DE' yyyy", { locale: es })}</span>

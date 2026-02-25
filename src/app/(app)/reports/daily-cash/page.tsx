@@ -346,7 +346,7 @@ export default function DailyCashReportPage() {
       const html2pdf = (await import('html2pdf.js')).default;
       
       const opt = {
-        margin: [0.1, 0.4, 0.1, 0.1], // Margen izquierdo aumentado un 20% (0.4 vs 0.1)
+        margin: [0.3, 0.3, 0.3, 0.3], // Margen equilibrado para centrado
         filename: `Reporte_Caja_Freeway_${format(reportDate, 'dd-MM-yyyy')}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
@@ -354,7 +354,8 @@ export default function DailyCashReportPage() {
           useCORS: true, 
           letterRendering: true,
           logging: false,
-          width: 1350 // Tamaño optimizado para el aumento del 30% solicitado
+          backgroundColor: '#ffffff', // Fondo blanco limpio
+          width: 1350
         },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' },
         pagebreak: { mode: 'avoid-all' }
@@ -502,16 +503,16 @@ export default function DailyCashReportPage() {
         </div>
       </div>
 
-      <div id="report-to-export" className="print-container bg-white p-0 mx-auto w-full max-w-[1300px]">
-        <div className="p-1 text-center font-bold text-lg border-b-2 border-black mb-0 uppercase flex flex-col">
+      <div id="report-to-export" className="print-container bg-white p-0 mx-auto w-full max-w-[1300px] border border-black overflow-hidden rounded-sm">
+        <div className="p-2 text-center font-bold text-lg border-b border-black mb-0 uppercase flex flex-col bg-white">
             <span className="text-black">FREEWAY ESCUELA DE MANEJO</span>
             <span className="text-sm text-black">CONTROL DE CAJA - {format(reportDate, "EEEE d 'DE' LLLL 'DE' yyyy", { locale: es })}</span>
         </div>
 
         {!isLoading && (
             <div className="animate-in fade-in-50 duration-500">
-                <div className="overflow-x-auto border border-black border-b-0">
-                    <Table className="min-w-full text-[9px] border-collapse">
+                <div className="overflow-x-auto border-b border-black">
+                    <Table className="min-w-full text-[9px] border-collapse border-none">
                     <TableHeader>
                         <TableRow className="bg-muted/50 hover:bg-muted/50">
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black w-6">#</TableHead>
@@ -569,7 +570,7 @@ export default function DailyCashReportPage() {
                     </Table>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 border border-black border-t-0">
+                <div className="grid grid-cols-1 md:grid-cols-3">
                     <div className="md:col-span-2 border-r border-black">
                         <h3 className="font-bold text-center text-[10px] uppercase tracking-wider bg-slate-100 border-b border-black p-1 text-black">Desglose de Efectivo Físico</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2">
@@ -656,7 +657,7 @@ export default function DailyCashReportPage() {
                     </div>
                 </div>
                 
-                <div className="flex justify-around items-center pt-4 border-t border-black">
+                <div className="flex justify-around items-center pt-4 border-t border-black bg-white">
                     <div className="text-center w-48 border-t border-black pt-1"><p className="text-[8px] font-bold uppercase text-black">Recibido por</p></div>
                     <div className="text-center w-48 border-t border-black pt-1"><p className="text-[8px] font-bold uppercase text-black">Entregado por</p></div>
                 </div>

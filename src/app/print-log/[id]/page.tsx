@@ -66,14 +66,55 @@ function LogbookContent() {
     };
 
     const getLogTitle = () => {
-        const isMoto = type.startsWith('moto-');
-        const vehicle = isMoto ? 'MOTO MANUAL' : 'MANUAL';
+        if (type.startsWith('moto-')) {
+            const hours = type.split('-').pop()?.replace('h', '') + ' HORAS';
+            return `BITÁCORA-MOTO MANUAL - CLASES PRÁCTICAS-${hours}`;
+        }
+        if (type.startsWith('auto-automatic-')) {
+            const hours = type.split('-').pop()?.replace('h', '') + ' HORAS';
+            return `BITÁCORA-AUTOMATICO - CLASES PRÁCTICAS-${hours}`;
+        }
         const hours = type.split('-').pop()?.replace('h', '') + ' HORAS';
-        return `BITÁCORA-${vehicle} - CLASES PRÁCTICAS-${hours}`;
+        return `BITÁCORA-MANUAL - CLASES PRÁCTICAS-${hours}`;
     };
 
     const getClasses = (): LogbookClass[] => {
-        // MOTO 8H (Nuevo)
+        // AUTO AUTOMATICO 10H (Nuevo)
+        if (type === 'auto-automatic-10h') {
+            return [
+                { number: 1, content: [
+                    "Presentación del vehículo automático.",
+                    "Chequeo rutinario (luces, líquidos, llantas, frenos).",
+                    "Ajuste de asiento, espejos, cinturón de seguridad.",
+                    "Encendido y funciones básicas del tablero.",
+                    "Dominio del timón y pedales (acelerador, freno).",
+                    "Práctica de arranque, avance y frenado suave en línea recta."
+                ]},
+                { number: 2, content: [
+                    "Revisión rápida del chequeo rutinario.",
+                    "Dominio de cambios en automático (P, R, N, D).",
+                    "Uso de direccionales.",
+                    "Giros a la derecha e izquierda dentro del circuito.",
+                    "Primer contacto con estacionamiento de frente."
+                ]},
+                { number: 3, content: [
+                    "Estacionamientos de frente, lateral y reversa con mayor dominio.",
+                    "Práctica de giros seguidos + uso de direccionales."
+                ]},
+                { number: 4, content: [
+                    "Simulación de maniobras en intersección con prioridad.",
+                    "Frenado progresivo y de emergencia.",
+                    "Circulación continua en el circuito."
+                ]},
+                { number: 5, content: [
+                    "Repaso general de estacionamientos e intersecciones.",
+                    "Corrección de errores comunes.",
+                    "Evaluación práctica: maniobras, estacionamientos, intersecciones."
+                ], isEvaluation: true}
+            ];
+        }
+
+        // MOTO 8H
         if (type === 'moto-manual-8h') {
             return [
                 { number: 1, content: [
@@ -154,13 +195,13 @@ function LogbookContent() {
         }
 
         // AUTO 12H (Default)
-        if (type === 'manual-12h') {
+        if (type === 'manual-12h' || type === 'auto-automatic-12h') {
             return [
-                { number: 1, content: ["Presentación del vehículo manual.", "Chequeo rutinario.", "Ajuste de asiento y espejos.", "Encendido y funciones básicas.", "Explicación de pedales.", "Arranque en primera y frenado suave."] },
-                { number: 2, content: ["Dominio de la palanca de cambios (1ª a 3ª).", "Giros simples con embrague.", "Estacionamiento de frente."] },
+                { number: 1, content: ["Presentación del vehículo.", "Chequeo rutinario.", "Ajuste de asiento y espejos.", "Encendido y funciones básicas.", "Explicación de controles.", "Arranque y frenado suave."] },
+                { number: 2, content: ["Dominio de marchas.", "Giros simples.", "Estacionamiento de frente."] },
                 { number: 3, content: ["Estacionamientos lateral y reversa.", "Uso de retrovisores.", "Cruces en intersecciones."] },
-                { number: 4, content: ["Dominio de paradas.", "Arranque en pendiente con embrague.", "Frenado de emergencia."] },
-                { number: 5, content: ["Perfeccionamiento de cambios.", "Cruces más complejos.", "Maniobras avanzadas de estacionamiento."] },
+                { number: 4, content: ["Dominio de paradas.", "Arranque en pendiente.", "Frenado de emergencia."] },
+                { number: 5, content: ["Perfeccionamiento de conducción.", "Cruces más complejos.", "Maniobras avanzadas de estacionamiento."] },
                 { number: 6, content: ["Repaso integral.", "Evaluación avanzada: pendiente, dominio de marchas y cruces."] }
             ];
         }
@@ -175,12 +216,12 @@ function LogbookContent() {
             ];
         }
 
-        if (type === 'manual-8h') {
+        if (type === 'manual-8h' || type === 'auto-automatic-8h') {
             return [
                 { number: 1, content: ["Presentación del vehículo.", "Chequeo rutinario.", "Encendido.", "Arranque y frenado."] },
-                { number: 2, content: ["Palanca de cambios.", "Giros.", "Estacionamiento frontal."] },
+                { number: 2, content: ["Controles de mando.", "Giros.", "Estacionamiento frontal."] },
                 { number: 3, content: ["Estacionamiento reversa/lateral.", "Cruces e intersecciones."] },
-                { number: 4, content: ["Repaso de estacionamientos.", "Cambios hasta 3ª.", "Evaluación práctica final."], isEvaluation: true }
+                { number: 4, content: ["Repaso de estacionamientos.", "Circulación en circuito.", "Evaluación práctica final."], isEvaluation: true }
             ];
         }
 
@@ -189,7 +230,8 @@ function LogbookContent() {
 
     const classes = getClasses();
     const isMoto = type.startsWith('moto-');
-    const needsEvaluationSection = !isMoto && (type === 'manual-8h' || type === 'manual-10h');
+    const isAuto = !isMoto;
+    const needsEvaluationSection = isAuto && (type.endsWith('8h') || type.endsWith('10h'));
 
     return (
         <div className="bg-white min-h-screen">

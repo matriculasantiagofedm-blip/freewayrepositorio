@@ -83,10 +83,13 @@ export default function LogsPage() {
     const plan = (details as any)?.coursePlan || '';
     const planUpper = plan.toUpperCase();
     const typeUpper = contract.type.toUpperCase();
+    const transmission = (details as any)?.vehicleTransmission || 'Manual';
     
     // Detección de vehículo
     const isMoto = typeUpper.includes('MOTO') || planUpper.includes('MOTO');
-    const prefix = isMoto ? 'moto-manual-' : 'manual-';
+    const isAutomatic = transmission === 'Automático';
+    
+    const prefix = isMoto ? 'moto-manual-' : (isAutomatic ? 'auto-automatic-' : 'manual-');
     
     if (planUpper.includes('8 HR') || planUpper.includes('BASICO') || planUpper.includes('BÁSICO')) return `${prefix}8h`;
     if (planUpper.includes('10 HR') || planUpper.includes('PLUS')) return `${prefix}10h`;
@@ -94,7 +97,7 @@ export default function LogsPage() {
     
     // Fallbacks por tipo de contrato
     if (contract.type === 'Curso Moto') return 'moto-manual-8h';
-    if (contract.type === 'Curso Auto') return 'manual-8h';
+    if (contract.type === 'Curso Auto') return isAutomatic ? 'auto-automatic-10h' : 'manual-8h';
     return `${prefix}12h`;
   };
 
@@ -138,8 +141,10 @@ export default function LogsPage() {
                 {foundContracts.map(contract => {
                     const recommended = getRecommendedLogType(contract);
                     const isMoto = recommended.startsWith('moto-');
+                    const isAutomatic = recommended.startsWith('auto-automatic-');
                     const hoursLabel = recommended.split('-').pop()?.replace('h', '') + 'h';
                     const planName = (contract.autoMotoDetails as any)?.coursePlan || 'Plan no especificado';
+                    const transmission = (contract.autoMotoDetails as any)?.vehicleTransmission || 'Manual';
 
                     return (
                         <Card key={contract.id} className="border-l-4 border-l-primary overflow-hidden">
@@ -147,8 +152,8 @@ export default function LogsPage() {
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-1">
                                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Contrato N° {String(contract.folioNumber).padStart(6, '0')}</p>
-                                        <Badge variant="outline" className={cn("h-5 text-[8px] font-black uppercase", isMoto ? "bg-orange-50 text-orange-700 border-orange-200" : "bg-blue-50 text-blue-700 border-blue-200")}>
-                                            {isMoto ? <><Bike className="h-2.5 w-2.5 mr-1" /> Moto</> : <><Car className="h-2.5 w-2.5 mr-1" /> Auto</>}
+                                        <Badge variant="outline" className={cn("h-5 text-[8px] font-black uppercase", isMoto ? "bg-orange-50 text-orange-700 border-orange-200" : (isAutomatic ? "bg-purple-50 text-purple-700 border-purple-200" : "bg-blue-50 text-blue-700 border-blue-200"))}>
+                                            {isMoto ? <><Bike className="h-2.5 w-2.5 mr-1" /> Moto</> : <><Car className="h-2.5 w-2.5 mr-1" /> {transmission}</>}
                                         </Badge>
                                     </div>
                                     <p className="text-xl font-black text-slate-900 uppercase tracking-tight">{contract.clientName}</p>
@@ -159,16 +164,18 @@ export default function LogsPage() {
                                         onClick={() => handlePrintLog(contract, recommended)} 
                                         className={cn(
                                             "w-full md:w-auto font-black h-12 px-8 uppercase tracking-widest shadow-lg gap-2",
-                                            isMoto ? "bg-orange-600 hover:bg-orange-700" : "bg-blue-600 hover:bg-blue-700"
+                                            isMoto ? "bg-orange-600 hover:bg-orange-700" : (isAutomatic ? "bg-purple-600 hover:bg-purple-700" : "bg-blue-600 hover:bg-blue-700")
                                         )}
                                     >
                                         <Printer className="h-5 w-5" />
-                                        Generar Bitácora {isMoto ? 'Moto' : 'Auto'} {hoursLabel}
+                                        Generar Bitácora {isMoto ? 'Moto' : (isAutomatic ? 'Auto Aut.' : 'Auto Man.')} {hoursLabel}
                                     </Button>
                                     
                                     <div className="flex items-center gap-2">
                                         <span className="text-[9px] font-bold text-muted-foreground uppercase">Otros Formatos:</span>
-                                        {(isMoto ? ['moto-manual-8h', 'moto-manual-10h', 'moto-manual-12h'] : ['manual-8h', 'manual-10h', 'manual-12h'])
+                                        { (isMoto ? ['moto-manual-8h', 'moto-manual-10h', 'moto-manual-12h'] : 
+                                           isAutomatic ? ['auto-automatic-8h', 'auto-automatic-10h', 'auto-automatic-12h'] : 
+                                           ['manual-8h', 'manual-10h', 'manual-12h'])
                                             .filter(t => t !== recommended)
                                             .map(type => (
                                             <Button 
@@ -178,7 +185,7 @@ export default function LogsPage() {
                                                 className="h-7 text-[9px] font-black uppercase px-2 hover:bg-slate-100"
                                                 onClick={() => handlePrintLog(contract, type)}
                                             >
-                                                {type.replace('manual-', '').replace('moto-', '')}
+                                                {type.split('-').pop()?.replace('h', '') + 'h'}
                                             </Button>
                                         ))}
                                     </div>

@@ -218,6 +218,7 @@ export default function DailyCashReportPage() {
 
             fetchedTransactions.push({
                 id: doc.id,
+                buttonLabel: "Venta de Libros",
                 contrato: String(payment.bookSaleFolio || '').padStart(6, '0'),
                 cedula: payment.studentIdNumber || '',
                 clientName: payment.clientName || '',
@@ -346,7 +347,7 @@ export default function DailyCashReportPage() {
       const html2pdf = (await import('html2pdf.js')).default;
       
       const opt = {
-        margin: [0.3, 0.4, 0.3, 0.3],
+        margin: [0.3, 0.4, 0.3, 0.3], // Top, Left, Bottom, Right
         filename: `Reporte_Caja_Freeway_${format(reportDate, 'dd-MM-yyyy')}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
@@ -355,7 +356,7 @@ export default function DailyCashReportPage() {
           letterRendering: true,
           logging: false,
           backgroundColor: '#ffffff',
-          width: 1250 // Slightly larger width to achieve ~10% visual reduction on portrait page
+          width: 1135 // Reduced from 1250 to increase visual size by ~10%
         },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
         pagebreak: { mode: 'avoid-all' }
@@ -374,8 +375,10 @@ export default function DailyCashReportPage() {
   if (isUserLoading || isRoleLoading) {
     return (
         <div className="flex items-center justify-center py-24">
-            <Loader2 className="h-12 w-12 animate-spin text-primary opacity-20" />
-            <p className="ml-4 text-muted-foreground font-medium animate-pulse">Cargando reporte...</p>
+            <div className="flex flex-col items-center gap-4">
+                <Loader2 className="h-12 w-12 animate-spin text-primary opacity-20" />
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Cargando datos del reporte...</p>
+            </div>
         </div>
     );
   }
@@ -503,7 +506,7 @@ export default function DailyCashReportPage() {
         </div>
       </div>
 
-      <div id="report-to-export" className="print-container bg-white p-0 mx-auto w-full max-w-[1100px] border border-black overflow-hidden rounded-sm">
+      <div id="report-to-export" className="print-container bg-white p-0 mx-auto w-full max-w-[1100px] border border-black overflow-hidden rounded-sm flex flex-col">
         <div className="p-2 text-center font-bold text-lg border-b border-black mb-0 uppercase flex flex-col bg-white">
             <span className="text-black">FREEWAY ESCUELA DE MANEJO</span>
             <span className="text-sm text-black">CONTROL DE CAJA - {format(reportDate, "EEEE d 'DE' LLLL 'DE' yyyy", { locale: es })}</span>
@@ -511,10 +514,10 @@ export default function DailyCashReportPage() {
 
         {!isLoading && (
             <div className="animate-in fade-in-50 duration-500">
-                <div className="overflow-x-auto border-b border-black">
+                <div className="overflow-x-auto">
                     <Table className="min-w-full text-[9px] border-collapse border-none">
                     <TableHeader>
-                        <TableRow className="bg-muted/50 hover:bg-muted/50">
+                        <TableRow className="bg-muted/50 hover:bg-muted/50 border-b border-black">
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black w-6">#</TableHead>
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black w-14">Folio</TableHead>
                         <TableHead className="border-r border-black p-1 text-center font-bold text-black w-20">Cédula</TableHead>
@@ -531,7 +534,7 @@ export default function DailyCashReportPage() {
                     </TableHeader>
                     <TableBody>
                         {filteredTransactions.map((transaction, index) => (
-                        <TableRow key={transaction.id} className="hover:bg-transparent h-7">
+                        <TableRow key={transaction.id} className="hover:bg-transparent h-7 border-b border-black last:border-b-0">
                             <TableCell className="border-r border-black p-1 text-center text-black">{index + 1}</TableCell>
                             <TableCell className="border-r border-black p-1 font-bold text-black">{transaction.contrato}</TableCell>
                             <TableCell className="border-r border-black p-1 text-black">{transaction.cedula}</TableCell>
@@ -570,7 +573,7 @@ export default function DailyCashReportPage() {
                     </Table>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 border-t border-black">
                     <div className="md:col-span-2 border-r border-black">
                         <h3 className="font-bold text-center text-[10px] uppercase tracking-wider bg-slate-100 border-b border-black p-1 text-black">Desglose de Efectivo Físico</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2">
@@ -578,9 +581,9 @@ export default function DailyCashReportPage() {
                                 <TableHeader className="bg-slate-50"><TableRow><TableHead className="border-r border-black p-1 font-bold text-black h-6">Cant.</TableHead><TableHead className="border-r border-black p-1 font-bold text-black h-6 text-right">Billetes</TableHead><TableHead className="p-1 font-bold text-black h-6 text-right">Monto</TableHead></TableRow></TableHeader>
                                 <TableBody>
                                     {Object.keys(billQuantities).map(bill => (
-                                        <TableRow key={bill} className="h-6 hover:bg-transparent">
-                                            <TableCell className="border-r border-black p-0 text-black">
-                                                <span className={cn(isDownloading ? "block text-center" : "print-show-val text-center w-full")}>{billQuantities[bill] || '0'}</span>
+                                        <TableRow key={bill} className="h-6 hover:bg-transparent border-b border-black last:border-b-0">
+                                            <TableCell className="border-r border-black p-0 text-black text-center">
+                                                <span className={cn(isDownloading ? "block" : "print-show-val")}>{billQuantities[bill] || '0'}</span>
                                                 {!isDownloading && (
                                                     <Input type="number" value={billQuantities[bill] || ''} onChange={e => handleCashChange('bill', bill, e.target.value)} className="w-full h-6 border-none rounded-none text-[10px] p-1 text-center focus:ring-0 print:hidden" />
                                                 )}
@@ -596,9 +599,9 @@ export default function DailyCashReportPage() {
                                 <TableHeader className="bg-slate-50"><TableRow><TableHead className="border-r border-black p-1 font-bold text-black h-6">Cant.</TableHead><TableHead className="border-r border-black p-1 font-bold text-black h-6 text-right">Monedas</TableHead><TableHead className="p-1 font-bold text-black h-6 text-right">Monto</TableHead></TableRow></TableHeader>
                                 <TableBody>
                                     {Object.keys(coinQuantities).map(coin => (
-                                        <TableRow key={coin} className="h-6 hover:bg-transparent">
-                                            <TableCell className="border-r border-black p-0 text-black">
-                                                <span className={cn(isDownloading ? "block text-center" : "print-show-val text-center w-full")}>{coinQuantities[coin] || '0'}</span>
+                                        <TableRow key={coin} className="h-6 hover:bg-transparent border-b border-black last:border-b-0">
+                                            <TableCell className="border-r border-black p-0 text-black text-center">
+                                                <span className={cn(isDownloading ? "block" : "print-show-val")}>{coinQuantities[coin] || '0'}</span>
                                                 {!isDownloading && (
                                                     <Input type="number" value={coinQuantities[coin] || ''} onChange={e => handleCashChange('coin', coin, e.target.value)} className="w-full h-6 border-none rounded-none text-[10px] p-1 text-center focus:ring-0 print:hidden" />
                                                 )}
@@ -631,15 +634,15 @@ export default function DailyCashReportPage() {
                             <TableHeader className="bg-slate-100 border-b border-black"><TableRow><TableHead colSpan={2} className="text-center font-bold p-1 h-6 uppercase text-black">Gastos Menores</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {expenses.map((expense, index) => (
-                                    <TableRow key={index} className="hover:bg-transparent h-6">
+                                    <TableRow key={index} className="hover:bg-transparent h-6 border-b border-black last:border-b-0">
                                         <TableCell className="border-r border-black p-0 text-black">
                                             <span className={cn(isDownloading ? "block px-1" : "print-show-val px-1")}>{expense.description || '-'}</span>
                                             {!isDownloading && (
                                                 <Input placeholder="Descripción..." value={expense.description} onChange={e => handleExpenseChange(index, 'description', e.target.value)} className="w-full h-6 border-none rounded-none text-[10px] p-1 focus:ring-0 print:hidden" />
                                             )}
                                         </TableCell>
-                                        <TableCell className="p-0 w-20 text-black">
-                                            <span className={cn(isDownloading ? "block text-right px-1" : "print-show-val text-right px-1 w-full")}>{expense.amount > 0 ? expense.amount.toFixed(2) : '0.00'}</span>
+                                        <TableCell className="p-0 w-20 text-black text-right pr-1">
+                                            <span className={cn(isDownloading ? "block" : "print-show-val")}>{expense.amount > 0 ? expense.amount.toFixed(2) : '0.00'}</span>
                                             {!isDownloading && (
                                                 <Input type="number" value={expense.amount || ''} onChange={e => handleExpenseChange(index, 'amount', e.target.value)} className="w-full h-6 border-none rounded-none text-[10px] p-1 text-right focus:ring-0 print:hidden" />
                                             )}
@@ -657,7 +660,7 @@ export default function DailyCashReportPage() {
                     </div>
                 </div>
                 
-                <div className="flex justify-around items-center pt-4 border-t border-black bg-white">
+                <div className="flex justify-around items-center pt-4 pb-4 border-t border-black bg-white">
                     <div className="text-center w-48 border-t border-black pt-1"><p className="text-[8px] font-bold uppercase text-black">Recibido por</p></div>
                     <div className="text-center w-48 border-t border-black pt-1"><p className="text-[8px] font-bold uppercase text-black">Entregado por</p></div>
                 </div>

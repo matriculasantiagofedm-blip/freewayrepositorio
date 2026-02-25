@@ -347,12 +347,12 @@ export default function DailyCashReportPage() {
 
     setIsDownloading(true);
     try {
-      // Dynamic import to avoid SSR issues
+      // Importación dinámica para evitar problemas de SSR
       // @ts-ignore
       const html2pdf = (await import('html2pdf.js')).default;
       
       const opt = {
-        margin: [0.2, 0.2],
+        margin: [0.1, 0.1],
         filename: `Reporte_Caja_Freeway_${format(reportDate, 'dd-MM-yyyy')}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
@@ -360,15 +360,15 @@ export default function DailyCashReportPage() {
           useCORS: true, 
           letterRendering: true,
           logging: false,
-          width: 1050 // Ancho proporcional para Letter Landscape
+          width: 1750 // Aumentamos el ancho virtual para reducir el contenido un 40% al ajustar a página
         },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' },
-        pagebreak: { mode: 'avoid-all' } // Intentar evitar saltos de página
+        pagebreak: { mode: 'avoid-all' }
       };
 
-      // Forzamos el ajuste a una sola página escalando el contenido si es necesario
+      // Forzamos el ajuste a una sola página
       await html2pdf().from(element).set(opt).save();
-      toast({ title: "PDF Generado", description: "El reporte se ha descargado correctamente en una sola página." });
+      toast({ title: "PDF Generado", description: "El reporte se ha descargado con reducción del 40%." });
     } catch (err) {
       console.error("Error generating PDF:", err);
       toast({ variant: "destructive", title: "Error", description: "No se pudo generar el PDF." });
@@ -503,7 +503,7 @@ export default function DailyCashReportPage() {
                         )}
                     >
                         {isDownloading ? <Loader2 className="animate-spin mr-4 h-8 w-8" /> : <Download className="mr-4 h-8 w-8" />}
-                        DESCARGAR EN PDF
+                        DESCARGAR EN PDF (Reducido -40%)
                     </Button>
                 </div>
             )}

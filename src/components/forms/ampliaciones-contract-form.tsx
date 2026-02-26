@@ -187,6 +187,7 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
         toast({ title: 'Ampliación Actualizada' });
         router.push(`/contracts/${contract.id}`);
       } else {
+        let createdId = '';
         await runTransaction(db, async (transaction) => {
           const counterRef = doc(db, 'counters', 'contracts_folio');
           const counterDoc = await transaction.get(counterRef);
@@ -200,6 +201,7 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
           });
 
           const contractRef = doc(collection(db, 'contracts'));
+          createdId = contractRef.id;
           transaction.set(contractRef, {
             title: `Contrato de Ampliación - Folio ${nextFolio}`,
             clientName: clientName,
@@ -220,7 +222,7 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
           });
         });
         toast({ title: 'Ampliación Guardada' });
-        router.push('/dashboard');
+        if (createdId) router.push(`/contracts/${createdId}`);
       }
     } catch (error) {
       console.error("Error al guardar ampliación:", error);

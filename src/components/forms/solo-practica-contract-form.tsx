@@ -181,7 +181,7 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
     });
 
     allContracts?.forEach(c => {
-        if (isEdit && c.id === contract.id) return;
+        if (isEdit && contract && c.id === contract.id) return;
         const details = c.autoMotoDetails || c.deluxeDetails;
         const processSlots = (slots: any[]) => {
             slots.forEach(s => {
@@ -249,6 +249,7 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
         toast({ title: 'Práctica Actualizada' });
         router.push(`/contracts/${contract.id}`);
       } else {
+        let createdId = '';
         await runTransaction(db, async (transaction) => {
           const counterRef = doc(db, 'counters', 'contracts_folio');
           const counterDoc = await transaction.get(counterRef);
@@ -262,6 +263,7 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
           });
 
           const contractRef = doc(collection(db, 'contracts'));
+          createdId = contractRef.id;
           transaction.set(contractRef, {
             title: `Solo Práctica - Folio ${nextFolio}`,
             clientName: clientName,
@@ -282,7 +284,7 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
           });
         });
         toast({ title: 'Práctica Guardada' });
-        router.push('/dashboard');
+        if (createdId) router.push(`/contracts/${createdId}`);
       }
     } catch (error: any) {
       console.error("Error saving contract:", error);

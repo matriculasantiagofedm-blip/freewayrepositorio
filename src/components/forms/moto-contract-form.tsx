@@ -227,6 +227,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
         toast({ title: 'Moto Actualizada' });
         router.push(`/contracts/${contract.id}`);
       } else {
+        let createdId = '';
         await runTransaction(db, async (transaction) => {
           const counterRef = doc(db, 'counters', 'contracts_folio');
           const counterDoc = await transaction.get(counterRef);
@@ -235,6 +236,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
           const clientRef = doc(collection(db, 'clients'));
           transaction.set(clientRef, { name: clientName, email: clientEmail, idNumber: values.studentIdNumber, phone: values.studentPhone1, createdAt: serverTimestamp(), userId: user.uid });
           const contractRef = doc(collection(db, 'contracts'));
+          createdId = contractRef.id;
           transaction.set(contractRef, { 
             title: `Curso de Moto - Folio ${nextFolio}`, 
             clientName, 
@@ -256,7 +258,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
           });
         });
         toast({ title: 'Contrato Creado' });
-        router.push('/dashboard');
+        if (createdId) router.push(`/contracts/${createdId}`);
       }
     } catch (error) { 
       console.error(error);

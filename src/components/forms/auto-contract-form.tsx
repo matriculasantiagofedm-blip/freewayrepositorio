@@ -238,7 +238,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
     });
 
     allContracts?.forEach(c => {
-        if (isEdit && c.id === contract?.id) return;
+        if (isEdit && contract && c.id === contract.id) return;
         const details = c.autoMotoDetails || c.deluxeDetails;
         const processSlots = (slots: any[]) => {
             slots.forEach(s => {
@@ -339,6 +339,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
         toast({ title: 'Contrato Actualizado' });
         setTimeout(() => router.push(`/contracts/${contract.id}`), 500);
       } else {
+        let createdId = '';
         await runTransaction(db, async (transaction) => {
           const counterRef = doc(db, 'counters', 'contracts_folio');
           const counterDoc = await transaction.get(counterRef);
@@ -352,6 +353,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
           });
 
           const contractRef = doc(collection(db, 'contracts'));
+          createdId = contractRef.id;
           transaction.set(contractRef, {
             title: `Curso de Auto - Folio ${nextFolio}`,
             clientName: clientName,
@@ -373,7 +375,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
           });
         });
         toast({ title: 'Contrato Creado' });
-        router.push('/dashboard');
+        if (createdId) router.push(`/contracts/${createdId}`);
       }
     } catch (error: any) {
       console.error("Error saving contract:", error);
@@ -664,7 +666,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
                               <PopoverTrigger asChild>
                                 <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
                               </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={toDate(f.value)} onSelect={f.onChange} initialFocus /></PopoverContent>
+                              <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={toDate(f.value)} onSelect={field.onChange} initialFocus /></PopoverContent>
                             </Popover>
                           </FormItem>
                         )} />

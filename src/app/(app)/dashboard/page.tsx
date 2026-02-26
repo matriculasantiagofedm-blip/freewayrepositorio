@@ -30,6 +30,8 @@ export default function DashboardPage() {
   const { user, isUserLoading } = useUser();
   const { role } = useCurrentRole();
 
+  const isAdmin = role === 'Administrador';
+
   const contractsQuery = useMemo(() => {
     if (!db || !user) return null;
     return collection(db, 'contracts');
@@ -121,7 +123,8 @@ export default function DashboardPage() {
         <p className="text-muted-foreground font-medium">Gestión unificada de Freeway Escuela de Manejo</p>
       </div>
 
-      {!isContractsLoading && statsValues.drafts.length > 0 && (
+      {/* SOLO ADMINISTRADOR: SOLICITUDES WEB */}
+      {isAdmin && !isContractsLoading && statsValues.drafts.length > 0 && (
         <Card className="border-amber-200 bg-amber-50/30 overflow-hidden shadow-sm">
           <CardHeader className="pb-3 border-b border-amber-100 flex flex-row items-center justify-between">
             <div className="flex items-center gap-3">
@@ -158,27 +161,30 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      <div className="grid gap-4 md:grid-cols-3">
-        {stats.map((stat) => (
-            <Link key={stat.title} href={stat.href} className="no-underline">
-                <Card className={cn(
-                    "hover:shadow-md transition-all border-slate-200",
-                    stat.highlight && "border-primary/20 bg-primary/5"
-                )}>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-500">{stat.title}</CardTitle>
-                        <stat.icon className={cn("h-4 w-4", stat.highlight ? "text-primary" : "text-slate-400")} />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-baseline gap-3">
-                            <div className="text-3xl font-black text-slate-900">{stat.value}</div>
-                            {stat.secondaryValue && <p className="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">{stat.secondaryValue}</p>}
-                        </div>
-                    </CardContent>
-                </Card>
-            </Link>
-        ))}
-      </div>
+      {/* SOLO ADMINISTRADOR: ESTADÍSTICAS GLOBALES */}
+      {isAdmin && (
+        <div className="grid gap-4 md:grid-cols-3">
+          {stats.map((stat) => (
+              <Link key={stat.title} href={stat.href} className="no-underline">
+                  <Card className={cn(
+                      "hover:shadow-md transition-all border-slate-200",
+                      stat.highlight && "border-primary/20 bg-primary/5"
+                  )}>
+                      <CardHeader className="flex flex-row items-center justify-between pb-2">
+                          <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-500">{stat.title}</CardTitle>
+                          <stat.icon className={cn("h-4 w-4", stat.highlight ? "text-primary" : "text-slate-400")} />
+                      </CardHeader>
+                      <CardContent>
+                          <div className="flex items-baseline gap-3">
+                              <div className="text-3xl font-black text-slate-900">{stat.value}</div>
+                              {stat.secondaryValue && <p className="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">{stat.secondaryValue}</p>}
+                          </div>
+                      </CardContent>
+                  </Card>
+              </Link>
+          ))}
+        </div>
+      )}
 
       <div className="space-y-4">
         <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">

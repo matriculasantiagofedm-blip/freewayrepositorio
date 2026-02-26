@@ -350,7 +350,14 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
                 <FormField control={form.control} name="paymentDeadline" render={({ field }) => (
-                    <FormItem className="flex flex-col"><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Límite para Saldo</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("w-full h-10 pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(toDate(field.value), "PPP", { locale: es }) : <span>Elegir fecha</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={toDate(field.value)} onSelect={field.onChange} initialFocus /></PopoverContent></Popover></FormItem>
+                    <FormItem className="flex flex-col"><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Límite para Saldo</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("w-full h-10 pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(toDate(field.value), "PPP", { locale: es }) : <span>Elegir fecha</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start">
+                      <Calendar 
+                        mode="single" 
+                        selected={field.value ? toDate(field.value) : undefined} 
+                        onSelect={(date) => { if (date) field.onChange(date); }} 
+                        initialFocus 
+                      />
+                    </PopoverContent></Popover></FormItem>
                 )} />
                 <FormField control={form.control} name="paymentType" render={({ field }) => (
                     <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Método de Pago</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="cash">Efectivo</SelectItem><SelectItem value="debit">Tarjeta Débito</SelectItem><SelectItem value="credit">Tarjeta Crédito</SelectItem><SelectItem value="bac">BAC</SelectItem><SelectItem value="general">General</SelectItem><SelectItem value="cheques">Cheque</SelectItem></SelectContent></Select></FormItem>
@@ -363,7 +370,7 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
           <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-emerald-600" />
-              <CardTitle className="text-sm font-bold uppercase tracking-wider">Programación de Horas Prácticas</CardTitle>
+              <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-700">Programación de Horas Prácticas</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="p-6">
@@ -405,7 +412,14 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
                               <PopoverTrigger asChild>
                                 <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
                               </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={toDate(f.value)} onSelect={f.onChange} initialFocus /></PopoverContent>
+                              <PopoverContent className="w-auto p-0">
+                                <Calendar 
+                                  mode="single" 
+                                  selected={f.value ? toDate(f.value) : undefined} 
+                                  onSelect={(date) => { if (date) f.onChange(date); }} 
+                                  initialFocus 
+                                />
+                              </PopoverContent>
                             </Popover>
                           </FormItem>
                         )} />

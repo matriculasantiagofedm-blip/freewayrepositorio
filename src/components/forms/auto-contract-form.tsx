@@ -530,7 +530,12 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
                             </FormControl>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={toDate(field.value)} onSelect={field.onChange} initialFocus />
+                            <Calendar 
+                              mode="single" 
+                              selected={field.value ? toDate(field.value) : undefined} 
+                              onSelect={(date) => { if (date) field.onChange(date); }} 
+                              initialFocus 
+                            />
                           </PopoverContent>
                         </Popover>
                       </FormItem>
@@ -612,7 +617,14 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
                     <PopoverTrigger asChild>
                       <FormControl><Button variant="outline" className={cn("w-full h-10 pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(toDate(field.value), "PPP", { locale: es }) : <span>Elegir fecha</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={toDate(field.value)} onSelect={field.onChange} initialFocus /></PopoverContent>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar 
+                        mode="single" 
+                        selected={field.value ? toDate(field.value) : undefined} 
+                        onSelect={(date) => { if (date) field.onChange(date); }} 
+                        initialFocus 
+                      />
+                    </PopoverContent>
                   </Popover>
                 </FormItem>
               )} />
@@ -666,7 +678,14 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
                               <PopoverTrigger asChild>
                                 <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
                               </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={toDate(f.value)} onSelect={field.onChange} initialFocus /></PopoverContent>
+                              <PopoverContent className="w-auto p-0">
+                                <Calendar 
+                                  mode="single" 
+                                  selected={f.value ? toDate(f.value) : undefined} 
+                                  onSelect={(date) => { if (date) f.onChange(date); }} 
+                                  initialFocus 
+                                />
+                              </PopoverContent>
                             </Popover>
                           </FormItem>
                         )} />

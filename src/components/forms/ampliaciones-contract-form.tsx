@@ -265,7 +265,6 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
                 )} />
               </div>
               
-              {/* RESTAURACIÓN DE TIPO ID Y NÚMERO */}
               <div className="col-span-4 md:col-span-2">
                 <FormField control={form.control} name="idType" render={({ field }) => (
                   <FormItem>
@@ -396,7 +395,14 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={toDate(field.value)} onSelect={field.onChange} initialFocus /></PopoverContent>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar 
+                        mode="single" 
+                        selected={field.value ? toDate(field.value) : undefined} 
+                        onSelect={(date) => { if (date) field.onChange(date); }} 
+                        initialFocus 
+                      />
+                    </PopoverContent>
                   </Popover>
                 </FormItem>
               )} />
@@ -440,7 +446,14 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
                       </Button>
                     </FormControl>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={toDate(field.value)} onSelect={field.onChange} initialFocus /></PopoverContent>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar 
+                      mode="single" 
+                      selected={field.value ? toDate(field.value) : undefined} 
+                      onSelect={(date) => { if (date) field.onChange(date); }} 
+                      initialFocus 
+                    />
+                  </PopoverContent>
                 </Popover>
               </FormItem>
             )} />

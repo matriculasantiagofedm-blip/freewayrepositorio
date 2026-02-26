@@ -381,7 +381,14 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={toDate(field.value)} onSelect={field.onChange} initialFocus /></PopoverContent>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar 
+                            mode="single" 
+                            selected={field.value ? toDate(field.value) : undefined} 
+                            onSelect={(date) => { if (date) field.onChange(date); }} 
+                            initialFocus 
+                          />
+                        </PopoverContent>
                       </Popover>
                     </FormItem>
                   )} />
@@ -439,7 +446,14 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={toDate(field.value)} onSelect={field.onChange} initialFocus /></PopoverContent>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar 
+                        mode="single" 
+                        selected={field.value ? toDate(field.value) : undefined} 
+                        onSelect={(date) => { if (date) field.onChange(date); }} 
+                        initialFocus 
+                      />
+                    </PopoverContent>
                   </Popover>
                 </FormItem>
               )} />
@@ -482,7 +496,14 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
                           <PopoverTrigger asChild>
                             <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : 'Fecha'}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={toDate(f.value)} onSelect={f.onChange} initialFocus /></PopoverContent>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar 
+                              mode="single" 
+                              selected={f.value ? toDate(f.value) : undefined} 
+                              onSelect={(date) => { if (date) f.onChange(date); }} 
+                              initialFocus 
+                            />
+                          </PopoverContent>
                         </Popover>
                       </FormItem>
                     )} />

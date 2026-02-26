@@ -36,6 +36,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import Link from 'next/link';
 
 const ALL_CATEGORIES = ['A', 'B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];
 const FIRST_TIME_CATEGORIES = ['A', 'B', 'C', 'D'];
@@ -64,6 +65,22 @@ function CertificatesContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [foundContracts, setFoundContracts] = useState<Contract[] | null>(null);
   const [searched, setSearched] = useState(false);
+
+  // RESTRICCIÓN DE SEGURIDAD PARA ROLES OPERATIVOS
+  if (role !== 'Administrador') {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed rounded-2xl bg-slate-50">
+        <div className="bg-red-100 p-4 rounded-full mb-4">
+            <FileText className="h-10 w-10 text-red-600" />
+        </div>
+        <h3 className="text-xl font-black text-red-900 uppercase tracking-tight">Acceso Restringido</h3>
+        <p className="text-slate-600 mt-2 max-w-sm font-medium">Lo sentimos, el personal operativo no tiene permisos para utilizar el motor global de búsqueda e impresión masiva de certificados.</p>
+        <Button asChild className="mt-8 h-12 px-8 font-bold" variant="default">
+            <Link href="/dashboard">Volver al Panel Principal</Link>
+        </Button>
+      </div>
+    );
+  }
 
   // Estados del Modal
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);

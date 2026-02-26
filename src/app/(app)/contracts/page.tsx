@@ -79,6 +79,8 @@ function AllContractsContent() {
       return 'Listado Global de Contratos';
   };
 
+  const showActions = role === 'Administrador';
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -113,7 +115,7 @@ function AllContractsContent() {
                 <TableHead>Certificado</TableHead>
                 <TableHead>Fecha de Registro</TableHead>
                 <TableHead className="text-right">Saldo (B/.)</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
+                {showActions && <TableHead className="text-right">Acciones</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -157,17 +159,19 @@ function AllContractsContent() {
                       <TableCell className={cn("text-right font-bold", getBalance(contract) > 0 ? "text-destructive" : "text-green-600")}>
                           {getBalance(contract).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <Button asChild variant="ghost" size="icon">
-                          <Link href={`/contracts/${contract.id}`}><Eye className="h-4 w-4" /></Link>
-                        </Button>
-                      </TableCell>
+                      {showActions && (
+                        <TableCell className="text-right">
+                          <Button asChild variant="ghost" size="icon">
+                            <Link href={`/contracts/${contract.id}`}><Eye className="h-4 w-4" /></Link>
+                          </Button>
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-32 text-center text-muted-foreground italic">
+                  <TableCell colSpan={showActions ? 8 : 7} className="h-32 text-center text-muted-foreground italic">
                     {searchTerm ? "No se encontraron contratos con ese criterio." : "No hay trámites registrados para el filtro seleccionado."}
                   </TableCell>
                 </TableRow>

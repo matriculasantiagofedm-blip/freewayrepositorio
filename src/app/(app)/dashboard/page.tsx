@@ -10,7 +10,7 @@ import { collection } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import type { Contract } from '@/lib/types';
-import { Car, Bike, Plus, Repeat, Dumbbell, CalendarCheck, UserPlus, ArrowRight, Clock, ShieldCheck, Wallet, ClipboardList } from 'lucide-react';
+import { Car, Bike, Plus, Repeat, Dumbbell, CalendarCheck, UserPlus, ArrowRight, Clock, ShieldCheck, Wallet, Globe } from 'lucide-react';
 import { isToday, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -40,7 +40,7 @@ export default function DashboardPage() {
   const { data: allContracts, isLoading: isContractsLoading } = useCollection<Contract>(contractsQuery);
 
   const statsValues = useMemo(() => {
-    if (!allContracts) return { active: 0, today: 0, overdue: 0, overdueAmount: 0, drafts: [] as Contract[] };
+    if (!allContracts) return { active: 0, today: 0, overdue: 0, overdueAmount: 0, webEnrollments: [] as Contract[] };
     
     const filteredContracts = allContracts.filter(c => !c.isManualPrint);
 
@@ -49,14 +49,19 @@ export default function DashboardPage() {
     const overdueList = filteredContracts.filter(isOverdue);
     const overdueCount = overdueList.length;
     const overdueSum = overdueList.reduce((sum, c) => sum + getBalance(c), 0);
-    const draftsList = filteredContracts.filter(c => c.status === 'draft');
+    
+    // Detectar inscripciones hechas desde la web hoy
+    const webEnrollments = filteredContracts.filter(c => 
+        c.createdBy === 'Web Pública' && 
+        isToday(toDate(c.createdAt))
+    );
 
     return {
         active,
         today: todayCount,
         overdue: overdueCount,
         overdueAmount: overdueSum,
-        drafts: draftsList
+        webEnrollments
     };
   }, [allContracts]);
 
@@ -123,36 +128,37 @@ export default function DashboardPage() {
         <p className="text-muted-foreground font-medium">Gestión unificada de Freeway Escuela de Manejo</p>
       </div>
 
-      {/* SOLO ADMINISTRADOR: SOLICITUDES WEB */}
-      {isAdmin && !isContractsLoading && statsValues.drafts.length > 0 && (
-        <Card className="border-amber-200 bg-amber-50/30 overflow-hidden shadow-sm">
-          <CardHeader className="pb-3 border-b border-amber-100 flex flex-row items-center justify-between">
+      {/* SOLO ADMINISTRADOR: AVISO DE INSCRIPCIONES WEB RECIENTES */}
+      {isAdmin && !isContractsLoading && statsValues.webEnrollments.length > 0 && (
+        <Card className="border-blue-200 bg-blue-50/30 overflow-hidden shadow-sm">
+          <CardHeader className="pb-3 border-b border-blue-100 flex flex-row items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="bg-amber-100 p-2 rounded-xl">
-                <UserPlus className="h-5 w-5 text-amber-600" />
+              <div className="bg-blue-100 p-2 rounded-xl">
+                <Globe className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <CardTitle className="text-amber-900 text-sm font-bold uppercase tracking-wider">Nuevas Solicitudes Web</CardTitle>
-                <CardDescription className="text-amber-700/70 text-xs">Hay {statsValues.drafts.length} estudiantes esperando activación.</CardDescription>
+                <CardTitle className="text-blue-900 text-sm font-bold uppercase tracking-wider">Inscripciones Web de Hoy</CardTitle>
+                <CardDescription className="text-blue-700/70 text-xs">Hay {statsValues.webEnrollments.length} alumnos que se inscribieron por el portal público hoy.</CardDescription>
               </div>
             </div>
-            <Button asChild variant="outline" size="sm" className="bg-white border-amber-200 text-amber-700 hover:bg-amber-50">
-              <Link href="/contracts">Ver Todas</Link>
+            <Button asChild variant="outline" size="sm" className="bg-white border-blue-200 text-blue-700 hover:bg-blue-50">
+              <Link href="/contracts?filter=today">Ver Todas</Link>
             </Button>
           </CardHeader>
           <CardContent className="p-4 space-y-2">
-            {statsValues.drafts.slice(0, 3).map(draft => (
-              <div key={draft.id} className="bg-white p-3 rounded-xl border border-amber-100 flex items-center justify-between group hover:border-amber-300 transition-all">
+            {statsValues.webEnrollments.slice(0, 3).map(enrollment => (
+              <div key={enrollment.id} className="bg-white p-3 rounded-xl border border-blue-100 flex items-center justify-between group hover:border-blue-300 transition-all">
                 <div className="flex flex-col">
-                  <span className="font-bold text-sm uppercase text-slate-800">{draft.clientName}</span>
+                  <span className="font-bold text-sm uppercase text-slate-800">{enrollment.clientName}</span>
                   <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-bold uppercase mt-0.5">
-                    <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {format(toDate(draft.createdAt), "d 'de' MMM", { locale: es })}</span>
-                    <span className="bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-md">{draft.type}</span>
+                    <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {format(toDate(enrollment.createdAt), "hh:mm a", { locale: es })}</span>
+                    <span className="bg-green-100 text-green-800 px-1.5 py-0.5 rounded-md">PAGO VALIDADO</span>
+                    <span className="font-black text-blue-600">FOLIO {String(enrollment.folioNumber).padStart(6, '0')}</span>
                   </div>
                 </div>
-                <Button asChild size="sm" variant="ghost" className="text-amber-600 hover:bg-amber-50 rounded-full h-8 px-4">
-                  <Link href={`/contracts/${draft.id}`}>
-                    Revisar <ArrowRight className="ml-2 h-3 w-3" />
+                <Button asChild size="sm" variant="ghost" className="text-blue-600 hover:bg-blue-50 rounded-full h-8 px-4">
+                  <Link href={`/contracts/${enrollment.id}`}>
+                    Ver Registro <ArrowRight className="ml-2 h-3 w-3" />
                   </Link>
                 </Button>
               </div>

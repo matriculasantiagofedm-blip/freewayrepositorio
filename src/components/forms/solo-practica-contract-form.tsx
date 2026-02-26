@@ -2,7 +2,7 @@
 
 /**
  * FORMULARIO DE CONTRATO: CURSO DE SOLO PRÁCTICA
- * Soporta creación y edición.
+ * Soporta creación, edición y descarga de PDF en tiempo real.
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -52,7 +52,8 @@ import {
   UserCircle, 
   CreditCard, 
   Clock,
-  RefreshCw
+  RefreshCw,
+  Download
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useDb, useUser } from '@/components/firebase-provider';
@@ -62,6 +63,7 @@ import { isPanamaHoliday } from '@/lib/holidays';
 import type { Contract } from '@/lib/types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { AutoMotoContractTemplate } from '@/components/auto-moto-contract';
 
 const PRACTICE_PLANS = ["Basico 8 Hrs", "Plus 10 Hrs", "Premium 12 Hrs"];
 const PLAN_PRICES: Record<string, number> = { "Basico 8 Hrs": 123.00, "Plus 10 Hrs": 135.00, "Premium 12 Hrs": 160.00 };
@@ -127,6 +129,7 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
   const { toast } = useToast();
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const isEdit = !!contract;
 
   const activeContractsQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed'])) : null, [db, user]);
@@ -212,6 +215,34 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
     }
   }, [watchPlan, replacePractical, form, isEdit]);
 
+  const handleDownloadPdf = async () => {
+    const element = document.getElementById('contract-preview-hidden');
+    if (!element) return;
+
+    setIsDownloading(true);
+    try {
+      // @ts-ignore
+      const html2pdf = (await import('html2pdf.js')).default;
+      const values = form.getValues();
+      const clientFileName = values.clientName.replace(/\s+/g, '_');
+      
+      const opt = {
+        margin: [0.3, 0.7, 0.3, 0.3],
+        filename: `Contrato_Solo_Practica_Borrador_${clientFileName}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff', width: 820 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      await html2pdf().from(element).set(opt).save();
+      toast({ title: "PDF Generado", description: "Borrador de práctica descargado." });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Error", description: "No se pudo generar el PDF." });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const onSubmit = async (values: FormValues) => {
     if (!db || !user) return;
     setIsSaving(true);
@@ -237,15 +268,7 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
           updatedBy: role || 'Sistema',
         };
 
-        updateDoc(contractRef, updateData)
-          .catch(async (error) => {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-              path: contractRef.path,
-              operation: 'update',
-              requestResourceData: updateData
-            }));
-          });
-
+        await updateDoc(contractRef, updateData);
         toast({ title: 'Práctica Actualizada' });
         router.push(`/contracts/${contract.id}`);
       } else {
@@ -294,179 +317,211 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
     }
   };
 
-  const currentBalance = form.watch('courseValue') - form.watch('downPayment');
+  const currentBalance = (form.watch('courseValue') || 0) - (form.watch('downPayment') || 0);
+  
+  // Dummy contract for PDF
+  const watchAll = form.watch();
+  const dummyContractForPdf: any = {
+    clientName: watchAll.clientName,
+    clientEmail: watchAll.clientEmail,
+    type: 'Curso Solo Practica',
+    folioNumber: contract?.folioNumber || 0,
+    createdAt: contract?.createdAt || new Date(),
+    createdBy: role || 'Sistema',
+    autoMotoDetails: {
+        ...watchAll,
+        balance: currentBalance,
+    }
+  };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-5xl mx-auto pb-20">
-        <Card className="border-t-4 border-t-emerald-600 shadow-sm">
-          <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
-            <div className="flex items-center gap-2">
-              <UserCircle className="h-5 w-5 text-emerald-600" />
-              <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-700">Ficha (Solo Práctica)</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="grid grid-cols-12 gap-4">
-              <div className="col-span-12 md:col-span-8">
-                <FormField control={form.control} name="clientName" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Nombre</FormLabel><FormControl><Input placeholder="Nombre..." {...field} className="h-9 uppercase font-bold" /></FormControl><FormMessage /></FormItem>
+    <>
+      <div id="contract-preview-hidden" className="hidden">
+          <AutoMotoContractTemplate contract={dummyContractForPdf} />
+      </div>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-5xl mx-auto pb-20">
+          <Card className="border-t-4 border-t-emerald-600 shadow-sm">
+            <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
+              <div className="flex items-center gap-2">
+                <UserCircle className="h-5 w-5 text-emerald-600" />
+                <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-700">Ficha (Solo Práctica)</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-12 gap-4">
+                <div className="col-span-12 md:col-span-8">
+                  <FormField control={form.control} name="clientName" render={({ field }) => (
+                    <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Nombre</FormLabel><FormControl><Input placeholder="Nombre..." {...field} className="h-9 uppercase font-bold" /></FormControl><FormMessage /></FormItem>
+                  )} />
+                </div>
+                <div className="col-span-12 md:col-span-4">
+                  <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
+                    <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">ID</FormLabel><FormControl><Input placeholder="8-000-000" {...field} className="h-9 font-mono" readOnly={isEdit} /></FormControl></FormItem>
+                  )} />
+                </div>
+                <div className="col-span-12">
+                  <FormField control={form.control} name="studentAddress" render={({ field }) => (
+                    <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Dirección</FormLabel><FormControl><Input placeholder="Ubicación..." {...field} className="h-9 uppercase" /></FormControl></FormItem>
+                  )} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm">
+            <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-emerald-600" />
+                <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-700">Valores</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                <FormField control={form.control} name="coursePlan" render={({ field }) => (
+                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Paquete</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-10"><SelectValue placeholder="Elegir..." /></SelectTrigger></FormControl><SelectContent>{PRACTICE_PLANS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent></Select></FormItem>
+                )} />
+                <FormField control={form.control} name="courseValue" render={({ field }) => (
+                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Valor (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold bg-muted/30" readOnly={!isEdit} /></FormControl></FormItem>
+                )} />
+                <FormField control={form.control} name="downPayment" render={({ field }) => (
+                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Abono (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold text-green-600" /></FormControl></FormItem>
                 )} />
               </div>
-              <div className="col-span-12 md:col-span-4">
-                <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">ID</FormLabel><FormControl><Input placeholder="8-000-000" {...field} className="h-9 font-mono" readOnly={isEdit} /></FormControl></FormItem>
-                )} />
+              <div className="h-10 flex items-center px-4 bg-red-50 rounded-md border border-red-100"><span className="text-lg font-black text-red-900">Saldo Pendiente: B/. {currentBalance.toFixed(2)}</span></div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
+                  <FormField control={form.control} name="paymentDeadline" render={({ field }) => (
+                      <FormItem className="flex flex-col"><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Límite para Saldo</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("w-full h-10 pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(toDate(field.value), "PPP", { locale: es }) : <span>Elegir fecha</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start">
+                        <Calendar 
+                          mode="single" 
+                          selected={field.value ? toDate(field.value) : undefined} 
+                          onSelect={(date) => { if (date) field.onChange(date); }} 
+                          initialFocus 
+                        />
+                      </PopoverContent></Popover></FormItem>
+                  )} />
+                  <FormField control={form.control} name="paymentType" render={({ field }) => (
+                      <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Método de Pago</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="cash">Efectivo</SelectItem><SelectItem value="debit">Tarjeta Débito</SelectItem><SelectItem value="credit">Tarjeta Crédito</SelectItem><SelectItem value="bac">BAC</SelectItem><SelectItem value="general">General</SelectItem><SelectItem value="cheques">Cheque</SelectItem></SelectContent></Select></FormItem>
+                  )} />
               </div>
-              <div className="col-span-12">
-                <FormField control={form.control} name="studentAddress" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Dirección</FormLabel><FormControl><Input placeholder="Ubicación..." {...field} className="h-9 uppercase" /></FormControl></FormItem>
-                )} />
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm">
+            <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-emerald-600" />
+                <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-700">Programación de Horas Prácticas</CardTitle>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardHeader>
+            <CardContent className="p-6">
+              {!watchPlan ? (
+                <p className="text-center text-muted-foreground italic py-4">Seleccione un paquete para programar.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {practicalFields.map((field, index) => {
+                    const watchDate = form.watch(`practicalClassSchedules.${index}.date`);
+                    const watchTime = form.watch(`practicalClassSchedules.${index}.time`);
+                    
+                    const dObj = toDate(watchDate);
+                    const isValidDate = !isNaN(dObj.getTime());
+                    const holiday = isValidDate ? isPanamaHoliday(dObj) : null;
+                    const isSunday = isValidDate && dObj.getDay() === 0;
+                    
+                    const slotId = TIME_STRING_TO_SLOT_MAP[watchTime] || watchTime;
+                    const dateKey = isValidDate ? format(dObj, 'yyyy-MM-dd') : '';
+                    const occupancy = availabilityData.globalCounts[`${dateKey}|${slotId}`] || 0;
+                    const capacity = isValidDate ? getGlobalCapacity(dObj, slotId) : 3;
+                    const isFull = occupancy >= capacity;
 
-        <Card className="shadow-sm">
-          <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
-            <div className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-emerald-600" />
-              <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-700">Valores</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-              <FormField control={form.control} name="coursePlan" render={({ field }) => (
-                <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Paquete</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-10"><SelectValue placeholder="Elegir..." /></SelectTrigger></FormControl><SelectContent>{PRACTICE_PLANS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent></Select></FormItem>
-              )} />
-              <FormField control={form.control} name="courseValue" render={({ field }) => (
-                <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Valor (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold bg-muted/30" readOnly={!isEdit} /></FormControl></FormItem>
-              )} />
-              <FormField control={form.control} name="downPayment" render={({ field }) => (
-                <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Abono (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold text-green-600" /></FormControl></FormItem>
-              )} />
-            </div>
-            <div className="h-10 flex items-center px-4 bg-red-50 rounded-md border border-red-100"><span className="text-lg font-black text-red-900">Saldo Pendiente: B/. {currentBalance.toFixed(2)}</span></div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
-                <FormField control={form.control} name="paymentDeadline" render={({ field }) => (
-                    <FormItem className="flex flex-col"><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Límite para Saldo</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className={cn("w-full h-10 pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(toDate(field.value), "PPP", { locale: es }) : <span>Elegir fecha</span>}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start">
-                      <Calendar 
-                        mode="single" 
-                        selected={field.value ? toDate(field.value) : undefined} 
-                        onSelect={(date) => { if (date) field.onChange(date); }} 
-                        initialFocus 
-                      />
-                    </PopoverContent></Popover></FormItem>
-                )} />
-                <FormField control={form.control} name="paymentType" render={({ field }) => (
-                    <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Método de Pago</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="cash">Efectivo</SelectItem><SelectItem value="debit">Tarjeta Débito</SelectItem><SelectItem value="credit">Tarjeta Crédito</SelectItem><SelectItem value="bac">BAC</SelectItem><SelectItem value="general">General</SelectItem><SelectItem value="cheques">Cheque</SelectItem></SelectContent></Select></FormItem>
-                )} />
-            </div>
-          </CardContent>
-        </Card>
+                    return (
+                      <div key={field.id} className={cn(
+                        "p-4 border rounded-xl space-y-3 bg-white relative",
+                        (isFull || holiday || isSunday) ? "border-amber-500 bg-amber-50/10" : "border-slate-200"
+                      )}>
+                        <div className="absolute -top-2 right-3 flex gap-1 z-10">
+                            {isSunday && <div className="bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Domingo</div>}
+                            {holiday && !isSunday && <div className="bg-orange-500 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Feriado</div>}
+                            {isFull && !holiday && !isSunday && <div className="bg-amber-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Lleno</div>}
+                        </div>
 
-        <Card className="shadow-sm">
-          <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-emerald-600" />
-              <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-700">Programación de Horas Prácticas</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6">
-            {!watchPlan ? (
-              <p className="text-center text-muted-foreground italic py-4">Seleccione un paquete para programar.</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {practicalFields.map((field, index) => {
-                  const watchDate = form.watch(`practicalClassSchedules.${index}.date`);
-                  const watchTime = form.watch(`practicalClassSchedules.${index}.time`);
-                  
-                  const dObj = toDate(watchDate);
-                  const isValidDate = !isNaN(dObj.getTime());
-                  const holiday = isValidDate ? isPanamaHoliday(dObj) : null;
-                  const isSunday = isValidDate && dObj.getDay() === 0;
-                  
-                  const slotId = TIME_STRING_TO_SLOT_MAP[watchTime] || watchTime;
-                  const dateKey = isValidDate ? format(dObj, 'yyyy-MM-dd') : '';
-                  const occupancy = availabilityData.globalCounts[`${dateKey}|${slotId}`] || 0;
-                  const capacity = isValidDate ? getGlobalCapacity(dObj, slotId) : 3;
-                  const isFull = occupancy >= capacity;
-
-                  return (
-                    <div key={field.id} className={cn(
-                      "p-4 border rounded-xl space-y-3 bg-white relative",
-                      (isFull || holiday || isSunday) ? "border-amber-500 bg-amber-50/10" : "border-slate-200"
-                    )}>
-                      <div className="absolute -top-2 right-3 flex gap-1 z-10">
-                          {isSunday && <div className="bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Domingo</div>}
-                          {holiday && !isSunday && <div className="bg-orange-500 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Feriado</div>}
-                          {isFull && !holiday && !isSunday && <div className="bg-amber-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Lleno</div>}
+                        <div className="flex gap-4">
+                          <FormField control={form.control} name={`practicalClassSchedules.${index}.date`} render={({ field: f }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel className="text-[10px] font-black uppercase text-slate-500">Sesión {index + 1}</FormLabel>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                  <Calendar 
+                                    mode="single" 
+                                    selected={f.value ? toDate(f.value) : undefined} 
+                                    onSelect={(date) => { if (date) f.onChange(date); }} 
+                                    initialFocus 
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                            </FormItem>
+                          )} />
+                          <FormField control={form.control} name={`practicalClassSchedules.${index}.time`} render={({ field: f }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel className="text-[10px] font-black uppercase text-slate-500">Horario</FormLabel>
+                              <Select onValueChange={f.onChange} value={f.value}>
+                                <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
+                                <SelectContent>{TIME_OPTIONS.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </FormItem>
+                          )} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <FormField control={form.control} name={`practicalClassSchedules.${index}.vehicle`} render={({ field: f }) => (
+                            <FormItem>
+                              <Select onValueChange={f.onChange} value={f.value}>
+                                <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
+                                <SelectContent>{ALL_VEHICLES.map(v => <SelectItem key={v} value={v} className="text-[10px]">{v}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </FormItem>
+                          )} />
+                          <FormField control={form.control} name={`practicalClassSchedules.${index}.instructor`} render={({ field: f }) => (
+                            <FormItem>
+                              <Select onValueChange={f.onChange} value={f.value}>
+                                <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
+                                <SelectContent>{INSTRUCTORS.map(i => <SelectItem key={i} value={i} className="text-[10px]">{i}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </FormItem>
+                          )} />
+                        </div>
                       </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-                      <div className="flex gap-4">
-                        <FormField control={form.control} name={`practicalClassSchedules.${index}.date`} render={({ field: f }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel className="text-[10px] font-black uppercase text-slate-500">Sesión {index + 1}</FormLabel>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0">
-                                <Calendar 
-                                  mode="single" 
-                                  selected={f.value ? toDate(f.value) : undefined} 
-                                  onSelect={(date) => { if (date) f.onChange(date); }} 
-                                  initialFocus 
-                                />
-                              </PopoverContent>
-                            </Popover>
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name={`practicalClassSchedules.${index}.time`} render={({ field: f }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel className="text-[10px] font-black uppercase text-slate-500">Horario</FormLabel>
-                            <Select onValueChange={f.onChange} value={f.value}>
-                              <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
-                              <SelectContent>{TIME_OPTIONS.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent>
-                            </Select>
-                          </FormItem>
-                        )} />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <FormField control={form.control} name={`practicalClassSchedules.${index}.vehicle`} render={({ field: f }) => (
-                          <FormItem>
-                            <Select onValueChange={f.onChange} value={f.value}>
-                              <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
-                              <SelectContent>{ALL_VEHICLES.map(v => <SelectItem key={v} value={v} className="text-[10px]">{v}</SelectItem>)}</SelectContent>
-                            </Select>
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name={`practicalClassSchedules.${index}.instructor`} render={({ field: f }) => (
-                          <FormItem>
-                            <Select onValueChange={f.onChange} value={f.value}>
-                              <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
-                              <SelectContent>{INSTRUCTORS.map(i => <SelectItem key={i} value={i} className="text-[10px]">{i}</SelectItem>)}</SelectContent>
-                            </Select>
-                          </FormItem>
-                        )} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" size="lg" onClick={() => router.back()}>Cancelar</Button>
-          <Button type="submit" size="lg" disabled={isSaving} className={cn("min-w-[220px]", isEdit ? "bg-green-600 hover:bg-green-700" : "bg-emerald-600 hover:bg-emerald-700")}>
-            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : isEdit ? <RefreshCw className="mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />}
-            {isEdit ? 'Actualizar Práctica' : 'Guardar Solo Práctica'}
-          </Button>
-        </div>
-      </form>
-    </Form>
+          <div className="flex flex-col sm:flex-row justify-end gap-4">
+            <Button type="button" variant="outline" size="lg" onClick={() => router.back()}>Cancelar</Button>
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="lg" 
+              onClick={handleDownloadPdf} 
+              disabled={isDownloading || !watchAll.clientName} 
+              className="border-blue-600 text-blue-600 hover:bg-blue-50"
+            >
+              {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+              Descargar PDF
+            </Button>
+            <Button type="submit" size="lg" disabled={isSaving} className={cn("min-w-[220px]", isEdit ? "bg-green-600 hover:bg-green-700" : "bg-emerald-600 hover:bg-emerald-700")}>
+              {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : isEdit ? <RefreshCw className="mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />}
+              {isEdit ? 'Actualizar Práctica' : 'Guardar Solo Práctica'}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </>
   );
 }

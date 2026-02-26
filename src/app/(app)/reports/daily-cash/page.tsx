@@ -76,6 +76,13 @@ export default function DailyCashReportPage() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [sellerFilter, setSellerFilter] = useState('all');
 
+  // Ajustar filtro inicial según rol
+  useEffect(() => {
+    if (role && role !== 'Administrador') {
+      setSellerFilter(role);
+    }
+  }, [role]);
+
   useEffect(() => {
     if (!db || isUserLoading || isRoleLoading || !user || !role) {
         return;
@@ -243,11 +250,16 @@ export default function DailyCashReportPage() {
   }, [db, reportDate, user, role, isUserLoading, isRoleLoading]);
 
   const filteredTransactions = useMemo(() => {
+    // Si no es admin, ignorar cualquier cambio manual en sellerFilter y forzar su rol
+    if (role !== 'Administrador') {
+      return transactions.filter(t => t.createdBy === role);
+    }
+    // Si es admin, usar el filtro seleccionado
     if (sellerFilter === 'all') {
       return transactions;
     }
     return transactions.filter(t => t.createdBy === sellerFilter);
-  }, [transactions, sellerFilter]);
+  }, [transactions, sellerFilter, role]);
 
   const transactionTotals = useMemo(() => {
     return filteredTransactions.reduce(
@@ -388,19 +400,23 @@ export default function DailyCashReportPage() {
         <div className="flex justify-between items-center">
             <div className='flex flex-col'>
                 <h1 className="text-2xl font-bold font-headline text-slate-900">Reporte de Caja Diario</h1>
-                <p className="text-xs text-muted-foreground">Ingresos registrados en el sistema.</p>
+                <p className="text-xs text-muted-foreground">
+                  {isAdmin ? 'Visualizando transacciones globales.' : `Visualizando tus transacciones como ${role}.`}
+                </p>
             </div>
             <div className="flex items-center gap-2">
-                <Select value={sellerFilter} onValueChange={setSellerFilter}>
-                    <SelectTrigger className="w-[180px] h-9 text-xs"><SelectValue placeholder="Vendedor..." /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todos los Vendedores</SelectItem>
-                        <SelectItem value="Administrador">Administrador</SelectItem>
-                        <SelectItem value="Ventas">Ventas</SelectItem>
-                        <SelectItem value="Ventas Externas">Ventas Externas</SelectItem>
-                        <SelectItem value="Web Pública">Inscripción Web</SelectItem>
-                    </SelectContent>
-                </Select>
+                {isAdmin && (
+                  <Select value={sellerFilter} onValueChange={setSellerFilter}>
+                      <SelectTrigger className="w-[180px] h-9 text-xs"><SelectValue placeholder="Vendedor..." /></SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="all">Todos los Vendedores</SelectItem>
+                          <SelectItem value="Administrador">Administrador</SelectItem>
+                          <SelectItem value="Ventas">Ventas</SelectItem>
+                          <SelectItem value="Ventas Externas">Ventas Externas</SelectItem>
+                          <SelectItem value="Web Pública">Inscripción Web</SelectItem>
+                      </SelectContent>
+                  </Select>
+                )}
                 <Popover>
                     <PopoverTrigger asChild>
                     <Button variant={"outline"} className={cn("w-[220px] h-9 justify-start text-left font-normal text-xs", !reportDate && "text-muted-foreground")}>
@@ -429,6 +445,7 @@ export default function DailyCashReportPage() {
         <div className="text-center mb-4 border-b-2 border-black pb-2">
           <h2 className="text-xl font-black uppercase">FREEWAY ESCUELA DE MANEJO</h2>
           <p className="text-[10px] font-bold">REPORTE DE CAJA DIARIO - {format(reportDate, "EEEE d 'de' MMMM 'de' yyyy", { locale: es }).toUpperCase()}</p>
+          {!isAdmin && <p className="text-[8px] font-bold uppercase mt-1">Vendedor: {role}</p>}
         </div>
 
         {isLoading ? (

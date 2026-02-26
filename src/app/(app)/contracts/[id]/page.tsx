@@ -6,7 +6,7 @@ import type { Contract } from '@/lib/types';
 import { ContractView } from '@/components/contract-view';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ChevronLeft, Printer, Loader2, CheckCircle2, CalendarIcon, Phone, Trash2, AlertCircle, Edit, Zap, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, Printer, Loader2, CheckCircle2, CalendarIcon, Phone, Trash2, AlertCircle, Edit, Zap, AlertTriangle, Download } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -92,6 +92,7 @@ export default function ContractDetailPage() {
   });
 
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [isActivating, setIsActivating] = useState(false);
   const [lastFolio, setLastFolio] = useState<string | null>(null);
 
@@ -235,6 +236,40 @@ export default function ContractDetailPage() {
     window.open(`/print-contract/${contractId}`, '_blank');
   };
 
+  const handleDownloadPdf = async () => {
+    const element = document.getElementById('contract-view-content');
+    if (!element || !contract) return;
+
+    setIsDownloading(true);
+    try {
+      // @ts-ignore
+      const html2pdf = (await import('html2pdf.js')).default;
+      
+      const opt = {
+        margin: [0.3, 0.7, 0.3, 0.3], // Top, Left (0.7), Bottom, Right
+        filename: `Contrato_${contract.folioNumber || 'S-N'}_${contract.clientName.replace(/\s+/g, '_')}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+          scale: 2, 
+          useCORS: true, 
+          letterRendering: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          width: 820 
+        },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      await html2pdf().from(element).set(opt).save();
+      toast({ title: "PDF Generado", description: "El contrato se ha descargado correctamente." });
+    } catch (err) {
+      console.error("Error generating PDF:", err);
+      toast({ variant: "destructive", title: "Error", description: "No se pudo generar el PDF." });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const handleActivateContract = async () => {
     if (!db || !contract || !contractRef) return;
     setIsActivating(true);
@@ -372,12 +407,17 @@ export default function ContractDetailPage() {
                     </Link>
                 </Button>
               )}
+              <Button variant="outline" onClick={handleDownloadPdf} disabled={isDownloading} className="border-blue-600 text-blue-600 hover:bg-blue-50">
+                {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                Descargar PDF
+              </Button>
               {canGenerateCertificate && (role === 'Administrador' || role === 'Ventas' || role === 'Ventas Externas') && (
                 <Button onClick={handleOpenCertificateModal}>
                   Generar Certificado
                 </Button>
               )}
                <Button variant="outline" onClick={handlePrintContract}>
+                <Printer className="mr-2 h-4 w-4" />
                 Imprimir Contrato
               </Button>
               {role === 'Administrador' && contract && contract.status === 'active' && (
@@ -448,7 +488,10 @@ export default function ContractDetailPage() {
 
       {(isLoading || isUserLoading) && <p className="print-hide">Cargando contrato...</p>}
       {error && <p className="text-destructive print-hide">Error: {error.message}</p>}
-      {contract && <ContractView contract={contract} />}
+      
+      <div id="contract-view-content" className="bg-white">
+        {contract && <ContractView contract={contract} />}
+      </div>
 
       <Dialog open={isCertificateModalOpen} onOpenChange={setIsCertificateModalOpen}>
         <DialogContent className="print-hide sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">

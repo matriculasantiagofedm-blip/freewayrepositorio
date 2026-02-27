@@ -25,7 +25,7 @@ export type ContractType =
   | 'Curso Solo Practica'
   | 'Ampliaciones';
 
-export type ClassStatus = 'scheduled' | 'missed' | 'completed' | 'refueled';
+export type ClassStatus = 'scheduled' | 'missed' | 'completed' | 'refueled' | 'rescheduled_vehicle';
 
 export interface PracticalClassSlot {
   date?: any;

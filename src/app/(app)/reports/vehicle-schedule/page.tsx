@@ -13,7 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, ChevronLeft, ChevronRight, User, AlertCircle, Fuel, MessageSquare, Timer, ShieldCheck, Landmark, Ban } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, User, AlertCircle, Fuel, MessageSquare, Timer, ShieldCheck, Landmark, Ban, RefreshCw } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addDays, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
@@ -305,17 +305,18 @@ export default function VehicleScheduleReportPage() {
                                             <div className={cn(
                                                 "p-2 rounded border text-[10px] shadow-sm cursor-pointer hover:shadow-md transition-all relative", 
                                                 a.status === 'missed' ? "bg-red-600 border-red-700 text-white" : 
+                                                a.status === 'rescheduled_vehicle' ? "bg-amber-600 border-amber-700 text-white" :
                                                 a.isEval ? "bg-purple-50 border-purple-200" : (vehicleColors[a.vehicle] || 'bg-gray-100 border-gray-200')
                                             )}>
-                                                {a.status === 'missed' && <AlertCircle className="absolute -top-1 -right-1 h-3 w-3 text-white fill-red-600" />}
+                                                {(a.status === 'missed' || a.status === 'rescheduled_vehicle') && <AlertCircle className="absolute -top-1 -right-1 h-3 w-3 text-white fill-current" />}
                                                 {a.status === 'refueled' && <Fuel className="absolute -top-2 -right-2 h-5 w-5 text-white fill-sky-600 drop-shadow-sm z-20" />}
 
                                                 <p className="truncate font-black uppercase mb-0.5">{a.name}</p>
-                                                <p className={cn("truncate text-[8px] font-bold uppercase mb-1 flex items-center gap-1", a.status === 'missed' ? 'text-inherit opacity-80' : 'text-muted-foreground')}>
+                                                <p className={cn("truncate text-[8px] font-bold uppercase mb-1 flex items-center gap-1", (a.status === 'missed' || a.status === 'rescheduled_vehicle') ? 'text-inherit opacity-80' : 'text-muted-foreground')}>
                                                     <User className="h-2.5 w-2.5" /> {a.instructor || 'SIN ASIGNAR'}
                                                 </p>
                                                 
-                                                <div className={cn("flex justify-between font-bold text-[9px] border-t pt-1 mt-1", a.status === 'missed' ? 'border-current opacity-40' : 'border-black/10 opacity-80')}>
+                                                <div className={cn("flex justify-between font-bold text-[9px] border-t pt-1 mt-1", (a.status === 'missed' || a.status === 'rescheduled_vehicle') ? 'border-current opacity-40' : 'border-black/10 opacity-80')}>
                                                     <span className="flex items-center gap-1 text-[8px]">
                                                         {a.vehicle}
                                                     </span>
@@ -332,6 +333,9 @@ export default function VehicleScheduleReportPage() {
                                                 <div className="grid gap-2">
                                                     <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-sky-700 hover:bg-sky-50" onClick={() => handleUpdateStatus(a, 'refueled')}>
                                                         <Fuel className="h-3.5 w-3.5" /> Marcó Gasolina
+                                                    </Button>
+                                                    <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-amber-600 hover:bg-amber-50" onClick={() => handleUpdateStatus(a, 'rescheduled_vehicle')}>
+                                                        <RefreshCw className="h-3.5 w-3.5" /> Reagendada Vehículo
                                                     </Button>
                                                     <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-red-600 hover:bg-red-50" onClick={() => handleUpdateStatus(a, 'missed')}>
                                                         <AlertCircle className="h-3.5 w-3.5" /> No Asistió

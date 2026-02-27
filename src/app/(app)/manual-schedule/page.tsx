@@ -71,7 +71,7 @@ const classEntrySchema = z.object({
   instructor: z.string().min(1, 'Instructor requerido'),
   classNumber: z.coerce.number().min(1, 'Mínimo 1'),
   classType: z.enum(['Práctica', 'Teórica']).default('Práctica'),
-  status: z.enum(['scheduled', 'missed', 'completed']).default('scheduled'),
+  status: z.enum(['scheduled', 'missed', 'rescheduled_vehicle', 'completed']).default('scheduled'),
 });
 
 const manualScheduleSchema = z.object({
@@ -443,7 +443,7 @@ export default function ManualSchedulePage() {
 
                                     if (isValidDate && watchTime) {
                                         const dateKey = format(dObj, 'yyyy-MM-dd');
-                                        const slotId = watchTime; // FIX: slotId was undefined
+                                        const slotId = watchTime;
                                         if (watchVehicle) conflictStudents = availabilityData.vehicleOccupancy[`${dateKey}|${watchTime}|${watchVehicle}`] || [];
                                         capacity = getGlobalCapacity(dObj, watchTime);
                                         isFull = (availabilityData.globalCounts[`${dateKey}|${slotId}`] || 0) >= capacity;
@@ -458,6 +458,7 @@ export default function ManualSchedulePage() {
                                         )}>
                                             <div className="absolute -top-2 right-2 flex gap-1 z-10">
                                                 {watchStatus === 'missed' && <div className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">INASISTENCIA</div>}
+                                                {watchStatus === 'rescheduled_vehicle' && <div className="bg-amber-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">REAGENDADA VEHÍCULO</div>}
                                                 {isSunday && <div className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">DOMINGO</div>}
                                                 {holiday && !isSunday && <div className="bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">FERIADO</div>}
                                                 {hasConflict && !holiday && !isSunday && <div className="bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">OCUPADO</div>}
@@ -522,10 +523,11 @@ export default function ManualSchedulePage() {
                                             <FormField control={form.control} name={`classes.${index}.status`} render={({ field: f }) => (
                                                 <FormItem>
                                                     <Select onValueChange={f.onChange} value={f.value}>
-                                                        <FormControl><SelectTrigger className={cn("h-9 text-[10px] font-bold uppercase", f.value === 'missed' ? 'bg-red-600 text-white' : '')}><SelectValue /></SelectTrigger></FormControl>
+                                                        <FormControl><SelectTrigger className={cn("h-9 text-[10px] font-bold uppercase", f.value === 'missed' ? 'bg-red-600 text-white' : f.value === 'rescheduled_vehicle' ? 'bg-amber-600 text-white' : '')}><SelectValue /></SelectTrigger></FormControl>
                                                         <SelectContent>
                                                             <SelectItem value="scheduled" className="text-xs">Programada</SelectItem>
                                                             <SelectItem value="missed" className="text-xs">No Asistió</SelectItem>
+                                                            <SelectItem value="rescheduled_vehicle" className="text-xs">Reagendada Vehículo</SelectItem>
                                                             <SelectItem value="completed" className="text-xs">Completada</SelectItem>
                                                         </SelectContent>
                                                     </Select>
@@ -584,6 +586,8 @@ export default function ManualSchedulePage() {
                                             <TableCell>
                                                 {entry.status === 'missed' ? (
                                                     <span className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm">INASISTENCIA</span>
+                                                ) : entry.status === 'rescheduled_vehicle' ? (
+                                                    <span className="bg-amber-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm">REAGENDADA VEHÍCULO</span>
                                                 ) : (
                                                     <span className="text-[10px] font-bold opacity-50 uppercase">{entry.status === 'completed' ? 'Completada' : 'Programada'}</span>
                                                 )}

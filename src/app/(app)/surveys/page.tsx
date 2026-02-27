@@ -10,16 +10,35 @@ import type { Contract } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Search, Printer, Download, ClipboardSignature, AlertCircle } from 'lucide-react';
 import { SurveyTemplate } from '@/components/survey-template';
+import { useCurrentRole } from '@/hooks/use-current-role';
+import Link from 'next/link';
 
 export default function SurveysPage() {
   const db = useDb();
   const { toast } = useToast();
+  const { role } = useCurrentRole();
 
   const [studentIdNumber, setStudentIdNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [foundContract, setFoundContract] = useState<Contract | null>(null);
   const [searched, setSearched] = useState(false);
+
+  // RESTRICCIÓN DE SEGURIDAD PARA ROL VENTAS
+  if (role === 'Ventas') {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed rounded-2xl bg-slate-50">
+        <div className="bg-red-100 p-4 rounded-full mb-4">
+            <ClipboardSignature className="h-10 w-10 text-red-600" />
+        </div>
+        <h3 className="text-xl font-black text-red-900 uppercase tracking-tight">Acceso Restringido</h3>
+        <p className="text-slate-600 mt-2 max-w-sm font-medium">Lo sentimos, el personal de Ventas no tiene permisos para generar o visualizar encuestas de satisfacción.</p>
+        <Button asChild className="mt-8 h-12 px-8 font-bold" variant="default">
+            <Link href="/dashboard">Volver al Panel Principal</Link>
+        </Button>
+      </div>
+    );
+  }
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();

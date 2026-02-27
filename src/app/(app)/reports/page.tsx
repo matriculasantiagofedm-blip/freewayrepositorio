@@ -1,6 +1,6 @@
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ClipboardPenLine, ListChecks, Award, Gauge, FileText, Banknote, CalendarClock, ScrollText, GraduationCap } from 'lucide-react';
+import { ClipboardPenLine, ListChecks, Award, Gauge, FileText, Banknote, CalendarClock, ScrollText, GraduationCap, ClipboardSignature } from 'lucide-react';
 import Link from 'next/link';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Button } from '@/components/ui/button';
@@ -50,6 +50,13 @@ export default function ReportsPage() {
       href: '/reports/finance',
       icon: Banknote,
       roles: ['Administrador'],
+    },
+    {
+      title: 'Encuesta de Satisfacción',
+      description: 'Genera el formato físico de evaluación al instructor.',
+      href: '/surveys',
+      icon: ClipboardSignature,
+      roles: ['Administrador', 'Ventas Externas'],
     },
     {
       title: 'Listado de Pagos de Cancelación',

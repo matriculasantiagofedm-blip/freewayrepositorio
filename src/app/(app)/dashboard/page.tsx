@@ -107,7 +107,7 @@ export default function DashboardPage() {
       title: 'Gestión de Trámites y Agenda',
       actions: [
         { name: 'Bitácoras de Control', href: '/logs', bgColor: 'bg-sky-50', textColor: 'text-sky-600', roles: ['Administrador', 'Ventas Externas'] },
-        { name: 'Encuesta de Satisfacción', href: '/surveys', bgColor: 'bg-purple-50', textColor: 'text-purple-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+        { name: 'Encuesta de Satisfacción', href: '/surveys', bgColor: 'bg-purple-50', textColor: 'text-purple-600', roles: ['Administrador', 'Ventas Externas'] },
         { name: 'Generar Certificado Manual', href: '/certificates?mode=manual', bgColor: 'bg-amber-50', textColor: 'text-amber-600', roles: ['Administrador'] },
         { name: 'Agenda Manual', href: '/manual-schedule', bgColor: 'bg-rose-50', textColor: 'text-rose-600', roles: ['Administrador'] },
       ]

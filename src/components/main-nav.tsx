@@ -36,6 +36,11 @@ const navLinks = [
             roles: ['Administrador', 'Ventas Externas'],
         },
         {
+            href: '/surveys',
+            label: 'Encuestas de Satisfacción',
+            roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+        },
+        {
             href: '/certificates',
             label: 'Certificados (Impresión)',
             roles: ['Administrador'],

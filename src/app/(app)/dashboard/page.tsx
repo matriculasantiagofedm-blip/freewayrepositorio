@@ -10,13 +10,13 @@ import { collection } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import type { Contract } from '@/lib/types';
-import { Car, Bike, Plus, Repeat, Dumbbell, CalendarCheck, UserPlus, ArrowRight, Clock, ShieldCheck, Wallet, Globe } from 'lucide-react';
+import { Car, Bike, Plus, Repeat, Dumbbell, CalendarCheck, UserPlus, ArrowRight, Clock, ShieldCheck, Wallet, Globe, ClipboardSignature } from 'lucide-react';
 import { isToday, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const getBalance = (contract: Contract): number => {
     const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
-    return details?.balance || 0;
+    return Number(details?.balance) || 0;
 };
 
 const isOverdue = (contract: Contract): boolean => {
@@ -50,7 +50,6 @@ export default function DashboardPage() {
     const overdueCount = overdueList.length;
     const overdueSum = overdueList.reduce((sum, c) => sum + getBalance(c), 0);
     
-    // Detectar inscripciones hechas desde la web hoy
     const webEnrollments = filteredContracts.filter(c => 
         c.createdBy === 'Web Pública' && 
         isToday(toDate(c.createdAt))
@@ -108,6 +107,7 @@ export default function DashboardPage() {
       title: 'Gestión de Trámites y Agenda',
       actions: [
         { name: 'Bitácoras de Control', href: '/logs', bgColor: 'bg-sky-50', textColor: 'text-sky-600', roles: ['Administrador', 'Ventas Externas'] },
+        { name: 'Encuesta de Satisfacción', href: '/surveys', bgColor: 'bg-purple-50', textColor: 'text-purple-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
         { name: 'Generar Certificado Manual', href: '/certificates?mode=manual', bgColor: 'bg-amber-50', textColor: 'text-amber-600', roles: ['Administrador'] },
         { name: 'Agenda Manual', href: '/manual-schedule', bgColor: 'bg-rose-50', textColor: 'text-rose-600', roles: ['Administrador'] },
       ]
@@ -128,7 +128,6 @@ export default function DashboardPage() {
         <p className="text-muted-foreground font-medium">Gestión unificada de Freeway Escuela de Manejo</p>
       </div>
 
-      {/* SOLO ADMINISTRADOR: AVISO DE INSCRIPCIONES WEB RECIENTES */}
       {isAdmin && !isContractsLoading && statsValues.webEnrollments.length > 0 && (
         <Card className="border-blue-200 bg-blue-50/30 overflow-hidden shadow-sm">
           <CardHeader className="pb-3 border-b border-blue-100 flex flex-row items-center justify-between">
@@ -167,7 +166,6 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      {/* SOLO ADMINISTRADOR: ESTADÍSTICAS GLOBALES */}
       {isAdmin && (
         <div className="grid gap-4 md:grid-cols-3">
           {stats.map((stat) => (

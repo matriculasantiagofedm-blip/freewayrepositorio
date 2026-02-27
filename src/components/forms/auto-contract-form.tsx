@@ -408,7 +408,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
     }
   };
 
-  const currentBalance = (form.watch('courseValue') || 0) - (form.watch('downPayment') || 0);
+  const currentBalance = (Number(form.watch('courseValue')) || 0) - (Number(form.watch('downPayment')) || 0);
   const theoryDates = form.watch('theoreticalClassDates') || [];
 
   // Objeto de contrato simulado para la descarga de PDF

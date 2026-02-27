@@ -317,7 +317,7 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
     }
   };
 
-  const currentBalance = (form.watch('courseValue') || 0) - (form.watch('downPayment') || 0);
+  const currentBalance = (Number(form.watch('courseValue')) || 0) - (Number(form.watch('downPayment')) || 0);
   
   // Dummy contract for PDF
   const watchAll = form.watch();

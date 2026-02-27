@@ -66,7 +66,7 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
         <section>
           <p className="text-justify leading-snug">
             <span className="font-bold uppercase text-[9pt]">SEGUNDA (VALOR Y PAGO):</span> 
-            El valor total del servicio de capacitación es de B/. <Value>{details?.courseValue?.toFixed(2)}</Value>. EL ESTUDIANTE ha abonado la suma de B/. <Line className="min-w-[70px]">{details?.downPayment?.toFixed(2)}</Line>, manteniendo un saldo pendiente de B/. <Line className="min-w-[70px]">{(details?.balance || 0).toFixed(2)}</Line> a cancelar el día <Line className="min-w-[110px]">{formatDateStr(paymentDeadline)}</Line>. El pago total es requisito indispensable para la emisión del certificado final.
+            El valor total del servicio de capacitación es de B/. <Value>{Number(details?.courseValue || 0).toFixed(2)}</Value>. EL ESTUDIANTE ha abonado la suma de B/. <Line className="min-w-[70px]">{Number(details?.downPayment || 0).toFixed(2)}</Line>, manteniendo un saldo pendiente de B/. <Line className="min-w-[70px]">{Number(details?.balance || 0).toFixed(2)}</Line> a cancelar el día <Line className="min-w-[110px]">{formatDateStr(paymentDeadline)}</Line>. El pago total es requisito indispensable para la emisión del certificado final.
           </p>
         </section>
 

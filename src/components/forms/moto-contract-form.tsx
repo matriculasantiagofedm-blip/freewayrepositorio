@@ -178,7 +178,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
   const watchAdditional = form.watch('additionalService');
   const watchTheorySchedule = form.watch('theoreticalClassSchedule');
   const theoryDates = form.watch('theoreticalClassDates') || [];
-  const currentBalance = (form.watch('courseValue') || 0) - (form.watch('downPayment') || 0);
+  const currentBalance = (Number(form.watch('courseValue')) || 0) - (Number(form.watch('downPayment')) || 0);
 
   useEffect(() => {
     if (watchTheorySchedule && !isEdit) {
@@ -361,7 +361,6 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
                     <FormItem>
                       <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Teléfono de Contacto</FormLabel>
                       <FormControl><Input placeholder="6000-0000" {...field} className="h-9" /></FormControl>
-                      <FormMessage />
                     </FormItem>
                   )} />
                 </div>

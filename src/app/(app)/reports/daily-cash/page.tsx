@@ -142,7 +142,7 @@ export default function DailyCashReportPage() {
                 if (details) {
                     concept = `Abono ${contract.type}`;
                     paymentType = (details as any).paymentType || 'cash';
-                    amount = details.downPayment || 0;
+                    amount = Number(details.downPayment) || 0;
                 }
             }
 
@@ -166,7 +166,7 @@ export default function DailyCashReportPage() {
 
         cancellationSnapshot.docs.forEach((doc: any) => {
             const payment = doc.data() as Payment;
-            const amount = payment.amount || 0;
+            const amount = Number(payment.amount) || 0;
             const pType = payment.paymentType || 'cash';
             
             let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
@@ -188,7 +188,7 @@ export default function DailyCashReportPage() {
 
         updateSnapshot.docs.forEach((doc: any) => {
             const payment = doc.data() as Payment;
-            const amount = payment.amount || 0;
+            const amount = Number(payment.amount) || 0;
             const pType = payment.paymentType || 'cash';
 
             let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
@@ -210,7 +210,7 @@ export default function DailyCashReportPage() {
 
         bookSaleSnapshot.docs.forEach((doc: any) => {
             const payment = doc.data() as BookSalePayment;
-            const amount = payment.amount || 0;
+            const amount = Number(payment.amount) || 0;
             const pType = payment.paymentType || 'cash';
 
             let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
@@ -264,12 +264,12 @@ export default function DailyCashReportPage() {
   const transactionTotals = useMemo(() => {
     return filteredTransactions.reduce(
       (acc, curr) => ({
-        cash: acc.cash + (curr.cash || 0),
-        debit: acc.debit + (curr.debit || 0),
-        credit: acc.credit + (curr.credit || 0),
-        bac: acc.bac + (curr.bac || 0),
-        general: acc.general + (curr.general || 0),
-        cheques: acc.cheques + (curr.cheques || 0),
+        cash: acc.cash + (Number(curr.cash) || 0),
+        debit: acc.debit + (Number(curr.debit) || 0),
+        credit: acc.credit + (Number(curr.credit) || 0),
+        bac: acc.bac + (Number(curr.bac) || 0),
+        general: acc.general + (Number(curr.general) || 0),
+        cheques: acc.cheques + (Number(curr.cheques) || 0),
       }),
       { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 }
     );
@@ -281,7 +281,7 @@ export default function DailyCashReportPage() {
     return { billTotal, coinTotal, total: billTotal + coinTotal };
   }, [billQuantities, coinQuantities]);
   
-  const totalExpenses = useMemo(() => expenses.reduce((acc, curr) => acc + (curr.amount || 0), 0), [expenses]);
+  const totalExpenses = useMemo(() => expenses.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0), [expenses]);
   
   const grandTotals = useMemo(() => {
     const totalFacturado = Object.values(transactionTotals).reduce((sum, val) => sum + val, 0);
@@ -566,7 +566,7 @@ export default function DailyCashReportPage() {
                             value={exp.amount || ''} 
                             onChange={(e) => handleExpenseChange(idx, 'amount', e.target.value)}
                         />
-                        <span className="print-show-val w-16 text-right">{exp.amount.toFixed(2)}</span>
+                        <span className="print-show-val w-16 text-right">{Number(exp.amount || 0).toFixed(2)}</span>
                       </div>
                     ))}
                   </div>

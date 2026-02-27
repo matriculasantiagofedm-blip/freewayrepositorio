@@ -85,11 +85,12 @@ export default function SurveysPage() {
             backgroundColor: '#ffffff',
             width: 816 // 8.5in * 96dpi
         },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+        pagebreak: { mode: 'avoid-all' }
       };
 
       await html2pdf().from(element).set(opt).save();
-      toast({ title: "PDF Generado", description: "La encuesta se ha descargado correctamente en tamaño carta." });
+      toast({ title: "PDF Generado", description: "La encuesta se ha descargado correctamente." });
     } catch (err) {
       console.error(err);
       toast({ variant: "destructive", title: "Error", description: "No se pudo generar el PDF." });
@@ -149,14 +150,14 @@ export default function SurveysPage() {
                         size="lg" 
                         className="flex-1 h-14 font-black uppercase tracking-widest bg-blue-600 hover:bg-blue-700 shadow-xl"
                     >
-                        {isDownloading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Download className="mr-2 h-5 w-5" />}
+                        {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                         Descargar PDF Carta
                     </Button>
                 </div>
 
                 <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center gap-3 text-amber-800 max-w-2xl w-full">
                     <AlertCircle className="h-5 w-5 shrink-0" />
-                    <p className="text-xs font-bold uppercase">Formato optimizado para papel Carta (8.5" x 11"). Listo para completado físico.</p>
+                    <p className="text-xs font-bold uppercase">Formato optimizado para una sola página tamaño Carta.</p>
                 </div>
 
                 <div id="survey-to-print" className="bg-white shadow-2xl border-2 border-slate-200 rounded-sm">
@@ -172,14 +173,16 @@ export default function SurveysPage() {
                     margin: 0;
                 }
                 header, footer, nav, aside, .print-hide, button, .card-header, .card, .alert { display: none !important; }
-                body { background: white !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; }
+                body { background: white !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }
                 #survey-to-print { 
                     border: none !important; 
                     box-shadow: none !important; 
                     margin: 0 !important;
                     display: block !important;
                     width: 8.5in !important;
-                    height: 11in !important;
+                    height: 10.8in !important;
+                    overflow: hidden !important;
+                    page-break-after: avoid !important;
                 }
             }
         `}</style>

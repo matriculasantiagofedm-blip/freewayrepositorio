@@ -85,6 +85,15 @@ type FormValues = z.infer<typeof manualScheduleSchema>;
 const instructors: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon'];
 const allVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Auto Diesel', 'Moto Roja', 'Moto Negra'];
 
+const vehicleColors: Record<string, string> = {
+    'Picanto Blanco': 'bg-blue-50 border-blue-300',
+    'Picanto Bronce': 'bg-amber-50 border-amber-400',
+    'Spark': 'bg-green-50 border-green-300',
+    'Auto Diesel': 'bg-indigo-50 border-indigo-300',
+    'Moto Roja': 'bg-red-50 border-red-300',
+    'Moto Negra': 'bg-stone-50 border-stone-400',
+};
+
 const timeSlots = [
     { id: '8am-10am', label: '08:00 - 10:00' },
     { id: '10am-12pm', label: '10:00 - 12:00' },
@@ -217,7 +226,6 @@ export default function ManualSchedulePage() {
         const details = contract.autoMotoDetails || contract.deluxeDetails;
         const schedules = details?.practicalClassSchedules || details?.motoPracticalClassSchedules || (details as any)?.classSchedules || [];
         
-        // Verificar si tiene inasistencias previas
         const missed = schedules.some((s: any) => s.status === 'missed');
         setHasMissedClasses(missed);
 
@@ -454,7 +462,9 @@ export default function ManualSchedulePage() {
                                     return (
                                         <div key={field.id} className={cn(
                                             "grid grid-cols-1 md:grid-cols-6 lg:grid-cols-8 gap-3 p-4 border rounded-xl items-end relative",
-                                            watchStatus === 'missed' ? "border-red-600 bg-red-50/50" : (hasConflict || isFull || holiday || isSunday) ? "border-amber-500 bg-amber-50/30" : "bg-slate-50/50"
+                                            watchStatus === 'missed' ? "border-red-600 bg-red-50/50" : 
+                                            (watchStatus === 'rescheduled_vehicle' && watchVehicle) ? cn(vehicleColors[watchVehicle as VehicleName], "border-amber-500 border-2") :
+                                            (hasConflict || isFull || holiday || isSunday) ? "border-amber-500 bg-amber-50/30" : "bg-slate-50/50"
                                         )}>
                                             <div className="absolute -top-2 right-2 flex gap-1 z-10">
                                                 {watchStatus === 'missed' && <div className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">INASISTENCIA</div>}

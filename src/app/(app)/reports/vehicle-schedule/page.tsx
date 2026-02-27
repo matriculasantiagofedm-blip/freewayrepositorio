@@ -305,18 +305,18 @@ export default function VehicleScheduleReportPage() {
                                             <div className={cn(
                                                 "p-2 rounded border text-[10px] shadow-sm cursor-pointer hover:shadow-md transition-all relative", 
                                                 a.status === 'missed' ? "bg-red-600 border-red-700 text-white" : 
-                                                a.status === 'rescheduled_vehicle' ? "bg-amber-600 border-amber-700 text-white" :
+                                                a.status === 'rescheduled_vehicle' ? cn(vehicleColors[a.vehicle] || 'bg-amber-600 border-amber-700', "border-amber-500 border-2") :
                                                 a.isEval ? "bg-purple-50 border-purple-200" : (vehicleColors[a.vehicle] || 'bg-gray-100 border-gray-200')
                                             )}>
                                                 {(a.status === 'missed' || a.status === 'rescheduled_vehicle') && <AlertCircle className="absolute -top-1 -right-1 h-3 w-3 text-white fill-current" />}
                                                 {a.status === 'refueled' && <Fuel className="absolute -top-2 -right-2 h-5 w-5 text-white fill-sky-600 drop-shadow-sm z-20" />}
 
                                                 <p className="truncate font-black uppercase mb-0.5">{a.name}</p>
-                                                <p className={cn("truncate text-[8px] font-bold uppercase mb-1 flex items-center gap-1", (a.status === 'missed' || a.status === 'rescheduled_vehicle') ? 'text-inherit opacity-80' : 'text-muted-foreground')}>
+                                                <p className={cn("truncate text-[8px] font-bold uppercase mb-1 flex items-center gap-1", a.status === 'missed' ? 'text-inherit opacity-80' : 'text-muted-foreground')}>
                                                     <User className="h-2.5 w-2.5" /> {a.instructor || 'SIN ASIGNAR'}
                                                 </p>
                                                 
-                                                <div className={cn("flex justify-between font-bold text-[9px] border-t pt-1 mt-1", (a.status === 'missed' || a.status === 'rescheduled_vehicle') ? 'border-current opacity-40' : 'border-black/10 opacity-80')}>
+                                                <div className={cn("flex justify-between font-bold text-[9px] border-t pt-1 mt-1", a.status === 'missed' ? 'border-current opacity-40' : 'border-black/10 opacity-80')}>
                                                     <span className="flex items-center gap-1 text-[8px]">
                                                         {a.vehicle}
                                                     </span>

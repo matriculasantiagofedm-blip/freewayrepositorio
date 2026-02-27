@@ -13,7 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, ChevronLeft, ChevronRight, User, AlertCircle, Fuel, MessageSquare, Timer, ShieldCheck, Landmark, Ban, RefreshCw, XCircle } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, User, AlertCircle, Fuel, MessageSquare, Timer, ShieldCheck, Landmark, Ban, RefreshCw, Minus } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addDays, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
@@ -314,7 +314,6 @@ export default function VehicleScheduleReportPage() {
                                             <div className={cn(
                                                 "p-2 rounded border text-[10px] shadow-sm cursor-pointer hover:shadow-md transition-all relative", 
                                                 a.status === 'missed' ? "bg-red-600 border-red-700 text-white" : 
-                                                a.status === 'rescheduled_vehicle' ? cn(vehicleColors[a.vehicle] || 'bg-amber-600 border-amber-700', "border-2") :
                                                 a.isEval ? "bg-purple-50 border-purple-200" : (vehicleColors[a.vehicle] || 'bg-gray-100 border-gray-200')
                                             )}>
                                                 {/* INDICADOR NO ASISTIÓ (DERECHA) */}
@@ -324,10 +323,10 @@ export default function VehicleScheduleReportPage() {
                                                     </div>
                                                 )}
 
-                                                {/* INDICADOR CANCELADA POR VEHÍCULO (IZQUIERDA) */}
+                                                {/* INDICADOR CANCELADA POR VEHÍCULO (IZQUIERDA) - ICONO DE GUIÓN */}
                                                 {a.status === 'rescheduled_vehicle' && (
                                                     <div className={cn("absolute -top-1 -left-1 h-3.5 w-3.5 rounded-full flex items-center justify-center shadow-sm", vehicleStatusColors[a.vehicle])}>
-                                                        <XCircle className="h-2.5 w-2.5 text-white" />
+                                                        <Minus className="h-2.5 w-2.5 text-white" />
                                                     </div>
                                                 )}
 
@@ -357,7 +356,7 @@ export default function VehicleScheduleReportPage() {
                                                         <Fuel className="h-3.5 w-3.5" /> Marcó Gasolina
                                                     </Button>
                                                     <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-amber-600 hover:bg-amber-50" onClick={() => handleUpdateStatus(a, 'rescheduled_vehicle')}>
-                                                        <XCircle className="h-3.5 w-3.5" /> Cancelada por Vehículo
+                                                        <Minus className="h-3.5 w-3.5" /> Cancelada por Vehículo
                                                     </Button>
                                                     <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-red-600 hover:bg-red-50" onClick={() => handleUpdateStatus(a, 'missed')}>
                                                         <AlertCircle className="h-3.5 w-3.5" /> No Asistió

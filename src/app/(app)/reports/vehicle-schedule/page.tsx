@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -356,24 +357,22 @@ export default function VehicleScheduleReportPage() {
                                                         <Fuel className="h-3.5 w-3.5" /> Marcó Gasolina
                                                     </Button>
                                                     
-                                                    {a.type === 'manual' ? (
-                                                        <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-amber-600 hover:bg-amber-50" onClick={() => handleUpdateStatus(a, 'rescheduled')}>
-                                                            <RefreshCw className="h-3.5 w-3.5" /> Marcar Reagendada
-                                                        </Button>
-                                                    ) : (
-                                                        <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-amber-600 hover:bg-amber-50" onClick={() => handleUpdateStatus(a, 'cancelled_vehicle')}>
-                                                            <Minus className="h-3.5 w-3.5" /> Cancelada por Vehículo
-                                                        </Button>
-                                                    )}
+                                                    <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-amber-600 hover:bg-amber-50" onClick={() => handleUpdateStatus(a, 'cancelled_vehicle')}>
+                                                        <Minus className="h-3.5 w-3.5" /> Cancelada por Vehículo
+                                                    </Button>
+
+                                                    <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-amber-600 hover:bg-amber-50" onClick={() => handleUpdateStatus(a, 'rescheduled')}>
+                                                        <RefreshCw className="h-3.5 w-3.5" /> Reagendada
+                                                    </Button>
 
                                                     <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-red-600 hover:bg-red-50" onClick={() => handleUpdateStatus(a, 'missed')}>
                                                         <AlertCircle className="h-3.5 w-3.5" /> No Asistió
                                                     </Button>
-                                                    {role === 'Administrador' && (
-                                                        <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2" onClick={() => handleUpdateStatus(a, 'scheduled')}>
-                                                            <Timer className="h-3.5 w-3.5 text-blue-600" /> Restablecer Programada
-                                                        </Button>
-                                                    )}
+
+                                                    <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-blue-600 hover:bg-blue-50" onClick={() => handleUpdateStatus(a, 'scheduled')}>
+                                                        <Timer className="h-3.5 w-3.5" /> Restablecer Programada
+                                                    </Button>
+
                                                     {a.status === 'missed' && (
                                                         <Button variant="secondary" size="sm" className="h-8 w-full text-[10px] font-black uppercase gap-2 bg-green-600 text-white hover:bg-green-700" onClick={() => handleNotifyWhatsApp(a)}>
                                                             <MessageSquare className="h-3.5 w-3.5" /> Notificar WhatsApp

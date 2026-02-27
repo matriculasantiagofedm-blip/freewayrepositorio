@@ -140,7 +140,7 @@ export default function ManualSchedulePage() {
         name: "classes"
     });
 
-    const activeContractsQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'contracts'), where('status', '==', 'active')) : null, [db, user]);
+    const activeContractsQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed'])) : null, [db, user]);
     const manualEntriesQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'manual_schedules'), orderBy('date', 'desc')) : null, [db, user]);
     
     const { data: allContracts } = useCollection<Contract>(activeContractsQuery);
@@ -463,7 +463,7 @@ export default function ManualSchedulePage() {
                                         <div key={field.id} className={cn(
                                             "grid grid-cols-1 md:grid-cols-6 lg:grid-cols-8 gap-3 p-4 border rounded-xl items-end relative",
                                             watchStatus === 'missed' ? "border-red-600 bg-red-50/50" : 
-                                            (watchStatus === 'rescheduled_vehicle' && watchVehicle) ? cn(vehicleColors[watchVehicle as VehicleName], "border-amber-500 border-2") :
+                                            (watchStatus === 'rescheduled_vehicle' && watchVehicle) ? cn(vehicleColors[watchVehicle as VehicleName], "border-2") :
                                             (hasConflict || isFull || holiday || isSunday) ? "border-amber-500 bg-amber-50/30" : "bg-slate-50/50"
                                         )}>
                                             <div className="absolute -top-2 right-2 flex gap-1 z-10">

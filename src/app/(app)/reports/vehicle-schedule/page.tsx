@@ -305,7 +305,7 @@ export default function VehicleScheduleReportPage() {
                                             <div className={cn(
                                                 "p-2 rounded border text-[10px] shadow-sm cursor-pointer hover:shadow-md transition-all relative", 
                                                 a.status === 'missed' ? "bg-red-600 border-red-700 text-white" : 
-                                                a.status === 'rescheduled_vehicle' ? cn(vehicleColors[a.vehicle] || 'bg-amber-600 border-amber-700', "border-amber-500 border-2") :
+                                                a.status === 'rescheduled_vehicle' ? cn(vehicleColors[a.vehicle] || 'bg-amber-600 border-amber-700', "border-2") :
                                                 a.isEval ? "bg-purple-50 border-purple-200" : (vehicleColors[a.vehicle] || 'bg-gray-100 border-gray-200')
                                             )}>
                                                 {(a.status === 'missed' || a.status === 'rescheduled_vehicle') && <AlertCircle className="absolute -top-1 -right-1 h-3 w-3 text-white fill-current" />}

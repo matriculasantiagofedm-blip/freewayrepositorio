@@ -339,7 +339,7 @@ export default function VehicleScheduleReportPage() {
                                                 
                                                 <div className={cn("flex justify-between font-bold text-[9px] border-t pt-1 mt-1", a.status === 'missed' ? 'border-current opacity-40' : 'border-black/10 opacity-80')}>
                                                     <span className="flex items-center gap-1 text-[8px]">
-                                                        {a.vehicle} {a.status === 'rescheduled_vehicle' && '(reagendada)'}
+                                                        {a.vehicle} {a.status === 'rescheduled_vehicle' && a.type === 'manual' && '(reagendada)'}
                                                     </span>
                                                 </div>
 
@@ -356,7 +356,7 @@ export default function VehicleScheduleReportPage() {
                                                         <Fuel className="h-3.5 w-3.5" /> Marcó Gasolina
                                                     </Button>
                                                     <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-amber-600 hover:bg-amber-50" onClick={() => handleUpdateStatus(a, 'rescheduled_vehicle')}>
-                                                        <Minus className="h-3.5 w-3.5" /> Cancelada por Vehículo
+                                                        <Minus className="h-3.5 w-3.5" /> {a.type === 'manual' ? 'Reagendada' : 'Cancelada por Vehículo'}
                                                     </Button>
                                                     <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-red-600 hover:bg-red-50" onClick={() => handleUpdateStatus(a, 'missed')}>
                                                         <AlertCircle className="h-3.5 w-3.5" /> No Asistió

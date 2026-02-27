@@ -453,8 +453,7 @@ export default function ManualSchedulePage() {
                                     return (
                                         <div key={field.id} className={cn(
                                             "grid grid-cols-1 md:grid-cols-6 lg:grid-cols-8 gap-3 p-4 border rounded-xl items-end relative transition-colors duration-200",
-                                            watchStatus === 'missed' ? "border-red-600 bg-red-50/50" : 
-                                            (hasConflict || isFull || holiday || isSunday) ? "border-amber-500 bg-amber-50/30" : "bg-slate-50/50"
+                                            watchStatus === 'missed' ? "border-red-600 bg-red-50/50" : "bg-slate-50/50"
                                         )}>
                                             <div className="absolute -top-2 right-2 flex gap-1 z-10">
                                                 {watchStatus === 'missed' && <div className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">INASISTENCIA</div>}
@@ -531,7 +530,9 @@ export default function ManualSchedulePage() {
                                                         <SelectContent>
                                                             <SelectItem value="scheduled" className="text-xs">Programada</SelectItem>
                                                             <SelectItem value="missed" className="text-xs">No Asistió</SelectItem>
-                                                            <SelectItem value="rescheduled_vehicle" className="text-xs">Reagendada</SelectItem>
+                                                            {(!selectedContract || f.value === 'rescheduled_vehicle') && (
+                                                                <SelectItem value="rescheduled_vehicle" className="text-xs">Reagendada</SelectItem>
+                                                            )}
                                                             <SelectItem value="completed" className="text-xs">Completada</SelectItem>
                                                         </SelectContent>
                                                     </Select>

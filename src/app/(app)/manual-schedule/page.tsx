@@ -458,7 +458,7 @@ export default function ManualSchedulePage() {
                                         )}>
                                             <div className="absolute -top-2 right-2 flex gap-1 z-10">
                                                 {watchStatus === 'missed' && <div className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">INASISTENCIA</div>}
-                                                {watchStatus === 'rescheduled_vehicle' && <div className="bg-amber-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">REAGENDADA VEHÍCULO</div>}
+                                                {watchStatus === 'rescheduled_vehicle' && <div className="bg-amber-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">REAGENDADA</div>}
                                                 {isSunday && <div className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">DOMINGO</div>}
                                                 {holiday && !isSunday && <div className="bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">FERIADO</div>}
                                                 {hasConflict && !holiday && !isSunday && <div className="bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">OCUPADO</div>}
@@ -527,7 +527,7 @@ export default function ManualSchedulePage() {
                                                         <SelectContent>
                                                             <SelectItem value="scheduled" className="text-xs">Programada</SelectItem>
                                                             <SelectItem value="missed" className="text-xs">No Asistió</SelectItem>
-                                                            <SelectItem value="rescheduled_vehicle" className="text-xs">Reagendada Vehículo</SelectItem>
+                                                            <SelectItem value="rescheduled_vehicle" className="text-xs">Reagendada</SelectItem>
                                                             <SelectItem value="completed" className="text-xs">Completada</SelectItem>
                                                         </SelectContent>
                                                     </Select>
@@ -587,7 +587,7 @@ export default function ManualSchedulePage() {
                                                 {entry.status === 'missed' ? (
                                                     <span className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm">INASISTENCIA</span>
                                                 ) : entry.status === 'rescheduled_vehicle' ? (
-                                                    <span className="bg-amber-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm">REAGENDADA VEHÍCULO</span>
+                                                    <span className="bg-amber-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm">REAGENDADA</span>
                                                 ) : (
                                                     <span className="text-[10px] font-bold opacity-50 uppercase">{entry.status === 'completed' ? 'Completada' : 'Programada'}</span>
                                                 )}

@@ -317,11 +317,20 @@ export default function VehicleScheduleReportPage() {
                                                 a.status === 'rescheduled_vehicle' ? cn(vehicleColors[a.vehicle] || 'bg-amber-600 border-amber-700', "border-2") :
                                                 a.isEval ? "bg-purple-50 border-purple-200" : (vehicleColors[a.vehicle] || 'bg-gray-100 border-gray-200')
                                             )}>
-                                                {(a.status === 'missed' || a.status === 'rescheduled_vehicle') && (
-                                                    <div className={cn("absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full flex items-center justify-center shadow-sm", a.status === 'missed' ? 'bg-white' : vehicleStatusColors[a.vehicle])}>
-                                                        <AlertCircle className={cn("h-2.5 w-2.5", a.status === 'missed' ? 'text-red-600' : 'text-white')} />
+                                                {/* INDICADOR NO ASISTIÓ (DERECHA) */}
+                                                {a.status === 'missed' && (
+                                                    <div className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full flex items-center justify-center shadow-sm bg-white">
+                                                        <AlertCircle className="h-2.5 w-2.5 text-red-600" />
                                                     </div>
                                                 )}
+
+                                                {/* INDICADOR CANCELADA POR VEHÍCULO (IZQUIERDA) */}
+                                                {a.status === 'rescheduled_vehicle' && (
+                                                    <div className={cn("absolute -top-1 -left-1 h-3.5 w-3.5 rounded-full flex items-center justify-center shadow-sm", vehicleStatusColors[a.vehicle])}>
+                                                        <XCircle className="h-2.5 w-2.5 text-white" />
+                                                    </div>
+                                                )}
+
                                                 {a.status === 'refueled' && <Fuel className="absolute -top-2 -right-2 h-5 w-5 text-white fill-sky-600 drop-shadow-sm z-20" />}
 
                                                 <p className="truncate font-black uppercase mb-0.5">{a.name}</p>

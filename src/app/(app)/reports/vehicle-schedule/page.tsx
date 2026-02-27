@@ -340,7 +340,7 @@ export default function VehicleScheduleReportPage() {
                                                 
                                                 <div className={cn("flex justify-between font-bold text-[9px] border-t pt-1 mt-1", a.status === 'missed' ? 'border-current opacity-40' : 'border-black/10 opacity-80')}>
                                                     <span className="flex items-center gap-1 text-[8px]">
-                                                        {a.vehicle}
+                                                        {a.vehicle} {a.status === 'rescheduled_vehicle' && '(reagendada)'}
                                                     </span>
                                                 </div>
 

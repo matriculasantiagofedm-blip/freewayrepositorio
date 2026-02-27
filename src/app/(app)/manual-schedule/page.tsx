@@ -85,24 +85,6 @@ type FormValues = z.infer<typeof manualScheduleSchema>;
 const instructors: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon'];
 const allVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Auto Diesel', 'Moto Roja', 'Moto Negra'];
 
-const vehicleColors: Record<string, string> = {
-    'Picanto Blanco': 'bg-blue-50 border-blue-300 text-blue-800',
-    'Picanto Bronce': 'bg-amber-50 border-amber-400 text-amber-900',
-    'Spark': 'bg-green-50 border-green-300 text-green-800',
-    'Auto Diesel': 'bg-indigo-50 border-indigo-300 text-indigo-800',
-    'Moto Roja': 'bg-red-50 border-red-300 text-red-800',
-    'Moto Negra': 'bg-stone-50 border-stone-400 text-stone-800',
-};
-
-const vehicleBadgeColors: Record<string, string> = {
-    'Picanto Blanco': 'bg-blue-600',
-    'Picanto Bronce': 'bg-amber-700',
-    'Spark': 'bg-green-600',
-    'Auto Diesel': 'bg-indigo-600',
-    'Moto Roja': 'bg-red-600',
-    'Moto Negra': 'bg-stone-700',
-};
-
 const timeSlots = [
     { id: '8am-10am', label: '08:00 - 10:00' },
     { id: '10am-12pm', label: '10:00 - 12:00' },
@@ -366,12 +348,12 @@ export default function ManualSchedulePage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex gap-2">
-                        <Input 
+                        <input 
                             placeholder="Cédula o Pasaporte..." 
                             value={searchId} 
                             onChange={(e) => setSearchId(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                            className="max-w-sm bg-white"
+                            className="max-w-sm bg-white h-10 w-full rounded-md border border-input px-3 py-2 text-sm"
                         />
                         <Button onClick={handleSearch} disabled={isSearching}>
                             {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
@@ -472,13 +454,12 @@ export default function ManualSchedulePage() {
                                         <div key={field.id} className={cn(
                                             "grid grid-cols-1 md:grid-cols-6 lg:grid-cols-8 gap-3 p-4 border rounded-xl items-end relative transition-colors duration-200",
                                             watchStatus === 'missed' ? "border-red-600 bg-red-50/50" : 
-                                            (watchStatus === 'rescheduled_vehicle' && watchVehicle) ? cn(vehicleColors[watchVehicle as VehicleName], "border-2") :
                                             (hasConflict || isFull || holiday || isSunday) ? "border-amber-500 bg-amber-50/30" : "bg-slate-50/50"
                                         )}>
                                             <div className="absolute -top-2 right-2 flex gap-1 z-10">
                                                 {watchStatus === 'missed' && <div className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">INASISTENCIA</div>}
                                                 {watchStatus === 'rescheduled_vehicle' && (
-                                                    <div className={cn("text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase", watchVehicle ? vehicleBadgeColors[watchVehicle as VehicleName] : 'bg-amber-600')}>
+                                                    <div className="bg-slate-700 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">
                                                         REAGENDADA
                                                     </div>
                                                 )}
@@ -546,7 +527,7 @@ export default function ManualSchedulePage() {
                                             <FormField control={form.control} name={`classes.${index}.status`} render={({ field: f }) => (
                                                 <FormItem>
                                                     <Select onValueChange={f.onChange} value={f.value}>
-                                                        <FormControl><SelectTrigger className={cn("h-9 text-[10px] font-bold uppercase", f.value === 'missed' ? 'bg-red-600 text-white' : f.value === 'rescheduled_vehicle' ? (watchVehicle ? vehicleBadgeColors[watchVehicle as VehicleName] : 'bg-amber-600 text-white') : '')}><SelectValue /></SelectTrigger></FormControl>
+                                                        <FormControl><SelectTrigger className={cn("h-9 text-[10px] font-bold uppercase", f.value === 'missed' ? 'bg-red-600 text-white' : '')}><SelectValue /></SelectTrigger></FormControl>
                                                         <SelectContent>
                                                             <SelectItem value="scheduled" className="text-xs">Programada</SelectItem>
                                                             <SelectItem value="missed" className="text-xs">No Asistió</SelectItem>
@@ -610,7 +591,7 @@ export default function ManualSchedulePage() {
                                                 {entry.status === 'missed' ? (
                                                     <span className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm">INASISTENCIA</span>
                                                 ) : entry.status === 'rescheduled_vehicle' ? (
-                                                    <span className={cn("text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase", entry.vehicle ? vehicleBadgeColors[entry.vehicle as VehicleName] : 'bg-amber-600')}>REAGENDADA</span>
+                                                    <span className="bg-slate-700 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">REAGENDADA</span>
                                                 ) : (
                                                     <span className="text-[10px] font-bold opacity-50 uppercase">{entry.status === 'completed' ? 'Completada' : 'Programada'}</span>
                                                 )}

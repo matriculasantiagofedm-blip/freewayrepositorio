@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
-import { useDb, useUser } from '@/components/firebase-provider';
+import { useDb, useUser } from '@/firebase';
 import type { Contract, TimeSlot, ManualSchedule, ClassStatus } from '@/lib/types';
 import {
   Table,
@@ -219,7 +219,7 @@ export default function VehicleScheduleReportPage() {
             fieldPath = 'autoMotoDetails.practicalClassSchedules';
         }
 
-        if (schedules[item.slotIndex]) {
+        if (schedules[item.slotIndex] !== undefined) {
             schedules[item.slotIndex].status = newStatus;
             updateData[fieldPath] = schedules;
             
@@ -357,13 +357,17 @@ export default function VehicleScheduleReportPage() {
                                                         <Fuel className="h-3.5 w-3.5" /> Marcó Gasolina
                                                     </Button>
                                                     
-                                                    <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-amber-600 hover:bg-amber-50" onClick={() => handleUpdateStatus(a, 'cancelled_vehicle')}>
-                                                        <Minus className="h-3.5 w-3.5" /> Cancelada por Vehículo
-                                                    </Button>
+                                                    {a.type === 'contract' && (
+                                                        <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-amber-600 hover:bg-amber-50" onClick={() => handleUpdateStatus(a, 'cancelled_vehicle')}>
+                                                            <Minus className="h-3.5 w-3.5" /> Cancelada por Vehículo
+                                                        </Button>
+                                                    )}
 
-                                                    <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-amber-600 hover:bg-amber-50" onClick={() => handleUpdateStatus(a, 'rescheduled')}>
-                                                        <RefreshCw className="h-3.5 w-3.5" /> Reagendada
-                                                    </Button>
+                                                    {a.type === 'manual' && (
+                                                        <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-amber-600 hover:bg-amber-50" onClick={() => handleUpdateStatus(a, 'rescheduled')}>
+                                                            <RefreshCw className="h-3.5 w-3.5" /> Reagendada
+                                                        </Button>
+                                                    )}
 
                                                     <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-red-600 hover:bg-red-50" onClick={() => handleUpdateStatus(a, 'missed')}>
                                                         <AlertCircle className="h-3.5 w-3.5" /> No Asistió

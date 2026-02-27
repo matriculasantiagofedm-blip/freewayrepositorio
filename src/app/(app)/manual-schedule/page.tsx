@@ -31,7 +31,7 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, addDoc, serverTimestamp, deleteDoc, doc, query, orderBy, Timestamp, where, getDocs, updateDoc } from 'firebase/firestore';
 import type { ManualSchedule, VehicleName, InstructorName, Contract, TimeSlot, ClassStatus } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, CalendarIcon, PlusCircle, Trash2, CalendarClock, X, AlertTriangle, Search, UserCheck, RefreshCw, Save, Landmark, Ban, Edit2, ShieldAlert } from 'lucide-react';
+import { Loader2, CalendarIcon, PlusCircle, Trash2, CalendarClock, X, Search, UserCheck, RefreshCw, Save, Edit2, ShieldAlert } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -71,7 +71,7 @@ const classEntrySchema = z.object({
   instructor: z.string().min(1, 'Instructor requerido'),
   classNumber: z.coerce.number().min(1, 'Mínimo 1'),
   classType: z.enum(['Práctica', 'Teórica']).default('Práctica'),
-  status: z.enum(['scheduled', 'missed', 'rescheduled_vehicle', 'completed']).default('scheduled'),
+  status: z.enum(['scheduled', 'missed', 'rescheduled', 'cancelled_vehicle', 'completed']).default('scheduled'),
 });
 
 const manualScheduleSchema = z.object({
@@ -457,15 +457,12 @@ export default function ManualSchedulePage() {
                                         )}>
                                             <div className="absolute -top-2 right-2 flex gap-1 z-10">
                                                 {watchStatus === 'missed' && <div className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">INASISTENCIA</div>}
-                                                {watchStatus === 'rescheduled_vehicle' && (
-                                                    <div className="bg-slate-700 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">
-                                                        REAGENDADA
-                                                    </div>
-                                                )}
+                                                {watchStatus === 'rescheduled' && <div className="bg-slate-700 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">REAGENDADA</div>}
+                                                {watchStatus === 'cancelled_vehicle' && <div className="bg-slate-700 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">CANCELADA VEHÍCULO</div>}
                                                 {isSunday && <div className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">DOMINGO</div>}
                                                 {holiday && !isSunday && <div className="bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">FERIADO</div>}
-                                                {(hasConflict && watchStatus !== 'rescheduled_vehicle') && !holiday && !isSunday && <div className="bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">OCUPADO</div>}
-                                                {(isFull && watchStatus !== 'rescheduled_vehicle') && !hasConflict && !holiday && !isSunday && <div className="bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">LLENO</div>}
+                                                {(hasConflict && watchStatus !== 'rescheduled' && watchStatus !== 'cancelled_vehicle') && !holiday && !isSunday && <div className="bg-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">OCUPADO</div>}
+                                                {(isFull && watchStatus !== 'rescheduled' && watchStatus !== 'cancelled_vehicle') && !hasConflict && !holiday && !isSunday && <div className="bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">LLENO</div>}
                                             </div>
 
                                             {!editingManualEntryId && (
@@ -530,8 +527,12 @@ export default function ManualSchedulePage() {
                                                         <SelectContent>
                                                             <SelectItem value="scheduled" className="text-xs">Programada</SelectItem>
                                                             <SelectItem value="missed" className="text-xs">No Asistió</SelectItem>
-                                                            {(!selectedContract || f.value === 'rescheduled_vehicle') && (
-                                                                <SelectItem value="rescheduled_vehicle" className="text-xs">Reagendada</SelectItem>
+                                                            {/* SEPARACIÓN DE ACCIONES: SOLO MOSTRAR LA OPCIÓN CORRECTA SEGÚN EL TIPO */}
+                                                            {(!selectedContract || f.value === 'rescheduled') && (
+                                                                <SelectItem value="rescheduled" className="text-xs">Reagendada</SelectItem>
+                                                            )}
+                                                            {(!!selectedContract || f.value === 'cancelled_vehicle') && (
+                                                                <SelectItem value="cancelled_vehicle" className="text-xs">Cancelada Vehículo</SelectItem>
                                                             )}
                                                             <SelectItem value="completed" className="text-xs">Completada</SelectItem>
                                                         </SelectContent>
@@ -591,8 +592,10 @@ export default function ManualSchedulePage() {
                                             <TableCell>
                                                 {entry.status === 'missed' ? (
                                                     <span className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm">INASISTENCIA</span>
-                                                ) : entry.status === 'rescheduled_vehicle' ? (
+                                                ) : entry.status === 'rescheduled' ? (
                                                     <span className="bg-slate-700 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">REAGENDADA</span>
+                                                ) : entry.status === 'cancelled_vehicle' ? (
+                                                    <span className="bg-slate-700 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm uppercase">CANCELADA VEHÍCULO</span>
                                                 ) : (
                                                     <span className="text-[10px] font-bold opacity-50 uppercase">{entry.status === 'completed' ? 'Completada' : 'Programada'}</span>
                                                 )}

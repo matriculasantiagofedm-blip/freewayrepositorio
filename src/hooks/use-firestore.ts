@@ -89,12 +89,10 @@ export function useCollection<T>(q: Query<DocumentData> | CollectionReference<Do
       },
       (err) => {
         if (err.code === 'permission-denied') {
-          // Extraer la ruta de forma segura para el reporte de error contextual
           let path = 'unknown_collection';
           if ('path' in q) {
             path = (q as CollectionReference).path;
           } else if ('_query' in q) {
-            // Intento de extraer de query interna si es posible
             try {
               path = (q as any)._query.path.canonicalString();
             } catch {

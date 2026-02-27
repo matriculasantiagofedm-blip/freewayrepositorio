@@ -1,7 +1,7 @@
 'use client';
-import { useFirebase } from '@/components/firebase-provider';
+import { useFirebase } from '@/firebase';
 
 export function useCurrentRole() {
-  const { role, isLoading } = useFirebase();
-  return { role, isLoading };
+  const { role, isUserLoading } = useFirebase();
+  return { role, isLoading: isUserLoading };
 }

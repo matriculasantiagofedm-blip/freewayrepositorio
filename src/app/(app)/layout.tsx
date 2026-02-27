@@ -5,12 +5,12 @@ import { UserNav } from '@/components/user-nav';
 import { MainNav } from '@/components/main-nav';
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { useFirebase } from '@/components/firebase-provider';
+import { useFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { role, isLoading } = useFirebase();
+  const { role, isUserLoading } = useFirebase();
   const router = useRouter();
 
   /**
@@ -19,13 +19,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
    * Si no hay un rol detectado (clave de acceso), redirige al inicio público.
    */
   useEffect(() => {
-    if (!isLoading && !role) {
+    if (!isUserLoading && !role) {
       console.warn("Acceso no autorizado detectado. Redirigiendo al portal público.");
       router.push('/');
     }
-  }, [role, isLoading, router]);
+  }, [role, isUserLoading, router]);
 
-  if (isLoading || !role) {
+  if (isUserLoading || !role) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-4 text-center">

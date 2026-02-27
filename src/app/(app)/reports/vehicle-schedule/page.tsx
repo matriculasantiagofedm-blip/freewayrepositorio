@@ -75,6 +75,15 @@ const vehicleColors: Record<string, string> = {
     'Moto Negra': 'bg-stone-50 border-stone-400 text-stone-800',
 };
 
+const vehicleStatusColors: Record<string, string> = {
+    'Picanto Blanco': 'bg-blue-600',
+    'Picanto Bronce': 'bg-amber-700',
+    'Spark': 'bg-green-600',
+    'Auto Diesel': 'bg-indigo-600',
+    'Moto Roja': 'bg-red-600',
+    'Moto Negra': 'bg-stone-700',
+};
+
 export default function VehicleScheduleReportPage() {
   const db = useDb();
   const { user } = useUser();
@@ -308,7 +317,11 @@ export default function VehicleScheduleReportPage() {
                                                 a.status === 'rescheduled_vehicle' ? cn(vehicleColors[a.vehicle] || 'bg-amber-600 border-amber-700', "border-2") :
                                                 a.isEval ? "bg-purple-50 border-purple-200" : (vehicleColors[a.vehicle] || 'bg-gray-100 border-gray-200')
                                             )}>
-                                                {(a.status === 'missed' || a.status === 'rescheduled_vehicle') && <AlertCircle className="absolute -top-1 -right-1 h-3 w-3 text-white fill-current" />}
+                                                {(a.status === 'missed' || a.status === 'rescheduled_vehicle') && (
+                                                    <div className={cn("absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full flex items-center justify-center shadow-sm", a.status === 'missed' ? 'bg-white' : vehicleStatusColors[a.vehicle])}>
+                                                        <AlertCircle className={cn("h-2.5 w-2.5", a.status === 'missed' ? 'text-red-600' : 'text-white')} />
+                                                    </div>
+                                                )}
                                                 {a.status === 'refueled' && <Fuel className="absolute -top-2 -right-2 h-5 w-5 text-white fill-sky-600 drop-shadow-sm z-20" />}
 
                                                 <p className="truncate font-black uppercase mb-0.5">{a.name}</p>

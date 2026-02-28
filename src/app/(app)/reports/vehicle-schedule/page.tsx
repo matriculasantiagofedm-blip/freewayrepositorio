@@ -94,6 +94,8 @@ export default function VehicleScheduleReportPage() {
   const [weeklyAssignments, setWeeklyAssignments] = useState<Map<string, any[]>>(new Map());
   const [isUpdating, setIsUpdating] = useState(false);
 
+  const isAdmin = role === 'Administrador';
+
   const contractsQuery = useMemoQuery(() => {
     if (!db || !user) return null;
     return query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed']));
@@ -317,21 +319,33 @@ export default function VehicleScheduleReportPage() {
                                                 a.status === 'missed' ? "bg-red-600 border-red-700 text-white" : 
                                                 a.isEval ? "bg-purple-50 border-purple-200" : (vehicleColors[a.vehicle] || 'bg-gray-100 border-gray-200')
                                             )}>
-                                                {/* INDICADOR NO ASISTIÓ (DERECHA) */}
-                                                {a.status === 'missed' && (
-                                                    <div className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full flex items-center justify-center shadow-sm bg-white">
-                                                        <AlertCircle className="h-2.5 w-2.5 text-red-600" />
-                                                    </div>
-                                                )}
+                                                {/* INDICADORES ESQUINA SUPERIOR IZQUIERDA */}
+                                                <div className="absolute -top-1 -left-1 flex gap-0.5 z-20">
+                                                    {a.status === 'cancelled_vehicle' && (
+                                                        <div className={cn("h-4 w-4 rounded-full flex items-center justify-center shadow-sm", vehicleStatusColors[a.vehicle])}>
+                                                            <Minus className="h-2.5 w-2.5 text-white" />
+                                                        </div>
+                                                    )}
+                                                    {a.status === 'rescheduled' && (
+                                                        <div className={cn("h-4 w-4 rounded-full flex items-center justify-center shadow-sm bg-slate-700")}>
+                                                            <RefreshCw className="h-2.5 w-2.5 text-white" />
+                                                        </div>
+                                                    )}
+                                                </div>
 
-                                                {/* INDICADOR CANCELADA POR VEHÍCULO (IZQUIERDA) - ICONO DE GUIÓN SOLO PARA CONTRATOS */}
-                                                {a.status === 'cancelled_vehicle' && a.type === 'contract' && (
-                                                    <div className={cn("absolute -top-1 -left-1 h-3.5 w-3.5 rounded-full flex items-center justify-center shadow-sm", vehicleStatusColors[a.vehicle])}>
-                                                        <Minus className="h-2.5 w-2.5 text-white" />
-                                                    </div>
-                                                )}
-
-                                                {a.status === 'refueled' && <Fuel className="absolute -top-2 -right-2 h-5 w-5 text-white fill-sky-600 drop-shadow-sm z-20" />}
+                                                {/* INDICADORES ESQUINA SUPERIOR DERECHA */}
+                                                <div className="absolute -top-1 -right-1 flex gap-0.5 z-20">
+                                                    {a.status === 'refueled' && (
+                                                        <div className="h-4 w-4 rounded-full flex items-center justify-center shadow-sm bg-sky-600">
+                                                            <Fuel className="h-2.5 w-2.5 text-white" />
+                                                        </div>
+                                                    )}
+                                                    {a.status === 'missed' && (
+                                                        <div className="h-4 w-4 rounded-full flex items-center justify-center shadow-sm bg-white">
+                                                            <AlertCircle className="h-3 w-3 text-red-600" />
+                                                        </div>
+                                                    )}
+                                                </div>
 
                                                 <p className="truncate font-black uppercase mb-0.5">{a.name}</p>
                                                 <p className={cn("truncate text-[8px] font-bold uppercase mb-1 flex items-center gap-1", a.status === 'missed' ? 'text-inherit opacity-80' : 'text-muted-foreground')}>
@@ -357,25 +371,31 @@ export default function VehicleScheduleReportPage() {
                                                         <Fuel className="h-3.5 w-3.5" /> Marcó Gasolina
                                                     </Button>
                                                     
-                                                    {a.type === 'contract' && (
-                                                        <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-amber-600 hover:bg-amber-50" onClick={() => handleUpdateStatus(a, 'cancelled_vehicle')}>
-                                                            <Minus className="h-3.5 w-3.5" /> Cancelada por Vehículo
-                                                        </Button>
-                                                    )}
+                                                    {isAdmin && (
+                                                        <>
+                                                            {a.type === 'contract' && (
+                                                                <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-amber-600 hover:bg-amber-50" onClick={() => handleUpdateStatus(a, 'cancelled_vehicle')}>
+                                                                    <Minus className="h-3.5 w-3.5" /> Cancelada por Vehículo
+                                                                </Button>
+                                                            )}
 
-                                                    {a.type === 'manual' && (
-                                                        <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-amber-600 hover:bg-amber-50" onClick={() => handleUpdateStatus(a, 'rescheduled')}>
-                                                            <RefreshCw className="h-3.5 w-3.5" /> Reagendada
-                                                        </Button>
+                                                            {a.type === 'manual' && (
+                                                                <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-amber-600 hover:bg-amber-50" onClick={() => handleUpdateStatus(a, 'rescheduled')}>
+                                                                    <RefreshCw className="h-3.5 w-3.5" /> Reagendada
+                                                                </Button>
+                                                            )}
+                                                        </>
                                                     )}
 
                                                     <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-red-600 hover:bg-red-50" onClick={() => handleUpdateStatus(a, 'missed')}>
                                                         <AlertCircle className="h-3.5 w-3.5" /> No Asistió
                                                     </Button>
 
-                                                    <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-blue-600 hover:bg-blue-50" onClick={() => handleUpdateStatus(a, 'scheduled')}>
-                                                        <Timer className="h-3.5 w-3.5" /> Restablecer Programada
-                                                    </Button>
+                                                    {isAdmin && (
+                                                        <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-blue-600 hover:bg-blue-50" onClick={() => handleUpdateStatus(a, 'scheduled')}>
+                                                            <Timer className="h-3.5 w-3.5" /> Restablecer Programada
+                                                        </Button>
+                                                    )}
 
                                                     {a.status === 'missed' && (
                                                         <Button variant="secondary" size="sm" className="h-8 w-full text-[10px] font-black uppercase gap-2 bg-green-600 text-white hover:bg-green-700" onClick={() => handleNotifyWhatsApp(a)}>

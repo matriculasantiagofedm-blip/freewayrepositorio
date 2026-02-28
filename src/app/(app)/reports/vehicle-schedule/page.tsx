@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
 import { useDb, useUser } from '@/firebase';
-import type { Contract, TimeSlot, ManualSchedule, ClassStatus } from '@/lib/types';
+import type { Contract, TimeSlot, ManualSchedule, ClassStatus, PracticalClassSlot } from '@/lib/types';
 import {
   Table,
   TableBody,
@@ -126,6 +125,7 @@ export default function VehicleScheduleReportPage() {
         vehicle: string, 
         instructor: string, 
         status: ClassStatus = 'scheduled', 
+        refueled = false,
         isEval = false, 
         type: 'contract' | 'manual' = 'contract', 
         displayClassNumber: number | string, 
@@ -145,6 +145,7 @@ export default function VehicleScheduleReportPage() {
             vehicle, 
             instructor, 
             status, 
+            refueled,
             isEval, 
             type, 
             displayClassNumber, 
@@ -158,7 +159,7 @@ export default function VehicleScheduleReportPage() {
         const isEval = (d?.coursePlan === 'evaluacion-estacionamiento' || d?.coursePlan === 'moto-evaluacion-estacionamiento');
         const proc = (arr: any[], subType: 'auto' | 'moto' = 'auto') => {
             arr?.forEach((s, i) => {
-                processAny(c.id, c.clientName, s.date, s.time, s.vehicle, s.instructor, s.status || 'scheduled', isEval, 'contract', i + 1, i, subType);
+                processAny(c.id, c.clientName, s.date, s.time, s.vehicle, s.instructor, s.status || 'scheduled', !!s.refueled, isEval, 'contract', i + 1, i, subType);
             });
         };
         if (c.type === 'Curso Moto') proc(c.autoMotoDetails?.motoPracticalClassSchedules || c.autoMotoDetails?.practicalClassSchedules || [], 'moto');
@@ -171,7 +172,7 @@ export default function VehicleScheduleReportPage() {
 
     manualEntries?.forEach(e => {
         if (e.classType === 'Práctica') {
-            processAny(e.id, e.studentName, e.date, e.timeSlot, e.vehicle, e.instructor, e.status || 'scheduled', false, 'manual', e.classNumber);
+            processAny(e.id, e.studentName, e.date, e.timeSlot, e.vehicle, e.instructor, e.status || 'scheduled', !!e.refueled, false, 'manual', e.classNumber);
         }
     });
 
@@ -247,6 +248,67 @@ export default function VehicleScheduleReportPage() {
                     path: manualRef.path,
                     operation: 'update',
                     requestResourceData: { status: newStatus }
+                }));
+            })
+            .finally(() => setIsUpdating(false));
+    }
+  };
+
+  const handleToggleRefueled = (item: any) => {
+    if (!db || isUpdating) return;
+    
+    setIsUpdating(true);
+    const newRefueled = !item.refueled;
+    const updateData: any = {};
+
+    if (item.type === 'contract') {
+        const contractRef = doc(db, 'contracts', item.id);
+        const contract = contracts?.find(c => c.id === item.id);
+        if (!contract) {
+            setIsUpdating(false);
+            return;
+        }
+
+        let schedules: any[] = [];
+        let fieldPath = '';
+
+        if (item.subType === 'moto') {
+            schedules = [...(contract.autoMotoDetails?.motoPracticalClassSchedules || [])];
+            fieldPath = 'autoMotoDetails.motoPracticalClassSchedules';
+        } else if (contract.type === 'Curso Deluxe') {
+            schedules = [...(contract.deluxeDetails?.classSchedules || [])];
+            fieldPath = 'deluxeDetails.classSchedules';
+        } else {
+            schedules = [...(contract.autoMotoDetails?.practicalClassSchedules || [])];
+            fieldPath = 'autoMotoDetails.practicalClassSchedules';
+        }
+
+        if (schedules[item.slotIndex] !== undefined) {
+            schedules[item.slotIndex].refueled = newRefueled;
+            updateData[fieldPath] = schedules;
+            
+            updateDoc(contractRef, updateData)
+                .then(() => toast({ title: newRefueled ? 'Gasolina marcada' : 'Gasolina desmarcada' }))
+                .catch(async (err) => {
+                    errorEmitter.emit('permission-error', new FirestorePermissionError({
+                        path: contractRef.path,
+                        operation: 'update',
+                        requestResourceData: updateData
+                    }));
+                })
+                .finally(() => setIsUpdating(false));
+        } else {
+            setIsUpdating(false);
+        }
+    } else {
+        const manualRef = doc(db, 'manual_schedules', item.id);
+        updateDoc(manualRef, { refueled: newRefueled })
+            .then(() => toast({ title: newRefueled ? 'Gasolina marcada' : 'Gasolina desmarcada' }))
+            .catch(async (err) => {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: manualRef.path,
+                    operation: 'update',
+                    requestResourceData: { refueled: newRefueled }
                 }));
             })
             .finally(() => setIsUpdating(false));
@@ -335,7 +397,7 @@ export default function VehicleScheduleReportPage() {
 
                                                 {/* INDICADORES ESQUINA SUPERIOR DERECHA */}
                                                 <div className="absolute -top-1 -right-1 flex gap-0.5 z-20">
-                                                    {a.status === 'refueled' && (
+                                                    {a.refueled && (
                                                         <div className="h-4 w-4 rounded-full flex items-center justify-center shadow-sm bg-sky-600">
                                                             <Fuel className="h-2.5 w-2.5 text-white" />
                                                         </div>
@@ -367,23 +429,43 @@ export default function VehicleScheduleReportPage() {
                                             <div className="space-y-3">
                                                 <p className="text-xs font-bold uppercase text-slate-500">Gestión de Clase</p>
                                                 <div className="grid gap-2">
-                                                    <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-sky-700 hover:bg-sky-50" onClick={() => handleUpdateStatus(a, 'refueled')}>
+                                                    <Button 
+                                                        variant={a.refueled ? "default" : "outline"} 
+                                                        size="sm" 
+                                                        className={cn("h-8 justify-start text-[10px] font-bold uppercase gap-2", a.refueled ? "bg-sky-600 hover:bg-sky-700" : "text-sky-700 hover:bg-sky-50")} 
+                                                        onClick={() => handleToggleRefueled(a)}
+                                                    >
                                                         <Fuel className="h-3.5 w-3.5" /> Marcó Gasolina
                                                     </Button>
                                                     
                                                     {isAdmin && (
                                                         <>
-                                                            <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-amber-600 hover:bg-amber-50" onClick={() => handleUpdateStatus(a, 'cancelled_vehicle')}>
+                                                            <Button 
+                                                                variant={a.status === 'cancelled_vehicle' ? "default" : "outline"} 
+                                                                size="sm" 
+                                                                className={cn("h-8 justify-start text-[10px] font-bold uppercase gap-2", a.status === 'cancelled_vehicle' ? "bg-slate-800" : "text-amber-600 hover:bg-amber-50")} 
+                                                                onClick={() => handleUpdateStatus(a, 'cancelled_vehicle')}
+                                                            >
                                                                 <Minus className="h-3.5 w-3.5" /> Cancelada por Vehículo
                                                             </Button>
 
-                                                            <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-amber-600 hover:bg-amber-50" onClick={() => handleUpdateStatus(a, 'rescheduled')}>
+                                                            <Button 
+                                                                variant={a.status === 'rescheduled' ? "default" : "outline"} 
+                                                                size="sm" 
+                                                                className={cn("h-8 justify-start text-[10px] font-bold uppercase gap-2", a.status === 'rescheduled' ? "bg-slate-800" : "text-amber-600 hover:bg-amber-50")} 
+                                                                onClick={() => handleUpdateStatus(a, 'rescheduled')}
+                                                            >
                                                                 <RefreshCw className="h-3.5 w-3.5" /> Reagendada
                                                             </Button>
                                                         </>
                                                     )}
 
-                                                    <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-red-600 hover:bg-red-50" onClick={() => handleUpdateStatus(a, 'missed')}>
+                                                    <Button 
+                                                        variant={a.status === 'missed' ? "default" : "outline"} 
+                                                        size="sm" 
+                                                        className={cn("h-8 justify-start text-[10px] font-bold uppercase gap-2", a.status === 'missed' ? "bg-red-600" : "text-red-600 hover:bg-red-50")} 
+                                                        onClick={() => handleUpdateStatus(a, 'missed')}
+                                                    >
                                                         <AlertCircle className="h-3.5 w-3.5" /> No Asistió
                                                     </Button>
 

@@ -33,6 +33,7 @@ export interface PracticalClassSlot {
   vehicle?: VehicleName;
   instructor?: InstructorName;
   status?: ClassStatus;
+  refueled?: boolean;
 }
 
 export interface DeluxeContractDetails {
@@ -141,6 +142,7 @@ export interface ManualSchedule {
   classNumber: number;
   classType: 'Práctica' | 'Teórica';
   status?: ClassStatus;
+  refueled?: boolean;
   userId: string;
   createdAt: any;
 }

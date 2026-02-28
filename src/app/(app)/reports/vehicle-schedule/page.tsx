@@ -354,7 +354,7 @@ export default function VehicleScheduleReportPage() {
                                                 
                                                 <div className={cn("flex justify-between font-bold text-[9px] border-t pt-1 mt-1", a.status === 'missed' ? 'border-current opacity-40' : 'border-black/10 opacity-80')}>
                                                     <span className="flex items-center gap-1 text-[8px]">
-                                                        {a.vehicle} {a.status === 'rescheduled' && a.type === 'manual' && '(reagendada)'}
+                                                        {a.vehicle} {a.status === 'rescheduled' && '(reagendada)'}
                                                     </span>
                                                 </div>
 
@@ -373,17 +373,13 @@ export default function VehicleScheduleReportPage() {
                                                     
                                                     {isAdmin && (
                                                         <>
-                                                            {a.type === 'contract' && (
-                                                                <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-amber-600 hover:bg-amber-50" onClick={() => handleUpdateStatus(a, 'cancelled_vehicle')}>
-                                                                    <Minus className="h-3.5 w-3.5" /> Cancelada por Vehículo
-                                                                </Button>
-                                                            )}
+                                                            <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-amber-600 hover:bg-amber-50" onClick={() => handleUpdateStatus(a, 'cancelled_vehicle')}>
+                                                                <Minus className="h-3.5 w-3.5" /> Cancelada por Vehículo
+                                                            </Button>
 
-                                                            {a.type === 'manual' && (
-                                                                <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-amber-600 hover:bg-amber-50" onClick={() => handleUpdateStatus(a, 'rescheduled')}>
-                                                                    <RefreshCw className="h-3.5 w-3.5" /> Reagendada
-                                                                </Button>
-                                                            )}
+                                                            <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-amber-600 hover:bg-amber-50" onClick={() => handleUpdateStatus(a, 'rescheduled')}>
+                                                                <RefreshCw className="h-3.5 w-3.5" /> Reagendada
+                                                            </Button>
                                                         </>
                                                     )}
 

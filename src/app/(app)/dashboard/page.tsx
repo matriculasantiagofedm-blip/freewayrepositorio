@@ -10,7 +10,7 @@ import { collection } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import type { Contract } from '@/lib/types';
-import { Car, Bike, Plus, Repeat, Dumbbell, CalendarCheck, UserPlus, ArrowRight, Clock, ShieldCheck, Wallet, Globe, ClipboardSignature } from 'lucide-react';
+import { Car, Bike, Plus, Repeat, Dumbbell, CalendarCheck, ArrowRight, Clock, ShieldCheck, Wallet, Globe, AlertTriangle, CalendarX } from 'lucide-react';
 import { isToday, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -23,6 +23,28 @@ const isOverdue = (contract: Contract): boolean => {
     if (contract.status !== 'active') return false;
     const balance = getBalance(contract);
     return balance > 0;
+};
+
+/**
+ * LÓGICA DE DETECCIÓN DE AGENDA PENDIENTE
+ * Verifica si un contrato activo carece de fechas teóricas o prácticas según su tipo.
+ */
+const isPendingAgenda = (c: Contract): boolean => {
+    if (c.status !== 'active') return false;
+    
+    const hasPractical = (c.autoMotoDetails?.practicalClassSchedules?.length || 0) > 0 || 
+                         (c.autoMotoDetails?.motoPracticalClassSchedules?.length || 0) > 0 ||
+                         (c.deluxeDetails?.classSchedules?.length || 0) > 0;
+    
+    const hasTheoretical = (c.autoMotoDetails?.theoreticalClassDates?.length || 0) > 0 ||
+                           (c.deluxeDetails?.theoreticalClasses?.length || 0) > 0 ||
+                           !!c.ampliacionesDetails?.theoreticalClassDate;
+
+    if (c.type === 'Ampliaciones') return !hasTheoretical;
+    if (c.type === 'Curso Solo Practica') return !hasPractical;
+    
+    // Para Cursos Estándar (Auto, Moto, Mixto, Deluxe) se requieren ambas
+    return !hasPractical || !hasTheoretical;
 };
 
 export default function DashboardPage() {
@@ -40,7 +62,7 @@ export default function DashboardPage() {
   const { data: allContracts, isLoading: isContractsLoading } = useCollection<Contract>(contractsQuery);
 
   const statsValues = useMemo(() => {
-    if (!allContracts) return { active: 0, today: 0, overdue: 0, overdueAmount: 0, webEnrollments: [] as Contract[] };
+    if (!allContracts) return { active: 0, today: 0, overdue: 0, overdueAmount: 0, webEnrollments: [] as Contract[], pendingAgenda: [] as Contract[] };
     
     const filteredContracts = allContracts.filter(c => !c.isManualPrint);
 
@@ -55,12 +77,15 @@ export default function DashboardPage() {
         isToday(toDate(c.createdAt))
     );
 
+    const pendingAgenda = filteredContracts.filter(isPendingAgenda);
+
     return {
         active,
         today: todayCount,
         overdue: overdueCount,
         overdueAmount: overdueSum,
-        webEnrollments
+        webEnrollments,
+        pendingAgenda
     };
   }, [allContracts]);
 
@@ -127,6 +152,44 @@ export default function DashboardPage() {
         <h1 className="font-headline text-3xl font-bold text-slate-900 uppercase tracking-tight">Panel de Control</h1>
         <p className="text-muted-foreground font-medium">Gestión unificada de Freeway Escuela de Manejo</p>
       </div>
+
+      {/* SECCIÓN DE ALERTAS: CONTRATOS SIN AGENDA ASIGNADA */}
+      {isAdmin && !isContractsLoading && statsValues.pendingAgenda.length > 0 && (
+        <Card className="border-red-200 bg-red-50/30 overflow-hidden shadow-sm animate-in slide-in-from-top-4 duration-500">
+          <CardHeader className="pb-3 border-b border-red-100 flex flex-row items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-red-100 p-2 rounded-xl">
+                <CalendarX className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <CardTitle className="text-red-900 text-sm font-black uppercase tracking-wider">Agenda Pendiente Detectada</CardTitle>
+                <CardDescription className="text-red-700/70 text-xs font-bold">Hay {statsValues.pendingAgenda.length} trámites activos sin programación teórica o práctica.</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 space-y-2">
+            {statsValues.pendingAgenda.slice(0, 3).map(pending => (
+              <div key={pending.id} className="bg-white p-3 rounded-xl border border-red-100 flex items-center justify-between group hover:border-red-300 transition-all">
+                <div className="flex flex-col">
+                  <span className="font-bold text-sm uppercase text-slate-800">{pending.clientName}</span>
+                  <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-bold uppercase mt-0.5">
+                    <span className="bg-red-50 text-red-700 px-1.5 py-0.5 rounded-md flex items-center gap-1"><AlertTriangle className="h-2.5 w-2.5" /> SIN FECHAS ASIGNADAS</span>
+                    <span className="text-slate-400">TIPO: {pending.type}</span>
+                  </div>
+                </div>
+                <Button asChild size="sm" variant="ghost" className="text-red-600 hover:bg-red-50 rounded-full h-8 px-4 font-black">
+                  <Link href={`/contracts/${pending.id}`}>
+                    PROGRAMAR AHORA <ArrowRight className="ml-2 h-3 w-3" />
+                  </Link>
+                </Button>
+              </div>
+            ))}
+            {statsValues.pendingAgenda.length > 3 && (
+                <p className="text-[10px] text-center font-bold text-red-400 uppercase pt-2">Y {statsValues.pendingAgenda.length - 3} contratos más esperando agenda...</p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {isAdmin && !isContractsLoading && statsValues.webEnrollments.length > 0 && (
         <Card className="border-blue-200 bg-blue-50/30 overflow-hidden shadow-sm">

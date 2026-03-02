@@ -94,6 +94,7 @@ export default function VehicleScheduleReportPage() {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const isAdmin = role === 'Administrador';
+  const isVentas = role === 'Ventas';
 
   const contractsQuery = useMemoQuery(() => {
     if (!db || !user) return null;
@@ -373,118 +374,127 @@ export default function VehicleScheduleReportPage() {
                                 </div>
                             )}
                             <div className="flex flex-col gap-1.5 h-full pt-5">
-                                {assignments.map((a, i) => (
-                                    <Popover key={`${a.id}-${i}`}>
-                                        <PopoverTrigger asChild>
-                                            <div className={cn(
-                                                "p-2 rounded border text-[10px] shadow-sm cursor-pointer hover:shadow-md transition-all relative", 
-                                                a.status === 'missed' ? "bg-red-600 border-red-700 text-white" : 
-                                                a.isEval ? "bg-purple-50 border-purple-200" : (vehicleColors[a.vehicle] || 'bg-gray-100 border-gray-200')
-                                            )}>
-                                                {/* INDICADORES ESQUINA SUPERIOR IZQUIERDA */}
-                                                <div className="absolute -top-1 -left-1 flex gap-0.5 z-20">
-                                                    {a.status === 'cancelled_vehicle' && (
-                                                        <div className={cn("h-4 w-4 rounded-full flex items-center justify-center shadow-sm", vehicleStatusColors[a.vehicle])}>
-                                                            <Minus className="h-2.5 w-2.5 text-white" />
-                                                        </div>
-                                                    )}
-                                                    {a.status === 'rescheduled' && (
-                                                        <div className={cn("h-4 w-4 rounded-full flex items-center justify-center shadow-sm bg-slate-700")}>
-                                                            <RefreshCw className="h-2.5 w-2.5 text-white" />
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                {/* INDICADORES ESQUINA SUPERIOR DERECHA */}
-                                                <div className="absolute -top-1 -right-1 flex gap-0.5 z-20">
-                                                    {a.refueled && (
-                                                        <div className="h-4 w-4 rounded-full flex items-center justify-center shadow-sm bg-sky-600">
-                                                            <Fuel className="h-2.5 w-2.5 text-white" />
-                                                        </div>
-                                                    )}
-                                                    {a.status === 'missed' && (
-                                                        <div className="h-4 w-4 rounded-full flex items-center justify-center shadow-sm bg-white">
-                                                            <AlertCircle className="h-3 w-3 text-red-600" />
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                <p className="truncate font-black uppercase mb-0.5">{a.name}</p>
-                                                <p className={cn("truncate text-[8px] font-bold uppercase mb-1 flex items-center gap-1", a.status === 'missed' ? 'text-inherit opacity-80' : 'text-muted-foreground')}>
-                                                    <User className="h-2.5 w-2.5" /> {a.instructor || 'SIN ASIGNAR'}
-                                                </p>
-                                                
-                                                <div className={cn("flex justify-between font-bold text-[9px] border-t pt-1 mt-1", a.status === 'missed' ? 'border-current opacity-40' : 'border-black/10 opacity-80')}>
-                                                    <span className="flex items-center gap-1 text-[8px]">
-                                                        {a.vehicle} {a.status === 'rescheduled' && '(reagendada)'}
-                                                    </span>
-                                                </div>
-
-                                                <div className="absolute bottom-1 right-1 bg-primary text-white text-[10px] font-black px-1.5 py-0.5 rounded shadow-sm">
-                                                    #{a.displayClassNumber}
-                                                </div>
+                                {assignments.map((a, i) => {
+                                    const cardContent = (
+                                        <div className={cn(
+                                            "p-2 rounded border text-[10px] shadow-sm relative transition-all", 
+                                            !isVentas && "cursor-pointer hover:shadow-md",
+                                            a.status === 'missed' ? "bg-red-600 border-red-700 text-white" : 
+                                            a.isEval ? "bg-purple-50 border-purple-200" : (vehicleColors[a.vehicle] || 'bg-gray-100 border-gray-200')
+                                        )}>
+                                            {/* INDICADORES ESQUINA SUPERIOR IZQUIERDA */}
+                                            <div className="absolute -top-1 -left-1 flex gap-0.5 z-20">
+                                                {a.status === 'cancelled_vehicle' && (
+                                                    <div className={cn("h-4 w-4 rounded-full flex items-center justify-center shadow-sm", vehicleStatusColors[a.vehicle])}>
+                                                        <Minus className="h-2.5 w-2.5 text-white" />
+                                                    </div>
+                                                )}
+                                                {a.status === 'rescheduled' && (
+                                                    <div className={cn("h-4 w-4 rounded-full flex items-center justify-center shadow-sm bg-slate-700")}>
+                                                        <RefreshCw className="h-2.5 w-2.5 text-white" />
+                                                    </div>
+                                                )}
                                             </div>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-56 p-3">
-                                            <div className="space-y-3">
-                                                <p className="text-xs font-bold uppercase text-slate-500">Gestión de Clase</p>
-                                                <div className="grid gap-2">
-                                                    <Button 
-                                                        variant={a.refueled ? "default" : "outline"} 
-                                                        size="sm" 
-                                                        className={cn("h-8 justify-start text-[10px] font-bold uppercase gap-2", a.refueled ? "bg-sky-600 hover:bg-sky-700" : "text-sky-700 hover:bg-sky-50")} 
-                                                        onClick={() => handleToggleRefueled(a)}
-                                                    >
-                                                        <Fuel className="h-3.5 w-3.5" /> Marcó Gasolina
-                                                    </Button>
-                                                    
-                                                    {isAdmin && (
-                                                        <>
-                                                            <Button 
-                                                                variant={a.status === 'cancelled_vehicle' ? "default" : "outline"} 
-                                                                size="sm" 
-                                                                className={cn("h-8 justify-start text-[10px] font-bold uppercase gap-2", a.status === 'cancelled_vehicle' ? "bg-slate-800" : "text-amber-600 hover:bg-amber-50")} 
-                                                                onClick={() => handleUpdateStatus(a, 'cancelled_vehicle')}
-                                                            >
-                                                                <Minus className="h-3.5 w-3.5" /> Cancelada por Vehículo
-                                                            </Button>
 
-                                                            <Button 
-                                                                variant={a.status === 'rescheduled' ? "default" : "outline"} 
-                                                                size="sm" 
-                                                                className={cn("h-8 justify-start text-[10px] font-bold uppercase gap-2", a.status === 'rescheduled' ? "bg-slate-800" : "text-amber-600 hover:bg-amber-50")} 
-                                                                onClick={() => handleUpdateStatus(a, 'rescheduled')}
-                                                            >
-                                                                <RefreshCw className="h-3.5 w-3.5" /> Reagendada
-                                                            </Button>
-                                                        </>
-                                                    )}
-
-                                                    <Button 
-                                                        variant={a.status === 'missed' ? "default" : "outline"} 
-                                                        size="sm" 
-                                                        className={cn("h-8 justify-start text-[10px] font-bold uppercase gap-2", a.status === 'missed' ? "bg-red-600" : "text-red-600 hover:bg-red-50")} 
-                                                        onClick={() => handleUpdateStatus(a, 'missed')}
-                                                    >
-                                                        <AlertCircle className="h-3.5 w-3.5" /> No Asistió
-                                                    </Button>
-
-                                                    {isAdmin && (
-                                                        <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-blue-600 hover:bg-blue-50" onClick={() => handleUpdateStatus(a, 'scheduled')}>
-                                                            <Timer className="h-3.5 w-3.5" /> Restablecer Programada
-                                                        </Button>
-                                                    )}
-
-                                                    {a.status === 'missed' && (
-                                                        <Button variant="secondary" size="sm" className="h-8 w-full text-[10px] font-black uppercase gap-2 bg-green-600 text-white hover:bg-green-700" onClick={() => handleNotifyWhatsApp(a)}>
-                                                            <MessageSquare className="h-3.5 w-3.5" /> Notificar WhatsApp
-                                                        </Button>
-                                                    )}
-                                                </div>
+                                            {/* INDICADORES ESQUINA SUPERIOR DERECHA */}
+                                            <div className="absolute -top-1 -right-1 flex gap-0.5 z-20">
+                                                {a.refueled && (
+                                                    <div className="h-4 w-4 rounded-full flex items-center justify-center shadow-sm bg-sky-600">
+                                                        <Fuel className="h-2.5 w-2.5 text-white" />
+                                                    </div>
+                                                )}
+                                                {a.status === 'missed' && (
+                                                    <div className="h-4 w-4 rounded-full flex items-center justify-center shadow-sm bg-white">
+                                                        <AlertCircle className="h-3 w-3 text-red-600" />
+                                                    </div>
+                                                )}
                                             </div>
-                                        </PopoverContent>
-                                    </Popover>
-                                ))}
+
+                                            <p className="truncate font-black uppercase mb-0.5">{a.name}</p>
+                                            <p className={cn("truncate text-[8px] font-bold uppercase mb-1 flex items-center gap-1", a.status === 'missed' ? 'text-inherit opacity-80' : 'text-muted-foreground')}>
+                                                <User className="h-2.5 w-2.5" /> {a.instructor || 'SIN ASIGNAR'}
+                                            </p>
+                                            
+                                            <div className={cn("flex justify-between font-bold text-[9px] border-t pt-1 mt-1", a.status === 'missed' ? 'border-current opacity-40' : 'border-black/10 opacity-80')}>
+                                                <span className="flex items-center gap-1 text-[8px]">
+                                                    {a.vehicle} {a.status === 'rescheduled' && '(reagendada)'}
+                                                </span>
+                                            </div>
+
+                                            <div className="absolute bottom-1 right-1 bg-primary text-white text-[10px] font-black px-1.5 py-0.5 rounded shadow-sm">
+                                                #{a.displayClassNumber}
+                                            </div>
+                                        </div>
+                                    );
+
+                                    if (isVentas) return <div key={`${a.id}-${i}`}>{cardContent}</div>;
+
+                                    return (
+                                        <Popover key={`${a.id}-${i}`}>
+                                            <PopoverTrigger asChild>
+                                                {cardContent}
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-56 p-3">
+                                                <div className="space-y-3">
+                                                    <p className="text-xs font-bold uppercase text-slate-500">Gestión de Clase</p>
+                                                    <div className="grid gap-2">
+                                                        <Button 
+                                                            variant={a.refueled ? "default" : "outline"} 
+                                                            size="sm" 
+                                                            className={cn("h-8 justify-start text-[10px] font-bold uppercase gap-2", a.refueled ? "bg-sky-600 hover:bg-sky-700" : "text-sky-700 hover:bg-sky-50")} 
+                                                            onClick={() => handleToggleRefueled(a)}
+                                                        >
+                                                            <Fuel className="h-3.5 w-3.5" /> Marcó Gasolina
+                                                        </Button>
+                                                        
+                                                        {isAdmin && (
+                                                            <>
+                                                                <Button 
+                                                                    variant={a.status === 'cancelled_vehicle' ? "default" : "outline"} 
+                                                                    size="sm" 
+                                                                    className={cn("h-8 justify-start text-[10px] font-bold uppercase gap-2", a.status === 'cancelled_vehicle' ? "bg-slate-800" : "text-amber-600 hover:bg-amber-50")} 
+                                                                    onClick={() => handleUpdateStatus(a, 'cancelled_vehicle')}
+                                                                >
+                                                                    <Minus className="h-3.5 w-3.5" /> Cancelada por Vehículo
+                                                                </Button>
+
+                                                                <Button 
+                                                                    variant={a.status === 'rescheduled' ? "default" : "outline"} 
+                                                                    size="sm" 
+                                                                    className={cn("h-8 justify-start text-[10px] font-bold uppercase gap-2", a.status === 'rescheduled' ? "bg-slate-800" : "text-amber-600 hover:bg-amber-50")} 
+                                                                    onClick={() => handleUpdateStatus(a, 'rescheduled')}
+                                                                >
+                                                                    <RefreshCw className="h-3.5 w-3.5" /> Reagendada
+                                                                </Button>
+                                                            </>
+                                                        )}
+
+                                                        <Button 
+                                                            variant={a.status === 'missed' ? "default" : "outline"} 
+                                                            size="sm" 
+                                                            className={cn("h-8 justify-start text-[10px] font-bold uppercase gap-2", a.status === 'missed' ? "bg-red-600" : "text-red-600 hover:bg-red-50")} 
+                                                            onClick={() => handleUpdateStatus(a, 'missed')}
+                                                        >
+                                                            <AlertCircle className="h-3.5 w-3.5" /> No Asistió
+                                                        </Button>
+
+                                                        {isAdmin && (
+                                                            <Button variant="outline" size="sm" className="h-8 justify-start text-[10px] font-bold uppercase gap-2 text-blue-600 hover:bg-blue-50" onClick={() => handleUpdateStatus(a, 'scheduled')}>
+                                                                <Timer className="h-3.5 w-3.5" /> Restablecer Programada
+                                                            </Button>
+                                                        )}
+
+                                                        {a.status === 'missed' && (
+                                                            <Button variant="secondary" size="sm" className="h-8 w-full text-[10px] font-black uppercase gap-2 bg-green-600 text-white hover:bg-green-700" onClick={() => handleNotifyWhatsApp(a)}>
+                                                                <MessageSquare className="h-3.5 w-3.5" /> Notificar WhatsApp
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
+                                    );
+                                })}
                             </div>
                         </TableCell>
                         );

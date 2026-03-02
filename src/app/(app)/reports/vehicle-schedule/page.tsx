@@ -131,7 +131,8 @@ export default function VehicleScheduleReportPage() {
         type: 'contract' | 'manual' = 'contract', 
         displayClassNumber: number | string, 
         slotIndex?: number, 
-        subType?: 'auto' | 'moto'
+        subType?: 'auto' | 'moto',
+        plan?: string
     ) => {
         if (!date || !vehicle) return;
         const d = toDate(date);
@@ -151,16 +152,19 @@ export default function VehicleScheduleReportPage() {
             type, 
             displayClassNumber, 
             slotIndex, 
-            subType 
+            subType,
+            plan
         });
     };
 
     contracts?.forEach(c => {
         const d = c.autoMotoDetails || c.deluxeDetails;
+        const plan = d?.coursePlan || c.type;
         const isEval = (d?.coursePlan === 'evaluacion-estacionamiento' || d?.coursePlan === 'moto-evaluacion-estacionamiento');
+        
         const proc = (arr: any[], subType: 'auto' | 'moto' = 'auto') => {
             arr?.forEach((s, i) => {
-                processAny(c.id, c.clientName, s.date, s.time, s.vehicle, s.instructor, s.status || 'scheduled', !!s.refueled, isEval, 'contract', i + 1, i, subType);
+                processAny(c.id, c.clientName, s.date, s.time, s.vehicle, s.instructor, s.status || 'scheduled', !!s.refueled, isEval, 'contract', i + 1, i, subType, plan);
             });
         };
         if (c.type === 'Curso Moto') proc(c.autoMotoDetails?.motoPracticalClassSchedules || c.autoMotoDetails?.practicalClassSchedules || [], 'moto');
@@ -173,7 +177,7 @@ export default function VehicleScheduleReportPage() {
 
     manualEntries?.forEach(e => {
         if (e.classType === 'Práctica') {
-            processAny(e.id, e.studentName, e.date, e.timeSlot, e.vehicle, e.instructor, e.status || 'scheduled', !!e.refueled, false, 'manual', e.classNumber);
+            processAny(e.id, e.studentName, e.date, e.timeSlot, e.vehicle, e.instructor, e.status || 'scheduled', !!e.refueled, false, 'manual', e.classNumber, undefined, undefined, e.coursePlan || 'Trámite Manual');
         }
     });
 
@@ -411,6 +415,12 @@ export default function VehicleScheduleReportPage() {
                                             </div>
 
                                             <p className="truncate font-black uppercase mb-0.5">{a.name}</p>
+                                            
+                                            {/* INFO DEL PLAN O PAQUETE */}
+                                            <p className={cn("text-[8px] font-black uppercase truncate mb-0.5", a.status === 'missed' ? 'text-white/80' : 'text-primary')}>
+                                                {a.plan}
+                                            </p>
+
                                             <p className={cn("truncate text-[8px] font-bold uppercase mb-1 flex items-center gap-1", a.status === 'missed' ? 'text-inherit opacity-80' : 'text-muted-foreground')}>
                                                 <User className="h-2.5 w-2.5" /> {a.instructor || 'SIN ASIGNAR'}
                                             </p>

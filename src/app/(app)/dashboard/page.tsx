@@ -30,6 +30,7 @@ const isOverdue = (contract: Contract): boolean => {
  * Verifica si un contrato activo carece de fechas teóricas o prácticas según su tipo.
  */
 const isPendingAgenda = (c: Contract): boolean => {
+    // Solo auditamos contratos en estado "activo"
     if (c.status !== 'active') return false;
     
     const hasPractical = (c.autoMotoDetails?.practicalClassSchedules?.length || 0) > 0 || 
@@ -40,10 +41,11 @@ const isPendingAgenda = (c: Contract): boolean => {
                            (c.deluxeDetails?.theoreticalClasses?.length || 0) > 0 ||
                            !!c.ampliacionesDetails?.theoreticalClassDate;
 
+    // Validación por tipo de trámite
     if (c.type === 'Ampliaciones') return !hasTheoretical;
     if (c.type === 'Curso Solo Practica') return !hasPractical;
     
-    // Para Cursos Estándar (Auto, Moto, Mixto, Deluxe) se requieren ambas
+    // Para Cursos Estándar (Auto, Moto, Mixto, Deluxe) se requieren OBLIGATORIAMENTE ambas
     return !hasPractical || !hasTheoretical;
 };
 
@@ -77,6 +79,7 @@ export default function DashboardPage() {
         isToday(toDate(c.createdAt))
     );
 
+    // Filtrar contratos que necesitan atención de agenda
     const pendingAgenda = filteredContracts.filter(isPendingAgenda);
 
     return {
@@ -153,39 +156,46 @@ export default function DashboardPage() {
         <p className="text-muted-foreground font-medium">Gestión unificada de Freeway Escuela de Manejo</p>
       </div>
 
-      {/* SECCIÓN DE ALERTAS: CONTRATOS SIN AGENDA ASIGNADA */}
+      {/* SECCIÓN DE ALERTAS: CONTRATOS SIN AGENDA ASIGNADA (ALERTA ROJA) */}
       {isAdmin && !isContractsLoading && statsValues.pendingAgenda.length > 0 && (
-        <Card className="border-red-200 bg-red-50/30 overflow-hidden shadow-sm animate-in slide-in-from-top-4 duration-500">
-          <CardHeader className="pb-3 border-b border-red-100 flex flex-row items-center justify-between">
+        <Card className="border-red-500 border-2 bg-red-50/50 overflow-hidden shadow-xl animate-in slide-in-from-top-4 duration-700">
+          <CardHeader className="pb-3 border-b border-red-200 flex flex-row items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="bg-red-100 p-2 rounded-xl">
-                <CalendarX className="h-5 w-5 text-red-600" />
+              <div className="bg-red-600 p-2.5 rounded-xl shadow-lg animate-pulse">
+                <CalendarX className="h-6 w-6 text-white" />
               </div>
               <div>
-                <CardTitle className="text-red-900 text-sm font-black uppercase tracking-wider">Agenda Pendiente Detectada</CardTitle>
-                <CardDescription className="text-red-700/70 text-xs font-bold">Hay {statsValues.pendingAgenda.length} trámites activos sin programación teórica o práctica.</CardDescription>
+                <CardTitle className="text-red-900 text-base font-black uppercase tracking-tight">¡Atención! Agenda Pendiente</CardTitle>
+                <CardDescription className="text-red-700 font-bold">Hay {statsValues.pendingAgenda.length} contratos activos que no tienen fechas teóricas o prácticas asignadas.</CardDescription>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-4 space-y-2">
-            {statsValues.pendingAgenda.slice(0, 3).map(pending => (
-              <div key={pending.id} className="bg-white p-3 rounded-xl border border-red-100 flex items-center justify-between group hover:border-red-300 transition-all">
-                <div className="flex flex-col">
-                  <span className="font-bold text-sm uppercase text-slate-800">{pending.clientName}</span>
-                  <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-bold uppercase mt-0.5">
-                    <span className="bg-red-50 text-red-700 px-1.5 py-0.5 rounded-md flex items-center gap-1"><AlertTriangle className="h-2.5 w-2.5" /> SIN FECHAS ASIGNADAS</span>
-                    <span className="text-slate-400">TIPO: {pending.type}</span>
-                  </div>
+          <CardContent className="p-4 space-y-3">
+            <div className="grid grid-cols-1 gap-2">
+                {statsValues.pendingAgenda.slice(0, 5).map(pending => (
+                <div key={pending.id} className="bg-white p-4 rounded-xl border border-red-200 flex items-center justify-between group hover:border-red-500 hover:shadow-md transition-all">
+                    <div className="flex flex-col">
+                    <span className="font-black text-sm uppercase text-slate-900">{pending.clientName}</span>
+                    <div className="flex items-center gap-3 text-[10px] font-bold uppercase mt-1">
+                        <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded-md flex items-center gap-1.5 border border-red-200">
+                            <AlertTriangle className="h-3 w-3" /> REQUIERE PROGRAMACIÓN
+                        </span>
+                        <span className="text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">FOLIO: {String(pending.folioNumber).padStart(6, '0')}</span>
+                        <span className="text-primary">{pending.type}</span>
+                    </div>
+                    </div>
+                    <Button asChild size="sm" className="bg-red-600 hover:bg-red-700 text-white rounded-full h-9 px-6 font-black uppercase tracking-tighter shadow-sm">
+                    <Link href={`/contracts/${pending.id}`}>
+                        AGENDAR <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                    </Button>
                 </div>
-                <Button asChild size="sm" variant="ghost" className="text-red-600 hover:bg-red-50 rounded-full h-8 px-4 font-black">
-                  <Link href={`/contracts/${pending.id}`}>
-                    PROGRAMAR AHORA <ArrowRight className="ml-2 h-3 w-3" />
-                  </Link>
-                </Button>
-              </div>
-            ))}
-            {statsValues.pendingAgenda.length > 3 && (
-                <p className="text-[10px] text-center font-bold text-red-400 uppercase pt-2">Y {statsValues.pendingAgenda.length - 3} contratos más esperando agenda...</p>
+                ))}
+            </div>
+            {statsValues.pendingAgenda.length > 5 && (
+                <div className="pt-2 text-center">
+                    <Link href="/contracts" className="text-xs font-black text-red-600 uppercase hover:underline">Ver todos los pendientes ({statsValues.pendingAgenda.length})</Link>
+                </div>
             )}
           </CardContent>
         </Card>

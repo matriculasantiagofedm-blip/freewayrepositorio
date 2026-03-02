@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -153,7 +154,7 @@ export default function VehicleScheduleReportPage() {
             displayClassNumber, 
             slotIndex, 
             subType,
-            plan
+            plan: plan || 'Plan no especificado'
         });
     };
 
@@ -177,7 +178,7 @@ export default function VehicleScheduleReportPage() {
 
     manualEntries?.forEach(e => {
         if (e.classType === 'Práctica') {
-            processAny(e.id, e.studentName, e.date, e.timeSlot, e.vehicle, e.instructor, e.status || 'scheduled', !!e.refueled, false, 'manual', e.classNumber, undefined, undefined, e.coursePlan || 'Trámite Manual');
+            processAny(e.id, e.studentName, e.date, e.timeSlot, e.vehicle, e.instructor, e.status || 'scheduled', !!e.refueled, false, 'manual', e.classNumber, undefined, undefined, e.coursePlan);
         }
     });
 

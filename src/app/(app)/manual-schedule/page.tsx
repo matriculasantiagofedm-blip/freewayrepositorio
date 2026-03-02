@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -527,7 +528,6 @@ export default function ManualSchedulePage() {
                                                         <SelectContent>
                                                             <SelectItem value="scheduled" className="text-xs">Programada</SelectItem>
                                                             <SelectItem value="missed" className="text-xs">No Asistió</SelectItem>
-                                                            {/* SEPARACIÓN DE ACCIONES: SOLO MOSTRAR LA OPCIÓN CORRECTA SEGÚN EL TIPO */}
                                                             {(!selectedContract || f.value === 'rescheduled') && (
                                                                 <SelectItem value="rescheduled" className="text-xs">Reagendada</SelectItem>
                                                             )}
@@ -575,10 +575,10 @@ export default function ManualSchedulePage() {
                                     <TableRow>
                                         <TableHead className="font-bold text-[10px] uppercase">Fecha</TableHead>
                                         <TableHead className="font-bold text-[10px] uppercase">Estudiante</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase">Plan Seleccionado</TableHead>
                                         <TableHead className="font-bold text-[10px] uppercase">Estado</TableHead>
                                         <TableHead className="font-bold text-[10px] uppercase">Turno</TableHead>
                                         <TableHead className="font-bold text-[10px] uppercase">Vehículo</TableHead>
-                                        <TableHead className="font-bold text-[10px] uppercase">Instructor</TableHead>
                                         <TableHead className="font-bold text-[10px] uppercase text-right">Acciones</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -589,6 +589,7 @@ export default function ManualSchedulePage() {
                                         <TableRow key={entry.id}>
                                             <TableCell className="text-xs font-medium">{!isNaN(entryDate.getTime()) ? format(entryDate, 'dd/MM/yyyy') : '---'}</TableCell>
                                             <TableCell className="text-xs font-bold uppercase">{entry.studentName}</TableCell>
+                                            <TableCell className="text-[10px] font-bold text-primary uppercase">{entry.coursePlan || 'No especificado'}</TableCell>
                                             <TableCell>
                                                 {entry.status === 'missed' ? (
                                                     <span className="bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm">INASISTENCIA</span>
@@ -602,7 +603,6 @@ export default function ManualSchedulePage() {
                                             </TableCell>
                                             <TableCell className="text-xs">{timeSlots.find(t => t.id === entry.timeSlot)?.label || entry.timeSlot}</TableCell>
                                             <TableCell className="text-xs">{entry.vehicle}</TableCell>
-                                            <TableCell className="text-xs">{entry.instructor}</TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-1">
                                                     <Button size="icon" variant="ghost" className="h-8 w-8 text-blue-600" onClick={() => loadManualEntryForEdit(entry)}><Edit2 className="h-4 w-4" /></Button>

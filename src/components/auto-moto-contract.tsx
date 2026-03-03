@@ -85,11 +85,40 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
           </div>
           <div className="mt-2 pt-1 border-t border-gray-200">
             <p className="font-bold mb-1 uppercase text-[7.5pt]">4. Propuesta de Horario Práctico:</p>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 text-[8pt]">
-                {(details?.practicalClassSchedules || details?.motoPracticalClassSchedules || []).map((s, index) => (
-                    <div key={index} className="flex items-center justify-between border-b border-dotted border-gray-300"><span className="font-bold">Sesión {index + 1}:</span><span>{formatDateStr(s.date)}</span><span className="font-semibold">{s.time}</span></div>
-                ))}
-            </div>
+            
+            {/* AGENDA DE AUTO */}
+            {details?.practicalClassSchedules && details.practicalClassSchedules.length > 0 && (
+                <div className="mb-2">
+                    {details.motoPracticalClassSchedules && details.motoPracticalClassSchedules.length > 0 && (
+                        <p className="text-[7pt] font-black italic underline mb-0.5 uppercase">Sesiones de Auto:</p>
+                    )}
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 text-[8pt]">
+                        {details.practicalClassSchedules.map((s, index) => (
+                            <div key={index} className="flex items-center justify-between border-b border-dotted border-gray-300">
+                                <span className="font-bold">Sesión {index + 1}:</span>
+                                <span>{formatDateStr(s.date)}</span>
+                                <span className="font-semibold">{s.time}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* AGENDA DE MOTO */}
+            {details?.motoPracticalClassSchedules && details.motoPracticalClassSchedules.length > 0 && (
+                <div>
+                    <p className="text-[7pt] font-black italic underline mb-0.5 uppercase">Sesiones de Moto:</p>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 text-[8pt]">
+                        {details.motoPracticalClassSchedules.map((s, index) => (
+                            <div key={index} className="flex items-center justify-between border-b border-dotted border-gray-300">
+                                <span className="font-bold">Sesión {index + 1}:</span>
+                                <span>{formatDateStr(s.date)}</span>
+                                <span className="font-semibold">{s.time}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
           </div>
         </section>
 

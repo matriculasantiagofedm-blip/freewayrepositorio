@@ -14,18 +14,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { format, isToday } from 'date-fns';
+import { format, isToday, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
-import { Eye, Search, CheckCircle, XCircle } from 'lucide-react';
+import { Eye, Search, CheckCircle, XCircle, CalendarIcon, Printer, X } from 'lucide-react';
 import { useState, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useCollection } from '@/hooks/use-firestore';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 
 const getBalance = (contract: Contract): number => {
     const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
-    return details?.balance || 0;
+    return Number(details?.balance) || 0;
 }
 
 const isOverdue = (contract: Contract): boolean => {
@@ -40,6 +42,7 @@ function AllContractsContent() {
   const { role } = useCurrentRole();
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const filter = searchParams.get('filter');
 
   const contractsQuery = useMemo(() => {
@@ -52,7 +55,7 @@ function AllContractsContent() {
   const filteredContracts = useMemo(() => {
     if (!allContracts) return [];
     return allContracts.filter((contract) => {
-      // EXCLUSIÓN DE CERTIFICADOS MANUALES: Estos no son "Trámites" operativos del día
+      // EXCLUSIÓN DE CERTIFICADOS MANUALES
       if (contract.isManualPrint) return false;
 
       const folio = String(contract.folioNumber || '').padStart(6, '0');
@@ -62,7 +65,10 @@ function AllContractsContent() {
       
       const contractDate = toDate(contract.createdAt);
 
-      // Filtros Especiales
+      // Filtro por Fecha (Calendario)
+      if (selectedDate && !isSameDay(contractDate, selectedDate)) return false;
+
+      // Filtros Especiales (Params)
       if (filter === 'overdue' && !isOverdue(contract)) return false;
       if (filter === 'today' && !isToday(contractDate)) return false;
       
@@ -71,7 +77,7 @@ function AllContractsContent() {
       }
       return true;
     });
-  }, [allContracts, searchTerm, filter]);
+  }, [allContracts, searchTerm, filter, selectedDate]);
 
   const getTitle = () => {
       if (filter === 'overdue') return 'Contratos por Cobrar (Saldos)';
@@ -79,43 +85,105 @@ function AllContractsContent() {
       return 'Listado Global de Contratos';
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   const showActions = role === 'Administrador';
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          @page { size: letter landscape; margin: 10mm; }
+          header, footer, nav, aside, .print-hide, button { display: none !important; }
+          main { padding: 0 !important; margin: 0 !important; }
+          body { background: white !important; }
+          .rounded-lg { border: none !important; }
+          .shadow-sm { box-shadow: none !important; }
+          table { width: 100% !important; border-collapse: collapse !important; }
+          th, td { border: 1px solid #e2e8f0 !important; padding: 4px 8px !important; font-size: 8pt !important; }
+          .bg-primary\\/5 { background-color: transparent !important; }
+          .text-primary { color: black !important; }
+        }
+      `}} />
+
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 print-hide">
         <div className='flex flex-col'>
             <h1 className="font-headline text-3xl font-bold">{getTitle()}</h1>
             <p className='text-sm text-muted-foreground'>Consulta y gestiona los registros de la escuela.</p>
         </div>
-         <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar por folio, cliente..."
-            className="pl-8 sm:w-[300px]"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Buscar por folio, cliente..."
+              className="pl-8 sm:w-[250px] h-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={"outline"}
+                className={cn(
+                  "w-[200px] h-10 justify-start text-left font-normal",
+                  !selectedDate && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: es }) : <span>Filtrar por día</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+
+          {selectedDate && (
+            <Button variant="ghost" size="icon" onClick={() => setSelectedDate(undefined)} title="Limpiar fecha">
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+
+          <Button onClick={handlePrint} className="bg-slate-800 hover:bg-slate-900 h-10">
+            <Printer className="mr-2 h-4 w-4" />
+            Imprimir Reporte
+          </Button>
         </div>
       </div>
+
       {isLoading ? (
         <div className="flex items-center justify-center p-12">
             <p className="animate-pulse font-medium">Cargando base de datos...</p>
         </div>
       ) : (
-        <div className="rounded-lg border bg-card shadow-sm">
+        <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
+          <div className="hidden print:block text-center mb-6">
+            <h2 className="text-xl font-black uppercase">Freeway Escuela de Manejo</h2>
+            <p className="text-sm font-bold uppercase">{getTitle()}</p>
+            {selectedDate && <p className="text-xs">Fecha: {format(selectedDate, "PPP", { locale: es })}</p>}
+          </div>
+
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow>
-                <TableHead className="w-[100px]">Folio</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Tipo de Trámite</TableHead>
-                <TableHead>Certificado</TableHead>
-                <TableHead>Fecha de Registro</TableHead>
-                <TableHead className="text-right">Saldo (B/.)</TableHead>
-                {showActions && <TableHead className="text-right">Acciones</TableHead>}
+                <TableHead className="w-[100px] font-bold text-black">Folio</TableHead>
+                <TableHead className="font-bold text-black">Estado</TableHead>
+                <TableHead className="font-bold text-black">Cliente</TableHead>
+                <TableHead className="font-bold text-black">Tipo de Trámite</TableHead>
+                <TableHead className="font-bold text-black">Certificado</TableHead>
+                <TableHead className="font-bold text-black">Fecha Registro</TableHead>
+                <TableHead className="text-right font-bold text-black">Saldo (B/.)</TableHead>
+                {showActions && <TableHead className="text-right font-bold text-black print-hide">Acciones</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -153,14 +221,14 @@ function AllContractsContent() {
                       <TableCell className="text-xs">
                         <div className="flex items-center gap-2">
                             {format(contractDate, 'dd/MM/yyyy', { locale: es })}
-                            {isCreatedToday && <Badge className="h-4 px-1 text-[8px] bg-primary">HOY</Badge>}
+                            {isCreatedToday && <Badge className="h-4 px-1 text-[8px] bg-primary print-hide">HOY</Badge>}
                         </div>
                       </TableCell>
                       <TableCell className={cn("text-right font-bold", getBalance(contract) > 0 ? "text-destructive" : "text-green-600")}>
                           {getBalance(contract).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       </TableCell>
                       {showActions && (
-                        <TableCell className="text-right">
+                        <TableCell className="text-right print-hide">
                           <Button asChild variant="ghost" size="icon">
                             <Link href={`/contracts/${contract.id}`}><Eye className="h-4 w-4" /></Link>
                           </Button>
@@ -172,7 +240,7 @@ function AllContractsContent() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={showActions ? 8 : 7} className="h-32 text-center text-muted-foreground italic">
-                    {searchTerm ? "No se encontraron contratos con ese criterio." : "No hay trámites registrados para el filtro seleccionado."}
+                    {searchTerm || selectedDate ? "No se encontraron contratos con ese criterio." : "No hay trámites registrados para el filtro seleccionado."}
                   </TableCell>
                 </TableRow>
               )}

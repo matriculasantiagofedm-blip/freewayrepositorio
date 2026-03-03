@@ -279,7 +279,8 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
     if (watchPlan && !isEdit) {
       let price = PLAN_PRICES[watchPlan] || 0;
       
-      if (watchAdditional === 'Basico Moto 10Hrs' && watchPlan === 'Curso Auto Básico (8 Hrs)') {
+      // UNIFICACIÓN DE PRECIO COMBO: Si se añade moto, el valor es 290.00 fijo para el combo
+      if (watchAdditional === 'Basico Moto 10Hrs') {
         price = 290.00;
       } else if (watchAdditional === 'Ya se manejar Moto') {
         price += 20.00;

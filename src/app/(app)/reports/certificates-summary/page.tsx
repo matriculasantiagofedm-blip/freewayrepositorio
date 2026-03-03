@@ -80,7 +80,12 @@ export default function CertificatesSummaryReportPage() {
         const sLName = data.certificateSecondLastName || splitName(data.clientName).sLName;
         const mLastName = data.certificateMarriedLastName || '';
         
-        const category = data.certificateLicenseType || (data.autoMotoDetails?.licenseCategory) || '';
+        let category = data.certificateLicenseType || (data.autoMotoDetails?.licenseCategory) || '';
+
+        // HOTFIX: Corrección manual para folios con datos incorrectos en origen
+        if (rawFolio === '2029') {
+            category = 'A, B';
+        }
 
         const row: DiplomaRow = {
           index: 0,
@@ -105,14 +110,12 @@ export default function CertificatesSummaryReportPage() {
             /**
              * LÓGICA DE PRIORIDAD PARA DUPLICADOS:
              * 1. Si el nuevo registro es una Corrección o Actualización, debe ganar.
-             * 2. Caso específico Esteban Sanches (Fijación de categoría).
+             * 2. Casos específicos de folios que requieren el dato más reciente por encima del original.
              */
             const isPriorityEntry = row.isCorrection || row.isUpdate;
-            const fullName = `${row.firstName} ${row.lastName}`.toUpperCase();
-            const isEsteban = fullName.includes('ESTEBAN') && (fullName.includes('SANCHES') || fullName.includes('SANCHEZ'));
-            const isCorrectCategory = row.category.toUpperCase().replace(/\s/g, '') === 'A,C';
+            const isManualOverride = row.folio === '2029';
 
-            if (isPriorityEntry || (isEsteban && isCorrectCategory)) {
+            if (isPriorityEntry || isManualOverride) {
                 uniqueDiplomasMap.set(rawFolio, row);
             }
         }

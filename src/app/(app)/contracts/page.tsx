@@ -17,7 +17,7 @@ import Link from 'next/link';
 import { format, isToday, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
-import { Eye, Search, CheckCircle, XCircle, CalendarIcon, Printer, X } from 'lucide-react';
+import { Eye, Search, CheckCircle, XCircle, CalendarIcon, X } from 'lucide-react';
 import { useState, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useDb, useUser } from '@/components/firebase-provider';
@@ -85,30 +85,11 @@ function AllContractsContent() {
       return 'Listado Global de Contratos';
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   const showActions = role === 'Administrador';
 
   return (
     <div className="flex flex-col gap-8">
-      <style dangerouslySetInnerHTML={{ __html: `
-        @media print {
-          @page { size: letter landscape; margin: 10mm; }
-          header, footer, nav, aside, .print-hide, button { display: none !important; }
-          main { padding: 0 !important; margin: 0 !important; }
-          body { background: white !important; }
-          .rounded-lg { border: none !important; }
-          .shadow-sm { box-shadow: none !important; }
-          table { width: 100% !important; border-collapse: collapse !important; }
-          th, td { border: 1px solid #e2e8f0 !important; padding: 4px 8px !important; font-size: 8pt !important; }
-          .bg-primary\\/5 { background-color: transparent !important; }
-          .text-primary { color: black !important; }
-        }
-      `}} />
-
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 print-hide">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className='flex flex-col'>
             <h1 className="font-headline text-3xl font-bold">{getTitle()}</h1>
             <p className='text-sm text-muted-foreground'>Consulta y gestiona los registros de la escuela.</p>
@@ -153,11 +134,6 @@ function AllContractsContent() {
               <X className="h-4 w-4" />
             </Button>
           )}
-
-          <Button onClick={handlePrint} className="bg-slate-800 hover:bg-slate-900 h-10">
-            <Printer className="mr-2 h-4 w-4" />
-            Imprimir Reporte
-          </Button>
         </div>
       </div>
 
@@ -167,12 +143,6 @@ function AllContractsContent() {
         </div>
       ) : (
         <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
-          <div className="hidden print:block text-center mb-6">
-            <h2 className="text-xl font-black uppercase">Freeway Escuela de Manejo</h2>
-            <p className="text-sm font-bold uppercase">{getTitle()}</p>
-            {selectedDate && <p className="text-xs">Fecha: {format(selectedDate, "PPP", { locale: es })}</p>}
-          </div>
-
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow>
@@ -183,7 +153,7 @@ function AllContractsContent() {
                 <TableHead className="font-bold text-black">Certificado</TableHead>
                 <TableHead className="font-bold text-black">Fecha Registro</TableHead>
                 <TableHead className="text-right font-bold text-black">Saldo (B/.)</TableHead>
-                {showActions && <TableHead className="text-right font-bold text-black print-hide">Acciones</TableHead>}
+                {showActions && <TableHead className="text-right font-bold text-black">Acciones</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -221,14 +191,14 @@ function AllContractsContent() {
                       <TableCell className="text-xs">
                         <div className="flex items-center gap-2">
                             {format(contractDate, 'dd/MM/yyyy', { locale: es })}
-                            {isCreatedToday && <Badge className="h-4 px-1 text-[8px] bg-primary print-hide">HOY</Badge>}
+                            {isCreatedToday && <Badge className="h-4 px-1 text-[8px] bg-primary">HOY</Badge>}
                         </div>
                       </TableCell>
                       <TableCell className={cn("text-right font-bold", getBalance(contract) > 0 ? "text-destructive" : "text-green-600")}>
                           {getBalance(contract).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       </TableCell>
                       {showActions && (
-                        <TableCell className="text-right print-hide">
+                        <TableCell className="text-right">
                           <Button asChild variant="ghost" size="icon">
                             <Link href={`/contracts/${contract.id}`}><Eye className="h-4 w-4" /></Link>
                           </Button>

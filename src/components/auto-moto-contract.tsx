@@ -66,18 +66,22 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
 
         <section className="border border-gray-200 p-2 rounded-sm">
           <h4 className="font-bold uppercase mb-1 border-b border-gray-200 pb-0.5">CLÁUSULA SEGUNDA - DETALLES DEL CURSO</h4>
-          <div className="grid grid-cols-2 gap-x-4 text-[8pt]">
+          <div className="grid grid-cols-1 gap-y-1 text-[8pt]">
             <div className="space-y-1">
                 <p>1. Categoría de licencia a aplicar: 
-                    A, B <Checkbox checked={licenseStr.includes('B')} />
-                    A, C <Checkbox checked={licenseStr.includes('C') && !licenseStr.includes('D')} /> 
-                    A, C, D <Checkbox checked={licenseStr.includes('D')} />
+                    A, B <Checkbox checked={licenseStr === 'A, B'} /> 
+                    A, C <Checkbox checked={licenseStr === 'A, C'} /> 
+                    A, C, D <Checkbox checked={licenseStr === 'A, C, D'} /> 
+                    A, B, C <Checkbox checked={licenseStr === 'A, B, C' || licenseStr === 'A, C, B'} /> 
+                    A, B, C, D <Checkbox checked={licenseStr === 'A, B, C, D' || licenseStr === 'A, C, B, D'} />
                 </p>
-                <p>2. Transmisión del vehículo: 
-                    Automático <Checkbox checked={details?.vehicleTransmission === 'Automático'} /> 
-                    Manual <Checkbox checked={details?.vehicleTransmission === 'Manual' || details?.vehicleTransmission === 'Moto'} />
-                </p>
-                {!isSoloPractica && <p>3. Horario clases teóricas: <span className="font-semibold underline uppercase">{details?.theoreticalClassSchedule || 'PENDIENTE'}</span></p>}
+                <div className="flex gap-8">
+                  <p>2. Transmisión del vehículo: 
+                      Automático <Checkbox checked={details?.vehicleTransmission === 'Automático'} /> 
+                      Manual <Checkbox checked={details?.vehicleTransmission === 'Manual' || details?.vehicleTransmission === 'Moto'} />
+                  </p>
+                  {!isSoloPractica && <p>3. Horario clases teóricas: <span className="font-semibold underline uppercase">{details?.theoreticalClassSchedule || 'PENDIENTE'}</span></p>}
+                </div>
             </div>
             <div className="space-y-1">
                 {!isSoloPractica && <div className="text-[7.5pt] text-gray-600">{(details?.theoreticalClassDates || []).map((d, i) => formatDateStr(d)).join(' | ')}</div>}

@@ -83,9 +83,11 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, idTyp
                 <p>1. Categoría de licencia a aplicar: <Value>No Aplica</Value></p>
             ) : (
                 <p>1. Categoría de licencia a aplicar: 
-                    A, B <Checkbox checked={licenseStr.includes('B')} /> / 
-                    A, C <Checkbox checked={licenseStr.includes('C') && !licenseStr.includes('D')} /> / 
-                    A, C, D <Checkbox checked={licenseStr.includes('D')} />
+                    A, B <Checkbox checked={licenseStr === 'A, B'} /> / 
+                    A, C <Checkbox checked={licenseStr === 'A, C'} /> / 
+                    A, C, D <Checkbox checked={licenseStr === 'A, C, D'} /> / 
+                    A, B, C <Checkbox checked={licenseStr === 'A, B, C' || licenseStr === 'A, C, B'} /> / 
+                    A, B, C, D <Checkbox checked={licenseStr === 'A, B, C, D' || licenseStr === 'A, C, B, D'} />
                 </p>
             )}
 

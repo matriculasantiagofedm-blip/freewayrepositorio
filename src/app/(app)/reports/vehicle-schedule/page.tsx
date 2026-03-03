@@ -168,12 +168,20 @@ export default function VehicleScheduleReportPage() {
                 processAny(c.id, c.clientName, s.date, s.time, s.vehicle, s.instructor, s.status || 'scheduled', !!s.refueled, isEval, 'contract', i + 1, i, subType, plan);
             });
         };
-        if (c.type === 'Curso Moto') proc(c.autoMotoDetails?.motoPracticalClassSchedules || c.autoMotoDetails?.practicalClassSchedules || [], 'moto');
-        else if (c.type === 'Curso Deluxe') proc(c.deluxeDetails?.classSchedules || [], 'auto');
-        else if (c.type === 'Curso Mixto') {
-            proc(c.autoMotoDetails?.practicalClassSchedules || [], 'auto');
-            proc(c.autoMotoDetails?.motoPracticalClassSchedules || [], 'moto');
-        } else proc(c.autoMotoDetails?.practicalClassSchedules || [], 'auto');
+
+        // SE PROCESAN TODOS LOS ARREGLOS DE AGENDA DISPONIBLES (Soporte para Combos)
+        if (c.type === 'Curso Deluxe') {
+            proc(c.deluxeDetails?.classSchedules || [], 'auto');
+        } else {
+            // Procesar agenda de auto si existe
+            if (c.autoMotoDetails?.practicalClassSchedules && c.autoMotoDetails.practicalClassSchedules.length > 0) {
+                proc(c.autoMotoDetails.practicalClassSchedules, 'auto');
+            }
+            // Procesar agenda de moto si existe (Independientemente del tipo de contrato)
+            if (c.autoMotoDetails?.motoPracticalClassSchedules && c.autoMotoDetails.motoPracticalClassSchedules.length > 0) {
+                proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');
+            }
+        }
     });
 
     manualEntries?.forEach(e => {

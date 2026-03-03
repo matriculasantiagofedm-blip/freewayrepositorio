@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { collection, query, where, getDocs, Timestamp, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -11,7 +11,6 @@ import { Loader2, Printer, CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import type { Contract } from '@/lib/types';
 
 interface DiplomaRow {
     index: number;
@@ -105,13 +104,15 @@ export default function CertificatesSummaryReportPage() {
         } else {
             /**
              * LÓGICA DE PRIORIDAD PARA DUPLICADOS:
-             * Si detectamos a ESTEBAN SANCHES y este nuevo registro tiene las categorías A, C, lo preferimos sobre el anterior.
+             * 1. Si el nuevo registro es una Corrección o Actualización, debe ganar.
+             * 2. Caso específico Esteban Sanches (Fijación de categoría).
              */
+            const isPriorityEntry = row.isCorrection || row.isUpdate;
             const fullName = `${row.firstName} ${row.lastName}`.toUpperCase();
             const isEsteban = fullName.includes('ESTEBAN') && (fullName.includes('SANCHES') || fullName.includes('SANCHEZ'));
             const isCorrectCategory = row.category.toUpperCase().replace(/\s/g, '') === 'A,C';
 
-            if (isEsteban && isCorrectCategory) {
+            if (isPriorityEntry || (isEsteban && isCorrectCategory)) {
                 uniqueDiplomasMap.set(rawFolio, row);
             }
         }
@@ -222,7 +223,7 @@ export default function CertificatesSummaryReportPage() {
               </PopoverContent>
             </Popover>
           </div>
-          <Button onClick={handleReportDataFetchManual} size="sm" variant="outline" className="h-8"><Loader2 className={cn("h-3 w-3 mr-2", isLoading && "animate-spin")} /> Refrescar</Button>
+          <Button onClick={fetchReportData} size="sm" variant="outline" className="h-8"><Loader2 className={cn("h-3 w-3 mr-2", isLoading && "animate-spin")} /> Refrescar</Button>
           <Button onClick={handlePrint} size="sm"><Printer className="mr-2 h-4 w-4" /> Imprimir Reporte</Button>
         </div>
       </div>
@@ -341,8 +342,4 @@ export default function CertificatesSummaryReportPage() {
       </div>
     </div>
   );
-
-  function handleReportDataFetchManual() {
-      fetchReportData();
-  }
 }

@@ -277,9 +277,14 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
 
   useEffect(() => {
     if (watchPlan && !isEdit) {
+      // VALIDACIÓN: Solo permitir 'Basico Moto 10Hrs' si el plan es 'Curso Auto Plus (10 Hrs)'
+      if (watchPlan !== "Curso Auto Plus (10 Hrs)" && watchAdditional === "Basico Moto 10Hrs") {
+        form.setValue('additionalService', 'Ninguno');
+        return; 
+      }
+
       let price = PLAN_PRICES[watchPlan] || 0;
       
-      // UNIFICACIÓN DE PRECIO COMBO: Si se añade moto, el valor es 290.00 fijo para el combo
       if (watchAdditional === 'Basico Moto 10Hrs') {
         price = 290.00;
       } else if (watchAdditional === 'Ya se manejar Moto') {
@@ -619,7 +624,9 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
                       <SelectContent>
                         <SelectItem value="Ninguno">Ninguno</SelectItem>
                         <SelectItem value="Ya se manejar Moto">Ya se manejar Moto (+B/.20)</SelectItem>
-                        <SelectItem value="Basico Moto 10Hrs">Basico Moto 10Hrs (Combo B/.290)</SelectItem>
+                        {watchPlan === "Curso Auto Plus (10 Hrs)" && (
+                          <SelectItem value="Basico Moto 10Hrs">Basico Moto 10Hrs (Combo B/.290)</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </FormItem>

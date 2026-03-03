@@ -3,6 +3,7 @@
 /**
  * FORMULARIO DE CONTRATO: CURSO DE AUTO (SINCRONIZADO CON AGENDA)
  * Soporta creación, edición y descarga de PDF en tiempo real.
+ * Incluye lógica de Combo Plus Moto con agenda doble.
  */
 
 import { useState, useEffect, useMemo } from 'react';
@@ -57,7 +58,8 @@ import {
   Plus,
   RefreshCw,
   BookOpen,
-  Download
+  Download,
+  Bike
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useDb, useUser } from '@/components/firebase-provider';
@@ -65,8 +67,6 @@ import { useCurrentRole } from '@/hooks/use-current-role';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { isPanamaHoliday } from '@/lib/holidays';
 import type { Contract } from '@/lib/types';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { AutoMotoContractTemplate } from '@/components/auto-moto-contract';
 
 const AUTO_PLANS = [
@@ -111,6 +111,7 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
 };
 
 const VEHICLES = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Auto Diesel'];
+const VEHICLES_MOTO = ['Moto Roja', 'Moto Negra'];
 const INSTRUCTORS = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon'];
 
 const getGlobalCapacity = (date: Date, slotId: string) => {
@@ -135,7 +136,7 @@ const autoContractSchema = z.object({
   licenseCategory: z.string().min(1, 'Categoría requerida'),
   vehicleTransmission: z.enum(['Automático', 'Manual']).default('Automático'),
   coursePlan: z.string({ required_error: "Seleccione un plan" }),
-  additionalService: z.enum(['Ninguno', 'Ya se manejar Moto', 'Basico Moto 10Hrs']).default('Ninguno'),
+  additionalService: z.enum(['Ninguno', 'Ya se manejar Moto', 'Plus Moto 10Hrs']).default('Ninguno'),
   courseValue: z.coerce.number().min(1, 'Monto inválido'),
   downPayment: z.coerce.number().min(0),
   paymentDeadline: z.date({ required_error: 'Fecha límite requerida' }),
@@ -143,6 +144,12 @@ const autoContractSchema = z.object({
   theoreticalClassSchedule: z.enum(['Sabados 3:00 pm a 5:00 pm', 'Semanal 8:00 am a 10:00 am'], { required_error: "Seleccione un horario" }),
   theoreticalClassDates: z.array(z.date()).optional(),
   practicalClassSchedules: z.array(z.object({
+    date: z.date({ required_error: 'Fecha requerida' }),
+    time: z.string().min(1, 'Hora requerida'),
+    vehicle: z.string().optional(),
+    instructor: z.string().optional(),
+  })).optional(),
+  motoPracticalClassSchedules: z.array(z.object({
     date: z.date({ required_error: 'Fecha requerida' }),
     time: z.string().min(1, 'Hora requerida'),
     vehicle: z.string().optional(),
@@ -193,6 +200,10 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
         ...s,
         date: toDate(s.date)
       })),
+      motoPracticalClassSchedules: (contract.autoMotoDetails?.motoPracticalClassSchedules || []).map(s => ({
+        ...s,
+        date: toDate(s.date)
+      })),
     } : {
       clientName: '',
       clientEmail: '',
@@ -211,12 +222,18 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
       theoreticalClassSchedule: 'Sabados 3:00 pm a 5:00 pm',
       theoreticalClassDates: [],
       practicalClassSchedules: [],
+      motoPracticalClassSchedules: [],
     },
   });
 
   const { fields: practicalFields, replace: replacePractical } = useFieldArray({
     control: form.control,
     name: "practicalClassSchedules"
+  });
+
+  const { fields: motoPracticalFields, replace: replaceMotoPractical } = useFieldArray({
+    control: form.control,
+    name: "motoPracticalClassSchedules"
   });
 
   const availabilityData = useMemo(() => {
@@ -277,17 +294,28 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
 
   useEffect(() => {
     if (watchPlan && !isEdit) {
-      // VALIDACIÓN: Solo permitir 'Basico Moto 10Hrs' si el plan es 'Curso Auto Plus (10 Hrs)'
-      if (watchPlan !== "Curso Auto Plus (10 Hrs)" && watchAdditional === "Basico Moto 10Hrs") {
+      // VALIDACIÓN: Solo permitir 'Plus Moto 10Hrs' si el plan es 'Curso Auto Plus (10 Hrs)'
+      if (watchPlan !== "Curso Auto Plus (10 Hrs)" && watchAdditional === "Plus Moto 10Hrs") {
         form.setValue('additionalService', 'Ninguno');
         return; 
       }
 
       let price = PLAN_PRICES[watchPlan] || 0;
       
-      if (watchAdditional === 'Basico Moto 10Hrs') {
+      if (watchAdditional === 'Plus Moto 10Hrs') {
         price = 290.00;
-      } else if (watchAdditional === 'Ya se manejar Moto') {
+        // Inicializar agenda de moto (5 sesiones / 10 horas)
+        replaceMotoPractical(Array.from({ length: 5 }, () => ({ 
+          date: new Date(), 
+          time: '08:00am a 10:00am', 
+          vehicle: 'Moto Roja', 
+          instructor: '' 
+        })));
+      } else {
+        replaceMotoPractical([]); // Limpiar si no es combo
+      }
+
+      if (watchAdditional === 'Ya se manejar Moto') {
         price += 20.00;
       }
 
@@ -303,7 +331,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
       });
       replacePractical(newSchedules);
     }
-  }, [watchPlan, watchAdditional, replacePractical, form, isEdit]);
+  }, [watchPlan, watchAdditional, replacePractical, replaceMotoPractical, form, isEdit]);
 
   const handleDownloadPdf = async () => {
     const element = document.getElementById('contract-preview-hidden');
@@ -346,6 +374,10 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
         ...s,
         date: Timestamp.fromDate(s.date)
       }));
+      const formattedMotoPracticalSchedules = (values.motoPracticalClassSchedules || []).map(s => ({
+        ...s,
+        date: Timestamp.fromDate(s.date)
+      }));
 
       if (isEdit && contract) {
         const contractRef = doc(db, 'contracts', contract.id);
@@ -358,6 +390,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
             paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null,
             theoreticalClassDates: formattedTheoryDates,
             practicalClassSchedules: formattedPracticalSchedules,
+            motoPracticalClassSchedules: formattedMotoPracticalSchedules,
             balance: balance,
           },
           updatedAt: serverTimestamp(),
@@ -399,6 +432,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
               paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null,
               theoreticalClassDates: formattedTheoryDates,
               practicalClassSchedules: formattedPracticalSchedules,
+              motoPracticalClassSchedules: formattedMotoPracticalSchedules,
               balance: balance,
             }
           });
@@ -625,7 +659,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
                         <SelectItem value="Ninguno">Ninguno</SelectItem>
                         <SelectItem value="Ya se manejar Moto">Ya se manejar Moto (+B/.20)</SelectItem>
                         {watchPlan === "Curso Auto Plus (10 Hrs)" && (
-                          <SelectItem value="Basico Moto 10Hrs">Basico Moto 10Hrs (Combo B/.290)</SelectItem>
+                          <SelectItem value="Plus Moto 10Hrs">Plus Moto 10Hrs (Combo 290.00)</SelectItem>
                         )}
                       </SelectContent>
                     </Select>
@@ -687,7 +721,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
             <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
               <div className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-blue-600" />
-                <CardTitle className="text-sm font-bold uppercase tracking-wider">Agenda de Clases Prácticas</CardTitle>
+                <CardTitle className="text-sm font-bold uppercase tracking-wider">Agenda de Clases Prácticas (AUTO)</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="p-6">
@@ -775,6 +809,68 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
               )}
             </CardContent>
           </Card>
+
+          {/* AGENDA MOTO (PARA COMBO) */}
+          {watchAdditional === 'Plus Moto 10Hrs' && (
+            <Card className="shadow-sm border-t-4 border-t-orange-600">
+              <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
+                <div className="flex items-center gap-2">
+                  <Bike className="h-5 w-5 text-orange-600" />
+                  <CardTitle className="text-sm font-bold uppercase tracking-wider text-slate-700">Agenda de Clases Prácticas (MOTO)</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {motoPracticalFields.map((field, index) => (
+                    <div key={field.id} className="p-4 border rounded-xl space-y-3 bg-white border-slate-200">
+                      <div className="flex gap-4">
+                        <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.date`} render={({ field: f }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="text-[10px] font-black uppercase text-slate-500">Sesión Moto {index + 1}</FormLabel>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : 'Fecha'}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0">
+                                <Calendar mode="single" selected={f.value ? toDate(f.value) : undefined} onSelect={(date) => { if (date) f.onChange(date); }} initialFocus />
+                              </PopoverContent>
+                            </Popover>
+                          </FormItem>
+                        )} />
+                        <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.time`} render={({ field: f }) => (
+                          <FormItem className="flex-1">
+                            <FormLabel className="text-[10px] font-black uppercase text-slate-500">Horario</FormLabel>
+                            <Select onValueChange={f.onChange} value={f.value}>
+                              <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
+                              <SelectContent>{TIME_OPTIONS.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent>
+                            </Select>
+                          </FormItem>
+                        )} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.vehicle`} render={({ field: f }) => (
+                          <FormItem>
+                            <Select onValueChange={f.onChange} value={f.value}>
+                              <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
+                              <SelectContent>{VEHICLES_MOTO.map(v => <SelectItem key={v} value={v} className="text-[10px]">{v}</SelectItem>)}</SelectContent>
+                            </Select>
+                          </FormItem>
+                        )} />
+                        <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.instructor`} render={({ field: f }) => (
+                          <FormItem>
+                            <Select onValueChange={f.onChange} value={f.value}>
+                              <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
+                              <SelectContent>{INSTRUCTORS.map(i => <SelectItem key={i} value={i} className="text-[10px]">{i}</SelectItem>)}</SelectContent>
+                            </Select>
+                          </FormItem>
+                        )} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <div className="flex flex-col sm:flex-row justify-end gap-4">
             <Button type="button" variant="outline" size="lg" onClick={() => router.back()}>Cancelar</Button>

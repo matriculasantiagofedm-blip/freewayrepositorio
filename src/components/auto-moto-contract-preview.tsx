@@ -38,8 +38,8 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, idTyp
   const balance = autoMotoDetails?.balance || 0;
   const creationDate = new Date();
   const paymentDeadline = autoMotoDetails?.paymentDeadline ? toDate(autoMotoDetails.paymentDeadline) : null;
-  const courseValue = autoMotoDetails?.courseValue || 0;
   const isSoloPractica = type === 'Curso Solo Practica';
+  const licenseStr = autoMotoDetails?.licenseCategory || '';
 
   const formatDate = (dateString?: string | Date) => {
     if (!dateString) return <Line />;
@@ -82,10 +82,14 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, idTyp
             {isSoloPractica ? (
                 <p>1. Categoría de licencia a aplicar: <Value>No Aplica</Value></p>
             ) : (
-                <p>1. Categoría de licencia a aplicar: A, C <Checkbox checked={autoMotoDetails?.licenseCategory?.includes('C')} /> / A, C, D <Checkbox checked={autoMotoDetails?.licenseCategory?.includes('D')} /> / A, B <Checkbox checked={autoMotoDetails?.licenseCategory?.includes('B')} /></p>
+                <p>1. Categoría de licencia a aplicar: 
+                    A, B <Checkbox checked={licenseStr.includes('B')} /> / 
+                    A, C <Checkbox checked={licenseStr.includes('C') && !licenseStr.includes('D')} /> / 
+                    A, C, D <Checkbox checked={licenseStr.includes('D')} />
+                </p>
             )}
 
-            <p>2. Transmisión del vehículo: Automático <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Automático'} /> / Manual <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Manual'} /> / Moto <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Moto'} /></p>
+            <p>2. Transmisión del vehículo: Automático <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Automático'} /> / Manual <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Manual' || autoMotoDetails?.vehicleTransmission === 'Moto'} /></p>
             
             {!isSoloPractica && (
                 <>

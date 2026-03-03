@@ -31,7 +31,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
   };
 
   const isSoloPractica = contract.type === 'Curso Solo Practica';
-  const isMoto = contract.type === 'Curso Moto' || details?.vehicleTransmission === 'Moto' || details?.vehicleTransmission === 'Motocicleta';
+  const licenseStr = details?.licenseCategory || '';
 
   return (
     <div className="max-w-[8.5in] mx-auto bg-white p-10 font-serif text-[8.5pt] leading-[1.15] text-black print:p-0 print:m-0">
@@ -69,13 +69,13 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
           <div className="grid grid-cols-2 gap-x-4 text-[8pt]">
             <div className="space-y-1">
                 <p>1. Categoría de licencia a aplicar: 
-                    A, B <Checkbox checked={details?.licenseCategory?.includes('B') || isMoto} />
-                    A, C <Checkbox checked={details?.licenseCategory === 'A, C' && !isMoto} /> 
-                    A, C, D <Checkbox checked={details?.licenseCategory === 'A, C, D' && !isMoto} />
+                    A, B <Checkbox checked={licenseStr.includes('B')} />
+                    A, C <Checkbox checked={licenseStr.includes('C') && !licenseStr.includes('D')} /> 
+                    A, C, D <Checkbox checked={licenseStr.includes('D')} />
                 </p>
                 <p>2. Transmisión del vehículo: 
-                    Automático <Checkbox checked={details?.vehicleTransmission === 'Automático' && !isMoto} /> 
-                    Manual <Checkbox checked={details?.vehicleTransmission === 'Manual' || isMoto} />
+                    Automático <Checkbox checked={details?.vehicleTransmission === 'Automático'} /> 
+                    Manual <Checkbox checked={details?.vehicleTransmission === 'Manual' || details?.vehicleTransmission === 'Moto'} />
                 </p>
                 {!isSoloPractica && <p>3. Horario clases teóricas: <span className="font-semibold underline uppercase">{details?.theoreticalClassSchedule || 'PENDIENTE'}</span></p>}
             </div>

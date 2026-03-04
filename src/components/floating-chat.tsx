@@ -141,7 +141,7 @@ export function FloatingChat() {
             size="icon" 
             className={cn(
               "h-12 w-12 rounded-full shadow-xl transition-all duration-300 hover:scale-110",
-              isOpen ? "bg-slate-800" : "bg-primary"
+              isOpen ? "bg-slate-800" : "bg-blue-600"
             )}
           >
             {isOpen ? <X className="h-5 w-5 text-white" /> : <MessageSquare className="h-5 w-5 text-white" />}
@@ -157,8 +157,8 @@ export function FloatingChat() {
           className="w-[340px] p-0 overflow-hidden rounded-xl shadow-2xl border-slate-200"
         >
           <Card className="border-none shadow-none flex flex-col h-[480px]">
-            {/* ENCABEZADO COMPACTO */}
-            <CardHeader className="py-2.5 px-3 border-b bg-primary text-white flex flex-row items-center justify-between space-y-0 shrink-0">
+            {/* ENCABEZADO COMPACTO - AHORA AZUL */}
+            <CardHeader className="py-2.5 px-3 border-b bg-blue-600 text-white flex flex-row items-center justify-between space-y-0 shrink-0">
               <div className="flex items-center gap-2 overflow-hidden">
                 {selectedChannelId && (
                   <Button 
@@ -174,7 +174,7 @@ export function FloatingChat() {
                   <CardTitle className="text-xs font-black uppercase tracking-tight truncate">
                     {selectedChannelId ? activeChannel?.label : "Mensajería Interna"}
                   </CardTitle>
-                  <p className="text-[9px] font-bold text-primary-foreground/60 uppercase truncate">
+                  <p className="text-[9px] font-bold text-blue-100/60 uppercase truncate">
                     {selectedChannelId ? "Chat de Equipo" : `Rol: ${role}`}
                   </p>
                 </div>
@@ -236,7 +236,7 @@ export function FloatingChat() {
                                 <div className={cn(
                                   "p-2 rounded-xl text-[12px] shadow-sm leading-snug",
                                   isMine 
-                                      ? "bg-primary text-white rounded-tr-none" 
+                                      ? "bg-blue-600 text-white rounded-tr-none" 
                                       : "bg-white border border-slate-200 rounded-tl-none text-slate-800"
                                 )}>
                                   {msg.text}
@@ -263,12 +263,12 @@ export function FloatingChat() {
                     <form onSubmit={handleSendMessage} className="flex gap-1.5">
                       <Input 
                         placeholder="Mensaje..." 
-                        className="h-9 text-[13px] border-slate-200 focus:ring-primary font-medium"
+                        className="h-9 text-[13px] border-slate-200 focus:ring-blue-600 font-medium"
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         autoFocus
                       />
-                      <Button type="submit" disabled={!message.trim()} size="icon" className="h-9 w-9 shrink-0 bg-primary hover:bg-slate-800 shadow-md">
+                      <Button type="submit" disabled={!message.trim()} size="icon" className="h-9 w-9 shrink-0 bg-blue-600 hover:bg-blue-700 shadow-md">
                         <Send className="h-3.5 w-3.5 text-white" />
                       </Button>
                     </form>

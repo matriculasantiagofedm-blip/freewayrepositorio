@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -16,7 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Separator } from './ui/separator';
 import { useDb, useUser, useMemoFirebase, useCollection } from '@/firebase';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { CHANNELS } from '@/lib/chat-config';
 import { toDate } from '@/lib/utils';
 

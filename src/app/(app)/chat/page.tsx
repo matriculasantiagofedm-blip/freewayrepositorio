@@ -26,7 +26,7 @@ import {
   AccordionItem, 
   AccordionTrigger 
 } from '@/components/ui/accordion';
-import { MessageSquare, Send, User as UserIcon, Loader2, Search, Users, Tag } from 'lucide-react';
+import { MessageSquare, Send, User as UserIcon, Loader2, Search, Users, Tag, Info } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -41,7 +41,7 @@ export default function ChatPage() {
   const [selectedContact, setSelectedContact] = useState<UserProfile | null>(null);
   const [message, setMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [openRoles, setOpenRoles] = useState<string[]>([]);
+  const [openRoles, setOpenRoles] = useState<string[]>(POSSIBLE_ROLES);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Consulta de usuarios registrados
@@ -61,47 +61,47 @@ export default function ChatPage() {
     return [];
   }, [role]);
 
-  // Filtrar contactos según el rol y agruparlos
-  const groupedContacts = useMemo(() => {
-    if (!allUsers || !role) return {};
+  // Agrupar contactos por rol, filtrando según reglas de seguridad
+  const contactsByRole = useMemo(() => {
+    const groups: Record<string, UserProfile[]> = {};
     
-    const filtered = allUsers.filter(u => {
-      if (u.uid === user?.uid) return false;
-
-      // REGLA: Ventas y Ventas Externas NO se ven entre sí
-      if (role === 'Ventas' && u.role === 'Ventas Externas') return false;
-      if (role === 'Ventas Externas' && u.role === 'Ventas') return false;
-
-      if (searchTerm) {
-        const search = searchTerm.toLowerCase();
-        const matchesName = u.name.toLowerCase().includes(search);
-        const matchesRole = u.role.toLowerCase().includes(search);
-        if (!matchesName && !matchesRole) return false;
-      }
-
-      return true;
+    // Inicializar grupos con roles permitidos
+    allowedRoles.forEach(r => {
+        groups[r] = [];
     });
 
-    const groups: Record<string, UserProfile[]> = {};
-    filtered.forEach(u => {
-      if (!groups[u.role]) groups[u.role] = [];
-      groups[u.role].push(u);
+    if (!allUsers || !role) return groups;
+    
+    allUsers.forEach(u => {
+      if (u.uid === user?.uid) return;
+
+      // REGLA: Ventas y Ventas Externas NO se ven entre sí
+      if (role === 'Ventas' && u.role === 'Ventas Externas') return;
+      if (role === 'Ventas Externas' && u.role === 'Ventas') return;
+
+      // Solo añadir si el rol está en la lista de permitidos
+      if (groups[u.role]) {
+          // Filtrado por nombre si hay término de búsqueda
+          if (searchTerm) {
+              const search = searchTerm.toLowerCase();
+              if (u.name.toLowerCase().includes(search)) {
+                  groups[u.role].push(u);
+              }
+          } else {
+              groups[u.role].push(u);
+          }
+      }
     });
 
     return groups;
-  }, [allUsers, user?.uid, role, searchTerm]);
+  }, [allUsers, user?.uid, role, searchTerm, allowedRoles]);
 
-  // Lista de roles que tienen contactos (para el acordeón)
-  const roleListWithUsers = useMemo(() => {
-    return Object.keys(groupedContacts).sort();
-  }, [groupedContacts]);
-
-  // Auto-expandir el acordeón cuando hay búsqueda o cambio de datos
+  // Auto-expandir el acordeón cuando hay búsqueda
   useEffect(() => {
-    if (searchTerm || roleListWithUsers.length > 0) {
-        setOpenRoles(roleListWithUsers);
+    if (searchTerm) {
+        setOpenRoles(allowedRoles);
     }
-  }, [searchTerm, roleListWithUsers]);
+  }, [searchTerm, allowedRoles]);
 
   // ID de sala de chat único para dos participantes
   const activeRoomId = useMemo(() => {
@@ -162,11 +162,6 @@ export default function ChatPage() {
     }
   };
 
-  const handleRoleTagClick = (roleName: string) => {
-    const isAlreadyFiltered = searchTerm.toLowerCase() === roleName.toLowerCase();
-    setSearchTerm(isAlreadyFiltered ? '' : roleName);
-  };
-
   return (
     <div className="flex flex-col gap-6 h-[calc(100vh-140px)]">
       <div className="flex items-center gap-3">
@@ -201,7 +196,7 @@ export default function ChatPage() {
                                 ? "bg-primary text-white border-primary" 
                                 : "bg-white text-slate-500 hover:bg-slate-100"
                         )}
-                        onClick={() => handleRoleTagClick(r)}
+                        onClick={() => setSearchTerm(r === searchTerm ? '' : r)}
                     >
                         <Tag className="h-2 w-2 mr-1" />
                         {r}
@@ -214,15 +209,15 @@ export default function ChatPage() {
               <div className="p-4">
                 {isLoadingUsers ? (
                   <div className="p-8 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-slate-300" /></div>
-                ) : roleListWithUsers.length > 0 ? (
+                ) : (
                   <Accordion 
                     type="multiple" 
                     value={openRoles} 
                     onValueChange={setOpenRoles} 
                     className="space-y-2"
                   >
-                    {roleListWithUsers.map(roleName => {
-                      const contactsInRole = groupedContacts[roleName] || [];
+                    {allowedRoles.map(roleName => {
+                      const contactsInRole = contactsByRole[roleName] || [];
                       return (
                         <AccordionItem key={roleName} value={roleName} className="border-none">
                           <AccordionTrigger className="hover:no-underline py-2 px-3 bg-slate-100 rounded-lg group">
@@ -235,41 +230,43 @@ export default function ChatPage() {
                           </AccordionTrigger>
                           <AccordionContent className="pt-2 pb-0">
                             <div className="space-y-1 pl-1">
-                              {contactsInRole.map(contact => (
-                                <button
-                                  key={contact.uid}
-                                  onClick={() => setSelectedContact(contact)}
-                                  className={cn(
-                                    "w-full flex items-center gap-3 p-2.5 rounded-xl transition-all text-left group",
-                                    selectedContact?.uid === contact.uid 
-                                      ? "bg-primary text-white shadow-md" 
-                                      : "hover:bg-slate-50"
-                                  )}
-                                >
-                                  <Avatar className={cn("h-8 w-8", selectedContact?.uid === contact.uid ? "border-2 border-white/20" : "border")}>
-                                    <AvatarFallback className={cn(selectedContact?.uid === contact.uid ? "bg-white/10 text-white" : "bg-slate-100")}>
-                                      <UserIcon className="h-4 w-4" />
-                                    </AvatarFallback>
-                                  </Avatar>
-                                  <div className="flex-1 overflow-hidden">
-                                    <p className="font-bold text-xs truncate uppercase leading-none">{contact.name}</p>
-                                    <p className={cn("text-[9px] font-medium uppercase tracking-wider opacity-70 mt-1", selectedContact?.uid === contact.uid ? "text-white" : "text-slate-400")}>
-                                      {contact.role}
-                                    </p>
-                                  </div>
-                                </button>
-                              ))}
+                              {contactsInRole.length > 0 ? (
+                                contactsInRole.map(contact => (
+                                    <button
+                                    key={contact.uid}
+                                    onClick={() => setSelectedContact(contact)}
+                                    className={cn(
+                                        "w-full flex items-center gap-3 p-2.5 rounded-xl transition-all text-left group",
+                                        selectedContact?.uid === contact.uid 
+                                        ? "bg-primary text-white shadow-md" 
+                                        : "hover:bg-slate-50"
+                                    )}
+                                    >
+                                    <Avatar className={cn("h-8 w-8", selectedContact?.uid === contact.uid ? "border-2 border-white/20" : "border")}>
+                                        <AvatarFallback className={cn(selectedContact?.uid === contact.uid ? "bg-white/10 text-white" : "bg-slate-100")}>
+                                        <UserIcon className="h-4 w-4" />
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 overflow-hidden">
+                                        <p className="font-bold text-xs truncate uppercase leading-none">{contact.name}</p>
+                                        <p className={cn("text-[9px] font-medium uppercase tracking-wider opacity-70 mt-1", selectedContact?.uid === contact.uid ? "text-white" : "text-slate-400")}>
+                                        {contact.role}
+                                        </p>
+                                    </div>
+                                    </button>
+                                ))
+                              ) : (
+                                <div className="py-4 text-center text-[10px] text-muted-foreground italic flex flex-col items-center gap-1 opacity-50">
+                                    <Info className="h-3 w-3" />
+                                    Sin personal registrado
+                                </div>
+                              )}
                             </div>
                           </AccordionContent>
                         </AccordionItem>
                       )
                     })}
                   </Accordion>
-                ) : (
-                  <div className="p-8 text-center text-xs text-muted-foreground italic flex flex-col items-center gap-2">
-                    <Users className="h-8 w-8 opacity-20" />
-                    {searchTerm ? "Sin coincidencias." : "Inicia sesión en otro navegador para ver tu perfil aquí."}
-                  </div>
                 )}
               </div>
             </ScrollArea>

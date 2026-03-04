@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -17,21 +18,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { MessageSquare, Send, Loader2, Info, Users, ShieldAlert } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
-
-// Definición de canales globales
-const CHANNELS = [
-  { id: 'admin_ventas', label: 'Ventas ↔ Administración', roles: ['Administrador', 'Ventas'], icon: MessageSquare, color: 'bg-blue-600' },
-  { id: 'admin_ventasext', label: 'Ventas Ext ↔ Administración', roles: ['Administrador', 'Ventas Externas'], icon: MessageSquare, color: 'bg-purple-600' },
-  { id: 'internal_admin', label: 'Solo Administradores', roles: ['Administrador'], icon: Users, color: 'bg-slate-800' },
-  { id: 'internal_ventas', label: 'Solo Ventas (Interno)', roles: ['Ventas'], icon: Users, color: 'bg-blue-500' },
-  { id: 'internal_ventasext', label: 'Solo Ventas Ext (Interno)', roles: ['Ventas Externas'], icon: Users, color: 'bg-purple-500' },
-];
+import { CHANNELS } from '@/lib/chat-config';
 
 export default function ChatPage() {
   const db = useDb();
@@ -78,7 +70,6 @@ export default function ChatPage() {
     setMessage('');
 
     try {
-      // Registrar el canal si no existe (opcional, para metadatos)
       const channelRef = doc(db, 'chatChannels', selectedChannelId);
       await setDoc(channelRef, {
         id: selectedChannelId,
@@ -87,11 +78,10 @@ export default function ChatPage() {
         allowedRoles: activeChannel?.roles || [],
       }, { merge: true });
 
-      // Añadir el mensaje
       await addDoc(collection(db, 'chatChannels', selectedChannelId, 'messages'), {
         senderId: user.uid,
         senderRole: role,
-        senderName: role, // Usamos el rol como nombre para anonimato corporativo
+        senderName: role, 
         text: msgText,
         createdAt: serverTimestamp(),
       });
@@ -136,7 +126,7 @@ export default function ChatPage() {
                         "h-10 w-10 rounded-full flex items-center justify-center shrink-0 border-2 border-white/20 shadow-sm",
                         channel.color
                     )}>
-                        <channel.icon className="h-5 w-5 text-white" />
+                        <MessageSquare className="h-5 w-5 text-white" />
                     </div>
                     <div className="flex-1 overflow-hidden">
                         <p className="font-black text-[11px] uppercase tracking-tight leading-none mb-1">{channel.label}</p>
@@ -158,7 +148,7 @@ export default function ChatPage() {
               <CardHeader className="py-3 px-6 border-b bg-slate-50/50 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-4">
                     <div className={cn("h-10 w-10 rounded-full flex items-center justify-center", activeChannel.color)}>
-                        <activeChannel.icon className="h-5 w-5 text-white" />
+                        <MessageSquare className="h-5 w-5 text-white" />
                     </div>
                     <div>
                         <CardTitle className="text-base font-black uppercase tracking-tight">{activeChannel.label}</CardTitle>

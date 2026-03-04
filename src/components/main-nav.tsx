@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -14,6 +15,10 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from './ui/separator';
+import { useDb, useUser, useMemoFirebase, useCollection } from '@/firebase';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { CHANNELS } from '@/lib/chat-config';
+import { toDate } from '@/lib/utils';
 
 const navLinks = [
   {
@@ -25,6 +30,7 @@ const navLinks = [
     href: '/chat',
     label: 'Mensajería',
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+    showBadge: true,
   },
   {
     href: '/clients',
@@ -212,8 +218,43 @@ function HoverDropdownMenu({ link, visibleChildren, pathname, linkClass }: any) 
 
 
 export function MainNav({ className, isMobile = false }: { className?: string, isMobile?: boolean }) {
+  const db = useDb();
+  const { user } = useUser();
   const pathname = usePathname();
   const { role } = useCurrentRole();
+  const [hasRecentActivity, setHasRecentActivity] = React.useState(false);
+
+  // Monitor de actividad reciente en los canales permitidos
+  React.useEffect(() => {
+    if (!db || !role || !user) return;
+
+    const allowedChannels = CHANNELS.filter(c => c.roles.includes(role));
+    const unsubs: (() => void)[] = [];
+
+    allowedChannels.forEach(channel => {
+      const q = query(collection(db, 'chatChannels', channel.id, 'messages'), orderBy('createdAt', 'desc'), limit(1));
+      const unsub = onSnapshot(q, (snap) => {
+        if (!snap.empty) {
+          const lastMsg = snap.docs[0].data();
+          const lastMsgTime = toDate(lastMsg.createdAt).getTime();
+          // Si el mensaje tiene menos de 10 minutos y no es mío, marcar actividad
+          if (Date.now() - lastMsgTime < 600000 && lastMsg.senderId !== user.uid) {
+            setHasRecentActivity(true);
+          }
+        }
+      });
+      unsubs.push(unsub);
+    });
+
+    return () => unsubs.forEach(un => un());
+  }, [db, role, user]);
+
+  // Si entramos al chat, limpiar el indicador
+  React.useEffect(() => {
+    if (pathname === '/chat') {
+      setHasRecentActivity(false);
+    }
+  }, [pathname]);
 
   if (!role) return null;
 
@@ -271,9 +312,12 @@ export function MainNav({ className, isMobile = false }: { className?: string, i
             <Link
               key={link.href}
               href={link.href!}
-              className={cn(linkClass, (pathname === link.href || (link.href !== '/dashboard' && pathname.startsWith(link.href!))) && activeLinkClass)}
+              className={cn(linkClass, (pathname === link.href || (link.href !== '/dashboard' && pathname.startsWith(link.href!))) && activeLinkClass, "relative")}
             >
               {link.label}
+              {link.showBadge && hasRecentActivity && (
+                <span className="absolute -top-1 -right-1 h-2 w-2 bg-red-600 rounded-full animate-pulse shadow-sm" />
+              )}
             </Link>
         );
       })}

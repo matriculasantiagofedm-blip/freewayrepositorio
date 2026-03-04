@@ -1,3 +1,4 @@
+
 'use client';
 import { GanttChart, Menu, Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { ChatNotificationListener } from '@/components/chat-notification-listener';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { role, isUserLoading } = useFirebase();
@@ -38,6 +40,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen w-full flex-col">
+      {/* Vigilante de notificaciones de chat */}
+      <ChatNotificationListener />
+      
       <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 print-hide">
         <Link
             href="/dashboard"

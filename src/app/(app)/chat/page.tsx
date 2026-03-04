@@ -32,6 +32,8 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 
+const POSSIBLE_ROLES = ['Administrador', 'Ventas', 'Ventas Externas'];
+
 export default function ChatPage() {
   const db = useDb();
   const { user } = useUser();
@@ -39,6 +41,7 @@ export default function ChatPage() {
   const [selectedContact, setSelectedContact] = useState<UserProfile | null>(null);
   const [message, setMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [openRoles, setOpenRoles] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Consulta de usuarios registrados
@@ -48,6 +51,15 @@ export default function ChatPage() {
   }, [db, user]);
 
   const { data: allUsers, isLoading: isLoadingUsers } = useCollection<UserProfile>(usersQuery);
+
+  // Roles permitidos según el usuario actual
+  const allowedRoles = useMemo(() => {
+    if (!role) return [];
+    if (role === 'Administrador') return POSSIBLE_ROLES;
+    if (role === 'Ventas') return ['Administrador', 'Ventas'];
+    if (role === 'Ventas Externas') return ['Administrador', 'Ventas Externas'];
+    return [];
+  }, [role]);
 
   // Filtrar contactos según el rol y agruparlos
   const groupedContacts = useMemo(() => {
@@ -59,8 +71,6 @@ export default function ChatPage() {
       // REGLA: Ventas y Ventas Externas NO se ven entre sí
       if (role === 'Ventas' && u.role === 'Ventas Externas') return false;
       if (role === 'Ventas Externas' && u.role === 'Ventas') return false;
-
-      // El Administrador ve a todos. Ventas ve a Admin y Ventas. Ventas Ext ve a Admin y Ventas Ext.
 
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
@@ -80,6 +90,18 @@ export default function ChatPage() {
 
     return groups;
   }, [allUsers, user?.uid, role, searchTerm]);
+
+  // Lista de roles que tienen contactos (para el acordeón)
+  const roleListWithUsers = useMemo(() => {
+    return Object.keys(groupedContacts).sort();
+  }, [groupedContacts]);
+
+  // Auto-expandir el acordeón cuando hay búsqueda o cambio de datos
+  useEffect(() => {
+    if (searchTerm || roleListWithUsers.length > 0) {
+        setOpenRoles(roleListWithUsers);
+    }
+  }, [searchTerm, roleListWithUsers]);
 
   // ID de sala de chat único para dos participantes
   const activeRoomId = useMemo(() => {
@@ -140,26 +162,10 @@ export default function ChatPage() {
     }
   };
 
-  const roleList = Object.keys(groupedContacts).sort();
-  
-  // Etiquetas de roles disponibles según permisos de visibilidad
-  const allRolesAvailable = useMemo(() => {
-    if (!allUsers) return [];
-    const roles = new Set<string>();
-    
-    // Si soy admin, quiero ver todos los roles posibles registrados
-    if (role === 'Administrador') {
-        allUsers.forEach(u => roles.add(u.role));
-    } else {
-        // Si soy ventas, solo veo Admin y Ventas
-        allUsers.forEach(u => {
-            if (role === 'Ventas' && u.role === 'Ventas Externas') return;
-            if (role === 'Ventas Externas' && u.role === 'Ventas') return;
-            roles.add(u.role);
-        });
-    }
-    return Array.from(roles).sort();
-  }, [allUsers, role]);
+  const handleRoleTagClick = (roleName: string) => {
+    const isAlreadyFiltered = searchTerm.toLowerCase() === roleName.toLowerCase();
+    setSearchTerm(isAlreadyFiltered ? '' : roleName);
+  };
 
   return (
     <div className="flex flex-col gap-6 h-[calc(100vh-140px)]">
@@ -178,85 +184,91 @@ export default function ChatPage() {
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Filtrar por rol o nombre..." 
+                placeholder="Buscar por nombre..." 
                 className="pl-8 h-9 text-xs bg-white border-slate-200" 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            {allRolesAvailable.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                    {allRolesAvailable.map(r => (
-                        <Badge 
-                            key={r} 
-                            variant="outline" 
-                            className={cn(
-                                "cursor-pointer text-[9px] font-black uppercase transition-colors px-2 py-0",
-                                searchTerm.toLowerCase() === r.toLowerCase() 
-                                    ? "bg-primary text-white border-primary" 
-                                    : "bg-white text-slate-500 hover:bg-slate-100"
-                            )}
-                            onClick={() => setSearchTerm(searchTerm.toLowerCase() === r.toLowerCase() ? '' : r)}
-                        >
-                            <Tag className="h-2 w-2 mr-1" />
-                            {r}
-                        </Badge>
-                    ))}
-                </div>
-            )}
+            <div className="flex flex-wrap gap-1.5">
+                {allowedRoles.map(r => (
+                    <Badge 
+                        key={r} 
+                        variant="outline" 
+                        className={cn(
+                            "cursor-pointer text-[9px] font-black uppercase transition-colors px-2 py-0",
+                            searchTerm.toLowerCase() === r.toLowerCase() 
+                                ? "bg-primary text-white border-primary" 
+                                : "bg-white text-slate-500 hover:bg-slate-100"
+                        )}
+                        onClick={() => handleRoleTagClick(r)}
+                    >
+                        <Tag className="h-2 w-2 mr-1" />
+                        {r}
+                    </Badge>
+                ))}
+            </div>
           </CardHeader>
           <CardContent className="p-0 flex-1 overflow-hidden">
             <ScrollArea className="h-full">
               <div className="p-4">
                 {isLoadingUsers ? (
                   <div className="p-8 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-slate-300" /></div>
-                ) : roleList.length > 0 ? (
-                  <Accordion type="multiple" defaultValue={roleList} className="space-y-2">
-                    {roleList.map(roleName => (
-                      <AccordionItem key={roleName} value={roleName} className="border-none">
-                        <AccordionTrigger className="hover:no-underline py-2 px-3 bg-slate-100 rounded-lg group">
-                          <div className="flex items-center justify-between w-full pr-4">
-                            <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">{roleName}</span>
-                            <Badge variant="secondary" className="h-5 text-[9px] font-bold bg-white text-slate-600 border-slate-200">
-                              {groupedContacts[roleName].length}
-                            </Badge>
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="pt-2 pb-0">
-                          <div className="space-y-1 pl-1">
-                            {groupedContacts[roleName].map(contact => (
-                              <button
-                                key={contact.uid}
-                                onClick={() => setSelectedContact(contact)}
-                                className={cn(
-                                  "w-full flex items-center gap-3 p-2.5 rounded-xl transition-all text-left group",
-                                  selectedContact?.uid === contact.uid 
-                                    ? "bg-primary text-white shadow-md" 
-                                    : "hover:bg-slate-50"
-                                )}
-                              >
-                                <Avatar className={cn("h-8 w-8", selectedContact?.uid === contact.uid ? "border-2 border-white/20" : "border")}>
-                                  <AvatarFallback className={cn(selectedContact?.uid === contact.uid ? "bg-white/10 text-white" : "bg-slate-100")}>
-                                    <UserIcon className="h-4 w-4" />
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 overflow-hidden">
-                                  <p className="font-bold text-xs truncate uppercase leading-none">{contact.name}</p>
-                                  <p className={cn("text-[9px] font-medium uppercase tracking-wider opacity-70 mt-1", selectedContact?.uid === contact.uid ? "text-white" : "text-slate-400")}>
-                                    {contact.role}
-                                  </p>
-                                </div>
-                              </button>
-                            ))}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
+                ) : roleListWithUsers.length > 0 ? (
+                  <Accordion 
+                    type="multiple" 
+                    value={openRoles} 
+                    onValueChange={setOpenRoles} 
+                    className="space-y-2"
+                  >
+                    {roleListWithUsers.map(roleName => {
+                      const contactsInRole = groupedContacts[roleName] || [];
+                      return (
+                        <AccordionItem key={roleName} value={roleName} className="border-none">
+                          <AccordionTrigger className="hover:no-underline py-2 px-3 bg-slate-100 rounded-lg group">
+                            <div className="flex items-center justify-between w-full pr-4">
+                              <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">{roleName}</span>
+                              <Badge variant="secondary" className="h-5 text-[9px] font-bold bg-white text-slate-600 border-slate-200">
+                                {contactsInRole.length}
+                              </Badge>
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="pt-2 pb-0">
+                            <div className="space-y-1 pl-1">
+                              {contactsInRole.map(contact => (
+                                <button
+                                  key={contact.uid}
+                                  onClick={() => setSelectedContact(contact)}
+                                  className={cn(
+                                    "w-full flex items-center gap-3 p-2.5 rounded-xl transition-all text-left group",
+                                    selectedContact?.uid === contact.uid 
+                                      ? "bg-primary text-white shadow-md" 
+                                      : "hover:bg-slate-50"
+                                  )}
+                                >
+                                  <Avatar className={cn("h-8 w-8", selectedContact?.uid === contact.uid ? "border-2 border-white/20" : "border")}>
+                                    <AvatarFallback className={cn(selectedContact?.uid === contact.uid ? "bg-white/10 text-white" : "bg-slate-100")}>
+                                      <UserIcon className="h-4 w-4" />
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex-1 overflow-hidden">
+                                    <p className="font-bold text-xs truncate uppercase leading-none">{contact.name}</p>
+                                    <p className={cn("text-[9px] font-medium uppercase tracking-wider opacity-70 mt-1", selectedContact?.uid === contact.uid ? "text-white" : "text-slate-400")}>
+                                      {contact.role}
+                                    </p>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      )
+                    })}
                   </Accordion>
                 ) : (
                   <div className="p-8 text-center text-xs text-muted-foreground italic flex flex-col items-center gap-2">
                     <Users className="h-8 w-8 opacity-20" />
-                    No hay contactos que coincidan con la búsqueda.
+                    {searchTerm ? "Sin coincidencias." : "Inicia sesión en otro navegador para ver tu perfil aquí."}
                   </div>
                 )}
               </div>

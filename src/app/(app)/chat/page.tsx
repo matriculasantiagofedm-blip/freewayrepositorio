@@ -7,23 +7,29 @@ import {
   collection, 
   query, 
   orderBy, 
-  where, 
   addDoc, 
   serverTimestamp, 
   doc, 
   setDoc,
   limit
 } from 'firebase/firestore';
-import type { UserProfile, ChatMessage, ChatRoom } from '@/lib/types';
+import type { UserProfile, ChatMessage } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { MessageSquare, Send, User as UserIcon, Loader2, Search } from 'lucide-react';
+import { 
+  Accordion, 
+  AccordionContent, 
+  AccordionItem, 
+  AccordionTrigger 
+} from '@/components/ui/accordion';
+import { MessageSquare, Send, User as UserIcon, Loader2, Search, Users } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Badge } from '@/components/ui/badge';
 
 export default function ChatPage() {
   const db = useDb();
@@ -42,28 +48,34 @@ export default function ChatPage() {
 
   const { data: allUsers, isLoading: isLoadingUsers } = useCollection<UserProfile>(usersQuery);
 
-  // Filtrar contactos según el rol
-  const contacts = useMemo(() => {
-    if (!allUsers || !role) return [];
+  // Filtrar contactos según el rol y agruparlos
+  const groupedContacts = useMemo(() => {
+    if (!allUsers || !role) return {};
     
-    return allUsers.filter(u => {
-      // No mostrarse a uno mismo
+    const filtered = allUsers.filter(u => {
       if (u.uid === user?.uid) return false;
 
       // Restricción: Ventas y Ventas Externas NO se ven entre sí
       if (role === 'Ventas' && u.role === 'Ventas Externas') return false;
       if (role === 'Ventas Externas' && u.role === 'Ventas') return false;
-      if (role === 'Ventas' && u.role === 'Ventas') return false; // Tampoco entre mismos Ventas (opcional, tú decides)
+      if (role === 'Ventas' && u.role === 'Ventas') return false; 
       if (role === 'Ventas Externas' && u.role === 'Ventas Externas') return false;
 
-      // Búsqueda por nombre
       if (searchTerm && !u.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
 
       return true;
     });
+
+    const groups: Record<string, UserProfile[]> = {};
+    filtered.forEach(u => {
+      if (!groups[u.role]) groups[u.role] = [];
+      groups[u.role].push(u);
+    });
+
+    return groups;
   }, [allUsers, user?.uid, role, searchTerm]);
 
-  // ID de sala de chat único para dos participantes (ordenado alfabéticamente para consistencia)
+  // ID de sala de chat único para dos participantes
   const activeRoomId = useMemo(() => {
     if (!user || !selectedContact) return null;
     const ids = [user.uid, selectedContact.uid].sort();
@@ -97,7 +109,6 @@ export default function ChatPage() {
     setMessage('');
 
     try {
-      // 1. Asegurar que la sala existe
       const roomRef = doc(db, 'chatRooms', activeRoomId);
       await setDoc(roomRef, {
         participants: [user.uid, selectedContact.uid],
@@ -113,7 +124,6 @@ export default function ChatPage() {
         updatedAt: serverTimestamp(),
       }, { merge: true });
 
-      // 2. Añadir el mensaje
       await addDoc(collection(db, 'chatRooms', activeRoomId, 'messages'), {
         senderId: user.uid,
         text: msgText,
@@ -123,6 +133,8 @@ export default function ChatPage() {
       console.error("Error al enviar mensaje:", err);
     }
   };
+
+  const roleList = Object.keys(groupedContacts).sort();
 
   return (
     <div className="flex flex-col gap-6 h-[calc(100vh-140px)]">
@@ -135,14 +147,14 @@ export default function ChatPage() {
       </div>
 
       <div className="flex flex-1 gap-6 overflow-hidden">
-        {/* LISTADO DE CONTACTOS */}
-        <Card className="w-80 flex flex-col shadow-md">
-          <CardHeader className="pb-3 border-b">
+        {/* LISTADO DE CONTACTOS DESPLEGABLE */}
+        <Card className="w-80 flex flex-col shadow-md border-slate-200">
+          <CardHeader className="pb-3 border-b bg-slate-50/50">
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Buscar contacto..." 
-                className="pl-8 h-9 text-xs" 
+                placeholder="Filtrar por nombre..." 
+                className="pl-8 h-9 text-xs bg-white" 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -150,36 +162,57 @@ export default function ChatPage() {
           </CardHeader>
           <CardContent className="p-0 flex-1 overflow-hidden">
             <ScrollArea className="h-full">
-              <div className="p-2 space-y-1">
+              <div className="p-4">
                 {isLoadingUsers ? (
                   <div className="p-8 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto text-slate-300" /></div>
-                ) : contacts.length > 0 ? (
-                  contacts.map(contact => (
-                    <button
-                      key={contact.uid}
-                      onClick={() => setSelectedContact(contact)}
-                      className={cn(
-                        "w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left group",
-                        selectedContact?.uid === contact.uid 
-                          ? "bg-primary text-white shadow-lg" 
-                          : "hover:bg-slate-100"
-                      )}
-                    >
-                      <Avatar className={cn("h-10 w-10", selectedContact?.uid === contact.uid ? "border-2 border-white/20" : "border")}>
-                        <AvatarFallback className={cn(selectedContact?.uid === contact.uid ? "bg-white/10 text-white" : "bg-slate-100")}>
-                          <UserIcon className="h-5 w-5" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 overflow-hidden">
-                        <p className="font-bold text-sm truncate uppercase">{contact.name}</p>
-                        <p className={cn("text-[10px] font-medium uppercase tracking-wider opacity-70", selectedContact?.uid === contact.uid ? "text-white" : "text-primary")}>
-                          {contact.role}
-                        </p>
-                      </div>
-                    </button>
-                  ))
+                ) : roleList.length > 0 ? (
+                  <Accordion type="multiple" defaultValue={roleList} className="space-y-2">
+                    {roleList.map(roleName => (
+                      <AccordionItem key={roleName} value={roleName} className="border-none">
+                        <AccordionTrigger className="hover:no-underline py-2 px-3 bg-slate-100 rounded-lg group">
+                          <div className="flex items-center justify-between w-full pr-4">
+                            <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">{roleName}</span>
+                            <Badge variant="secondary" className="h-5 text-[9px] font-bold bg-white text-slate-600 border-slate-200">
+                              {groupedContacts[roleName].length}
+                            </Badge>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="pt-2 pb-0">
+                          <div className="space-y-1 pl-1">
+                            {groupedContacts[roleName].map(contact => (
+                              <button
+                                key={contact.uid}
+                                onClick={() => setSelectedContact(contact)}
+                                className={cn(
+                                  "w-full flex items-center gap-3 p-2.5 rounded-xl transition-all text-left group",
+                                  selectedContact?.uid === contact.uid 
+                                    ? "bg-primary text-white shadow-md" 
+                                    : "hover:bg-slate-50"
+                                )}
+                              >
+                                <Avatar className={cn("h-8 w-8", selectedContact?.uid === contact.uid ? "border-2 border-white/20" : "border")}>
+                                  <AvatarFallback className={cn(selectedContact?.uid === contact.uid ? "bg-white/10 text-white" : "bg-slate-100")}>
+                                    <UserIcon className="h-4 w-4" />
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 overflow-hidden">
+                                  <p className="font-bold text-xs truncate uppercase leading-none">{contact.name}</p>
+                                  <p className={cn("text-[9px] font-medium uppercase tracking-wider opacity-70 mt-1", selectedContact?.uid === contact.uid ? "text-white" : "text-slate-400")}>
+                                    {contact.role}
+                                  </p>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
                 ) : (
-                  <div className="p-8 text-center text-xs text-muted-foreground italic">No hay contactos disponibles bajo tu restricción de rol.</div>
+                  <div className="p-8 text-center text-xs text-muted-foreground italic flex flex-col items-center gap-2">
+                    <Users className="h-8 w-8 opacity-20" />
+                    No hay contactos disponibles bajo tu restricción de rol.
+                  </div>
                 )}
               </div>
             </ScrollArea>
@@ -187,16 +220,19 @@ export default function ChatPage() {
         </Card>
 
         {/* ÁREA DE CHAT */}
-        <Card className="flex-1 flex flex-col shadow-md overflow-hidden relative">
+        <Card className="flex-1 flex flex-col shadow-md overflow-hidden relative border-slate-200">
           {selectedContact ? (
             <>
               <CardHeader className="py-3 px-6 border-b bg-slate-50/50 flex flex-row items-center gap-4">
-                <Avatar className="h-10 w-10 border">
-                  <AvatarFallback><UserIcon className="h-5 w-5" /></AvatarFallback>
+                <Avatar className="h-10 w-10 border shadow-sm">
+                  <AvatarFallback className="bg-white text-primary"><UserIcon className="h-5 w-5" /></AvatarFallback>
                 </Avatar>
                 <div>
-                  <CardTitle className="text-base font-black uppercase">{selectedContact.name}</CardTitle>
-                  <p className="text-[10px] font-bold text-primary uppercase tracking-widest">{selectedContact.role}</p>
+                  <CardTitle className="text-base font-black uppercase tracking-tight">{selectedContact.name}</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                    <p className="text-[10px] font-bold text-primary uppercase tracking-widest">{selectedContact.role}</p>
+                  </div>
                 </div>
               </CardHeader>
               
@@ -216,11 +252,11 @@ export default function ChatPage() {
                               "p-3 rounded-2xl text-sm shadow-sm",
                               isMine 
                                 ? "bg-primary text-white rounded-tr-none" 
-                                : "bg-white border rounded-tl-none"
+                                : "bg-white border border-slate-200 rounded-tl-none text-slate-800"
                             )}>
                               {msg.text}
                             </div>
-                            <span className="text-[9px] text-muted-foreground mt-1 px-1">
+                            <span className="text-[9px] text-muted-foreground mt-1 px-1 font-bold">
                               {!isNaN(date.getTime()) ? format(date, 'hh:mm a', { locale: es }) : '...'}
                             </span>
                           </div>
@@ -228,8 +264,10 @@ export default function ChatPage() {
                       })
                     ) : (
                       <div className="h-64 flex flex-col items-center justify-center text-center opacity-30 gap-3">
-                        <MessageSquare className="h-12 w-12" />
-                        <p className="text-xs font-bold uppercase tracking-widest">Inicia la conversación</p>
+                        <div className="p-4 bg-slate-100 rounded-full">
+                          <MessageSquare className="h-10 w-10 text-slate-400" />
+                        </div>
+                        <p className="text-xs font-black uppercase tracking-widest">Inicia la conversación</p>
                       </div>
                     )}
                     <div ref={scrollRef} />
@@ -241,11 +279,11 @@ export default function ChatPage() {
                 <form onSubmit={handleSendMessage} className="flex gap-2">
                   <Input 
                     placeholder="Escribe un mensaje..." 
-                    className="h-11 focus-visible:ring-primary"
+                    className="h-11 focus-visible:ring-primary border-slate-200 shadow-inner"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                   />
-                  <Button type="submit" disabled={!message.trim()} className="h-11 w-11 p-0 shrink-0 shadow-lg">
+                  <Button type="submit" disabled={!message.trim()} className="h-11 w-11 p-0 shrink-0 shadow-lg bg-primary hover:bg-slate-800 transition-all">
                     <Send className="h-5 w-5" />
                   </Button>
                 </form>
@@ -253,11 +291,11 @@ export default function ChatPage() {
             </>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-12 bg-slate-50/50">
-              <div className="bg-white p-6 rounded-full shadow-xl mb-6">
-                <MessageSquare className="h-12 w-12 text-slate-200" />
+              <div className="bg-white p-8 rounded-full shadow-xl mb-6 animate-in zoom-in duration-500">
+                <MessageSquare className="h-16 w-16 text-slate-100" />
               </div>
               <h3 className="text-xl font-black uppercase text-slate-400 tracking-tighter">Selecciona un chat</h3>
-              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-2">Para comenzar a coordinar con el equipo</p>
+              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-2 max-w-[200px] leading-relaxed">Usa el menú desplegable a la izquierda para elegir un contacto</p>
             </div>
           )}
         </Card>

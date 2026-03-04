@@ -11,7 +11,8 @@ import {
   serverTimestamp, 
   doc, 
   setDoc,
-  limit
+  limit,
+  onSnapshot
 } from 'firebase/firestore';
 import type { ChatMessage } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,6 +32,7 @@ export default function ChatPage() {
   const { role } = useFirebase();
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
   const [message, setMessage] = useState('');
+  const [activeChannels, setActiveChannels] = useState<Record<string, boolean>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Filtrar canales según el rol del usuario actual
@@ -42,6 +44,41 @@ export default function ChatPage() {
   const activeChannel = useMemo(() => {
     return allowedChannels.find(c => c.id === selectedChannelId);
   }, [selectedChannelId, allowedChannels]);
+
+  // Monitor de actividad para CADA canal (Puntos rojos)
+  useEffect(() => {
+    if (!db || !user || !role) return;
+
+    const unsubs = allowedChannels.map(channel => {
+      const q = query(
+        collection(db, 'chatChannels', channel.id, 'messages'),
+        orderBy('createdAt', 'desc'),
+        limit(1)
+      );
+
+      return onSnapshot(q, (snap) => {
+        if (!snap.empty) {
+          const lastMsg = snap.docs[0].data();
+          const lastMsgTime = toDate(lastMsg.createdAt).getTime();
+          const isFromOthers = lastMsg.senderId !== user.uid;
+          const isRecent = Date.now() - lastMsgTime < 900000; // 15 minutos
+
+          if (isRecent && isFromOthers && selectedChannelId !== channel.id) {
+            setActiveChannels(prev => ({ ...prev, [channel.id]: true }));
+          }
+        }
+      });
+    });
+
+    return () => unsubs.forEach(unsub => unsub());
+  }, [db, user, role, allowedChannels, selectedChannelId]);
+
+  // Limpiar indicador al seleccionar canal
+  useEffect(() => {
+    if (selectedChannelId) {
+      setActiveChannels(prev => ({ ...prev, [selectedChannelId]: false }));
+    }
+  }, [selectedChannelId]);
 
   // Consulta de mensajes del canal activo
   const messagesQuery = useMemoFirebase(() => {
@@ -116,7 +153,7 @@ export default function ChatPage() {
                     key={channel.id}
                     onClick={() => setSelectedChannelId(channel.id)}
                     className={cn(
-                      "w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left group",
+                      "w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left group relative",
                       selectedChannelId === channel.id 
                         ? "bg-primary text-white shadow-lg scale-[1.02]" 
                         : "hover:bg-slate-100"
@@ -134,6 +171,10 @@ export default function ChatPage() {
                             Canal de Equipo
                         </p>
                     </div>
+                    {/* PUNTO ROJO DE ACTIVIDAD POR ROL */}
+                    {activeChannels[channel.id] && (
+                      <span className="absolute top-3 right-3 h-3 w-3 bg-red-600 rounded-full animate-pulse shadow-[0_0_8px_rgba(220,38,38,0.5)] border-2 border-white" />
+                    )}
                   </button>
                 ))}
               </div>

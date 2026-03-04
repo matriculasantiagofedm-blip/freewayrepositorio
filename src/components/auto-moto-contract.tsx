@@ -31,7 +31,15 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
   };
 
   const isSoloPractica = contract.type === 'Curso Solo Practica';
+  const isAutoContract = contract.type === 'Curso Auto';
+  const isMotoContract = contract.type === 'Curso Moto';
+  const isMixtoContract = contract.type === 'Curso Mixto';
+  
   const licenseStr = details?.licenseCategory || '';
+
+  // Lógica de validación de servicios para evitar duplicidad o errores de agenda
+  const showAutoSessions = isAutoContract || isMixtoContract || (isMotoContract && details?.additionalService === 'Curso Plus Auto 10Hrs') || (isSoloPractica && (details as any)?.vehicleType === 'Auto');
+  const showMotoSessions = isMotoContract || isMixtoContract || (isAutoContract && details?.additionalService === 'Plus Moto 10Hrs') || (isSoloPractica && (details as any)?.vehicleType === 'Motocicleta');
 
   return (
     <div className="max-w-[8.5in] mx-auto bg-white p-10 font-serif text-[8.5pt] leading-[1.15] text-black print:p-0 print:m-0">
@@ -90,10 +98,10 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
           <div className="mt-2 pt-1 border-t border-gray-200">
             <p className="font-bold mb-1 uppercase text-[7.5pt]">4. Propuesta de Horario Práctico:</p>
             
-            {/* AGENDA DE AUTO */}
-            {details?.practicalClassSchedules && details.practicalClassSchedules.length > 0 && (
+            {/* AGENDA DE AUTO - Filtrada por servicio */}
+            {showAutoSessions && details?.practicalClassSchedules && details.practicalClassSchedules.length > 0 && (
                 <div className="mb-2">
-                    {details.motoPracticalClassSchedules && details.motoPracticalClassSchedules.length > 0 && (
+                    {showMotoSessions && (
                         <p className="text-[7pt] font-black italic underline mb-0.5 uppercase">Sesiones de Auto:</p>
                     )}
                     <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 text-[8pt]">
@@ -108,10 +116,12 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                 </div>
             )}
 
-            {/* AGENDA DE MOTO */}
-            {details?.motoPracticalClassSchedules && details.motoPracticalClassSchedules.length > 0 && (
+            {/* AGENDA DE MOTO - Filtrada por servicio */}
+            {showMotoSessions && details?.motoPracticalClassSchedules && details.motoPracticalClassSchedules.length > 0 && (
                 <div>
-                    <p className="text-[7pt] font-black italic underline mb-0.5 uppercase">Sesiones de Moto:</p>
+                    {showAutoSessions && (
+                        <p className="text-[7pt] font-black italic underline mb-0.5 uppercase">Sesiones de Moto:</p>
+                    )}
                     <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 text-[8pt]">
                         {details.motoPracticalClassSchedules.map((s, index) => (
                             <div key={index} className="flex items-center justify-between border-b border-dotted border-gray-300">

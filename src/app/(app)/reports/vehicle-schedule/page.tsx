@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -163,22 +162,31 @@ export default function VehicleScheduleReportPage() {
         const plan = d?.coursePlan || c.type;
         const isEval = (d?.coursePlan === 'evaluacion-estacionamiento' || d?.coursePlan === 'moto-evaluacion-estacionamiento');
         
+        const isAutoContract = c.type === 'Curso Auto';
+        const isMotoContract = c.type === 'Curso Moto';
+        const isMixtoContract = c.type === 'Curso Mixto';
+        const isDeluxeContract = c.type === 'Curso Deluxe';
+        const isSoloPractica = c.type === 'Curso Solo Practica';
+
+        // Lógica de detección de combos para evitar reportar clases fantasma
+        const hasAutoSessionsEnabled = isAutoContract || isMixtoContract || isDeluxeContract || (isMotoContract && d?.additionalService === 'Curso Plus Auto 10Hrs') || (isSoloPractica && (d as any)?.vehicleType === 'Auto');
+        const hasMotoSessionsEnabled = isMotoContract || isMixtoContract || (isAutoContract && d?.additionalService === 'Plus Moto 10Hrs') || (isSoloPractica && (d as any)?.vehicleType === 'Motocicleta');
+
         const proc = (arr: any[], subType: 'auto' | 'moto' = 'auto') => {
             arr?.forEach((s, i) => {
                 processAny(c.id, c.clientName, s.date, s.time, s.vehicle, s.instructor, s.status || 'scheduled', !!s.refueled, isEval, 'contract', i + 1, i, subType, plan);
             });
         };
 
-        // SE PROCESAN TODOS LOS ARREGLOS DE AGENDA DISPONIBLES (Soporte para Combos)
-        if (c.type === 'Curso Deluxe') {
+        if (isDeluxeContract) {
             proc(c.deluxeDetails?.classSchedules || [], 'auto');
         } else {
-            // Procesar agenda de auto si existe
-            if (c.autoMotoDetails?.practicalClassSchedules && c.autoMotoDetails.practicalClassSchedules.length > 0) {
+            // Solo procesar si el servicio de auto está habilitado para este contrato
+            if (hasAutoSessionsEnabled && c.autoMotoDetails?.practicalClassSchedules && c.autoMotoDetails.practicalClassSchedules.length > 0) {
                 proc(c.autoMotoDetails.practicalClassSchedules, 'auto');
             }
-            // Procesar agenda de moto si existe (Independientemente del tipo de contrato)
-            if (c.autoMotoDetails?.motoPracticalClassSchedules && c.autoMotoDetails.motoPracticalClassSchedules.length > 0) {
+            // Solo procesar si el servicio de moto está habilitado para este contrato
+            if (hasMotoSessionsEnabled && c.autoMotoDetails?.motoPracticalClassSchedules && c.autoMotoDetails.motoPracticalClassSchedules.length > 0) {
                 proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');
             }
         }

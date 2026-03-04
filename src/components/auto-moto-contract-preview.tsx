@@ -39,7 +39,13 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, idTyp
   const creationDate = new Date();
   const paymentDeadline = autoMotoDetails?.paymentDeadline ? toDate(autoMotoDetails.paymentDeadline) : null;
   const isSoloPractica = type === 'Curso Solo Practica';
+  const isAutoContract = type === 'Curso Auto';
+  const isMotoContract = type === 'Curso Moto';
+  const isMixtoContract = type === 'Curso Mixto';
   const licenseStr = autoMotoDetails?.licenseCategory || '';
+
+  const showAutoSessions = isAutoContract || isMixtoContract || (isMotoContract && autoMotoDetails?.additionalService === 'Curso Plus Auto 10Hrs') || (isSoloPractica && (autoMotoDetails as any)?.vehicleType === 'Auto');
+  const showMotoSessions = isMotoContract || isMixtoContract || (isAutoContract && autoMotoDetails?.additionalService === 'Plus Moto 10Hrs') || (isSoloPractica && (autoMotoDetails as any)?.vehicleType === 'Motocicleta');
 
   const formatDate = (dateString?: string | Date) => {
     if (!dateString) return <Line />;
@@ -100,10 +106,10 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, idTyp
             )}
             <p className="font-semibold underline mt-1">4. Propuesta de Horario Práctico:</p>
             
-            {/* PREVIEW AGENDAS */}
-            {autoMotoDetails?.practicalClassSchedules && autoMotoDetails.practicalClassSchedules.length > 0 && (
+            {/* AGENDA DE AUTO - Filtrada en preview */}
+            {showAutoSessions && autoMotoDetails?.practicalClassSchedules && autoMotoDetails.practicalClassSchedules.length > 0 && (
                 <div className="mb-1">
-                    {autoMotoDetails.motoPracticalClassSchedules && autoMotoDetails.motoPracticalClassSchedules.length > 0 && (
+                    {showMotoSessions && (
                         <p className="text-[8px] font-bold italic">Auto:</p>
                     )}
                     <div className="grid grid-cols-2 gap-x-4 pl-2">
@@ -116,9 +122,12 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, idTyp
                 </div>
             )}
 
-            {autoMotoDetails?.motoPracticalClassSchedules && autoMotoDetails.motoPracticalClassSchedules.length > 0 && (
+            {/* AGENDA DE MOTO - Filtrada en preview */}
+            {showMotoSessions && autoMotoDetails?.motoPracticalClassSchedules && autoMotoDetails.motoPracticalClassSchedules.length > 0 && (
                 <div>
-                    <p className="text-[8px] font-bold italic">Moto:</p>
+                    {showAutoSessions && (
+                        <p className="text-[8px] font-bold italic">Moto:</p>
+                    )}
                     <div className="grid grid-cols-2 gap-x-4 pl-2">
                         {autoMotoDetails.motoPracticalClassSchedules.map((s, index) => (
                             <div key={index} className="text-[9px]">

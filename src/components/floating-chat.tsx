@@ -138,13 +138,13 @@ export function FloatingChat() {
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button 
-            size="icon" 
             className={cn(
-              "h-12 w-12 rounded-full shadow-xl transition-all duration-300 hover:scale-110",
+              "h-12 px-4 rounded-full shadow-xl transition-all duration-300 hover:scale-110 flex items-center gap-2",
               isOpen ? "bg-slate-800" : "bg-blue-600"
             )}
           >
             {isOpen ? <X className="h-5 w-5 text-white" /> : <MessageSquare className="h-5 w-5 text-white" />}
+            <span className="text-[10px] font-black uppercase tracking-[0.1em] text-white">Chat Interno</span>
             {hasUnreadGlobal && !isOpen && (
               <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 bg-red-600 rounded-full border-2 border-white animate-bounce shadow-lg" />
             )}

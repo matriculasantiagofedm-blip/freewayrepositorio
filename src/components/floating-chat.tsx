@@ -86,18 +86,20 @@ export function FloatingChat() {
     return query(
       collection(db, 'chatChannels', selectedChannelId, 'messages'),
       orderBy('createdAt', 'asc'),
-      limit(50) // Limitar en el widget flotante para rendimiento
+      limit(50) 
     );
   }, [db, selectedChannelId]);
 
   const { data: messages, isLoading: isLoadingMessages } = useCollection<ChatMessage>(messagesQuery);
 
-  // Auto-scroll al final
+  // Auto-scroll al final con mayor robustez
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => {
+        scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 100);
     }
-  }, [messages]);
+  }, [messages, selectedChannelId]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,9 +156,9 @@ export function FloatingChat() {
           sideOffset={16} 
           className="w-[380px] p-0 overflow-hidden rounded-2xl shadow-2xl border-slate-200"
         >
-          <Card className="border-none shadow-none flex flex-col h-[500px]">
+          <Card className="border-none shadow-none flex flex-col h-[550px]">
             {/* ENCABEZADO DEL CHAT */}
-            <CardHeader className="py-3 px-4 border-b bg-primary text-white flex flex-row items-center justify-between space-y-0">
+            <CardHeader className="py-3 px-4 border-b bg-primary text-white flex flex-row items-center justify-between space-y-0 shrink-0">
               <div className="flex items-center gap-2 overflow-hidden">
                 {selectedChannelId && (
                   <Button 
@@ -187,11 +189,11 @@ export function FloatingChat() {
               </Button>
             </CardHeader>
 
-            <CardContent className="flex-1 p-0 overflow-hidden bg-slate-50/30">
+            <CardContent className="flex-1 p-0 overflow-hidden bg-slate-50/30 min-h-0">
               {!selectedChannelId ? (
                 /* LISTADO DE CANALES */
-                <ScrollArea className="h-full p-2">
-                  <div className="space-y-1">
+                <ScrollArea className="h-full">
+                  <div className="p-2 space-y-1">
                     <p className="text-[10px] font-black uppercase text-slate-400 px-3 py-2 tracking-widest">Canales de Comunicación</p>
                     {allowedChannels.map((channel) => (
                       <button
@@ -218,44 +220,46 @@ export function FloatingChat() {
                 </ScrollArea>
               ) : (
                 /* ÁREA DE CONVERSACIÓN */
-                <div className="flex flex-col h-full">
-                  <ScrollArea className="flex-1 p-4">
-                    <div className="space-y-4">
+                <div className="flex flex-col h-full overflow-hidden">
+                  <ScrollArea className="flex-1">
+                    <div className="p-4 space-y-4">
                       {isLoadingMessages ? (
                         <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-slate-300" /></div>
                       ) : messages && messages.length > 0 ? (
-                        messages.map((msg, idx) => {
-                          const isMine = msg.senderId === user?.uid;
-                          const date = toDate(msg.createdAt);
-                          return (
-                            <div key={msg.id || idx} className={cn("flex flex-col max-w-[85%]", isMine ? "ml-auto items-end" : "items-start")}>
-                              {!isMine && <span className="text-[8px] font-black uppercase text-slate-400 mb-0.5 px-1">{msg.senderRole}</span>}
-                              <div className={cn(
-                                "p-2.5 rounded-2xl text-[13px] shadow-sm leading-snug",
-                                isMine 
-                                    ? "bg-primary text-white rounded-tr-none" 
-                                    : "bg-white border border-slate-200 rounded-tl-none text-slate-800"
-                              )}>
-                                {msg.text}
+                        <>
+                          {messages.map((msg, idx) => {
+                            const isMine = msg.senderId === user?.uid;
+                            const date = toDate(msg.createdAt);
+                            return (
+                              <div key={msg.id || idx} className={cn("flex flex-col max-w-[85%]", isMine ? "ml-auto items-end" : "items-start")}>
+                                {!isMine && <span className="text-[8px] font-black uppercase text-slate-400 mb-0.5 px-1">{msg.senderRole}</span>}
+                                <div className={cn(
+                                  "p-2.5 rounded-2xl text-[13px] shadow-sm leading-snug",
+                                  isMine 
+                                      ? "bg-primary text-white rounded-tr-none" 
+                                      : "bg-white border border-slate-200 rounded-tl-none text-slate-800"
+                                )}>
+                                  {msg.text}
+                                </div>
+                                <span className="text-[7px] text-muted-foreground mt-0.5 px-1 font-bold">
+                                  {!isNaN(date.getTime()) ? format(date, 'hh:mm a', { locale: es }) : 'Enviando...'}
+                                </span>
                               </div>
-                              <span className="text-[7px] text-muted-foreground mt-0.5 px-1 font-bold">
-                                {!isNaN(date.getTime()) ? format(date, 'hh:mm a', { locale: es }) : 'Enviando...'}
-                              </span>
-                            </div>
-                          )
-                        })
+                            )
+                          })}
+                          <div ref={scrollRef} className="h-1" />
+                        </>
                       ) : (
                         <div className="h-48 flex flex-col items-center justify-center text-center opacity-20">
                           <MessageSquare className="h-10 w-10 mb-2" />
                           <p className="text-[10px] font-black uppercase tracking-widest">Inicia la conversación</p>
                         </div>
                       )}
-                      <div ref={scrollRef} />
                     </div>
                   </ScrollArea>
                   
                   {/* BARRA DE ENTRADA */}
-                  <div className="p-3 bg-white border-t">
+                  <div className="p-3 bg-white border-t shrink-0">
                     <form onSubmit={handleSendMessage} className="flex gap-2">
                       <Input 
                         placeholder="Escribe un mensaje..." 

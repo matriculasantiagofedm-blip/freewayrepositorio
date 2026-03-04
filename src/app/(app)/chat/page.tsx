@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -55,11 +56,11 @@ export default function ChatPage() {
     const filtered = allUsers.filter(u => {
       if (u.uid === user?.uid) return false;
 
-      // Restricción: Ventas y Ventas Externas NO se ven entre sí
+      // REGLA: Ventas y Ventas Externas NO se ven entre sí
       if (role === 'Ventas' && u.role === 'Ventas Externas') return false;
       if (role === 'Ventas Externas' && u.role === 'Ventas') return false;
-      if (role === 'Ventas' && u.role === 'Ventas') return false; 
-      if (role === 'Ventas Externas' && u.role === 'Ventas Externas') return false;
+
+      // El Administrador ve a todos. Ventas ve a Admin y Ventas. Ventas Ext ve a Admin y Ventas Ext.
 
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
@@ -140,17 +141,23 @@ export default function ChatPage() {
   };
 
   const roleList = Object.keys(groupedContacts).sort();
+  
+  // Etiquetas de roles disponibles según permisos de visibilidad
   const allRolesAvailable = useMemo(() => {
     if (!allUsers) return [];
     const roles = new Set<string>();
-    allUsers.forEach(u => {
-        // Misma lógica de restricción para las etiquetas
-        if (role === 'Ventas' && u.role === 'Ventas Externas') return;
-        if (role === 'Ventas Externas' && u.role === 'Ventas') return;
-        if (role === 'Ventas' && u.role === 'Ventas') return; 
-        if (role === 'Ventas Externas' && u.role === 'Ventas Externas') return;
-        roles.add(u.role);
-    });
+    
+    // Si soy admin, quiero ver todos los roles posibles registrados
+    if (role === 'Administrador') {
+        allUsers.forEach(u => roles.add(u.role));
+    } else {
+        // Si soy ventas, solo veo Admin y Ventas
+        allUsers.forEach(u => {
+            if (role === 'Ventas' && u.role === 'Ventas Externas') return;
+            if (role === 'Ventas Externas' && u.role === 'Ventas') return;
+            roles.add(u.role);
+        });
+    }
     return Array.from(roles).sort();
   }, [allUsers, role]);
 

@@ -22,6 +22,11 @@ const navLinks = [
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
   },
   {
+    href: '/chat',
+    label: 'Mensajería',
+    roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+  },
+  {
     href: '/clients',
     label: 'Clientes',
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],

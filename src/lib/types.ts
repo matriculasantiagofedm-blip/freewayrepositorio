@@ -6,6 +6,30 @@ export interface User {
   role: 'Ventas' | 'Ventas Externas' | 'Administrador';
 }
 
+export interface UserProfile {
+  id: string;
+  uid: string;
+  role: string;
+  name: string;
+  lastActive: any;
+}
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  text: string;
+  createdAt: any;
+}
+
+export interface ChatRoom {
+  id: string;
+  participants: string[];
+  participantRoles: Record<string, string>;
+  participantNames: Record<string, string>;
+  lastMessage?: string;
+  updatedAt: any;
+}
+
 export interface Client {
   id: string;
   name: string;

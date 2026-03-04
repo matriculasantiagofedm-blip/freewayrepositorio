@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -11,9 +10,16 @@ import Link from 'next/link';
 import { useFirebase } from '@/components/firebase-provider';
 import { signInAnonymously } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+
+const roleMapping: { [key: string]: string } = {
+  'ventas123': 'Ventas',
+  'ventasext123': 'Ventas Externas',
+  'Ayax/2022': 'Administrador',
+};
 
 export default function AdminAccessPage() {
-  const { auth, setRole, role } = useFirebase();
+  const { auth, firestore, setRole, role } = useFirebase();
   const [accessKey, setAccessKey] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -25,19 +31,32 @@ export default function AdminAccessPage() {
     setError('');
 
     try {
-      if (!auth.currentUser) {
-        await signInAnonymously(auth);
+      let currentUser = auth.currentUser;
+      if (!currentUser) {
+        const cred = await signInAnonymously(auth);
+        currentUser = cred.user;
       }
 
-      const validKeys = ['ventas123', 'ventasext123', 'Ayax/2022'];
-      
-      if (validKeys.includes(accessKey)) {
+      if (roleMapping[accessKey]) {
+        const assignedRole = roleMapping[accessKey];
+        
+        // Registrar perfil de usuario para el chat
+        if (currentUser) {
+          await setDoc(doc(firestore, 'users', currentUser.uid), {
+            uid: currentUser.uid,
+            role: assignedRole,
+            name: assignedRole, // Nombre por defecto es el rol
+            lastActive: serverTimestamp(),
+          }, { merge: true });
+        }
+
         setRole(accessKey);
         router.push('/dashboard');
       } else {
         setError('Contraseña incorrecta.');
       }
     } catch (err) {
+      console.error(err);
       setError('Error de conexión.');
     } finally {
       setIsLoading(false);

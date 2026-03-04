@@ -1,245 +1,75 @@
 {
   "entities": {
-    "Client": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Client",
-      "type": "object",
-      "description": "Represents a client with whom contracts are established. Stores essential contact information.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Client entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The full name or company name of the client."
-        },
-        "email": {
-          "type": "string",
-          "description": "The primary email address of the client for communication and reminders.",
-          "format": "email"
-        },
-        "phoneNumber": {
-          "type": "string",
-          "description": "The contact phone number of the client."
-        },
-        "address": {
-          "type": "string",
-          "description": "The physical address of the client."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the client record was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the client record was last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "email"
-      ]
-    },
     "Contract": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Contract",
       "type": "object",
-      "description": "Represents a legal agreement or contract between the user and a client. Includes details, terms, and status.",
+      "description": "Represents a contract for driving school services.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Contract entity."
-        },
-        "clientId": {
-          "type": "string",
-          "description": "Reference to the Client associated with this contract. (Relationship: Client 1:N Contract)"
-        },
-        "title": {
-          "type": "string",
-          "description": "The descriptive title or name of the contract."
-        },
-        "description": {
-          "type": "string",
-          "description": "Detailed clauses and terms of the contract."
-        },
-        "status": {
-          "type": "string",
-          "description": "The current status of the contract (e.g., 'Draft', 'Active', 'Pending Approval', 'Completed', 'Canceled')."
-        },
-        "startDate": {
-          "type": "string",
-          "description": "The official start date of the contract.",
-          "format": "date"
-        },
-        "endDate": {
-          "type": "string",
-          "description": "The official end date of the contract.",
-          "format": "date"
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the contract was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the contract was last updated.",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "folioNumber": { "type": "number" },
+        "title": { "type": "string" },
+        "clientName": { "type": "string" },
+        "clientEmail": { "type": "string", "format": "email" },
+        "clientId": { "type": "string" },
+        "type": { "type": "string", "enum": ["Curso Auto", "Curso Moto", "Curso Mixto", "Curso Deluxe", "Ampliaciones", "Curso Solo Practica"] },
+        "status": { "type": "string", "enum": ["draft", "active", "completed", "expired"] },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "createdBy": { "type": "string" },
+        "clauses": { "type": "string" },
+        "studentIdNumber": { "type": "string" },
+        "certificateGeneratedAt": { "type": "string", "format": "date-time" },
+        "certificateFolio": { "type": "string" }
       },
-      "required": [
-        "id",
-        "clientId",
-        "title",
-        "description",
-        "status",
-        "startDate"
-      ]
+      "required": ["id", "folioNumber", "title", "clientName", "clientId", "type", "status", "userId", "createdAt"]
     },
-    "ContractEvent": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ContractEvent",
+    "UserProfile": {
+      "title": "UserProfile",
       "type": "object",
-      "description": "Represents a specific event, deadline, or meeting associated with a contract, used for scheduling and reminders.",
+      "description": "User role and presence tracking.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the ContractEvent entity."
-        },
-        "contractId": {
-          "type": "string",
-          "description": "Reference to the Contract this event belongs to. (Relationship: Contract 1:N ContractEvent)"
-        },
-        "type": {
-          "type": "string",
-          "description": "The type of event (e.g., 'Deadline', 'Meeting', 'Milestone', 'Payment Due')."
-        },
-        "description": {
-          "type": "string",
-          "description": "A description detailing the purpose or specifics of the event."
-        },
-        "dateTime": {
-          "type": "string",
-          "description": "The specific date and time for this event, crucial for reminders.",
-          "format": "date-time"
-        },
-        "isReminderSent": {
-          "type": "boolean",
-          "description": "Flag indicating whether a reminder has already been sent for this event."
-        },
-        "remindToClient": {
-          "type": "boolean",
-          "description": "Flag indicating if a reminder should be sent to the client for this event."
-        },
-        "remindToUser": {
-          "type": "boolean",
-          "description": "Flag indicating if a reminder should be sent to the app user for this event."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the event was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the event was last updated.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "contractId",
-        "type",
-        "description",
-        "dateTime"
-      ]
+        "uid": { "type": "string" },
+        "role": { "type": "string" },
+        "name": { "type": "string" },
+        "lastActive": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ChatRoom": {
+      "title": "ChatRoom",
+      "type": "object",
+      "description": "A conversation between two users.",
+      "properties": {
+        "participants": { "type": "array", "items": { "type": "string" } },
+        "participantRoles": { "type": "object" },
+        "participantNames": { "type": "object" },
+        "lastMessage": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
     }
-  },
-  "auth": {
-    "providers": [
-      "password",
-      "anonymous"
-    ]
   },
   "firestore": {
     "structure": [
       {
-        "path": "users/{userId}/clients/{clientId}",
+        "path": "/contracts/{contractId}",
         "definition": {
-          "entityName": "Client",
-          "schema": {
-            "$ref": "#/backend/entities/Client"
-          },
-          "description": "Stores client details associated with a specific user. Access is restricted to the owning user (`userId`) determined by the path.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user who owns this client."
-            },
-            {
-              "name": "clientId",
-              "description": "The unique identifier for the client."
-            }
-          ]
+          "schema": { "$ref": "#/entities/Contract" },
+          "description": "Colección raíz unificada para acceso global de la empresa."
         }
       },
       {
-        "path": "users/{userId}/clients/{clientId}/contracts/{contractId}",
+        "path": "/users/{userId}",
         "definition": {
-          "entityName": "Contract",
-          "schema": {
-            "$ref": "#/backend/entities/Contract"
-          },
-          "description": "Stores contract details for a specific client, owned by a specific user. The `clientId` field within the document must match the path parameter `{clientId}` for data integrity. Access is restricted to the owning user (`userId`) determined by the path.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user who owns this contract."
-            },
-            {
-              "name": "clientId",
-              "description": "The unique identifier of the client to whom this contract belongs."
-            },
-            {
-              "name": "contractId",
-              "description": "The unique identifier for the contract."
-            }
-          ]
+          "schema": { "$ref": "#/entities/UserProfile" },
+          "description": "Perfiles de usuario con sus respectivos roles."
         }
       },
       {
-        "path": "users/{userId}/clients/{clientId}/contracts/{contractId}/events/{eventId}",
+        "path": "/chatRooms/{roomId}",
         "definition": {
-          "entityName": "ContractEvent",
-          "schema": {
-            "$ref": "#/backend/entities/ContractEvent"
-          },
-          "description": "Stores scheduled events and reminders related to a specific contract and client, all owned by a specific user. The `contractId` field within the document must match the path parameter `{contractId}` for data integrity. Access is restricted to the owning user (`userId`) determined by the path.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user who owns this contract event."
-            },
-            {
-              "name": "clientId",
-              "description": "The unique identifier of the client associated with the parent contract."
-            },
-            {
-              "name": "contractId",
-              "description": "The unique identifier of the contract to which this event belongs."
-            },
-            {
-              "name": "eventId",
-              "description": "The unique identifier for the contract event."
-            }
-          ]
+          "schema": { "$ref": "#/entities/ChatRoom" },
+          "description": "Salas de chat entre personal."
         }
       }
-    ],
-    "reasoning": "The recommended Firestore structure for ContractTime prioritizes strict data ownership and authorization independence through a deeply nested, path-based hierarchy. All data—Clients, Contracts, and ContractEvents—are directly scoped under the authenticated user's ID. This results in paths like `users/{userId}/clients/{clientId}/contracts/{contractId}/events/{eventId}`.\n\n**Authorization Independence:** This structure inherently achieves authorization independence. The `userId` is explicitly present in the path for every document. This means that security rules can always determine the owner of a document (e.g., `request.auth.uid == userId`) without needing to perform `get()` operations on parent documents (like `clients/{clientId}` or `contracts/{contractId}`). This allows for atomic operations (transactions/batches) and significantly simplifies security rules, as the authorization context is always self-contained within the document's path.\n\n**Support for QAPs (Rules are not Filters):** The structural segregation principle is fully applied here. Each collection (e.g., `/users/{userId}/clients`, `/users/{userId}/clients/{clientId}/contracts`) contains documents that exclusively belong to the `userId` specified in the path. This ensures a homogeneous security posture within each collection. When a user queries for clients, contracts, or events, their query is naturally constrained to their owned data by the `userId` in the path. For example, a query to `users/ABC/clients` will only return clients owned by user `ABC`. This design makes `list` operations inherently secure and prevents users from accidentally or maliciously querying data they don't own, as the rules will simply deny access if the `userId` in the path doesn't match `request.auth.uid`."
+    ]
   }
 }

@@ -6,9 +6,24 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
     match /users/{userId} {
       allow read: if isSignedIn();
       allow write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // REGLAS DE CANALES POR ROL
+    match /chatChannels/{channelId} {
+      allow read: if isSignedIn() && getUserRole() in resource.data.allowedRoles;
+      allow create, update: if isSignedIn();
+    }
+
+    match /chatChannels/{channelId}/messages/{messageId} {
+      allow read: if isSignedIn() && getUserRole() in get(/databases/$(database)/documents/chatChannels/$(channelId)).data.allowedRoles;
+      allow create: if isSignedIn() && getUserRole() in get(/databases/$(database)/documents/chatChannels/$(channelId)).data.allowedRoles;
     }
 
     match /chatRooms/{roomId} {

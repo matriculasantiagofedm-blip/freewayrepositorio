@@ -2,7 +2,7 @@
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Firestore } from 'firebase/firestore';
+import { Firestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Auth, User, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener'
 
@@ -43,7 +43,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const [role, setRoleState] = useState<string | null>(null);
 
   useEffect(() => {
-    // Persistencia del rol para mantener acceso tras recargar
+    // 1. Recuperar rol de persistencia
     if (typeof window !== 'undefined') {
       const storedRoleKey = window.localStorage.getItem('userRoleKey');
       if (storedRoleKey && roleMapping[storedRoleKey]) {
@@ -54,12 +54,26 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       }
     }
 
+    // 2. Escuchar cambios de autenticación
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       setIsUserLoading(false);
     });
     return () => unsubscribe();
   }, [auth]);
+
+  // 3. EFECTO CRÍTICO: Sincronizar perfil en Firestore para el CHAT
+  useEffect(() => {
+    if (user && role && !isUserLoading) {
+      const userRef = doc(firestore, 'users', user.uid);
+      setDoc(userRef, {
+        uid: user.uid,
+        role: role,
+        name: role, // Nombre por defecto es el rol para identificar al personal
+        lastActive: serverTimestamp(),
+      }, { merge: true }).catch(err => console.error("Error al sincronizar perfil de chat:", err));
+    }
+  }, [user, role, isUserLoading, firestore]);
 
   const setRole = (roleKey: string) => {
     const assignedRole = roleMapping[roleKey] || null;

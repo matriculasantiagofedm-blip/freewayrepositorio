@@ -26,7 +26,7 @@ import {
   AccordionItem, 
   AccordionTrigger 
 } from '@/components/ui/accordion';
-import { MessageSquare, Send, User as UserIcon, Loader2, Search, Users, Tag, Info } from 'lucide-react';
+import { MessageSquare, Send, User as UserIcon, Loader2, Search, Users, Tag, Info, UserPlus } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -44,7 +44,7 @@ export default function ChatPage() {
   const [openRoles, setOpenRoles] = useState<string[]>(POSSIBLE_ROLES);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Consulta de usuarios registrados
+  // Consulta de usuarios registrados (solo los que han iniciado sesión al menos una vez)
   const usersQuery = useMemoQuery(() => {
     if (!db || !user) return null;
     return collection(db, 'users');
@@ -65,7 +65,6 @@ export default function ChatPage() {
   const contactsByRole = useMemo(() => {
     const groups: Record<string, UserProfile[]> = {};
     
-    // Inicializar grupos con roles permitidos
     allowedRoles.forEach(r => {
         groups[r] = [];
     });
@@ -79,15 +78,10 @@ export default function ChatPage() {
       if (role === 'Ventas' && u.role === 'Ventas Externas') return;
       if (role === 'Ventas Externas' && u.role === 'Ventas') return;
 
-      // Solo añadir si el rol está en la lista de permitidos
       if (groups[u.role]) {
-          // Filtrado por nombre si hay término de búsqueda
-          if (searchTerm) {
-              const search = searchTerm.toLowerCase();
-              if (u.name.toLowerCase().includes(search)) {
-                  groups[u.role].push(u);
-              }
-          } else {
+          const search = searchTerm.toLowerCase();
+          // Si hay búsqueda, filtrar por nombre o si el término coincide exactamente con el rol
+          if (!searchTerm || u.name.toLowerCase().includes(search) || u.role.toLowerCase() === search) {
               groups[u.role].push(u);
           }
       }
@@ -96,21 +90,19 @@ export default function ChatPage() {
     return groups;
   }, [allUsers, user?.uid, role, searchTerm, allowedRoles]);
 
-  // Auto-expandir el acordeón cuando hay búsqueda
+  // Auto-expandir el acordeón cuando hay búsqueda o se selecciona un rol
   useEffect(() => {
     if (searchTerm) {
         setOpenRoles(allowedRoles);
     }
   }, [searchTerm, allowedRoles]);
 
-  // ID de sala de chat único para dos participantes
   const activeRoomId = useMemo(() => {
     if (!user || !selectedContact) return null;
     const ids = [user.uid, selectedContact.uid].sort();
     return `${ids[0]}_${ids[1]}`;
   }, [user, selectedContact]);
 
-  // Consulta de mensajes en tiempo real
   const messagesQuery = useMemoQuery(() => {
     if (!db || !activeRoomId) return null;
     return query(
@@ -122,7 +114,6 @@ export default function ChatPage() {
 
   const { data: messages, isLoading: isLoadingMessages } = useCollection<ChatMessage>(messagesQuery);
 
-  // Auto-scroll al final del chat
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -173,14 +164,14 @@ export default function ChatPage() {
       </div>
 
       <div className="flex flex-1 gap-6 overflow-hidden">
-        {/* LISTADO DE CONTACTOS DESPLEGABLE */}
+        {/* LISTADO DE CONTACTOS */}
         <Card className="w-80 flex flex-col shadow-md border-slate-200">
           <CardHeader className="pb-3 border-b bg-slate-50/50 space-y-3">
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input 
                 placeholder="Buscar por nombre..." 
-                className="pl-8 h-9 text-xs bg-white border-slate-200" 
+                className="pl-8 h-10 text-sm bg-white border-slate-200 shadow-sm" 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -191,14 +182,13 @@ export default function ChatPage() {
                         key={r} 
                         variant="outline" 
                         className={cn(
-                            "cursor-pointer text-[9px] font-black uppercase transition-colors px-2 py-0",
+                            "cursor-pointer text-[9px] font-black uppercase transition-colors px-2 py-1",
                             searchTerm.toLowerCase() === r.toLowerCase() 
                                 ? "bg-primary text-white border-primary" 
                                 : "bg-white text-slate-500 hover:bg-slate-100"
                         )}
                         onClick={() => setSearchTerm(r === searchTerm ? '' : r)}
                     >
-                        <Tag className="h-2 w-2 mr-1" />
                         {r}
                     </Badge>
                 ))}
@@ -220,9 +210,9 @@ export default function ChatPage() {
                       const contactsInRole = contactsByRole[roleName] || [];
                       return (
                         <AccordionItem key={roleName} value={roleName} className="border-none">
-                          <AccordionTrigger className="hover:no-underline py-2 px-3 bg-slate-100 rounded-lg group">
+                          <AccordionTrigger className="hover:no-underline py-2.5 px-3 bg-slate-100 rounded-xl group transition-all hover:bg-slate-200/70">
                             <div className="flex items-center justify-between w-full pr-4">
-                              <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">{roleName}</span>
+                              <span className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-600">{roleName}</span>
                               <Badge variant="secondary" className="h-5 text-[9px] font-bold bg-white text-slate-600 border-slate-200">
                                 {contactsInRole.length}
                               </Badge>
@@ -236,29 +226,30 @@ export default function ChatPage() {
                                     key={contact.uid}
                                     onClick={() => setSelectedContact(contact)}
                                     className={cn(
-                                        "w-full flex items-center gap-3 p-2.5 rounded-xl transition-all text-left group",
+                                        "w-full flex items-center gap-3 p-3 rounded-xl transition-all text-left group",
                                         selectedContact?.uid === contact.uid 
-                                        ? "bg-primary text-white shadow-md" 
+                                        ? "bg-primary text-white shadow-md scale-[1.02]" 
                                         : "hover:bg-slate-50"
                                     )}
                                     >
-                                    <Avatar className={cn("h-8 w-8", selectedContact?.uid === contact.uid ? "border-2 border-white/20" : "border")}>
+                                    <Avatar className={cn("h-9 w-9", selectedContact?.uid === contact.uid ? "border-2 border-white/20" : "border")}>
                                         <AvatarFallback className={cn(selectedContact?.uid === contact.uid ? "bg-white/10 text-white" : "bg-slate-100")}>
                                         <UserIcon className="h-4 w-4" />
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1 overflow-hidden">
                                         <p className="font-bold text-xs truncate uppercase leading-none">{contact.name}</p>
-                                        <p className={cn("text-[9px] font-medium uppercase tracking-wider opacity-70 mt-1", selectedContact?.uid === contact.uid ? "text-white" : "text-slate-400")}>
-                                        {contact.role}
+                                        <p className={cn("text-[9px] font-medium uppercase tracking-wider opacity-70 mt-1.5", selectedContact?.uid === contact.uid ? "text-white" : "text-slate-400")}>
+                                        En línea
                                         </p>
                                     </div>
                                     </button>
                                 ))
                               ) : (
-                                <div className="py-4 text-center text-[10px] text-muted-foreground italic flex flex-col items-center gap-1 opacity-50">
-                                    <Info className="h-3 w-3" />
-                                    Sin personal registrado
+                                <div className="py-6 px-4 text-center border-2 border-dashed rounded-xl border-slate-100">
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase leading-relaxed">
+                                        No hay personal de este rol conectado actualmente.
+                                    </p>
                                 </div>
                               )}
                             </div>
@@ -279,7 +270,9 @@ export default function ChatPage() {
             <>
               <CardHeader className="py-3 px-6 border-b bg-slate-50/50 flex flex-row items-center gap-4">
                 <Avatar className="h-10 w-10 border shadow-sm">
-                  <AvatarFallback className="bg-white text-primary"><UserIcon className="h-5 w-5" /></AvatarFallback>
+                  <AvatarFallback className="bg-white text-primary font-black">
+                    {selectedContact.name[0].toUpperCase()}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
                   <CardTitle className="text-base font-black uppercase tracking-tight">{selectedContact.name}</CardTitle>
@@ -290,7 +283,7 @@ export default function ChatPage() {
                 </div>
               </CardHeader>
               
-              <CardContent className="flex-1 p-0 overflow-hidden bg-slate-50/30">
+              <CardContent className="flex-1 p-0 overflow-hidden bg-white">
                 <ScrollArea className="h-full px-6 py-4">
                   <div className="space-y-4">
                     {isLoadingMessages ? (
@@ -306,7 +299,7 @@ export default function ChatPage() {
                               "p-3 rounded-2xl text-sm shadow-sm",
                               isMine 
                                 ? "bg-primary text-white rounded-tr-none" 
-                                : "bg-white border border-slate-200 rounded-tl-none text-slate-800"
+                                : "bg-slate-100 border border-slate-200 rounded-tl-none text-slate-800"
                             )}>
                               {msg.text}
                             </div>
@@ -321,7 +314,7 @@ export default function ChatPage() {
                         <div className="p-4 bg-slate-100 rounded-full">
                           <MessageSquare className="h-10 w-10 text-slate-400" />
                         </div>
-                        <p className="text-xs font-black uppercase tracking-widest">Inicia la conversación</p>
+                        <p className="text-xs font-black uppercase tracking-widest">Inicia la conversación con {selectedContact.name}</p>
                       </div>
                     )}
                     <div ref={scrollRef} />
@@ -332,12 +325,13 @@ export default function ChatPage() {
               <div className="p-4 bg-white border-t">
                 <form onSubmit={handleSendMessage} className="flex gap-2">
                   <Input 
-                    placeholder="Escribe un mensaje..." 
-                    className="h-11 focus-visible:ring-primary border-slate-200 shadow-inner"
+                    placeholder="Escribe un mensaje aquí..." 
+                    className="h-12 focus-visible:ring-primary border-slate-200 shadow-inner text-sm"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
+                    autoFocus
                   />
-                  <Button type="submit" disabled={!message.trim()} className="h-11 w-11 p-0 shrink-0 shadow-lg bg-primary hover:bg-slate-800 transition-all">
+                  <Button type="submit" disabled={!message.trim()} className="h-12 w-12 p-0 shrink-0 shadow-lg bg-primary hover:bg-slate-800 transition-all">
                     <Send className="h-5 w-5" />
                   </Button>
                 </form>
@@ -345,11 +339,32 @@ export default function ChatPage() {
             </>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-12 bg-slate-50/50">
-              <div className="bg-white p-8 rounded-full shadow-xl mb-6 animate-in zoom-in duration-500">
-                <MessageSquare className="h-16 w-16 text-slate-100" />
+              <div className="bg-white p-10 rounded-full shadow-2xl mb-8 animate-in zoom-in duration-700">
+                <MessageSquare className="h-20 w-20 text-blue-100" />
               </div>
-              <h3 className="text-xl font-black uppercase text-slate-400 tracking-tighter">Selecciona un chat</h3>
-              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-2 max-w-[200px] leading-relaxed">Usa el menú desplegable a la izquierda para elegir un contacto</p>
+              <h3 className="text-2xl font-black uppercase text-slate-800 tracking-tighter mb-4">¿Cómo empezar a escribir?</h3>
+              
+              <div className="grid grid-cols-1 gap-4 max-w-sm">
+                <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-start gap-4 text-left">
+                    <div className="bg-blue-100 p-2 rounded-lg text-blue-600 font-black">1</div>
+                    <div>
+                        <p className="text-xs font-black uppercase text-slate-900">Selecciona un Contacto</p>
+                        <p className="text-[10px] text-slate-500 font-medium">Usa el menú desplegable a la izquierda. Si no ves a nadie, tus compañeros deben entrar al sistema primero.</p>
+                    </div>
+                </div>
+                <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-start gap-4 text-left">
+                    <div className="bg-green-100 p-2 rounded-lg text-green-600 font-black">2</div>
+                    <div>
+                        <p className="text-xs font-black uppercase text-slate-900">Escribe tu Mensaje</p>
+                        <p className="text-[10px] text-slate-500 font-medium">Una vez que hagas clic en un nombre, aparecerá el cuadro de texto para que escribas y envíes.</p>
+                    </div>
+                </div>
+              </div>
+              
+              <div className="mt-8 flex items-center gap-2 text-amber-600 bg-amber-50 px-4 py-2 rounded-full border border-amber-100">
+                <Info className="h-4 w-4" />
+                <p className="text-[9px] font-black uppercase tracking-widest">Seguridad: Ventas y Ventas Ext. no pueden hablar entre sí.</p>
+              </div>
             </div>
           )}
         </Card>

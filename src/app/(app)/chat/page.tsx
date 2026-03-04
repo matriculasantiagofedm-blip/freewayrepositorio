@@ -25,7 +25,7 @@ import {
   AccordionItem, 
   AccordionTrigger 
 } from '@/components/ui/accordion';
-import { MessageSquare, Send, User as UserIcon, Loader2, Search, Users } from 'lucide-react';
+import { MessageSquare, Send, User as UserIcon, Loader2, Search, Users, Tag } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -61,7 +61,12 @@ export default function ChatPage() {
       if (role === 'Ventas' && u.role === 'Ventas') return false; 
       if (role === 'Ventas Externas' && u.role === 'Ventas Externas') return false;
 
-      if (searchTerm && !u.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+      if (searchTerm) {
+        const search = searchTerm.toLowerCase();
+        const matchesName = u.name.toLowerCase().includes(search);
+        const matchesRole = u.role.toLowerCase().includes(search);
+        if (!matchesName && !matchesRole) return false;
+      }
 
       return true;
     });
@@ -135,6 +140,19 @@ export default function ChatPage() {
   };
 
   const roleList = Object.keys(groupedContacts).sort();
+  const allRolesAvailable = useMemo(() => {
+    if (!allUsers) return [];
+    const roles = new Set<string>();
+    allUsers.forEach(u => {
+        // Misma lógica de restricción para las etiquetas
+        if (role === 'Ventas' && u.role === 'Ventas Externas') return;
+        if (role === 'Ventas Externas' && u.role === 'Ventas') return;
+        if (role === 'Ventas' && u.role === 'Ventas') return; 
+        if (role === 'Ventas Externas' && u.role === 'Ventas Externas') return;
+        roles.add(u.role);
+    });
+    return Array.from(roles).sort();
+  }, [allUsers, role]);
 
   return (
     <div className="flex flex-col gap-6 h-[calc(100vh-140px)]">
@@ -149,16 +167,36 @@ export default function ChatPage() {
       <div className="flex flex-1 gap-6 overflow-hidden">
         {/* LISTADO DE CONTACTOS DESPLEGABLE */}
         <Card className="w-80 flex flex-col shadow-md border-slate-200">
-          <CardHeader className="pb-3 border-b bg-slate-50/50">
+          <CardHeader className="pb-3 border-b bg-slate-50/50 space-y-3">
             <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Filtrar por nombre..." 
-                className="pl-8 h-9 text-xs bg-white" 
+                placeholder="Filtrar por rol o nombre..." 
+                className="pl-8 h-9 text-xs bg-white border-slate-200" 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+            {allRolesAvailable.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                    {allRolesAvailable.map(r => (
+                        <Badge 
+                            key={r} 
+                            variant="outline" 
+                            className={cn(
+                                "cursor-pointer text-[9px] font-black uppercase transition-colors px-2 py-0",
+                                searchTerm.toLowerCase() === r.toLowerCase() 
+                                    ? "bg-primary text-white border-primary" 
+                                    : "bg-white text-slate-500 hover:bg-slate-100"
+                            )}
+                            onClick={() => setSearchTerm(searchTerm.toLowerCase() === r.toLowerCase() ? '' : r)}
+                        >
+                            <Tag className="h-2 w-2 mr-1" />
+                            {r}
+                        </Badge>
+                    ))}
+                </div>
+            )}
           </CardHeader>
           <CardContent className="p-0 flex-1 overflow-hidden">
             <ScrollArea className="h-full">
@@ -211,7 +249,7 @@ export default function ChatPage() {
                 ) : (
                   <div className="p-8 text-center text-xs text-muted-foreground italic flex flex-col items-center gap-2">
                     <Users className="h-8 w-8 opacity-20" />
-                    No hay contactos disponibles bajo tu restricción de rol.
+                    No hay contactos que coincidan con la búsqueda.
                   </div>
                 )}
               </div>

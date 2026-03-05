@@ -19,7 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { MessageSquare, Send, Loader2, X, ChevronLeft } from 'lucide-react';
+import { MessageSquare, Send, Loader2, X, Minus } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -46,7 +46,7 @@ export function FloatingChat() {
     return allowedChannels.find(c => c.id === selectedChannelId);
   }, [selectedChannelId, allowedChannels]);
 
-  // Monitor de actividad para CADA canal
+  // Monitor de actividad para cada canal
   useEffect(() => {
     if (!db || !user || !role) return;
 
@@ -158,62 +158,60 @@ export function FloatingChat() {
           className="w-[340px] p-0 overflow-hidden rounded-xl shadow-2xl border-slate-200"
         >
           <Card className="border-none shadow-none flex flex-col h-[480px]">
-            {/* ENCABEZADO MEJORADO CON BOTÓN VOLVER Y BOTÓN CERRAR */}
-            <CardHeader className="py-2.5 px-3 border-b bg-blue-600 text-white flex flex-row items-center gap-2 space-y-0 shrink-0">
-              {selectedChannelId && (
+            {/* ENCABEZADO REESTRUCTURADO PARA VISIBILIDAD TOTAL */}
+            <CardHeader className="py-2 px-3 border-b bg-blue-600 text-white flex flex-row items-center gap-2 space-y-0 shrink-0">
+              {/* BOTÓN X PARA CERRAR LA CONVERSACIÓN (A PEDIDO DEL USUARIO) */}
+              {selectedChannelId ? (
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="h-8 w-8 text-white hover:bg-white/10 shrink-0 -ml-1" 
+                  className="h-7 w-7 text-white hover:bg-white/20 shrink-0" 
                   onClick={() => setSelectedChannelId(null)}
-                  title="Volver a la lista"
+                  title="Cerrar conversación y volver a la lista"
                 >
-                  <ChevronLeft className="h-5 w-5" />
+                  <X className="h-4 w-4" />
                 </Button>
-              )}
-              
-              <div className="flex items-center gap-2 overflow-hidden flex-1">
-                <div className={cn(
-                    "h-6 w-6 rounded-full flex items-center justify-center shrink-0 border border-white/20",
-                    selectedChannelId ? activeChannel?.color : "bg-blue-500 shadow-inner"
-                )}>
+              ) : (
+                <div className="h-7 w-7 flex items-center justify-center bg-blue-500 rounded-full shadow-inner">
                   <MessageSquare className="h-3 w-3 text-white" />
                 </div>
-                <div className="overflow-hidden">
-                  <CardTitle className="text-[11px] font-black uppercase tracking-tight truncate">
-                    {selectedChannelId ? activeChannel?.label : "Mensajería Interna"}
-                  </CardTitle>
-                  <p className="text-[8px] font-bold text-blue-100/60 uppercase truncate">
-                    {selectedChannelId ? "Conversación Activa" : `Rol: ${role}`}
-                  </p>
-                </div>
+              )}
+              
+              <div className="flex-1 overflow-hidden">
+                <CardTitle className="text-[11px] font-black uppercase tracking-tight truncate">
+                  {selectedChannelId ? activeChannel?.label : "Mensajería Interna"}
+                </CardTitle>
+                <p className="text-[8px] font-bold text-blue-100/60 uppercase truncate">
+                  {selectedChannelId ? "Conversación Activa" : `Personal: ${role}`}
+                </p>
               </div>
 
+              {/* BOTÓN MINIMIZAR PARA CERRAR TODO EL WIDGET */}
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-8 w-8 text-white hover:bg-white/10 shrink-0 -mr-1" 
+                className="h-7 w-7 text-white hover:bg-white/20 shrink-0" 
                 onClick={() => setIsOpen(false)}
-                title="Cerrar ventana"
+                title="Cerrar ventana de chat"
               >
-                <X className="h-5 w-5" />
+                <Minus className="h-4 w-4" />
               </Button>
             </CardHeader>
 
             <CardContent className="flex-1 p-0 overflow-hidden bg-slate-50/30 min-h-0">
               {!selectedChannelId ? (
-                /* LISTADO DE CANALES COMPACTO */
+                /* LISTADO DE CANALES */
                 <ScrollArea className="h-full">
-                  <div className="p-1.5 space-y-0.5">
+                  <div className="p-2 space-y-1">
                     <p className="text-[9px] font-black uppercase text-slate-400 px-2 py-1.5 tracking-widest">Canales Disponibles</p>
                     {allowedChannels.map((channel) => (
                       <button
                         key={channel.id}
                         onClick={() => setSelectedChannelId(channel.id)}
-                        className="w-full flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-slate-100 transition-all text-left group relative"
+                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-100 transition-all text-left group relative bg-white border border-slate-100 shadow-sm"
                       >
                         <div className={cn(
-                            "h-8 w-8 rounded-full flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-105 border border-white/50",
+                            "h-8 w-8 rounded-full flex items-center justify-center shrink-0 border border-white/50 shadow-sm",
                             channel.color
                         )}>
                           <MessageSquare className="h-4 w-4 text-white" />
@@ -230,7 +228,7 @@ export function FloatingChat() {
                   </div>
                 </ScrollArea>
               ) : (
-                /* ÁREA DE CONVERSACIÓN COMPACTA */
+                /* ÁREA DE CONVERSACIÓN */
                 <div className="flex flex-col h-full overflow-hidden">
                   <ScrollArea className="flex-1">
                     <div className="p-3 space-y-3">
@@ -269,11 +267,10 @@ export function FloatingChat() {
                     </div>
                   </ScrollArea>
                   
-                  {/* BARRA DE ENTRADA COMPACTA */}
                   <div className="p-2 bg-white border-t shrink-0">
                     <form onSubmit={handleSendMessage} className="flex gap-1.5">
                       <Input 
-                        placeholder="Escribe aquí..." 
+                        placeholder="Mensaje..." 
                         className="h-9 text-[13px] border-slate-200 focus:ring-blue-600 font-medium"
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}

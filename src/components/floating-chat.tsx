@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -157,36 +158,49 @@ export function FloatingChat() {
           className="w-[340px] p-0 overflow-hidden rounded-xl shadow-2xl border-slate-200"
         >
           <Card className="border-none shadow-none flex flex-col h-[480px]">
-            {/* ENCABEZADO COMPACTO - AHORA AZUL */}
+            {/* ENCABEZADO CON BOTÓN X PARA VOLVER A LA LISTA */}
             <CardHeader className="py-2.5 px-3 border-b bg-blue-600 text-white flex flex-row items-center justify-between space-y-0 shrink-0">
               <div className="flex items-center gap-2 overflow-hidden">
-                {selectedChannelId && (
+                <div className={cn(
+                    "h-6 w-6 rounded-full flex items-center justify-center shrink-0 border border-white/20",
+                    selectedChannelId ? activeChannel?.color : "bg-blue-500"
+                )}>
+                  <MessageSquare className="h-3 w-3 text-white" />
+                </div>
+                <div className="overflow-hidden">
+                  <CardTitle className="text-xs font-black uppercase tracking-tight truncate">
+                    {selectedChannelId ? activeChannel?.label : "Mensajería Interna"}
+                  </CardTitle>
+                  <p className="text-[8px] font-bold text-blue-100/60 uppercase truncate">
+                    {selectedChannelId ? "Conversación Activa" : `Rol: ${role}`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                {selectedChannelId ? (
+                  // Esta X cierra la conversación y vuelve a la lista de roles
                   <Button 
                     variant="ghost" 
                     size="icon" 
                     className="h-7 w-7 text-white hover:bg-white/10 shrink-0" 
                     onClick={() => setSelectedChannelId(null)}
+                    title="Cerrar conversación"
                   >
-                    <ChevronLeft className="h-4 w-4" />
+                    <X className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  // Esta X cierra el globo de chat por completo
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-7 w-7 text-white hover:bg-white/10 shrink-0" 
+                    onClick={() => setIsOpen(false)}
+                    title="Cerrar ventana"
+                  >
+                    <X className="h-4 w-4" />
                   </Button>
                 )}
-                <div className="overflow-hidden">
-                  <CardTitle className="text-xs font-black uppercase tracking-tight truncate">
-                    {selectedChannelId ? activeChannel?.label : "Mensajería Interna"}
-                  </CardTitle>
-                  <p className="text-[9px] font-bold text-blue-100/60 uppercase truncate">
-                    {selectedChannelId ? "Chat de Equipo" : `Rol: ${role}`}
-                  </p>
-                </div>
               </div>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-7 w-7 text-white hover:bg-white/10 shrink-0" 
-                onClick={() => setIsOpen(false)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
             </CardHeader>
 
             <CardContent className="flex-1 p-0 overflow-hidden bg-slate-50/30 min-h-0">

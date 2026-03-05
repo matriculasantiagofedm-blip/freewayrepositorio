@@ -155,19 +155,17 @@ export function FloatingChat() {
           side="top" 
           align="end" 
           sideOffset={12} 
-          className="w-[340px] p-0 overflow-hidden rounded-xl shadow-2xl border-slate-200"
+          className="w-[320px] p-0 overflow-hidden rounded-xl shadow-2xl border-slate-200"
         >
-          <Card className="border-none shadow-none flex flex-col h-[480px]">
-            {/* ENCABEZADO REESTRUCTURADO PARA VISIBILIDAD TOTAL */}
+          <Card className="border-none shadow-none flex flex-col h-[420px]">
+            {/* ENCABEZADO FIJO */}
             <CardHeader className="py-2 px-3 border-b bg-blue-600 text-white flex flex-row items-center gap-2 space-y-0 shrink-0">
-              {/* BOTÓN X PARA CERRAR LA CONVERSACIÓN (A PEDIDO DEL USUARIO) */}
               {selectedChannelId ? (
                 <Button 
                   variant="ghost" 
                   size="icon" 
                   className="h-7 w-7 text-white hover:bg-white/20 shrink-0" 
                   onClick={() => setSelectedChannelId(null)}
-                  title="Cerrar conversación y volver a la lista"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -179,20 +177,18 @@ export function FloatingChat() {
               
               <div className="flex-1 overflow-hidden">
                 <CardTitle className="text-[11px] font-black uppercase tracking-tight truncate">
-                  {selectedChannelId ? activeChannel?.label : "Mensajería Interna"}
+                  {selectedChannelId ? activeChannel?.label : "Chat Interno"}
                 </CardTitle>
                 <p className="text-[8px] font-bold text-blue-100/60 uppercase truncate">
-                  {selectedChannelId ? "Conversación Activa" : `Personal: ${role}`}
+                  {selectedChannelId ? "Conversación" : `Rol: ${role}`}
                 </p>
               </div>
 
-              {/* BOTÓN MINIMIZAR PARA CERRAR TODO EL WIDGET */}
               <Button 
                 variant="ghost" 
                 size="icon" 
                 className="h-7 w-7 text-white hover:bg-white/20 shrink-0" 
                 onClick={() => setIsOpen(false)}
-                title="Cerrar ventana de chat"
               >
                 <Minus className="h-4 w-4" />
               </Button>
@@ -200,28 +196,27 @@ export function FloatingChat() {
 
             <CardContent className="flex-1 p-0 overflow-hidden bg-slate-50/30 min-h-0">
               {!selectedChannelId ? (
-                /* LISTADO DE CANALES */
+                /* LISTADO DE CANALES COMPACTO */
                 <ScrollArea className="h-full">
                   <div className="p-2 space-y-1">
-                    <p className="text-[9px] font-black uppercase text-slate-400 px-2 py-1.5 tracking-widest">Canales Disponibles</p>
+                    <p className="text-[8px] font-black uppercase text-slate-400 px-2 py-1 tracking-[0.2em]">Canales</p>
                     {allowedChannels.map((channel) => (
                       <button
                         key={channel.id}
                         onClick={() => setSelectedChannelId(channel.id)}
-                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-100 transition-all text-left group relative bg-white border border-slate-100 shadow-sm"
+                        className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-slate-100 transition-all text-left group relative bg-white border border-slate-100 shadow-sm"
                       >
                         <div className={cn(
-                            "h-8 w-8 rounded-full flex items-center justify-center shrink-0 border border-white/50 shadow-sm",
+                            "h-7 w-7 rounded-full flex items-center justify-center shrink-0 border border-white/50 shadow-sm",
                             channel.color
                         )}>
-                          <MessageSquare className="h-4 w-4 text-white" />
+                          <MessageSquare className="h-3.5 w-3.5 text-white" />
                         </div>
                         <div className="flex-1 overflow-hidden">
-                          <p className="font-bold text-[11px] uppercase tracking-tight leading-none mb-0.5">{channel.label}</p>
-                          <p className="text-[9px] text-slate-400 truncate font-medium">Click para entrar al canal</p>
+                          <p className="font-bold text-[10px] uppercase tracking-tight leading-none">{channel.label}</p>
                         </div>
                         {activeChannels[channel.id] && (
-                          <span className="h-2.5 w-2.5 bg-red-600 rounded-full animate-pulse shadow-[0_0_4px_rgba(220,38,38,0.5)] border-2 border-white" />
+                          <span className="h-2 w-2 bg-red-600 rounded-full animate-pulse border border-white" />
                         )}
                       </button>
                     ))}
@@ -261,7 +256,7 @@ export function FloatingChat() {
                       ) : (
                         <div className="h-32 flex flex-col items-center justify-center text-center opacity-20">
                           <MessageSquare className="h-8 w-8 mb-1" />
-                          <p className="text-[9px] font-black uppercase tracking-widest">Escribe algo...</p>
+                          <p className="text-[9px] font-black uppercase tracking-widest">Sin mensajes</p>
                         </div>
                       )}
                     </div>
@@ -270,14 +265,14 @@ export function FloatingChat() {
                   <div className="p-2 bg-white border-t shrink-0">
                     <form onSubmit={handleSendMessage} className="flex gap-1.5">
                       <Input 
-                        placeholder="Mensaje..." 
-                        className="h-9 text-[13px] border-slate-200 focus:ring-blue-600 font-medium"
+                        placeholder="Escribe..." 
+                        className="h-8 text-[12px] border-slate-200 focus:ring-blue-600 font-medium"
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         autoFocus
                       />
-                      <Button type="submit" disabled={!message.trim()} size="icon" className="h-9 w-9 shrink-0 bg-blue-600 hover:bg-blue-700 shadow-md">
-                        <Send className="h-3.5 w-3.5 text-white" />
+                      <Button type="submit" disabled={!message.trim()} size="icon" className="h-8 w-8 shrink-0 bg-blue-600 hover:bg-blue-700">
+                        <Send className="h-3 w-3 text-white" />
                       </Button>
                     </form>
                   </div>

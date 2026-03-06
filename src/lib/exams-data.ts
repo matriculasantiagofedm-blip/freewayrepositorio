@@ -1,4 +1,3 @@
-
 export interface ExamQuestion {
   q: string;
   options: string[];

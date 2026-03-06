@@ -10,12 +10,15 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 function ExamPrintContent() {
-    const { id } = useParams();
+    const params = useParams();
+    const id = params?.id;
+    const examId = Array.isArray(id) ? id[0] : id;
+    
     const { toast } = useToast();
     const [isReady, setIsReady] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
 
-    const exam = EXAMS.find(e => e.id === id);
+    const exam = EXAMS.find(e => e.id === examId);
 
     useEffect(() => {
         const timer = setTimeout(() => setIsReady(true), 3000);
@@ -64,7 +67,7 @@ function ExamPrintContent() {
 
     return (
         <div className="bg-slate-100 min-h-screen">
-            <style jsx global>{`
+            <style dangerouslySetInnerHTML={{ __html: `
                 @media print {
                     @page { 
                         size: letter portrait; 
@@ -89,7 +92,7 @@ function ExamPrintContent() {
                         page-break-after: avoid !important;
                     }
                 }
-            `}</style>
+            `}} />
 
             <div className="print-ui-element p-4 sticky top-0 z-[100] bg-white border-b shadow-lg">
                 <div className="max-w-4xl mx-auto flex flex-col gap-3">
@@ -116,13 +119,11 @@ function ExamPrintContent() {
             </div>
 
             <div id="exam-to-print" className="print-container-wrapper bg-white mx-auto shadow-2xl my-8 print:my-0 print:shadow-none w-[8.5in] h-[11in] p-[0.6in] flex flex-col font-sans text-black overflow-hidden">
-                {/* HEADER COMPACTO */}
                 <div className="text-center mb-4 border-b-2 border-black pb-2">
                     <h1 className="text-lg font-black uppercase tracking-tighter">FREEWAY ESCUELA DE MANEJO S.A.</h1>
                     <h2 className="text-[10pt] font-bold uppercase">EXAMEN DE CONOCIMIENTOS TEÓRICOS</h2>
                 </div>
 
-                {/* STUDENT INFO COMPACTO */}
                 <div className="grid grid-cols-3 gap-4 mb-4 text-[9pt]">
                     <div className="col-span-1 flex items-end gap-1">
                         <span className="font-bold uppercase whitespace-nowrap">Nombre:</span>
@@ -144,7 +145,6 @@ function ExamPrintContent() {
                     • ESCOJA LA LETRA DE LA RESPUESTA CORRECTA.
                 </p>
 
-                {/* QUESTIONS COMPACTAS */}
                 <div className="flex-1 grid grid-cols-1 gap-y-3 overflow-hidden">
                     {exam.questions.map((q, idx) => (
                         <div key={idx} className="space-y-1">
@@ -161,7 +161,6 @@ function ExamPrintContent() {
                     ))}
                 </div>
 
-                {/* FOOTER FIRMAS COMPACTO */}
                 <div className="mt-6 pt-4 flex justify-around">
                     <div className="text-center w-56">
                         <div className="border-t border-black mb-1"></div>

@@ -63,16 +63,16 @@ export const EXAMS: ExamData[] = [
     id: '4',
     title: 'Examen de Conocimientos Teóricos #4',
     questions: [
-      { q: '¿Cuál es la función principal del cinturón de seguridad?', options: ['a) Evitar multas.', 'b) Mantener al pasajero en su asiento y evitar impactos contra el interior del vehículo.', 'c) Comodidad al conducir.', 'd) Ninguna de las anteriores.'] },
-      { q: '¿Qué debe verificar periódicamente en los neumáticos?', options: ['a) El color.', 'b) La presión de aire y el desgaste de la banda de rodadura.', 'c) La marca de fábrica.', 'd) Si brillan.'] },
-      { q: 'Si el motor se sobrecalienta, usted debe:', options: ['a) Seguir hasta llegar a casa.', 'b) Apagar el aire acondicionado y detenerse en un lugar seguro.', 'c) Abrir el radiador de inmediato.', 'd) Echarle agua fría al motor encendido.'] },
-      { q: 'El uso de distractores como el celular al conducir aumenta el riesgo de accidente en un:', options: ['a) 10%.', 'b) 50%.', 'c) 400% o más.', 'd) No afecta si usa manos libres.'] },
-      { q: 'Los niños menores de 5 años deben viajar en:', options: ['a) El asiento delantero.', 'b) El asiento trasero en silla de seguridad adecuada.', 'c) En los brazos de un adulto.', 'd) Donde ellos quieran.'] },
-      { q: 'Si los frenos fallan mientras conduce, usted debe:', options: ['a) Apagar el motor.', 'b) Bombear el pedal de freno y usar el freno de mano gradualmente.', 'c) Saltarse del auto.', 'd) Tocar la bocina y cerrar los ojos.'] },
-      { q: 'La función de los espejos retrovisores es:', options: ['a) Ver cómo luce el conductor.', 'b) Eliminar puntos ciegos y vigilar el entorno del vehículo.', 'c) Reflejar la luz del sol.', 'd) Ninguna de las anteriores.'] },
-      { q: '¿Para qué sirve el sistema de suspensión?', options: ['a) Para que el auto corra más.', 'b) Para absorber las irregularidades del terreno y dar estabilidad.', 'c) Para frenar el auto.', 'd) Para encender las luces.'] },
-      { q: '¿Qué líquido se debe revisar para asegurar la visibilidad en lluvia?', options: ['a) Aceite de motor.', 'b) Líquido de frenos.', 'c) Líquido limpiaparabrisas.', 'd) Refrigerante.'] },
-      { q: 'El humo negro saliendo del escape suele indicar:', options: ['a) Consumo excesivo de combustible.', 'b) Quema de aceite.', 'c) Motor frío.', 'd) Fallo en las luces.'] }
+      { q: 'Circulación de personas, animales o vehículos por una vía o privada abierta al pública.', options: ['a) Caminos.', 'b) Veredas.', 'c) Calles.', 'd) Tránsito.'] },
+      { q: 'Es obligatorio para todo conductor reemplazar el sistema de luces altas por el sistema de luces bajas siempre que se encuentren con otro vehículo.', options: ['a) Este reemplazo se hará a una distancia no menor de ciento cincuenta (150) metros en carreteras y autopistas y no menos de setenta y cinco (75) metros, en calles y avenidas.', 'b) Solamente en carreteras.', 'c) A 150 metros en autopistas.', 'd) Todas son correctas.'] },
+      { q: 'Detenerse en aceras y formar tumultos que impidan la circulación es una infracción de:', options: ['a) Los conductores.', 'b) Peatones.', 'c) Camiones de cargas.', 'd) Todas las anteriores.'] },
+      { q: '¿Según el artículo 125 de la ley de tránsito a quien se le debe entregar la licencia de conducir?', options: ['a) Al policía.', 'b) A los inspectores de la A.T.T.T.', 'c) A y B son correctos.', 'd) Ninguna de las anteriores.'] },
+      { q: 'Cobrar deliberadamente a pasajeros en vehículos particulares, comerciales y de transporte gratuito de empleados es:', options: ['a) Una obligación.', 'b) Una prohibición.', 'c) Una norma de transporte.', 'd) Ninguna de las anteriores.'] },
+      { q: 'Cuando se procede a sancionar con multa y retención del vehículo.', options: ['a) Embriaguez comprobada.', 'b) Aliento a alcohólico.', 'c) Nivel e tolerancia.', 'd) Todas las anteriores.'] },
+      { q: 'Las señales viales de tránsito se clasifican en:', options: ['a) Preventivas, Reglamentarias.', 'b) Informativas.', 'c) A y B son correctos.', 'd) Ninguna de las anteriores.'] },
+      { q: 'Las personas que guíen ganado bravo deben:', options: ['a) Extremar las medidas de seguridad.', 'b) Transportarlos en un vehículo automotor.', 'c) Llevarlos fuera de la vía de circulación.', 'd) A y B son correctas.'] },
+      { q: 'Las infracciones serán del conocimiento de:', options: ['a) El departamento de infracciones menores de la A.T.T.T.', 'b) Del policía de tránsito.', 'c) Del director general.', 'd) Ninguna de las anteriores.'] },
+      { q: 'La resolución de primera instancia proferida por el Juez de Tránsito admite recurso de:', options: ['a) Apelación.', 'b) Resolución.', 'c) Reconsideración.', 'd) Ninguna de las anteriores.'] }
     ]
   },
   {

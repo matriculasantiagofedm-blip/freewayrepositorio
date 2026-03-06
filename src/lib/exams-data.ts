@@ -29,18 +29,18 @@ export const EXAMS: ExamData[] = [
   },
   {
     id: '2',
-    title: 'Examen de Conocimientos Teóricos #2 (Señales y Marcas)',
+    title: 'Examen de Conocimientos Teóricos #2',
     questions: [
-      { q: '¿Qué indica una línea amarilla continua en el centro de la calzada?', options: ['a) Se puede rebasar con precaución.', 'b) Prohibido el adelantamiento en ambos sentidos.', 'c) Carril exclusivo para buses.', 'd) Zona de estacionamiento.'] },
-      { q: 'Las señales de tránsito preventivas tienen forma de rombo y color:', options: ['a) Rojo.', 'b) Azul.', 'c) Amarillo.', 'd) Verde.'] },
-      { q: '¿Cuál es el límite de velocidad en zonas residenciales según el reglamento?', options: ['a) 40 km/h.', 'b) 30 km/h.', 'c) 50 km/h.', 'd) 25 km/h.'] },
-      { q: 'Ante una señal de PARE, el conductor debe:', options: ['a) Disminuir la velocidad.', 'b) Detenerse totalmente.', 'c) Seguir si no viene nadie.', 'd) Tocar la bocina.'] },
-      { q: 'Las señales informativas de color azul indican:', options: ['a) Peligro en la vía.', 'b) Restricciones de peso.', 'c) Servicios y lugares de interés.', 'd) Obras en construcción.'] },
-      { q: 'Una flecha verde en un semáforo de giro indica:', options: ['a) Precaución al girar.', 'b) Prioridad absoluta de giro.', 'c) Que debe esperar el rojo.', 'd) Giro prohibido.'] },
-      { q: '¿Qué significan las líneas blancas discontinuas en el pavimento?', options: ['a) Separación de carriles en el mismo sentido.', 'b) Prohibido cambiar de carril.', 'c) Zona de peatones.', 'd) Carril de emergencia.'] },
-      { q: '¿A qué distancia se debe colocar el triángulo de seguridad en caso de desperfecto en carretera?', options: ['a) 5 metros.', 'b) 10 metros.', 'c) Entre 50 y 100 metros.', 'd) Detrás de la llanta.'] },
-      { q: 'La señal circular con borde rojo y fondo blanco es una señal de:', options: ['a) Información.', 'b) Reglamentación.', 'c) Prevención.', 'd) Destino.'] },
-      { q: '¿Qué indica el encendido de la luz roja del semáforo?', options: ['a) Avance con cuidado.', 'b) Detención obligatoria tras la línea de pare.', 'c) Gire a la derecha.', 'd) Disminuya velocidad.'] }
+      { q: 'Vía pública utilizada para el tránsito interurbano de vehículos con niveles adecuados de seguridad y comodidad.', options: ['a) Avenidas.', 'b) Avenidas y calles.', 'c) Carreteras.', 'd) Aceras.'] },
+      { q: 'Los vehículos a motor deben portar el siguiente equipo de seguridad en las vías de circulación.', options: ['a) Triangulo reflectivo de seguridad, herramientas básicas, llanta de repuesto, elevador mecánico, herramientas para reemplazo de llantas.', 'b) Reglamento de tránsito.', 'c) Licencia de conducir.', 'd) Todas las anteriores.'] },
+      { q: 'Los peatones caminarán obligatoriamente por:', options: ['a) Las aceras, veredas, pasos elevados y demás facilidades habilitadas para su uso.', 'b) Pavimento.', 'c) Aceras únicamente.', 'd) Puentes elevados peatones solamente.'] },
+      { q: 'Los extranjeros que ingresen a la República de Panamá en calidad de turista solamente podrán conducir vehículos con licencia vigente de su país de origen por:', options: ['a) 30 días.', 'b) 60 días.', 'c) 90 días.', 'd) 120 días.'] },
+      { q: 'Artículo 125. Todo conductor de vehículo está en la obligación de:', options: ['a) Portar su licencia de conducir.', 'b) Portar los documentos del vehículo.', 'c) Portar la placa de circulación.', 'd) Ninguna de las anteriores.'] },
+      { q: 'El estado de embriaguez y la intoxicación por estupefacientes se determinará por cualquier de los siguientes exámenes y pruebas:', options: ['a) Análisis de aires expírales (estado de embriaguez).', 'b) Pruebas de estado físico.', 'c) Médicas.', 'd) Todas las anteriores.'] },
+      { q: 'En carreteras o autopistas, los triciclos y las motocicletas que transmiten en grupos lo harán:', options: ['a) En forma de X.', 'b) En forma de Z.', 'c) En fila.', 'd) Ninguna de las anteriores.'] },
+      { q: 'Los conductores de vehículos:', options: ['a) Serán responsables de los animales que se encuentren en la vía.', 'b) No serán responsables de los daños que sufran los animales que se hallen en las vías públicas, incluyendo la muerte de éstos.', 'c) Ninguna de las anteriores.'] },
+      { q: 'La aplicación y ejecución del presente reglamento en todas sus partes compete a:', options: ['a) La Policía Nacional.', 'b) Los jueces de tránsito.', 'c) La Autoridad de Tránsito y Transporte Terrestre.', 'd) Todas las anteriores.'] },
+      { q: 'Los procesos de tránsito serán:', options: ['a) Orales en la primera instancia y escritos en la segunda.', 'b) Solo orales.', 'c) Solo escritos en ambas instancias.', 'd) Todas las anteriores.'] }
     ]
   },
   {

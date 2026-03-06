@@ -45,23 +45,23 @@ export const EXAMS: ExamData[] = [
   },
   {
     id: '3',
-    title: 'Examen de Conocimientos Teóricos #3 (Prioridades y Giros)',
+    title: 'Examen de Conocimientos Teóricos #3',
     questions: [
-      { q: 'En una intersección sin señales, ¿quién tiene la prioridad de paso?', options: ['a) El vehículo que va más rápido.', 'b) El vehículo que entra por la derecha.', 'c) El vehículo más grande.', 'd) El que toque la bocina primero.'] },
-      { q: 'Para realizar un giro a la izquierda en una vía de dos sentidos, debe colocarse:', options: ['a) En el carril derecho.', 'b) Cerca de la línea central divisoria.', 'c) En el hombro de la vía.', 'd) En cualquier carril.'] },
-      { q: '¿Cuál es el uso correcto del carril izquierdo en una autopista de tres carriles?', options: ['a) Solo para vehículos lentos.', 'b) Solo para rebasar o circular a la velocidad máxima permitida.', 'c) Para estacionarse en emergencia.', 'd) Para camiones de carga.'] },
-      { q: 'Al entrar a una rotonda o glorieta, la prioridad la tiene:', options: ['a) El que va a entrar.', 'b) El que circula dentro de la rotonda.', 'c) El que sale de la rotonda.', 'd) Los vehículos de emergencia solamente.'] },
-      { q: '¿Con cuánta distancia de antelación se debe poner la luz de giro (direccional)?', options: ['a) Al momento de girar.', 'b) 30 metros antes de la maniobra.', 'c) 5 metros antes.', 'd) Solo si viene otro auto.'] },
-      { q: '¿Qué debe hacer un conductor si un vehículo de emergencia viene con sirena y luces?', options: ['a) Acelerar para no estorbar.', 'b) Detenerse o ceder el paso hacia la derecha.', 'c) Seguir normal.', 'd) Tocar la bocina también.'] },
-      { q: 'Está prohibido el giro en "U" en:', options: ['a) Curvas y pendientes.', 'b) Puentes y túneles.', 'c) Intersecciones señalizadas con prohibición.', 'd) Todas las anteriores.'] },
-      { q: '¿Qué indica la luz amarilla del semáforo?', options: ['a) Acelere para pasar rápido.', 'b) Deténgase si puede hacerlo con seguridad.', 'c) Avance con precaución.', 'd) El semáforo está dañado.'] },
-      { q: 'En un cruce de peatones no semaforizado, la prioridad es de:', options: ['a) El conductor.', 'b) El peatón.', 'c) El que llegue primero.', 'd) Nadie.'] },
-      { q: '¿Cuál es la distancia mínima de seguridad que debe mantenerse con el vehículo de adelante?', options: ['a) Un metro.', 'b) La longitud de un vehículo por cada 15km/h.', 'c) No importa mientras frene bien.', 'd) 10 metros fijos.'] }
+      { q: 'Preferencia en la circulación que tiene un vehículo o peatón con respecto a los demás vehículos o peatones.', options: ['a) Derecho de vía.', 'b) Carril Principal.', 'c) Ceder al paso.', 'd) Transitar por el carril izquierdo.'] },
+      { q: 'Para transitar en las vías públicas, todo vehículo requiere una placa única y definitiva suministrada por:', options: ['a) La Autoridad de Tránsito y Transporte Terrestre.', 'b) El Municipio donde se encuentra inscrito.', 'c) En la agencia donde lo compró.', 'd) En la junta comunal.'] },
+      { q: 'En caso de no existir aceras, los peatones transitarán:', options: ['a) Por los puentes elevados peatonales.', 'b) Por los parques fuera de la vía.', 'c) Del lado izquierdo de la vía con el sentido del tránsito de vehículos de frente.', 'd) Ninguna de las anteriores.'] },
+      { q: 'Los extranjeros que ingresen a la República de Panamá en calidad de turistas podrán conducir vehículos tipo:', options: ['a) Transporte colectivo.', 'b) Particulares.', 'c) Selectivo.', 'd) Todas las anteriores.'] },
+      { q: 'No podrán viajar en el asiento delantero del vehículo, excepto en vehículos de una sola cabina.', options: ['a) Los pasajeros menores de cinco (5) años.', 'b) Los pasajeros menores de dos (2) años.', 'c) Los pasajeros menores de diez (10) años.', 'd) Todas las anteriores.'] },
+      { q: 'Están en la obligación de someterse a las pruebas para determinar el grado de intoxicación por alcohol:', options: ['a) En caso de peatones involucrados en accidentes por atropello.', 'b) Todo conductor de vehículo a motor.', 'c) A y B son correctas.', 'd) Ninguna de las anteriores.'] },
+      { q: 'Al rebasar otro vehículo deberá hacerlo:', options: ['a) Por la derecha.', 'b) Por la izquierda.', 'c) Por el carril de centro.', 'd) Todas las anteriores.'] },
+      { q: 'Las cabalgaduras deberán transitar:', options: ['a) Por el lado derecho de la vía.', 'b) Por los hombros.', 'c) Por la calzada con precaución.', 'd) Ninguna de las anteriores.'] },
+      { q: 'Las acciones u omisiones contrarias a este reglamento tendrán el carácter de:', options: ['a) Mulas.', 'b) Accidentes.', 'c) Infracciones de tránsito.', 'd) Ninguna de las anteriores.'] },
+      { q: 'El accidente de tránsito es materia de conocimiento de:', options: ['a) La Policía de Tránsito.', 'b) Los inspectores de la A.T.T.T.', 'c) A y B son correctas.', 'd) De los jueces de tránsito.'] }
     ]
   },
   {
     id: '4',
-    title: 'Examen de Conocimientos Teóricos #4 (Seguridad y Mecánica)',
+    title: 'Examen de Conocimientos Teóricos #4',
     questions: [
       { q: '¿Cuál es la función principal del cinturón de seguridad?', options: ['a) Evitar multas.', 'b) Mantener al pasajero en su asiento y evitar impactos contra el interior del vehículo.', 'c) Comodidad al conducir.', 'd) Ninguna de las anteriores.'] },
       { q: '¿Qué debe verificar periódicamente en los neumáticos?', options: ['a) El color.', 'b) La presión de aire y el desgaste de la banda de rodadura.', 'c) La marca de fábrica.', 'd) Si brillan.'] },
@@ -77,7 +77,7 @@ export const EXAMS: ExamData[] = [
   },
   {
     id: '5',
-    title: 'Examen de Conocimientos Teóricos #5 (Leyes y Sanciones)',
+    title: 'Examen de Conocimientos Teóricos #5',
     questions: [
       { q: '¿Cuál es la vigencia general de una licencia de conducir particular en Panamá?', options: ['a) 2 años.', 'b) 4 años.', 'c) 10 años.', 'd) 5 años.'] },
       { q: 'Conducir con la licencia vencida conlleva:', options: ['a) Solo una advertencia.', 'b) Multa y retención del vehículo.', 'c) No pasa nada.', 'd) Cárcel de 24 horas.'] },

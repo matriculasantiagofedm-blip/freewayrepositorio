@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -13,7 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, ChevronLeft, ChevronRight, User, AlertCircle, Fuel, MessageSquare, Timer, ShieldCheck, Landmark, Ban, RefreshCw, Minus } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, User, AlertCircle, Fuel, MessageSquare, Timer, ShieldCheck, Landmark, Ban, RefreshCw, Minus, Printer, ClipboardList } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addDays, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
@@ -132,7 +133,8 @@ export default function VehicleScheduleReportPage() {
         displayClassNumber: number | string, 
         slotIndex?: number, 
         subType?: 'auto' | 'moto',
-        plan?: string
+        plan?: string,
+        studentIdNumber?: string
     ) => {
         if (!date || !vehicle) return;
         const d = toDate(date);
@@ -153,7 +155,8 @@ export default function VehicleScheduleReportPage() {
             displayClassNumber, 
             slotIndex, 
             subType,
-            plan: plan || 'Plan no especificado'
+            plan: plan || 'Plan no especificado',
+            studentIdNumber: studentIdNumber || ''
         });
     };
 
@@ -161,6 +164,7 @@ export default function VehicleScheduleReportPage() {
         const d = c.autoMotoDetails || c.deluxeDetails;
         const plan = d?.coursePlan || c.type;
         const isEval = (d?.coursePlan === 'evaluacion-estacionamiento' || d?.coursePlan === 'moto-evaluacion-estacionamiento');
+        const sid = d?.studentIdNumber || c.studentIdNumber || '';
         
         const isAutoContract = c.type === 'Curso Auto';
         const isMotoContract = c.type === 'Curso Moto';
@@ -168,24 +172,21 @@ export default function VehicleScheduleReportPage() {
         const isDeluxeContract = c.type === 'Curso Deluxe';
         const isSoloPractica = c.type === 'Curso Solo Practica';
 
-        // Lógica de detección de combos para evitar reportar clases fantasma
         const hasAutoSessionsEnabled = isAutoContract || isMixtoContract || isDeluxeContract || (isMotoContract && d?.additionalService === 'Curso Plus Auto 10Hrs') || (isSoloPractica && (d as any)?.vehicleType === 'Auto');
         const hasMotoSessionsEnabled = isMotoContract || isMixtoContract || (isAutoContract && d?.additionalService === 'Plus Moto 10Hrs') || (isSoloPractica && (d as any)?.vehicleType === 'Motocicleta');
 
         const proc = (arr: any[], subType: 'auto' | 'moto' = 'auto') => {
             arr?.forEach((s, i) => {
-                processAny(c.id, c.clientName, s.date, s.time, s.vehicle, s.instructor, s.status || 'scheduled', !!s.refueled, isEval, 'contract', i + 1, i, subType, plan);
+                processAny(c.id, c.clientName, s.date, s.time, s.vehicle, s.instructor, s.status || 'scheduled', !!s.refueled, isEval, 'contract', i + 1, i, subType, plan, sid);
             });
         };
 
         if (isDeluxeContract) {
             proc(c.deluxeDetails?.classSchedules || [], 'auto');
         } else {
-            // Solo procesar si el servicio de auto está habilitado para este contrato
             if (hasAutoSessionsEnabled && c.autoMotoDetails?.practicalClassSchedules && c.autoMotoDetails.practicalClassSchedules.length > 0) {
                 proc(c.autoMotoDetails.practicalClassSchedules, 'auto');
             }
-            // Solo procesar si el servicio de moto está habilitado para este contrato
             if (hasMotoSessionsEnabled && c.autoMotoDetails?.motoPracticalClassSchedules && c.autoMotoDetails.motoPracticalClassSchedules.length > 0) {
                 proc(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');
             }
@@ -194,7 +195,7 @@ export default function VehicleScheduleReportPage() {
 
     manualEntries?.forEach(e => {
         if (e.classType === 'Práctica') {
-            processAny(e.id, e.studentName, e.date, e.timeSlot, e.vehicle, e.instructor, e.status || 'scheduled', !!e.refueled, false, 'manual', e.classNumber, undefined, undefined, e.coursePlan);
+            processAny(e.id, e.studentName, e.date, e.timeSlot, e.vehicle, e.instructor, e.status || 'scheduled', !!e.refueled, false, 'manual', e.classNumber, undefined, undefined, e.coursePlan, '');
         }
     });
 
@@ -215,6 +216,45 @@ export default function VehicleScheduleReportPage() {
 
     setWeeklyAssignments(newWeeklyAssignments);
   }, [contracts, manualEntries, weekStart, currentDate]);
+
+  const getRecommendedLogType = (contract: Contract) => {
+    const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
+    const plan = (details as any)?.coursePlan || '';
+    const planUpper = plan.toUpperCase();
+    const typeUpper = contract.type.toUpperCase();
+    const transmission = (details as any)?.vehicleTransmission || 'Manual';
+    
+    if (planUpper.includes('YA SE MANEJAR')) return 'already-know';
+
+    const isMoto = typeUpper.includes('MOTO') || planUpper.includes('MOTO');
+    const isAutomatic = transmission === 'Automático';
+    const prefix = isMoto ? 'moto-manual-' : (isAutomatic ? 'auto-automatic-' : 'manual-');
+    
+    if (planUpper.includes('8 HR') || planUpper.includes('BASICO') || planUpper.includes('BÁSICO')) return `${prefix}8h`;
+    if (planUpper.includes('10 HR') || planUpper.includes('PLUS')) return `${prefix}10h`;
+    if (planUpper.includes('12 HR') || planUpper.includes('PREMIUM')) return `${prefix}12h`;
+    
+    if (contract.type === 'Curso Moto') return 'moto-manual-8h';
+    if (contract.type === 'Curso Auto') return isAutomatic ? 'auto-automatic-10h' : 'manual-8h';
+    return `${prefix}12h`;
+  };
+
+  const handlePrintLog = (item: any) => {
+    const contract = contracts?.find(c => c.id === item.id);
+    if (!contract) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo recuperar los datos del contrato.' });
+        return;
+    }
+
+    const logType = getRecommendedLogType(contract);
+    const params = new URLSearchParams({
+        name: contract.clientName || '',
+        id: item.studentIdNumber || '',
+        type: logType,
+        instructor: item.instructor || ''
+    });
+    window.open(`/print-log/${contract.id}?${params.toString()}`, '_blank');
+  };
 
   const handleUpdateStatus = (item: any, newStatus: ClassStatus) => {
     if (!db || isUpdating) return;
@@ -396,6 +436,7 @@ export default function VehicleScheduleReportPage() {
                             )}
                             <div className="flex flex-col gap-1.5 h-full pt-5">
                                 {assignments.map((a, i) => {
+                                    const isFirstClass = String(a.displayClassNumber) === '1';
                                     const cardContent = (
                                         <div className={cn(
                                             "p-2 rounded border text-[10px] shadow-sm relative transition-all", 
@@ -413,6 +454,11 @@ export default function VehicleScheduleReportPage() {
                                                 {a.status === 'rescheduled' && (
                                                     <div className={cn("h-4 w-4 rounded-full flex items-center justify-center shadow-sm bg-slate-700")}>
                                                         <RefreshCw className="h-2.5 w-2.5 text-white" />
+                                                    </div>
+                                                )}
+                                                {isFirstClass && a.type === 'contract' && (
+                                                    <div className="h-4 w-4 rounded-full flex items-center justify-center shadow-sm bg-blue-600 animate-pulse" title="¡Primera Clase! Imprimir Bitácora">
+                                                        <ClipboardList className="h-2.5 w-2.5 text-white" />
                                                     </div>
                                                 )}
                                             </div>
@@ -465,6 +511,18 @@ export default function VehicleScheduleReportPage() {
                                                 <div className="space-y-3">
                                                     <p className="text-xs font-bold uppercase text-slate-500">Gestión de Clase</p>
                                                     <div className="grid gap-2">
+                                                        {/* BOTÓN DE IMPRESIÓN DE BITÁCORA PARA CLASE #1 */}
+                                                        {isFirstClass && a.type === 'contract' && (
+                                                            <Button 
+                                                                variant="default" 
+                                                                size="sm" 
+                                                                className="h-10 justify-start text-[10px] font-black uppercase gap-2 bg-blue-600 hover:bg-blue-700 shadow-md animate-in zoom-in-95"
+                                                                onClick={() => handlePrintLog(a)}
+                                                            >
+                                                                <Printer className="h-4 w-4" /> Imprimir Bitácora Inicial
+                                                            </Button>
+                                                        )}
+
                                                         <Button 
                                                             variant={a.refueled ? "default" : "outline"} 
                                                             size="sm" 

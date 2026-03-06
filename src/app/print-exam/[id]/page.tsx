@@ -1,10 +1,9 @@
-
 'use client';
 
 import React, { useEffect, Suspense, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Printer, Loader2, Download, AlertCircle, FileText } from 'lucide-react';
+import { Printer, Loader2, Download, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { EXAMS } from '@/lib/exams-data';
 import { format } from 'date-fns';
@@ -35,7 +34,7 @@ function ExamPrintContent() {
             const html2pdf = (await import('html2pdf.js')).default;
             
             const opt = {
-                margin: [0.5, 0.5, 0.5, 0.5],
+                margin: 0,
                 filename: `Examen_Teorico_${exam.id}_Freeway.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { 
@@ -44,7 +43,7 @@ function ExamPrintContent() {
                     letterRendering: true,
                     logging: false,
                     backgroundColor: '#ffffff',
-                    width: 750 
+                    width: 816 // 8.5in * 96dpi
                 },
                 jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
             };
@@ -64,21 +63,39 @@ function ExamPrintContent() {
     }
 
     return (
-        <div className="bg-white min-h-screen">
+        <div className="bg-slate-100 min-h-screen">
             <style jsx global>{`
                 @media print {
-                    @page { size: letter portrait; margin: 0; }
-                    body { background-color: white !important; margin: 0 !important; padding: 0 !important; }
+                    @page { 
+                        size: letter portrait; 
+                        margin: 0; 
+                    }
+                    body { 
+                        background-color: white !important; 
+                        margin: 0 !important; 
+                        padding: 0 !important; 
+                    }
                     .print-ui-element { display: none !important; }
-                    .print-container-wrapper { width: 100% !important; margin: 0 !important; padding: 0 !important; }
+                    .print-container-wrapper { 
+                        width: 100% !important; 
+                        margin: 0 !important; 
+                        padding: 0 !important; 
+                    }
+                    #exam-to-print {
+                        width: 8.5in !important;
+                        height: 11in !important;
+                        padding: 0.5in !important;
+                        overflow: hidden !important;
+                        page-break-after: avoid !important;
+                    }
                 }
             `}</style>
 
-            <div className="print-ui-element p-4 sticky top-0 z-[100] bg-slate-50 border-b shadow-lg">
+            <div className="print-ui-element p-4 sticky top-0 z-[100] bg-white border-b shadow-lg">
                 <div className="max-w-4xl mx-auto flex flex-col gap-3">
                     <div className="flex items-center gap-2 text-blue-800 bg-blue-50 p-2 rounded-lg border border-blue-100">
                         <AlertCircle className="h-4 w-4" />
-                        <p className="text-[10px] font-bold uppercase text-center w-full">Formato oficial de evaluación teórica Freeway.</p>
+                        <p className="text-[10px] font-bold uppercase text-center w-full">Formato optimizado para UNA SOLA PÁGINA tamaño carta.</p>
                     </div>
                     {!isReady ? (
                         <div className="bg-slate-200 text-slate-500 p-4 rounded-xl text-center font-black uppercase text-sm flex items-center justify-center gap-3">
@@ -98,68 +115,66 @@ function ExamPrintContent() {
                 </div>
             </div>
 
-            <div id="exam-to-print" className="print-container-wrapper bg-white">
-                <div className="max-w-[8.5in] mx-auto p-12 font-sans text-black">
-                    {/* HEADER */}
-                    <div className="text-center mb-8 border-b-2 border-black pb-4">
-                        <h1 className="text-xl font-black uppercase tracking-tighter">FREEWAY ESCUELA DE MANEJO S.A.</h1>
-                        <h2 className="text-lg font-bold uppercase mt-1">EXAMEN DE CONOCIMIENTOS TEÓRICOS PARA ASPIRANTE A LICENCIAS DE CONDUCIR</h2>
-                    </div>
+            <div id="exam-to-print" className="print-container-wrapper bg-white mx-auto shadow-2xl my-8 print:my-0 print:shadow-none w-[8.5in] h-[11in] p-[0.6in] flex flex-col font-sans text-black overflow-hidden">
+                {/* HEADER COMPACTO */}
+                <div className="text-center mb-4 border-b-2 border-black pb-2">
+                    <h1 className="text-lg font-black uppercase tracking-tighter">FREEWAY ESCUELA DE MANEJO S.A.</h1>
+                    <h2 className="text-[10pt] font-bold uppercase">EXAMEN DE CONOCIMIENTOS TEÓRICOS</h2>
+                </div>
 
-                    {/* STUDENT INFO */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 mb-8">
-                        <div className="flex items-end gap-2">
-                            <span className="font-bold text-[10pt] uppercase whitespace-nowrap">Nombre:</span>
-                            <div className="flex-1 border-b border-black h-6"></div>
+                {/* STUDENT INFO COMPACTO */}
+                <div className="grid grid-cols-3 gap-4 mb-4 text-[9pt]">
+                    <div className="col-span-1 flex items-end gap-1">
+                        <span className="font-bold uppercase whitespace-nowrap">Nombre:</span>
+                        <div className="flex-1 border-b border-black h-5"></div>
+                    </div>
+                    <div className="col-span-1 flex items-end gap-1">
+                        <span className="font-bold uppercase whitespace-nowrap">Cédula:</span>
+                        <div className="flex-1 border-b border-black h-5"></div>
+                    </div>
+                    <div className="col-span-1 flex items-end gap-1">
+                        <span className="font-bold uppercase whitespace-nowrap">Fecha:</span>
+                        <div className="flex-1 border-b border-black h-5 text-center font-medium">
+                            {format(new Date(), 'dd/MM/yyyy')}
                         </div>
-                        <div className="flex items-end gap-2">
-                            <span className="font-bold text-[10pt] uppercase whitespace-nowrap">Cédula:</span>
-                            <div className="flex-1 border-b border-black h-6"></div>
-                        </div>
-                        <div className="flex items-end gap-2">
-                            <span className="font-bold text-[10pt] uppercase whitespace-nowrap">Fecha:</span>
-                            <div className="flex-1 border-b border-black h-6 text-[10pt] font-medium text-center">
-                                {format(new Date(), 'dd/MM/yyyy')}
+                    </div>
+                </div>
+
+                <p className="font-black text-[8.5pt] mb-4 uppercase border-l-4 border-black pl-2 bg-slate-50 py-1 italic">
+                    • ESCOJA LA LETRA DE LA RESPUESTA CORRECTA.
+                </p>
+
+                {/* QUESTIONS COMPACTAS */}
+                <div className="flex-1 grid grid-cols-1 gap-y-3 overflow-hidden">
+                    {exam.questions.map((q, idx) => (
+                        <div key={idx} className="space-y-1">
+                            <p className="font-bold text-[9.5pt] leading-tight flex gap-2">
+                                <span className="bg-black text-white px-1 rounded-sm h-fit text-[8pt]">{idx + 1}</span>
+                                {q.q}
+                            </p>
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 pl-7">
+                                {q.options.map((opt, oIdx) => (
+                                    <p key={oIdx} className="text-[8.5pt] font-medium leading-none">{opt}</p>
+                                ))}
                             </div>
                         </div>
-                    </div>
+                    ))}
+                </div>
 
-                    <p className="font-black text-[10pt] mb-6 uppercase border-l-4 border-black pl-3 bg-slate-50 py-1 italic">
-                        • ESCOJA LA LETRA DE LA RESPUESTA CORRECTA. Lea con atención las preguntas y las opciones de respuestas.
-                    </p>
-
-                    {/* QUESTIONS */}
-                    <div className="grid grid-cols-1 gap-y-8">
-                        {exam.questions.map((q, idx) => (
-                            <div key={idx} className="space-y-2">
-                                <p className="font-bold text-[11pt] leading-tight flex gap-3">
-                                    <span className="bg-black text-white px-1.5 rounded-sm h-fit">{idx + 1}.</span>
-                                    {q.q}
-                                </p>
-                                <div className="grid grid-cols-1 gap-1 pl-10">
-                                    {q.options.map((opt, oIdx) => (
-                                        <p key={oIdx} className="text-[10pt] font-medium">{opt}</p>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
+                {/* FOOTER FIRMAS COMPACTO */}
+                <div className="mt-6 pt-4 flex justify-around">
+                    <div className="text-center w-56">
+                        <div className="border-t border-black mb-1"></div>
+                        <p className="text-[8pt] font-black uppercase">Firma del estudiante</p>
                     </div>
-
-                    {/* FOOTER FIRMAS */}
-                    <div className="mt-20 pt-12 flex justify-between px-12">
-                        <div className="text-center w-64">
-                            <div className="border-t-2 border-black mb-1"></div>
-                            <p className="text-[9pt] font-black uppercase">Firma del estudiante</p>
-                        </div>
-                        <div className="text-center w-64">
-                            <div className="border-t-2 border-black mb-1"></div>
-                            <p className="text-[9pt] font-black uppercase">Firma del instructor</p>
-                        </div>
+                    <div className="text-center w-56">
+                        <div className="border-t border-black mb-1"></div>
+                        <p className="text-[8pt] font-black uppercase">Firma del instructor</p>
                     </div>
+                </div>
 
-                    <div className="mt-12 text-center text-[7pt] text-slate-400 font-bold uppercase tracking-widest border-t pt-2">
-                        Control de Calidad Académica Freeway • {exam.title}
-                    </div>
+                <div className="mt-4 text-center text-[6.5pt] text-slate-400 font-bold uppercase tracking-widest border-t pt-1">
+                    Control de Calidad Académica Freeway • {exam.title} • Página 1/1
                 </div>
             </div>
         </div>

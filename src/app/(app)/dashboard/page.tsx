@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -10,9 +11,15 @@ import { collection } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import type { Contract } from '@/lib/types';
-import { Car, Bike, Plus, Repeat, Dumbbell, CalendarCheck, ArrowRight, Clock, ShieldCheck, Wallet, Globe, AlertTriangle, CalendarX } from 'lucide-react';
+import { Car, Bike, Plus, Repeat, Dumbbell, CalendarCheck, ArrowRight, Clock, ShieldCheck, Wallet, Globe, AlertTriangle, CalendarX, FileText } from 'lucide-react';
 import { isToday, format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const getBalance = (contract: Contract): number => {
     const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
@@ -136,6 +143,7 @@ export default function DashboardPage() {
       actions: [
         { name: 'Bitácoras de Control', href: '/logs', bgColor: 'bg-sky-50', textColor: 'text-sky-600', roles: ['Administrador', 'Ventas Externas'] },
         { name: 'Encuesta de Satisfacción', href: '/surveys', bgColor: 'bg-purple-50', textColor: 'text-purple-600', roles: ['Administrador', 'Ventas Externas'] },
+        { name: 'Exámenes Teóricos', isDropdown: true, roles: ['Administrador', 'Ventas Externas'], bgColor: 'bg-orange-50', textColor: 'text-orange-600' },
         { name: 'Generar Certificado Manual', href: '/certificates?mode=manual', bgColor: 'bg-amber-50', textColor: 'text-amber-600', roles: ['Administrador'] },
         { name: 'Agenda Manual', href: '/manual-schedule', bgColor: 'bg-rose-50', textColor: 'text-rose-600', roles: ['Administrador'] },
       ]
@@ -303,19 +311,56 @@ export default function DashboardPage() {
               <div key={group.title} className="space-y-4">
                 <h3 className="text-[10px] font-black uppercase text-slate-500 border-l-2 border-primary pl-3">{group.title}</h3>
                 <div className="flex flex-col gap-2">
-                    {visibleActions.map((action) => (
-                        <Link key={action.name} href={action.href} className="no-underline">
-                          <div className={cn(
-                            "flex items-center justify-between p-4 rounded-xl border border-slate-200 transition-all hover:translate-x-1 hover:shadow-sm",
-                            action.bgColor
-                          )}>
-                              <span className={cn("font-bold text-sm uppercase tracking-tight", action.textColor)}>{action.name}</span>
-                              <div className="h-8 w-8 bg-white/50 rounded-full flex items-center justify-center">
-                                <ArrowRight className={cn("h-4 w-4", action.textColor)} />
-                              </div>
-                          </div>
-                        </Link>
-                    ))}
+                    {visibleActions.map((action) => {
+                        if (action.isDropdown) {
+                          return (
+                            <DropdownMenu key={action.name}>
+                              <DropdownMenuTrigger asChild>
+                                <div className={cn(
+                                  "flex items-center justify-between p-4 rounded-xl border border-slate-200 transition-all hover:translate-x-1 hover:shadow-sm cursor-pointer",
+                                  action.bgColor
+                                )}>
+                                    <span className={cn("font-bold text-sm uppercase tracking-tight", action.textColor)}>{action.name}</span>
+                                    <div className="h-8 w-8 bg-white/50 rounded-full flex items-center justify-center">
+                                      <FileText className={cn("h-4 w-4", action.textColor)} />
+                                    </div>
+                                </div>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-56">
+                                <DropdownMenuItem asChild>
+                                  <Link href="/print-exam/1" target="_blank" className="font-bold uppercase text-[10px] cursor-pointer">Examen Teórico #1</Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                  <Link href="/print-exam/2" target="_blank" className="font-bold uppercase text-[10px] cursor-pointer">Examen Teórico #2</Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                  <Link href="/print-exam/3" target="_blank" className="font-bold uppercase text-[10px] cursor-pointer">Examen Teórico #3</Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                  <Link href="/print-exam/4" target="_blank" className="font-bold uppercase text-[10px] cursor-pointer">Examen Teórico #4</Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                  <Link href="/print-exam/5" target="_blank" className="font-bold uppercase text-[10px] cursor-pointer">Examen Teórico #5</Link>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          );
+                        }
+
+                        return (
+                          <Link key={action.name} href={action.href!} className="no-underline">
+                            <div className={cn(
+                              "flex items-center justify-between p-4 rounded-xl border border-slate-200 transition-all hover:translate-x-1 hover:shadow-sm",
+                              action.bgColor
+                            )}>
+                                <span className={cn("font-bold text-sm uppercase tracking-tight", action.textColor)}>{action.name}</span>
+                                <div className="h-8 w-8 bg-white/50 rounded-full flex items-center justify-center">
+                                  <ArrowRight className={cn("h-4 w-4", action.textColor)} />
+                                </div>
+                            </div>
+                          </Link>
+                        )
+                    })}
                 </div>
               </div>
             );

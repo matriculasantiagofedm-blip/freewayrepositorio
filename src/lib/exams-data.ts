@@ -79,16 +79,16 @@ export const EXAMS: ExamData[] = [
     id: '5',
     title: 'Examen de Conocimientos Teóricos #5',
     questions: [
-      { q: '¿Cuál es la vigencia general de una licencia de conducir particular en Panamá?', options: ['a) 2 años.', 'b) 4 años.', 'c) 10 años.', 'd) 5 años.'] },
-      { q: 'Conducir con la licencia vencida conlleva:', options: ['a) Solo una advertencia.', 'b) Multa y retención del vehículo.', 'c) No pasa nada.', 'd) Cárcel de 24 horas.'] },
-      { q: '¿Qué cantidad de puntos acumulados en el historial acarrea la suspensión de la licencia?', options: ['a) 10 puntos.', 'b) 35 puntos.', 'c) 15 puntos.', 'd) 50 puntos.'] },
-      { q: 'El seguro de daños a terceros es:', options: ['a) Opcional.', 'b) Obligatorio para circular.', 'c) Solo para autos nuevos.', 'd) Para viajes largos.'] },
-      { q: 'La embriaguez comprobada se sanciona con:', options: ['a) Multa, retención de licencia y del vehículo.', 'b) Una charla de tránsito.', 'c) Trabajo comunitario.', 'd) Solo multa.'] },
-      { q: '¿Quién es la autoridad máxima encargada de regular el tránsito en Panamá?', options: ['a) La Policía Nacional.', 'b) La ATTT.', 'c) El Ministerio de Gobierno.', 'd) Los Jueces de Paz.'] },
-      { q: 'Fugarse después de un accidente de tránsito es:', options: ['a) Una falta menor.', 'b) Un agravante serio que conlleva sanciones severas.', 'c) Permitido si no hay heridos.', 'd) Normal.'] },
-      { q: '¿Cuál es la sanción por hablar por celular mientras se conduce?', options: ['a) Multa económica.', 'b) Retiro de placa.', 'c) Suspensión de por vida.', 'd) No hay sanción.'] },
-      { q: 'El "desacato" en el pago de boletas ocurre después de:', options: ['a) 24 horas.', 'b) 30 días calendario.', 'c) 1 año.', 'd) 15 días.'] },
-      { q: '¿Es obligatorio portar el Registro Único de Propiedad Vehicular?', options: ['a) No, solo la copia.', 'b) Sí, es un documento obligatorio.', 'c) Solo para salir de la ciudad.', 'd) Depende del modelo del auto.'] }
+      { q: 'Carril destinado para el uso único de un determinado tipo de vehículo y que muestra una separación física longitudinal a través de elementos fijos, tales como barreras o cordones o por medio de señalización especial. Puede mantener cruces a nivel con otras vías, así como con los peatones.', options: ['a) Carril exclusivo.', 'b) Carril derecho.', 'c) Aceras.'] },
+      { q: 'Vehículo destinado al transporte de turistas debidamente registrado e identificado como tal, con las normas y características que se exijan para esta actividad.', options: ['a) Vehículos de uso particular en general.', 'b) Vehículos de turismo.', 'c) Taxis.', 'd) Buses.'] },
+      { q: 'Antes de cruzar la vía, todo peatón esperará:', options: ['a) El momento en que no exista tránsito vehicular.', 'b) Que éste se halle detenido.', 'c) Que la distancia de los vehículos más próximos sea tal que pueda realizar el cruce a paso normal.', 'd) Todas las anteriores.'] },
+      { q: 'Quienes podrán obtener una licencia de conducir vehículos, siempre que cumplan con los requisitos establecidos en el presente Reglamento.', options: ['a) Los panameños por nacimiento.', 'b) Los mayores de 25 años.', 'c) Los panameños y extranjeros mayores de 18 años.', 'd) Ninguna de los anteriores.'] },
+      { q: 'Artículo 122. Todo conductor es responsable del vehículo que conduce y está en la obligación de:', options: ['a) Velar por la seguridad de sus pasajeros y de la carga que transporta.', 'b) Por la seguridad de los peatones.', 'c) No dañar el vehículo.', 'd) A y B son correctas de acuerdo con el artículo.'] },
+      { q: 'El alcohol es:', options: ['a) Una droga psico depresora de consumo legal.', 'b) Una bebida prohibida.', 'c) Una bebida para conductores mayores de 18 años.', 'd) Ninguna de las anteriores.'] },
+      { q: 'Artículo 144. Los conductores de vehículos están obligados.', options: ['a) Moderar la marcha y a detenerla en donde la autoridad competente lo ordene.', 'b) De acuerdo con las circunstancias del tránsito, de la vía, de la visibilidad de los propios vehículos o peatones.', 'c) Deberán conducir prudentemente para evitar posibles accidentes o prejuicios a terceras personas.', 'd) Todas las anteriores.'] },
+      { q: 'El tránsito por las vías públicas de caballería, ganado en manadas o rebaños se permitirá únicamente cuando:', options: ['a) Sea zona de lechería o de cría de ganado.', 'b) Cuando no existen otras vías utilizadas que permitan realizar esta actividad.', 'c) Cuando la servidumbre tenga la maleza alta.', 'd) Todas las anteriores.'] },
+      { q: 'Cuando el infractor incurra en varias faltas a la vez se le aplicará:', options: ['a) La sanción por la falta más grave.', 'b) La sanción por la falta más leve.', 'c) Una sanción por cada falta cometida.', 'd) Ninguna de las anteriores.'] },
+      { q: 'Los procesos administrativos sobre accidentes de tránsito se tramitarán en:', options: ['a) Dos instancias; la primera ante el juzgado de tránsito y la segunda instancia ante la Autoridad Municipal correspondiente.', 'b) En los lugares donde no existan juzgados de tránsito, la primera instancia la constituye la Autoridad Municipal y la segunda instancia la Gobernación de la Provincia.', 'c) A y B son correctos.', 'd) Ninguna de las anteriores.'] }
     ]
   }
 ];

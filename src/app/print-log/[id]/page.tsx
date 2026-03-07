@@ -108,18 +108,42 @@ function LogbookContent() {
             ];
         }
 
-        // AUTO AUTOMATICO 10H
+        // AUTO AUTOMATICO 10H - ACTUALIZADO CON CONTENIDO SOLICITADO
         if (type === 'auto-automatic-10h') {
             return [
-                { number: 1, content: ["Presentación del vehículo y chequeo rutinario.", "Encendido, funciones del tablero y dominio de pedales.", "Arranque, avance y frenado progresivo."] },
-                { number: 2, content: ["Cambios en automático y uso de direccionales.", "Giros dentro del circuito y posicionamiento en carril.", "Estacionamiento de frente."] },
-                { number: 3, content: ["Estacionamientos de frente, lateral y reversa.", "Giros continuos y coordinación visual."] },
-                { number: 4, content: ["Maniobras en intersección y ceder el paso.", "Frenado de emergencia y control en subida.", "Circulación continua en circuito."] },
-                { number: 5, content: ["Repaso general de todas las maniobras.", "Evaluación práctica final y corrección de errores.", "Firma de aprobación de competencias."], isEvaluation: true}
+                { number: 1, content: [
+                    "Presentación del vehículo automático.",
+                    "Chequeo rutinario (luces, líquidos, llantas, frenos).",
+                    "Ajuste de asiento, espejos, cinturón de seguridad.",
+                    "Encendido y funciones básicas del tablero.",
+                    "Dominio inicial del timón y pedales (acelerador, freno).",
+                    "Práctica de arranque, avance y frenado suave en línea recta."
+                ] },
+                { number: 2, content: [
+                    "Revisión rápida del chequeo rutinario.",
+                    "Dominio de cambios en automático (P, R, N, D).",
+                    "Uso de direccionales.",
+                    "Giros a la derecha e izquierda dentro del circuito.",
+                    "Primer contacto con estacionamiento de frente."
+                ] },
+                { number: 3, content: [
+                    "Estacionamientos de frente, lateral y reversa con mayor dominio.",
+                    "Práctica de giros seguidos + uso de direccionales."
+                ] },
+                { number: 4, content: [
+                    "Simulación de maniobras en intersección con prioridad.",
+                    "Frenado progresivo y de emergencia.",
+                    "Circulación continua en el circuito."
+                ] },
+                { number: 5, content: [
+                    "Repaso general de estacionamientos e intersecciones.",
+                    "Corrección de errores comunes.",
+                    "Evaluación práctica: maniobras, estacionamientos, intersecciones."
+                ], isEvaluation: true }
             ];
         }
 
-        // AUTO AUTOMATICO 8H - ACTUALIZADO CON CONTENIDO SOLICITADO
+        // AUTO AUTOMATICO 8H
         if (type === 'auto-automatic-8h') {
             return [
                 { number: 1, content: [
@@ -152,7 +176,7 @@ function LogbookContent() {
             ];
         }
 
-        // MOTO 12H - ACTUALIZADO
+        // MOTO 12H
         if (type === 'moto-manual-12h') {
             return [
                 { number: 1, content: ["Presentación del circuito y normas de seguridad.", "Artículos de seguridad obligatorios.", "Chequeo rutinario del moto: Llantas, Frenos, Niveles, Luces / direccionales y Sonido del motor", "Encendido seguro y apagado.", "Dominio del timón y punto de equilibrio.", "Aceleración ligera y uso del freno trasero y delantero.", "Práctica: control a baja velocidad en línea recta."] },
@@ -164,7 +188,7 @@ function LogbookContent() {
             ];
         }
 
-        // MOTO 10H - ACTUALIZADO
+        // MOTO 10H
         if (type === 'moto-manual-10h') {
             return [
                 { number: 1, content: ["Presentación del circuito y normas de seguridad.", "Artículos de seguridad obligatorios.", "Chequeo rutinario del moto: Llantas, Frenos, Niveles, Luces / direccionales y Sonido del motor", "Encendido seguro y apagado.", "Dominio del timón y punto de equilibrio.", "Aceleración ligera y uso del freno trasero y delantero.", "Práctica: control a baja velocidad en línea recta."] },
@@ -175,7 +199,7 @@ function LogbookContent() {
             ];
         }
 
-        // MOTO 8H - ACTUALIZADO
+        // MOTO 8H
         if (type === 'moto-manual-8h') {
             return [
                 { number: 1, content: ["Presentación del circuito y normas de seguridad.", "Artículos de seguridad obligatorios.", "Chequeo rutinario del moto: Llantas, Frenos, Niveles, Luces / direccionales y Sonido del motor", "Encendido seguro y apagado.", "Dominio del timón y punto de equilibrio.", "Aceleración ligera y uso del freno trasero y delantero.", "Práctica: control a baja velocidad en línea recta."] },

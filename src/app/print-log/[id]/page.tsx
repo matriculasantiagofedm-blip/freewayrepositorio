@@ -179,9 +179,9 @@ function LogbookContent() {
             return [
                 { number: 1, content: ["Presentación del vehículo manual.", "Chequeo rutinario (luces, líquidos, llantas, frenos).", "Ajuste de asiento, espejos, cinturón de seguridad.", "Encendido y funciones básicas del tablero.", "Explicación de pedales (embrague, freno, acelerador).", "Arranque en primera marcha y frenado suave."] },
                 { number: 2, content: ["Dominio de la palanca de cambios (1ª a 3ª).", "Giros simples con embrague y direccionales.", "Primer contacto con estacionamiento de frente."] },
-                { number: 3, content: ["Estacionamiento lateral y en reversa.", "Uso de espejos en maniobras de giro.", "Cruces simples e intersecciones."] },
-                { number: 4, content: ["Control de paradas y arranque en pendiente.", "Frenado de emergencia.", "Circulación continua en el circuito."] },
-                { number: 5, content: ["Recorrido completo integrando todas las maniobras.", "Evaluación práctica final.", "Firma de aprobación de competencias."], isEvaluation: true }
+                { number: 3, content: ["Estacionamientos lateral y reversa.", "Uso de retrovisores.", "Cruces en intersecciones."] },
+                { number: 4, content: ["Dominio de paradas.", "Arranque en pendiente con embrague.", "Frenado de emergencia."] },
+                { number: 5, content: ["Recorrido completo en el circuito.", "Evaluación práctica: arranque en pendiente, estacionamientos e intersecciones."], isEvaluation: true }
             ];
         }
 
@@ -399,8 +399,8 @@ function LogbookContent() {
                                             <td className="p-1 align-top text-[6pt] font-black text-slate-300 uppercase w-32 text-right">ESPACIO PARA OBSERVACIÓN</td>
                                         </tr>
                                         <tr className="border-b-2 last:border-b-0 border-black h-7 bg-slate-50/50">
-                                            <td colSpan={2} className="px-2 text-[7.5pt] font-bold uppercase italic">Firma Alumno: _________________________</td>
-                                            <td className="px-2 text-[7.5pt] font-bold uppercase italic text-right">Firma Inst: __________</td>
+                                            <td colSpan={2} className="px-2 text-[7.5pt] font-bold uppercase italic">Asistencia del Estudiante: _________________________</td>
+                                            <td className="px-2 text-[7.5pt] font-bold uppercase italic text-right">Instructor: __________</td>
                                         </tr>
                                     </React.Fragment>
                                 ))}

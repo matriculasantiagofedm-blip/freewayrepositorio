@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -186,7 +185,6 @@ export default function TheoryAttendanceReportPage() {
                                 <TableHead className="font-bold text-black border-black">Nombre del Estudiante</TableHead>
                                 <TableHead className="font-bold text-black border-black">Cédula / ID</TableHead>
                                 <TableHead className="font-bold text-black border-black">Curso / Plan</TableHead>
-                                <TableHead className="font-bold text-black border-black">Horario</TableHead>
                                 <TableHead className="w-40 font-bold text-black border-black text-center">Firma de Asistencia</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -198,13 +196,12 @@ export default function TheoryAttendanceReportPage() {
                                         <TableCell className="font-bold uppercase border-black">{row.name}</TableCell>
                                         <TableCell className="border-black">{row.idNumber}</TableCell>
                                         <TableCell className="text-xs border-black">{row.plan}</TableCell>
-                                        <TableCell className="text-xs font-bold border-black">{row.schedule}</TableCell>
                                         <TableCell className="border-black"></TableCell>
                                     </TableRow>
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="h-32 text-center text-muted-foreground italic border-black">
+                                    <TableCell colSpan={5} className="h-32 text-center text-muted-foreground italic border-black">
                                         No hay estudiantes programados para teoría en esta fecha.
                                     </TableCell>
                                 </TableRow>

@@ -129,19 +129,19 @@ function LogbookContent() {
             ];
         }
 
-        // MOTO 12H
+        // MOTO 12H - ACTUALIZADO CON CONTENIDO SOLICITADO
         if (type === 'moto-manual-12h') {
             return [
-                { number: 1, content: ["Normas de seguridad y familiarización con mandos.", "Encendido, equilibrio dinámico y aceleración suave.", "Frenado coordinado."] },
-                { number: 2, content: ["Dominio de embrague y cambios de marcha.", "Coordinación aceleración-freno en curvas.", "Giros amplios."] },
-                { number: 3, content: ["Zigzag avanzado y circuito en 8 reducido.", "Giro en U en espacio limitado.", "Señalización constante."] },
-                { number: 4, content: ["Intersecciones múltiples y ceder el paso.", "Uso de espejos y mirada periférica.", "Simulación de tráfico."] },
-                { number: 5, content: ["Curvas cerradas y control de inclinación.", "Arranque en pendiente y control de tracción.", "Maniobras de evasión."] },
-                { number: 6, content: ["Prueba completa de circuito bajo evaluación.", "Dominio total de la motocicleta.", "Feedback y cierre del curso."], isEvaluation: true }
+                { number: 1, content: ["Presentación del circuito y normas de seguridad.", "Artículos de seguridad obligatorios.", "Chequeo rutinario del moto: Llantas, Frenos, Niveles, Luces / direccionales y Sonido del motor", "Encendido seguro y apagado.", "Dominio del timón y punto de equilibrio.", "Aceleración ligera y uso del freno trasero y delantero.", "Práctica: control a baja velocidad en línea recta."] },
+                { number: 2, content: ["Embrague, punto de fricción.", "Cambios ascendentes y descendentes.", "Coordinación aceleración–embrague.", "Práctica: Recorrido usando 1ra–2da–3ra según circuito."] },
+                { number: 3, content: ["Zigzag avanzado.", "Circuito en 8 reducido.", "Giro cerrado con control del cuerpo.", "Frenado de emergencia básico."] },
+                { number: 4, content: ["Explicación de cruce de intersecciones múltiples.", "Señalización anticipada.", "Jerarquía de paso (quién va primero).", "Simulación de tráfico con los otros estudiantes."] },
+                { number: 5, content: ["Circuito con: Zigzag, Circuito 8, Intersecciones, Curvas cerradas y Arranques en puntos amplios", "Análisis de errores comunes y práctica reforzada."] },
+                { number: 6, content: ["Evaluación final práctica: Recorrido integral del circuito.", "Maniobras de precisión y seguridad vial.", "Feedback final y cierre del curso PREMIUM."], isEvaluation: true }
             ];
         }
 
-        // MOTO 10H - ACTUALIZADO SEGÚN SOLICITUD
+        // MOTO 10H - ACTUALIZADO
         if (type === 'moto-manual-10h') {
             return [
                 { number: 1, content: ["Presentación del circuito y normas de seguridad.", "Artículos de seguridad obligatorios.", "Chequeo rutinario del moto: Llantas, Frenos, Niveles, Luces / direccionales y Sonido del motor", "Encendido seguro y apagado.", "Dominio del timón y punto de equilibrio.", "Aceleración ligera y uso del freno trasero y delantero.", "Práctica: control a baja velocidad en línea recta."] },
@@ -152,7 +152,7 @@ function LogbookContent() {
             ];
         }
 
-        // MOTO 8H - ACTUALIZADO SEGÚN SOLICITUD
+        // MOTO 8H - ACTUALIZADO
         if (type === 'moto-manual-8h') {
             return [
                 { number: 1, content: ["Presentación del circuito y normas de seguridad.", "Artículos de seguridad obligatorios.", "Chequeo rutinario del moto: Llantas, Frenos, Niveles, Luces / direccionales y Sonido del motor", "Encendido seguro y apagado.", "Dominio del timón y punto de equilibrio.", "Aceleración ligera y uso del freno trasero y delantero.", "Práctica: control a baja velocidad en línea recta."] },

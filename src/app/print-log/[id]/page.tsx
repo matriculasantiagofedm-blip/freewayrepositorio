@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, Suspense, useState } from 'react';
@@ -95,100 +96,103 @@ function LogbookContent() {
 
     const getClasses = (): LogbookClass[] => {
         if (type === 'already-know') return [];
+        
         // AUTO AUTOMATICO 12H
         if (type === 'auto-automatic-12h') {
             return [
-                { number: 1, content: ["Presentación del vehículo.", "Chequeo rutinario.", "Ajuste de asiento, espejos, cinturón.", "Encendido y funciones del tablero.", "Dominio de timón y pedales.", "Arranque, avance y frenado suave."] },
-                { number: 2, content: ["Dominio de cambios (P, R, N, D).", "Uso de direccionales.", "Giros a la derecha e izquierda.", "Estacionamiento de frente."] },
-                { number: 3, content: ["Estacionamientos de frente, lateral y reversa.", "Práctica de giros seguidos + direccionales."] },
-                { number: 4, content: ["Estacionamientos bajo presión de tiempo.", "Control en intersecciones.", "Vueltas en U."] },
-                { number: 5, content: ["Simulación de recorrido completo.", "Uso combinado de maniobras.", "Dominio de subida y bajada."] },
-                { number: 6, content: ["Evaluación práctica avanzada: Arranque, direccionales, giros, estacionamientos, cruces, ceder el paso."], isEvaluation: true}
+                { number: 1, content: ["Presentación del vehículo y chequeo rutinario.", "Ajuste de asiento, espejos y cinturón de seguridad.", "Encendido del motor y funciones del tablero.", "Dominio de timón y pedales (aceleración/frenado).", "Arranque, avance y frenado suave."] },
+                { number: 2, content: ["Dominio de cambios (P, R, N, D) y uso de direccionales.", "Giros a la derecha e izquierda dentro del circuito.", "Estacionamiento de frente.", "Mantenimiento de distancia de seguridad."] },
+                { number: 3, content: ["Práctica de estacionamiento lateral y en reversa.", "Uso adecuado de espejos retrovisores en maniobras.", "Práctica intensiva de giros continuos con señalización."] },
+                { number: 4, content: ["Estacionamientos bajo presión de tiempo.", "Control del vehículo en intersecciones y pare.", "Maniobras de vueltas en U."] },
+                { number: 5, content: ["Simulación de recorrido completo integrando maniobras.", "Dominio de subidas y bajadas (control de freno).", "Uso de luces y cambios de carril."] },
+                { number: 6, content: ["Evaluación práctica avanzada: Arranque, direccionales, giros, estacionamientos.", "Observancia de señales de tránsito y ceder el paso.", "Feedback final del instructor."], isEvaluation: true}
             ];
         }
 
         // AUTO AUTOMATICO 10H
         if (type === 'auto-automatic-10h') {
             return [
-                { number: 1, content: ["Presentación del vehículo.", "Chequeo rutinario.", "Encendido y funciones.", "Dominio del timón y pedales.", "Arranque, avance y frenado."] },
-                { number: 2, content: ["Cambios en automático.", "Uso de direccionales.", "Giros dentro del circuito.", "Estacionamiento de frente."] },
-                { number: 3, content: ["Estacionamientos de frente, lateral y reversa.", "Giros y direccionales."] },
-                { number: 4, content: ["Maniobras en intersección.", "Frenado progresivo y de emergencia.", "Circulación continua."] },
-                { number: 5, content: ["Repaso general y corrección de errores.", "Evaluación práctica final."], isEvaluation: true}
+                { number: 1, content: ["Presentación del vehículo y chequeo rutinario.", "Encendido, funciones del tablero y dominio de pedales.", "Arranque, avance y frenado progresivo."] },
+                { number: 2, content: ["Cambios en automático y uso de direccionales.", "Giros dentro del circuito y posicionamiento en carril.", "Estacionamiento de frente."] },
+                { number: 3, content: ["Estacionamientos de frente, lateral y reversa.", "Giros continuos y coordinación visual."] },
+                { number: 4, content: ["Maniobras en intersección y ceder el paso.", "Frenado de emergencia y control en subida.", "Circulación continua en circuito."] },
+                { number: 5, content: ["Repaso general de todas las maniobras.", "Evaluación práctica final y corrección de errores.", "Firma de aprobación de competencias."], isEvaluation: true}
             ];
         }
 
         // AUTO AUTOMATICO 8H
         if (type === 'auto-automatic-8h') {
             return [
-                { number: 1, content: ["Presentación del vehículo.", "Chequeo rutinario.", "Ajuste de asiento y espejos.", "Encendido y controles.", "Arranque y frenado."] },
-                { number: 2, content: ["Uso de direccionales.", "Giros dentro del circuito.", "Estacionamiento de frente."] },
-                { number: 3, content: ["Estacionamientos reversa/lateral.", "Espejos retrovisores.", "Cruces e intersecciones."] },
-                { number: 4, content: ["Repaso general.", "Circulación continua.", "Evaluación práctica final."], isEvaluation: true}
+                { number: 1, content: ["Presentación del vehículo y ajuste de cabina.", "Encendido, controles de mando y arranque básico.", "Frenado suave y dominio de timón."] },
+                { number: 2, content: ["Uso de direccionales y giros en circuito.", "Estacionamiento frontal y coordinación visual.", "Control de velocidad en curvas."] },
+                { number: 3, content: ["Estacionamiento reversa y lateral.", "Uso de espejos retrovisores en maniobras de cruce.", "Intersecciones y señales de Pare/Ceda el Paso."] },
+                { number: 4, content: ["Circulación continua y simulación de tráfico.", "Evaluación práctica final.", "Observaciones finales del instructor."], isEvaluation: true}
             ];
         }
 
         // MOTO 8H
         if (type === 'moto-manual-8h') {
             return [
-                { number: 1, content: ["Normas de seguridad.", "Chequeo rutinario.", "Encendido y apagado.", "Equilibrio y aceleración."] },
-                { number: 2, content: ["Caja manual y embrague.", "Cambios 1ra -> 2da.", "Frenado progresivo."] },
-                { number: 3, content: ["Zig Zag y Circuito en 8.", "Balance y mirada anticipada."] },
-                { number: 4, content: ["Intersecciones y ceder el paso.", "Direccionales.", "Evaluación final."], isEvaluation: true}
+                { number: 1, content: ["Normas de seguridad y equipo de protección.", "Chequeo de mandos, encendido y apagado.", "Equilibrio estático y dinámico, aceleración inicial."] },
+                { number: 2, content: ["Caja manual: uso de embrague y cambios 1ra -> 2da.", "Frenado progresivo (delantero y trasero).", "Giros amplios en circuito."] },
+                { number: 3, content: ["Maniobras de precisión: Zig Zag y Circuito en 8.", "Balance y mirada anticipada en curvas cerradas.", "Uso de direccionales."] },
+                { number: 4, content: ["Intersecciones, ceder el paso y señales de mano.", "Repaso de maniobras de baja velocidad.", "Evaluación final de habilidades."], isEvaluation: true}
             ];
         }
 
         // MOTO 10H
         if (type === 'moto-manual-10h') {
             return [
-                { number: 1, content: ["Normas de seguridad.", "Chequeo rutinario.", "Equilibrio y frenado."] },
-                { number: 2, content: ["Embrague y cambios.", "Circuito básico."] },
-                { number: 3, content: ["Maniobras: Zig Zag y 8.", "Uso de embrague en cerrado."] },
-                { number: 4, content: ["Intersecciones y retrovisores.", "Circulación continua."] },
-                { number: 5, content: ["Repaso de maniobras.", "Evaluación práctica final."], isEvaluation: true}
+                { number: 1, content: ["Normas de seguridad y revisión de la motocicleta.", "Equilibrio, arranque y frenado básico.", "Postura correcta del conductor."] },
+                { number: 2, content: ["Uso de embrague y cambios ascendentes/descendentes.", "Circuito básico de giros y señalización."] },
+                { number: 3, content: ["Maniobras avanzadas: Zig Zag reducido y 8.", "Uso de embrague en maniobras a baja velocidad.", "Espejos y puntos ciegos."] },
+                { number: 4, content: ["Intersecciones complejas y prioridad de paso.", "Circulación continua y control de revoluciones.", "Frenado de emergencia."] },
+                { number: 5, content: ["Repaso de todas las maniobras del circuito.", "Evaluación práctica final de competencias.", "Recomendaciones de seguridad vial."], isEvaluation: true}
             ];
         }
 
         // MOTO 12H
         if (type === 'moto-manual-12h') {
             return [
-                { number: 1, content: ["Normas de seguridad.", "Chequeo rutinario.", "Encendido y equilibrio."] },
-                { number: 2, content: ["Embrague y cambios ascendentes.", "Coordinación aceleración-freno."] },
-                { number: 3, content: ["Zigzag avanzado y 8 reducido.", "Giro cerrado."] },
-                { number: 4, content: ["Intersecciones múltiples.", "Señalización y prioridad."] },
-                { number: 5, content: ["Curvas cerradas.", "Arranque en puntos amplios."] },
-                { number: 6, content: ["Prueba completa de circuito.", "Dominio total y retroalimentación."] }
+                { number: 1, content: ["Normas de seguridad y familiarización con mandos.", "Encendido, equilibrio dinámico y aceleración suave.", "Frenado coordinado."] },
+                { number: 2, content: ["Dominio de embrague y cambios de marcha.", "Coordinación aceleración-freno en curvas.", "Giros amplios."] },
+                { number: 3, content: ["Zigzag avanzado y circuito en 8 reducido.", "Giro en U en espacio limitado.", "Señalización constante."] },
+                { number: 4, content: ["Intersecciones múltiples y ceder el paso.", "Uso de espejos y mirada periférica.", "Simulación de tráfico."] },
+                { number: 5, content: ["Curvas cerradas y control de inclinación.", "Arranque en pendiente y control de tracción.", "Maniobras de evasión."] },
+                { number: 6, content: ["Prueba completa de circuito bajo evaluación.", "Dominio total de la motocicleta.", "Feedback y cierre del curso."], isEvaluation: true }
             ];
         }
 
-        // AUTO MANUAL (Default)
+        // AUTO MANUAL 12H
         if (type === 'manual-12h') {
             return [
-                { number: 1, content: ["Presentación del vehículo.", "Chequeo rutinario.", "Encendido y funciones básicas.", "Arranque y frenado suave."] },
-                { number: 2, content: ["Dominio de marchas.", "Giros simples.", "Estacionamiento de frente."] },
-                { number: 3, content: ["Estacionamientos lateral y reversa.", "Uso de retrovisores.", "Cruces en intersecciones."] },
-                { number: 4, content: ["Dominio de paradas.", "Arranque en pendiente.", "Frenado de emergencia."] },
-                { number: 5, content: ["Perfeccionamiento de conducción.", "Cruces más complejos.", "Maniobras avanzadas."] },
-                { number: 6, content: ["Repaso integral.", "Evaluación avanzada: pendiente, marchas y cruces."] }
+                { number: 1, content: ["Presentación del vehículo y chequeo rutinario.", "Encendido, funciones básicas y dominio de pedales.", "Arranque en 1ra marcha y frenado suave."] },
+                { number: 2, content: ["Dominio de marchas (1ra a 3ra) y uso de embrague.", "Giros simples y señalización con direccionales.", "Estacionamiento de frente."] },
+                { number: 3, content: ["Estacionamientos lateral y en reversa.", "Uso intensivo de espejos retrovisores.", "Cruces en intersecciones y señales de Pare."] },
+                { number: 4, content: ["Dominio de paradas y arranques en pendiente.", "Frenado de emergencia y control de tracción.", "Retroceso en línea recta."] },
+                { number: 5, content: ["Perfeccionamiento de conducción en circuito.", "Cruces complejos y prioridad de paso.", "Maniobras de precisión en espacios reducidos."] },
+                { number: 6, content: ["Repaso integral de maniobras y estacionamiento.", "Evaluación avanzada de habilidades prácticas.", "Resultados y recomendaciones finales."], isEvaluation: true }
             ];
         }
 
+        // AUTO MANUAL 10H
         if (type === 'manual-10h') {
             return [
-                { number: 1, content: ["Presentación.", "Chequeo.", "Encendido.", "Arranque y frenado."] },
-                { number: 2, content: ["Cambios de 1ª a 3ª.", "Giros y direccionales.", "Estacionamiento frente."] },
-                { number: 3, content: ["Lateral y reversa.", "Uso de espejos.", "Cruces simples."] },
-                { number: 4, content: ["Paradas.", "Arranque en pendiente.", "Frenado de emergencia."] },
-                { number: 5, content: ["Recorrido completo.", "Evaluación práctica final."], isEvaluation: true }
+                { number: 1, content: ["Presentación del vehículo y ajuste de cabina.", "Encendido del motor y arranque en 1ra marcha.", "Frenado suave y dominio del timón."] },
+                { number: 2, content: ["Cambios de marchas (1ª a 3ª) y uso de embrague.", "Giros en circuito y uso de direccionales.", "Estacionamiento frontal."] },
+                { number: 3, content: ["Estacionamiento lateral y en reversa.", "Uso de espejos en maniobras de giro.", "Cruces simples e intersecciones."] },
+                { number: 4, content: ["Control de paradas y arranque en pendiente.", "Frenado de emergencia.", "Circulación continua en el circuito."] },
+                { number: 5, content: ["Recorrido completo integrando todas las maniobras.", "Evaluación práctica final.", "Firma de aprobación de competencias."], isEvaluation: true }
             ];
         }
 
+        // AUTO MANUAL 8H
         if (type === 'manual-8h') {
             return [
-                { number: 1, content: ["Vehículo y chequeo.", "Encendido.", "Arranque y frenado."] },
-                { number: 2, content: ["Controles de mando.", "Giros.", "Estacionamiento frontal."] },
-                { number: 3, content: ["Estacionamiento reversa/lateral.", "Cruces e intersecciones."] },
-                { number: 4, content: ["Repaso.", "Circulación.", "Evaluación práctica final."], isEvaluation: true }
+                { number: 1, content: ["Vehículo, chequeo y ajuste de seguridad.", "Encendido del motor y arranque inicial.", "Frenado y dominio de embrague básico."] },
+                { number: 2, content: ["Controles de mando y cambios de marcha.", "Giros y señalización.", "Estacionamiento frontal."] },
+                { number: 3, content: ["Estacionamiento reversa y lateral.", "Cruces e intersecciones bajo supervisión.", "Uso de retrovisores."] },
+                { number: 4, content: ["Repaso general de maniobras críticas.", "Circulación fluida en circuito.", "Evaluación práctica final."], isEvaluation: true }
             ];
         }
 
@@ -388,7 +392,7 @@ function LogbookContent() {
                                     <React.Fragment key={cls.number}>
                                         <tr className="border-b-2 border-black">
                                             <td className="border-r-2 border-black p-1.5 w-16 text-center font-black text-[8pt] align-middle bg-slate-50">Clase {cls.number}</td>
-                                            <td className="border-r-2 border-black p-2 align-top leading-tight text-[7.5pt]">
+                                            <td className="border-r-2 border-black p-2 align-top leading-tight text-[7pt]">
                                                 <ul className={cn("space-y-0.5 list-disc pl-4", cls.isEvaluation && "font-black")}>
                                                     {cls.content.map((item, cIdx) => <li key={cIdx}>{item}</li>)}
                                                 </ul>

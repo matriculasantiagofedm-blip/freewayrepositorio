@@ -119,17 +119,40 @@ function LogbookContent() {
             ];
         }
 
-        // AUTO AUTOMATICO 8H
+        // AUTO AUTOMATICO 8H - ACTUALIZADO CON CONTENIDO SOLICITADO
         if (type === 'auto-automatic-8h') {
             return [
-                { number: 1, content: ["Presentación del vehículo y ajuste de cabina.", "Encendido, controles de mando y arranque básico.", "Frenado suave y dominio de timón."] },
-                { number: 2, content: ["Uso de direccionales y giros en circuito.", "Estacionamiento frontal y coordinación visual.", "Control de velocidad en curvas."] },
-                { number: 3, content: ["Estacionamiento reversa y lateral.", "Uso de espejos retrovisores en maniobras de cruce.", "Intersecciones y señales de Pare/Ceda el Paso."] },
-                { number: 4, content: ["Circulación continua y simulación de tráfico.", "Evaluación práctica final.", "Observaciones finales del instructor."], isEvaluation: true}
+                { number: 1, content: [
+                    "Presentación del vehículo automático.",
+                    "Chequeo rutinario (luces, líquidos, llantas, frenos).",
+                    "Ajuste de asiento, espejos, cinturón de seguridad.",
+                    "Encendido y funciones básicas del tablero.",
+                    "Dominio inicial del timón y pedales (acelerador, freno).",
+                    "Práctica de arranque, avance y frenado suave en línea recta."
+                ] },
+                { number: 2, content: [
+                    "Revisión rápida del chequeo rutinario.",
+                    "Dominio de cambios en automático (P, R, N, D).",
+                    "Uso de direccionales.",
+                    "Giros a la derecha e izquierda dentro del circuito.",
+                    "Primer contacto con estacionamiento de frente."
+                ] },
+                { number: 3, content: [
+                    "Práctica de estacionamiento lateral y en reversa.",
+                    "Uso correcto de retrovisores.",
+                    "Ceder el paso en intersección simulada.",
+                    "Práctica de cruces en “T” o intersección simple."
+                ] },
+                { number: 4, content: [
+                    "Repaso de estacionamientos.",
+                    "Práctica de giros + intersecciones con ceder el paso.",
+                    "Simulación de recorrido dentro del circuito.",
+                    "Evaluación práctica: arranque, giro, estacionamiento y cruce."
+                ], isEvaluation: true}
             ];
         }
 
-        // MOTO 12H - ACTUALIZADO CON CONTENIDO SOLICITADO
+        // MOTO 12H - ACTUALIZADO
         if (type === 'moto-manual-12h') {
             return [
                 { number: 1, content: ["Presentación del circuito y normas de seguridad.", "Artículos de seguridad obligatorios.", "Chequeo rutinario del moto: Llantas, Frenos, Niveles, Luces / direccionales y Sonido del motor", "Encendido seguro y apagado.", "Dominio del timón y punto de equilibrio.", "Aceleración ligera y uso del freno trasero y delantero.", "Práctica: control a baja velocidad en línea recta."] },

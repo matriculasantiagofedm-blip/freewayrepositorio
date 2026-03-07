@@ -5,7 +5,7 @@ import { collection, query, where } from 'firebase/firestore';
 import { useDb, useUser } from '@/firebase';
 import type { Contract } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Loader2, ChevronLeft, ChevronRight, Printer, User, CalendarDays, ClipboardList } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Printer, User, CalendarDays, ClipboardList, Car } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addDays, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';

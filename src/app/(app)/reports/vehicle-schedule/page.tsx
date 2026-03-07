@@ -405,7 +405,7 @@ export default function VehicleScheduleReportPage() {
           letterRendering: true,
           logging: false,
           backgroundColor: '#ffffff',
-          width: 1120 // Ancho óptimo para Landscape Carta
+          width: 1120 
         },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
       };
@@ -428,10 +428,13 @@ export default function VehicleScheduleReportPage() {
           header, footer, nav, aside, .print-hide, button, .popover-trigger { display: none !important; }
           body { background: white !important; padding: 0 !important; overflow: hidden !important; height: auto !important; }
           .print-container { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 5mm !important; display: block !important; }
-          table { width: 100% !important; border-collapse: collapse !important; font-size: 6.5pt !important; border: 1px solid black !important; table-layout: fixed !important; }
+          table { width: 100% !important; border-collapse: collapse !important; font-size: 6pt !important; border: 1px solid black !important; table-layout: fixed !important; }
           th, td { border: 1px solid black !important; padding: 1px !important; overflow: hidden !important; }
-          .h-44 { height: 10rem !important; } /* Reducir altura para que quepa en una página */
+          .h-40 { height: 7.5rem !important; } /* Reducción de altura para compactar */
           .card-content { padding: 0 !important; }
+          .p-1\\.5 { padding: 0.2rem !important; }
+          .text-\\[9px\\] { font-size: 7.5px !important; }
+          .text-\\[7px\\] { font-size: 6px !important; }
           * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
       `}} />

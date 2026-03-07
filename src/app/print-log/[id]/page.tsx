@@ -93,23 +93,6 @@ function LogbookContent() {
         return `BITÁCORA-MANUAL - CLASES PRÁCTICAS-${hours}`;
     };
 
-    const getSessionInstructor = (index: number) => {
-        if (!contract) return generalInstructor;
-        const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
-        let schedules: any[] = [];
-        
-        if (type.startsWith('moto-')) {
-            schedules = contract.autoMotoDetails?.motoPracticalClassSchedules || [];
-        } else if (contract.type === 'Curso Deluxe') {
-            schedules = contract.deluxeDetails?.classSchedules || [];
-        } else {
-            schedules = contract.autoMotoDetails?.practicalClassSchedules || [];
-        }
-        
-        const sessionInstructor = schedules[index]?.instructor;
-        return sessionInstructor || details?.instructor || generalInstructor;
-    };
-
     const getClasses = (): LogbookClass[] => {
         if (type === 'already-know') return [];
         // AUTO AUTOMATICO 12H
@@ -416,7 +399,7 @@ function LogbookContent() {
                         </div>
                         <div className="flex border-b border-black pb-1">
                             <span className="font-black w-40">INSTRUCTOR:</span>
-                            <span className="font-bold flex-1 uppercase">{generalInstructor}</span>
+                            <span className="font-bold flex-1 uppercase">_________________________</span>
                         </div>
                     </div>
 
@@ -513,7 +496,7 @@ function LogbookContent() {
                                 <Printer className="mr-2 h-6 w-6" /> Imprimir
                             </Button>
                             <Button onClick={handleDownloadPdf} disabled={isDownloading} className="h-16 text-lg font-black uppercase bg-blue-600 hover:bg-blue-700 shadow-md border-2 border-blue-400">
-                                {isDownloading ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Download className="mr-2 h-6 w-6" />} Descargar PDF
+                                {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />} Descargar PDF
                             </Button>
                         </div>
                     )}
@@ -553,7 +536,7 @@ function LogbookContent() {
                             </div>
                             <div className="flex items-end gap-2">
                                 <span className="font-black text-[9pt]">INSTRUCTOR ASIGNADO:</span>
-                                <div className="flex-1 border-b-2 border-black px-2 py-0.5 font-bold uppercase text-base h-7 leading-none">{generalInstructor}</div>
+                                <div className="flex-1 border-b-2 border-black px-2 py-0.5 font-bold uppercase text-base h-7 leading-none">_________________________</div>
                             </div>
                         </div>
 
@@ -561,7 +544,6 @@ function LogbookContent() {
                         <table className="w-full border-2 border-black border-collapse">
                             <tbody>
                                 {classes.map((cls, idx) => {
-                                    const sessionInstructor = getSessionInstructor(idx);
                                     return (
                                         <React.Fragment key={cls.number}>
                                             <tr className="border-b-2 border-black h-28">
@@ -578,7 +560,7 @@ function LogbookContent() {
                                             <tr className="border-b-2 last:border-b-0 border-black h-7 bg-slate-50">
                                                 <td colSpan={2} className="px-3 text-[7.5pt] font-black uppercase">Asistencia del Estudiante: _________________________</td>
                                                 <td className="px-3 text-[7.5pt] font-black uppercase">
-                                                    Instructor: <span className="underline ml-1">{sessionInstructor || '_________________________'}</span>
+                                                    _________________________
                                                 </td>
                                             </tr>
                                         </React.Fragment>
@@ -598,7 +580,7 @@ function LogbookContent() {
                                 <div className="pt-2">
                                     <div className="flex items-end gap-2">
                                         <span className="font-black text-[9pt] uppercase">NOMBRE DEL INSTRUCTOR:</span>
-                                        <div className="flex-1 border-b border-black border-dashed px-2 font-bold uppercase">{generalInstructor}</div>
+                                        <div className="flex-1 border-b border-black border-dashed px-2 font-bold uppercase">_________________________</div>
                                     </div>
                                 </div>
                             </div>

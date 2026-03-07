@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, Suspense, useState } from 'react';
@@ -142,24 +141,24 @@ function LogbookContent() {
             ];
         }
 
-        // MOTO 10H
+        // MOTO 10H - ACTUALIZADO SEGÚN SOLICITUD
         if (type === 'moto-manual-10h') {
             return [
-                { number: 1, content: ["Normas de seguridad y revisión de la motocicleta.", "Equilibrio, arranque y frenado básico.", "Postura correcta del conductor."] },
-                { number: 2, content: ["Uso de embrague y cambios ascendentes/descendentes.", "Circuito básico de giros y señalización."] },
-                { number: 3, content: ["Maniobras avanzadas: Zig Zag reducido y 8.", "Uso de embrague en maniobras a baja velocidad.", "Espejos y puntos ciegos."] },
-                { number: 4, content: ["Intersecciones complejas y prioridad de paso.", "Circulación continua y control de revoluciones.", "Frenado de emergencia."] },
-                { number: 5, content: ["Repaso de todas las maniobras del circuito.", "Evaluación práctica final de competencias.", "Recomendaciones de seguridad vial."], isEvaluation: true}
+                { number: 1, content: ["Presentación del circuito y normas de seguridad.", "Artículos de seguridad obligatorios.", "Chequeo rutinario del moto: Llantas, Frenos, Niveles, Luces / direccionales y Sonido del motor", "Encendido seguro y apagado.", "Dominio del timón y punto de equilibrio.", "Aceleración ligera y uso del freno trasero y delantero.", "Práctica: control a baja velocidad en línea recta."] },
+                { number: 2, content: ["Embrague, punto de fricción.", "Cambios ascendentes y descendentes.", "Coordinación aceleración–embrague.", "Práctica: Recorrido usando 1ra–2da–3ra según circuito."] },
+                { number: 3, content: ["Zigzag avanzado.", "Circuito en 8 con menos diámetro.", "Dominio del freno trasero para estabilidad.", "Práctica combinada."] },
+                { number: 4, content: ["Cómo cruzar intersecciones internas.", "Ceder el paso en entornos simulados.", "Señalización obligatoria.", "Práctica: Intersección + cambios + frenado."] },
+                { number: 5, content: ["Recorrido completo del circuito con todos los elementos: Zigzag, Circuito en 8, Intersecciones, Cambios ascendentes/descendentes y Paradas y arranques correctos", "Corrección de errores.", "Evaluación final del curso PLUS."], isEvaluation: true}
             ];
         }
 
-        // MOTO 8H - CONTENIDO ACTUALIZADO SEGÚN SOLICITUD
+        // MOTO 8H - ACTUALIZADO SEGÚN SOLICITUD
         if (type === 'moto-manual-8h') {
             return [
-                { number: 1, content: ["Presentación del circuito y normas de seguridad.", "Artículos de seguridad obligatorios.", "Chequeo rutinario del moto: Llantas, Frenos, Niveles, Luces / direccionales y Sonido del motor.", "Encendido seguro y apagado.", "Dominio del timón y punto de equilibrio.", "Aceleración ligera y uso del freno trasero y delantero.", "Práctica: control a baja velocidad en línea recta."] },
+                { number: 1, content: ["Presentación del circuito y normas de seguridad.", "Artículos de seguridad obligatorios.", "Chequeo rutinario del moto: Llantas, Frenos, Niveles, Luces / direccionales y Sonido del motor", "Encendido seguro y apagado.", "Dominio del timón y punto de equilibrio.", "Aceleración ligera y uso del freno trasero y delantero.", "Práctica: control a baja velocidad en línea recta."] },
                 { number: 2, content: ["Explicación de la caja manual (1 abajo, 2–5 arriba).", "Salida suave con embrague (punto de fricción).", "Cambios de 1ra → 2da → 1ra dentro del circuito.", "Frenado progresivo.", "Práctica: a. Circuito básico (rectas + curvas amplias). b. Control del embrague a baja velocidad."] },
-                { number: 3, content: ["Zig Zag: Dominio del timón, Balance con velocidad baja y Uso del embrague en maniobras.", "Circuito en 8: Trazado de curvas cerradas y Mirada anticipada.", "Práctica combinada: Zigzag + curvas en 8 + frenado controlado."] },
-                { number: 4, content: ["Cómo cruzar una intersección dentro del circuito.", "Ceder el paso (simulación de tráfico entre estudiantes).", "Señalización con direccionales.", "Retrovisores: revisión constante.", "Práctica final: Recorrido completo del circuito y Zigzag + 8 + detención + arranque.", "Evaluación final del curso básico."], isEvaluation: true}
+                { number: 3, content: ["Zig Zag: Dominio del timón, Balance con velocidad baja y Uso del embrague en maniobras", "Circuito en 8: Trazado de curvas cerradas y Mirada anticipada", "Práctica combinada: Zigzag + curvas en 8 + frenado controlado"] },
+                { number: 4, content: ["Cómo cruzar una intersección dentro del circuito.", "Ceder el paso (simulación de tráfico entre estudiantes).", "Señalización con direccionales.", "Retrovisores: revisión constante.", "Práctica final: Recorrido completo del circuito y Zigzag + 8 + detención + arranque", "Evaluación final del curso básico"], isEvaluation: true}
             ];
         }
 
@@ -222,7 +221,7 @@ function LogbookContent() {
                             <span className="font-bold flex-1">{idNumber}</span>
                         </div>
                         <div className="flex border-b border-black pb-1">
-                            <span className="font-black w-36">INSTRUCTOR:</span>
+                            <span className="font-black w-36">INSTRUCTOR ASIGNADO:</span>
                             <span className="font-bold flex-1 uppercase text-primary">{generalInstructor}</span>
                         </div>
                         
@@ -315,7 +314,7 @@ function LogbookContent() {
     };
 
     const classes = getClasses();
-    const needsEvaluationSection = (type.includes('8h') || type.includes('10h'));
+    const needsEvaluationSection = (type.includes('8h') || type.includes('10h') || type.includes('12h'));
 
     return (
         <div className="bg-white min-h-screen">

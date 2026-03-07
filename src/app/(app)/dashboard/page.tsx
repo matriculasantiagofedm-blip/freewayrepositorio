@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -141,7 +140,6 @@ export default function DashboardPage() {
     {
       title: 'Gestión de Trámites y Agenda',
       actions: [
-        { name: 'Bitácoras de Control', href: '/logs', bgColor: 'bg-sky-50', textColor: 'text-sky-600', roles: ['Administrador', 'Ventas Externas'] },
         { name: 'Encuesta de Satisfacción', href: '/surveys', bgColor: 'bg-purple-50', textColor: 'text-purple-600', roles: ['Administrador', 'Ventas Externas'] },
         { name: 'Exámenes Teóricos', isDropdown: true, roles: ['Administrador', 'Ventas Externas'], bgColor: 'bg-orange-50', textColor: 'text-orange-600' },
         { name: 'Generar Certificado Manual', href: '/certificates?mode=manual', bgColor: 'bg-amber-50', textColor: 'text-amber-600', roles: ['Administrador'] },

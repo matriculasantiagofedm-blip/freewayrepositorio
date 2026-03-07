@@ -1,6 +1,7 @@
+
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ClipboardPenLine, ListChecks, Award, Gauge, FileText, Banknote, CalendarClock, ScrollText, GraduationCap, ClipboardSignature } from 'lucide-react';
+import { ClipboardPenLine, ListChecks, Award, Gauge, FileText, Banknote, CalendarClock, ScrollText, GraduationCap, ClipboardSignature, FileSpreadsheet } from 'lucide-react';
 import Link from 'next/link';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,13 @@ export default function ReportsPage() {
       description: 'Visualiza la programación semanal de alumnos en aula teórica.',
       href: '/reports/theory-schedule',
       icon: GraduationCap,
+      roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+    },
+    {
+      title: 'Lista de Asistencia Teórica',
+      description: 'Genera el formato físico de firmas para alumnos en clase teórica por día.',
+      href: '/reports/theory-attendance',
+      icon: FileSpreadsheet,
       roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     },
     {

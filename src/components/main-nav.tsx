@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -93,7 +94,12 @@ const navLinks = [
       },
       {
           href: '/reports/theory-schedule',
-          label: 'Agenda Teórica',
+          label: 'Agenda Teórica (Semanal)',
+          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+      },
+      {
+          href: '/reports/theory-attendance',
+          label: 'Asistencia Teórica (Lista)',
           roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
       {

@@ -398,8 +398,8 @@ function LogbookContent() {
                             <span className="font-bold flex-1 uppercase">{details?.theoreticalClassSchedule || 'PROGRAMADO'}</span>
                         </div>
                         <div className="flex border-b border-black pb-1">
-                            <span className="font-black w-40">INSTRUCTOR:</span>
-                            <span className="font-bold flex-1 uppercase">_________________________</span>
+                            <span className="font-black w-40">INSTRUCTOR ASIGNADO:</span>
+                            <span className="font-bold flex-1 uppercase">{generalInstructor || '_________________________'}</span>
                         </div>
                     </div>
 
@@ -536,7 +536,7 @@ function LogbookContent() {
                             </div>
                             <div className="flex items-end gap-2">
                                 <span className="font-black text-[9pt]">INSTRUCTOR ASIGNADO:</span>
-                                <div className="flex-1 border-b-2 border-black px-2 py-0.5 font-bold uppercase text-base h-7 leading-none">_________________________</div>
+                                <div className="flex-1 border-b-2 border-black px-2 py-0.5 font-bold uppercase text-base h-7 leading-none">{generalInstructor || '_________________________'}</div>
                             </div>
                         </div>
 

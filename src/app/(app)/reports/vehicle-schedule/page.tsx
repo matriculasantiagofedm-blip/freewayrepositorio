@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -14,7 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Loader2, ChevronLeft, ChevronRight, User, AlertCircle, Fuel, MessageSquare, Timer, ShieldCheck, Landmark, Ban, RefreshCw, Minus, Printer, ClipboardList } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, User, AlertCircle, Fuel, MessageSquare, Timer, ShieldCheck, Landmark, Ban, RefreshCw, Minus, Printer, ClipboardList, Download } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addDays, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
@@ -93,6 +92,7 @@ export default function VehicleScheduleReportPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [weeklyAssignments, setWeeklyAssignments] = useState<Map<string, any[]>>(new Map());
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const isAdmin = role === 'Administrador';
   const isVentas = role === 'Ventas';
@@ -382,20 +382,80 @@ export default function VehicleScheduleReportPage() {
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleDownloadPdf = async () => {
+    const element = document.getElementById('practical-schedule-content');
+    if (!element) return;
+
+    setIsDownloading(true);
+    try {
+      // @ts-ignore
+      const html2pdf = (await import('html2pdf.js')).default;
+      
+      const opt = {
+        margin: 0.2,
+        filename: `Agenda_Practica_Semanal_${format(weekStart, 'dd-MM-yyyy')}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+          scale: 2, 
+          useCORS: true, 
+          letterRendering: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          width: 1100 
+        },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
+      };
+
+      await html2pdf().from(element).set(opt).save();
+      toast({ title: "PDF Generado", description: "La agenda se ha descargado correctamente." });
+    } catch (err) {
+      console.error(err);
+      toast({ variant: "destructive", title: "Error", description: "No se pudo generar el PDF." });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex justify-between items-center">
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          @page { size: letter landscape; margin: 5mm; }
+          header, footer, nav, aside, .print-hide, button, .popover-trigger { display: none !important; }
+          body { background: white !important; padding: 0 !important; overflow: visible !important; }
+          .print-container { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
+          table { width: 100% !important; border-collapse: collapse !important; font-size: 7pt !important; border: 1px solid black !important; }
+          th, td { border: 1px solid black !important; padding: 2px !important; }
+          .card-content { padding: 0 !important; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+      `}} />
+
+      <div className="flex justify-between items-center print-hide">
         <div>
             <h1 className="font-headline text-3xl font-bold">Agenda Práctica Semanal</h1>
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Control de Flota y Sesiones de Estudiantes</p>
         </div>
-        <div className="flex items-center gap-2 bg-background border p-1 rounded-md">
-            <Button variant="ghost" size="icon" onClick={() => setCurrentDate(subDays(currentDate, 7))}><ChevronLeft className="h-4 w-4" /></Button>
-            <span className="font-bold text-[10px] uppercase w-44 text-center">{format(weekStart, "d 'de' MMM", { locale: es })} - {format(addDays(weekStart, 6), "d 'de' MMM yyyy", { locale: es })}</span>
-            <Button variant="ghost" size="icon" onClick={() => setCurrentDate(addDays(currentDate, 7))}><ChevronRight className="h-4 w-4" /></Button>
+        <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 bg-background border p-1 rounded-md">
+                <Button variant="ghost" size="icon" onClick={() => setCurrentDate(subDays(currentDate, 7))}><ChevronLeft className="h-4 w-4" /></Button>
+                <span className="font-bold text-[10px] uppercase w-44 text-center">{format(weekStart, "d 'de' MMM", { locale: es })} - {format(addDays(weekStart, 6), "d 'de' MMM yyyy", { locale: es })}</span>
+                <Button variant="ghost" size="icon" onClick={() => setCurrentDate(addDays(currentDate, 7))}><ChevronRight className="h-4 w-4" /></Button>
+            </div>
+            <Button onClick={handlePrint} variant="outline" className="gap-2">
+                <Printer className="h-4 w-4" /> Imprimir
+            </Button>
+            <Button onClick={handleDownloadPdf} disabled={isDownloading} className="gap-2 bg-blue-600 hover:bg-blue-700">
+                {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} PDF
+            </Button>
         </div>
       </div>
-      <Card className="border-none shadow-none bg-transparent">
+
+      <Card id="practical-schedule-content" className="border-none shadow-none bg-transparent print-container">
         <CardContent className="p-0 overflow-x-auto">
             <Table className="min-w-[1000px] border-collapse table-fixed w-full">
                 <TableHeader>
@@ -428,13 +488,13 @@ export default function VehicleScheduleReportPage() {
                         return (
                         <TableCell key={day.toISOString()} className={cn("border p-1.5 align-top relative", day.getDay() === 0 && "bg-red-50/20")}>
                             {cap > 0 && (
-                                <div className="absolute top-1 right-1 z-10">
+                                <div className="absolute top-1 right-1 z-10 print-hide">
                                     <div className={cn("px-1 py-0.5 rounded text-[9px] font-black border bg-white", count >= cap ? "text-red-600 border-red-200" : "text-slate-500")}>
                                         <ShieldCheck className="h-2.5 w-2.5 inline mr-1" /> {count}/{cap}
                                     </div>
                                 </div>
                             )}
-                            <div className="flex flex-col gap-1.5 h-full pt-5">
+                            <div className="flex flex-col gap-1.5 h-full pt-5 print:pt-1">
                                 {assignments.map((a, i) => {
                                     const isFirstClass = String(a.displayClassNumber) === '1';
                                     const cardContent = (
@@ -457,7 +517,7 @@ export default function VehicleScheduleReportPage() {
                                                     </div>
                                                 )}
                                                 {isFirstClass && a.type === 'contract' && (
-                                                    <div className="h-4 w-4 rounded-full flex items-center justify-center shadow-sm bg-blue-600 animate-pulse" title="¡Primera Clase! Imprimir Bitácora">
+                                                    <div className="h-4 w-4 rounded-full flex items-center justify-center shadow-sm bg-blue-600 animate-pulse print:hidden" title="¡Primera Clase! Imprimir Bitácora">
                                                         <ClipboardList className="h-2.5 w-2.5 text-white" />
                                                     </div>
                                                 )}

@@ -125,7 +125,7 @@ function LogbookContent() {
                 { number: 1, content: ["Presentación del vehículo automático.", "Chequeo rutinario (luces, líquidos, llantas, frenos).", "Ajuste de asiento, espejos, cinturón de seguridad.", "Encendido y funciones básicas del tablero.", "Dominio inicial del timón y pedales (acelerador, freno).", "Práctica de arranque, avance y frenado suave en línea recta."] },
                 { number: 2, content: ["Revisión rápida del chequeo rutinario.", "Dominio de cambios en automático (P, R, N, D).", "Uso de direccionales.", "Giros a la derecha e izquierda dentro del circuito.", "Primer contacto con estacionamiento de frente."] },
                 { number: 3, content: ["Práctica de estacionamiento lateral y en reversa.", "Uso correcto de retrovisores.", "Ceder el paso en intersección simulada.", "Práctica de cruces en “T” o intersección simple."] },
-                { number: 4, content: ["Repaso de estacionamientos.", "Práctica de giros + intersecciones con ceder el paso.", "Simulación de recorrido dentro del circuito.", "Evaluación práctica: arranque, giro, estacionamiento y cruce."], isEvaluation: true}
+                { number: 4, content: ["Repaso de estacionamientos.", "Práctica de giros + intersecciones con ceder el paso.", "Simulación de recorrido dentro del circuito.", "Evaluación práctica: arranque, giro, estacionamiento y cruce."], isEvaluation: true }
             ];
         }
 
@@ -148,7 +148,7 @@ function LogbookContent() {
                 { number: 2, content: ["Embrague, punto de fricción.", "Cambios ascendentes y descendentes.", "Coordinación aceleración–embrague.", "Práctica: Recorrido usando 1ra–2da–3ra según circuito."] },
                 { number: 3, content: ["Zigzag avanzado.", "Circuito en 8 con menos diámetro.", "Dominio del freno trasero para estabilidad.", "Práctica combinada."] },
                 { number: 4, content: ["Cómo cruzar intersecciones internas.", "Ceder el paso en entornos simulados.", "Señalización obligatoria.", "Práctica: Intersección + cambios + frenado."] },
-                { number: 5, content: ["Recorrido completo del circuito con todos los elementos: Zigzag, Circuito en 8, Intersecciones, Cambios ascendentes/descendentes y Paradas y arranques correctos", "Corrección de errores.", "Evaluación final del curso PLUS."], isEvaluation: true}
+                { number: 5, content: ["Recorrido completo del circuito con todos los elementos: Zigzag, Circuito en 8, Intersecciones, Cambios ascendentes/descendentes y Paradas y arranques correctos", "Corrección de errores.", "Evaluación final del curso PLUS."], isEvaluation: true }
             ];
         }
 
@@ -158,7 +158,7 @@ function LogbookContent() {
                 { number: 1, content: ["Presentación del circuito y normas de seguridad.", "Artículos de seguridad obligatorios.", "Chequeo rutinario del moto: Llantas, Frenos, Niveles, Luces / direccionales y Sonido del motor", "Encendido seguro y apagado.", "Dominio del timón y punto de equilibrio.", "Aceleración ligera y uso del freno trasero y delantero.", "Práctica: control a baja velocidad en línea recta."] },
                 { number: 2, content: ["Explicación de la caja manual (1 abajo, 2–5 arriba).", "Salida suave con embrague (punto de fricción).", "Cambios de 1ra → 2da → 1ra dentro del circuito.", "Frenado progresivo.", "Práctica: a. Circuito básico (rectas + curvas amplias). b. Control del embrague a baja velocidad."] },
                 { number: 3, content: ["Zig Zag: Dominio del timón, Balance con velocidad baja y Uso del embrague en maniobras", "Circuito en 8: Trazado de curvas cerradas y Mirada anticipada", "Práctica combinada: Zigzag + curvas en 8 + frenado controlado"] },
-                { number: 4, content: ["Cómo cruzar una intersección dentro del circuito.", "Ceder el paso (simulación de tráfico entre estudiantes).", "Señalización con direccionales.", "Retrovisores: revisión constante.", "Práctica final: Recorrido completo del circuito y Zigzag + 8 + detención + arranque", "Evaluación final del curso básico"], isEvaluation: true}
+                { number: 4, content: ["Cómo cruzar una intersección dentro del circuito.", "Ceder el paso (simulación de tráfico entre estudiantes).", "Señalización con direccionales.", "Retrovisores: revisión constante.", "Práctica final: Recorrido completo del circuito y Zigzag + 8 + detención + arranque", "Evaluación final del curso básico"], isEvaluation: true }
             ];
         }
 
@@ -168,9 +168,9 @@ function LogbookContent() {
                 { number: 1, content: ["Presentación del vehículo manual.", "Chequeo rutinario (luces, líquidos, llantas, frenos).", "Ajuste de asiento, espejos, cinturón de seguridad.", "Encendido y funciones básicas del tablero.", "Explicación de pedales (embrague, freno, acelerador).", "Arranque en primera marcha y frenado suave."] },
                 { number: 2, content: ["Dominio de la palanca de cambios (1ª a 3ª).", "Giros simples con embrague y direccionales.", "Primer contacto con estacionamiento de frente."] },
                 { number: 3, content: ["Estacionamientos lateral y reversa.", "Uso de retrovisores.", "Cruces en intersecciones."] },
-                { number: 4, content: ["Dominio de paradas y arranques en pendiente.", "Frenado de emergencia y control de tracción.", "Retroceso en línea recta."] },
-                { number: 5, content: ["Perfeccionamiento de conducción en circuito.", "Cruces complejos y prioridad de paso.", "Maniobras de precisión en espacios reducidos."] },
-                { number: 6, content: ["Repaso integral de maniobras y estacionamiento.", "Evaluación avanzada de habilidades prácticas.", "Resultados y recomendaciones finales."], isEvaluation: true }
+                { number: 4, content: ["Dominio de paradas.", "Arranque en pendiente con embrague.", "Frenado de emergencia."] },
+                { number: 5, content: ["Perfeccionamiento de cambios (1ª a 3ª).", "Cruces más complejos (en “T” y 4 vías).", "Maniobras avanzadas de estacionamiento."] },
+                { number: 6, content: ["Repaso integral + evaluación avanzada:", "a. Arranque en pendiente, dominio de marchas, estacionamientos y cruces."], isEvaluation: true }
             ];
         }
 

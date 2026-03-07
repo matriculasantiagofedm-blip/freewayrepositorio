@@ -396,7 +396,7 @@ export default function VehicleScheduleReportPage() {
       const html2pdf = (await import('html2pdf.js')).default;
       
       const opt = {
-        margin: 0.2,
+        margin: 0,
         filename: `Agenda_Practica_Semanal_${format(weekStart, 'dd-MM-yyyy')}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
@@ -405,7 +405,7 @@ export default function VehicleScheduleReportPage() {
           letterRendering: true,
           logging: false,
           backgroundColor: '#ffffff',
-          width: 1100 
+          width: 1120 // Ancho óptimo para Landscape Carta
         },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' }
       };
@@ -424,12 +424,13 @@ export default function VehicleScheduleReportPage() {
     <div className="flex flex-col gap-6">
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
-          @page { size: letter landscape; margin: 5mm; }
+          @page { size: letter landscape; margin: 0; }
           header, footer, nav, aside, .print-hide, button, .popover-trigger { display: none !important; }
-          body { background: white !important; padding: 0 !important; overflow: visible !important; }
-          .print-container { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
-          table { width: 100% !important; border-collapse: collapse !important; font-size: 7pt !important; border: 1px solid black !important; }
-          th, td { border: 1px solid black !important; padding: 2px !important; }
+          body { background: white !important; padding: 0 !important; overflow: hidden !important; height: auto !important; }
+          .print-container { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 5mm !important; display: block !important; }
+          table { width: 100% !important; border-collapse: collapse !important; font-size: 6.5pt !important; border: 1px solid black !important; table-layout: fixed !important; }
+          th, td { border: 1px solid black !important; padding: 1px !important; overflow: hidden !important; }
+          .h-44 { height: 10rem !important; } /* Reducir altura para que quepa en una página */
           .card-content { padding: 0 !important; }
           * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
@@ -457,19 +458,19 @@ export default function VehicleScheduleReportPage() {
 
       <Card id="practical-schedule-content" className="border-none shadow-none bg-transparent print-container">
         <CardContent className="p-0 overflow-x-auto">
-            <Table className="min-w-[1000px] border-collapse table-fixed w-full">
+            <Table className="min-w-[1000px] border-collapse table-fixed w-full print:min-w-full">
                 <TableHeader>
                     <TableRow className="bg-muted/50">
-                        <TableHead className="w-[100px] border text-center text-[10px] font-bold">TURNO</TableHead>
+                        <TableHead className="w-[80px] border text-center text-[10px] font-bold">TURNO</TableHead>
                         {days.map(day => {
                             const holiday = isPanamaHoliday(day);
                             const isSunday = day.getDay() === 0;
                             return (
-                            <TableHead key={day.toISOString()} className={cn("text-center border p-2", isSunday && "bg-red-50", holiday && !isSunday && "bg-amber-50")}>
-                                <div className="text-[10px] font-bold uppercase">{format(day, 'eee', { locale: es })}</div>
-                                <div className="text-xl font-black">{format(day, 'd')}</div>
-                                {isSunday && <div className="text-[8px] font-black text-red-600 uppercase mt-1">CERRADO</div>}
-                                {holiday && !isSunday && <div className="text-[8px] font-black text-amber-700 uppercase mt-1">{holiday.name}</div>}
+                            <TableHead key={day.toISOString()} className={cn("text-center border p-1", isSunday && "bg-red-50", holiday && !isSunday && "bg-amber-50")}>
+                                <div className="text-[9px] font-bold uppercase">{format(day, 'eee', { locale: es })}</div>
+                                <div className="text-lg font-black">{format(day, 'd')}</div>
+                                {isSunday && <div className="text-[7px] font-black text-red-600 uppercase mt-0.5">CERRADO</div>}
+                                {holiday && !isSunday && <div className="text-[7px] font-black text-amber-700 uppercase mt-0.5">{holiday.name}</div>}
                             </TableHead>
                             )
                         })}
@@ -477,8 +478,8 @@ export default function VehicleScheduleReportPage() {
                 </TableHeader>
                 <TableBody>
                 {TIME_SLOTS.map(slot => (
-                    <TableRow key={slot.id} className="h-44 group">
-                    <TableCell className="border bg-muted/10 text-center text-[10px] font-bold">{slot.label}</TableCell>
+                    <TableRow key={slot.id} className="h-40 group print:h-32">
+                    <TableCell className="border bg-muted/10 text-center text-[9px] font-bold">{slot.label}</TableCell>
                     {days.map(day => {
                         const dateKey = format(day, 'yyyy-MM-dd');
                         const assignments = weeklyAssignments.get(dateKey)?.filter(a => a.slot === slot.id) || [];
@@ -486,20 +487,20 @@ export default function VehicleScheduleReportPage() {
                         const count = new Set(assignments.map(a => a.vehicle)).size;
 
                         return (
-                        <TableCell key={day.toISOString()} className={cn("border p-1.5 align-top relative", day.getDay() === 0 && "bg-red-50/20")}>
+                        <TableCell key={day.toISOString()} className={cn("border p-1 align-top relative", day.getDay() === 0 && "bg-red-50/20")}>
                             {cap > 0 && (
-                                <div className="absolute top-1 right-1 z-10 print-hide">
-                                    <div className={cn("px-1 py-0.5 rounded text-[9px] font-black border bg-white", count >= cap ? "text-red-600 border-red-200" : "text-slate-500")}>
-                                        <ShieldCheck className="h-2.5 w-2.5 inline mr-1" /> {count}/{cap}
+                                <div className="absolute top-0.5 right-1 z-10 print-hide">
+                                    <div className={cn("px-1 py-0.5 rounded text-[8px] font-black border bg-white/80", count >= cap ? "text-red-600 border-red-200" : "text-slate-500")}>
+                                        {count}/{cap}
                                     </div>
                                 </div>
                             )}
-                            <div className="flex flex-col gap-1.5 h-full pt-5 print:pt-1">
+                            <div className="flex flex-col gap-1 h-full pt-4 print:pt-0.5">
                                 {assignments.map((a, i) => {
                                     const isFirstClass = String(a.displayClassNumber) === '1';
                                     const cardContent = (
                                         <div className={cn(
-                                            "p-2 rounded border text-[10px] shadow-sm relative transition-all", 
+                                            "p-1.5 rounded border text-[9px] shadow-sm relative transition-all", 
                                             !isVentas && "cursor-pointer hover:shadow-md",
                                             a.status === 'missed' ? "bg-red-600 border-red-700 text-white" : 
                                             a.isEval ? "bg-purple-50 border-purple-200" : (vehicleColors[a.vehicle] || 'bg-gray-100 border-gray-200')
@@ -507,18 +508,18 @@ export default function VehicleScheduleReportPage() {
                                             {/* INDICADORES ESQUINA SUPERIOR IZQUIERDA */}
                                             <div className="absolute -top-1 -left-1 flex gap-0.5 z-20">
                                                 {a.status === 'cancelled_vehicle' && (
-                                                    <div className={cn("h-4 w-4 rounded-full flex items-center justify-center shadow-sm", vehicleStatusColors[a.vehicle])}>
-                                                        <Minus className="h-2.5 w-2.5 text-white" />
+                                                    <div className={cn("h-3.5 w-3.5 rounded-full flex items-center justify-center shadow-sm", vehicleStatusColors[a.vehicle])}>
+                                                        <Minus className="h-2 w-2 text-white" />
                                                     </div>
                                                 )}
                                                 {a.status === 'rescheduled' && (
-                                                    <div className={cn("h-4 w-4 rounded-full flex items-center justify-center shadow-sm bg-slate-700")}>
-                                                        <RefreshCw className="h-2.5 w-2.5 text-white" />
+                                                    <div className={cn("h-3.5 w-3.5 rounded-full flex items-center justify-center shadow-sm bg-slate-700")}>
+                                                        <RefreshCw className="h-2 w-2 text-white" />
                                                     </div>
                                                 )}
                                                 {isFirstClass && a.type === 'contract' && (
-                                                    <div className="h-4 w-4 rounded-full flex items-center justify-center shadow-sm bg-blue-600 animate-pulse print:hidden" title="¡Primera Clase! Imprimir Bitácora">
-                                                        <ClipboardList className="h-2.5 w-2.5 text-white" />
+                                                    <div className="h-3.5 w-3.5 rounded-full flex items-center justify-center shadow-sm bg-blue-600 animate-pulse print:hidden" title="¡Primera Clase! Imprimir Bitácora">
+                                                        <ClipboardList className="h-2 w-2 text-white" />
                                                     </div>
                                                 )}
                                             </div>
@@ -526,35 +527,34 @@ export default function VehicleScheduleReportPage() {
                                             {/* INDICADORES ESQUINA SUPERIOR DERECHA */}
                                             <div className="absolute -top-1 -right-1 flex gap-0.5 z-20">
                                                 {a.refueled && (
-                                                    <div className="h-4 w-4 rounded-full flex items-center justify-center shadow-sm bg-sky-600">
-                                                        <Fuel className="h-2.5 w-2.5 text-white" />
+                                                    <div className="h-3.5 w-3.5 rounded-full flex items-center justify-center shadow-sm bg-sky-600">
+                                                        <Fuel className="h-2 w-2 text-white" />
                                                     </div>
                                                 )}
                                                 {a.status === 'missed' && (
-                                                    <div className="h-4 w-4 rounded-full flex items-center justify-center shadow-sm bg-white">
-                                                        <AlertCircle className="h-3 w-3 text-red-600" />
+                                                    <div className="h-3.5 w-3.5 rounded-full flex items-center justify-center shadow-sm bg-white">
+                                                        <AlertCircle className="h-2.5 w-2.5 text-red-600" />
                                                     </div>
                                                 )}
                                             </div>
 
-                                            <p className="truncate font-black uppercase mb-0.5">{a.name}</p>
+                                            <p className="truncate font-black uppercase mb-0.5 leading-none">{a.name}</p>
                                             
-                                            {/* INFO DEL PLAN O PAQUETE */}
-                                            <p className={cn("text-[8px] font-black uppercase truncate mb-0.5", a.status === 'missed' ? 'text-white/80' : 'text-primary')}>
+                                            <p className={cn("text-[7px] font-black uppercase truncate mb-0.5", a.status === 'missed' ? 'text-white/80' : 'text-primary')}>
                                                 {a.plan}
                                             </p>
 
-                                            <p className={cn("truncate text-[8px] font-bold uppercase mb-1 flex items-center gap-1", a.status === 'missed' ? 'text-inherit opacity-80' : 'text-muted-foreground')}>
-                                                <User className="h-2.5 w-2.5" /> {a.instructor || 'SIN ASIGNAR'}
+                                            <p className={cn("truncate text-[7px] font-bold uppercase mb-0.5 flex items-center gap-1", a.status === 'missed' ? 'text-inherit opacity-80' : 'text-muted-foreground')}>
+                                                <User className="h-2 w-2" /> {a.instructor || 'SIN ASIGNAR'}
                                             </p>
                                             
-                                            <div className={cn("flex justify-between font-bold text-[9px] border-t pt-1 mt-1", a.status === 'missed' ? 'border-current opacity-40' : 'border-black/10 opacity-80')}>
-                                                <span className="flex items-center gap-1 text-[8px]">
-                                                    {a.vehicle} {a.status === 'rescheduled' && '(reagendada)'}
+                                            <div className={cn("flex justify-between font-bold text-[7px] border-t pt-0.5 mt-0.5", a.status === 'missed' ? 'border-current opacity-40' : 'border-black/10 opacity-80')}>
+                                                <span className="flex items-center gap-1">
+                                                    {a.vehicle}
                                                 </span>
                                             </div>
 
-                                            <div className="absolute bottom-1 right-1 bg-primary text-white text-[10px] font-black px-1.5 py-0.5 rounded shadow-sm">
+                                            <div className="absolute bottom-0.5 right-0.5 bg-primary text-white text-[8px] font-black px-1 rounded shadow-sm">
                                                 #{a.displayClassNumber}
                                             </div>
                                         </div>
@@ -571,12 +571,11 @@ export default function VehicleScheduleReportPage() {
                                                 <div className="space-y-3">
                                                     <p className="text-xs font-bold uppercase text-slate-500">Gestión de Clase</p>
                                                     <div className="grid gap-2">
-                                                        {/* BOTÓN DE IMPRESIÓN DE BITÁCORA PARA CLASE #1 */}
                                                         {isFirstClass && a.type === 'contract' && (
                                                             <Button 
                                                                 variant="default" 
                                                                 size="sm" 
-                                                                className="h-10 justify-start text-[10px] font-black uppercase gap-2 bg-blue-600 hover:bg-blue-700 shadow-md animate-in zoom-in-95"
+                                                                className="h-10 justify-start text-[10px] font-black uppercase gap-2 bg-blue-600 hover:bg-blue-700 shadow-md"
                                                                 onClick={() => handlePrintLog(a)}
                                                             >
                                                                 <Printer className="h-4 w-4" /> Imprimir Bitácora Inicial

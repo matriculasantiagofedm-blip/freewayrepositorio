@@ -96,7 +96,7 @@ function LogbookContent() {
     const getClasses = (): LogbookClass[] => {
         if (type === 'already-know') return [];
         
-        // AUTO AUTOMATICO 12H - ACTUALIZADO
+        // AUTO AUTOMATICO 12H
         if (type === 'auto-automatic-12h') {
             return [
                 { number: 1, content: ["Presentación del vehículo automático.", "Chequeo rutinario (luces, líquidos, llantas, frenos).", "Ajuste de asiento, espejos, cinturón de seguridad.", "Encendido y funciones básicas del tablero.", "Dominio inicial del timón y pedales (acelerador, freno).", "Práctica de arranque, avance y frenado suave en línea recta."] },
@@ -137,7 +137,7 @@ function LogbookContent() {
                 { number: 3, content: ["Zigzag avanzado.", "Circuito en 8 reducido.", "Giro cerrado con control del cuerpo.", "Frenado de emergencia básico."] },
                 { number: 4, content: ["Explicación de cruce de intersecciones múltiples.", "Señalización anticipada.", "Jerarquía de paso (quién va primero).", "Simulación de tráfico con los otros estudiantes."] },
                 { number: 5, content: ["Circuito con: Zigzag, Circuito 8, Intersecciones, Curvas cerradas y Arranques en puntos amplios", "Análisis de errores comunes y práctica reforzada."] },
-                { number: 6, content: ["Evaluación final práctica: Recorrido integral del circuito.", "Maniobras de precisión y seguridad vial.", "Feedback final y cierre del curso PREMIUM."], isEvaluation: true }
+                { number: 6, content: ["Evaluación final práctica integral del curso Premium.", "Firma de aprobación de competencias."], isEvaluation: true }
             ];
         }
 
@@ -165,9 +165,9 @@ function LogbookContent() {
         // MANUAL 12H
         if (type === 'manual-12h') {
             return [
-                { number: 1, content: ["Presentación del vehículo y chequeo rutinario.", "Ajuste de asiento, espejos y cinturón de seguridad.", "Encendido del motor y funciones del tablero.", "Dominio de timón y pedales (aceleración/frenado/embrague).", "Arranque en 1ra marcha y frenado suave."] },
-                { number: 2, content: ["Dominio de marchas (1ra a 3ra) y uso de embrague.", "Giros simples y señalización con direccionales.", "Estacionamiento de frente."] },
-                { number: 3, content: ["Estacionamientos lateral y en reversa.", "Uso intensivo de espejos retrovisores.", "Cruces en intersecciones y señales de Pare."] },
+                { number: 1, content: ["Presentación del vehículo manual.", "Chequeo rutinario (luces, líquidos, llantas, frenos).", "Ajuste de asiento, espejos, cinturón de seguridad.", "Encendido y funciones básicas del tablero.", "Explicación de pedales (embrague, freno, acelerador).", "Arranque en primera marcha y frenado suave."] },
+                { number: 2, content: ["Dominio de la palanca de cambios (1ª a 3ª).", "Giros simples con embrague y direccionales.", "Primer contacto con estacionamiento de frente."] },
+                { number: 3, content: ["Estacionamientos lateral y reversa.", "Uso de retrovisores.", "Cruces en intersecciones."] },
                 { number: 4, content: ["Dominio de paradas y arranques en pendiente.", "Frenado de emergencia y control de tracción.", "Retroceso en línea recta."] },
                 { number: 5, content: ["Perfeccionamiento de conducción en circuito.", "Cruces complejos y prioridad de paso.", "Maniobras de precisión en espacios reducidos."] },
                 { number: 6, content: ["Repaso integral de maniobras y estacionamiento.", "Evaluación avanzada de habilidades prácticas.", "Resultados y recomendaciones finales."], isEvaluation: true }
@@ -177,8 +177,8 @@ function LogbookContent() {
         // MANUAL 10H
         if (type === 'manual-10h') {
             return [
-                { number: 1, content: ["Presentación del vehículo y ajuste de cabina.", "Encendido del motor y arranque en 1ra marcha.", "Frenado suave y dominio del timón."] },
-                { number: 2, content: ["Cambios de marchas (1ª a 3ª) y uso de embrague.", "Giros en circuito y uso de direccionales.", "Estacionamiento frontal."] },
+                { number: 1, content: ["Presentación del vehículo manual.", "Chequeo rutinario (luces, líquidos, llantas, frenos).", "Ajuste de asiento, espejos, cinturón de seguridad.", "Encendido y funciones básicas del tablero.", "Explicación de pedales (embrague, freno, acelerador).", "Arranque en primera marcha y frenado suave."] },
+                { number: 2, content: ["Dominio de la palanca de cambios (1ª a 3ª).", "Giros simples con embrague y direccionales.", "Primer contacto con estacionamiento de frente."] },
                 { number: 3, content: ["Estacionamiento lateral y en reversa.", "Uso de espejos en maniobras de giro.", "Cruces simples e intersecciones."] },
                 { number: 4, content: ["Control de paradas y arranque en pendiente.", "Frenado de emergencia.", "Circulación continua en el circuito."] },
                 { number: 5, content: ["Recorrido completo integrando todas las maniobras.", "Evaluación práctica final.", "Firma de aprobación de competencias."], isEvaluation: true }
@@ -188,10 +188,10 @@ function LogbookContent() {
         // MANUAL 8H
         if (type === 'manual-8h') {
             return [
-                { number: 1, content: ["Vehículo, chequeo y ajuste de seguridad.", "Encendido del motor y arranque inicial.", "Frenado y dominio de embrague básico."] },
-                { number: 2, content: ["Controles de mando y cambios de marcha.", "Giros y señalización.", "Estacionamiento frontal."] },
-                { number: 3, content: ["Estacionamiento reversa y lateral.", "Cruces e intersecciones bajo supervisión.", "Uso de retrovisores."] },
-                { number: 4, content: ["Repaso general de maniobras críticas.", "Circulación fluida en circuito.", "Evaluación práctica final."], isEvaluation: true }
+                { number: 1, content: ["Presentación del vehículo manual.", "Chequeo rutinario (luces, líquidos, llantas, frenos).", "Ajuste de asiento, espejos, cinturón de seguridad.", "Encendido y funciones básicas del tablero.", "Explicación de pedales (embrague, freno, acelerador).", "Arranque en primera marcha y frenado suave."] },
+                { number: 2, content: ["Dominio de la palanca de cambios (1ª a 3ª).", "Giros simples con embrague y direccionales.", "Primer contacto con estacionamiento de frente."] },
+                { number: 3, content: ["Estacionamientos lateral y reversa.", "Uso de retrovisores.", "Cruces en intersecciones."] },
+                { number: 4, content: ["Repaso de estacionamientos.", "Cambios hasta 3ª marcha con fluidez.", "Evaluación práctica: arranque, estacionar, giros e intersecciones."], isEvaluation: true }
             ];
         }
 

@@ -96,83 +96,36 @@ function LogbookContent() {
     const getClasses = (): LogbookClass[] => {
         if (type === 'already-know') return [];
         
-        // AUTO AUTOMATICO 12H
+        // AUTO AUTOMATICO 12H - ACTUALIZADO
         if (type === 'auto-automatic-12h') {
             return [
-                { number: 1, content: ["Presentación del vehículo y chequeo rutinario.", "Ajuste de asiento, espejos y cinturón de seguridad.", "Encendido del motor y funciones del tablero.", "Dominio de timón y pedales (aceleración/frenado).", "Arranque, avance y frenado suave."] },
-                { number: 2, content: ["Dominio de cambios (P, R, N, D) y uso de direccionales.", "Giros a la derecha e izquierda dentro del circuito.", "Estacionamiento de frente.", "Mantenimiento de distancia de seguridad."] },
-                { number: 3, content: ["Práctica de estacionamiento lateral y en reversa.", "Uso adecuado de espejos retrovisores en maniobras.", "Práctica intensiva de giros continuos con señalización."] },
-                { number: 4, content: ["Estacionamientos bajo presión de tiempo.", "Control del vehículo en intersecciones y pare.", "Maniobras de vueltas en U."] },
-                { number: 5, content: ["Simulación de recorrido completo integrando maniobras.", "Dominio de subidas y bajadas (control de freno).", "Uso de luces y cambios de carril."] },
-                { number: 6, content: ["Evaluación práctica avanzada: Arranque, direccionales, giros, estacionamientos.", "Observancia de señales de tránsito y ceder el paso.", "Feedback final del instructor."], isEvaluation: true}
+                { number: 1, content: ["Presentación del vehículo automático.", "Chequeo rutinario (luces, líquidos, llantas, frenos).", "Ajuste de asiento, espejos, cinturón de seguridad.", "Encendido y funciones básicas del tablero.", "Dominio inicial del timón y pedales (acelerador, freno).", "Práctica de arranque, avance y frenado suave en línea recta."] },
+                { number: 2, content: ["Revisión rápida del chequeo rutinario.", "Dominio de cambios en automático (P, R, N, D).", "Uso de direccionales.", "Giros a la derecha e izquierda dentro del circuito.", "Primer contacto con estacionamiento de frente."] },
+                { number: 3, content: ["Estacionamientos de frente, lateral y reversa con mayor dominio.", "Práctica de giros seguidos + uso de direccionales."] },
+                { number: 4, content: ["Estacionamientos bajo presión de tiempo.", "Mayor control en intersecciones.", "Práctica de vueltas en U."] },
+                { number: 5, content: ["Simulación de recorrido completo con varias maniobras.", "Uso combinado de estacionamientos y cruces.", "Dominio de subida y bajada."] },
+                { number: 6, content: ["Repaso integral + evaluación práctica avanzada:", "a. Arranque correcto, uso de direccionales, giros, estacionamientos, cruces, ceder el paso."], isEvaluation: true }
             ];
         }
 
-        // AUTO AUTOMATICO 10H - ACTUALIZADO CON CONTENIDO SOLICITADO
+        // AUTO AUTOMATICO 10H
         if (type === 'auto-automatic-10h') {
             return [
-                { number: 1, content: [
-                    "Presentación del vehículo automático.",
-                    "Chequeo rutinario (luces, líquidos, llantas, frenos).",
-                    "Ajuste de asiento, espejos, cinturón de seguridad.",
-                    "Encendido y funciones básicas del tablero.",
-                    "Dominio inicial del timón y pedales (acelerador, freno).",
-                    "Práctica de arranque, avance y frenado suave en línea recta."
-                ] },
-                { number: 2, content: [
-                    "Revisión rápida del chequeo rutinario.",
-                    "Dominio de cambios en automático (P, R, N, D).",
-                    "Uso de direccionales.",
-                    "Giros a la derecha e izquierda dentro del circuito.",
-                    "Primer contacto con estacionamiento de frente."
-                ] },
-                { number: 3, content: [
-                    "Estacionamientos de frente, lateral y reversa con mayor dominio.",
-                    "Práctica de giros seguidos + uso de direccionales."
-                ] },
-                { number: 4, content: [
-                    "Simulación de maniobras en intersección con prioridad.",
-                    "Frenado progresivo y de emergencia.",
-                    "Circulación continua en el circuito."
-                ] },
-                { number: 5, content: [
-                    "Repaso general de estacionamientos e intersecciones.",
-                    "Corrección de errores comunes.",
-                    "Evaluación práctica: maniobras, estacionamientos, intersecciones."
-                ], isEvaluation: true }
+                { number: 1, content: ["Presentación del vehículo automático.", "Chequeo rutinario (luces, líquidos, llantas, frenos).", "Ajuste de asiento, espejos, cinturón de seguridad.", "Encendido y funciones básicas del tablero.", "Dominio inicial del timón y pedales (acelerador, freno).", "Práctica de arranque, avance y frenado suave en línea recta."] },
+                { number: 2, content: ["Revisión rápida del chequeo rutinario.", "Dominio de cambios en automático (P, R, N, D).", "Uso de direccionales.", "Giros a la derecha e izquierda dentro del circuito.", "Primer contacto con estacionamiento de frente."] },
+                { number: 3, content: ["Estacionamientos de frente, lateral y reversa con mayor dominio.", "Práctica de giros seguidos + uso de direccionales."] },
+                { number: 4, content: ["Simulación de maniobras en intersección con prioridad.", "Frenado progresivo y de emergencia.", "Circulación continua en el circuito."] },
+                { number: 5, content: ["Repaso general de estacionamientos e intersecciones.", "Corrección de errores comunes.", "Evaluación práctica: maniobras, estacionamientos, intersecciones."], isEvaluation: true }
             ];
         }
 
         // AUTO AUTOMATICO 8H
         if (type === 'auto-automatic-8h') {
             return [
-                { number: 1, content: [
-                    "Presentación del vehículo automático.",
-                    "Chequeo rutinario (luces, líquidos, llantas, frenos).",
-                    "Ajuste de asiento, espejos, cinturón de seguridad.",
-                    "Encendido y funciones básicas del tablero.",
-                    "Dominio inicial del timón y pedales (acelerador, freno).",
-                    "Práctica de arranque, avance y frenado suave en línea recta."
-                ] },
-                { number: 2, content: [
-                    "Revisión rápida del chequeo rutinario.",
-                    "Dominio de cambios en automático (P, R, N, D).",
-                    "Uso de direccionales.",
-                    "Giros a la derecha e izquierda dentro del circuito.",
-                    "Primer contacto con estacionamiento de frente."
-                ] },
-                { number: 3, content: [
-                    "Práctica de estacionamiento lateral y en reversa.",
-                    "Uso correcto de retrovisores.",
-                    "Ceder el paso en intersección simulada.",
-                    "Práctica de cruces en “T” o intersección simple."
-                ] },
-                { number: 4, content: [
-                    "Repaso de estacionamientos.",
-                    "Práctica de giros + intersecciones con ceder el paso.",
-                    "Simulación de recorrido dentro del circuito.",
-                    "Evaluación práctica: arranque, giro, estacionamiento y cruce."
-                ], isEvaluation: true}
+                { number: 1, content: ["Presentación del vehículo automático.", "Chequeo rutinario (luces, líquidos, llantas, frenos).", "Ajuste de asiento, espejos, cinturón de seguridad.", "Encendido y funciones básicas del tablero.", "Dominio inicial del timón y pedales (acelerador, freno).", "Práctica de arranque, avance y frenado suave en línea recta."] },
+                { number: 2, content: ["Revisión rápida del chequeo rutinario.", "Dominio de cambios en automático (P, R, N, D).", "Uso de direccionales.", "Giros a la derecha e izquierda dentro del circuito.", "Primer contacto con estacionamiento de frente."] },
+                { number: 3, content: ["Práctica de estacionamiento lateral y en reversa.", "Uso correcto de retrovisores.", "Ceder el paso en intersección simulada.", "Práctica de cruces en “T” o intersección simple."] },
+                { number: 4, content: ["Repaso de estacionamientos.", "Práctica de giros + intersecciones con ceder el paso.", "Simulación de recorrido dentro del circuito.", "Evaluación práctica: arranque, giro, estacionamiento y cruce."], isEvaluation: true}
             ];
         }
 
@@ -212,7 +165,7 @@ function LogbookContent() {
         // MANUAL 12H
         if (type === 'manual-12h') {
             return [
-                { number: 1, content: ["Presentación del vehículo y chequeo rutinario.", "Encendido, funciones básicas y dominio de pedales.", "Arranque en 1ra marcha y frenado suave."] },
+                { number: 1, content: ["Presentación del vehículo y chequeo rutinario.", "Ajuste de asiento, espejos y cinturón de seguridad.", "Encendido del motor y funciones del tablero.", "Dominio de timón y pedales (aceleración/frenado/embrague).", "Arranque en 1ra marcha y frenado suave."] },
                 { number: 2, content: ["Dominio de marchas (1ra a 3ra) y uso de embrague.", "Giros simples y señalización con direccionales.", "Estacionamiento de frente."] },
                 { number: 3, content: ["Estacionamientos lateral y en reversa.", "Uso intensivo de espejos retrovisores.", "Cruces en intersecciones y señales de Pare."] },
                 { number: 4, content: ["Dominio de paradas y arranques en pendiente.", "Frenado de emergencia y control de tracción.", "Retroceso en línea recta."] },
@@ -268,7 +221,7 @@ function LogbookContent() {
                             <span className="font-bold flex-1">{idNumber}</span>
                         </div>
                         <div className="flex border-b border-black pb-1">
-                            <span className="font-black w-36">INSTRUCTOR ASIGNADO:</span>
+                            <span className="font-black w-36 text-blue-700">INSTRUCTOR ASIGNADO:</span>
                             <span className="font-bold flex-1 uppercase text-primary">{generalInstructor}</span>
                         </div>
                         

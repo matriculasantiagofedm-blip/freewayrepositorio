@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, Suspense, useState } from 'react';
@@ -152,13 +153,13 @@ function LogbookContent() {
             ];
         }
 
-        // MOTO 8H
+        // MOTO 8H - CONTENIDO ACTUALIZADO SEGÚN SOLICITUD
         if (type === 'moto-manual-8h') {
             return [
-                { number: 1, content: ["Normas de seguridad y equipo de protección.", "Chequeo de mandos, encendido y apagado.", "Equilibrio estático y dinámico, aceleración inicial."] },
-                { number: 2, content: ["Caja manual: uso de embrague y cambios 1ra -> 2da.", "Frenado progresivo (delantero y trasero).", "Giros amplios en circuito."] },
-                { number: 3, content: ["Maniobras de precisión: Zig Zag y Circuito en 8.", "Balance y mirada anticipada en curvas cerradas.", "Uso de direccionales."] },
-                { number: 4, content: ["Intersecciones, ceder el paso y señales de mano.", "Repaso de maniobras de baja velocidad.", "Evaluación final de habilidades."], isEvaluation: true}
+                { number: 1, content: ["Presentación del circuito y normas de seguridad.", "Artículos de seguridad obligatorios.", "Chequeo rutinario del moto: Llantas, Frenos, Niveles, Luces / direccionales y Sonido del motor.", "Encendido seguro y apagado.", "Dominio del timón y punto de equilibrio.", "Aceleración ligera y uso del freno trasero y delantero.", "Práctica: control a baja velocidad en línea recta."] },
+                { number: 2, content: ["Explicación de la caja manual (1 abajo, 2–5 arriba).", "Salida suave con embrague (punto de fricción).", "Cambios de 1ra → 2da → 1ra dentro del circuito.", "Frenado progresivo.", "Práctica: a. Circuito básico (rectas + curvas amplias). b. Control del embrague a baja velocidad."] },
+                { number: 3, content: ["Zig Zag: Dominio del timón, Balance con velocidad baja y Uso del embrague en maniobras.", "Circuito en 8: Trazado de curvas cerradas y Mirada anticipada.", "Práctica combinada: Zigzag + curvas en 8 + frenado controlado."] },
+                { number: 4, content: ["Cómo cruzar una intersección dentro del circuito.", "Ceder el paso (simulación de tráfico entre estudiantes).", "Señalización con direccionales.", "Retrovisores: revisión constante.", "Práctica final: Recorrido completo del circuito y Zigzag + 8 + detención + arranque.", "Evaluación final del curso básico."], isEvaluation: true}
             ];
         }
 
@@ -380,7 +381,7 @@ function LogbookContent() {
                                 <span className="font-bold flex-1">{idNumber}</span>
                             </div>
                             <div className="flex border-b border-black pb-0.5">
-                                <span className="font-black w-24 text-blue-700">INSTRUCTOR ASIGNADO:</span>
+                                <span className="font-black w-36 text-blue-700">INSTRUCTOR ASIGNADO:</span>
                                 <span className="font-bold flex-1 uppercase text-primary">{generalInstructor}</span>
                             </div>
                         </div>

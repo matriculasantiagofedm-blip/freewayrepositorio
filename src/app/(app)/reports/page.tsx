@@ -1,7 +1,6 @@
-
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ClipboardPenLine, ListChecks, Award, Gauge, FileText, Banknote, CalendarClock, ScrollText, GraduationCap, ClipboardSignature, FileSpreadsheet } from 'lucide-react';
+import { ClipboardPenLine, ListChecks, Award, Gauge, FileText, Banknote, CalendarClock, ScrollText, GraduationCap, ClipboardSignature, FileSpreadsheet, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,13 @@ export default function ReportsPage() {
   const { role } = useCurrentRole();
 
   const allReports = [
+    {
+      title: 'Inicios de Semana',
+      description: 'Identifica alumnos que inician clases prácticas para imprimir sus bitácoras.',
+      href: '/reports/weekly-starts',
+      icon: UserPlus,
+      roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+    },
     {
       title: 'Agenda Práctica',
       description: 'Visualiza la agenda semanal de clases prácticas por vehículo e instructor.',

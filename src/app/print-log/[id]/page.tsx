@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, Suspense, useState } from 'react';
@@ -130,13 +129,15 @@ function LogbookContent() {
             ];
         }
 
-        // MOTO 8H
-        if (type === 'moto-manual-8h') {
+        // MOTO 12H
+        if (type === 'moto-manual-12h') {
             return [
-                { number: 1, content: ["Normas de seguridad y equipo de protección.", "Chequeo de mandos, encendido y apagado.", "Equilibrio estático y dinámico, aceleración inicial."] },
-                { number: 2, content: ["Caja manual: uso de embrague y cambios 1ra -> 2da.", "Frenado progresivo (delantero y trasero).", "Giros amplios en circuito."] },
-                { number: 3, content: ["Maniobras de precisión: Zig Zag y Circuito en 8.", "Balance y mirada anticipada en curvas cerradas.", "Uso de direccionales."] },
-                { number: 4, content: ["Intersecciones, ceder el paso y señales de mano.", "Repaso de maniobras de baja velocidad.", "Evaluación final de habilidades."], isEvaluation: true}
+                { number: 1, content: ["Normas de seguridad y familiarización con mandos.", "Encendido, equilibrio dinámico y aceleración suave.", "Frenado coordinado."] },
+                { number: 2, content: ["Dominio de embrague y cambios de marcha.", "Coordinación aceleración-freno en curvas.", "Giros amplios."] },
+                { number: 3, content: ["Zigzag avanzado y circuito en 8 reducido.", "Giro en U en espacio limitado.", "Señalización constante."] },
+                { number: 4, content: ["Intersecciones múltiples y ceder el paso.", "Uso de espejos y mirada periférica.", "Simulación de tráfico."] },
+                { number: 5, content: ["Curvas cerradas y control de inclinación.", "Arranque en pendiente y control de tracción.", "Maniobras de evasión."] },
+                { number: 6, content: ["Prueba completa de circuito bajo evaluación.", "Dominio total de la motocicleta.", "Feedback y cierre del curso."], isEvaluation: true }
             ];
         }
 
@@ -151,19 +152,17 @@ function LogbookContent() {
             ];
         }
 
-        // MOTO 12H
-        if (type === 'moto-manual-12h') {
+        // MOTO 8H
+        if (type === 'moto-manual-8h') {
             return [
-                { number: 1, content: ["Normas de seguridad y familiarización con mandos.", "Encendido, equilibrio dinámico y aceleración suave.", "Frenado coordinado."] },
-                { number: 2, content: ["Dominio de embrague y cambios de marcha.", "Coordinación aceleración-freno en curvas.", "Giros amplios."] },
-                { number: 3, content: ["Zigzag avanzado y circuito en 8 reducido.", "Giro en U en espacio limitado.", "Señalización constante."] },
-                { number: 4, content: ["Intersecciones múltiples y ceder el paso.", "Uso de espejos y mirada periférica.", "Simulación de tráfico."] },
-                { number: 5, content: ["Curvas cerradas y control de inclinación.", "Arranque en pendiente y control de tracción.", "Maniobras de evasión."] },
-                { number: 6, content: ["Prueba completa de circuito bajo evaluación.", "Dominio total de la motocicleta.", "Feedback y cierre del curso."], isEvaluation: true }
+                { number: 1, content: ["Normas de seguridad y equipo de protección.", "Chequeo de mandos, encendido y apagado.", "Equilibrio estático y dinámico, aceleración inicial."] },
+                { number: 2, content: ["Caja manual: uso de embrague y cambios 1ra -> 2da.", "Frenado progresivo (delantero y trasero).", "Giros amplios en circuito."] },
+                { number: 3, content: ["Maniobras de precisión: Zig Zag y Circuito en 8.", "Balance y mirada anticipada en curvas cerradas.", "Uso de direccionales."] },
+                { number: 4, content: ["Intersecciones, ceder el paso y señales de mano.", "Repaso de maniobras de baja velocidad.", "Evaluación final de habilidades."], isEvaluation: true}
             ];
         }
 
-        // AUTO MANUAL 12H
+        // MANUAL 12H
         if (type === 'manual-12h') {
             return [
                 { number: 1, content: ["Presentación del vehículo y chequeo rutinario.", "Encendido, funciones básicas y dominio de pedales.", "Arranque en 1ra marcha y frenado suave."] },
@@ -175,7 +174,7 @@ function LogbookContent() {
             ];
         }
 
-        // AUTO MANUAL 10H
+        // MANUAL 10H
         if (type === 'manual-10h') {
             return [
                 { number: 1, content: ["Presentación del vehículo y ajuste de cabina.", "Encendido del motor y arranque en 1ra marcha.", "Frenado suave y dominio del timón."] },
@@ -186,7 +185,7 @@ function LogbookContent() {
             ];
         }
 
-        // AUTO MANUAL 8H
+        // MANUAL 8H
         if (type === 'manual-8h') {
             return [
                 { number: 1, content: ["Vehículo, chequeo y ajuste de seguridad.", "Encendido del motor y arranque inicial.", "Frenado y dominio de embrague básico."] },
@@ -361,7 +360,7 @@ function LogbookContent() {
                 </div>
             </div>
 
-            <div id="log-to-print" className="print-container-wrapper bg-white mx-auto w-[8.5in] h-[11in] p-10 flex flex-col overflow-hidden">
+            <div id="log-to-print" className="print-container-wrapper bg-white mx-auto w-[8.5in] h-[11in] p-8 flex flex-col overflow-hidden">
                 {type === 'already-know' ? (
                     <AlreadyKnowTemplate />
                 ) : (
@@ -371,7 +370,7 @@ function LogbookContent() {
                             <h2 className="text-[10pt] font-bold uppercase">{getLogTitle()}</h2>
                         </div>
 
-                        <div className="space-y-2 mb-4 text-[9pt]">
+                        <div className="space-y-1 mb-4 text-[9pt]">
                             <div className="flex border-b border-black pb-0.5">
                                 <span className="font-black w-24">NOMBRE:</span>
                                 <span className="font-bold uppercase flex-1">{name}</span>
@@ -381,7 +380,7 @@ function LogbookContent() {
                                 <span className="font-bold flex-1">{idNumber}</span>
                             </div>
                             <div className="flex border-b border-black pb-0.5">
-                                <span className="font-black w-24 text-blue-700">INSTRUCTOR:</span>
+                                <span className="font-black w-24 text-blue-700">INSTRUCTOR ASIGNADO:</span>
                                 <span className="font-bold flex-1 uppercase text-primary">{generalInstructor}</span>
                             </div>
                         </div>
@@ -391,17 +390,17 @@ function LogbookContent() {
                                 {classes.map((cls) => (
                                     <React.Fragment key={cls.number}>
                                         <tr className="border-b-2 border-black">
-                                            <td className="border-r-2 border-black p-1.5 w-16 text-center font-black text-[8pt] align-middle bg-slate-50">Clase {cls.number}</td>
-                                            <td className="border-r-2 border-black p-2 align-top leading-tight text-[7pt]">
+                                            <td className="border-r-2 border-black p-1.5 w-16 text-center font-black text-[8pt] align-middle bg-slate-50">Sesión {cls.number}</td>
+                                            <td className="border-r-2 border-black p-2 align-top leading-tight text-[7.5pt]">
                                                 <ul className={cn("space-y-0.5 list-disc pl-4", cls.isEvaluation && "font-black")}>
                                                     {cls.content.map((item, cIdx) => <li key={cIdx}>{item}</li>)}
                                                 </ul>
                                             </td>
-                                            <td className="p-1 align-top text-[6pt] font-black text-slate-300 uppercase w-32 text-right">OBSERVACIÓN</td>
+                                            <td className="p-1 align-top text-[6pt] font-black text-slate-300 uppercase w-32 text-right">ESPACIO PARA OBSERVACIÓN</td>
                                         </tr>
-                                        <tr className="border-b-2 last:border-b-0 border-black h-6 bg-slate-50/50">
-                                            <td colSpan={2} className="px-2 text-[7pt] font-bold uppercase italic">Firma Alumno: _________________________</td>
-                                            <td className="px-2 text-[7pt] font-bold uppercase italic">Firma Inst: __________</td>
+                                        <tr className="border-b-2 last:border-b-0 border-black h-7 bg-slate-50/50">
+                                            <td colSpan={2} className="px-2 text-[7.5pt] font-bold uppercase italic">Firma Alumno: _________________________</td>
+                                            <td className="px-2 text-[7.5pt] font-bold uppercase italic text-right">Firma Inst: __________</td>
                                         </tr>
                                     </React.Fragment>
                                 ))}
@@ -410,7 +409,7 @@ function LogbookContent() {
 
                         {needsEvaluationSection && (
                             <div className="mt-3 border-t-2 border-black pt-2">
-                                <h3 className="font-black text-[8pt] uppercase mb-1">PUNTOS A MEJORAR / OBSERVACIONES FINALES:</h3>
+                                <h3 className="font-black text-[8pt] uppercase mb-1">OBSERVACIONES FINALES / RECOMENDACIONES:</h3>
                                 <div className="border-b border-black border-dashed h-5"></div>
                                 <div className="border-b border-black border-dashed h-5"></div>
                             </div>

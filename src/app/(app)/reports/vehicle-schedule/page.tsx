@@ -427,14 +427,16 @@ export default function VehicleScheduleReportPage() {
           @page { size: letter landscape; margin: 0; }
           header, footer, nav, aside, .print-hide, button, .popover-trigger { display: none !important; }
           body { background: white !important; padding: 0 !important; overflow: hidden !important; height: auto !important; }
-          .print-container { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 5mm !important; display: block !important; }
-          table { width: 100% !important; border-collapse: collapse !important; font-size: 6pt !important; border: 1px solid black !important; table-layout: fixed !important; }
-          th, td { border: 1px solid black !important; padding: 1px !important; overflow: hidden !important; }
-          .h-40 { height: 7.5rem !important; } /* Reducción de altura para compactar */
+          .print-container { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 3mm !important; display: block !important; }
+          table { width: 100% !important; border-collapse: collapse !important; font-size: 5pt !important; border: 1px solid black !important; table-layout: fixed !important; }
+          th, td { border: 1px solid black !important; padding: 0.5px !important; overflow: hidden !important; }
+          .h-40 { height: 5.5rem !important; } /* Reducción agresiva para 40% adicional */
           .card-content { padding: 0 !important; }
-          .p-1\\.5 { padding: 0.2rem !important; }
-          .text-\\[9px\\] { font-size: 7.5px !important; }
-          .text-\\[7px\\] { font-size: 6px !important; }
+          .p-1\\.5 { padding: 0.1rem !important; }
+          .text-\\[9px\\] { font-size: 6.5px !important; }
+          .text-\\[7px\\] { font-size: 5.5px !important; }
+          .text-\\[8px\\] { font-size: 6px !important; }
+          .rounded { border-radius: 2px !important; }
           * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
       `}} />

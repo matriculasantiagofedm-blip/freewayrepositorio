@@ -14,7 +14,7 @@ export default function ReportsPage() {
       description: 'Identifica alumnos que inician clases prácticas para imprimir sus bitácoras.',
       href: '/reports/weekly-starts',
       icon: UserPlus,
-      roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+      roles: ['Administrador', 'Ventas Externas'],
     },
     {
       title: 'Agenda Práctica',

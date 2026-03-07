@@ -5,7 +5,7 @@ import { collection, query, where } from 'firebase/firestore';
 import { useDb, useUser } from '@/firebase';
 import type { Contract } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Loader2, ChevronLeft, ChevronRight, Printer, User, CalendarDays, ClipboardList, Car } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, User, CalendarDays, ClipboardList, Car } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addDays, subDays, isWithinInterval, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
@@ -13,6 +13,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { useCurrentRole } from '@/hooks/use-current-role';
+import Link from 'next/link';
 
 interface WeeklyStart {
     contract: Contract;
@@ -25,7 +27,24 @@ interface WeeklyStart {
 export default function WeeklyStartsReportPage() {
   const db = useDb();
   const { user } = useUser();
+  const { role } = useCurrentRole();
   const [currentDate, setCurrentDate] = useState(new Date());
+
+  // RESTRICCIÓN DE SEGURIDAD PARA ROL VENTAS
+  if (role === 'Ventas') {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed rounded-2xl bg-slate-50">
+        <div className="bg-red-100 p-4 rounded-full mb-4">
+            <ClipboardList className="h-10 w-10 text-red-600" />
+        </div>
+        <h3 className="text-xl font-black text-red-900 uppercase tracking-tight">Acceso Restringido</h3>
+        <p className="text-slate-600 mt-2 max-w-sm font-medium">Lo sentimos, el personal de Ventas no tiene permisos para visualizar este reporte de inicios.</p>
+        <Button asChild className="mt-8 h-12 px-8 font-bold" variant="default">
+            <Link href="/dashboard">Volver al Panel Principal</Link>
+        </Button>
+      </div>
+    );
+  }
 
   const contractsQuery = useMemoQuery(() => {
     if (!db || !user) return null;

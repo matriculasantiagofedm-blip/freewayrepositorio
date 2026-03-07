@@ -94,7 +94,7 @@ const navLinks = [
       {
           href: '/reports/weekly-starts',
           label: 'Inicios de Semana',
-          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+          roles: ['Administrador', 'Ventas Externas'],
       },
       {
           href: '/reports/theory-schedule',

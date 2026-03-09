@@ -5,7 +5,7 @@ import { collection, query, where } from 'firebase/firestore';
 import { useDb, useUser } from '@/firebase';
 import type { Contract, ManualSchedule } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Loader2, CalendarIcon, Printer, Download, UserCheck, Search, Users } from 'lucide-react';
+import { Loader2, CalendarIcon, Printer, Download, UserCheck, Search, Users, ClipboardCheck } from 'lucide-react';
 import { format, isSameDay, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import Link from 'next/link';
 
 interface AttendanceRow {
     name: string;
@@ -158,7 +159,7 @@ export default function TheoryAttendanceReportPage() {
                 </PopoverContent>
             </Popover>
             <Button onClick={handlePrint} variant="outline" className="h-11"><Printer className="mr-2 h-4 w-4" /> Imprimir</Button>
-            <Button onClick={handleDownloadPdf} disabled={isDownloading} className="h-11 bg-blue-600 hover:bg-blue-700">
+            <Button onClick={handleDownloadPdf} disabled={isDownloading} className="h-11 bg-blue-600 hover:bg-blue-700 text-white">
                 {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4 mr-2" />} PDF
             </Button>
         </div>
@@ -186,6 +187,7 @@ export default function TheoryAttendanceReportPage() {
                                 <TableHead className="font-bold text-black border-black">Cédula / ID</TableHead>
                                 <TableHead className="font-bold text-black border-black">Curso / Plan</TableHead>
                                 <TableHead className="w-40 font-bold text-black border-black text-center">Firma de Asistencia</TableHead>
+                                <TableHead className="w-20 font-bold text-black border-black text-center print:hidden">Evaluación</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -197,11 +199,20 @@ export default function TheoryAttendanceReportPage() {
                                         <TableCell className="border-black">{row.idNumber}</TableCell>
                                         <TableCell className="text-xs border-black">{row.plan}</TableCell>
                                         <TableCell className="border-black"></TableCell>
+                                        <TableCell className="border-black text-center print:hidden">
+                                            {row.idNumber !== '---' && row.idNumber !== 'MANUAL' && (
+                                                <Button asChild size="sm" variant="ghost" className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title="Generar Constancia ATTT">
+                                                    <Link href={`/att-evaluations?id=${row.idNumber}`}>
+                                                        <ClipboardCheck className="h-4 w-4" />
+                                                    </Link>
+                                                </Button>
+                                            )}
+                                        </TableCell>
                                     </TableRow>
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="h-32 text-center text-muted-foreground italic border-black">
+                                    <TableCell colSpan={6} className="h-32 text-center text-muted-foreground italic border-black">
                                         No hay estudiantes programados para teoría en esta fecha.
                                     </TableCell>
                                 </TableRow>

@@ -1,7 +1,7 @@
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,10 +17,11 @@ import { ATTstandardTemplate } from '@/components/att-standard-template';
 
 type TemplateType = 'standard' | 'ampliacion';
 
-export default function ATTEvaluationsPage() {
+function ATTEvaluationsContent() {
   const db = useDb();
   const { toast } = useToast();
   const { role } = useCurrentRole();
+  const searchParams = useSearchParams();
 
   const [studentIdNumber, setStudentIdNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -29,12 +30,8 @@ export default function ATTEvaluationsPage() {
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [activeTemplate, setActiveTemplate] = useState<TemplateType>('ampliacion');
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!studentIdNumber.trim() || !db) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Introduce una cédula para buscar.' });
-      return;
-    }
+  const performSearch = async (id: string) => {
+    if (!id.trim() || !db) return;
 
     setIsLoading(true);
     setSearched(true);
@@ -43,9 +40,9 @@ export default function ATTEvaluationsPage() {
 
     try {
       const contractsRef = collection(db, 'contracts');
-      const q1 = query(contractsRef, where('autoMotoDetails.studentIdNumber', '==', studentIdNumber.trim()));
-      const q2 = query(contractsRef, where('ampliacionesDetails.studentIdNumber', '==', studentIdNumber.trim()));
-      const q3 = query(contractsRef, where('deluxeDetails.studentIdNumber', '==', studentIdNumber.trim()));
+      const q1 = query(contractsRef, where('autoMotoDetails.studentIdNumber', '==', id.trim()));
+      const q2 = query(contractsRef, where('ampliacionesDetails.studentIdNumber', '==', id.trim()));
+      const q3 = query(contractsRef, where('deluxeDetails.studentIdNumber', '==', id.trim()));
 
       const [snapshot1, snapshot2, snapshot3] = await Promise.all([getDocs(q1), getDocs(q2), getDocs(q3)]);
       
@@ -69,6 +66,11 @@ export default function ATTEvaluationsPage() {
           } else {
               setActiveTemplate('standard');
           }
+          
+          // Si solo hay uno, seleccionarlo automáticamente
+          if (results.length === 1) {
+            setSelectedContract(results[0]);
+          }
       }
     } catch (error) {
       console.error("Error searching student:", error);
@@ -76,6 +78,23 @@ export default function ATTEvaluationsPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
+    const idFromUrl = searchParams.get('id');
+    if (idFromUrl && db) {
+      setStudentIdNumber(idFromUrl);
+      performSearch(idFromUrl);
+    }
+  }, [searchParams, db]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!studentIdNumber.trim()) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Introduce una cédula para buscar.' });
+      return;
+    }
+    performSearch(studentIdNumber);
   };
 
   const handlePrint = () => {
@@ -166,12 +185,12 @@ export default function ATTEvaluationsPage() {
                             <Printer className="mr-2 h-5 w-5" /> Imprimir Documento
                         </Button>
                         <Button 
-                            onClick={() => setSelectedContract(null)} 
+                            onClick={() => { setSelectedContract(null); setSearched(false); setFoundContracts([]); setStudentIdNumber(''); }} 
                             variant="outline" 
                             size="lg" 
                             className="h-14 px-8 font-bold uppercase"
                         >
-                            Cambiar Alumno
+                            Nueva Búsqueda
                         </Button>
                     </div>
                 </div>
@@ -192,7 +211,7 @@ export default function ATTEvaluationsPage() {
                     size: letter portrait;
                     margin: 0;
                 }
-                header, footer, nav, aside, .print-hidden, button, .card-header, .card, .tabs-list { display: none !important; }
+                header, footer, nav, aside, .print-hide, button, .card-header, .card, .tabs-list { display: none !important; }
                 body { background: white !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }
                 #evaluation-print-area { 
                     border: none !important; 
@@ -207,5 +226,13 @@ export default function ATTEvaluationsPage() {
             }
         `}</style>
     </div>
+  );
+}
+
+export default function ATTEvaluationsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center p-12"><Loader2 className="animate-spin" /></div>}>
+      <ATTEvaluationsContent />
+    </Suspense>
   );
 }

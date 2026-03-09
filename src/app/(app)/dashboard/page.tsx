@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { collection } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import type { Contract } from '@/lib/types';
-import { Car, Bike, Plus, Repeat, Dumbbell, CalendarCheck, ArrowRight, Clock, ShieldCheck, Wallet, Globe, AlertTriangle, CalendarX, FileText } from 'lucide-react';
+import { Car, Bike, Plus, Repeat, Dumbbell, CalendarCheck, ArrowRight, Clock, ShieldCheck, Wallet, Globe, AlertTriangle, CalendarX, FileText, ClipboardCheck } from 'lucide-react';
 import { isToday, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -142,6 +143,7 @@ export default function DashboardPage() {
       actions: [
         { name: 'Bitácoras Semanales', href: '/reports/weekly-starts', bgColor: 'bg-cyan-50', textColor: 'text-cyan-600', roles: ['Administrador', 'Ventas Externas'] },
         { name: 'Encuesta de Satisfacción', href: '/surveys', bgColor: 'bg-purple-50', textColor: 'text-purple-600', roles: ['Administrador', 'Ventas Externas'] },
+        { name: 'Constancia de Evaluación ATTT', href: '/att-evaluations', bgColor: 'bg-blue-50', textColor: 'text-blue-700', roles: ['Administrador', 'Ventas Externas'] },
         { name: 'Exámenes Teóricos', isDropdown: true, roles: ['Administrador'], bgColor: 'bg-orange-50', textColor: 'text-orange-600' },
         { name: 'Generar Certificado Manual', href: '/certificates?mode=manual', bgColor: 'bg-amber-50', textColor: 'text-amber-600', roles: ['Administrador'] },
         { name: 'Agenda Manual', href: '/manual-schedule', bgColor: 'bg-rose-50', textColor: 'text-rose-600', roles: ['Administrador'] },
@@ -187,7 +189,7 @@ export default function DashboardPage() {
                         <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded-md flex items-center gap-1.5 border border-red-200">
                             <AlertTriangle className="h-3 w-3" /> REQUIERE PROGRAMACIÓN
                         </span>
-                        <span className="text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">FOLIO: {String(pending.folioNumber).padStart(6, '0')}</span>
+                        <span className="text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-red-200">FOLIO: {String(pending.folioNumber).padStart(6, '0')}</span>
                         <span className="text-primary">{pending.type}</span>
                     </div>
                     </div>
@@ -354,7 +356,7 @@ export default function DashboardPage() {
                             )}>
                                 <span className={cn("font-bold text-sm uppercase tracking-tight", action.textColor)}>{action.name}</span>
                                 <div className="h-8 w-8 bg-white/50 rounded-full flex items-center justify-center">
-                                  <ArrowRight className={cn("h-4 w-4", action.textColor)} />
+                                  {action.name === 'Constancia de Evaluación ATTT' ? <ClipboardCheck className={cn("h-4 w-4", action.textColor)} /> : <ArrowRight className={cn("h-4 w-4", action.textColor)} />}
                                 </div>
                             </div>
                           </Link>

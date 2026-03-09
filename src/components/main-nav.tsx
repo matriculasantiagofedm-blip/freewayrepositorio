@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -38,6 +39,11 @@ const navLinks = [
         {
             href: '/surveys',
             label: 'Encuestas de Satisfacción',
+            roles: ['Administrador', 'Ventas Externas'],
+        },
+        {
+            href: '/att-evaluations',
+            label: 'Evaluaciones ATTT',
             roles: ['Administrador', 'Ventas Externas'],
         },
         {

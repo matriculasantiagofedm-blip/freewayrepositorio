@@ -24,7 +24,7 @@ const navLinks = [
   {
     href: '/clients',
     label: 'Clientes',
-    roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+    roles: ['Administrador'],
   },
   {
     label: 'Operaciones',

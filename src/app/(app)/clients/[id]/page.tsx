@@ -1,36 +1,55 @@
 'use client';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { doc, collection, query, where } from 'firebase/firestore';
 import type { Client, Contract } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, ShieldAlert } from 'lucide-react';
 import { ContractCard } from '@/components/contract-card';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useCollection, useDoc, useMemoDoc, useMemoQuery } from '@/hooks/use-firestore';
+import { useEffect } from 'react';
 
 export default function ClientDetailPage() {
   const { id } = useParams();
   const db = useDb();
   const { user } = useUser();
-  const { role } = useCurrentRole();
+  const { role, isLoading: isRoleLoading } = useCurrentRole();
+  const router = useRouter();
 
   const clientId = Array.isArray(id) ? id[0] : id;
 
+  // SEGURIDAD: Solo Administrador
+  const isAdmin = role === 'Administrador';
+
   const clientRef = useMemoDoc(() => {
-    if (!db || !clientId || !user) return null;
+    if (!db || !clientId || !user || !isAdmin) return null;
     return doc(db, `clients`, clientId);
-  }, [db, clientId, user]);
+  }, [db, clientId, user, isAdmin]);
 
   const contractsQuery = useMemoQuery(() => {
-    if (!db || !user || !role) return null;
-    // Admin and Ventas can see all contracts for this client
+    if (!db || !user || !isAdmin) return null;
     return query(collection(db, 'contracts'), where('clientId', '==', clientId));
-  }, [db, user, clientId, role]);
+  }, [db, user, clientId, isAdmin]);
 
   const { data: client, isLoading: isClientLoading } = useDoc<Client>(clientRef);
   const { data: contracts, isLoading: areContractsLoading } = useCollection<Contract>(contractsQuery);
+
+  if (!isRoleLoading && !isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center border-2 border-dashed rounded-2xl bg-slate-50">
+        <div className="bg-red-100 p-4 rounded-full mb-4">
+            <ShieldAlert className="h-10 w-10 text-red-600" />
+        </div>
+        <h3 className="text-xl font-black text-red-900 uppercase tracking-tight">Acceso Restringido</h3>
+        <p className="text-slate-600 mt-2 max-w-sm font-medium">No tienes permisos administrativos para visualizar fichas de clientes.</p>
+        <Button asChild className="mt-8 h-12 px-8 font-bold" variant="default">
+            <Link href="/dashboard">Volver al Panel Principal</Link>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -51,13 +70,13 @@ export default function ClientDetailPage() {
             <p className="text-muted-foreground">{client.email}</p>
         </div>
       )}
-       {!client && !isClientLoading && (
+       {!client && !isClientLoading && isAdmin && (
          <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
             <h3 className="mt-4 text-lg font-semibold text-foreground">
                 Cliente no encontrado
             </h3>
             <p className="mt-2 text-sm text-muted-foreground">
-                No tienes permiso para ver este cliente o no existe.
+                El cliente solicitado no existe en la base de datos.
             </p>
         </div>
        )}
@@ -75,13 +94,13 @@ export default function ClientDetailPage() {
                 ))}
             </div>
         ) : (
-             !areContractsLoading && (
+             !areContractsLoading && isAdmin && (
                 <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
                     <h3 className="mt-4 text-lg font-semibold text-foreground">
                         No hay contratos para este cliente
                     </h3>
                     <p className="mt-2 text-sm text-muted-foreground">
-                        Cuando se cree el primer contrato, el cliente aparecerá aquí.
+                        No se han registrado trámites vinculados a esta ficha.
                     </p>
                 </div>
              )

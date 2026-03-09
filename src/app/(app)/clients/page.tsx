@@ -24,9 +24,9 @@ export default function ClientsPage() {
   const { role } = useCurrentRole();
   const [searchTerm, setSearchTerm] = useState('');
 
-  // DESBLOQUEO TOTAL: Todos los roles operativos ven el listado completo de clientes
+  // ACCESO RESTRINGIDO: Solo el Administrador ve el listado de clientes
   const clientsQuery = useMemoQuery(() => {
-    if (!db || !user || !role || (role !== 'Administrador' && role !== 'Ventas' && role !== 'Ventas Externas')) return null;
+    if (!db || !user || !role || role !== 'Administrador') return null;
     return collection(db, 'clients');
   }, [db, user, role]);
 
@@ -43,11 +43,14 @@ export default function ClientsPage() {
     }) || [];
 
   const renderContent = () => {
-    if (role && (role !== 'Administrador' && role !== 'Ventas' && role !== 'Ventas Externas')) {
+    if (role && role !== 'Administrador') {
       return (
-        <div className="p-12 text-center border-2 border-dashed rounded-lg">
-          <h3 className="text-lg font-semibold">Acceso Restringido</h3>
-          <Button asChild className="mt-4"><Link href="/dashboard">Volver al Panel</Link></Button>
+        <div className="p-12 text-center border-2 border-dashed rounded-lg bg-slate-50">
+          <h3 className="text-xl font-black text-red-900 uppercase tracking-tight">Acceso Restringido</h3>
+          <p className="text-slate-600 mt-2 max-w-sm mx-auto font-medium">Lo sentimos, esta sección es de uso exclusivo para la Administración Central.</p>
+          <Button asChild className="mt-8 h-12 px-8 font-bold" variant="default">
+            <Link href="/dashboard">Volver al Panel Principal</Link>
+          </Button>
         </div>
       );
     }
@@ -98,10 +101,12 @@ export default function ClientsPage() {
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
         <h1 className="font-headline text-3xl font-bold">Clientes</h1>
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input type="search" placeholder="Nombre o cédula..." className="pl-8 sm:w-[300px]" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-        </div>
+        {isAdmin && (
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input type="search" placeholder="Nombre o cédula..." className="pl-8 sm:w-[300px]" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          </div>
+        )}
       </div>
       {renderContent()}
     </div>

@@ -4,15 +4,18 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDb } from '@/components/firebase-provider';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Printer, ClipboardCheck, User, ArrowRight } from 'lucide-react';
+import { Loader2, Search, Printer, ClipboardCheck, User, ArrowRight, FileText, Repeat } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
-import Link from 'next/link';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ATTampliacionTemplate } from '@/components/att-ampliacion-template';
+import { ATTstandardTemplate } from '@/components/att-standard-template';
+
+type TemplateType = 'standard' | 'ampliacion';
 
 export default function ATTEvaluationsPage() {
   const db = useDb();
@@ -24,6 +27,7 @@ export default function ATTEvaluationsPage() {
   const [foundContracts, setFoundContracts] = useState<Contract[]>([]);
   const [searched, setSearched] = useState(false);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+  const [activeTemplate, setActiveTemplate] = useState<TemplateType>('ampliacion');
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,13 +52,23 @@ export default function ATTEvaluationsPage() {
       const results: Contract[] = [];
       [snapshot1, snapshot2, snapshot3].forEach(snapshot => {
           snapshot.forEach(doc => {
-              results.push({ id: doc.id, ...doc.data() } as Contract);
+              const data = doc.data() as Contract;
+              if (data.status !== 'expired') {
+                results.push({ id: doc.id, ...data } as Contract);
+              }
           });
       });
 
       setFoundContracts(results);
       if (results.length === 0) {
-          toast({ variant: 'destructive', title: 'No Encontrado', description: 'No se hallaron contratos para esta cédula.' });
+          toast({ variant: 'destructive', title: 'No Encontrado', description: 'No se hallaron contratos activos para esta cédula.' });
+      } else {
+          // Auto-seleccionar tipo de plantilla según el contrato
+          if (results[0].type === 'Ampliaciones') {
+              setActiveTemplate('ampliacion');
+          } else {
+              setActiveTemplate('standard');
+          }
       }
     } catch (error) {
       console.error("Error searching student:", error);
@@ -76,7 +90,7 @@ export default function ATTEvaluationsPage() {
             </div>
             <div>
                 <h1 className="font-headline text-3xl font-bold uppercase tracking-tight">Evaluaciones ATTT</h1>
-                <p className="text-muted-foreground font-medium">Genera la constancia de evaluación práctica oficial para la ATTT.</p>
+                <p className="text-muted-foreground font-medium">Genera las constancias de evaluación oficiales para la ATTT.</p>
             </div>
         </div>
 
@@ -128,27 +142,46 @@ export default function ATTEvaluationsPage() {
 
         {selectedContract && (
             <div className="flex flex-col items-center gap-8 animate-in fade-in-50 duration-500">
-                <div className="flex flex-col sm:flex-row gap-4 print:hidden w-full max-w-2xl">
-                    <Button 
-                        onClick={handlePrint} 
-                        variant="default" 
-                        size="lg" 
-                        className="flex-1 h-14 font-black uppercase tracking-widest bg-blue-600 hover:bg-blue-700 shadow-xl border-2 border-blue-400"
-                    >
-                        <Printer className="mr-2 h-5 w-5" /> Imprimir Evaluación
-                    </Button>
-                    <Button 
-                        onClick={() => setSelectedContract(null)} 
-                        variant="outline" 
-                        size="lg" 
-                        className="h-14 px-8 font-bold uppercase"
-                    >
-                        Cambiar Alumno
-                    </Button>
+                <div className="flex flex-col gap-6 print:hidden w-full max-w-3xl">
+                    <div className="bg-slate-100 p-1 rounded-xl flex justify-center">
+                        <Tabs value={activeTemplate} onValueChange={(v: any) => setActiveTemplate(v)} className="w-full">
+                            <TabsList className="grid w-full grid-cols-2 h-12 bg-transparent">
+                                <TabsTrigger value="ampliacion" className="gap-2 font-bold uppercase text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                                    <Repeat className="h-4 w-4" /> Evaluación Ampliaciones
+                                </TabsTrigger>
+                                <TabsTrigger value="standard" className="gap-2 font-bold uppercase text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                                    <FileText className="h-4 w-4" /> Evaluación Estándar
+                                </TabsTrigger>
+                            </TabsList>
+                        </Tabs>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-4 w-full">
+                        <Button 
+                            onClick={handlePrint} 
+                            variant="default" 
+                            size="lg" 
+                            className="flex-1 h-14 font-black uppercase tracking-widest bg-blue-600 hover:bg-blue-700 shadow-xl border-2 border-blue-400"
+                        >
+                            <Printer className="mr-2 h-5 w-5" /> Imprimir Documento
+                        </Button>
+                        <Button 
+                            onClick={() => setSelectedContract(null)} 
+                            variant="outline" 
+                            size="lg" 
+                            className="h-14 px-8 font-bold uppercase"
+                        >
+                            Cambiar Alumno
+                        </Button>
+                    </div>
                 </div>
 
                 <div id="evaluation-print-area" className="bg-white shadow-2xl border-2 border-slate-200 rounded-sm">
-                    <ATTampliacionTemplate contract={selectedContract} />
+                    {activeTemplate === 'ampliacion' ? (
+                        <ATTampliacionTemplate contract={selectedContract} />
+                    ) : (
+                        <ATTstandardTemplate contract={selectedContract} />
+                    )}
                 </div>
             </div>
         )}
@@ -159,7 +192,7 @@ export default function ATTEvaluationsPage() {
                     size: letter portrait;
                     margin: 0;
                 }
-                header, footer, nav, aside, .print-hidden, button, .card-header, .card { display: none !important; }
+                header, footer, nav, aside, .print-hidden, button, .card-header, .card, .tabs-list { display: none !important; }
                 body { background: white !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }
                 #evaluation-print-area { 
                     border: none !important; 

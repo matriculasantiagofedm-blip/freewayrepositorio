@@ -142,7 +142,7 @@ export default function DashboardPage() {
       actions: [
         { name: 'Bitácoras Semanales', href: '/reports/weekly-starts', bgColor: 'bg-cyan-50', textColor: 'text-cyan-600', roles: ['Administrador', 'Ventas Externas'] },
         { name: 'Encuesta de Satisfacción', href: '/surveys', bgColor: 'bg-purple-50', textColor: 'text-purple-600', roles: ['Administrador', 'Ventas Externas'] },
-        { name: 'Exámenes Teóricos', isDropdown: true, roles: ['Administrador', 'Ventas Externas'], bgColor: 'bg-orange-50', textColor: 'text-orange-600' },
+        { name: 'Exámenes Teóricos', isDropdown: true, roles: ['Administrador'], bgColor: 'bg-orange-50', textColor: 'text-orange-600' },
         { name: 'Generar Certificado Manual', href: '/certificates?mode=manual', bgColor: 'bg-amber-50', textColor: 'text-amber-600', roles: ['Administrador'] },
         { name: 'Agenda Manual', href: '/manual-schedule', bgColor: 'bg-rose-50', textColor: 'text-rose-600', roles: ['Administrador'] },
       ]

@@ -1,11 +1,8 @@
-
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Contract } from '@/lib/types';
-import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 
 interface ATTampliacionTemplateProps {
     contract: Contract;
@@ -40,10 +37,15 @@ const CriteriaRow = ({ num, text }: { num: number; text: string }) => (
 );
 
 export function ATTampliacionTemplate({ contract }: ATTampliacionTemplateProps) {
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => { setMounted(true); }, []);
+
     const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
     const studentName = contract.clientName || "";
     const studentId = details?.studentIdNumber || contract.studentIdNumber || "";
     
+    if (!mounted) return null;
+
     return (
         <div className="w-[8.5in] h-[11in] bg-white p-[0.25in] font-sans text-black flex flex-col overflow-hidden box-border" style={{ backgroundColor: '#ffffff', height: '11in', width: '8.5in' }}>
             {/* Header */}

@@ -34,14 +34,16 @@ export default function MileageLogPage() {
     const { user } = useUser();
     const { toast } = useToast();
 
+    const [mounted, setMounted] = useState(false);
     const [cars, setCars] = useState<VehicleMileageState[]>(initialVehicles);
     const [isSaving, setIsSaving] = useState(false);
     const [logSaved, setLogSaved] = useState(false);
-    const [logDate, setLogDate] = useState(new Date());
-
-    const today = new Date();
+    const [logDate, setLogDate] = useState<Date | null>(null);
 
     useEffect(() => {
+        setMounted(true);
+        setLogDate(new Date());
+        
         const fetchLastLog = async () => {
             if (!db) return;
 
@@ -60,7 +62,7 @@ export default function MileageLogPage() {
                 if (!querySnapshot.empty) {
                     const lastLog = querySnapshot.docs[0].data() as MileageLog;
                     
-                    const newCarsState = cars.map(car => {
+                    const newCarsState = initialVehicles.map(car => {
                         const lastLogCar = lastLog.cars.find(c => c.name === car.name);
                         if (lastLogCar && lastLogCar.finalMileage) {
                             return {
@@ -86,16 +88,10 @@ export default function MileageLogPage() {
                 }
             } catch (error) {
                 console.error("Error fetching last mileage log:", error);
-                toast({
-                    variant: 'destructive',
-                    title: 'Error al cargar datos previos',
-                    description: 'No se pudo cargar el kilometraje del día anterior. Revisa tus permisos.',
-                });
             }
         };
 
         fetchLastLog();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [db]);
 
     const handleMileageChange = (index: number, field: 'initialMileage' | 'finalMileage', value: string) => {
@@ -155,11 +151,7 @@ export default function MileageLogPage() {
 
         } catch (error) {
              console.error("Error saving mileage log:", error);
-             toast({
-                variant: 'destructive',
-                title: 'Error al Guardar',
-                description: 'No se pudo guardar el registro. Por favor, revisa tus permisos e inténtalo de nuevo.',
-            });
+             toast({ variant: 'destructive', title: 'Error al Guardar' });
         } finally {
             setIsSaving(false);
         }
@@ -174,6 +166,8 @@ export default function MileageLogPage() {
         setLogSaved(false);
     }
 
+    if (!mounted || !logDate) return null;
+
     return (
         <div className="flex flex-col gap-8 print:p-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center print-hide">
@@ -182,7 +176,7 @@ export default function MileageLogPage() {
                     <div>
                         <h1 className="font-headline text-3xl font-bold">Control de Kilometraje</h1>
                         <p className="text-muted-foreground">
-                            {format(today, "d 'de' MMMM 'de' yyyy", { locale: es })}
+                            {format(new Date(), "d 'de' MMMM 'de' yyyy", { locale: es })}
                         </p>
                     </div>
                 </div>

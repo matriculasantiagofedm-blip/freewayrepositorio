@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,7 +9,7 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import type { Contract, Payment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Printer, Save, PlusCircle, UserPlus, CreditCard } from 'lucide-react';
+import { Loader2, Search, Printer, Save, PlusCircle, UserPlus } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -36,16 +36,15 @@ export default function CancellationsPage() {
   const { toast } = useToast();
   const { role } = useCurrentRole();
 
+  const [mounted, setMounted] = useState(false);
   const [studentIdNumber, setStudentIdNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [foundContracts, setFoundContracts] = useState<Contract[] | null>(null);
   const [searched, setSearched] = useState(false);
   
-  // Estado para montos y métodos de pago por contrato
   const [payments, setPayments] = useState<{ [key: string]: number }>({});
   const [paymentMethods, setPaymentMethods] = useState<{ [key: string]: string }>({});
-  
   const [savedPayments, setSavedPayments] = useState<{ [contractId: string]: Partial<Payment> }>({});
   
   const [manualName, setManualName] = useState('');
@@ -55,7 +54,9 @@ export default function CancellationsPage() {
   const [manualPaymentSaved, setManualPaymentSaved] = useState(false);
   const [manualSavedPaymentData, setManualSavedPaymentData] = useState<Partial<Payment> | null>(null);
 
-  const today = new Date();
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   const resetForm = () => {
     setStudentIdNumber('');
@@ -231,6 +232,8 @@ export default function CancellationsPage() {
     window.open(`/print-receipt?${queryParams.toString()}`, '_blank');
   };
 
+  if (!mounted) return null;
+
   return (
     <div className="print:w-1/2 print:mx-auto print:mt-8">
       <div className="flex flex-col gap-8 print:gap-4">
@@ -238,7 +241,7 @@ export default function CancellationsPage() {
           <div className="flex flex-col">
             <h1 className="font-headline text-3xl font-bold print:text-lg">Gestión de Saldos</h1>
             <p className="text-muted-foreground print:text-sm">
-              {format(today, "d 'de' MMMM 'de' yyyy", { locale: es })}
+              {format(new Date(), "d 'de' MMMM 'de' yyyy", { locale: es })}
             </p>
           </div>
            <Button onClick={resetForm} className="print-hide">
@@ -271,7 +274,6 @@ export default function CancellationsPage() {
 
         {isLoading && <div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}
 
-        {/* Caso: Contratos Encontrados */}
         {searched && !isLoading && foundContracts && (
           <Card className='print:border-none print:shadow-none'>
               <CardHeader className='print:p-2'>
@@ -337,7 +339,6 @@ export default function CancellationsPage() {
           </Card>
         )}
 
-        {/* Caso: Sin Contratos (Pago Manual) */}
         {searched && !isLoading && !foundContracts && (
             <Card className="animate-in fade-in-50 max-w-2xl mx-auto w-full">
                 <CardHeader>

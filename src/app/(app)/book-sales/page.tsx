@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +10,7 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import type { BookSalePayment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Printer, PlusCircle, BookOpen, CreditCard } from 'lucide-react';
+import { Loader2, Save, Printer, PlusCircle, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -42,6 +42,7 @@ export default function BookSalesPage() {
   const { toast } = useToast();
   const { role } = useCurrentRole();
 
+  const [mounted, setMounted] = useState(false);
   const [clientName, setClientName] = useState('');
   const [studentIdNumber, setStudentIdNumber] = useState('');
   const [paymentType, setPaymentType] = useState('cash');
@@ -52,7 +53,9 @@ export default function BookSalesPage() {
   const [paymentSaved, setPaymentSaved] = useState(false);
   const [savedPaymentData, setSavedPaymentData] = useState<Partial<BookSalePayment> | null>(null);
   
-  const today = new Date();
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const resetFormState = () => {
     setClientName('');
@@ -137,12 +140,14 @@ export default function BookSalesPage() {
     window.open(printUrl, '_blank');
   };
 
+  if (!mounted) return null;
+
   return (
     <div className="flex flex-col gap-8">
         <div className="flex flex-col">
           <h1 className="font-headline text-3xl font-bold">Venta de Libros</h1>
           <p className="text-muted-foreground">
-            {format(today, "d 'de' MMMM 'de' yyyy", { locale: es })}
+            {format(new Date(), "d 'de' MMMM 'de' yyyy", { locale: es })}
           </p>
         </div>
 

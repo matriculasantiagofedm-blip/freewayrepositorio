@@ -61,7 +61,8 @@ const paymentTypeLabels: { [key: string]: string } = {
 export default function FinanceReportPage() {
   const db = useDb();
   const { user } = useUser();
-  const [reportDate, setReportDate] = useState<Date>(new Date());
+  const [mounted, setMounted] = useState(false);
+  const [reportDate, setReportDate] = useState<Date | undefined>(undefined);
   const [view, setView] = useState('daily');
   const [reportData, setReportData] = useState<ReportRow[]>([]);
   const [paymentTypeData, setPaymentTypeData] = useState<PaymentTypeRow[]>([]);
@@ -69,8 +70,13 @@ export default function FinanceReportPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!db || !user) {
-      setIsLoading(false);
+    setMounted(true);
+    setReportDate(new Date());
+  }, []);
+
+  useEffect(() => {
+    if (!db || !user || !reportDate) {
+      if (mounted && !reportDate) setIsLoading(false);
       return;
     }
 
@@ -117,117 +123,72 @@ export default function FinanceReportPage() {
         const paymentTypeAggregated: { [key: string]: { transactions: number; total: number } } = {};
         const roleAggregated: { [key: string]: { transactions: number; total: number } } = {};
 
-        // Helper to aggregate data by concept
         const aggregate = (concept: string, amount: number) => {
-          if (!aggregated[concept]) {
-            aggregated[concept] = { transactions: 0, total: 0 };
-          }
+          if (!aggregated[concept]) aggregated[concept] = { transactions: 0, total: 0 };
           aggregated[concept].transactions += 1;
           aggregated[concept].total += amount;
         };
         
-        // Helper to aggregate data by payment type
         const aggregateByPaymentType = (paymentType: string, amount: number) => {
-          if (!paymentTypeAggregated[paymentType]) {
-            paymentTypeAggregated[paymentType] = { transactions: 0, total: 0 };
-          }
+          if (!paymentTypeAggregated[paymentType]) paymentTypeAggregated[paymentType] = { transactions: 0, total: 0 };
           paymentTypeAggregated[paymentType].transactions += 1;
           paymentTypeAggregated[paymentType].total += amount;
         };
 
-        // Helper to aggregate data by role (SALES VOLUME)
         const aggregateByRole = (role: string | undefined, amount: number) => {
           const roleName = role || 'Sin Asignar';
-          if (!roleAggregated[roleName]) {
-            roleAggregated[roleName] = { transactions: 0, total: 0 };
-          }
+          if (!roleAggregated[roleName]) roleAggregated[roleName] = { transactions: 0, total: 0 };
           roleAggregated[roleName].transactions += 1;
           roleAggregated[roleName].total += amount;
         };
 
-        // 1. Contract Processing
         contractsSnap.forEach((doc) => {
           const contract = doc.data() as Contract;
           if (contract.status === 'expired') return;
-
           const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
-          
           let amountCollected = 0;
           let totalSaleValue = details?.courseValue || 0;
           let paymentType = 'desconocido';
           let concept = '';
-
           if (contract.type === 'Curso Deluxe') {
             concept = 'Matrícula Deluxe';
             amountCollected = 15.00;
             paymentType = contract.deluxeDetails?.paymentType || 'cash';
-          } else {
-            if (details) {
-              concept = `Abono - ${contract.type}`;
-              amountCollected = details.downPayment || 0;
-              paymentType = (details as any).paymentType || 'cash';
-            }
+          } else if (details) {
+            concept = `Abono - ${contract.type}`;
+            amountCollected = details.downPayment || 0;
+            paymentType = (details as any).paymentType || 'cash';
           }
-
-          // Para el reporte de ingresos (recaudación efectiva)
           if (amountCollected > 0) {
             aggregate(concept, amountCollected);
             aggregateByPaymentType(paymentType, amountCollected);
           }
-          
-          // Para el reporte de ventas por rol (valor total del contrato)
-          if (totalSaleValue > 0) {
-            aggregateByRole(contract.createdBy, totalSaleValue);
-          }
+          if (totalSaleValue > 0) aggregateByRole(contract.createdBy, totalSaleValue);
         });
 
-        // 2. Cancellation/Balance payments
         cancellationsSnap.forEach((doc) => {
           const payment = doc.data() as Payment;
-          // Contabilizar como ingreso
           aggregate('Abono/Cancelación de Saldo', payment.amount);
           aggregateByPaymentType(payment.paymentType || 'cash', payment.amount);
-          
-          // No sumamos a las ventas por rol para evitar duplicidad, 
-          // ya que el contrato ya se contó al 100% en el paso 1.
         });
 
-        // 3. Update payments
         updatesSnap.forEach((doc) => {
           const payment = doc.data() as Payment;
           aggregate('Actualización de Certificado', payment.amount);
           aggregateByPaymentType(payment.paymentType || 'cash', payment.amount);
-          // Estas son ventas individuales, sí se cuentan para el rol
           aggregateByRole(payment.createdBy, payment.amount);
         });
 
-        // 4. Book sale payments
         bookSalesSnap.forEach((doc) => {
           const payment = doc.data() as BookSalePayment;
           aggregate('Venta de Libros', payment.amount);
           aggregateByPaymentType(payment.paymentType || 'cash', payment.amount);
-          // Estas son ventas individuales, sí se cuentan para el rol
           aggregateByRole(payment.createdBy, payment.amount);
         });
 
-        const finalReport = Object.entries(aggregated).map(([concept, data]) => ({
-          concept,
-          ...data,
-        })).sort((a, b) => b.total - a.total);
-
-        const finalPaymentTypeReport = Object.entries(paymentTypeAggregated).map(([type, data]) => ({
-          paymentType: type,
-          ...data,
-        })).sort((a, b) => b.total - a.total);
-
-        const finalRoleReport = Object.entries(roleAggregated).map(([role, data]) => ({
-          role,
-          ...data,
-        })).sort((a, b) => b.total - a.total);
-
-        setReportData(finalReport);
-        setPaymentTypeData(finalPaymentTypeReport);
-        setRoleData(finalRoleReport);
+        setReportData(Object.entries(aggregated).map(([concept, data]) => ({ concept, ...data })).sort((a, b) => b.total - a.total));
+        setPaymentTypeData(Object.entries(paymentTypeAggregated).map(([type, data]) => ({ paymentType: type, ...data })).sort((a, b) => b.total - a.total));
+        setRoleData(Object.entries(roleAggregated).map(([role, data]) => ({ role, ...data })).sort((a, b) => b.total - a.total));
 
       } catch (error) {
         console.error("Error fetching financial data:", error);
@@ -237,22 +198,13 @@ export default function FinanceReportPage() {
     };
 
     fetchData();
-  }, [db, user, reportDate, view]);
+  }, [db, user, reportDate, view, mounted]);
 
-  const totalIncome = useMemo(() => {
-    return reportData.reduce((sum, row) => sum + row.total, 0);
-  }, [reportData]);
+  const totalIncome = useMemo(() => reportData.reduce((sum, row) => sum + row.total, 0), [reportData]);
+  const totalRoleSalesValue = useMemo(() => roleData.reduce((sum, row) => sum + row.total, 0), [roleData]);
+  const chartData = useMemo(() => reportData.map(item => ({ name: item.concept, Ingresos: item.total })), [reportData]);
 
-  const totalRoleSalesValue = useMemo(() => {
-    return roleData.reduce((sum, row) => sum + row.total, 0);
-  }, [roleData]);
-
-  const chartData = useMemo(() => {
-    return reportData.map(item => ({
-      name: item.concept,
-      Ingresos: item.total
-    }));
-  }, [reportData]);
+  if (!mounted || !reportDate) return null;
 
   return (
     <div className="flex flex-col gap-8">
@@ -300,35 +252,20 @@ export default function FinanceReportPage() {
         </div>
       ) : reportData.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
-            <h3 className="mt-4 text-lg font-semibold text-foreground">
-                No se encontraron datos
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-                No se registraron transacciones para el período seleccionado.
-            </p>
+            <h3 className="mt-4 text-lg font-semibold text-foreground">No se encontraron datos</h3>
+            <p className="mt-2 text-sm text-muted-foreground">No se registraron transacciones para el período seleccionado.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 flex flex-col gap-8">
-                
-                {/* Desglose por Rol (VALOR TOTAL DE VENTAS) */}
                 <Card className="border-primary/20 bg-primary/5">
                     <CardHeader>
-                        <div className="flex items-center gap-2">
-                            <Users className="h-5 w-5 text-primary" />
-                            <CardTitle>Ventas por Rol de Usuario (Valor Total)</CardTitle>
-                        </div>
-                        <CardDescription>Monto total de los contratos y servicios vendidos (No abonos).</CardDescription>
+                        <div className="flex items-center gap-2"><Users className="h-5 w-5 text-primary" /><CardTitle>Ventas por Rol</CardTitle></div>
+                        <CardDescription>Monto total de los contratos y servicios vendidos.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Rol de Usuario</TableHead>
-                                    <TableHead className="text-center"># Transacciones</TableHead>
-                                    <TableHead className="text-right">Monto de Venta</TableHead>
-                                </TableRow>
-                            </TableHeader>
+                            <TableHeader><TableRow><TableHead>Rol</TableHead><TableHead className="text-center"># Trans.</TableHead><TableHead className="text-right">Monto Venta</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {roleData.map((row) => (
                                     <TableRow key={row.role}>
@@ -338,33 +275,15 @@ export default function FinanceReportPage() {
                                     </TableRow>
                                 ))}
                             </TableBody>
-                            <TableFooter>
-                                <TableRow className="font-bold text-base bg-transparent">
-                                    <TableCell colSpan={2}>Volumen Total de Ventas</TableCell>
-                                    <TableCell className="text-right">{currencyFormatter.format(totalRoleSalesValue)}</TableCell>
-                                </TableRow>
-                            </TableFooter>
+                            <TableFooter><TableRow className="font-bold text-base bg-transparent"><TableCell colSpan={2}>Volumen Total</TableCell><TableCell className="text-right">{currencyFormatter.format(totalRoleSalesValue)}</TableCell></TableRow></TableFooter>
                         </Table>
                     </CardContent>
                 </Card>
-
-                {/* Desglose por Concepto (RECAUDACIÓN) */}
                 <Card>
-                    <CardHeader>
-                        <CardTitle>Ingresos Reales Recaudados</CardTitle>
-                        <CardDescription>
-                            Dinero efectivamente ingresado (Abonos + Pagos de Saldo).
-                        </CardDescription>
-                    </CardHeader>
+                    <CardHeader><CardTitle>Ingresos Reales Recaudados</CardTitle></CardHeader>
                     <CardContent>
                         <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Concepto</TableHead>
-                                    <TableHead className="text-center"># Transacciones</TableHead>
-                                    <TableHead className="text-right">Monto Cobrado</TableHead>
-                                </TableRow>
-                            </TableHeader>
+                            <TableHeader><TableRow><TableHead>Concepto</TableHead><TableHead className="text-center"># Trans.</TableHead><TableHead className="text-right">Monto Cobrado</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {reportData.map((row) => (
                                     <TableRow key={row.concept}>
@@ -374,57 +293,13 @@ export default function FinanceReportPage() {
                                     </TableRow>
                                 ))}
                             </TableBody>
-                            <TableFooter>
-                                <TableRow className="font-bold text-base">
-                                    <TableCell colSpan={2}>Total Recaudado en Caja</TableCell>
-                                    <TableCell className="text-right">{currencyFormatter.format(totalIncome)}</TableCell>
-                                </TableRow>
-                            </TableFooter>
-                        </Table>
-                    </CardContent>
-                </Card>
-                
-                {/* Desglose por Tipo de Pago */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Recaudación por Método de Pago</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                         <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Tipo de Pago</TableHead>
-                                    <TableHead className="text-center"># Transacciones</TableHead>
-                                    <TableHead className="text-right">Monto Recibido</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {paymentTypeData.map((row) => (
-                                    <TableRow key={row.paymentType}>
-                                        <TableCell className="font-medium">{paymentTypeLabels[row.paymentType] || row.paymentType}</TableCell>
-                                        <TableCell className="text-center">{row.transactions}</TableCell>
-                                        <TableCell className="text-right">{currencyFormatter.format(row.total)}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                            <TableFooter>
-                                <TableRow className="font-bold text-base">
-                                    <TableCell colSpan={2}>Total Recaudado</TableCell>
-                                    <TableCell className="text-right">{currencyFormatter.format(totalIncome)}</TableCell>
-                                </TableRow>
-                            </TableFooter>
+                            <TableFooter><TableRow className="font-bold text-base"><TableCell colSpan={2}>Total en Caja</TableCell><TableCell className="text-right">{currencyFormatter.format(totalIncome)}</TableCell></TableRow></TableFooter>
                         </Table>
                     </CardContent>
                 </Card>
             </div>
-
             <Card className="lg:col-span-1">
-                <CardHeader>
-                    <CardTitle>Gráfico de Recaudación</CardTitle>
-                     <CardDescription>
-                        Distribución de dinero ingresado por concepto.
-                    </CardDescription>
-                </CardHeader>
+                <CardHeader><CardTitle>Gráfico de Recaudación</CardTitle></CardHeader>
                  <CardContent>
                      <ResponsiveContainer width="100%" height={400}>
                         <BarChart data={chartData} layout="vertical" margin={{ left: 20, right: 30 }}>

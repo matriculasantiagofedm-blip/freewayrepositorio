@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +10,7 @@ import { useDb, useUser } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import type { Contract, Payment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Save, UserPlus, Printer, PlusCircle, CreditCard } from 'lucide-react';
+import { Loader2, Search, Save, Printer, PlusCircle, CreditCard } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -43,6 +43,7 @@ export default function UpdatesPage() {
   const { toast } = useToast();
   const { role } = useCurrentRole();
 
+  const [mounted, setMounted] = useState(false);
   const [studentIdNumber, setStudentIdNumber] = useState('');
   const [manualName, setManualName] = useState('');
   const [manualAddress, setManualAddress] = useState('');
@@ -55,7 +56,9 @@ export default function UpdatesPage() {
   const [paymentSaved, setPaymentSaved] = useState(false);
   const [savedPaymentData, setSavedPaymentData] = useState<Partial<Payment> | null>(null);
   
-  const today = new Date();
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const resetFormState = () => {
     setStudentIdNumber(''); 
@@ -137,6 +140,8 @@ export default function UpdatesPage() {
     });
     window.open(`/print-receipt?${queryParams.toString()}`, '_blank');
   };
+
+  if (!mounted) return null;
 
   return (
     <div className="flex flex-col gap-8">

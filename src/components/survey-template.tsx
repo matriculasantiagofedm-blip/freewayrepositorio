@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Contract } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Star, Check, AlertTriangle, X, ShieldCheck, UserCheck, ClipboardEdit } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface SurveyTemplateProps {
     contract?: Contract | null;
@@ -47,6 +48,9 @@ const StarRating = ({ label }: { label: string }) => (
 );
 
 export function SurveyTemplate({ contract }: SurveyTemplateProps) {
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => { setMounted(true); }, []);
+
     const studentName = contract?.clientName || "_________________________________________________";
     let instructorName = contract?.autoMotoDetails?.instructor || "";
     
@@ -57,9 +61,10 @@ export function SurveyTemplate({ contract }: SurveyTemplateProps) {
         if (sessionWithInstructor) instructorName = sessionWithInstructor.instructor;
     }
 
+    if (!mounted) return null;
+
     return (
         <div className="w-[8.5in] h-[10.7in] bg-white p-[0.7in] font-sans text-black flex flex-col relative overflow-hidden">
-            {/* Header Moderno */}
             <div className="flex justify-between items-start mb-8 border-b-4 border-slate-900 pb-4">
                 <div className="space-y-1">
                     <h1 className="font-black text-2xl uppercase tracking-tighter leading-none text-slate-900">FREEWAY</h1>
@@ -71,7 +76,6 @@ export function SurveyTemplate({ contract }: SurveyTemplateProps) {
                 </div>
             </div>
 
-            {/* Info Alumno */}
             <div className="grid grid-cols-2 gap-8 mb-8 bg-slate-50 p-4 rounded-xl border border-slate-100">
                 <div className="space-y-1">
                     <span className="text-[7pt] font-black uppercase text-slate-400">Estudiante</span>
@@ -84,7 +88,6 @@ export function SurveyTemplate({ contract }: SurveyTemplateProps) {
             </div>
 
             <div className="grid grid-cols-1 gap-8">
-                {/* Sección 1: Instructor */}
                 <section className="space-y-4">
                     <div className="flex items-center gap-2 mb-2">
                         <UserCheck className="h-5 w-5 text-slate-900" />
@@ -99,7 +102,6 @@ export function SurveyTemplate({ contract }: SurveyTemplateProps) {
                     </div>
                 </section>
 
-                {/* Sección 2: Seguridad y Confianza */}
                 <section className="space-y-4">
                     <div className="flex items-center gap-2 mb-2">
                         <ShieldCheck className="h-5 w-5 text-slate-900" />
@@ -112,7 +114,6 @@ export function SurveyTemplate({ contract }: SurveyTemplateProps) {
                     </div>
                 </section>
 
-                {/* Sección 3: Observaciones */}
                 <section className="space-y-4">
                     <div className="flex items-center gap-2 mb-2">
                         <ClipboardEdit className="h-5 w-5 text-slate-900" />
@@ -127,7 +128,6 @@ export function SurveyTemplate({ contract }: SurveyTemplateProps) {
                     </div>
                 </section>
 
-                {/* Veredicto Final */}
                 <section className="bg-slate-900 text-white p-6 rounded-2xl flex items-center justify-between">
                     <div>
                         <h4 className="font-black text-sm uppercase tracking-tighter">Estado Final del Estudiante:</h4>
@@ -146,7 +146,6 @@ export function SurveyTemplate({ contract }: SurveyTemplateProps) {
                 </section>
             </div>
 
-            {/* Footer con Firmas */}
             <div className="mt-auto pt-12 flex justify-between items-end border-t border-slate-100">
                 <div className="flex items-center gap-2">
                     <div className="bg-slate-900 text-white p-1 rounded">

@@ -9,7 +9,7 @@ import { useDb } from '@/components/firebase-provider';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Printer, ClipboardCheck, User, ArrowRight, FileText, Repeat, Download } from 'lucide-react';
+import { Loader2, Search, Printer, ClipboardCheck, User, ArrowRight, FileText, Repeat } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ATTampliacionTemplate } from '@/components/att-ampliacion-template';
@@ -25,7 +25,6 @@ function ATTEvaluationsContent() {
 
   const [studentIdNumber, setStudentIdNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
   const [foundContracts, setFoundContracts] = useState<Contract[]>([]);
   const [searched, setSearched] = useState(false);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
@@ -98,47 +97,6 @@ function ATTEvaluationsContent() {
 
   const handlePrint = () => {
     window.print();
-  };
-
-  const handleDownloadPdf = async () => {
-    const element = document.getElementById('evaluation-print-area');
-    if (!element || !selectedContract) return;
-
-    setIsDownloading(true);
-    try {
-      // Importación dinámica de la librería para reducir carga inicial
-      // @ts-ignore
-      const html2pdf = (await import('html2pdf.js')).default;
-      
-      const fileName = activeTemplate === 'ampliacion' 
-        ? `Evaluacion_ATTT_Ampliacion_${selectedContract.clientName.replace(/\s+/g, '_')}.pdf`
-        : `Evaluacion_ATTT_Estandar_${selectedContract.clientName.replace(/\s+/g, '_')}.pdf`;
-
-      const opt = {
-        margin: 0,
-        filename: fileName,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-          scale: 1.5, // Reducido ligeramente para mejor compatibilidad en tablets
-          useCORS: true, 
-          letterRendering: true,
-          logging: false,
-          backgroundColor: '#ffffff'
-        },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait', compress: true },
-        pagebreak: { mode: 'avoid-all' }
-      };
-
-      // Ejecutar la descarga
-      await html2pdf().from(element).set(opt).save();
-      
-      toast({ title: "Archivo Descargado", description: "La evaluación se ha guardado en tu dispositivo." });
-    } catch (err) {
-      console.error("Error generating PDF:", err);
-      toast({ variant: "destructive", title: "Error de Descarga", description: "No se pudo generar el archivo PDF. Intenta imprimir directamente." });
-    } finally {
-      setIsDownloading(false);
-    }
   };
 
   return (
@@ -217,21 +175,11 @@ function ATTEvaluationsContent() {
                     <div className="flex flex-col sm:flex-row gap-2 w-full">
                         <Button 
                             onClick={handlePrint} 
-                            variant="outline" 
+                            variant="default" 
                             size="lg" 
                             className="flex-1 h-12 font-black uppercase tracking-widest border-2 border-slate-800"
                         >
-                            <Printer className="mr-2 h-4 w-4" /> Imprimir
-                        </Button>
-                        <Button 
-                            onClick={handleDownloadPdf} 
-                            disabled={isDownloading}
-                            variant="default" 
-                            size="lg" 
-                            className="flex-1 h-12 font-black uppercase tracking-widest bg-blue-600 hover:bg-blue-700 shadow-lg border-2 border-blue-400"
-                        >
-                            {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />} 
-                            Descargar PDF
+                            <Printer className="mr-2 h-4 w-4" /> Imprimir Evaluación
                         </Button>
                         <Button 
                             onClick={() => { setSelectedContract(null); setSearched(false); setFoundContracts([]); setStudentIdNumber(''); }} 

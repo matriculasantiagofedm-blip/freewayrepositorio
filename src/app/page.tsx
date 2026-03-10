@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +23,12 @@ export default function Home() {
   const [accessKey, setAccessKey] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleAccess = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +45,6 @@ export default function Home() {
       if (roleMapping[accessKey]) {
         const assignedRole = roleMapping[accessKey];
         
-        // Registrar perfil de usuario para el chat
         if (currentUser) {
           await setDoc(doc(firestore, 'users', currentUser.uid), {
             uid: currentUser.uid,
@@ -79,7 +83,6 @@ export default function Home() {
           </p>
         </div>
 
-        {/* PORTAL DEL ESTUDIANTE */}
         <div className="space-y-4">
           <div className="relative">
             <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
@@ -107,7 +110,6 @@ export default function Home() {
           </Card>
         </div>
 
-        {/* ACCESO ADMINISTRATIVO */}
         <div className="space-y-4">
           <div className="relative">
             <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
@@ -164,7 +166,7 @@ export default function Home() {
         </div>
 
         <p className="text-center text-[10px] text-muted-foreground uppercase font-bold tracking-widest opacity-50">
-          © {new Date().getFullYear()} Freeway Escuela de Manejo, S.A.
+          © {mounted ? new Date().getFullYear() : '2025'} Freeway Escuela de Manejo, S.A.
         </p>
       </div>
     </main>

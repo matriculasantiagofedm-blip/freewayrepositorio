@@ -25,14 +25,9 @@
     }
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/contracts/{contractId}",
-        "definition": {
-          "schema": { "$ref": "#/entities/Contract" },
-          "description": "Colección raíz unificada para acceso global de la empresa."
-        }
-      }
-    ]
+    "/contracts/{contractId}": {
+      "schema": { "$ref": "#/entities/Contract" },
+      "description": "Colección raíz unificada para acceso global de la empresa."
+    }
   }
 }

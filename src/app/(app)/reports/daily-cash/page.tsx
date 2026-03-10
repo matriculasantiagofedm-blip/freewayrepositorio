@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/table';
 import { Trash2, Printer, CalendarIcon, Loader2, AlertCircle, User, CheckCircle2, Download } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
-import Link from 'next/link';
+import Link from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   Popover,
@@ -64,19 +64,24 @@ export default function DailyCashReportPage() {
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   
-  const [reportDate, setReportDate] = useState<Date>(new Date());
+  const [reportDate, setReportDate] = useState<Date | undefined>(undefined);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [billQuantities, setBillQuantities] = useState(initialBillQuantities);
   const [coinQuantities, setCoinQuantities] = useState(initialCoinQuantities);
   const [expenses, setExpenses] = useState(initialExpenses);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [sellerFilter, setSellerFilter] = useState('all');
+  const [mounted, setMounted] = useState(false);
 
-  // Ajustar filtro inicial según rol
+  useEffect(() => {
+    setMounted(true);
+    setReportDate(new Date());
+  }, []);
+
   useEffect(() => {
     if (role && role !== 'Administrador') {
       setSellerFilter(role);
@@ -84,7 +89,7 @@ export default function DailyCashReportPage() {
   }, [role]);
 
   useEffect(() => {
-    if (!db || isUserLoading || isRoleLoading || !user || !role) {
+    if (!db || isUserLoading || isRoleLoading || !user || !role || !reportDate) {
         return;
     }
 
@@ -250,11 +255,9 @@ export default function DailyCashReportPage() {
   }, [db, reportDate, user, role, isUserLoading, isRoleLoading]);
 
   const filteredTransactions = useMemo(() => {
-    // Si no es admin, ignorar cualquier cambio manual en sellerFilter y forzar su rol
     if (role !== 'Administrador') {
       return transactions.filter(t => t.createdBy === role);
     }
-    // Si es admin, usar el filtro seleccionado
     if (sellerFilter === 'all') {
       return transactions;
     }
@@ -320,8 +323,8 @@ export default function DailyCashReportPage() {
       const html2pdf = (await import('html2pdf.js')).default;
       
       const opt = {
-        margin: [0.3, 0.7, 0.3, 0.3], // Top, Left (0.7), Bottom, Right
-        filename: `Reporte_Caja_Freeway_${format(reportDate, 'dd-MM-yyyy')}.pdf`,
+        margin: [0.3, 0.7, 0.3, 0.3],
+        filename: `Reporte_Caja_Freeway_${reportDate ? format(reportDate, 'dd-MM-yyyy') : ''}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
           scale: 2, 
@@ -345,6 +348,8 @@ export default function DailyCashReportPage() {
   };
 
   const isAdmin = role === 'Administrador';
+
+  if (!mounted) return null;
 
   return (
     <div className="space-y-6 rounded-lg print:bg-white min-h-screen pb-12">
@@ -380,9 +385,6 @@ export default function DailyCashReportPage() {
                 border: 1px solid black !important;
                 color: black !important;
                 padding: 2px 4px !important;
-            }
-            .bg-muted\\/50 {
-                background-color: #f1f5f9 !important;
             }
             input, select, button {
                 display: none !important;
@@ -444,7 +446,7 @@ export default function DailyCashReportPage() {
       <div id="report-to-export" className="print-container bg-white mx-auto p-0" style={{ maxWidth: '820px' }}>
         <div className="text-center mb-4 border-b-2 border-black pb-2">
           <h2 className="text-xl font-black uppercase">FREEWAY ESCUELA DE MANEJO</h2>
-          <p className="text-[10px] font-bold">REPORTE DE CAJA DIARIO - {format(reportDate, "EEEE d 'de' MMMM 'de' yyyy", { locale: es }).toUpperCase()}</p>
+          <p className="text-[10px] font-bold">REPORTE DE CAJA DIARIO - {reportDate ? format(reportDate, "EEEE d 'de' MMMM 'de' yyyy", { locale: es }).toUpperCase() : ''}</p>
           {!isAdmin && <p className="text-[8px] font-bold uppercase mt-1">Vendedor: {role}</p>}
         </div>
 

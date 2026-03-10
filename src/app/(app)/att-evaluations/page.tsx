@@ -121,8 +121,10 @@ function ATTEvaluationsContent() {
             letterRendering: true, 
             backgroundColor: '#ffffff',
             logging: false,
-            // Importante: No forzar scrollY a 0 si el elemento está visible
-            windowWidth: 816, // Ancho exacto 8.5in * 96dpi
+            // CORRECCIÓN CRÍTICA: Forzar scroll a 0 para capturar el área correcta sin importar la posición del usuario
+            scrollY: 0,
+            scrollX: 0,
+            windowWidth: 816
         },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
         pagebreak: { mode: 'avoid-all' }
@@ -257,8 +259,10 @@ function ATTEvaluationsContent() {
                     size: letter portrait;
                     margin: 0;
                 }
-                header, footer, nav, aside, .print-hide, button, .card-header, .card, .tabs-list { display: none !important; }
-                body { background: white !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; height: 11in !important; }
+                /* CORRECCIÓN: Ocultar selectores específicos para evitar vista en blanco */
+                header, footer, nav, aside, .print-hide, button, .tabs-list { display: none !important; }
+                /* Asegurar que el contenido NO esté dentro de un elemento oculto */
+                body { background: white !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; height: auto !important; }
                 #evaluation-print-area { 
                     border: none !important; 
                     box-shadow: none !important; 
@@ -267,10 +271,10 @@ function ATTEvaluationsContent() {
                     width: 8.5in !important;
                     height: 11in !important;
                     overflow: hidden !important;
-                    page-break-after: avoid !important;
                     position: absolute !important;
                     top: 0 !important;
                     left: 0 !important;
+                    z-index: 9999 !important;
                 }
             }
         `}</style>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -12,28 +11,28 @@ interface ATTampliacionTemplateProps {
 }
 
 const Checkbox = ({ label }: { label: string }) => (
-    <div className="flex items-center gap-2">
-        <span className="text-[10pt] font-medium uppercase">{label}</span>
-        <div className="w-8 h-5 border border-blue-800 rounded-sm"></div>
+    <div className="flex items-center gap-1.5">
+        <span className="text-[8pt] font-medium uppercase">{label}</span>
+        <div className="w-6 h-4 border border-blue-800 rounded-sm"></div>
     </div>
 );
 
 const CriteriaRow = ({ num, text }: { num: number; text: string }) => (
     <tr className="border-b border-black">
-        <td className="p-2 text-[9.5pt] leading-tight border-r border-black">
-            <span className="font-bold mr-2">{num}.</span>
+        <td className="p-1.5 text-[7.5pt] leading-tight border-r border-black">
+            <span className="font-bold mr-1.5">{num}.</span>
             {text}
         </td>
-        <td className="p-1 w-24 border-r border-black">
-            <div className="flex items-center justify-between px-2">
-                <span className="text-[9pt] font-bold">Si</span>
-                <div className="w-8 h-5 border border-blue-800 rounded-sm"></div>
+        <td className="p-0.5 w-20 border-r border-black">
+            <div className="flex items-center justify-between px-1.5">
+                <span className="text-[7.5pt] font-bold">Si</span>
+                <div className="w-6 h-4 border border-blue-800 rounded-sm"></div>
             </div>
         </td>
-        <td className="p-1 w-24">
-            <div className="flex items-center justify-between px-2">
-                <span className="text-[9pt] font-bold">No</span>
-                <div className="w-8 h-5 border border-blue-800 rounded-sm"></div>
+        <td className="p-0.5 w-20">
+            <div className="flex items-center justify-between px-1.5">
+                <span className="text-[7.5pt] font-bold">No</span>
+                <div className="w-6 h-4 border border-blue-800 rounded-sm"></div>
             </div>
         </td>
     </tr>
@@ -45,45 +44,45 @@ export function ATTampliacionTemplate({ contract }: ATTampliacionTemplateProps) 
     const studentId = details?.studentIdNumber || contract.studentIdNumber || "";
     
     return (
-        <div className="w-[8.5in] h-[11in] bg-white p-[0.6in] font-sans text-black flex flex-col overflow-hidden">
+        <div className="w-[8.5in] h-[11in] bg-white p-[0.5in] font-sans text-black flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="flex justify-between items-start mb-4">
+            <div className="flex justify-between items-start mb-3">
                 <div className="flex flex-col">
-                    <h1 className="font-black text-2xl uppercase tracking-tighter leading-none text-black">FREEWAY</h1>
-                    <p className="text-[7pt] font-bold text-black uppercase tracking-[0.2em] -mt-1">E S C U E L A D E M A N E J O</p>
+                    <h1 className="font-black text-xl uppercase tracking-tighter leading-none text-black">FREEWAY</h1>
+                    <p className="text-[6pt] font-bold text-black uppercase tracking-[0.2em] -mt-1">E S C U E L A D E M A N E J O</p>
                 </div>
-                <div className="text-center flex-1 pt-2">
-                    <h2 className="font-black text-[13pt] uppercase tracking-tight">FREWAY ESCUELA DE MANEJO S.A.</h2>
-                    <h3 className="font-bold text-[11pt] uppercase mt-1">Constancia de Evaluación Práctica Ampliaciones</h3>
+                <div className="text-center flex-1 pt-1">
+                    <h2 className="font-black text-[10.5pt] uppercase tracking-tight">FREWAY ESCUELA DE MANEJO S.A.</h2>
+                    <h3 className="font-bold text-[9pt] uppercase mt-0.5">Constancia de Evaluación Práctica Ampliaciones</h3>
                 </div>
-                <div className="border border-black p-1 px-3 rounded-sm flex items-center gap-2">
-                    <span className="text-[9pt] font-bold">Fecha:</span>
-                    <span className="border-b border-black w-32 h-5 inline-block text-[9pt] text-center">
+                <div className="border border-black p-1 px-2 rounded-sm flex items-center gap-1.5">
+                    <span className="text-[7.5pt] font-bold">Fecha:</span>
+                    <span className="border-b border-black w-24 h-4 inline-block text-[7.5pt] text-center">
                         {format(new Date(), 'dd/MM/yyyy')}
                     </span>
                 </div>
             </div>
 
             {/* Datos Alumno */}
-            <div className="space-y-3 mb-4">
-                <div className="flex gap-4 border-b border-black pb-0.5">
-                    <span className="text-[10pt] font-medium whitespace-nowrap">Nombre del estudiante:</span>
-                    <span className="text-[10pt] font-bold uppercase flex-1">{studentName}</span>
-                    <span className="text-[10pt] font-medium whitespace-nowrap ml-4">Cédula:</span>
-                    <span className="text-[10pt] font-bold w-48">{studentId}</span>
+            <div className="space-y-2 mb-3">
+                <div className="flex gap-3 border-b border-black pb-0.5">
+                    <span className="text-[8pt] font-medium whitespace-nowrap">Nombre del estudiante:</span>
+                    <span className="text-[8pt] font-bold uppercase flex-1">{studentName}</span>
+                    <span className="text-[8pt] font-medium whitespace-nowrap ml-3">Cédula:</span>
+                    <span className="text-[8pt] font-bold w-40">{studentId}</span>
                 </div>
-                <div className="flex gap-4 border-b border-black pb-0.5">
-                    <span className="text-[10pt] font-medium whitespace-nowrap">Tipo de vehículo:</span>
-                    <span className="text-[10pt] font-bold uppercase flex-1">________________________________________</span>
-                    <span className="text-[10pt] font-medium whitespace-nowrap ml-4">Placa:</span>
-                    <span className="text-[10pt] font-bold w-48">____________________</span>
+                <div className="flex gap-3 border-b border-black pb-0.5">
+                    <span className="text-[8pt] font-medium whitespace-nowrap">Tipo de vehículo:</span>
+                    <span className="text-[8pt] font-bold uppercase flex-1">________________________________________</span>
+                    <span className="text-[8pt] font-medium whitespace-nowrap ml-3">Placa:</span>
+                    <span className="text-[8pt] font-bold w-40">____________________</span>
                 </div>
             </div>
 
             {/* Categorías */}
-            <div className="border border-blue-800 p-3 py-4 rounded-sm flex items-center justify-between mb-4">
-                <span className="font-black text-[11pt] uppercase tracking-wider">Categorías:</span>
-                <div className="flex gap-8">
+            <div className="border border-blue-800 p-2 py-3 rounded-sm flex items-center justify-between mb-3">
+                <span className="font-black text-[9pt] uppercase tracking-wider">Categorías:</span>
+                <div className="flex gap-6">
                     <Checkbox label="B" />
                     <Checkbox label="D" />
                     <Checkbox label="E1" />
@@ -94,9 +93,9 @@ export function ATTampliacionTemplate({ contract }: ATTampliacionTemplateProps) 
             </div>
 
             {/* Equipo utilizado */}
-            <div className="border border-black p-3 py-2 rounded-sm mb-4">
-                <p className="font-black text-[10pt] uppercase mb-2">Equipo utilizado:</p>
-                <div className="flex justify-between px-2">
+            <div className="border border-black p-2 py-1.5 rounded-sm mb-3">
+                <p className="font-black text-[8pt] uppercase mb-1.5">Equipo utilizado:</p>
+                <div className="flex justify-between px-1.5">
                     <Checkbox label="MOTO" />
                     <Checkbox label="CAMIÓN SENCILLO" />
                     <Checkbox label="TAXI" />
@@ -106,20 +105,20 @@ export function ATTampliacionTemplate({ contract }: ATTampliacionTemplateProps) 
             </div>
 
             {/* Resultado */}
-            <div className="flex justify-center gap-12 mb-4">
-                <div className="flex items-center gap-3">
-                    <div className="w-12 h-6 border-2 border-black rounded-sm"></div>
-                    <span className="font-bold text-[11pt] uppercase">Aprobado</span>
+            <div className="flex justify-center gap-10 mb-3">
+                <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-5 border-2 border-black rounded-sm"></div>
+                    <span className="font-bold text-[9pt] uppercase">Aprobado</span>
                 </div>
-                <div className="flex items-center gap-3">
-                    <div className="w-12 h-6 border-2 border-black rounded-sm"></div>
-                    <span className="font-bold text-[11pt] uppercase">Reprobado</span>
+                <div className="flex items-center gap-2.5">
+                    <div className="w-10 h-5 border-2 border-black rounded-sm"></div>
+                    <span className="font-bold text-[9pt] uppercase">Reprobado</span>
                 </div>
             </div>
 
             {/* Criterios de Evaluación */}
-            <div className="mb-4">
-                <p className="font-black text-[10.5pt] uppercase mb-2">Criterios de evaluación:</p>
+            <div className="mb-3">
+                <p className="font-black text-[8.5pt] uppercase mb-1.5">Criterios de evaluación:</p>
                 <table className="w-full border-collapse border border-black">
                     <tbody>
                         <CriteriaRow num={1} text="Conocimientos generales del equipo." />
@@ -127,24 +126,24 @@ export function ATTampliacionTemplate({ contract }: ATTampliacionTemplateProps) 
                         <CriteriaRow num={3} text="Destreza y uso correcto del vehículo o equipo." />
                         <CriteriaRow num={4} text="Demuestra destreza adecuadas, conocimiento y respeto por las normas de tránsito." />
                         <tr className="bg-slate-50">
-                            <td className="p-2 border-r border-black font-bold text-[9pt]">Escala:</td>
-                            <td colSpan={2} className="p-2">
-                                <div className="flex justify-between px-4">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[8.5pt]">Excelente</span>
-                                        <div className="w-8 h-5 border border-blue-800 rounded-sm"></div>
+                            <td className="p-1.5 border-r border-black font-bold text-[7.5pt]">Escala:</td>
+                            <td colSpan={2} className="p-1.5">
+                                <div className="flex justify-between px-3">
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[7pt]">Excelente</span>
+                                        <div className="w-6 h-4 border border-blue-800 rounded-sm"></div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[8.5pt]">Bueno</span>
-                                        <div className="w-8 h-5 border border-blue-800 rounded-sm"></div>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[7pt]">Bueno</span>
+                                        <div className="w-6 h-4 border border-blue-800 rounded-sm"></div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[8.5pt]">Regular</span>
-                                        <div className="w-8 h-5 border border-blue-800 rounded-sm"></div>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[7pt]">Regular</span>
+                                        <div className="w-6 h-4 border border-blue-800 rounded-sm"></div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-[8.5pt]">No apto</span>
-                                        <div className="w-8 h-5 border border-blue-800 rounded-sm"></div>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[7pt]">No apto</span>
+                                        <div className="w-6 h-4 border border-blue-800 rounded-sm"></div>
                                     </div>
                                 </div>
                             </td>
@@ -154,26 +153,26 @@ export function ATTampliacionTemplate({ contract }: ATTampliacionTemplateProps) 
             </div>
 
             {/* Comentarios generales */}
-            <div className="border border-blue-800 p-4 py-6 rounded-sm mb-12 relative">
-                <span className="absolute -top-3 left-4 bg-white px-2 font-black text-[10pt] uppercase tracking-tight">Comentarios generales:</span>
-                <div className="border-b border-black border-dotted h-1 pt-2 w-full"></div>
-                <div className="border-b border-black border-dotted h-8 w-full"></div>
+            <div className="border border-blue-800 p-3 py-5 rounded-sm mb-10 relative">
+                <span className="absolute -top-2.5 left-3 bg-white px-1.5 font-black text-[8pt] uppercase tracking-tight">Comentarios generales:</span>
+                <div className="border-b border-black border-dotted h-1 pt-1.5 w-full"></div>
+                <div className="border-b border-black border-dotted h-6 w-full"></div>
             </div>
 
             {/* Firmas */}
-            <div className="mt-auto space-y-12 mb-8">
-                <div className="flex gap-4">
-                    <span className="text-[10pt] font-medium whitespace-nowrap">Firma del instructor:</span>
-                    <div className="border-b border-black flex-1 h-5"></div>
+            <div className="mt-auto space-y-10 mb-6">
+                <div className="flex gap-3">
+                    <span className="text-[8pt] font-medium whitespace-nowrap">Firma del instructor:</span>
+                    <div className="border-b border-black flex-1 h-4"></div>
                 </div>
-                <div className="flex gap-4">
-                    <span className="text-[10pt] font-medium whitespace-nowrap">Firma del estudiante:</span>
-                    <div className="border-b border-black flex-1 h-5"></div>
+                <div className="flex gap-3">
+                    <span className="text-[8pt] font-medium whitespace-nowrap">Firma del estudiante:</span>
+                    <div className="border-b border-black flex-1 h-4"></div>
                 </div>
             </div>
 
             {/* Footer */}
-            <div className="text-center text-[7pt] text-slate-400 font-bold uppercase tracking-[0.3em] border-t pt-2">
+            <div className="text-center text-[6pt] text-slate-400 font-bold uppercase tracking-[0.3em] border-t pt-1.5">
                 Documento de Control Interno • Freeway Escuela de Manejo S.A.
             </div>
         </div>

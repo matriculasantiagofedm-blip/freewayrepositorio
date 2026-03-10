@@ -116,14 +116,16 @@ function ATTEvaluationsContent() {
         filename: fileName,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
-            scale: 1.5, 
+            scale: 2, 
             useCORS: true, 
             letterRendering: true, 
             backgroundColor: '#ffffff',
-            width: 816 // 8.5in * 96dpi
+            logging: false,
+            scrollY: 0,
+            scrollX: 0
         },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-        pagebreak: { mode: 'avoid-all' }
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
       };
 
       await html2pdf().from(element).set(opt).save();
@@ -239,7 +241,7 @@ function ATTEvaluationsContent() {
                     </div>
                 </div>
 
-                <div id="evaluation-print-area" className="bg-white shadow-2xl border-2 border-slate-200 rounded-sm overflow-hidden" style={{ width: '8.5in', height: '11in', maxWidth: '100%' }}>
+                <div id="evaluation-print-area" className="bg-white shadow-2xl rounded-sm overflow-hidden" style={{ width: '8.5in', height: '11in', maxWidth: '100%' }}>
                     {activeTemplate === 'ampliacion' ? (
                         <ATTampliacionTemplate contract={selectedContract} />
                     ) : (

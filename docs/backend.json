@@ -3,11 +3,10 @@
     "Contract": {
       "title": "Contract",
       "type": "object",
-      "description": "Represents a contract for driving school services.",
+      "description": "Representa un contrato de servicio de la escuela de manejo con detalles ATTT.",
       "properties": {
         "id": { "type": "string" },
         "folioNumber": { "type": "number" },
-        "title": { "type": "string" },
         "clientName": { "type": "string" },
         "clientEmail": { "type": "string", "format": "email" },
         "clientId": { "type": "string" },
@@ -16,17 +15,16 @@
         "userId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
         "createdBy": { "type": "string" },
-        "clauses": { "type": "string" },
-        "studentIdNumber": { "type": "string" },
         "certificateGeneratedAt": { "type": "string", "format": "date-time" },
-        "certificateFolio": { "type": "string" }
+        "certificateFolio": { "type": "string" },
+        "paymentReference": { "type": "string" }
       },
-      "required": ["id", "folioNumber", "title", "clientName", "clientId", "type", "status", "userId", "createdAt"]
+      "required": ["id", "folioNumber", "clientName", "type", "status", "userId", "createdAt"]
     },
     "UserProfile": {
       "title": "UserProfile",
       "type": "object",
-      "description": "User role and presence tracking.",
+      "description": "Perfil de usuario para identificación en chat y auditoría.",
       "properties": {
         "uid": { "type": "string" },
         "role": { "type": "string" },
@@ -34,42 +32,45 @@
         "lastActive": { "type": "string", "format": "date-time" }
       }
     },
-    "ChatRoom": {
-      "title": "ChatRoom",
+    "Payment": {
+      "title": "Payment",
       "type": "object",
-      "description": "A conversation between two users.",
+      "description": "Registro de pagos por cancelaciones, abonos o actualizaciones.",
       "properties": {
-        "participants": { "type": "array", "items": { "type": "string" } },
-        "participantRoles": { "type": "object" },
-        "participantNames": { "type": "object" },
-        "lastMessage": { "type": "string" },
-        "updatedAt": { "type": "string", "format": "date-time" }
+        "amount": { "type": "number" },
+        "paymentDate": { "type": "string", "format": "date-time" },
+        "clientName": { "type": "string" },
+        "type": { "type": "string", "enum": ["abono", "cancelacion", "actualizacion"] }
       }
     }
   },
+  "auth": {
+    "providers": ["anonymous"]
+  },
   "firestore": {
-    "structure": [
-      {
-        "path": "/contracts/{contractId}",
-        "definition": {
-          "schema": { "$ref": "#/entities/Contract" },
-          "description": "Colección raíz unificada para acceso global de la empresa."
-        }
-      },
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "schema": { "$ref": "#/entities/UserProfile" },
-          "description": "Perfiles de usuario con sus respectivos roles."
-        }
-      },
-      {
-        "path": "/chatRooms/{roomId}",
-        "definition": {
-          "schema": { "$ref": "#/entities/ChatRoom" },
-          "description": "Salas de chat entre personal."
-        }
-      }
-    ]
+    "/contracts/{contractId}": {
+      "schema": { "$ref": "#/entities/Contract" },
+      "description": "Contratos y expedientes de alumnos."
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Perfiles de personal administrativo."
+    },
+    "/cancellation_payments/{paymentId}": {
+      "schema": { "$ref": "#/entities/Payment" },
+      "description": "Pagos de saldos pendientes."
+    },
+    "/update_payments/{paymentId}": {
+      "schema": { "$ref": "#/entities/Payment" },
+      "description": "Pagos por actualización de certificados."
+    },
+    "/book_sale_payments/{saleId}": {
+      "schema": { "type": "object" },
+      "description": "Venta de libros de educación vial."
+    },
+    "/manual_schedules/{scheduleId}": {
+      "schema": { "type": "object" },
+      "description": "Asignaciones manuales de agenda práctica."
+    }
   }
 }

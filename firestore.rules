@@ -6,51 +6,46 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function getUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
-    }
-
+    // REGLAS PARA USUARIOS
     match /users/{userId} {
       allow read: if isSignedIn();
       allow write: if isSignedIn() && request.auth.uid == userId;
     }
 
-    // REGLAS DE CANALES POR ROL
-    match /chatChannels/{channelId} {
-      allow read: if isSignedIn() && getUserRole() in resource.data.allowedRoles;
-      allow create, update: if isSignedIn();
-    }
-
-    match /chatChannels/{channelId}/messages/{messageId} {
-      allow read: if isSignedIn() && getUserRole() in get(/databases/$(database)/documents/chatChannels/$(channelId)).data.allowedRoles;
-      allow create: if isSignedIn() && getUserRole() in get(/databases/$(database)/documents/chatChannels/$(channelId)).data.allowedRoles;
-    }
-
-    match /chatRooms/{roomId} {
-      allow read: if isSignedIn() && request.auth.uid in resource.data.participants;
-      allow create: if isSignedIn() && 
-        request.auth.uid in request.resource.data.participants &&
-        !(
-          (request.resource.data.participantRoles[request.resource.data.participants[0]] == 'Ventas' && 
-           request.resource.data.participantRoles[request.resource.data.participants[1]] == 'Ventas Externas') ||
-          (request.resource.data.participantRoles[request.resource.data.participants[0]] == 'Ventas Externas' && 
-           request.resource.data.participantRoles[request.resource.data.participants[1]] == 'Ventas')
-        );
-      allow update: if isSignedIn() && request.auth.uid in resource.data.participants;
-    }
-
-    match /chatRooms/{roomId}/messages/{messageId} {
-      allow read: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(roomId)).data.participants;
-      allow create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/chatRooms/$(roomId)).data.participants;
-    }
-
+    // REGLAS PARA CONTRATOS Y EVALUACIONES ATTT
     match /contracts/{contractId} {
-      allow create: if isSignedIn();
       allow read, write: if isSignedIn();
     }
 
+    // REGLAS PARA PAGOS Y CAJA
+    match /cancellation_payments/{id} {
+      allow read, write: if isSignedIn();
+    }
+    
+    match /update_payments/{id} {
+      allow read, write: if isSignedIn();
+    }
+    
+    match /book_sale_payments/{id} {
+      allow read, write: if isSignedIn();
+    }
+
+    // REGLAS PARA AGENDA Y CONTROL
+    match /manual_schedules/{id} {
+      allow read, write: if isSignedIn();
+    }
+
+    // REGLAS PARA CHAT
+    match /chatChannels/{channelId} {
+      allow read, write: if isSignedIn();
+    }
+
+    match /chatChannels/{channelId}/messages/{messageId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // REGLAS PARA CLIENTES Y CONTADORES
     match /clients/{clientId} {
-      allow create: if isSignedIn();
       allow read, write: if isSignedIn();
     }
 
@@ -58,10 +53,7 @@ service cloud.firestore {
       allow read, write: if isSignedIn();
     }
 
-    match /{collectionName}/{docId} {
-      allow read, write: if isSignedIn();
-    }
-
+    // REGLA GLOBAL DE RESPALDO PARA OPERACIONES INTERNAS
     match /{path=**} {
       allow read, write: if isSignedIn();
     }

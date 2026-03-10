@@ -1,3 +1,4 @@
+
 'use client';
 import { collection, query, orderBy } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
@@ -18,7 +19,7 @@ import { format, isToday, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
 import { Eye, Search, CheckCircle, XCircle, CalendarIcon, X } from 'lucide-react';
-import { useState, Suspense, useMemo } from 'react';
+import { useState, Suspense, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useCollection } from '@/hooks/use-firestore';
@@ -43,7 +44,12 @@ function AllContractsContent() {
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [mounted, setMounted] = useState(false);
   const filter = searchParams.get('filter');
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const contractsQuery = useMemo(() => {
     if (!db || !user) return null;
@@ -53,9 +59,8 @@ function AllContractsContent() {
   const { data: allContracts, isLoading } = useCollection<Contract>(contractsQuery);
 
   const filteredContracts = useMemo(() => {
-    if (!allContracts) return [];
+    if (!allContracts || !mounted) return [];
     return allContracts.filter((contract) => {
-      // EXCLUSIÓN DE CERTIFICADOS MANUALES
       if (contract.isManualPrint) return false;
 
       const folio = String(contract.folioNumber || '').padStart(6, '0');
@@ -65,10 +70,7 @@ function AllContractsContent() {
       
       const contractDate = toDate(contract.createdAt);
 
-      // Filtro por Fecha (Calendario)
       if (selectedDate && !isSameDay(contractDate, selectedDate)) return false;
-
-      // Filtros Especiales (Params)
       if (filter === 'overdue' && !isOverdue(contract)) return false;
       if (filter === 'today' && !isToday(contractDate)) return false;
       
@@ -77,7 +79,9 @@ function AllContractsContent() {
       }
       return true;
     });
-  }, [allContracts, searchTerm, filter, selectedDate]);
+  }, [allContracts, searchTerm, filter, selectedDate, mounted]);
+
+  if (!mounted) return null;
 
   const getTitle = () => {
       if (filter === 'overdue') return 'Contratos por Cobrar (Saldos)';

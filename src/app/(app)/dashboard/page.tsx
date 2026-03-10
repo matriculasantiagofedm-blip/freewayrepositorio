@@ -9,7 +9,7 @@ import { useCollection } from '@/hooks/use-firestore';
 import { cn, toDate } from '@/lib/utils';
 import { collection } from 'firebase/firestore';
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import type { Contract } from '@/lib/types';
 import { Car, Bike, Plus, Repeat, Dumbbell, CalendarCheck, ArrowRight, Clock, ShieldCheck, Wallet, Globe, AlertTriangle, CalendarX, FileText, ClipboardCheck } from 'lucide-react';
 import { isToday, format } from 'date-fns';
@@ -32,12 +32,7 @@ const isOverdue = (contract: Contract): boolean => {
     return balance > 0;
 };
 
-/**
- * LÓGICA DE DETECCIÓN DE AGENDA PENDIENTE
- * Verifica si un contrato activo carece de fechas teóricas o prácticas según su tipo.
- */
 const isPendingAgenda = (c: Contract): boolean => {
-    // Solo auditamos contratos en estado "activo"
     if (c.status !== 'active') return false;
     
     const hasPractical = (c.autoMotoDetails?.practicalClassSchedules?.length || 0) > 0 || 
@@ -48,11 +43,9 @@ const isPendingAgenda = (c: Contract): boolean => {
                            (c.deluxeDetails?.theoreticalClasses?.length || 0) > 0 ||
                            !!c.ampliacionesDetails?.theoreticalClassDate;
 
-    // Validación por tipo de trámite
     if (c.type === 'Ampliaciones') return !hasTheoretical;
     if (c.type === 'Curso Solo Practica') return !hasPractical;
     
-    // Para Cursos Estándar (Auto, Moto, Mixto, Deluxe) se requieren OBLIGATORIAMENTE ambas
     return !hasPractical || !hasTheoretical;
 };
 
@@ -60,6 +53,11 @@ export default function DashboardPage() {
   const db = useDb();
   const { user, isUserLoading } = useUser();
   const { role } = useCurrentRole();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isAdmin = role === 'Administrador';
 
@@ -71,7 +69,7 @@ export default function DashboardPage() {
   const { data: allContracts, isLoading: isContractsLoading } = useCollection<Contract>(contractsQuery);
 
   const statsValues = useMemo(() => {
-    if (!allContracts) return { active: 0, today: 0, overdue: 0, overdueAmount: 0, webEnrollments: [] as Contract[], pendingAgenda: [] as Contract[] };
+    if (!allContracts || !mounted) return { active: 0, today: 0, overdue: 0, overdueAmount: 0, webEnrollments: [] as Contract[], pendingAgenda: [] as Contract[] };
     
     const filteredContracts = allContracts.filter(c => !c.isManualPrint);
 
@@ -86,7 +84,6 @@ export default function DashboardPage() {
         isToday(toDate(c.createdAt))
     );
 
-    // Filtrar contratos que necesitan atención de agenda
     const pendingAgenda = filteredContracts.filter(isPendingAgenda);
 
     return {
@@ -97,7 +94,9 @@ export default function DashboardPage() {
         webEnrollments,
         pendingAgenda
     };
-  }, [allContracts]);
+  }, [allContracts, mounted]);
+
+  if (!mounted) return null;
 
   const stats = [
     { 
@@ -165,7 +164,6 @@ export default function DashboardPage() {
         <p className="text-muted-foreground font-medium">Gestión unificada de Freeway Escuela de Manejo</p>
       </div>
 
-      {/* SECCIÓN DE ALERTAS: CONTRATOS SIN AGENDA ASIGNADA (ALERTA ROJA) */}
       {isAdmin && !isContractsLoading && statsValues.pendingAgenda.length > 0 && (
         <Card className="border-red-500 border-2 bg-red-50/50 overflow-hidden shadow-xl animate-in slide-in-from-top-4 duration-700">
           <CardHeader className="pb-3 border-b border-red-200 flex flex-row items-center justify-between">

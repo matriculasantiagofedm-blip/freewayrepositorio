@@ -31,6 +31,11 @@ function ATTEvaluationsContent() {
   const [searched, setSearched] = useState(false);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [activeTemplate, setActiveTemplate] = useState<TemplateType>('standard');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const performSearch = async (id: string) => {
     if (!id.trim() || !db) return;
@@ -121,16 +126,13 @@ function ATTEvaluationsContent() {
             letterRendering: true, 
             backgroundColor: '#ffffff',
             logging: false,
-            // Solución definitiva para blancos: ignorar scroll
             scrollY: 0,
             scrollX: 0
         },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
       };
 
-      // Pequeña pausa para asegurar renderizado final
       await new Promise(resolve => setTimeout(resolve, 500));
-      
       await html2pdf().from(element).set(opt).save();
       toast({ title: "PDF Generado", description: "La evaluación se ha descargado correctamente." });
     } catch (err) {
@@ -140,6 +142,8 @@ function ATTEvaluationsContent() {
       setIsDownloading(false);
     }
   };
+
+  if (!mounted) return null;
 
   return (
     <div className="flex flex-col gap-4 pb-10">

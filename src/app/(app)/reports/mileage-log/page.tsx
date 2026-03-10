@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { collection, query, orderBy, where, Timestamp } from 'firebase/firestore';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { useDb, useUser } from '@/components/firebase-provider';
@@ -27,9 +27,14 @@ export default function MileageLogReportPage() {
   const db = useDb();
   const { user } = useUser();
   const [reportDate, setReportDate] = useState<Date | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const logsQuery = useMemoQuery(() => {
-    if (!db || !user) return null;
+    if (!db || !user || !mounted) return null;
     
     let q = query(
         collection(db, 'mileage_logs'),
@@ -43,9 +48,11 @@ export default function MileageLogReportPage() {
     }
 
     return q;
-  }, [db, user, reportDate]);
+  }, [db, user, reportDate, mounted]);
 
   const { data: logs, isLoading } = useCollection<MileageLog>(logsQuery);
+
+  if (!mounted) return null;
 
   const renderContent = () => {
     if (isLoading) {
@@ -84,7 +91,7 @@ export default function MileageLogReportPage() {
               const logDate = toDate(log.date);
               return (
                 <Collapsible asChild key={log.id}>
-                  <tbody>
+                  <TableBody>
                   <TableRow>
                     <TableCell className="font-medium">
                       {!isNaN(logDate.getTime()) ? format(logDate, 'PPP', { locale: es }) : 'Fecha inválida'}
@@ -130,7 +137,7 @@ export default function MileageLogReportPage() {
                           </td>
                       </tr>
                   </CollapsibleContent>
-                  </tbody>
+                  </TableBody>
                 </Collapsible>
               );
             })}
@@ -173,5 +180,3 @@ export default function MileageLogReportPage() {
     </div>
   );
 }
-
-    

@@ -11,7 +11,6 @@ import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
-import { Separator } from '@/components/ui/separator';
 import { isPanamaHoliday } from '@/lib/holidays';
 
 interface TheoryAssignment {
@@ -24,8 +23,14 @@ interface TheoryAssignment {
 export default function TheoryScheduleReportPage() {
   const db = useDb();
   const { user } = useUser();
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState<Date | undefined>(undefined);
   const [weeklyAssignments, setWeeklyAssignments] = useState<Map<string, TheoryAssignment[]>>(new Map());
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    setCurrentDate(new Date());
+  }, []);
 
   const contractsQuery = useMemoQuery(() => {
     if (!db || !user) return null;
@@ -37,14 +42,14 @@ export default function TheoryScheduleReportPage() {
     return collection(db, 'manual_schedules');
   }, [db, user]);
 
-  const { data: contracts, isLoading: isLoadingContracts } = useCollection<Contract>(contractsQuery);
-  const { data: manualEntries, isLoading: isLoadingManual } = useCollection<ManualSchedule>(manualEntriesQuery);
+  const { data: contracts } = useCollection<Contract>(contractsQuery);
+  const { data: manualEntries } = useCollection<ManualSchedule>(manualEntriesQuery);
 
-  const weekStart = useMemo(() => startOfWeek(currentDate, { weekStartsOn: 1 }), [currentDate]);
-  const days = Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
+  const weekStart = useMemo(() => currentDate ? startOfWeek(currentDate, { weekStartsOn: 1 }) : null, [currentDate]);
+  const days = useMemo(() => weekStart ? Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i)) : [], [weekStart]);
 
   useEffect(() => {
-    if (!contracts && !manualEntries) return;
+    if (!contracts && !manualEntries || !weekStart || !currentDate) return;
     const weekInterval = { start: startOfDay(weekStart), end: endOfWeek(currentDate, { weekStartsOn: 1 }) };
     const newWeeklyAssignments = new Map<string, TheoryAssignment[]>();
 
@@ -75,6 +80,8 @@ export default function TheoryScheduleReportPage() {
     setWeeklyAssignments(newWeeklyAssignments);
   }, [contracts, manualEntries, weekStart, currentDate]);
 
+  if (!mounted || !currentDate || !weekStart) return null;
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex justify-between items-center">
@@ -98,8 +105,6 @@ export default function TheoryScheduleReportPage() {
                             <div>
                                 <p className="text-[10px] font-bold uppercase opacity-60">{format(day, 'EEEE', { locale: es })}</p>
                                 <p className="text-lg font-black">{format(day, 'd \'de\' MMMM', { locale: es })}</p>
-                                {isSunday && <p className="text-[9px] font-black uppercase mt-1 flex items-center gap-1"><Ban className="h-2 w-2" /> NO LABORABLE</p>}
-                                {holiday && !isSunday && <p className="text-[9px] font-black uppercase mt-1 flex items-center gap-1"><Landmark className="h-2 w-2" /> {holiday.name}</p>}
                             </div>
                         </div>
                         <CardContent className="p-0">

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -9,7 +10,7 @@ import { useDb } from '@/components/firebase-provider';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Search, Printer, ClipboardCheck, User, ArrowRight, FileText, Repeat } from 'lucide-react';
+import { Loader2, Search, Printer, ClipboardCheck, User, ArrowRight, FileText, Repeat, Download } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ATTampliacionTemplate } from '@/components/att-ampliacion-template';
@@ -25,6 +26,7 @@ function ATTEvaluationsContent() {
 
   const [studentIdNumber, setStudentIdNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [foundContracts, setFoundContracts] = useState<Contract[]>([]);
   const [searched, setSearched] = useState(false);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
@@ -97,6 +99,41 @@ function ATTEvaluationsContent() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadPdf = async () => {
+    const element = document.getElementById('evaluation-print-area');
+    if (!element || !selectedContract) return;
+
+    setIsDownloading(true);
+    try {
+      // @ts-ignore
+      const html2pdf = (await import('html2pdf.js')).default;
+      const fileName = `Evaluacion_ATTT_${selectedContract.clientName.replace(/\s+/g, '_')}.pdf`;
+      
+      const opt = {
+        margin: 0,
+        filename: fileName,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { 
+            scale: 1.5, 
+            useCORS: true, 
+            letterRendering: true, 
+            backgroundColor: '#ffffff',
+            width: 816 // 8.5in * 96dpi
+        },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+        pagebreak: { mode: 'avoid-all' }
+      };
+
+      await html2pdf().from(element).set(opt).save();
+      toast({ title: "PDF Generado", description: "La evaluación se ha descargado correctamente." });
+    } catch (err) {
+      console.error(err);
+      toast({ variant: "destructive", title: "Error", description: "No se pudo generar el PDF." });
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -180,6 +217,16 @@ function ATTEvaluationsContent() {
                             className="flex-1 h-12 font-black uppercase tracking-widest border-2 border-slate-800"
                         >
                             <Printer className="mr-2 h-4 w-4" /> Imprimir Evaluación
+                        </Button>
+                        <Button 
+                            onClick={handleDownloadPdf} 
+                            disabled={isDownloading}
+                            variant="outline" 
+                            size="lg" 
+                            className="flex-1 h-12 font-black uppercase tracking-widest border-2 border-blue-600 text-blue-600 hover:bg-blue-50"
+                        >
+                            {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                            Descargar PDF
                         </Button>
                         <Button 
                             onClick={() => { setSelectedContract(null); setSearched(false); setFoundContracts([]); setStudentIdNumber(''); }} 

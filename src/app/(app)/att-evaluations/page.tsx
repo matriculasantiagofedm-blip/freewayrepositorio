@@ -258,7 +258,7 @@ function ATTEvaluationsContent() {
                     margin: 0;
                 }
                 header, footer, nav, aside, .print-hide, button, .card-header, .card, .tabs-list { display: none !important; }
-                body { background: white !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }
+                body { background: white !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; height: 11in !important; }
                 #evaluation-print-area { 
                     border: none !important; 
                     box-shadow: none !important; 
@@ -268,6 +268,9 @@ function ATTEvaluationsContent() {
                     height: 11in !important;
                     overflow: hidden !important;
                     page-break-after: avoid !important;
+                    position: absolute !important;
+                    top: 0 !important;
+                    left: 0 !important;
                 }
             }
         `}</style>

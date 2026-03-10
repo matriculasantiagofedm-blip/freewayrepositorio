@@ -33,25 +33,25 @@ export function ATTstandardTemplate({ contract }: ATTstandardTemplateProps) {
     ];
 
     return (
-        <div className="w-[8.5in] h-[11in] bg-white p-[0.3in] font-sans text-black flex flex-col overflow-hidden">
+        <div className="w-[8.5in] h-[11in] bg-white p-[0.25in] font-sans text-black flex flex-col overflow-hidden box-border">
             {/* Header */}
             <div className="flex justify-between items-start mb-1">
                 <div className="flex flex-col">
                     <h1 className="font-black text-lg uppercase tracking-tighter leading-none text-black">FREEWAY</h1>
-                    <p className="text-[4.5pt] font-bold text-black uppercase tracking-[0.2em] -mt-1">E S C U E L A D E M A N E J O</p>
+                    <p className="text-[4.5pt] font-bold text-black uppercase tracking-[0.2em] -mt-0.5">E S C U E L A D E M A N E J O</p>
                 </div>
-                <div className="text-center flex-1">
-                    <h2 className="font-black text-[8.5pt] uppercase tracking-tight">FREEWAY ESCUELA DE MANEJO S.A.</h2>
-                    <h3 className="font-bold text-[7.5pt] uppercase">Constancia de evaluación</h3>
-                    <p className="text-[5.5pt] font-bold italic mt-0.5">Dando cumplimiento al Artículo Vigésimo Tercero del Resuelto #380 del 04 de diciembre de 2000</p>
+                <div className="text-center flex-1 pt-0.5">
+                    <h2 className="font-black text-[8.5pt] uppercase tracking-tight leading-none">FREEWAY ESCUELA DE MANEJO S.A.</h2>
+                    <h3 className="font-bold text-[7pt] uppercase mt-0.5">Constancia de evaluación</h3>
+                    <p className="text-[5pt] font-bold italic mt-0.5">Dando cumplimiento al Artículo Vigésimo Tercero del Resuelto #380 del 04 de diciembre de 2000</p>
                 </div>
                 <div className="w-12"></div>
             </div>
 
             {/* Datos Alumno */}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1 mb-2 mt-1">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 mb-1.5 mt-0.5">
                 <div className="flex gap-1 border-b border-black pb-0.5">
-                    <span className="text-[6.5pt] font-medium whitespace-nowrap">Nombre del estudiante:</span>
+                    <span className="text-[6.5pt] font-medium whitespace-nowrap">Estudiante:</span>
                     <span className="text-[6.5pt] font-bold uppercase flex-1 truncate">{studentName}</span>
                 </div>
                 <div className="flex gap-1 border-b border-black pb-0.5">
@@ -64,7 +64,7 @@ export function ATTstandardTemplate({ contract }: ATTstandardTemplateProps) {
                         <span className="text-[6.5pt] font-bold flex-1">{category}</span>
                     </div>
                     <div className="flex gap-1 border-b border-black pb-0.5">
-                        <span className="text-[6.5pt] font-medium">Tipo de vehículo:</span>
+                        <span className="text-[6.5pt] font-medium">Vehículo:</span>
                         <span className="text-[6.5pt] font-bold flex-1">_________________</span>
                     </div>
                     <div className="flex gap-1 border-b border-black pb-0.5">
@@ -75,11 +75,11 @@ export function ATTstandardTemplate({ contract }: ATTstandardTemplateProps) {
             </div>
 
             {/* Tabla Clases Teóricas */}
-            <div className="mb-2">
-                <p className="text-center font-black text-[6pt] uppercase mb-0.5">CLASES TEÓRICAS ASISTENCIA</p>
-                <table className="w-full border-collapse border border-black text-[5pt]">
+            <div className="mb-1.5">
+                <p className="text-center font-black text-[5.5pt] uppercase mb-0.5">CLASES TEÓRICAS ASISTENCIA</p>
+                <table className="w-full border-collapse border border-black text-[4.5pt]">
                     <thead>
-                        <tr className="bg-slate-50 font-bold">
+                        <tr className="bg-slate-50 font-bold h-3">
                             <th className="border border-black p-0.5 w-14">1° Semana</th>
                             <th className="border border-black p-0.5">LUNES</th>
                             <th className="border border-black p-0.5">MARTES</th>
@@ -87,12 +87,12 @@ export function ATTstandardTemplate({ contract }: ATTstandardTemplateProps) {
                             <th className="border border-black p-0.5">JUEVES</th>
                             <th className="border border-black p-0.5">VIERNES</th>
                             <th className="border border-black p-0.5">SÁBADO</th>
-                            <th className="border border-black p-0.5 w-14 leading-tight">TOTAL HORAS</th>
+                            <th className="border border-black p-0.5 w-12">TOTAL HRS</th>
                         </tr>
                     </thead>
                     <tbody>
                         {['FECHA', 'HORARIO', 'HRS DÍA', 'FIRMA'].map((label) => (
-                            <tr key={label} className="h-4">
+                            <tr key={label} className="h-3">
                                 <td className="border border-black px-1 font-bold bg-slate-50">{label}</td>
                                 <td className="border border-black"></td>
                                 <td className="border border-black"></td>
@@ -103,7 +103,7 @@ export function ATTstandardTemplate({ contract }: ATTstandardTemplateProps) {
                                 <td className="border border-black"></td>
                             </tr>
                         ))}
-                        <tr className="bg-slate-50 font-bold border-t border-black">
+                        <tr className="bg-slate-50 font-bold border-t border-black h-3">
                             <th className="border border-black p-0.5">2° Semana</th>
                             <th className="border border-black p-0.5">SÁBADO</th>
                             <th className="border border-black p-0.5">SÁBADO</th>
@@ -111,10 +111,10 @@ export function ATTstandardTemplate({ contract }: ATTstandardTemplateProps) {
                             <th className="border border-black p-0.5">SÁBADO</th>
                             <th className="border border-black p-0.5">SÁBADO</th>
                             <th className="border border-black p-0.5">SÁBADO</th>
-                            <th className="border border-black p-0.5 leading-tight">TOTAL HORAS</th>
+                            <th className="border border-black p-0.5">TOTAL HRS</th>
                         </tr>
                         {['FECHA', 'HORARIO', 'HRS DÍA', 'FIRMA'].map((label) => (
-                            <tr key={`2-${label}`} className="h-4">
+                            <tr key={`2-${label}`} className="h-3">
                                 <td className="border border-black px-1 font-bold bg-slate-50">{label}</td>
                                 <td className="border border-black"></td>
                                 <td className="border border-black"></td>
@@ -129,57 +129,57 @@ export function ATTstandardTemplate({ contract }: ATTstandardTemplateProps) {
                 </table>
             </div>
 
-            <div className="flex gap-2 border-b border-black pb-0.5 mb-2 max-w-lg">
-                <span className="text-[7pt] font-medium">Instructor teórico:</span>
-                <span className="text-[7pt] font-bold flex-1">_____________________________________________________________</span>
+            <div className="flex gap-2 border-b border-black pb-0.5 mb-1.5 max-w-sm">
+                <span className="text-[6.5pt] font-medium">Instructor teórico:</span>
+                <span className="text-[6.5pt] font-bold flex-1">________________________________________</span>
             </div>
 
             {/* Actitud Evaluada */}
-            <div className="flex justify-center gap-8 mb-2">
-                <span className="font-black text-[7pt] uppercase">Actitud Evaluada</span>
+            <div className="flex justify-center gap-6 mb-1.5">
+                <span className="font-black text-[6.5pt] uppercase">Actitud Evaluada</span>
                 <div className="flex items-center gap-1">
-                    <div className="w-6 h-3.5 border border-black"></div>
-                    <span className="text-[7pt] font-bold uppercase">Aprobado</span>
+                    <div className="w-5 h-3 border border-black rounded-sm"></div>
+                    <span className="text-[6.5pt] font-bold uppercase">Aprobado</span>
                 </div>
                 <div className="flex items-center gap-1">
-                    <div className="w-6 h-3.5 border border-black"></div>
-                    <span className="text-[7pt] font-bold uppercase">Reprobado</span>
+                    <div className="w-5 h-3 border border-black rounded-sm"></div>
+                    <span className="text-[6.5pt] font-bold uppercase">Reprobado</span>
                 </div>
             </div>
 
             {/* Recomendaciones */}
-            <div className="grid grid-cols-2 gap-x-8 mb-2 px-2">
+            <div className="grid grid-cols-2 gap-x-6 mb-1.5 px-1">
                 <div className="space-y-0.5">
-                    <p className="text-[6pt] font-bold italic mb-0.5">Recomendaciones</p>
+                    <p className="text-[5.5pt] font-bold italic mb-0.5 uppercase">Evaluación de Competencias</p>
                     {recommendations.slice(0, 7).map(rec => (
-                        <div key={rec} className="flex items-center justify-between gap-2">
-                            <span className="text-[6.5pt]">{rec}</span>
-                            <div className="w-6 h-3 border border-slate-400"></div>
+                        <div key={rec} className="flex items-center justify-between gap-2 border-b border-dotted border-slate-200">
+                            <span className="text-[6pt]">{rec}</span>
+                            <div className="w-5 h-2.5 border border-slate-400 rounded-sm"></div>
                         </div>
                     ))}
                 </div>
                 <div className="space-y-0.5 pt-3">
                     {recommendations.slice(7).map(rec => (
-                        <div key={rec} className="flex items-center justify-between gap-2">
-                            <span className="text-[6.5pt]">{rec}</span>
-                            <div className="w-6 h-3 border border-slate-400"></div>
+                        <div key={rec} className="flex items-center justify-between gap-2 border-b border-dotted border-slate-200">
+                            <span className="text-[6pt]">{rec}</span>
+                            <div className="w-5 h-2.5 border border-slate-400 rounded-sm"></div>
                         </div>
                     ))}
                 </div>
             </div>
 
             {/* Tabla Prácticas */}
-            <div className="mt-1">
-                <p className="text-center font-black text-[6pt] uppercase mb-0.5">DÍAS DE CLASES PRACTICAS</p>
-                <table className="w-full border-collapse border border-black text-[5.5pt]">
+            <div className="mt-0.5">
+                <p className="text-center font-black text-[5.5pt] uppercase mb-0.5">DÍAS DE CLASES PRACTICAS</p>
+                <table className="w-full border-collapse border border-black text-[5pt]">
                     <thead>
-                        <tr className="bg-slate-50 font-bold">
-                            <th rowSpan={2} className="border border-black p-0.5 w-20"></th>
+                        <tr className="bg-slate-50 font-bold h-3">
+                            <th rowSpan={2} className="border border-black p-0.5 w-16"></th>
                             <th colSpan={2} className="border border-black p-0.5 text-center">FECHA</th>
                             <th colSpan={2} className="border border-black p-0.5 text-center">HORARIO</th>
-                            <th rowSpan={2} className="border border-black p-0.5 w-14">HORAS</th>
+                            <th rowSpan={2} className="border border-black p-0.5 w-12">HRS</th>
                         </tr>
-                        <tr className="bg-slate-50 font-bold">
+                        <tr className="bg-slate-50 font-bold h-3">
                             <th className="border border-black p-0.5">1° SEMANA</th>
                             <th className="border border-black p-0.5">2° SEMANA</th>
                             <th className="border border-black p-0.5">1° SEMANA</th>
@@ -188,7 +188,7 @@ export function ATTstandardTemplate({ contract }: ATTstandardTemplateProps) {
                     </thead>
                     <tbody>
                         {['LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO'].map(day => (
-                            <tr key={day} className="h-3.5">
+                            <tr key={day} className="h-3">
                                 <td className="border border-black px-1 font-bold bg-slate-50">{day}</td>
                                 <td className="border border-black"></td>
                                 <td className="border border-black"></td>
@@ -197,8 +197,8 @@ export function ATTstandardTemplate({ contract }: ATTstandardTemplateProps) {
                                 <td className="border border-black"></td>
                             </tr>
                         ))}
-                        <tr>
-                            <td colSpan={5} className="border border-black px-1 text-right font-black uppercase bg-slate-50 p-0.5 text-[5.5pt]">EVALUACIÓN FINAL</td>
+                        <tr className="h-3">
+                            <td colSpan={5} className="border border-black px-1 text-right font-black uppercase bg-slate-50 p-0.5 text-[5pt]">EVALUACIÓN FINAL PRÁCTICA</td>
                             <td className="border border-black p-0.5"></td>
                         </tr>
                     </tbody>
@@ -206,15 +206,20 @@ export function ATTstandardTemplate({ contract }: ATTstandardTemplateProps) {
             </div>
 
             {/* Firmas */}
-            <div className="mt-2 space-y-3">
+            <div className="mt-auto space-y-2.5 mb-2">
                 <div className="flex gap-2 border-b border-black pb-0.5">
-                    <span className="text-[7pt] font-medium whitespace-nowrap">Instructor Práctico:</span>
-                    <span className="text-[7pt] font-bold flex-1">____________________________________________________________</span>
+                    <span className="text-[6.5pt] font-medium whitespace-nowrap">Instructor Práctico:</span>
+                    <span className="text-[6.5pt] font-bold flex-1">________________________________________</span>
                 </div>
                 <div className="flex gap-2 border-b border-black pb-0.5">
-                    <span className="text-[7pt] font-medium whitespace-nowrap">Firma del estudiante:</span>
-                    <span className="text-[7pt] font-bold flex-1">____________________________________________________________</span>
+                    <span className="text-[6.5pt] font-medium whitespace-nowrap">Estudiante:</span>
+                    <span className="text-[6.5pt] font-bold flex-1">________________________________________</span>
                 </div>
+            </div>
+
+            {/* Footer */}
+            <div className="text-center text-[5pt] text-slate-400 font-bold uppercase tracking-[0.2em] border-t pt-1">
+                Control de Calidad Académica • Freeway Escuela de Manejo S.A.
             </div>
         </div>
     );

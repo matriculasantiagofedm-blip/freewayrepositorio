@@ -34,7 +34,7 @@ export function ATTstandardTemplate({ contract }: ATTstandardTemplateProps) {
     ];
 
     return (
-        <div className="w-[8.5in] h-[11in] bg-white p-[0.3in] font-sans text-black flex flex-col overflow-hidden box-border">
+        <div className="w-[8.5in] h-[11in] bg-white p-[0.3in] font-sans text-black flex flex-col overflow-hidden box-border" style={{ height: '11in', width: '8.5in' }}>
             {/* Header */}
             <div className="flex justify-between items-start mb-2">
                 <div className="flex flex-col">

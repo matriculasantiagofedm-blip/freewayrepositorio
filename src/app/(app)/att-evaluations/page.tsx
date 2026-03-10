@@ -121,11 +121,11 @@ function ATTEvaluationsContent() {
             letterRendering: true, 
             backgroundColor: '#ffffff',
             logging: false,
-            scrollY: 0,
-            scrollX: 0
+            // Importante: No forzar scrollY a 0 si el elemento está visible
+            windowWidth: 816, // Ancho exacto 8.5in * 96dpi
         },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        pagebreak: { mode: 'avoid-all' }
       };
 
       await html2pdf().from(element).set(opt).save();
@@ -241,7 +241,7 @@ function ATTEvaluationsContent() {
                     </div>
                 </div>
 
-                <div id="evaluation-print-area" className="bg-white shadow-2xl rounded-sm overflow-hidden" style={{ width: '8.5in', height: '11in', maxWidth: '100%' }}>
+                <div id="evaluation-print-area" className="bg-white shadow-2xl rounded-sm overflow-hidden" style={{ width: '8.5in', height: '11in', maxWidth: '100%', minHeight: '11in' }}>
                     {activeTemplate === 'ampliacion' ? (
                         <ATTampliacionTemplate contract={selectedContract} />
                     ) : (

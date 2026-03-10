@@ -61,14 +61,12 @@ function ATTEvaluationsContent() {
       if (results.length === 0) {
           toast({ variant: 'destructive', title: 'No Encontrado', description: 'No se hallaron contratos activos para esta cédula.' });
       } else {
-          // Auto-seleccionar tipo de plantilla según el contrato
           if (results[0].type === 'Ampliaciones') {
               setActiveTemplate('ampliacion');
           } else {
               setActiveTemplate('standard');
           }
           
-          // Si solo hay uno, seleccionarlo automáticamente
           if (results.length === 1) {
             setSelectedContract(results[0]);
           }
@@ -125,7 +123,7 @@ function ATTEvaluationsContent() {
           letterRendering: true,
           logging: false,
           backgroundColor: '#ffffff',
-          width: 816 // 8.5in * 96dpi
+          width: 816
         },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
       };
@@ -141,34 +139,33 @@ function ATTEvaluationsContent() {
   };
 
   return (
-    <div className="flex flex-col gap-8 pb-20">
+    <div className="flex flex-col gap-4 pb-10">
         <div className="flex items-center gap-3 print:hidden">
             <div className="bg-primary p-2 rounded-lg">
-                <ClipboardCheck className="h-8 w-8 text-white" />
+                <ClipboardCheck className="h-6 w-6 text-white" />
             </div>
             <div>
-                <h1 className="font-headline text-3xl font-bold uppercase tracking-tight">Evaluaciones ATTT</h1>
-                <p className="text-muted-foreground font-medium">Genera las constancias de evaluación oficiales para la ATTT.</p>
+                <h1 className="font-headline text-2xl font-bold uppercase tracking-tight">Evaluaciones ATTT</h1>
+                <p className="text-muted-foreground text-xs font-medium">Genera las constancias de evaluación oficiales para la ATTT.</p>
             </div>
         </div>
 
-        <Card className="max-w-2xl mx-auto w-full shadow-md border-primary/20 bg-primary/5 print:hidden">
-            <CardHeader>
-                <CardTitle className="text-sm font-black uppercase flex items-center gap-2">
-                    <Search className="h-4 w-4 text-primary" />
+        <Card className="max-w-2xl mx-auto w-full shadow-sm border-primary/20 bg-primary/5 print:hidden">
+            <CardHeader className="py-3">
+                <CardTitle className="text-xs font-black uppercase flex items-center gap-2">
+                    <Search className="h-3.5 w-3.5 text-primary" />
                     Buscador de Alumnos
                 </CardTitle>
-                <CardDescription>Carga un alumno para generar su constancia de evaluación.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pb-4">
                 <form onSubmit={handleSearch} className="flex items-center gap-2">
                     <Input 
                         placeholder="Cédula (Ej: 8-000-000)" 
                         value={studentIdNumber} 
                         onChange={(e) => setStudentIdNumber(e.target.value)} 
-                        className="h-11 font-bold tracking-widest bg-white uppercase"
+                        className="h-10 font-bold tracking-widest bg-white uppercase"
                     />
-                    <Button type="submit" disabled={isLoading} className="h-11 px-8 font-bold">
+                    <Button type="submit" disabled={isLoading} className="h-10 px-6 font-bold">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
                         Buscar
                     </Button>
@@ -177,21 +174,21 @@ function ATTEvaluationsContent() {
         </Card>
 
         {searched && !selectedContract && foundContracts.length > 0 && (
-            <div className="grid gap-4 max-w-4xl mx-auto w-full print:hidden">
-                <h2 className="text-xl font-black uppercase text-slate-800">Selecciona el Trámite</h2>
+            <div className="grid gap-3 max-w-4xl mx-auto w-full print:hidden">
+                <h2 className="text-sm font-black uppercase text-slate-800 ml-1">Selecciona el Trámite</h2>
                 {foundContracts.map(c => (
-                    <Card key={c.id} className="hover:border-primary transition-all cursor-pointer group" onClick={() => setSelectedContract(c)}>
-                        <CardContent className="p-6 flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="bg-slate-100 p-3 rounded-full group-hover:bg-primary/10 transition-colors">
-                                    <User className="h-6 w-6 text-slate-600 group-hover:text-primary" />
+                    <Card key={c.id} className="hover:border-primary transition-all cursor-pointer group shadow-sm" onClick={() => setSelectedContract(c)}>
+                        <CardContent className="p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-slate-100 p-2 rounded-full group-hover:bg-primary/10 transition-colors">
+                                    <User className="h-5 w-5 text-slate-600 group-hover:text-primary" />
                                 </div>
                                 <div>
-                                    <p className="font-black text-lg uppercase tracking-tight">{c.clientName}</p>
-                                    <p className="text-xs font-bold text-muted-foreground uppercase">{c.type} — FOLIO {String(c.folioNumber).padStart(6, '0')}</p>
+                                    <p className="font-black text-sm uppercase tracking-tight">{c.clientName}</p>
+                                    <p className="text-[10px] font-bold text-muted-foreground uppercase">{c.type} — FOLIO {String(c.folioNumber).padStart(6, '0')}</p>
                                 </div>
                             </div>
-                            <ArrowRight className="h-5 w-5 text-slate-300 group-hover:text-primary transition-all group-hover:translate-x-1" />
+                            <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-primary transition-all group-hover:translate-x-1" />
                         </CardContent>
                     </Card>
                 ))}
@@ -199,45 +196,45 @@ function ATTEvaluationsContent() {
         )}
 
         {selectedContract && (
-            <div className="flex flex-col items-center gap-8 animate-in fade-in-50 duration-500">
-                <div className="flex flex-col gap-6 print:hidden w-full max-w-3xl">
+            <div className="flex flex-col items-center gap-4 animate-in fade-in-50 duration-500">
+                <div className="flex flex-col gap-4 print:hidden w-full max-w-3xl">
                     <div className="bg-slate-100 p-1 rounded-xl flex justify-center">
                         <Tabs value={activeTemplate} onValueChange={(v: any) => setActiveTemplate(v)} className="w-full">
-                            <TabsList className="grid w-full grid-cols-2 h-12 bg-transparent">
-                                <TabsTrigger value="ampliacion" className="gap-2 font-bold uppercase text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                                    <Repeat className="h-4 w-4" /> Evaluación Ampliaciones
+                            <TabsList className="grid w-full grid-cols-2 h-10 bg-transparent">
+                                <TabsTrigger value="ampliacion" className="gap-2 font-bold uppercase text-[10px] data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                                    <Repeat className="h-3.5 w-3.5" /> Evaluación Ampliaciones
                                 </TabsTrigger>
-                                <TabsTrigger value="standard" className="gap-2 font-bold uppercase text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                                    <FileText className="h-4 w-4" /> Evaluación Estándar
+                                <TabsTrigger value="standard" className="gap-2 font-bold uppercase text-[10px] data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                                    <FileText className="h-3.5 w-3.5" /> Evaluación Estándar
                                 </TabsTrigger>
                             </TabsList>
                         </Tabs>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-4 w-full">
+                    <div className="flex flex-col sm:flex-row gap-2 w-full">
                         <Button 
                             onClick={handlePrint} 
                             variant="outline" 
                             size="lg" 
-                            className="flex-1 h-14 font-black uppercase tracking-widest border-2 border-slate-800"
+                            className="flex-1 h-12 font-black uppercase tracking-widest border-2 border-slate-800"
                         >
-                            <Printer className="mr-2 h-5 w-5" /> Imprimir Pantalla
+                            <Printer className="mr-2 h-4 w-4" /> Imprimir
                         </Button>
                         <Button 
                             onClick={handleDownloadPdf} 
                             disabled={isDownloading}
                             variant="default" 
                             size="lg" 
-                            className="flex-1 h-14 font-black uppercase tracking-widest bg-blue-600 hover:bg-blue-700 shadow-xl border-2 border-blue-400"
+                            className="flex-1 h-12 font-black uppercase tracking-widest bg-blue-600 hover:bg-blue-700 shadow-lg border-2 border-blue-400"
                         >
-                            {isDownloading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Download className="mr-2 h-5 w-5" />} 
+                            {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />} 
                             Descargar PDF
                         </Button>
                         <Button 
                             onClick={() => { setSelectedContract(null); setSearched(false); setFoundContracts([]); setStudentIdNumber(''); }} 
                             variant="ghost" 
                             size="lg" 
-                            className="h-14 px-8 font-bold uppercase"
+                            className="h-12 px-6 font-bold uppercase text-[10px]"
                         >
                             Nueva Búsqueda
                         </Button>

@@ -121,15 +121,18 @@ function ATTEvaluationsContent() {
             letterRendering: true, 
             backgroundColor: '#ffffff',
             logging: false,
-            // CORRECCIÓN CRÍTICA: Forzar scroll a 0 para capturar el área correcta sin importar la posición del usuario
-            scrollY: 0,
-            scrollX: 0,
-            windowWidth: 816
+            // CRÍTICO: Estas opciones aseguran que se capture el contenido ignorando el scroll de la página
+            width: element.offsetWidth,
+            height: element.offsetHeight,
+            windowWidth: 816, // Ancho de página carta estándar (8.5in * 96dpi)
         },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-        pagebreak: { mode: 'avoid-all' }
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
       };
 
+      // Pequeña pausa para asegurar renderizado final
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       await html2pdf().from(element).set(opt).save();
       toast({ title: "PDF Generado", description: "La evaluación se ha descargado correctamente." });
     } catch (err) {
@@ -259,9 +262,7 @@ function ATTEvaluationsContent() {
                     size: letter portrait;
                     margin: 0;
                 }
-                /* CORRECCIÓN: Ocultar selectores específicos para evitar vista en blanco */
-                header, footer, nav, aside, .print-hide, button, .tabs-list { display: none !important; }
-                /* Asegurar que el contenido NO esté dentro de un elemento oculto */
+                header, footer, nav, aside, .print-hide, button, .tabs-list, .print-hidden { display: none !important; }
                 body { background: white !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; height: auto !important; }
                 #evaluation-print-area { 
                     border: none !important; 

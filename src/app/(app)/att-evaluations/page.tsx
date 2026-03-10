@@ -29,7 +29,7 @@ function ATTEvaluationsContent() {
   const [foundContracts, setFoundContracts] = useState<Contract[]>([]);
   const [searched, setSearched] = useState(false);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
-  const [activeTemplate, setActiveTemplate] = useState<TemplateType>('ampliacion');
+  const [activeTemplate, setActiveTemplate] = useState<TemplateType>('standard');
 
   const performSearch = async (id: string) => {
     if (!id.trim() || !db) return;
@@ -106,6 +106,7 @@ function ATTEvaluationsContent() {
 
     setIsDownloading(true);
     try {
+      // Importación dinámica de la librería para reducir carga inicial
       // @ts-ignore
       const html2pdf = (await import('html2pdf.js')).default;
       
@@ -118,22 +119,23 @@ function ATTEvaluationsContent() {
         filename: fileName,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
-          scale: 2, 
+          scale: 1.5, // Reducido ligeramente para mejor compatibilidad en tablets
           useCORS: true, 
           letterRendering: true,
           logging: false,
-          backgroundColor: '#ffffff',
-          width: 816
+          backgroundColor: '#ffffff'
         },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait', compress: true },
         pagebreak: { mode: 'avoid-all' }
       };
 
+      // Ejecutar la descarga
       await html2pdf().from(element).set(opt).save();
-      toast({ title: "PDF Generado", description: "La evaluación se ha descargado correctamente." });
+      
+      toast({ title: "Archivo Descargado", description: "La evaluación se ha guardado en tu dispositivo." });
     } catch (err) {
       console.error("Error generating PDF:", err);
-      toast({ variant: "destructive", title: "Error", description: "No se pudo generar el PDF." });
+      toast({ variant: "destructive", title: "Error de Descarga", description: "No se pudo generar el archivo PDF. Intenta imprimir directamente." });
     } finally {
       setIsDownloading(false);
     }
@@ -146,7 +148,7 @@ function ATTEvaluationsContent() {
                 <ClipboardCheck className="h-6 w-6 text-white" />
             </div>
             <div>
-                <h1 className="font-headline text-2xl font-bold uppercase tracking-tight">Evaluaciones ATTT</h1>
+                <h1 className="font-headline text-2xl font-bold uppercase tracking-tight text-slate-900">Evaluaciones ATTT</h1>
                 <p className="text-muted-foreground text-xs font-medium">Genera las constancias de evaluación oficiales para la ATTT.</p>
             </div>
         </div>
@@ -281,7 +283,7 @@ function ATTEvaluationsContent() {
 
 export default function ATTEvaluationsPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center p-12"><Loader2 className="animate-spin" /></div>}>
+    <Suspense fallback={<div className="flex items-center justify-center p-12"><Loader2 className="animate-spin text-primary" /></div>}>
       <ATTEvaluationsContent />
     </Suspense>
   );

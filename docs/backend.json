@@ -71,6 +71,22 @@
     "/manual_schedules/{scheduleId}": {
       "schema": { "type": "object" },
       "description": "Asignaciones manuales de agenda práctica."
+    },
+    "/mileage_logs/{logId}": {
+      "schema": { "type": "object" },
+      "description": "Control diario de kilometraje de vehículos."
+    },
+    "/maintenance_logs/{logId}": {
+      "schema": { "type": "object" },
+      "description": "Historial de mantenimiento de la flota."
+    },
+    "/clients/{clientId}": {
+      "schema": { "type": "object" },
+      "description": "Fichas de clientes de la escuela."
+    },
+    "/counters/{counterId}": {
+      "schema": { "type": "object" },
+      "description": "Contadores para folios de contratos y pagos."
     }
   }
 }

@@ -6,18 +6,18 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // REGLAS PARA USUARIOS
+    // REGLAS PARA USUARIOS Y PERFILES
     match /users/{userId} {
       allow read: if isSignedIn();
       allow write: if isSignedIn() && request.auth.uid == userId;
     }
 
-    // REGLAS PARA CONTRATOS Y EVALUACIONES ATTT
+    // REGLAS PARA CONTRATOS
     match /contracts/{contractId} {
       allow read, write: if isSignedIn();
     }
 
-    // REGLAS PARA PAGOS Y CAJA
+    // REGLAS PARA PAGOS, CAJA Y LIBROS
     match /cancellation_payments/{id} {
       allow read, write: if isSignedIn();
     }
@@ -30,8 +30,16 @@ service cloud.firestore {
       allow read, write: if isSignedIn();
     }
 
-    // REGLAS PARA AGENDA Y CONTROL
+    // REGLAS PARA AGENDA Y CONTROL FLOTA
     match /manual_schedules/{id} {
+      allow read, write: if isSignedIn();
+    }
+    
+    match /mileage_logs/{id} {
+      allow read, write: if isSignedIn();
+    }
+    
+    match /maintenance_logs/{id} {
       allow read, write: if isSignedIn();
     }
 
@@ -53,7 +61,7 @@ service cloud.firestore {
       allow read, write: if isSignedIn();
     }
 
-    // REGLA GLOBAL DE RESPALDO PARA OPERACIONES INTERNAS
+    // REGLA GLOBAL PARA OPERACIONES INTERNAS DE LA ESCUELA
     match /{path=**} {
       allow read, write: if isSignedIn();
     }

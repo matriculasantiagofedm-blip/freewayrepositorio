@@ -66,6 +66,8 @@ export default function Home() {
     }
   };
 
+  if (!mounted) return null;
+
   return (
     <main className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-body">
       <div className="max-w-md w-full space-y-8 animate-in fade-in zoom-in duration-500">
@@ -166,7 +168,7 @@ export default function Home() {
         </div>
 
         <p className="text-center text-[10px] text-muted-foreground uppercase font-bold tracking-widest opacity-50">
-          © {mounted ? new Date().getFullYear() : '2025'} Freeway Escuela de Manejo, S.A.
+          © {new Date().getFullYear()} Freeway Escuela de Manejo, S.A.
         </p>
       </div>
     </main>

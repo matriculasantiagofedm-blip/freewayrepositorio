@@ -347,8 +347,6 @@ export default function DailyCashReportPage() {
     }
   };
 
-  const isAdmin = role === 'Administrador';
-
   if (!mounted) return null;
 
   return (
@@ -403,11 +401,11 @@ export default function DailyCashReportPage() {
             <div className='flex flex-col'>
                 <h1 className="text-2xl font-bold font-headline text-slate-900">Reporte de Caja Diario</h1>
                 <p className="text-xs text-muted-foreground">
-                  {isAdmin ? 'Visualizando transacciones globales.' : `Visualizando tus transacciones como ${role}.`}
+                  {role === 'Administrador' ? 'Visualizando transacciones globales.' : `Visualizando tus transacciones como ${role}.`}
                 </p>
             </div>
             <div className="flex items-center gap-2">
-                {isAdmin && (
+                {role === 'Administrador' && (
                   <Select value={sellerFilter} onValueChange={setSellerFilter}>
                       <SelectTrigger className="w-[180px] h-9 text-xs"><SelectValue placeholder="Vendedor..." /></SelectTrigger>
                       <SelectContent>
@@ -447,7 +445,7 @@ export default function DailyCashReportPage() {
         <div className="text-center mb-4 border-b-2 border-black pb-2">
           <h2 className="text-xl font-black uppercase">FREEWAY ESCUELA DE MANEJO</h2>
           <p className="text-[10px] font-bold">REPORTE DE CAJA DIARIO - {reportDate ? format(reportDate, "EEEE d 'de' MMMM 'de' yyyy", { locale: es }).toUpperCase() : ''}</p>
-          {!isAdmin && <p className="text-[8px] font-bold uppercase mt-1">Vendedor: {role}</p>}
+          {role !== 'Administrador' && <p className="text-[8px] font-bold uppercase mt-1">Vendedor: {role}</p>}
         </div>
 
         {isLoading ? (

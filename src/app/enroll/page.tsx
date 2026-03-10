@@ -142,6 +142,9 @@ export default function PublicEnrollmentPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [submittedFolio, setSubmittedFolio] = useState<number | null>(null);
   const [showCuboModal, setShowCuboModal] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   const activeContractsQuery = useMemoQuery(() => (db && auth.currentUser) ? query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed'])) : null, [db, auth.currentUser]);
   const manualEntriesQuery = useMemoQuery(() => (db && auth.currentUser) ? query(collection(db, 'manual_schedules')) : null, [db, auth.currentUser]);
@@ -189,20 +192,20 @@ export default function PublicEnrollmentPage() {
   const watchPaymentMethod = form.watch('paymentMethod');
 
   useEffect(() => {
-    if (watchPlan) {
+    if (watchPlan && mounted) {
       const count = PLAN_PRACTICAL_COUNTS[watchPlan] || 0;
       const current = form.getValues('practicalClassSchedules') || [];
       replacePractical(Array.from({ length: count }, (_, i) => current[i] || { date: new Date(), time: '08:00am a 10:00am' }));
     }
-  }, [watchPlan, replacePractical, form]);
+  }, [watchPlan, replacePractical, form, mounted]);
 
   useEffect(() => {
-    if (watchTheorySchedule) {
+    if (watchTheorySchedule && mounted) {
       const count = watchTheorySchedule === 'Semanal 8:00 am a 10:00 am' ? 4 : 3;
       const current = form.getValues('theoreticalClassDates') || [];
       form.setValue('theoreticalClassDates', Array.from({ length: count }, (_, i) => current[i] || new Date()));
     }
-  }, [watchTheorySchedule, form]);
+  }, [watchTheorySchedule, form, mounted]);
 
   const onSubmit = async (values: FormValues) => {
     if (!db || !auth.currentUser) return;
@@ -270,6 +273,8 @@ export default function PublicEnrollmentPage() {
   const handleOpenCubo = () => {
     window.open("https://link.cubopago.com/m_JPusnlxKnM", "_blank");
   };
+
+  if (!mounted) return null;
 
   if (submittedFolio) {
     return (

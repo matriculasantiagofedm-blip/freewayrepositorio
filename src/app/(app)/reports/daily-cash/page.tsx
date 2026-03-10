@@ -89,7 +89,7 @@ export default function DailyCashReportPage() {
   }, [role]);
 
   useEffect(() => {
-    if (!db || isUserLoading || isRoleLoading || !user || !role || !reportDate) {
+    if (!db || isUserLoading || isRoleLoading || !user || !role || !reportDate || !mounted) {
         return;
     }
 
@@ -252,7 +252,7 @@ export default function DailyCashReportPage() {
     };
 
     fetchDailyData();
-  }, [db, reportDate, user, role, isUserLoading, isRoleLoading]);
+  }, [db, reportDate, user, role, isUserLoading, isRoleLoading, mounted]);
 
   const filteredTransactions = useMemo(() => {
     if (role !== 'Administrador') {

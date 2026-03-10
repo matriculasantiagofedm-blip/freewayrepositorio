@@ -114,24 +114,26 @@ function ATTEvaluationsContent() {
       const opt = {
         margin: 0,
         filename: fileName,
-        image: { type: 'jpeg', quality: 0.98 },
+        image: { type: 'jpeg', quality: 1.0 },
         html2canvas: { 
-            scale: 2, 
+            scale: 3, // Máxima nitidez
             useCORS: true, 
             letterRendering: true, 
             backgroundColor: '#ffffff',
             logging: false,
             // CRÍTICO: Estas opciones aseguran que se capture el contenido ignorando el scroll de la página
-            width: element.offsetWidth,
-            height: element.offsetHeight,
-            windowWidth: 816, // Ancho de página carta estándar (8.5in * 96dpi)
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: 816, // 8.5in x 96dpi
+            width: 816,
+            height: 1056,
         },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
       };
 
-      // Pequeña pausa para asegurar renderizado final
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Pausa necesaria para que el motor de renderizado detecte todos los estilos aplicados
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       await html2pdf().from(element).set(opt).save();
       toast({ title: "PDF Generado", description: "La evaluación se ha descargado correctamente." });
@@ -246,7 +248,12 @@ function ATTEvaluationsContent() {
                     </div>
                 </div>
 
-                <div id="evaluation-print-area" className="bg-white shadow-2xl rounded-sm overflow-hidden" style={{ width: '8.5in', height: '11in', maxWidth: '100%', minHeight: '11in' }}>
+                <div className="bg-slate-50 p-4 border rounded-lg border-dashed print:hidden flex items-center gap-2 mb-2">
+                    <ClipboardCheck className="h-4 w-4 text-primary" />
+                    <p className="text-[10px] font-bold uppercase text-slate-500">Vista Previa (Tamaño Carta 8.5" x 11")</p>
+                </div>
+
+                <div id="evaluation-print-area" className="bg-white shadow-2xl rounded-sm overflow-hidden" style={{ width: '8.5in', height: '11in', minWidth: '8.5in', minHeight: '11in', backgroundColor: '#ffffff' }}>
                     {activeTemplate === 'ampliacion' ? (
                         <ATTampliacionTemplate contract={selectedContract} />
                     ) : (

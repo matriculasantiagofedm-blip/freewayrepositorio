@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -44,7 +45,7 @@ export function ATTampliacionTemplate({ contract }: ATTampliacionTemplateProps) 
     const studentId = details?.studentIdNumber || contract.studentIdNumber || "";
     
     return (
-        <div className="w-[8.5in] h-[11in] bg-white p-[0.25in] font-sans text-black flex flex-col overflow-hidden box-border">
+        <div className="w-[8.5in] h-[11in] bg-white p-[0.25in] font-sans text-black flex flex-col overflow-hidden box-border" style={{ backgroundColor: '#ffffff', height: '11in', width: '8.5in' }}>
             {/* Header */}
             <div className="flex justify-between items-start mb-1">
                 <div className="flex flex-col">

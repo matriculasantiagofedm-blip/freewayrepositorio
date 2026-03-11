@@ -99,7 +99,6 @@ export default function DailyCashReportPage() {
       const fetchedTransactionsMap = new Map<string, Transaction>();
 
       try {
-        // Buscamos contratos por creación O activación para capturar inscripciones web pagadas hoy
         const qContractsCreated = query(collection(db, 'contracts'), where('createdAt', '>=', Timestamp.fromDate(start)), where('createdAt', '<=', Timestamp.fromDate(end)));
         const qContractsActivated = query(collection(db, 'contracts'), where('activatedAt', '>=', Timestamp.fromDate(start)), where('activatedAt', '<=', Timestamp.fromDate(end)));
         const qCancellations = query(collection(db, 'cancellation_payments'), where('paymentDate', '>=', Timestamp.fromDate(start)), where('paymentDate', '<=', Timestamp.fromDate(end)));
@@ -118,29 +117,16 @@ export default function DailyCashReportPage() {
             const contract = { id: docSnap.id, ...docSnap.data() } as Contract;
             if (contract.status === 'expired' || fetchedTransactionsMap.has(contract.id)) return;
 
-            let paymentType: string = 'cash';
-            let amount: number = 0;
-            let concept: string = '';
-            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0 };
-            
             const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
-            let studentId = details?.studentIdNumber || contract.studentIdNumber || '';
+            if (!details) return;
 
-            if (contract.type === 'Curso Deluxe') {
-                concept = 'Matrícula Deluxe';
-                paymentType = contract.deluxeDetails?.paymentType || 'cash';
-                amount = 15.00;
-            } else if (details) {
-                concept = `Abono ${contract.type}`;
-                paymentType = (details as any).paymentType || 'cash';
-                amount = Number(details.downPayment) || 0;
-            }
+            let paymentType = (details as any).paymentType || 'cash';
+            let amount = Number(details.downPayment) || 0;
+            let concept = contract.type === 'Curso Deluxe' ? 'Matrícula Deluxe' : `Abono ${contract.type}`;
+            let studentId = details.studentIdNumber || contract.studentIdNumber || '';
 
-            if(amount > 0) {
-                const pKey = paymentType && paymentColumns.hasOwnProperty(paymentType) ? paymentType : 'cash';
-                paymentColumns[pKey] = amount;
-
-                fetchedTransactionsMap.set(contract.id, {
+            if (amount > 0) {
+                const transaction: any = {
                     id: contract.id,
                     contrato: String(contract.folioNumber || '').padStart(6, '0'),
                     cedula: studentId,
@@ -149,8 +135,12 @@ export default function DailyCashReportPage() {
                     amount: amount,
                     paymentType: paymentType,
                     createdBy: contract.createdBy || 'Sistema',
-                    ...paymentColumns,
-                });
+                    cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0
+                };
+
+                const pKey = paymentType && transaction.hasOwnProperty(paymentType) ? paymentType : 'cash';
+                transaction[pKey] = amount;
+                fetchedTransactionsMap.set(contract.id, transaction);
             }
         };
 
@@ -159,76 +149,66 @@ export default function DailyCashReportPage() {
 
         snapCancellations.docs.forEach((docSnap: any) => {
             const payment = docSnap.data() as Payment;
-            const amount = Number(payment.amount) || 0;
             const pType = payment.paymentType || 'cash';
-            
-            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0 };
-            const pKey = pType && paymentColumns.hasOwnProperty(pType) ? pType : 'cash';
-            paymentColumns[pKey] = amount;
-
-            fetchedTransactionsMap.set(docSnap.id, {
+            const transaction: any = {
                 id: docSnap.id,
                 contrato: String(payment.cancellationFolio || '').padStart(6, '0'),
                 cedula: payment.studentIdNumber || '',
                 clientName: payment.clientName || '',
                 service: 'Abono/Cancelación de Saldo',
-                amount: amount,
+                amount: payment.amount,
                 paymentType: pType,
                 createdBy: payment.createdBy || 'Sistema',
-                ...paymentColumns,
-            });
+                cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0
+            };
+            const pKey = pType && transaction.hasOwnProperty(pType) ? pType : 'cash';
+            transaction[pKey] = payment.amount;
+            fetchedTransactionsMap.set(docSnap.id, transaction);
         });
 
         snapUpdates.docs.forEach((docSnap: any) => {
             const payment = docSnap.data() as Payment;
-            const amount = Number(payment.amount) || 0;
             const pType = payment.paymentType || 'cash';
-
-            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0 };
-            const pKey = pType && paymentColumns.hasOwnProperty(pType) ? pType : 'cash';
-            paymentColumns[pKey] = amount;
-
-            fetchedTransactionsMap.set(docSnap.id, {
+            const transaction: any = {
                 id: docSnap.id,
                 contrato: String(payment.updateFolio || '').padStart(6, '0'),
                 cedula: payment.studentIdNumber || '',
                 clientName: payment.clientName || '',
                 service: 'Actualización de Certificado',
-                amount: amount,
+                amount: payment.amount,
                 paymentType: pType,
                 createdBy: payment.createdBy || 'Sistema',
-                ...paymentColumns,
-            });
+                cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0
+            };
+            const pKey = pType && transaction.hasOwnProperty(pType) ? pType : 'cash';
+            transaction[pKey] = payment.amount;
+            fetchedTransactionsMap.set(docSnap.id, transaction);
         });
 
         snapBookSales.docs.forEach((docSnap: any) => {
             const payment = docSnap.data() as BookSalePayment;
-            const amount = Number(payment.amount) || 0;
             const pType = payment.paymentType || 'cash';
-
-            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0 };
-            const pKey = pType && paymentColumns.hasOwnProperty(pType) ? pType : 'cash';
-            paymentColumns[pKey] = amount;
-
-            fetchedTransactionsMap.set(docSnap.id, {
+            const transaction: any = {
                 id: docSnap.id,
                 contrato: String(payment.bookSaleFolio || '').padStart(6, '0'),
                 cedula: payment.studentIdNumber || '',
                 clientName: payment.clientName || '',
                 service: `Libro: ${payment.bookTitle}`,
-                amount: amount,
+                amount: payment.amount,
                 paymentType: pType,
                 createdBy: payment.createdBy || 'Sistema',
-                ...paymentColumns,
-            });
+                cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0
+            };
+            const pKey = pType && transaction.hasOwnProperty(pType) ? pType : 'cash';
+            transaction[pKey] = payment.amount;
+            fetchedTransactionsMap.set(docSnap.id, transaction);
         });
 
         setTransactions(Array.from(fetchedTransactionsMap.values()));
         setIsReady(true);
-
       } catch (err: any) {
-        console.error("Error fetching report data:", err);
-        toast({ variant: 'destructive', title: 'Error', description: 'No se pudieron cargar los datos de caja.' });
+        console.error(err);
+        toast({ variant: 'destructive', title: 'Error', description: 'Fallo al cargar datos.' });
       } finally {
         setIsLoading(false);
       }
@@ -238,12 +218,8 @@ export default function DailyCashReportPage() {
   }, [db, reportDate, user, role, isUserLoading, isRoleLoading, mounted]);
 
   const filteredTransactions = useMemo(() => {
-    if (role !== 'Administrador') {
-      return transactions.filter(t => t.createdBy === role);
-    }
-    if (sellerFilter === 'all') {
-      return transactions;
-    }
+    if (role !== 'Administrador') return transactions.filter(t => t.createdBy === role);
+    if (sellerFilter === 'all') return transactions;
     return transactions.filter(t => t.createdBy === sellerFilter);
   }, [transactions, sellerFilter, role]);
 
@@ -276,48 +252,37 @@ export default function DailyCashReportPage() {
     const diferencia = cashBreakdownTotals.total - totalEfectivoMenosGastos;
     return { totalFacturado, totalEfectivoMenosGastos, diferencia };
   }, [transactionTotals, totalExpenses, cashBreakdownTotals.total]);
-  
 
   const handleCashChange = (type: 'bill' | 'coin', value: string, quantity: string) => {
     const qty = parseInt(quantity) || 0;
-    if (type === 'bill') {
-      setBillQuantities(prev => ({ ...prev, [value]: qty }));
-    } else {
-      setCoinQuantities(prev => ({ ...prev, [value]: qty }));
-    }
+    if (type === 'bill') setBillQuantities(prev => ({ ...prev, [value]: qty }));
+    else setCoinQuantities(prev => ({ ...prev, [value]: qty }));
   };
 
   const handleExpenseChange = (index: number, field: 'description' | 'amount', value: any) => {
     const updated = [...expenses];
-    if (field === 'amount') {
-      updated[index] = { ...updated[index], [field]: parseFloat(value) || 0 };
-    } else {
-      updated[index] = { ...updated[index], [field]: value };
-    }
+    if (field === 'amount') updated[index] = { ...updated[index], [field]: parseFloat(value) || 0 };
+    else updated[index] = { ...updated[index], [field]: value };
     setExpenses(updated);
   };
 
   const handleDownloadPdf = async () => {
     const element = document.getElementById('report-to-export');
     if (!element) return;
-
     setIsDownloading(true);
     try {
-      // @ts-ignore
       const html2pdf = (await import('html2pdf.js')).default;
-      
       const opt = {
         margin: [0.3, 0.7, 0.3, 0.3],
-        filename: `Reporte_Caja_Freeway_${reportDate ? format(reportDate, 'dd-MM-yyyy') : ''}.pdf`,
+        filename: `Caja_Freeway_${reportDate ? format(reportDate, 'dd-MM-yyyy') : ''}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true, logging: false, backgroundColor: '#ffffff', width: 820 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff', width: 820 },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
       };
-
       await html2pdf().from(element).set(opt).save();
-      toast({ title: "PDF Generado", description: "Reporte descargado." });
+      toast({ title: "PDF Generado" });
     } catch (err) {
-      toast({ variant: "destructive", title: "Error", description: "No se pudo generar el PDF." });
+      toast({ variant: "destructive", title: "Error PDF" });
     } finally {
       setIsDownloading(false);
     }

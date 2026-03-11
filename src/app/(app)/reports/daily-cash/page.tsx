@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/select';
 import { useDb, useUser } from '@/firebase';
 import { collection, query, getDocs, Timestamp, where } from 'firebase/firestore';
-import type { Contract, Payment, Transaction, BookSalePayment } from '@/lib/types';
+import type { Contract, Payment, Transaction } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
 const initialBillQuantities: { [key: string]: number } = {
@@ -87,7 +87,7 @@ export default function DailyCashReportPage() {
       const start = startOfDay(reportDate);
       const end = endOfDay(reportDate);
 
-      // 1. CONTRATOS (Detectamos por creación O activación)
+      // 1. CONTRATOS
       const contractsSnap = await getDocs(collection(db, 'contracts'));
       
       contractsSnap.docs.forEach(docSnap => {
@@ -140,7 +140,6 @@ export default function DailyCashReportPage() {
       cancellationsSnap.docs.forEach(docSnap => {
           const payment = docSnap.data() as Payment;
           
-          // Excluir si el folio de contrato asociado es 93 (poco probable pero por seguridad)
           if (payment.contractFolio === 93) return;
 
           const pType = payment.paymentType || 'cash';

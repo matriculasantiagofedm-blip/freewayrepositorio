@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useDb, useUser } from '@/components/firebase-provider';
+import { useDb, useUser } from '@/firebase';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import type { Contract, Payment, Transaction, BookSalePayment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -99,6 +99,7 @@ export default function DailyCashReportPage() {
       const fetchedTransactionsMap = new Map<string, Transaction>();
 
       try {
+        // Buscamos contratos por creación O activación para capturar inscripciones web pagadas hoy
         const qContractsCreated = query(collection(db, 'contracts'), where('createdAt', '>=', Timestamp.fromDate(start)), where('createdAt', '<=', Timestamp.fromDate(end)));
         const qContractsActivated = query(collection(db, 'contracts'), where('activatedAt', '>=', Timestamp.fromDate(start)), where('activatedAt', '<=', Timestamp.fromDate(end)));
         const qCancellations = query(collection(db, 'cancellation_payments'), where('paymentDate', '>=', Timestamp.fromDate(start)), where('paymentDate', '<=', Timestamp.fromDate(end)));
@@ -153,10 +154,10 @@ export default function DailyCashReportPage() {
             }
         };
 
-        if (snapCreated) snapCreated.docs.forEach(processContract);
-        if (snapActivated) snapActivated.docs.forEach(processContract);
+        snapCreated.docs.forEach(processContract);
+        snapActivated.docs.forEach(processContract);
 
-        if (snapCancellations) snapCancellations.docs.forEach((docSnap: any) => {
+        snapCancellations.docs.forEach((docSnap: any) => {
             const payment = docSnap.data() as Payment;
             const amount = Number(payment.amount) || 0;
             const pType = payment.paymentType || 'cash';
@@ -178,7 +179,7 @@ export default function DailyCashReportPage() {
             });
         });
 
-        if (snapUpdates) snapUpdates.docs.forEach((docSnap: any) => {
+        snapUpdates.docs.forEach((docSnap: any) => {
             const payment = docSnap.data() as Payment;
             const amount = Number(payment.amount) || 0;
             const pType = payment.paymentType || 'cash';
@@ -200,7 +201,7 @@ export default function DailyCashReportPage() {
             });
         });
 
-        if (snapBookSales) snapBookSales.docs.forEach((docSnap: any) => {
+        snapBookSales.docs.forEach((docSnap: any) => {
             const payment = docSnap.data() as BookSalePayment;
             const amount = Number(payment.amount) || 0;
             const pType = payment.paymentType || 'cash';

@@ -2,11 +2,9 @@
 
 /**
  * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN AUTOMÁTICA
- * Proceso 100% automático con validación de referencia anti-fraude.
- * Identidad visual: Yappy (Azul #004fb9) y Cubo (Verde #16a34a).
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -135,7 +133,7 @@ const enrollmentSchema = z.object({
 
 type FormValues = z.infer<typeof enrollmentSchema>;
 
-export default function PublicEnrollmentPage() {
+function EnrollmentContent() {
   const db = useDb();
   const { auth } = useFirebase();
   const { toast } = useToast();
@@ -481,5 +479,13 @@ export default function PublicEnrollmentPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+export default function PublicEnrollmentPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>}>
+      <EnrollmentContent />
+    </Suspense>
   );
 }

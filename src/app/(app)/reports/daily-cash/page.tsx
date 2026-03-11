@@ -87,17 +87,18 @@ export default function DailyCashReportPage() {
       const start = startOfDay(reportDate);
       const end = endOfDay(reportDate);
 
-      // 1. CONTRATOS (Detectamos por creación O activación para capturar casos como el Contrato 93)
+      // 1. CONTRATOS (Detectamos por creación O activación)
       const contractsSnap = await getDocs(collection(db, 'contracts'));
       
       contractsSnap.docs.forEach(docSnap => {
           const contract = { id: docSnap.id, ...docSnap.data() } as Contract;
-          if (contract.status === 'expired') return;
+          
+          // EXCLUSIÓN EXPLÍCITA DEL CONTRATO 93
+          if (contract.status === 'expired' || contract.folioNumber === 93) return;
 
           const createdDate = toDate(contract.createdAt);
           const activatedDate = contract.activatedAt ? toDate(contract.activatedAt) : null;
           
-          // El contrato es relevante si se creó hoy O si se activó hoy
           const isMatch = isSameDay(createdDate, reportDate) || (activatedDate && isSameDay(activatedDate, reportDate));
 
           if (!isMatch || fetchedTransactionsMap.has(contract.id)) return;
@@ -138,6 +139,10 @@ export default function DailyCashReportPage() {
       const cancellationsSnap = await getDocs(qCancellations);
       cancellationsSnap.docs.forEach(docSnap => {
           const payment = docSnap.data() as Payment;
+          
+          // Excluir si el folio de contrato asociado es 93 (poco probable pero por seguridad)
+          if (payment.contractFolio === 93) return;
+
           const pType = payment.paymentType || 'cash';
           const transaction: any = {
               id: docSnap.id,
@@ -319,7 +324,7 @@ export default function DailyCashReportPage() {
                     </PopoverContent>
                 </Popover>
                 <Button onClick={handleDownloadPdf} disabled={isDownloading || !isReady} size="sm" className="bg-blue-600 hover:bg-blue-700 h-9 px-4">
-                    {isDownloading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Download className="h-4 w-4 mr-2" />}
+                    {isDownloading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Download className="mr-2 h-4 w-4 mr-2" />}
                     Descargar PDF
                 </Button>
             </div>

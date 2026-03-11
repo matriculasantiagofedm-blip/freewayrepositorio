@@ -2,3 +2,5 @@ runConfig:
   cpu: 1
   memory: 1024Mi
   maxInstances: 10
+options:
+  machineType: 'E2_HIGHCPU_8'

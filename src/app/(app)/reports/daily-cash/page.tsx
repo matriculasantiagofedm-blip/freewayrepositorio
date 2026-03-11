@@ -88,6 +88,7 @@ export default function DailyCashReportPage() {
       const end = endOfDay(reportDate);
 
       // 1. CONTRATOS (CREADOS O ACTIVADOS HOY)
+      // Buscamos todos los contratos para filtrar los que coincidan con la fecha seleccionada
       const contractsSnap = await getDocs(collection(db, 'contracts'));
       
       contractsSnap.docs.forEach(docSnap => {
@@ -95,6 +96,7 @@ export default function DailyCashReportPage() {
           const createdDate = toDate(contract.createdAt);
           const activatedDate = contract.activatedAt ? toDate(contract.activatedAt) : null;
           
+          // El contrato aparece si fue creado HOY o activado HOY (muy importante para Contrato 93)
           const isMatch = isSameDay(createdDate, reportDate) || (activatedDate && isSameDay(activatedDate, reportDate));
 
           if (!isMatch || contract.status === 'expired' || fetchedTransactionsMap.has(contract.id)) return;
@@ -120,6 +122,7 @@ export default function DailyCashReportPage() {
                   cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0
               };
 
+              // Mapeo dinámico del monto a la columna correspondiente
               const pKey = paymentType && transaction.hasOwnProperty(paymentType) ? paymentType : 'cash';
               transaction[pKey] = amount;
               fetchedTransactionsMap.set(contract.id, transaction);

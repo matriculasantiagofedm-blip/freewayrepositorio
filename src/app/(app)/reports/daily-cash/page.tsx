@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { format, startOfDay, endOfDay, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Printer, CalendarIcon, Loader2, Download, RefreshCw, Globe } from 'lucide-react';
+import { Printer, CalendarIcon, Loader2, Download, RefreshCw } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { cn, toDate } from '@/lib/utils';
 import {
@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/select';
 import { useDb, useUser } from '@/firebase';
 import { collection, query, getDocs, Timestamp, where } from 'firebase/firestore';
-import type { Contract, Payment, Transaction } from '@/lib/types';
+import type { Contract, Payment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
 const initialBillQuantities: { [key: string]: number } = {
@@ -47,7 +47,7 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
   currency: 'USD',
 });
 
-export default function DailyCashReportPage() {
+function DailyCashReportContent() {
   const { role, isLoading: isRoleLoading } = useCurrentRole();
   const db = useDb();
   const { user, isUserLoading } = useUser();
@@ -84,8 +84,7 @@ export default function DailyCashReportPage() {
       contractsSnap.docs.forEach(docSnap => {
           const contract = { id: docSnap.id, ...docSnap.data() } as Contract;
           
-          // EXCLUSIÓN EXPLÍCITA DEL CONTRATO 93 POR SOLICITUD
-          if (contract.status === 'expired' || contract.folioNumber === 93) return;
+          if (contract.status === 'expired') return;
 
           const createdDate = toDate(contract.createdAt);
           const activatedDate = contract.activatedAt ? toDate(contract.activatedAt) : null;
@@ -113,20 +112,19 @@ export default function DailyCashReportPage() {
                   cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0
               };
 
-              // Mapeo dinámico a columnas según método de pago
               if (pType === 'cash') transaction.cash = amount;
               else if (pType === 'debit') transaction.debit = amount;
               else if (pType === 'credit') transaction.credit = amount;
               else if (pType === 'bac') transaction.bac = amount;
               else if (pType === 'yappy' || pType === 'general') transaction.general = amount;
               else if (pType === 'cheques') transaction.cheques = amount;
-              else transaction.cash = amount; // default
+              else transaction.cash = amount;
 
               fetchedTransactionsMap.set(contract.id, transaction);
           }
       });
 
-      // 2. PAGOS DE CANCELACIÓN / ABONOS DE SALDO
+      // 2. PAGOS DE CANCELACIÓN
       const start = startOfDay(reportDate);
       const end = endOfDay(reportDate);
       const qCancellations = query(
@@ -137,8 +135,6 @@ export default function DailyCashReportPage() {
       const cancellationsSnap = await getDocs(qCancellations);
       cancellationsSnap.docs.forEach(docSnap => {
           const payment = docSnap.data() as Payment;
-          if (payment.contractFolio === 93) return;
-
           const pType = payment.paymentType || 'cash';
           const transaction: any = {
               id: docSnap.id,
@@ -338,161 +334,165 @@ export default function DailyCashReportPage() {
 
       <div id="report-to-export" className="print-container bg-white mx-auto p-8 border shadow-sm" style={{ width: '8.5in', height: '11in', maxWidth: '8.5in', boxSizing: 'border-box' }}>
         <div className="text-center mb-6 border-b-4 border-black pb-2">
-          <h2 className="text-2xl font-black uppercase tracking-tighter">FREEWAY ESCUELA DE MANEJO</h2>
-          <p className="text-[11px] font-black uppercase tracking-widest">REPORTE DE CAJA DIARIO - {reportDate ? format(reportDate, "EEEE d 'de' MMMM 'de' yyyy", { locale: es }).toUpperCase() : ''}</p>
+          <h2 className="text-2xl font-black uppercase tracking-tighter text-black">FREEWAY ESCUELA DE MANEJO</h2>
+          <p className="text-[11px] font-black uppercase tracking-widest text-black">REPORTE DE CAJA DIARIO - {reportDate ? format(reportDate, "EEEE d 'de' MMMM 'de' yyyy", { locale: es }).toUpperCase() : ''}</p>
         </div>
 
-        {isLoading ? (
-          <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin opacity-20" /></div>
-        ) : (
-          <div className="space-y-6">
-            <div className="overflow-hidden border border-black rounded-sm">
-                <Table className="border-collapse">
-                <TableHeader>
-                    <TableRow className="bg-slate-100 font-bold h-8 border-b-2 border-black">
-                    <TableHead className="text-black p-1 text-[8pt] text-center font-black">Contrato</TableHead>
-                    <TableHead className="text-black p-1 text-[8pt] text-center font-black">Cédula</TableHead>
-                    <TableHead className="text-black p-1 text-[8pt] font-black">Cliente</TableHead>
-                    <TableHead className="text-black p-1 text-[8pt] font-black">Servicio</TableHead>
-                    <TableHead className="text-black p-1 text-[8pt] text-center font-black">Vendedor</TableHead>
-                    <TableHead className="text-black p-1 text-[8pt] text-center font-black">Web</TableHead>
-                    <TableHead className="text-black p-1 text-[8pt] text-right font-black">Efectivo</TableHead>
-                    <TableHead className="text-black p-1 text-[8pt] text-right font-black">T.Débito</TableHead>
-                    <TableHead className="text-black p-1 text-[8pt] text-right font-black">T.Crédito</TableHead>
-                    <TableHead className="text-black p-1 text-[8pt] text-right font-black">BAC</TableHead>
-                    <TableHead className="text-black p-1 text-[8pt] text-right font-black">Gral/Yappy</TableHead>
-                    <TableHead className="text-black p-1 text-[8pt] text-right font-black">Cheque</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {filteredTransactions.length > 0 ? filteredTransactions.map((t) => (
-                    <TableRow key={t.id} className="h-7 border-black hover:bg-transparent">
-                        <TableCell className="p-1 text-[7.5pt] font-bold text-center">{t.contrato}</TableCell>
-                        <TableCell className="p-1 text-[7.5pt] text-center">{t.cedula}</TableCell>
-                        <TableCell className="p-1 text-[7.5pt] uppercase font-bold max-w-[100px] truncate">{t.clientName}</TableCell>
-                        <TableCell className="p-1 text-[7pt] italic max-w-[100px] truncate">{t.service}</TableCell>
-                        <TableCell className="p-1 text-[7pt] text-center uppercase font-bold">{t.vendedor}</TableCell>
-                        <TableCell className="p-1 text-[7pt] text-center">
-                            {t.isWeb ? <span className="bg-blue-100 text-blue-800 px-1 rounded font-black">SÍ</span> : '-'}
-                        </TableCell>
-                        <TableCell className="p-1 text-[7.5pt] text-right font-medium">{t.cash > 0 ? t.cash.toFixed(2) : '-'}</TableCell>
-                        <TableCell className="p-1 text-[7.5pt] text-right">{t.debit > 0 ? t.debit.toFixed(2) : '-'}</TableCell>
-                        <TableCell className="p-1 text-[7.5pt] text-right">{t.credit > 0 ? t.credit.toFixed(2) : '-'}</TableCell>
-                        <TableCell className="p-1 text-[7.5pt] text-right">{t.bac > 0 ? t.bac.toFixed(2) : '-'}</TableCell>
-                        <TableCell className="p-1 text-[7.5pt] text-right">{t.general > 0 ? t.general.toFixed(2) : '-'}</TableCell>
-                        <TableCell className="p-1 text-[7.5pt] text-right">{t.cheques > 0 ? t.cheques.toFixed(2) : '-'}</TableCell>
-                    </TableRow>
-                    )) : (
-                    <TableRow className="h-20"><TableCell colSpan={12} className="text-center italic text-slate-400">Sin transacciones registradas.</TableCell></TableRow>
-                    )}
-                    <TableRow className="bg-slate-50 font-black border-t-2 border-black h-8">
-                    <TableCell colSpan={6} className="p-1 text-[8pt] text-right uppercase">TOTALES POR MÉTODO</TableCell>
-                    <TableCell className="p-1 text-[8pt] text-right">{transactionTotals.cash.toFixed(2)}</TableCell>
-                    <TableCell className="p-1 text-[8pt] text-right">{transactionTotals.debit.toFixed(2)}</TableCell>
-                    <TableCell className="p-1 text-[8pt] text-right">{transactionTotals.credit.toFixed(2)}</TableCell>
-                    <TableCell className="p-1 text-[8pt] text-right">{transactionTotals.bac.toFixed(2)}</TableCell>
-                    <TableCell className="p-1 text-[8pt] text-right">{transactionTotals.general.toFixed(2)}</TableCell>
-                    <TableCell className="p-1 text-[8pt] text-right">{transactionTotals.cheques.toFixed(2)}</TableCell>
-                    </TableRow>
-                </TableBody>
-                </Table>
-            </div>
+        <div className="space-y-6">
+          <div className="overflow-hidden border border-black rounded-sm">
+              <Table className="border-collapse">
+              <TableHeader>
+                  <TableRow className="bg-slate-100 font-bold h-8 border-b-2 border-black">
+                  <TableHead className="text-black p-1 text-[8pt] text-center font-black">Contrato</TableHead>
+                  <TableHead className="text-black p-1 text-[8pt] text-center font-black">Cédula</TableHead>
+                  <TableHead className="text-black p-1 text-[8pt] font-black">Cliente</TableHead>
+                  <TableHead className="text-black p-1 text-[8pt] font-black">Servicio</TableHead>
+                  <TableHead className="text-black p-1 text-[8pt] text-center font-black">Vendedor</TableHead>
+                  <TableHead className="text-black p-1 text-[8pt] text-center font-black">Web</TableHead>
+                  <TableHead className="text-black p-1 text-[8pt] text-right font-black">Efectivo</TableHead>
+                  <TableHead className="text-black p-1 text-[8pt] text-right font-black">T.Débito</TableHead>
+                  <TableHead className="text-black p-1 text-[8pt] text-right font-black">T.Crédito</TableHead>
+                  <TableHead className="text-black p-1 text-[8pt] text-right font-black">BAC</TableHead>
+                  <TableHead className="text-black p-1 text-[8pt] text-right font-black">Gral/Yappy</TableHead>
+                  <TableHead className="text-black p-1 text-[8pt] text-right font-black">Cheque</TableHead>
+                  </TableRow>
+              </TableHeader>
+              <TableBody>
+                  {filteredTransactions.length > 0 ? filteredTransactions.map((t) => (
+                  <TableRow key={t.id} className="h-7 border-black hover:bg-transparent">
+                      <TableCell className="p-1 text-[7.5pt] font-bold text-center text-black">{t.contrato}</TableCell>
+                      <TableCell className="p-1 text-[7.5pt] text-center text-black">{t.cedula}</TableCell>
+                      <TableCell className="p-1 text-[7.5pt] uppercase font-bold max-w-[100px] truncate text-black">{t.clientName}</TableCell>
+                      <TableCell className="p-1 text-[7pt] italic max-w-[100px] truncate text-black">{t.service}</TableCell>
+                      <TableCell className="p-1 text-[7pt] text-center uppercase font-bold text-black">{t.vendedor}</TableCell>
+                      <TableCell className="p-1 text-[7pt] text-center">
+                          {t.isWeb ? <span className="bg-blue-100 text-blue-800 px-1 rounded font-black">SÍ</span> : '-'}
+                      </TableCell>
+                      <TableCell className="p-1 text-[7.5pt] text-right font-medium text-black">{t.cash > 0 ? t.cash.toFixed(2) : '-'}</TableCell>
+                      <TableCell className="p-1 text-[7.5pt] text-right text-black">{t.debit > 0 ? t.debit.toFixed(2) : '-'}</TableCell>
+                      <TableCell className="p-1 text-[7.5pt] text-right text-black">{t.credit > 0 ? t.credit.toFixed(2) : '-'}</TableCell>
+                      <TableCell className="p-1 text-[7.5pt] text-right text-black">{t.bac > 0 ? t.bac.toFixed(2) : '-'}</TableCell>
+                      <TableCell className="p-1 text-[7.5pt] text-right text-black">{t.general > 0 ? t.general.toFixed(2) : '-'}</TableCell>
+                      <TableCell className="p-1 text-[7.5pt] text-right text-black">{t.cheques > 0 ? t.cheques.toFixed(2) : '-'}</TableCell>
+                  </TableRow>
+                  )) : (
+                  <TableRow className="h-20"><TableCell colSpan={12} className="text-center italic text-slate-400">Sin transacciones registradas.</TableCell></TableRow>
+                  )}
+                  <TableRow className="bg-slate-50 font-black border-t-2 border-black h-8">
+                  <TableCell colSpan={6} className="p-1 text-[8pt] text-right uppercase text-black">TOTALES POR MÉTODO</TableCell>
+                  <TableCell className="p-1 text-[8pt] text-right text-black">{transactionTotals.cash.toFixed(2)}</TableCell>
+                  <TableCell className="p-1 text-[8pt] text-right text-black">{transactionTotals.debit.toFixed(2)}</TableCell>
+                  <TableCell className="p-1 text-[8pt] text-right text-black">{transactionTotals.credit.toFixed(2)}</TableCell>
+                  <TableCell className="p-1 text-[8pt] text-right text-black">{transactionTotals.bac.toFixed(2)}</TableCell>
+                  <TableCell className="p-1 text-[8pt] text-right text-black">{transactionTotals.general.toFixed(2)}</TableCell>
+                  <TableCell className="p-1 text-[8pt] text-right text-black">{transactionTotals.cheques.toFixed(2)}</TableCell>
+                  </TableRow>
+              </TableBody>
+              </Table>
+          </div>
 
-            <div className="grid grid-cols-2 gap-8">
-              <div className="border border-black p-3 rounded-sm space-y-3 bg-white">
-                <h3 className="text-[10px] font-black uppercase bg-slate-100 p-1.5 border-b border-black text-center">DESGLOSE DE EFECTIVO</h3>
-                <div className="grid grid-cols-2 gap-x-6">
-                  <div className="space-y-1.5">
-                    {Object.keys(billQuantities).map(val => (
-                      <div key={val} className="flex justify-between items-center text-[8pt]">
-                        <span className="font-bold">B/. {val}:</span>
-                        <div className="flex items-center gap-1">
-                            <Input type="number" className="h-5 w-10 text-[8pt] p-1 border-black print-hide" value={billQuantities[val] || ''} onChange={(e) => handleCashChange('bill', val, e.target.value)} />
-                            <span className="print-show-val">{billQuantities[val]}</span>
-                            <span className="w-12 text-right">{(parseFloat(val) * (billQuantities[val] || 0)).toFixed(2)}</span>
-                        </div>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="border border-black p-3 rounded-sm space-y-3 bg-white">
+              <h3 className="text-[10px] font-black uppercase bg-slate-100 p-1.5 border-b border-black text-center text-black">DESGLOSE DE EFECTIVO</h3>
+              <div className="grid grid-cols-2 gap-x-6">
+                <div className="space-y-1.5">
+                  {Object.keys(billQuantities).map(val => (
+                    <div key={val} className="flex justify-between items-center text-[8pt]">
+                      <span className="font-bold text-black">B/. {val}:</span>
+                      <div className="flex items-center gap-1">
+                          <Input type="number" className="h-5 w-10 text-[8pt] p-1 border-black print-hide" value={billQuantities[val] || ''} onChange={(e) => handleCashChange('bill', val, e.target.value)} />
+                          <span className="print-show-val text-black">{billQuantities[val]}</span>
+                          <span className="w-12 text-right text-black">{(parseFloat(val) * (billQuantities[val] || 0)).toFixed(2)}</span>
                       </div>
-                    ))}
-                  </div>
-                  <div className="space-y-1.5 border-l border-black pl-6">
-                    {Object.keys(coinQuantities).map(val => (
-                      <div key={val} className="flex justify-between items-center text-[8pt]">
-                        <span className="font-bold">B/. {val}:</span>
-                        <div className="flex items-center gap-1">
-                            <Input type="number" className="h-5 w-10 text-[8pt] p-1 border-black print-hide" value={coinQuantities[val] || ''} onChange={(e) => handleCashChange('coin', val, e.target.value)} />
-                            <span className="print-show-val">{coinQuantities[val]}</span>
-                            <span className="w-12 text-right">{(parseFloat(val) * (coinQuantities[val] || 0)).toFixed(2)}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex justify-between items-center font-black text-[10pt] pt-2 border-t-2 border-black">
-                  <span>TOTAL FÍSICO:</span>
-                  <span>B/. {cashBreakdownTotals.total.toFixed(2)}</span>
+                <div className="space-y-1.5 border-l border-black pl-6">
+                  {Object.keys(coinQuantities).map(val => (
+                    <div key={val} className="flex justify-between items-center text-[8pt]">
+                      <span className="font-bold text-black">B/. {val}:</span>
+                      <div className="flex items-center gap-1">
+                          <Input type="number" className="h-5 w-10 text-[8pt] p-1 border-black print-hide" value={coinQuantities[val] || ''} onChange={(e) => handleCashChange('coin', val, e.target.value)} />
+                          <span className="print-show-val text-black">{coinQuantities[val]}</span>
+                          <span className="w-12 text-right text-black">{(parseFloat(val) * (coinQuantities[val] || 0)).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-
-              <div className="space-y-4">
-                <div className="border border-black p-3 rounded-sm bg-white">
-                  <h3 className="text-[10px] font-black uppercase bg-slate-100 p-1.5 border-b border-black flex justify-between">
-                    <span>GASTOS DEL DÍA</span>
-                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 print-hide" onClick={() => setExpenses([...expenses, { description: '', amount: 0 }])}>+</Button>
-                  </h3>
-                  <div className="space-y-1.5 pt-2">
-                    {expenses.map((exp, idx) => (
-                      <div key={idx} className="flex gap-2 items-center">
-                        <Input placeholder="Descripción..." className="h-5 text-[8pt] p-1 border-black flex-1 print-hide" value={exp.description} onChange={(e) => handleExpenseChange(idx, 'description', e.target.value)} />
-                        <span className="print-show-val flex-1 uppercase text-[8pt]">{exp.description}</span>
-                        <Input type="number" placeholder="0.00" className="h-5 w-16 text-[8pt] p-1 border-black print-hide" value={exp.amount || ''} onChange={(e) => handleExpenseChange(idx, 'amount', e.target.value)} />
-                        <span className="print-show-val w-16 text-right text-[8pt]">{Number(exp.amount || 0).toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex justify-between items-center font-black text-[9pt] pt-2 border-t border-black mt-2">
-                    <span>TOTAL GASTOS:</span>
-                    <span>B/. {totalExpenses.toFixed(2)}</span>
-                  </div>
-                </div>
-
-                <div className="border-4 border-black p-4 bg-slate-50 space-y-2 rounded-sm">
-                  <div className="flex justify-between text-[10pt] font-black border-b border-slate-300 pb-1">
-                    <span>Total Facturado:</span>
-                    <span className="text-xl">{currencyFormatter.format(grandTotals.totalFacturado)}</span>
-                  </div>
-                  <div className="flex justify-between text-[9pt] font-bold">
-                    <span>Efectivo en Sistema:</span>
-                    <span>{grandTotals.efectivoEnSistema.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-[9pt] font-bold text-red-600">
-                    <span>(-) Gastos:</span>
-                    <span>- {totalExpenses.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-[11pt] font-black border-t-2 border-black pt-2 bg-slate-200 px-1">
-                    <span>Efectivo Esperado:</span>
-                    <span>B/. {grandTotals.efectivoEsperado.toFixed(2)}</span>
-                  </div>
-                  <div className={cn("flex justify-between text-[12pt] font-black p-2 rounded-sm mt-2 border-2", Math.abs(grandTotals.diferencia) < 0.01 ? "bg-green-100 text-green-800 border-green-600" : "bg-red-100 text-red-800 border-red-600")}>
-                    <span>DIFERENCIA:</span>
-                    <span>B/. {grandTotals.diferencia.toFixed(2)}</span>
-                  </div>
-                </div>
+              <div className="flex justify-between items-center font-black text-[10pt] pt-2 border-t-2 border-black text-black">
+                <span>TOTAL FÍSICO:</span>
+                <span>B/. {cashBreakdownTotals.total.toFixed(2)}</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-20 pt-12 pb-6">
-                <div className="text-center">
-                    <div className="border-t-2 border-black w-full mx-auto"></div>
-                    <p className="text-[10pt] font-black uppercase mt-1">FIRMA DEL CAJERO</p>
+            <div className="space-y-4">
+              <div className="border border-black p-3 rounded-sm bg-white">
+                <h3 className="text-[10px] font-black uppercase bg-slate-100 p-1.5 border-b border-black flex justify-between text-black">
+                  <span>GASTOS DEL DÍA</span>
+                  <Button variant="ghost" size="sm" className="h-4 w-4 p-0 print-hide" onClick={() => setExpenses([...expenses, { description: '', amount: 0 }])}>+</Button>
+                </h3>
+                <div className="space-y-1.5 pt-2">
+                  {expenses.map((exp, idx) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <Input placeholder="Descripción..." className="h-5 text-[8pt] p-1 border-black flex-1 print-hide" value={exp.description} onChange={(e) => handleExpenseChange(idx, 'description', e.target.value)} />
+                      <span className="print-show-val flex-1 uppercase text-[8pt] text-black">{exp.description}</span>
+                      <Input type="number" placeholder="0.00" className="h-5 w-16 text-[8pt] p-1 border-black print-hide" value={exp.amount || ''} onChange={(e) => handleExpenseChange(idx, 'amount', e.target.value)} />
+                      <span className="print-show-val w-16 text-right text-[8pt] text-black">{Number(exp.amount || 0).toFixed(2)}</span>
+                    </div>
+                  ))}
                 </div>
-                <div className="text-center">
-                    <div className="border-t-2 border-black w-full mx-auto"></div>
-                    <p className="text-[10pt] font-black uppercase mt-1">FIRMA DEL ADMINISTRADOR</p>
+                <div className="flex justify-between items-center font-black text-[9pt] pt-2 border-t border-black mt-2 text-black">
+                  <span>TOTAL GASTOS:</span>
+                  <span>B/. {totalExpenses.toFixed(2)}</span>
                 </div>
+              </div>
+
+              <div className="border-4 border-black p-4 bg-slate-50 space-y-2 rounded-sm">
+                <div className="flex justify-between text-[10pt] font-black border-b border-slate-300 pb-1 text-black">
+                  <span>Total Facturado:</span>
+                  <span className="text-xl">{currencyFormatter.format(grandTotals.totalFacturado)}</span>
+                </div>
+                <div className="flex justify-between text-[9pt] font-bold text-black">
+                  <span>Efectivo en Sistema:</span>
+                  <span>{grandTotals.efectivoEnSistema.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-[9pt] font-bold text-red-600">
+                  <span>(-) Gastos:</span>
+                  <span>- {totalExpenses.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-[11pt] font-black border-t-2 border-black pt-2 bg-slate-200 px-1 text-black">
+                  <span>Efectivo Esperado:</span>
+                  <span>B/. {grandTotals.efectivoEsperado.toFixed(2)}</span>
+                </div>
+                <div className={cn("flex justify-between text-[12pt] font-black p-2 rounded-sm mt-2 border-2", Math.abs(grandTotals.diferencia) < 0.01 ? "bg-green-100 text-green-800 border-green-600" : "bg-red-100 text-red-800 border-red-600")}>
+                  <span>DIFERENCIA:</span>
+                  <span>B/. {grandTotals.diferencia.toFixed(2)}</span>
+                </div>
+              </div>
             </div>
           </div>
-        )}
+
+          <div className="grid grid-cols-2 gap-20 pt-12 pb-6">
+              <div className="text-center">
+                  <div className="border-t-2 border-black w-full mx-auto"></div>
+                  <p className="text-[10pt] font-black uppercase mt-1 text-black">FIRMA DEL CAJERO</p>
+              </div>
+              <div className="text-center">
+                  <div className="border-t-2 border-black w-full mx-auto"></div>
+                  <p className="text-[10pt] font-black uppercase mt-1 text-black">FIRMA DEL ADMINISTRADOR</p>
+              </div>
+          </div>
+        </div>
       </div>
     </div>
+  );
+}
+
+export default function DailyCashReportPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center p-12"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>}>
+      <DailyCashReportContent />
+    </Suspense>
   );
 }

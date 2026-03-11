@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useDb, useUser } from '@/components/firebase-provider';
-import { collection, query, where, getDocs, Timestamp, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import type { Contract, Payment, Transaction, BookSalePayment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -106,15 +106,15 @@ export default function DailyCashReportPage() {
         const qBookSales = query(collection(db, 'book_sale_payments'), where('paymentDate', '>=', Timestamp.fromDate(start)), where('paymentDate', '<=', Timestamp.fromDate(end)));
 
         const [snapCreated, snapActivated, snapCancellations, snapUpdates, snapBookSales] = await Promise.all([
-            getDocs(snapCreated || qContractsCreated), // fixed placeholders
-            getDocs(snapActivated || qContractsActivated),
+            getDocs(qContractsCreated),
+            getDocs(qContractsActivated),
             getDocs(qCancellations),
             getDocs(qUpdates),
             getDocs(qBookSales)
-        ]).catch(() => [null, null, null, null, null]);
+        ]);
 
-        const processContract = (doc: any) => {
-            const contract = { id: doc.id, ...doc.data() } as Contract;
+        const processContract = (docSnap: any) => {
+            const contract = { id: docSnap.id, ...docSnap.data() } as Contract;
             if (contract.status === 'expired' || fetchedTransactionsMap.has(contract.id)) return;
 
             let paymentType: string = 'cash';
@@ -156,8 +156,8 @@ export default function DailyCashReportPage() {
         if (snapCreated) snapCreated.docs.forEach(processContract);
         if (snapActivated) snapActivated.docs.forEach(processContract);
 
-        if (snapCancellations) snapCancellations.docs.forEach((doc: any) => {
-            const payment = doc.data() as Payment;
+        if (snapCancellations) snapCancellations.docs.forEach((docSnap: any) => {
+            const payment = docSnap.data() as Payment;
             const amount = Number(payment.amount) || 0;
             const pType = payment.paymentType || 'cash';
             
@@ -165,8 +165,8 @@ export default function DailyCashReportPage() {
             const pKey = pType && paymentColumns.hasOwnProperty(pType) ? pType : 'cash';
             paymentColumns[pKey] = amount;
 
-            fetchedTransactionsMap.set(doc.id, {
-                id: doc.id,
+            fetchedTransactionsMap.set(docSnap.id, {
+                id: docSnap.id,
                 contrato: String(payment.cancellationFolio || '').padStart(6, '0'),
                 cedula: payment.studentIdNumber || '',
                 clientName: payment.clientName || '',
@@ -178,8 +178,8 @@ export default function DailyCashReportPage() {
             });
         });
 
-        if (snapUpdates) snapUpdates.docs.forEach((doc: any) => {
-            const payment = doc.data() as Payment;
+        if (snapUpdates) snapUpdates.docs.forEach((docSnap: any) => {
+            const payment = docSnap.data() as Payment;
             const amount = Number(payment.amount) || 0;
             const pType = payment.paymentType || 'cash';
 
@@ -187,8 +187,8 @@ export default function DailyCashReportPage() {
             const pKey = pType && paymentColumns.hasOwnProperty(pType) ? pType : 'cash';
             paymentColumns[pKey] = amount;
 
-            fetchedTransactionsMap.set(doc.id, {
-                id: doc.id,
+            fetchedTransactionsMap.set(docSnap.id, {
+                id: docSnap.id,
                 contrato: String(payment.updateFolio || '').padStart(6, '0'),
                 cedula: payment.studentIdNumber || '',
                 clientName: payment.clientName || '',
@@ -200,8 +200,8 @@ export default function DailyCashReportPage() {
             });
         });
 
-        if (snapBookSales) snapBookSales.docs.forEach((doc: any) => {
-            const payment = doc.data() as BookSalePayment;
+        if (snapBookSales) snapBookSales.docs.forEach((docSnap: any) => {
+            const payment = docSnap.data() as BookSalePayment;
             const amount = Number(payment.amount) || 0;
             const pType = payment.paymentType || 'cash';
 
@@ -209,8 +209,8 @@ export default function DailyCashReportPage() {
             const pKey = pType && paymentColumns.hasOwnProperty(pType) ? pType : 'cash';
             paymentColumns[pKey] = amount;
 
-            fetchedTransactionsMap.set(doc.id, {
-                id: doc.id,
+            fetchedTransactionsMap.set(docSnap.id, {
+                id: docSnap.id,
                 contrato: String(payment.bookSaleFolio || '').padStart(6, '0'),
                 cedula: payment.studentIdNumber || '',
                 clientName: payment.clientName || '',
@@ -227,6 +227,7 @@ export default function DailyCashReportPage() {
 
       } catch (err: any) {
         console.error("Error fetching report data:", err);
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudieron cargar los datos de caja.' });
       } finally {
         setIsLoading(false);
       }

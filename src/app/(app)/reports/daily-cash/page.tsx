@@ -15,8 +15,7 @@ import {
 } from '@/components/ui/table';
 import { Trash2, Printer, CalendarIcon, Loader2, AlertCircle, User, CheckCircle2, Download } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
-import Link from 'next/navigation';
-import { cn } from '@/lib/utils';
+import { cn, toDate } from '@/lib/utils';
 import {
   Popover,
   PopoverContent,
@@ -99,37 +98,33 @@ export default function DailyCashReportPage() {
       setIsDataLoaded(false);
       setIsReady(false);
       
-      const startOfReportDay = startOfDay(reportDate);
-      const endOfReportDay = endOfDay(reportDate);
-      const fetchedTransactions: Transaction[] = [];
+      const start = startOfDay(reportDate);
+      const end = endOfDay(reportDate);
+      const fetchedTransactionsMap = new Map<string, Transaction>();
 
       try {
-        const createDateQuery = (collName: string) => {
-            const baseRef = collection(db, collName);
-            const dateField = (collName === 'contracts') ? 'createdAt' : 'paymentDate';
-            
-            return query(
-                baseRef, 
-                where(dateField, '>=', Timestamp.fromDate(startOfReportDay)), 
-                where(dateField, '<=', Timestamp.fromDate(endOfReportDay))
-            );
-        };
+        // QUERY 1: CONTRATOS CREADOS HOY
+        const qContractsCreated = query(collection(db, 'contracts'), where('createdAt', '>=', Timestamp.fromDate(start)), where('createdAt', '<=', Timestamp.fromDate(end)));
         
-        const [
-            contractsSnapshot,
-            cancellationSnapshot,
-            updateSnapshot,
-            bookSaleSnapshot
-        ] = await Promise.all([
-            getDocs(createDateQuery('contracts')),
-            getDocs(createDateQuery('cancellation_payments')),
-            getDocs(createDateQuery('update_payments')),
-            getDocs(createDateQuery('book_sale_payments'))
+        // QUERY 2: CONTRATOS ACTIVADOS HOY (Para capturar pagos de inscripciones web previas)
+        const qContractsActivated = query(collection(db, 'contracts'), where('activatedAt', '>=', Timestamp.fromDate(start)), where('activatedAt', '<=', Timestamp.fromDate(end)));
+
+        // OTRAS QUERIES DE PAGOS
+        const qCancellations = query(collection(db, 'cancellation_payments'), where('paymentDate', '>=', Timestamp.fromDate(start)), where('paymentDate', '<=', Timestamp.fromDate(end)));
+        const qUpdates = query(collection(db, 'update_payments'), where('paymentDate', '>=', Timestamp.fromDate(start)), where('paymentDate', '<=', Timestamp.fromDate(end)));
+        const qBookSales = query(collection(db, 'book_sale_payments'), where('paymentDate', '>=', Timestamp.fromDate(start)), where('paymentDate', '<=', Timestamp.fromDate(end)));
+
+        const [snapCreated, snapActivated, snapCancellations, snapUpdates, snapBookSales] = await Promise.all([
+            getDocs(qContractsCreated),
+            getDocs(qContractsActivated),
+            getDocs(qCancellations),
+            getDocs(qUpdates),
+            getDocs(qBookSales)
         ]);
 
-        contractsSnapshot.docs.forEach((doc: any) => {
+        const processContract = (doc: any) => {
             const contract = { id: doc.id, ...doc.data() } as Contract;
-            if (contract.status === 'expired') return;
+            if (contract.status === 'expired' || fetchedTransactionsMap.has(contract.id)) return;
 
             let paymentType: string = 'cash';
             let amount: number = 0;
@@ -143,19 +138,17 @@ export default function DailyCashReportPage() {
                 concept = 'Matrícula Deluxe';
                 paymentType = contract.deluxeDetails?.paymentType || 'cash';
                 amount = 15.00;
-            } else {
-                if (details) {
-                    concept = `Abono ${contract.type}`;
-                    paymentType = (details as any).paymentType || 'cash';
-                    amount = Number(details.downPayment) || 0;
-                }
+            } else if (details) {
+                concept = `Abono ${contract.type}`;
+                paymentType = (details as any).paymentType || 'cash';
+                amount = Number(details.downPayment) || 0;
             }
 
             if(amount > 0) {
                 const pKey = paymentType && paymentColumns.hasOwnProperty(paymentType) ? paymentType : 'cash';
                 paymentColumns[pKey] = amount;
 
-                fetchedTransactions.push({
+                fetchedTransactionsMap.set(contract.id, {
                     id: contract.id,
                     contrato: String(contract.folioNumber || '').padStart(6, '0'),
                     cedula: studentId,
@@ -167,9 +160,12 @@ export default function DailyCashReportPage() {
                     ...paymentColumns,
                 });
             }
-        });
+        };
 
-        cancellationSnapshot.docs.forEach((doc: any) => {
+        snapCreated.docs.forEach(processContract);
+        snapActivated.docs.forEach(processContract);
+
+        snapCancellations.docs.forEach((doc: any) => {
             const payment = doc.data() as Payment;
             const amount = Number(payment.amount) || 0;
             const pType = payment.paymentType || 'cash';
@@ -178,7 +174,7 @@ export default function DailyCashReportPage() {
             const pKey = pType && paymentColumns.hasOwnProperty(pType) ? pType : 'cash';
             paymentColumns[pKey] = amount;
 
-            fetchedTransactions.push({
+            fetchedTransactionsMap.set(doc.id, {
                 id: doc.id,
                 contrato: String(payment.cancellationFolio || '').padStart(6, '0'),
                 cedula: payment.studentIdNumber || '',
@@ -191,7 +187,7 @@ export default function DailyCashReportPage() {
             });
         });
 
-        updateSnapshot.docs.forEach((doc: any) => {
+        snapUpdates.docs.forEach((doc: any) => {
             const payment = doc.data() as Payment;
             const amount = Number(payment.amount) || 0;
             const pType = payment.paymentType || 'cash';
@@ -200,7 +196,7 @@ export default function DailyCashReportPage() {
             const pKey = pType && paymentColumns.hasOwnProperty(pType) ? pType : 'cash';
             paymentColumns[pKey] = amount;
 
-            fetchedTransactions.push({
+            fetchedTransactionsMap.set(doc.id, {
                 id: doc.id,
                 contrato: String(payment.updateFolio || '').padStart(6, '0'),
                 cedula: payment.studentIdNumber || '',
@@ -213,7 +209,7 @@ export default function DailyCashReportPage() {
             });
         });
 
-        bookSaleSnapshot.docs.forEach((doc: any) => {
+        snapBookSales.docs.forEach((doc: any) => {
             const payment = doc.data() as BookSalePayment;
             const amount = Number(payment.amount) || 0;
             const pType = payment.paymentType || 'cash';
@@ -222,7 +218,7 @@ export default function DailyCashReportPage() {
             const pKey = pType && paymentColumns.hasOwnProperty(pType) ? pType : 'cash';
             paymentColumns[pKey] = amount;
 
-            fetchedTransactions.push({
+            fetchedTransactionsMap.set(doc.id, {
                 id: doc.id,
                 contrato: String(payment.bookSaleFolio || '').padStart(6, '0'),
                 cedula: payment.studentIdNumber || '',
@@ -235,7 +231,7 @@ export default function DailyCashReportPage() {
             });
         });
 
-        setTransactions(fetchedTransactions);
+        setTransactions(Array.from(fetchedTransactionsMap.values()));
         setIsDataLoaded(true);
 
         const timer = setTimeout(() => {

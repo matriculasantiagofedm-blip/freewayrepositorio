@@ -12,8 +12,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Trash2, Printer, CalendarIcon, Loader2, AlertCircle, User, CheckCircle2, Download } from 'lucide-react';
+} from '@/table';
+import { Printer, CalendarIcon, Loader2, Download } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { cn, toDate } from '@/lib/utils';
 import {
@@ -69,8 +69,6 @@ export default function DailyCashReportPage() {
   const [coinQuantities, setCoinQuantities] = useState(initialCoinQuantities);
   const [expenses, setExpenses] = useState(initialExpenses);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [sellerFilter, setSellerFilter] = useState('all');
@@ -94,8 +92,6 @@ export default function DailyCashReportPage() {
 
     const fetchDailyData = async () => {
       setIsLoading(true);
-      setError(null);
-      setIsDataLoaded(false);
       setIsReady(false);
       
       const start = startOfDay(reportDate);
@@ -106,7 +102,7 @@ export default function DailyCashReportPage() {
         // QUERY 1: CONTRATOS CREADOS HOY
         const qContractsCreated = query(collection(db, 'contracts'), where('createdAt', '>=', Timestamp.fromDate(start)), where('createdAt', '<=', Timestamp.fromDate(end)));
         
-        // QUERY 2: CONTRATOS ACTIVADOS HOY (Para capturar pagos de inscripciones web previas)
+        // QUERY 2: CONTRATOS ACTIVADOS HOY (Crucial para contrato 93 y similares)
         const qContractsActivated = query(collection(db, 'contracts'), where('activatedAt', '>=', Timestamp.fromDate(start)), where('activatedAt', '<=', Timestamp.fromDate(end)));
 
         // OTRAS QUERIES DE PAGOS
@@ -129,7 +125,7 @@ export default function DailyCashReportPage() {
             let paymentType: string = 'cash';
             let amount: number = 0;
             let concept: string = '';
-            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
+            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0 };
             
             const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
             let studentId = details?.studentIdNumber || contract.studentIdNumber || '';
@@ -170,7 +166,7 @@ export default function DailyCashReportPage() {
             const amount = Number(payment.amount) || 0;
             const pType = payment.paymentType || 'cash';
             
-            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
+            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0 };
             const pKey = pType && paymentColumns.hasOwnProperty(pType) ? pType : 'cash';
             paymentColumns[pKey] = amount;
 
@@ -192,7 +188,7 @@ export default function DailyCashReportPage() {
             const amount = Number(payment.amount) || 0;
             const pType = payment.paymentType || 'cash';
 
-            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
+            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0 };
             const pKey = pType && paymentColumns.hasOwnProperty(pType) ? pType : 'cash';
             paymentColumns[pKey] = amount;
 
@@ -214,7 +210,7 @@ export default function DailyCashReportPage() {
             const amount = Number(payment.amount) || 0;
             const pType = payment.paymentType || 'cash';
 
-            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 };
+            let paymentColumns: any = { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0 };
             const pKey = pType && paymentColumns.hasOwnProperty(pType) ? pType : 'cash';
             paymentColumns[pKey] = amount;
 
@@ -232,16 +228,14 @@ export default function DailyCashReportPage() {
         });
 
         setTransactions(Array.from(fetchedTransactionsMap.values()));
-        setIsDataLoaded(true);
 
         const timer = setTimeout(() => {
             setIsReady(true);
-        }, 3000);
+        }, 2000);
         return () => clearTimeout(timer);
 
       } catch (err: any) {
         console.error("Error fetching report data:", err);
-        setError("No se pudieron cargar los datos del reporte.");
       } finally {
         setIsLoading(false);
       }
@@ -269,8 +263,9 @@ export default function DailyCashReportPage() {
         bac: acc.bac + (Number(curr.bac) || 0),
         general: acc.general + (Number(curr.general) || 0),
         cheques: acc.cheques + (Number(curr.cheques) || 0),
+        yappy: acc.yappy + (Number((curr as any).yappy) || 0),
       }),
-      { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 }
+      { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0 }
     );
   }, [filteredTransactions]);
 
@@ -322,21 +317,13 @@ export default function DailyCashReportPage() {
         margin: [0.3, 0.7, 0.3, 0.3],
         filename: `Reporte_Caja_Freeway_${reportDate ? format(reportDate, 'dd-MM-yyyy') : ''}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-          scale: 2, 
-          useCORS: true, 
-          letterRendering: true,
-          logging: false,
-          backgroundColor: '#ffffff',
-          width: 820 
-        },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true, logging: false, backgroundColor: '#ffffff', width: 820 },
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
       };
 
       await html2pdf().from(element).set(opt).save();
-      toast({ title: "PDF Generado", description: "El reporte se ha descargado correctamente." });
+      toast({ title: "PDF Generado", description: "Reporte descargado." });
     } catch (err) {
-      console.error("Error generating PDF:", err);
       toast({ variant: "destructive", title: "Error", description: "No se pudo generar el PDF." });
     } finally {
       setIsDownloading(false);
@@ -349,56 +336,23 @@ export default function DailyCashReportPage() {
     <div className="space-y-6 rounded-lg print:bg-white min-h-screen pb-12">
       <style dangerouslySetInnerHTML={{ __html: `
         @media print {
-            @page { 
-                size: letter portrait; 
-                margin: 5mm; 
-            }
-            header, footer, nav, aside, .print-hide { 
-                display: none !important; 
-            }
-            body { 
-                -webkit-print-color-adjust: exact !important; 
-                print-color-adjust: exact !important; 
-                background-color: white !important; 
-                margin: 0 !important;
-                padding: 0 !important;
-                overflow: visible !important;
-            }
-            .print-container {
-                width: 100% !important;
-                max-width: none !important;
-                margin: 0 auto !important;
-                padding: 0 !important;
-            }
-            table {
-                border-collapse: collapse !important;
-                width: 100% !important;
-                border: 1px solid black !important;
-            }
-            th, td {
-                border: 1px solid black !important;
-                color: black !important;
-                padding: 2px 4px !important;
-            }
-            input, select, button {
-                display: none !important;
-            }
-            .print-show-val {
-                display: block !important;
-            }
+            @page { size: letter portrait; margin: 5mm; }
+            header, footer, nav, aside, .print-hide { display: none !important; }
+            body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; background-color: white !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; }
+            .print-container { width: 100% !important; max-width: none !important; margin: 0 auto !important; padding: 0 !important; }
+            table { border-collapse: collapse !important; width: 100% !important; border: 1px solid black !important; }
+            th, td { border: 1px solid black !important; color: black !important; padding: 2px 4px !important; }
+            input, select, button { display: none !important; }
+            .print-show-val { display: block !important; }
         }
-        .print-show-val {
-            display: none;
-        }
+        .print-show-val { display: none; }
       `}} />
       
       <div className="flex flex-col gap-4 print-hide">
         <div className="flex justify-between items-center">
             <div className='flex flex-col'>
                 <h1 className="text-2xl font-bold font-headline text-slate-900">Reporte de Caja Diario</h1>
-                <p className="text-xs text-muted-foreground">
-                  {role === 'Administrador' ? 'Visualizando transacciones globales.' : `Visualizando tus transacciones como ${role}.`}
-                </p>
+                <p className="text-xs text-muted-foreground">{role === 'Administrador' ? 'Visualizando transacciones globales.' : `Visualizando tus transacciones.`}</p>
             </div>
             <div className="flex items-center gap-2">
                 {role === 'Administrador' && (
@@ -421,12 +375,7 @@ export default function DailyCashReportPage() {
                     </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="end">
-                    <Calendar
-                        mode="single"
-                        selected={reportDate}
-                        onSelect={(date) => setReportDate(date || new Date())}
-                        initialFocus
-                    />
+                    <Calendar mode="single" selected={reportDate} onSelect={(date) => setReportDate(date || new Date())} initialFocus />
                     </PopoverContent>
                 </Popover>
                 <Button onClick={handleDownloadPdf} disabled={isDownloading || !isReady} size="sm" className="bg-blue-600 hover:bg-blue-700 h-9 px-4">
@@ -441,7 +390,6 @@ export default function DailyCashReportPage() {
         <div className="text-center mb-4 border-b-2 border-black pb-2">
           <h2 className="text-xl font-black uppercase">FREEWAY ESCUELA DE MANEJO</h2>
           <p className="text-[10px] font-bold">REPORTE DE CAJA DIARIO - {reportDate ? format(reportDate, "EEEE d 'de' MMMM 'de' yyyy", { locale: es }).toUpperCase() : ''}</p>
-          {role !== 'Administrador' && <p className="text-[8px] font-bold uppercase mt-1">Vendedor: {role}</p>}
         </div>
 
         {isLoading ? (
@@ -451,89 +399,76 @@ export default function DailyCashReportPage() {
             <Table className="border-collapse border border-black">
               <TableHeader>
                 <TableRow className="bg-slate-100 font-bold border-b-2 border-black">
-                  <TableHead className="text-black p-1 h-auto text-[10px]">Contrato</TableHead>
-                  <TableHead className="text-black p-1 h-auto text-[10px]">Cédula</TableHead>
-                  <TableHead className="text-black p-1 h-auto text-[10px]">Cliente</TableHead>
-                  <TableHead className="text-black p-1 h-auto text-[10px]">Servicio</TableHead>
-                  <TableHead className="text-black p-1 h-auto text-[10px]">Vendedor</TableHead>
-                  <TableHead className="text-black p-1 h-auto text-[10px] text-right">Efectivo</TableHead>
-                  <TableHead className="text-black p-1 h-auto text-[10px] text-right">T.Débito</TableHead>
-                  <TableHead className="text-black p-1 h-auto text-[10px] text-right">T.Crédito</TableHead>
-                  <TableHead className="text-black p-1 h-auto text-[10px] text-right">BAC</TableHead>
-                  <TableHead className="text-black p-1 h-auto text-[10px] text-right">Gral</TableHead>
-                  <TableHead className="text-black p-1 h-auto text-[10px] text-right">Cheque</TableHead>
+                  <TableHead className="text-black p-1 h-auto text-[9px]">Folio</TableHead>
+                  <TableHead className="text-black p-1 h-auto text-[9px]">Cliente</TableHead>
+                  <TableHead className="text-black p-1 h-auto text-[9px]">Servicio</TableHead>
+                  <TableHead className="text-black p-1 h-auto text-[9px] text-right">Efectivo</TableHead>
+                  <TableHead className="text-black p-1 h-auto text-[9px] text-right">Débito</TableHead>
+                  <TableHead className="text-black p-1 h-auto text-[9px] text-right">Crédito</TableHead>
+                  <TableHead className="text-black p-1 h-auto text-[9px] text-right">BAC</TableHead>
+                  <TableHead className="text-black p-1 h-auto text-[9px] text-right">Gral</TableHead>
+                  <TableHead className="text-black p-1 h-auto text-[9px] text-right">Cheque</TableHead>
+                  <TableHead className="text-black p-1 h-auto text-[9px] text-right">Yappy</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredTransactions.map((t) => (
                   <TableRow key={t.id} className="h-auto border-black">
-                    <TableCell className="p-1 text-[9px] font-bold">{t.contrato}</TableCell>
-                    <TableCell className="p-1 text-[9px] whitespace-nowrap">{t.cedula}</TableCell>
-                    <TableCell className="p-1 text-[9px] uppercase font-medium max-w-[100px] truncate">{t.clientName}</TableCell>
-                    <TableCell className="p-1 text-[9px] italic max-w-[100px] truncate">{t.service}</TableCell>
-                    <TableCell className="p-1 text-[9px] uppercase">{t.createdBy}</TableCell>
-                    <TableCell className="p-1 text-[9px] text-right">{t.cash > 0 ? t.cash.toFixed(2) : '-'}</TableCell>
-                    <TableCell className="p-1 text-[9px] text-right">{t.debit > 0 ? t.debit.toFixed(2) : '-'}</TableCell>
-                    <TableCell className="p-1 text-[9px] text-right">{t.credit > 0 ? t.credit.toFixed(2) : '-'}</TableCell>
-                    <TableCell className="p-1 text-[9px] text-right">{t.bac > 0 ? t.bac.toFixed(2) : '-'}</TableCell>
-                    <TableCell className="p-1 text-[9px] text-right">{t.general > 0 ? t.general.toFixed(2) : '-'}</TableCell>
-                    <TableCell className="p-1 text-[9px] text-right">{t.cheques > 0 ? t.cheques.toFixed(2) : '-'}</TableCell>
+                    <TableCell className="p-1 text-[8.5px] font-bold">{t.contrato}</TableCell>
+                    <TableCell className="p-1 text-[8.5px] uppercase font-medium max-w-[120px] truncate">{t.clientName}</TableCell>
+                    <TableCell className="p-1 text-[8.5px] italic max-w-[120px] truncate">{t.service}</TableCell>
+                    <TableCell className="p-1 text-[8.5px] text-right">{t.cash > 0 ? t.cash.toFixed(2) : '-'}</TableCell>
+                    <TableCell className="p-1 text-[8.5px] text-right">{t.debit > 0 ? t.debit.toFixed(2) : '-'}</TableCell>
+                    <TableCell className="p-1 text-[8.5px] text-right">{t.credit > 0 ? t.credit.toFixed(2) : '-'}</TableCell>
+                    <TableCell className="p-1 text-[8.5px] text-right">{t.bac > 0 ? t.bac.toFixed(2) : '-'}</TableCell>
+                    <TableCell className="p-1 text-[8.5px] text-right">{t.general > 0 ? t.general.toFixed(2) : '-'}</TableCell>
+                    <TableCell className="p-1 text-[8.5px] text-right">{t.cheques > 0 ? t.cheques.toFixed(2) : '-'}</TableCell>
+                    <TableCell className="p-1 text-[8.5px] text-right">{(t as any).yappy > 0 ? (t as any).yappy.toFixed(2) : '-'}</TableCell>
                   </TableRow>
                 ))}
                 <TableRow className="bg-slate-50 font-bold border-t-2 border-black h-auto">
-                  <TableCell colSpan={5} className="p-1 text-[10px] text-right uppercase">Totales por Método</TableCell>
-                  <TableCell className="p-1 text-[10px] text-right">{transactionTotals.cash.toFixed(2)}</TableCell>
-                  <TableCell className="p-1 text-[10px] text-right">{transactionTotals.debit.toFixed(2)}</TableCell>
-                  <TableCell className="p-1 text-[10px] text-right">{transactionTotals.credit.toFixed(2)}</TableCell>
-                  <TableCell className="p-1 text-[10px] text-right">{transactionTotals.bac.toFixed(2)}</TableCell>
-                  <TableCell className="p-1 text-[10px] text-right">{transactionTotals.general.toFixed(2)}</TableCell>
-                  <TableCell className="p-1 text-[10px] text-right">{transactionTotals.cheques.toFixed(2)}</TableCell>
+                  <TableCell colSpan={3} className="p-1 text-[9px] text-right uppercase">Totales</TableCell>
+                  <TableCell className="p-1 text-[9px] text-right">{transactionTotals.cash.toFixed(2)}</TableCell>
+                  <TableCell className="p-1 text-[9px] text-right">{transactionTotals.debit.toFixed(2)}</TableCell>
+                  <TableCell className="p-1 text-[9px] text-right">{transactionTotals.credit.toFixed(2)}</TableCell>
+                  <TableCell className="p-1 text-[9px] text-right">{transactionTotals.bac.toFixed(2)}</TableCell>
+                  <TableCell className="p-1 text-[9px] text-right">{transactionTotals.general.toFixed(2)}</TableCell>
+                  <TableCell className="p-1 text-[9px] text-right">{transactionTotals.cheques.toFixed(2)}</TableCell>
+                  <TableCell className="p-1 text-[9px] text-right">{transactionTotals.yappy.toFixed(2)}</TableCell>
                 </TableRow>
               </TableBody>
             </Table>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="border border-black p-2 rounded-sm space-y-2">
-                <h3 className="text-[10px] font-black uppercase bg-slate-100 p-1 border-b border-black">Desglose de Efectivo</h3>
+                <h3 className="text-[9px] font-black uppercase bg-slate-100 p-1 border-b border-black">Desglose de Efectivo</h3>
                 <div className="grid grid-cols-2 gap-x-4">
                   <div className="space-y-1">
-                    <p className="text-[9px] font-bold border-b mb-1">Billetes</p>
                     {Object.keys(billQuantities).map(val => (
-                      <div key={val} className="flex justify-between items-center text-[9px]">
+                      <div key={val} className="flex justify-between items-center text-[8px]">
                         <span>B/. {val}:</span>
                         <div className="flex items-center gap-1">
-                            <Input 
-                                type="number" 
-                                className="h-5 w-10 text-[9px] p-1 border-black print-hide" 
-                                value={billQuantities[val] || ''}
-                                onChange={(e) => handleCashChange('bill', val, e.target.value)}
-                            />
+                            <Input type="number" className="h-4 w-8 text-[8px] p-0.5 border-black print-hide" value={billQuantities[val] || ''} onChange={(e) => handleCashChange('bill', val, e.target.value)} />
                             <span className="print-show-val">{billQuantities[val]}</span>
-                            <span className="w-12 text-right">{(parseFloat(val) * (billQuantities[val] || 0)).toFixed(2)}</span>
+                            <span className="w-10 text-right">{(parseFloat(val) * (billQuantities[val] || 0)).toFixed(2)}</span>
                         </div>
                       </div>
                     ))}
                   </div>
                   <div className="space-y-1 border-l border-black pl-4">
-                    <p className="text-[9px] font-bold border-b mb-1">Monedas</p>
                     {Object.keys(coinQuantities).map(val => (
-                      <div key={val} className="flex justify-between items-center text-[9px]">
+                      <div key={val} className="flex justify-between items-center text-[8px]">
                         <span>B/. {val}:</span>
                         <div className="flex items-center gap-1">
-                            <Input 
-                                type="number" 
-                                className="h-5 w-10 text-[9px] p-1 border-black print-hide" 
-                                value={coinQuantities[val] || ''}
-                                onChange={(e) => handleCashChange('coin', val, e.target.value)}
-                            />
+                            <Input type="number" className="h-4 w-8 text-[8px] p-0.5 border-black print-hide" value={coinQuantities[val] || ''} onChange={(e) => handleCashChange('coin', val, e.target.value)} />
                             <span className="print-show-val">{coinQuantities[val]}</span>
-                            <span className="w-12 text-right">{(parseFloat(val) * (coinQuantities[val] || 0)).toFixed(2)}</span>
+                            <span className="w-10 text-right">{(parseFloat(val) * (coinQuantities[val] || 0)).toFixed(2)}</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
-                <div className="flex justify-between items-center font-bold text-[10px] pt-1 border-t border-black">
+                <div className="flex justify-between items-center font-bold text-[9px] pt-1 border-t border-black">
                   <span>TOTAL FÍSICO:</span>
                   <span>B/. {cashBreakdownTotals.total.toFixed(2)}</span>
                 </div>
@@ -541,55 +476,44 @@ export default function DailyCashReportPage() {
 
               <div className="space-y-2">
                 <div className="border border-black p-2 rounded-sm">
-                  <h3 className="text-[10px] font-black uppercase bg-slate-100 p-1 border-b border-black flex justify-between">
+                  <h3 className="text-[9px] font-black uppercase bg-slate-100 p-1 border-b border-black flex justify-between">
                     <span>Gastos del Día</span>
-                    <Button variant="ghost" size="sm" className="h-4 w-4 p-0 print-hide" onClick={() => setExpenses([...expenses, { description: '', amount: 0 }])}>+</Button>
+                    <Button variant="ghost" size="sm" className="h-3 w-3 p-0 print-hide" onClick={() => setExpenses([...expenses, { description: '', amount: 0 }])}>+</Button>
                   </h3>
                   <div className="space-y-1 pt-1">
                     {expenses.map((exp, idx) => (
                       <div key={idx} className="flex gap-1 items-center">
-                        <Input 
-                            placeholder="Descripción" 
-                            className="h-5 text-[9px] p-1 border-black flex-1 print-hide" 
-                            value={exp.description} 
-                            onChange={(e) => handleExpenseChange(idx, 'description', e.target.value)}
-                        />
+                        <Input placeholder="Descripción" className="h-4 text-[8px] p-0.5 border-black flex-1 print-hide" value={exp.description} onChange={(e) => handleExpenseChange(idx, 'description', e.target.value)} />
                         <span className="print-show-val flex-1">{exp.description}</span>
-                        <Input 
-                            type="number" 
-                            placeholder="0.00" 
-                            className="h-5 w-16 text-[9px] p-1 border-black print-hide" 
-                            value={exp.amount || ''} 
-                            onChange={(e) => handleExpenseChange(idx, 'amount', e.target.value)}
-                        />
-                        <span className="print-show-val w-16 text-right">{Number(exp.amount || 0).toFixed(2)}</span>
+                        <Input type="number" placeholder="0.00" className="h-4 w-12 text-[8px] p-0.5 border-black print-hide" value={exp.amount || ''} onChange={(e) => handleExpenseChange(idx, 'amount', e.target.value)} />
+                        <span className="print-show-val w-12 text-right">{Number(exp.amount || 0).toFixed(2)}</span>
                       </div>
                     ))}
                   </div>
-                  <div className="flex justify-between items-center font-bold text-[10px] pt-1 border-t border-black mt-1">
+                  <div className="flex justify-between items-center font-bold text-[9px] pt-1 border-t border-black mt-1">
                     <span>TOTAL GASTOS:</span>
                     <span>B/. {totalExpenses.toFixed(2)}</span>
                   </div>
                 </div>
 
                 <div className="border-2 border-black p-3 bg-slate-50 space-y-1">
-                  <div className="flex justify-between text-[10px]">
-                    <span className="font-bold">Total Facturado:</span>
-                    <span className="font-black">{currencyFormatter.format(grandTotals.totalFacturado)}</span>
+                  <div className="flex justify-between text-[9px] font-bold">
+                    <span>Total Facturado:</span>
+                    <span>{currencyFormatter.format(grandTotals.totalFacturado)}</span>
                   </div>
-                  <div className="flex justify-between text-[10px]">
-                    <span>Efectivo en Sistema:</span>
+                  <div className="flex justify-between text-[9px]">
+                    <span>Efectivo Sistema:</span>
                     <span>{transactionTotals.cash.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-[10px] text-red-600">
+                  <div className="flex justify-between text-[9px] text-red-600">
                     <span>(-) Gastos:</span>
                     <span>- {totalExpenses.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-[11px] font-black border-t border-black pt-1">
-                    <span>Efectivo Esperado:</span>
+                  <div className="flex justify-between text-[10px] font-black border-t border-black pt-1">
+                    <span>Efectivo Neto:</span>
                     <span>B/. {grandTotals.totalEfectivoMenosGastos.toFixed(2)}</span>
                   </div>
-                  <div className={cn("flex justify-between text-[12px] font-black p-1 rounded-sm mt-1", grandTotals.diferencia === 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")}>
+                  <div className={cn("flex justify-between text-[11px] font-black p-1 rounded-sm mt-1", grandTotals.diferencia === 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")}>
                     <span>DIFERENCIA:</span>
                     <span>B/. {grandTotals.diferencia.toFixed(2)}</span>
                   </div>
@@ -597,14 +521,14 @@ export default function DailyCashReportPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-12 pt-12 pb-4">
+            <div className="grid grid-cols-2 gap-12 pt-8 pb-4">
                 <div className="text-center">
-                    <div className="border-t border-black w-48 mx-auto"></div>
-                    <p className="text-[10px] font-bold uppercase">Firma del Cajero</p>
+                    <div className="border-t border-black w-40 mx-auto"></div>
+                    <p className="text-[9px] font-bold uppercase">Cajero</p>
                 </div>
                 <div className="text-center">
-                    <div className="border-t border-black w-48 mx-auto"></div>
-                    <p className="text-[10px] font-bold uppercase">Firma del Administrador</p>
+                    <div className="border-t border-black w-40 mx-auto"></div>
+                    <p className="text-[9px] font-bold uppercase">Administración</p>
                 </div>
             </div>
           </div>

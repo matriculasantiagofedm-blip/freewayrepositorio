@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useDb, useUser } from '@/firebase';
-import { collection, query, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, query, getDocs, Timestamp, where } from 'firebase/firestore';
 import type { Contract, Payment, Transaction, BookSalePayment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -84,18 +84,17 @@ export default function DailyCashReportPage() {
     const fetchedTransactionsMap = new Map<string, any>();
 
     try {
-      // Obtenemos colecciones base
-      const contractsSnap = await getDocs(collection(db, 'contracts'));
-      const cancellationsSnap = await getDocs(collection(db, 'cancellation_payments'));
-      const updatesSnap = await getDocs(collection(db, 'update_payments'));
-      const bookSalesSnap = await getDocs(collection(db, 'book_sale_payments'));
+      const start = startOfDay(reportDate);
+      const end = endOfDay(reportDate);
 
-      const processContract = (docSnap: any) => {
+      // 1. CONTRATOS (CREADOS O ACTIVADOS HOY)
+      const contractsSnap = await getDocs(collection(db, 'contracts'));
+      
+      contractsSnap.docs.forEach(docSnap => {
           const contract = { id: docSnap.id, ...docSnap.data() } as Contract;
           const createdDate = toDate(contract.createdAt);
           const activatedDate = contract.activatedAt ? toDate(contract.activatedAt) : null;
           
-          // CRÍTICO: Si se creó hoy O se activó hoy, debe aparecer en el reporte
           const isMatch = isSameDay(createdDate, reportDate) || (activatedDate && isSameDay(activatedDate, reportDate));
 
           if (!isMatch || contract.status === 'expired' || fetchedTransactionsMap.has(contract.id)) return;
@@ -125,15 +124,17 @@ export default function DailyCashReportPage() {
               transaction[pKey] = amount;
               fetchedTransactionsMap.set(contract.id, transaction);
           }
-      };
+      });
 
-      contractsSnap.docs.forEach(processContract);
-
-      cancellationsSnap.docs.forEach((docSnap: any) => {
+      // 2. CANCELACIONES/ABONOS
+      const qCancellations = query(
+        collection(db, 'cancellation_payments'),
+        where('paymentDate', '>=', Timestamp.fromDate(start)),
+        where('paymentDate', '<=', Timestamp.fromDate(end))
+      );
+      const cancellationsSnap = await getDocs(qCancellations);
+      cancellationsSnap.docs.forEach(docSnap => {
           const payment = docSnap.data() as Payment;
-          const pDate = toDate(payment.paymentDate);
-          if (!isSameDay(pDate, reportDate)) return;
-
           const pType = payment.paymentType || 'cash';
           const transaction: any = {
               id: docSnap.id,
@@ -151,11 +152,15 @@ export default function DailyCashReportPage() {
           fetchedTransactionsMap.set(docSnap.id, transaction);
       });
 
-      updatesSnap.docs.forEach((docSnap: any) => {
+      // 3. ACTUALIZACIONES
+      const qUpdates = query(
+        collection(db, 'update_payments'),
+        where('paymentDate', '>=', Timestamp.fromDate(start)),
+        where('paymentDate', '<=', Timestamp.fromDate(end))
+      );
+      const updatesSnap = await getDocs(qUpdates);
+      updatesSnap.docs.forEach(docSnap => {
           const payment = docSnap.data() as Payment;
-          const pDate = toDate(payment.paymentDate);
-          if (!isSameDay(pDate, reportDate)) return;
-
           const pType = payment.paymentType || 'cash';
           const transaction: any = {
               id: docSnap.id,
@@ -173,11 +178,15 @@ export default function DailyCashReportPage() {
           fetchedTransactionsMap.set(docSnap.id, transaction);
       });
 
-      bookSalesSnap.docs.forEach((docSnap: any) => {
+      // 4. LIBROS
+      const qBooks = query(
+        collection(db, 'book_sale_payments'),
+        where('paymentDate', '>=', Timestamp.fromDate(start)),
+        where('paymentDate', '<=', Timestamp.fromDate(end))
+      );
+      const bookSalesSnap = await getDocs(qBooks);
+      bookSalesSnap.docs.forEach(docSnap => {
           const payment = docSnap.data() as BookSalePayment;
-          const pDate = toDate(payment.paymentDate);
-          if (!isSameDay(pDate, reportDate)) return;
-
           const pType = payment.paymentType || 'cash';
           const transaction: any = {
               id: docSnap.id,
@@ -198,8 +207,8 @@ export default function DailyCashReportPage() {
       setTransactions(Array.from(fetchedTransactionsMap.values()));
       setIsReady(true);
     } catch (err: any) {
-      console.error("Error en reporte de caja:", err);
-      toast({ variant: 'destructive', title: 'Error', description: 'Fallo al cargar transacciones.' });
+      console.error("Error fetching data:", err);
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudieron cargar las transacciones.' });
     } finally {
       setIsLoading(false);
     }

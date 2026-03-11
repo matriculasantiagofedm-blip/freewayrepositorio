@@ -99,7 +99,7 @@ export default function DailyCashReportPage() {
       const fetchedTransactionsMap = new Map<string, any>();
 
       try {
-        // Consultas por creación y por activación (crucial para contratos web como el 93)
+        // Consultas por creación y por activación (crucial para contratos de todo tipo)
         const qContractsCreated = query(collection(db, 'contracts'), where('createdAt', '>=', Timestamp.fromDate(start)), where('createdAt', '<=', Timestamp.fromDate(end)));
         const qContractsActivated = query(collection(db, 'contracts'), where('activatedAt', '>=', Timestamp.fromDate(start)), where('activatedAt', '<=', Timestamp.fromDate(end)));
         const qCancellations = query(collection(db, 'cancellation_payments'), where('paymentDate', '>=', Timestamp.fromDate(start)), where('paymentDate', '<=', Timestamp.fromDate(end)));
@@ -121,7 +121,6 @@ export default function DailyCashReportPage() {
             const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
             if (!details) return;
 
-            // Extraer método de pago
             let paymentType = (details as any).paymentType || 'cash';
             let amount = Number(details.downPayment) || 0;
             let concept = contract.type === 'Curso Deluxe' ? 'Matrícula Deluxe' : `Abono ${contract.type}`;
@@ -140,7 +139,6 @@ export default function DailyCashReportPage() {
                     cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0
                 };
 
-                // Normalización de llave de pago
                 const pKey = paymentType && transaction.hasOwnProperty(paymentType) ? paymentType : 'cash';
                 transaction[pKey] = amount;
                 fetchedTransactionsMap.set(contract.id, transaction);
@@ -237,7 +235,7 @@ export default function DailyCashReportPage() {
         cheques: acc.cheques + (Number(curr.cheques) || 0),
         yappy: acc.yappy + (Number(curr.yappy) || 0),
       }),
-      { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0 }
+      { cash: 0, debit: 0, credit: 0, core: 0, bac: 0, general: 0, cheques: 0, yappy: 0 }
     );
   }, [filteredTransactions]);
 
@@ -374,7 +372,7 @@ export default function DailyCashReportPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTransactions.map((t) => (
+                {filteredTransactions.length > 0 ? filteredTransactions.map((t) => (
                   <TableRow key={t.id} className="h-auto border-black">
                     <TableCell className="p-1 text-[8.5px] font-bold">{t.contrato}</TableCell>
                     <TableCell className="p-1 text-[8.5px] uppercase font-medium max-w-[120px] truncate">{t.clientName}</TableCell>
@@ -387,7 +385,9 @@ export default function DailyCashReportPage() {
                     <TableCell className="p-1 text-[8.5px] text-right">{t.cheques > 0 ? t.cheques.toFixed(2) : '-'}</TableCell>
                     <TableCell className="p-1 text-[8.5px] text-right">{t.yappy > 0 ? t.yappy.toFixed(2) : '-'}</TableCell>
                   </TableRow>
-                ))}
+                )) : (
+                  <TableRow className="h-20"><TableCell colSpan={10} className="text-center italic text-slate-400">No hay transacciones registradas para este día.</TableCell></TableRow>
+                )}
                 <TableRow className="bg-slate-50 font-bold border-t-2 border-black h-auto">
                   <TableCell colSpan={3} className="p-1 text-[9px] text-right uppercase">Totales</TableCell>
                   <TableCell className="p-1 text-[9px] text-right">{transactionTotals.cash.toFixed(2)}</TableCell>

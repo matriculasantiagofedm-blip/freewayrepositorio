@@ -78,7 +78,6 @@ function DailyCashReportContent() {
     const fetchedTransactionsMap = new Map<string, any>();
 
     try {
-      // 1. CONTRATOS
       const contractsSnap = await getDocs(collection(db, 'contracts'));
       
       contractsSnap.docs.forEach(docSnap => {
@@ -124,9 +123,9 @@ function DailyCashReportContent() {
           }
       });
 
-      // 2. PAGOS DE CANCELACIÓN
       const start = startOfDay(reportDate);
       const end = endOfDay(reportDate);
+      
       const qCancellations = query(
         collection(db, 'cancellation_payments'),
         where('paymentDate', '>=', Timestamp.fromDate(start)),
@@ -157,7 +156,6 @@ function DailyCashReportContent() {
           fetchedTransactionsMap.set(docSnap.id, transaction);
       });
 
-      // 3. PAGOS DE ACTUALIZACIÓN
       const qUpdates = query(
         collection(db, 'update_payments'),
         where('paymentDate', '>=', Timestamp.fromDate(start)),

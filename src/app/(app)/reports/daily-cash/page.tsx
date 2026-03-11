@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -13,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Printer, CalendarIcon, Loader2, Download } from 'lucide-react';
+import { Printer, CalendarIcon, Loader2, Download, RefreshCw } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { cn, toDate } from '@/lib/utils';
 import {
@@ -35,20 +36,10 @@ import type { Contract, Payment, Transaction, BookSalePayment } from '@/lib/type
 import { useToast } from '@/hooks/use-toast';
 
 const initialBillQuantities: { [key: string]: number } = {
-  '100.00': 0,
-  '50.00': 0,
-  '20.00': 0,
-  '10.00': 0,
-  '5.00': 0,
-  '1.00': 0,
+  '100.00': 0, '50.00': 0, '20.00': 0, '10.00': 0, '5.00': 0, '1.00': 0,
 };
 const initialCoinQuantities: { [key: string]: number } = {
-  '1.00': 0,
-  '0.50': 0,
-  '0.25': 0,
-  '0.10': 0,
-  '0.05': 0,
-  '0.01': 0,
+  '1.00': 0, '0.50': 0, '0.25': 0, '0.10': 0, '0.05': 0, '0.01': 0,
 };
 const initialExpenses = [{ description: '', amount: 0 }];
 
@@ -85,138 +76,136 @@ export default function DailyCashReportPage() {
     }
   }, [role]);
 
-  useEffect(() => {
-    if (!db || isUserLoading || isRoleLoading || !user || !role || !reportDate || !mounted) {
-        return;
-    }
+  const fetchDailyData = async () => {
+    if (!db || !user || !reportDate) return;
+    
+    setIsLoading(true);
+    setIsReady(false);
+    
+    const start = startOfDay(reportDate);
+    const end = endOfDay(reportDate);
+    const fetchedTransactionsMap = new Map<string, any>();
 
-    const fetchDailyData = async () => {
-      setIsLoading(true);
-      setIsReady(false);
+    try {
+      // 1. Contratos: Buscamos por creación O por activación (donde se asigna el folio y se confirma el pago)
+      const qContractsCreated = query(collection(db, 'contracts'), where('createdAt', '>=', Timestamp.fromDate(start)), where('createdAt', '<=', Timestamp.fromDate(end)));
+      const qContractsActivated = query(collection(db, 'contracts'), where('activatedAt', '>=', Timestamp.fromDate(start)), where('activatedAt', '<=', Timestamp.fromDate(end)));
       
-      const start = startOfDay(reportDate);
-      const end = endOfDay(reportDate);
-      const fetchedTransactionsMap = new Map<string, any>();
+      // 2. Otros pagos
+      const qCancellations = query(collection(db, 'cancellation_payments'), where('paymentDate', '>=', Timestamp.fromDate(start)), where('paymentDate', '<=', Timestamp.fromDate(end)));
+      const qUpdates = query(collection(db, 'update_payments'), where('paymentDate', '>=', Timestamp.fromDate(start)), where('paymentDate', '<=', Timestamp.fromDate(end)));
+      const qBookSales = query(collection(db, 'book_sale_payments'), where('paymentDate', '>=', Timestamp.fromDate(start)), where('paymentDate', '<=', Timestamp.fromDate(end)));
 
-      try {
-        // Consultas por creación y por activación (crucial para contratos de todo tipo)
-        const qContractsCreated = query(collection(db, 'contracts'), where('createdAt', '>=', Timestamp.fromDate(start)), where('createdAt', '<=', Timestamp.fromDate(end)));
-        const qContractsActivated = query(collection(db, 'contracts'), where('activatedAt', '>=', Timestamp.fromDate(start)), where('activatedAt', '<=', Timestamp.fromDate(end)));
-        const qCancellations = query(collection(db, 'cancellation_payments'), where('paymentDate', '>=', Timestamp.fromDate(start)), where('paymentDate', '<=', Timestamp.fromDate(end)));
-        const qUpdates = query(collection(db, 'update_payments'), where('paymentDate', '>=', Timestamp.fromDate(start)), where('paymentDate', '<=', Timestamp.fromDate(end)));
-        const qBookSales = query(collection(db, 'book_sale_payments'), where('paymentDate', '>=', Timestamp.fromDate(start)), where('paymentDate', '<=', Timestamp.fromDate(end)));
+      const [snapCreated, snapActivated, snapCancellations, snapUpdates, snapBookSales] = await Promise.all([
+          getDocs(qContractsCreated), getDocs(qContractsActivated), getDocs(qCancellations), getDocs(qUpdates), getDocs(qBookSales)
+      ]);
 
-        const [snapCreated, snapActivated, snapCancellations, snapUpdates, snapBookSales] = await Promise.all([
-            getDocs(qContractsCreated),
-            getDocs(qContractsActivated),
-            getDocs(qCancellations),
-            getDocs(qUpdates),
-            getDocs(qBookSales)
-        ]);
+      const processContract = (docSnap: any) => {
+          const contract = { id: docSnap.id, ...docSnap.data() } as Contract;
+          if (contract.status === 'expired' || fetchedTransactionsMap.has(contract.id)) return;
 
-        const processContract = (docSnap: any) => {
-            const contract = { id: docSnap.id, ...docSnap.data() } as Contract;
-            if (contract.status === 'expired' || fetchedTransactionsMap.has(contract.id)) return;
+          const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
+          if (!details) return;
 
-            const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
-            if (!details) return;
+          let paymentType = (details as any).paymentType || 'cash';
+          let amount = Number(details.downPayment) || 0;
+          let concept = contract.type === 'Curso Deluxe' ? 'Matrícula Deluxe' : `Abono ${contract.type}`;
+          let studentId = details.studentIdNumber || contract.studentIdNumber || '';
 
-            let paymentType = (details as any).paymentType || 'cash';
-            let amount = Number(details.downPayment) || 0;
-            let concept = contract.type === 'Curso Deluxe' ? 'Matrícula Deluxe' : `Abono ${contract.type}`;
-            let studentId = details.studentIdNumber || contract.studentIdNumber || '';
+          if (amount > 0) {
+              const transaction: any = {
+                  id: contract.id,
+                  contrato: String(contract.folioNumber || '').padStart(6, '0'),
+                  cedula: studentId,
+                  clientName: contract.clientName || '',
+                  service: concept,
+                  amount: amount,
+                  paymentType: paymentType,
+                  createdBy: contract.createdBy || 'Sistema',
+                  cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0
+              };
 
-            if (amount > 0) {
-                const transaction: any = {
-                    id: contract.id,
-                    contrato: String(contract.folioNumber || '').padStart(6, '0'),
-                    cedula: studentId,
-                    clientName: contract.clientName || '',
-                    service: concept,
-                    amount: amount,
-                    paymentType: paymentType,
-                    createdBy: contract.createdBy || 'Sistema',
-                    cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0
-                };
+              const pKey = paymentType && transaction.hasOwnProperty(paymentType) ? paymentType : 'cash';
+              transaction[pKey] = amount;
+              fetchedTransactionsMap.set(contract.id, transaction);
+          }
+      };
 
-                const pKey = paymentType && transaction.hasOwnProperty(paymentType) ? paymentType : 'cash';
-                transaction[pKey] = amount;
-                fetchedTransactionsMap.set(contract.id, transaction);
-            }
-        };
+      snapCreated.docs.forEach(processContract);
+      snapActivated.docs.forEach(processContract);
 
-        snapCreated.docs.forEach(processContract);
-        snapActivated.docs.forEach(processContract);
+      snapCancellations.docs.forEach((docSnap: any) => {
+          const payment = docSnap.data() as Payment;
+          const pType = payment.paymentType || 'cash';
+          const transaction: any = {
+              id: docSnap.id,
+              contrato: String(payment.cancellationFolio || '').padStart(6, '0'),
+              cedula: payment.studentIdNumber || '',
+              clientName: payment.clientName || '',
+              service: 'Abono/Cancelación de Saldo',
+              amount: payment.amount,
+              paymentType: pType,
+              createdBy: payment.createdBy || 'Sistema',
+              cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0
+          };
+          const pKey = pType && transaction.hasOwnProperty(pType) ? pType : 'cash';
+          transaction[pKey] = payment.amount;
+          fetchedTransactionsMap.set(docSnap.id, transaction);
+      });
 
-        snapCancellations.docs.forEach((docSnap: any) => {
-            const payment = docSnap.data() as Payment;
-            const pType = payment.paymentType || 'cash';
-            const transaction: any = {
-                id: docSnap.id,
-                contrato: String(payment.cancellationFolio || '').padStart(6, '0'),
-                cedula: payment.studentIdNumber || '',
-                clientName: payment.clientName || '',
-                service: 'Abono/Cancelación de Saldo',
-                amount: payment.amount,
-                paymentType: pType,
-                createdBy: payment.createdBy || 'Sistema',
-                cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0
-            };
-            const pKey = pType && transaction.hasOwnProperty(pType) ? pType : 'cash';
-            transaction[pKey] = payment.amount;
-            fetchedTransactionsMap.set(docSnap.id, transaction);
-        });
+      snapUpdates.docs.forEach((docSnap: any) => {
+          const payment = docSnap.data() as Payment;
+          const pType = payment.paymentType || 'cash';
+          const transaction: any = {
+              id: docSnap.id,
+              contrato: String(payment.updateFolio || '').padStart(6, '0'),
+              cedula: payment.studentIdNumber || '',
+              clientName: payment.clientName || '',
+              service: 'Actualización de Certificado',
+              amount: payment.amount,
+              paymentType: pType,
+              createdBy: payment.createdBy || 'Sistema',
+              cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0
+          };
+          const pKey = pType && transaction.hasOwnProperty(pType) ? pType : 'cash';
+          transaction[pKey] = payment.amount;
+          fetchedTransactionsMap.set(docSnap.id, transaction);
+      });
 
-        snapUpdates.docs.forEach((docSnap: any) => {
-            const payment = docSnap.data() as Payment;
-            const pType = payment.paymentType || 'cash';
-            const transaction: any = {
-                id: docSnap.id,
-                contrato: String(payment.updateFolio || '').padStart(6, '0'),
-                cedula: payment.studentIdNumber || '',
-                clientName: payment.clientName || '',
-                service: 'Actualización de Certificado',
-                amount: payment.amount,
-                paymentType: pType,
-                createdBy: payment.createdBy || 'Sistema',
-                cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0
-            };
-            const pKey = pType && transaction.hasOwnProperty(pType) ? pType : 'cash';
-            transaction[pKey] = payment.amount;
-            fetchedTransactionsMap.set(docSnap.id, transaction);
-        });
+      snapBookSales.docs.forEach((docSnap: any) => {
+          const payment = docSnap.data() as BookSalePayment;
+          const pType = payment.paymentType || 'cash';
+          const transaction: any = {
+              id: docSnap.id,
+              contrato: String(payment.bookSaleFolio || '').padStart(6, '0'),
+              cedula: payment.studentIdNumber || '',
+              clientName: payment.clientName || '',
+              service: `Libro: ${payment.bookTitle}`,
+              amount: payment.amount,
+              paymentType: pType,
+              createdBy: payment.createdBy || 'Sistema',
+              cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0
+          };
+          const pKey = pType && transaction.hasOwnProperty(pType) ? pType : 'cash';
+          transaction[pKey] = payment.amount;
+          fetchedTransactionsMap.set(docSnap.id, transaction);
+      });
 
-        snapBookSales.docs.forEach((docSnap: any) => {
-            const payment = docSnap.data() as BookSalePayment;
-            const pType = payment.paymentType || 'cash';
-            const transaction: any = {
-                id: docSnap.id,
-                contrato: String(payment.bookSaleFolio || '').padStart(6, '0'),
-                cedula: payment.studentIdNumber || '',
-                clientName: payment.clientName || '',
-                service: `Libro: ${payment.bookTitle}`,
-                amount: payment.amount,
-                paymentType: pType,
-                createdBy: payment.createdBy || 'Sistema',
-                cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0
-            };
-            const pKey = pType && transaction.hasOwnProperty(pType) ? pType : 'cash';
-            transaction[pKey] = payment.amount;
-            fetchedTransactionsMap.set(docSnap.id, transaction);
-        });
+      setTransactions(Array.from(fetchedTransactionsMap.values()));
+      setIsReady(true);
+    } catch (err: any) {
+      console.error("Error en reporte de caja:", err);
+      toast({ variant: 'destructive', title: 'Error', description: 'Fallo al cargar transacciones.' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-        setTransactions(Array.from(fetchedTransactionsMap.values()));
-        setIsReady(true);
-      } catch (err: any) {
-        console.error("Error en reporte de caja:", err);
-        toast({ variant: 'destructive', title: 'Error', description: 'Fallo al cargar transacciones.' });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchDailyData();
-  }, [db, reportDate, user, role, isUserLoading, isRoleLoading, mounted]);
+  useEffect(() => {
+    if (mounted && reportDate && !isUserLoading && !isRoleLoading && user) {
+      fetchDailyData();
+    }
+  }, [reportDate, user, isUserLoading, isRoleLoading, mounted]);
 
   const filteredTransactions = useMemo(() => {
     if (role !== 'Administrador') return transactions.filter(t => t.createdBy === role);
@@ -235,7 +224,7 @@ export default function DailyCashReportPage() {
         cheques: acc.cheques + (Number(curr.cheques) || 0),
         yappy: acc.yappy + (Number(curr.yappy) || 0),
       }),
-      { cash: 0, debit: 0, credit: 0, core: 0, bac: 0, general: 0, cheques: 0, yappy: 0 }
+      { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0 }
     );
   }, [filteredTransactions]);
 
@@ -298,7 +287,7 @@ export default function DailyCashReportPage() {
         @media print {
             @page { size: letter portrait; margin: 5mm; }
             header, footer, nav, aside, .print-hide { display: none !important; }
-            body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; background-color: white !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; }
+            body { background-color: white !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; }
             .print-container { width: 100% !important; max-width: none !important; margin: 0 auto !important; padding: 0 !important; }
             table { border-collapse: collapse !important; width: 100% !important; border: 1px solid black !important; }
             th, td { border: 1px solid black !important; color: black !important; padding: 2px 4px !important; }
@@ -315,6 +304,7 @@ export default function DailyCashReportPage() {
                 <p className="text-xs text-muted-foreground">{role === 'Administrador' ? 'Visualizando transacciones globales.' : `Visualizando tus transacciones.`}</p>
             </div>
             <div className="flex items-center gap-2">
+                <Button onClick={fetchDailyData} variant="ghost" size="icon" className="h-9 w-9"><RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} /></Button>
                 {role === 'Administrador' && (
                   <Select value={sellerFilter} onValueChange={setSellerFilter}>
                       <SelectTrigger className="w-[180px] h-9 text-xs"><SelectValue placeholder="Vendedor..." /></SelectTrigger>
@@ -475,7 +465,7 @@ export default function DailyCashReportPage() {
                     <span>Efectivo Neto:</span>
                     <span>B/. {grandTotals.totalEfectivoMenosGastos.toFixed(2)}</span>
                   </div>
-                  <div className={cn("flex justify-between text-[11px] font-black p-1 rounded-sm mt-1", grandTotals.diferencia === 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")}>
+                  <div className={cn("flex justify-between text-[11px] font-black p-1 rounded-sm mt-1", Math.abs(grandTotals.diferencia) < 0.01 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800")}>
                     <span>DIFERENCIA:</span>
                     <span>B/. {grandTotals.diferencia.toFixed(2)}</span>
                   </div>

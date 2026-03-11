@@ -96,9 +96,10 @@ export default function DailyCashReportPage() {
       
       const start = startOfDay(reportDate);
       const end = endOfDay(reportDate);
-      const fetchedTransactionsMap = new Map<string, Transaction>();
+      const fetchedTransactionsMap = new Map<string, any>();
 
       try {
+        // Consultas por creación y por activación (crucial para contratos web como el 93)
         const qContractsCreated = query(collection(db, 'contracts'), where('createdAt', '>=', Timestamp.fromDate(start)), where('createdAt', '<=', Timestamp.fromDate(end)));
         const qContractsActivated = query(collection(db, 'contracts'), where('activatedAt', '>=', Timestamp.fromDate(start)), where('activatedAt', '<=', Timestamp.fromDate(end)));
         const qCancellations = query(collection(db, 'cancellation_payments'), where('paymentDate', '>=', Timestamp.fromDate(start)), where('paymentDate', '<=', Timestamp.fromDate(end)));
@@ -120,6 +121,7 @@ export default function DailyCashReportPage() {
             const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
             if (!details) return;
 
+            // Extraer método de pago
             let paymentType = (details as any).paymentType || 'cash';
             let amount = Number(details.downPayment) || 0;
             let concept = contract.type === 'Curso Deluxe' ? 'Matrícula Deluxe' : `Abono ${contract.type}`;
@@ -138,6 +140,7 @@ export default function DailyCashReportPage() {
                     cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0
                 };
 
+                // Normalización de llave de pago
                 const pKey = paymentType && transaction.hasOwnProperty(paymentType) ? paymentType : 'cash';
                 transaction[pKey] = amount;
                 fetchedTransactionsMap.set(contract.id, transaction);
@@ -207,8 +210,8 @@ export default function DailyCashReportPage() {
         setTransactions(Array.from(fetchedTransactionsMap.values()));
         setIsReady(true);
       } catch (err: any) {
-        console.error(err);
-        toast({ variant: 'destructive', title: 'Error', description: 'Fallo al cargar datos.' });
+        console.error("Error en reporte de caja:", err);
+        toast({ variant: 'destructive', title: 'Error', description: 'Fallo al cargar transacciones.' });
       } finally {
         setIsLoading(false);
       }
@@ -271,6 +274,7 @@ export default function DailyCashReportPage() {
     if (!element) return;
     setIsDownloading(true);
     try {
+      // @ts-ignore
       const html2pdf = (await import('html2pdf.js')).default;
       const opt = {
         margin: [0.3, 0.7, 0.3, 0.3],

@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { format, startOfDay, endOfDay } from 'date-fns';
+import { format, startOfDay, endOfDay, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -31,7 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useDb, useUser } from '@/firebase';
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, query, getDocs, Timestamp } from 'firebase/firestore';
 import type { Contract, Payment, Transaction, BookSalePayment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -82,27 +81,24 @@ export default function DailyCashReportPage() {
     setIsLoading(true);
     setIsReady(false);
     
-    const start = startOfDay(reportDate);
-    const end = endOfDay(reportDate);
     const fetchedTransactionsMap = new Map<string, any>();
 
     try {
-      // 1. Contratos: Buscamos por creación O por activación (donde se asigna el folio y se confirma el pago)
-      const qContractsCreated = query(collection(db, 'contracts'), where('createdAt', '>=', Timestamp.fromDate(start)), where('createdAt', '<=', Timestamp.fromDate(end)));
-      const qContractsActivated = query(collection(db, 'contracts'), where('activatedAt', '>=', Timestamp.fromDate(start)), where('activatedAt', '<=', Timestamp.fromDate(end)));
-      
-      // 2. Otros pagos
-      const qCancellations = query(collection(db, 'cancellation_payments'), where('paymentDate', '>=', Timestamp.fromDate(start)), where('paymentDate', '<=', Timestamp.fromDate(end)));
-      const qUpdates = query(collection(db, 'update_payments'), where('paymentDate', '>=', Timestamp.fromDate(start)), where('paymentDate', '<=', Timestamp.fromDate(end)));
-      const qBookSales = query(collection(db, 'book_sale_payments'), where('paymentDate', '>=', Timestamp.fromDate(start)), where('paymentDate', '<=', Timestamp.fromDate(end)));
-
-      const [snapCreated, snapActivated, snapCancellations, snapUpdates, snapBookSales] = await Promise.all([
-          getDocs(qContractsCreated), getDocs(qContractsActivated), getDocs(qCancellations), getDocs(qUpdates), getDocs(qBookSales)
-      ]);
+      // Obtenemos colecciones base
+      const contractsSnap = await getDocs(collection(db, 'contracts'));
+      const cancellationsSnap = await getDocs(collection(db, 'cancellation_payments'));
+      const updatesSnap = await getDocs(collection(db, 'update_payments'));
+      const bookSalesSnap = await getDocs(collection(db, 'book_sale_payments'));
 
       const processContract = (docSnap: any) => {
           const contract = { id: docSnap.id, ...docSnap.data() } as Contract;
-          if (contract.status === 'expired' || fetchedTransactionsMap.has(contract.id)) return;
+          const createdDate = toDate(contract.createdAt);
+          const activatedDate = contract.activatedAt ? toDate(contract.activatedAt) : null;
+          
+          // CRÍTICO: Si se creó hoy O se activó hoy, debe aparecer en el reporte
+          const isMatch = isSameDay(createdDate, reportDate) || (activatedDate && isSameDay(activatedDate, reportDate));
+
+          if (!isMatch || contract.status === 'expired' || fetchedTransactionsMap.has(contract.id)) return;
 
           const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
           if (!details) return;
@@ -131,18 +127,20 @@ export default function DailyCashReportPage() {
           }
       };
 
-      snapCreated.docs.forEach(processContract);
-      snapActivated.docs.forEach(processContract);
+      contractsSnap.docs.forEach(processContract);
 
-      snapCancellations.docs.forEach((docSnap: any) => {
+      cancellationsSnap.docs.forEach((docSnap: any) => {
           const payment = docSnap.data() as Payment;
+          const pDate = toDate(payment.paymentDate);
+          if (!isSameDay(pDate, reportDate)) return;
+
           const pType = payment.paymentType || 'cash';
           const transaction: any = {
               id: docSnap.id,
               contrato: String(payment.cancellationFolio || '').padStart(6, '0'),
               cedula: payment.studentIdNumber || '',
               clientName: payment.clientName || '',
-              service: 'Abono/Cancelación de Saldo',
+              service: 'Abono/Cancelación Saldo',
               amount: payment.amount,
               paymentType: pType,
               createdBy: payment.createdBy || 'Sistema',
@@ -153,15 +151,18 @@ export default function DailyCashReportPage() {
           fetchedTransactionsMap.set(docSnap.id, transaction);
       });
 
-      snapUpdates.docs.forEach((docSnap: any) => {
+      updatesSnap.docs.forEach((docSnap: any) => {
           const payment = docSnap.data() as Payment;
+          const pDate = toDate(payment.paymentDate);
+          if (!isSameDay(pDate, reportDate)) return;
+
           const pType = payment.paymentType || 'cash';
           const transaction: any = {
               id: docSnap.id,
               contrato: String(payment.updateFolio || '').padStart(6, '0'),
               cedula: payment.studentIdNumber || '',
               clientName: payment.clientName || '',
-              service: 'Actualización de Certificado',
+              service: 'Actualización Certificado',
               amount: payment.amount,
               paymentType: pType,
               createdBy: payment.createdBy || 'Sistema',
@@ -172,8 +173,11 @@ export default function DailyCashReportPage() {
           fetchedTransactionsMap.set(docSnap.id, transaction);
       });
 
-      snapBookSales.docs.forEach((docSnap: any) => {
+      bookSalesSnap.docs.forEach((docSnap: any) => {
           const payment = docSnap.data() as BookSalePayment;
+          const pDate = toDate(payment.paymentDate);
+          if (!isSameDay(pDate, reportDate)) return;
+
           const pType = payment.paymentType || 'cash';
           const transaction: any = {
               id: docSnap.id,

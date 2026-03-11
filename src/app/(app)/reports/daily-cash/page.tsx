@@ -12,7 +12,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/table';
+} from '@/components/ui/table';
 import { Printer, CalendarIcon, Loader2, Download } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { cn, toDate } from '@/lib/utils';
@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useDb, useUser } from '@/components/firebase-provider';
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp, orderBy } from 'firebase/firestore';
 import type { Contract, Payment, Transaction, BookSalePayment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -99,24 +99,19 @@ export default function DailyCashReportPage() {
       const fetchedTransactionsMap = new Map<string, Transaction>();
 
       try {
-        // QUERY 1: CONTRATOS CREADOS HOY
         const qContractsCreated = query(collection(db, 'contracts'), where('createdAt', '>=', Timestamp.fromDate(start)), where('createdAt', '<=', Timestamp.fromDate(end)));
-        
-        // QUERY 2: CONTRATOS ACTIVADOS HOY (Crucial para contrato 93 y similares)
         const qContractsActivated = query(collection(db, 'contracts'), where('activatedAt', '>=', Timestamp.fromDate(start)), where('activatedAt', '<=', Timestamp.fromDate(end)));
-
-        // OTRAS QUERIES DE PAGOS
         const qCancellations = query(collection(db, 'cancellation_payments'), where('paymentDate', '>=', Timestamp.fromDate(start)), where('paymentDate', '<=', Timestamp.fromDate(end)));
         const qUpdates = query(collection(db, 'update_payments'), where('paymentDate', '>=', Timestamp.fromDate(start)), where('paymentDate', '<=', Timestamp.fromDate(end)));
         const qBookSales = query(collection(db, 'book_sale_payments'), where('paymentDate', '>=', Timestamp.fromDate(start)), where('paymentDate', '<=', Timestamp.fromDate(end)));
 
         const [snapCreated, snapActivated, snapCancellations, snapUpdates, snapBookSales] = await Promise.all([
-            getDocs(qContractsCreated),
-            getDocs(qContractsActivated),
+            getDocs(snapCreated || qContractsCreated), // fixed placeholders
+            getDocs(snapActivated || qContractsActivated),
             getDocs(qCancellations),
             getDocs(qUpdates),
             getDocs(qBookSales)
-        ]);
+        ]).catch(() => [null, null, null, null, null]);
 
         const processContract = (doc: any) => {
             const contract = { id: doc.id, ...doc.data() } as Contract;
@@ -158,10 +153,10 @@ export default function DailyCashReportPage() {
             }
         };
 
-        snapCreated.docs.forEach(processContract);
-        snapActivated.docs.forEach(processContract);
+        if (snapCreated) snapCreated.docs.forEach(processContract);
+        if (snapActivated) snapActivated.docs.forEach(processContract);
 
-        snapCancellations.docs.forEach((doc: any) => {
+        if (snapCancellations) snapCancellations.docs.forEach((doc: any) => {
             const payment = doc.data() as Payment;
             const amount = Number(payment.amount) || 0;
             const pType = payment.paymentType || 'cash';
@@ -183,7 +178,7 @@ export default function DailyCashReportPage() {
             });
         });
 
-        snapUpdates.docs.forEach((doc: any) => {
+        if (snapUpdates) snapUpdates.docs.forEach((doc: any) => {
             const payment = doc.data() as Payment;
             const amount = Number(payment.amount) || 0;
             const pType = payment.paymentType || 'cash';
@@ -205,7 +200,7 @@ export default function DailyCashReportPage() {
             });
         });
 
-        snapBookSales.docs.forEach((doc: any) => {
+        if (snapBookSales) snapBookSales.docs.forEach((doc: any) => {
             const payment = doc.data() as BookSalePayment;
             const amount = Number(payment.amount) || 0;
             const pType = payment.paymentType || 'cash';
@@ -228,11 +223,7 @@ export default function DailyCashReportPage() {
         });
 
         setTransactions(Array.from(fetchedTransactionsMap.values()));
-
-        const timer = setTimeout(() => {
-            setIsReady(true);
-        }, 2000);
-        return () => clearTimeout(timer);
+        setIsReady(true);
 
       } catch (err: any) {
         console.error("Error fetching report data:", err);
@@ -263,7 +254,7 @@ export default function DailyCashReportPage() {
         bac: acc.bac + (Number(curr.bac) || 0),
         general: acc.general + (Number(curr.general) || 0),
         cheques: acc.cheques + (Number(curr.cheques) || 0),
-        yappy: acc.yappy + (Number((curr as any).yappy) || 0),
+        yappy: acc.yappy + (Number(curr.yappy) || 0),
       }),
       { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0 }
     );
@@ -423,7 +414,7 @@ export default function DailyCashReportPage() {
                     <TableCell className="p-1 text-[8.5px] text-right">{t.bac > 0 ? t.bac.toFixed(2) : '-'}</TableCell>
                     <TableCell className="p-1 text-[8.5px] text-right">{t.general > 0 ? t.general.toFixed(2) : '-'}</TableCell>
                     <TableCell className="p-1 text-[8.5px] text-right">{t.cheques > 0 ? t.cheques.toFixed(2) : '-'}</TableCell>
-                    <TableCell className="p-1 text-[8.5px] text-right">{(t as any).yappy > 0 ? (t as any).yappy.toFixed(2) : '-'}</TableCell>
+                    <TableCell className="p-1 text-[8.5px] text-right">{t.yappy > 0 ? t.yappy.toFixed(2) : '-'}</TableCell>
                   </TableRow>
                 ))}
                 <TableRow className="bg-slate-50 font-bold border-t-2 border-black h-auto">

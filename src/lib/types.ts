@@ -205,6 +205,7 @@ export interface Transaction {
   bac: number;
   general: number;
   cheques: number;
+  yappy: number;
   createdBy?: string;
 }
 

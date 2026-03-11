@@ -245,6 +245,7 @@ function EnrollmentContent() {
           userId: auth.currentUser?.uid, 
           createdBy: 'Web Pública', 
           createdAt: serverTimestamp(),
+          activatedAt: serverTimestamp(), // Campo crítico para el reporte de caja
           paymentReference: values.paymentReference,
           autoMotoDetails: {
             ...values, 

@@ -87,19 +87,20 @@ export default function DailyCashReportPage() {
       const start = startOfDay(reportDate);
       const end = endOfDay(reportDate);
 
-      // 1. CONTRATOS (CREADOS O ACTIVADOS HOY)
-      // Buscamos todos los contratos para filtrar los que coincidan con la fecha seleccionada
+      // 1. CONTRATOS (Detectamos por creación O activación para capturar casos como el Contrato 93)
       const contractsSnap = await getDocs(collection(db, 'contracts'));
       
       contractsSnap.docs.forEach(docSnap => {
           const contract = { id: docSnap.id, ...docSnap.data() } as Contract;
+          if (contract.status === 'expired') return;
+
           const createdDate = toDate(contract.createdAt);
           const activatedDate = contract.activatedAt ? toDate(contract.activatedAt) : null;
           
-          // El contrato aparece si fue creado HOY o activado HOY (muy importante para Contrato 93)
+          // El contrato es relevante si se creó hoy O si se activó hoy
           const isMatch = isSameDay(createdDate, reportDate) || (activatedDate && isSameDay(activatedDate, reportDate));
 
-          if (!isMatch || contract.status === 'expired' || fetchedTransactionsMap.has(contract.id)) return;
+          if (!isMatch || fetchedTransactionsMap.has(contract.id)) return;
 
           const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
           if (!details) return;
@@ -122,7 +123,6 @@ export default function DailyCashReportPage() {
                   cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0
               };
 
-              // Mapeo dinámico del monto a la columna correspondiente
               const pKey = paymentType && transaction.hasOwnProperty(paymentType) ? paymentType : 'cash';
               transaction[pKey] = amount;
               fetchedTransactionsMap.set(contract.id, transaction);
@@ -181,37 +181,11 @@ export default function DailyCashReportPage() {
           fetchedTransactionsMap.set(docSnap.id, transaction);
       });
 
-      // 4. LIBROS
-      const qBooks = query(
-        collection(db, 'book_sale_payments'),
-        where('paymentDate', '>=', Timestamp.fromDate(start)),
-        where('paymentDate', '<=', Timestamp.fromDate(end))
-      );
-      const bookSalesSnap = await getDocs(qBooks);
-      bookSalesSnap.docs.forEach(docSnap => {
-          const payment = docSnap.data() as BookSalePayment;
-          const pType = payment.paymentType || 'cash';
-          const transaction: any = {
-              id: docSnap.id,
-              contrato: String(payment.bookSaleFolio || '').padStart(6, '0'),
-              cedula: payment.studentIdNumber || '',
-              clientName: payment.clientName || '',
-              service: `Libro: ${payment.bookTitle}`,
-              amount: payment.amount,
-              paymentType: pType,
-              createdBy: payment.createdBy || 'Sistema',
-              cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0, yappy: 0
-          };
-          const pKey = pType && transaction.hasOwnProperty(pType) ? pType : 'cash';
-          transaction[pKey] = payment.amount;
-          fetchedTransactionsMap.set(docSnap.id, transaction);
-      });
-
       setTransactions(Array.from(fetchedTransactionsMap.values()));
       setIsReady(true);
     } catch (err: any) {
-      console.error("Error fetching data:", err);
-      toast({ variant: 'destructive', title: 'Error', description: 'No se pudieron cargar las transacciones.' });
+      console.error("Error fetching daily report data:", err);
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudieron cargar los datos de caja.' });
     } finally {
       setIsLoading(false);
     }

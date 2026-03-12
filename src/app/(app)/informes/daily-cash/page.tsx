@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useDb } from '@/firebase';
-import { collection, query, where, Timestamp, getDocs } from 'firebase/firestore';
+import { collection, query, where, Timestamp } from 'firebase/firestore';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -312,11 +312,11 @@ export default function DailyCashReport() {
                 ) : (
                   <tr><td colSpan={11} className="p-10 text-center italic text-slate-400 font-bold uppercase text-[8pt]">No hay transacciones registradas para este día.</td></tr>
                 )}
-                {/* Fila de Totales */}
-                <tr className="bg-slate-900 text-white font-black text-[8pt]">
+                {/* Fila de Totales (Sin fondo negro para ahorro de tinta) */}
+                <tr className="bg-slate-200 text-black font-black text-[8pt]">
                   <td colSpan={5} className="border border-black p-2 text-right tracking-widest">TOTALES DEL DÍA:</td>
                   {COLUMNS.map(c => (
-                    <td key={c.id} className="border border-black p-2 text-right bg-black">{totalsByMethod[c.id].toFixed(2)}</td>
+                    <td key={c.id} className="border border-black p-2 text-right">{totalsByMethod[c.id].toFixed(2)}</td>
                   ))}
                 </tr>
               </tbody>
@@ -405,20 +405,20 @@ export default function DailyCashReport() {
                 </div>
               </div>
 
-              {/* Bloque de Cuadre Final */}
-              <div className="bg-slate-900 text-white p-4 rounded-sm border border-black shadow-md">
+              {/* Bloque de Cuadre Final (Sin fondo negro para ahorro de tinta) */}
+              <div className="bg-white text-black p-4 rounded-sm border-2 border-black shadow-sm">
                 <div className="space-y-2 text-[8.5pt]">
-                  <div className="flex justify-between border-b border-white/10 pb-1">
+                  <div className="flex justify-between border-b border-slate-200 pb-1">
                     <span className="opacity-60 uppercase font-bold text-[7pt]">Total Facturado (Sistema):</span>
                     <span className="font-black">B/. {totalFacturado.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between border-b border-white/10 pb-1">
+                  <div className="flex justify-between border-b border-slate-200 pb-1">
                     <span className="opacity-60 uppercase font-bold text-[7pt]">Efectivo Esperado (Neto):</span>
-                    <span className="font-black text-blue-400">B/. {efectivoEsperado.toFixed(2)}</span>
+                    <span className="font-black text-blue-700">B/. {efectivoEsperado.toFixed(2)}</span>
                   </div>
                   <div className={cn(
-                    "flex justify-between mt-3 p-2 rounded border",
-                    diferencia >= 0 ? "bg-green-600/20 border-green-500 text-green-400" : "bg-red-600/20 border-red-500 text-red-400"
+                    "flex justify-between mt-3 p-2 rounded border-2",
+                    diferencia >= 0 ? "border-green-600 text-green-700 bg-green-50" : "border-red-600 text-red-700 bg-red-50"
                   )}>
                     <span className="font-black uppercase text-[10pt]">Diferencia Final:</span>
                     <span className="font-black text-[14pt]">
@@ -457,8 +457,8 @@ export default function DailyCashReport() {
           header, footer, nav, .print-hidden { display: none !important; }
           #report-to-print { box-shadow: none !important; border: none !important; margin: 0 !important; width: 100% !important; max-width: none !important; }
           input { border: none !important; background: transparent !important; outline: none !important; padding: 0 !important; }
-          .bg-slate-900 { background-color: #000 !important; color: white !important; -webkit-print-color-adjust: exact; }
-          .text-white { color: white !important; }
+          .bg-slate-900 { background-color: transparent !important; color: black !important; border: 2px solid black !important; }
+          .text-white { color: black !important; }
           .bg-slate-50 { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; }
         }
       `}</style>

@@ -65,6 +65,7 @@ function DailyCashReportContent() {
     const dateKey = format(date, 'yyyy-MM-dd');
     
     try {
+      // 1. Verificar si existe un cierre guardado
       const savedReportRef = doc(db, 'daily_cash_reports', dateKey);
       const savedSnap = await getDoc(savedReportRef);
 
@@ -81,10 +82,12 @@ function DailyCashReportContent() {
           setIsReportSaved(false);
       }
 
+      // 2. Cargar transacciones del día
       const fetchedTransactions: any[] = [];
       const start = startOfDay(date);
       const end = endOfDay(date);
 
+      // Cargar contratos (abonos iniciales)
       const contractsSnap = await getDocs(collection(db, 'contracts'));
       contractsSnap.docs.forEach(docSnap => {
           const contract = { id: docSnap.id, ...docSnap.data() } as Contract;
@@ -92,6 +95,8 @@ function DailyCashReportContent() {
 
           const createdDate = toDate(contract.createdAt);
           const activatedDate = contract.activatedAt ? toDate(contract.activatedAt) : null;
+          
+          // Consideramos el día de creación o activación para la caja
           const isMatch = isSameDay(createdDate, date) || (activatedDate && isSameDay(activatedDate, date));
 
           if (!isMatch) return;
@@ -125,6 +130,7 @@ function DailyCashReportContent() {
           }
       });
 
+      // Cargar pagos de saldo (cancelaciones)
       const qCancellations = query(
         collection(db, 'cancellation_payments'),
         where('paymentDate', '>=', Timestamp.fromDate(start)),
@@ -273,6 +279,8 @@ function DailyCashReportContent() {
                   <TableHead className="text-black p-1 text-[7pt] text-center w-16">Contrato</TableHead>
                   <TableHead className="text-black p-1 text-[7pt] text-center w-16">Cédula</TableHead>
                   <TableHead className="text-black p-1 text-[7pt]">Cliente</TableHead>
+                  <TableHead className="text-black p-1 text-[7pt]">Servicio</TableHead>
+                  <TableHead className="text-black p-1 text-[7pt]">Vendedor</TableHead>
                   <TableHead className="text-black p-1 text-[7pt] text-right w-14">Efectivo</TableHead>
                   <TableHead className="text-black p-1 text-[7pt] text-right w-14">BAC</TableHead>
                   <TableHead className="text-black p-1 text-[7pt] text-right w-14">Gral/Yappy</TableHead>
@@ -283,13 +291,15 @@ function DailyCashReportContent() {
               </TableHeader>
               <TableBody>
                   {isLoading ? (
-                      <TableRow><TableCell colSpan={9} className="text-center py-10"><Loader2 className="h-6 w-6 animate-spin mx-auto text-slate-300" /></TableCell></TableRow>
+                      <TableRow><TableCell colSpan={11} className="text-center py-10"><Loader2 className="h-6 w-6 animate-spin mx-auto text-slate-300" /></TableCell></TableRow>
                   ) : transactions.length > 0 ? (
                       transactions.map((t) => (
                       <TableRow key={t.id} className="h-6 border-b border-black hover:bg-transparent last:border-0">
                           <TableCell className="p-1 text-[7pt] text-center text-black font-bold">{t.contrato}</TableCell>
                           <TableCell className="p-1 text-[7pt] text-center text-black">{t.cedula}</TableCell>
                           <TableCell className="p-1 text-[7pt] uppercase text-black truncate max-w-[150px]">{t.clientName}</TableCell>
+                          <TableCell className="p-1 text-[7pt] uppercase text-black truncate text-[6pt]">{t.service}</TableCell>
+                          <TableCell className="p-1 text-[7pt] uppercase text-black font-medium">{t.vendedor}</TableCell>
                           <TableCell className="p-1 text-[7pt] text-right text-black">{t.cash > 0 ? t.cash.toFixed(2) : '-'}</TableCell>
                           <TableCell className="p-1 text-[7pt] text-right text-black">{t.bac > 0 ? t.bac.toFixed(2) : '-'}</TableCell>
                           <TableCell className="p-1 text-[7pt] text-right text-black">{t.general > 0 ? t.general.toFixed(2) : '-'}</TableCell>
@@ -299,7 +309,7 @@ function DailyCashReportContent() {
                       </TableRow>
                       ))
                   ) : (
-                      <TableRow><TableCell colSpan={9} className="text-center py-10 text-[8pt] text-slate-400 font-bold uppercase italic">Sin transacciones registradas</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={11} className="text-center py-10 text-[8pt] text-slate-400 font-bold uppercase italic">Sin transacciones registradas</TableCell></TableRow>
                   )}
               </TableBody>
               </Table>

@@ -45,6 +45,8 @@ const TIME_STRING_MAP: Record<string, string> = {
   '10:00am a 12:00pm': '10am-12pm',
   '01:00pm a 03:00pm': '1pm-3pm',
   '03:00pm a 05:00pm': '3pm-5pm',
+  '8:00am a 10:00am': '8am-10am',
+  '1:00pm a 3:00pm': '1pm-3pm',
 };
 
 const getGlobalCapacity = (date: Date, slotId: string) => {
@@ -58,12 +60,13 @@ const getGlobalCapacity = (date: Date, slotId: string) => {
     return 3;
 };
 
-const getPlanColor = (planName: string = '') => {
-    const p = planName.toUpperCase();
-    if (p.includes('MOTO')) return 'border-red-500 bg-red-50 text-red-900';
-    if (p.includes('PREMIUM')) return 'border-emerald-500 bg-emerald-50 text-emerald-900';
-    if (p.includes('PLUS')) return 'border-blue-500 bg-blue-50 text-blue-900';
-    return 'border-amber-500 bg-amber-50 text-amber-900';
+// Nueva lógica de color por VEHÍCULO
+const getVehicleColor = (vehicleName: string = '') => {
+    const v = vehicleName.toUpperCase();
+    if (v.includes('MOTO')) return 'border-red-500 bg-red-50 text-red-900';
+    if (v.includes('BLANCO')) return 'border-emerald-500 bg-emerald-50 text-emerald-900';
+    if (v.includes('BRONCE')) return 'border-blue-500 bg-blue-50 text-blue-900';
+    return 'border-amber-500 bg-amber-50 text-amber-900'; // Spark, Diesel o sin asignar
 };
 
 export default function WeeklyScheduleReport() {
@@ -164,7 +167,7 @@ export default function WeeklyScheduleReport() {
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-2 print:hidden">
         <div>
           <h1 className="text-3xl font-black uppercase tracking-tight text-slate-900">Agenda Práctica Semanal</h1>
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Control de flota y sesiones de estudiantes</p>
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Control de flota y sesiones por vehículo</p>
         </div>
         
         <div className="flex items-center gap-3">
@@ -230,7 +233,7 @@ export default function WeeklyScheduleReport() {
                             {sessions.map((s, idx) => (
                               <div key={idx} className={cn(
                                 "relative p-3 rounded-lg border-l-4 shadow-sm flex flex-col gap-1 transition-all hover:scale-[1.02]",
-                                getPlanColor(s.plan)
+                                getVehicleColor(s.vehicle)
                               )}>
                                 <div className="absolute top-1 right-1.5 flex items-center gap-1">
                                     {idx === 0 && <span className="bg-white/80 text-[7pt] font-black px-1 rounded-sm border border-current/20">{sessions.length}/{capacity}</span>}
@@ -268,10 +271,10 @@ export default function WeeklyScheduleReport() {
       </div>
 
       <div className="flex flex-wrap items-center justify-center gap-6 p-6 bg-white border-t sticky bottom-0 print:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-50 border-l-4 border-red-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Curso Moto</span></div>
-        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-emerald-50 border-l-4 border-emerald-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Auto Premium</span></div>
-        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-50 border-l-4 border-blue-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Auto Plus</span></div>
-        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-amber-50 border-l-4 border-amber-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Básico / Manual</span></div>
+        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-50 border-l-4 border-red-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Motos</span></div>
+        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-emerald-50 border-l-4 border-emerald-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Picanto Blanco</span></div>
+        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-50 border-l-4 border-blue-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Picanto Bronce</span></div>
+        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-amber-50 border-l-4 border-amber-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Spark / Diesel</span></div>
         <div className="ml-auto flex items-center gap-2 text-slate-400"><Info className="h-3 w-3" /> <span className="text-[8px] font-bold uppercase tracking-widest italic">Capacidad regulada por ATTT según turnos</span></div>
       </div>
 

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -12,7 +13,6 @@ import {
   subDays, 
   startOfWeek, 
   endOfWeek, 
-  isSameDay, 
   eachDayOfInterval,
   isSunday
 } from 'date-fns';
@@ -59,7 +59,6 @@ const getGlobalCapacity = (date: Date, slotId: string) => {
     return 3;
 };
 
-// Nueva lógica de color por VEHÍCULO con Moto Negra en Gris
 const getVehicleColor = (vehicleName: string = '') => {
     const v = vehicleName.toUpperCase();
     if (v.includes('MOTO NEGRA')) return 'border-slate-500 bg-slate-50 text-slate-900';
@@ -67,7 +66,7 @@ const getVehicleColor = (vehicleName: string = '') => {
     if (v.includes('BLANCO')) return 'border-emerald-500 bg-emerald-50 text-emerald-900';
     if (v.includes('BRONCE')) return 'border-blue-500 bg-blue-50 text-blue-900';
     if (v.includes('PICK UP') || v.includes('PICKUP')) return 'border-orange-500 bg-orange-50 text-orange-900';
-    return 'border-amber-500 bg-amber-50 text-amber-900'; // Spark o sin asignar
+    return 'border-amber-500 bg-amber-50 text-amber-900'; 
 };
 
 export default function WeeklyScheduleReport() {
@@ -75,7 +74,7 @@ export default function WeeklyScheduleReport() {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [isDownloading, setIsDownloading] = useState(false);
 
-  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 }); // Empezar en Lunes
+  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
@@ -95,7 +94,7 @@ export default function WeeklyScheduleReport() {
     };
 
     contracts?.forEach(c => {
-      const details = c.autoMotoDetails || c.deluxeDetails;
+      const details = c.autoMotoDetails || c.deluxeDetails || c.ampliacionesDetails;
       const processSlots = (slots: any[]) => {
         slots?.forEach((s, idx) => {
           const slotDate = toDate(s.date);

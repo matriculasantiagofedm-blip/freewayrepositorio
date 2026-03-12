@@ -1,2 +1,2 @@
-// ARCHIVO ELIMINADO PARA RESOLVER CONFLICTO DE RUTAS PARALELAS
-// Use src/app/(app)/reports/cancellation-payments/page.tsx en su lugar.
+// Archivo neutralizado para evitar conflicto de rutas paralelas. Use la versión en (app)
+export default function DeletedPage() { return null; }

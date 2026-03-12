@@ -1,2 +1,2 @@
-// ARCHIVO ELIMINADO PARA RESOLVER CONFLICTO DE RUTAS PARALELAS Y DUPLICIDAD
-// La funcionalidad de Caja Diaria ha sido removida del sistema por solicitud del usuario.
+// Archivo neutralizado para evitar conflicto de rutas paralelas y eliminar rastro de Caja Diaria
+export default function DeletedPage() { return null; }

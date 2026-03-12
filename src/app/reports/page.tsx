@@ -1,2 +1,2 @@
-// ARCHIVO ELIMINADO PARA RESOLVER CONFLICTO DE RUTAS PARALELAS
-// Use src/app/(app)/reports/page.tsx en su lugar.
+// Archivo neutralizado para evitar conflicto de rutas paralelas con src/app/(app)/reports/page.tsx
+export default function DeletedPage() { return null; }

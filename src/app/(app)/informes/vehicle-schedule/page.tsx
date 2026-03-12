@@ -74,6 +74,11 @@ const getGlobalCapacity = (date: Date, slotId: string) => {
 };
 
 const getVehicleColor = (vehicleName: string = '', status?: ClassStatus) => {
+    // REGLA PRIORITARIA: Si no asistió, la tarjeta es ROJA
+    if (status === 'missed') {
+        return 'border-red-600 bg-red-50 text-red-900 shadow-[inset_0_0_0_1px_rgba(220,38,38,0.2)]';
+    }
+
     const v = vehicleName.toUpperCase();
     let base = 'border-amber-500 bg-amber-50 text-amber-900'; 
     
@@ -83,7 +88,8 @@ const getVehicleColor = (vehicleName: string = '', status?: ClassStatus) => {
     else if (v.includes('BRONCE')) base = 'border-blue-500 bg-blue-50 text-blue-900';
     else if (v.includes('PICK UP') || v.includes('PICKUP')) base = 'border-orange-500 bg-orange-50 text-orange-900';
 
-    if (status === 'missed' || status === 'cancelled_vehicle' || status === 'rescheduled') {
+    // Estados de atenuación para cancelaciones o reprogramaciones que NO sean inasistencia
+    if (status === 'cancelled_vehicle' || status === 'rescheduled') {
         return cn(base, "opacity-40 grayscale-[0.5] border-dashed");
     }
     
@@ -149,7 +155,7 @@ export default function WeeklyScheduleReport() {
               isManual: false,
               status: s.status,
               refueled: s.refueled,
-              fieldPath // para saber qué array actualizar (practicalClassSchedules, etc)
+              fieldPath 
             });
           }
         });
@@ -346,7 +352,9 @@ export default function WeeklyScheduleReport() {
                                         <div className="flex flex-col">
                                             <span className="text-[7.5px] font-black uppercase truncate max-w-[60px]">{s.vehicle}</span>
                                             {s.status && s.status !== 'scheduled' && (
-                                                <span className="text-[6px] font-black uppercase text-red-600 leading-none">{s.status === 'missed' ? 'Inasistencia' : s.status === 'cancelled_vehicle' ? 'Falló Vehículo' : 'Reagendada'}</span>
+                                                <span className={cn("text-[6px] font-black uppercase leading-none", s.status === 'missed' ? 'text-red-900' : 'text-red-600')}>
+                                                  {s.status === 'missed' ? 'Inasistencia' : s.status === 'cancelled_vehicle' ? 'Falló Vehículo' : 'Reagendada'}
+                                                </span>
                                             )}
                                         </div>
                                         <span className="bg-black text-white text-[7px] font-black px-1 rounded-full h-3.5 min-w-[14px] flex items-center justify-center">#{s.sessionNum}</span>
@@ -447,6 +455,7 @@ export default function WeeklyScheduleReport() {
         <div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-50 border-l-4 border-blue-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Picanto Bronce</span></div>
         <div className="flex items-center gap-2"><div className="w-3 h-3 bg-orange-50 border-l-4 border-orange-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Pick up</span></div>
         <div className="flex items-center gap-2"><div className="w-3 h-3 bg-amber-50 border-l-4 border-amber-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Spark</span></div>
+        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-50 border-l-4 border-red-600 rounded"></div> <span className="text-[9px] font-black uppercase text-red-600">No Asistió</span></div>
         <div className="ml-auto flex items-center gap-2 text-slate-400"><Info className="h-3 w-3" /> <span className="text-[8px] font-bold uppercase tracking-widest italic">Capacidad regulada por ATTT según turnos</span></div>
       </div>
 

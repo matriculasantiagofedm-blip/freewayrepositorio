@@ -1,6 +1,6 @@
 
 /**
- * Este archivo ha sido movido a src/app/(app)/reports/certificates-summary/page.tsx
+ * Este archivo ha sido movido a src/app/(app)/reports/daily-cash/page.tsx
  * para evitar conflictos de rutas paralelas en Next.js.
  */
 export const dynamic = 'force-dynamic';

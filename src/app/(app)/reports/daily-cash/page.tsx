@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Printer, CalendarIcon, Loader2, Download, RefreshCw, Save, Search } from 'lucide-react';
+import { Printer, CalendarIcon, Loader2, Save, Plus, Trash2 } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { cn, toDate } from '@/lib/utils';
 import {
@@ -23,15 +23,8 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useDb, useUser } from '@/firebase';
-import { collection, query, getDocs, Timestamp, where, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, getDocs, Timestamp, where, doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import type { Contract, Payment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -41,7 +34,6 @@ const initialBillQuantities: { [key: string]: number } = {
 const initialCoinQuantities: { [key: string]: number } = {
   '1.00': 0, '0.50': 0, '0.25': 0, '0.10': 0, '0.05': 0, '0.01': 0,
 };
-const initialExpenses = [{ description: '', amount: 0 }];
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -58,11 +50,9 @@ function DailyCashReportContent() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [billQuantities, setBillQuantities] = useState(initialBillQuantities);
   const [coinQuantities, setCoinQuantities] = useState(initialCoinQuantities);
-  const [expenses, setExpenses] = useState(initialExpenses);
+  const [expenses, setExpenses] = useState<{ description: string; amount: number }[]>([{ description: '', amount: 0 }]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [sellerFilter, setSellerFilter] = useState('all');
   const [mounted, setMounted] = useState(false);
   const [isReportSaved, setIsReportSaved] = useState(false);
 
@@ -80,18 +70,18 @@ function DailyCashReportContent() {
     try {
       const dateKey = format(reportDate, 'yyyy-MM-dd');
       const savedReportRef = doc(db, 'daily_cash_reports', dateKey);
-      const savedSnap = await getDocs(query(collection(db, 'daily_cash_reports'), where('reportDate', '==', dateKey)));
+      const savedSnap = await getDoc(savedReportRef);
 
-      if (!savedSnap.empty) {
-          const savedData = savedSnap.docs[0].data();
+      if (savedSnap.exists()) {
+          const savedData = savedSnap.data();
           setBillQuantities(savedData.billQuantities || initialBillQuantities);
           setCoinQuantities(savedData.coinQuantities || initialCoinQuantities);
-          setExpenses(savedData.expenses || initialExpenses);
+          setExpenses(savedData.expenses || [{ description: '', amount: 0 }]);
           setIsReportSaved(true);
       } else {
           setBillQuantities(initialBillQuantities);
           setCoinQuantities(initialCoinQuantities);
-          setExpenses(initialExpenses);
+          setExpenses([{ description: '', amount: 0 }]);
           setIsReportSaved(false);
       }
 
@@ -140,7 +130,6 @@ function DailyCashReportContent() {
 
       const start = startOfDay(reportDate);
       const end = endOfDay(reportDate);
-      
       const qCancellations = query(
         collection(db, 'cancellation_payments'),
         where('paymentDate', '>=', Timestamp.fromDate(start)),
@@ -184,14 +173,8 @@ function DailyCashReportContent() {
     }
   }, [reportDate, user, mounted]);
 
-  const filteredTransactions = useMemo(() => {
-    if (role !== 'Administrador') return transactions.filter(t => t.vendedor === role);
-    if (sellerFilter === 'all') return transactions;
-    return transactions.filter(t => t.vendedor === sellerFilter);
-  }, [transactions, sellerFilter, role]);
-
   const transactionTotals = useMemo(() => {
-    return filteredTransactions.reduce(
+    return transactions.reduce(
       (acc, curr) => ({
         cash: acc.cash + Number(curr.cash),
         debit: acc.debit + Number(curr.debit),
@@ -202,7 +185,7 @@ function DailyCashReportContent() {
       }),
       { cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0 }
     );
-  }, [filteredTransactions]);
+  }, [transactions]);
 
   const cashBreakdownTotals = useMemo(() => {
     const billTotal = Object.entries(billQuantities).reduce((acc, [bill, qty]) => acc + parseFloat(bill) * qty, 0);
@@ -245,17 +228,28 @@ function DailyCashReportContent() {
     }
   };
 
+  const addExpense = () => setExpenses([...expenses, { description: '', amount: 0 }]);
+  const removeExpense = (index: number) => setExpenses(expenses.filter((_, i) => i !== index));
+  const updateExpense = (index: number, field: string, value: any) => {
+    const newExpenses = [...expenses];
+    (newExpenses[index] as any)[field] = value;
+    setExpenses(newExpenses);
+  };
+
   if (!mounted) return null;
 
   return (
     <div className="space-y-6 print:bg-white min-h-screen pb-12">
       <div className="flex flex-col gap-4 print:hidden">
         <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-black font-headline text-slate-900 uppercase">Caja Diaria</h1>
+            <div>
+                <h1 className="text-2xl font-black font-headline text-slate-900 uppercase">Caja Diaria</h1>
+                <p className="text-xs text-muted-foreground font-medium">Gestión de ingresos y arqueo de efectivo.</p>
+            </div>
             <div className="flex items-center gap-2">
                 <Popover>
                     <PopoverTrigger asChild>
-                    <Button variant={"outline"} className="w-[220px] text-xs">
+                    <Button variant={"outline"} className="w-[220px] text-xs h-10 border-slate-300">
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {reportDate ? format(reportDate, "PPP", { locale: es }) : <span>Elegir fecha</span>}
                     </Button>
@@ -264,85 +258,142 @@ function DailyCashReportContent() {
                     <Calendar mode="single" selected={reportDate} onSelect={(date) => setReportDate(date || new Date())} initialFocus />
                     </PopoverContent>
                 </Popover>
-                <Button onClick={handleSaveReport} disabled={isSaving || isReportSaved} className="bg-green-600 h-9 font-black text-[10px] uppercase">
+                <Button onClick={handleSaveReport} disabled={isSaving || isReportSaved} className="bg-blue-600 hover:bg-blue-700 h-10 px-6 font-black text-[10px] uppercase tracking-widest shadow-md">
                     {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
                     {isReportSaved ? 'Caja Cerrada' : 'Cerrar Caja'}
                 </Button>
+                <Button variant="outline" onClick={() => window.print()} className="h-10 border-slate-300"><Printer className="h-4 w-4" /></Button>
             </div>
         </div>
       </div>
 
-      <div id="report-to-export" className="bg-white mx-auto p-8 border shadow-sm max-w-[8.5in]">
+      <div id="report-to-export" className="bg-white mx-auto p-8 border shadow-sm max-w-[8.5in] print:border-none print:shadow-none">
         <div className="text-center mb-6 border-b-2 border-black pb-2">
-          <h2 className="text-xl font-black uppercase text-black">FREEWAY ESCUELA DE MANEJO</h2>
-          <p className="text-[10px] font-bold text-black">REPORTE DE CAJA - {reportDate ? format(reportDate, "PPP", { locale: es }).toUpperCase() : ''}</p>
+          <h2 className="text-xl font-black uppercase text-black tracking-tight">FREEWAY ESCUELA DE MANEJO</h2>
+          <p className="text-[10px] font-bold text-black uppercase tracking-[0.2em]">REPORTE DE CAJA - {reportDate ? format(reportDate, "PPP", { locale: es }).toUpperCase() : ''}</p>
         </div>
 
         <div className="space-y-6">
-          <div className="border border-black">
+          <div className="border border-black overflow-hidden rounded-sm">
               <Table>
               <TableHeader>
                   <TableRow className="bg-slate-100 font-bold border-b border-black">
-                  <TableHead className="text-black p-1 text-[7pt] text-center">Contrato</TableHead>
+                  <TableHead className="text-black p-1 text-[7pt] text-center w-16">Contrato</TableHead>
                   <TableHead className="text-black p-1 text-[7pt]">Cliente</TableHead>
-                  <TableHead className="text-black p-1 text-[7pt] text-center">Web</TableHead>
-                  <TableHead className="text-black p-1 text-[7pt] text-right">Efectivo</TableHead>
-                  <TableHead className="text-black p-1 text-[7pt] text-right">BAC</TableHead>
-                  <TableHead className="text-black p-1 text-[7pt] text-right">Gral/Yappy</TableHead>
+                  <TableHead className="text-black p-1 text-[7pt] text-center w-10">Web</TableHead>
+                  <TableHead className="text-black p-1 text-[7pt] text-right w-16">Efectivo</TableHead>
+                  <TableHead className="text-black p-1 text-[7pt] text-right w-16">BAC</TableHead>
+                  <TableHead className="text-black p-1 text-[7pt] text-right w-16">Gral/Yappy</TableHead>
+                  <TableHead className="text-black p-1 text-[7pt] text-right w-16">Débito</TableHead>
                   </TableRow>
               </TableHeader>
               <TableBody>
-                  {filteredTransactions.map((t) => (
-                  <TableRow key={t.id} className="h-6 border-b border-black hover:bg-transparent">
-                      <TableCell className="p-1 text-[7pt] text-center text-black font-bold">{t.contrato}</TableCell>
-                      <TableCell className="p-1 text-[7pt] uppercase text-black">{t.clientName}</TableCell>
-                      <TableCell className="p-1 text-[7pt] text-center">{t.isWeb ? 'SÍ' : '-'}</TableCell>
-                      <TableCell className="p-1 text-[7pt] text-right text-black">{t.cash > 0 ? t.cash.toFixed(2) : '-'}</TableCell>
-                      <TableCell className="p-1 text-[7pt] text-right text-black">{t.bac > 0 ? t.bac.toFixed(2) : '-'}</TableCell>
-                      <TableCell className="p-1 text-[7pt] text-right text-black">{t.general > 0 ? t.general.toFixed(2) : '-'}</TableCell>
-                  </TableRow>
-                  ))}
+                  {isLoading ? (
+                      <TableRow><TableCell colSpan={7} className="text-center py-10"><Loader2 className="h-6 w-6 animate-spin mx-auto text-slate-300" /></TableCell></TableRow>
+                  ) : transactions.length > 0 ? (
+                      transactions.map((t) => (
+                      <TableRow key={t.id} className="h-6 border-b border-black hover:bg-transparent last:border-0">
+                          <TableCell className="p-1 text-[7pt] text-center text-black font-bold">{t.contrato}</TableCell>
+                          <TableCell className="p-1 text-[7pt] uppercase text-black truncate max-w-[150px]">{t.clientName}</TableCell>
+                          <TableCell className="p-1 text-[7pt] text-center">
+                              {t.isWeb ? <span className="bg-blue-100 text-blue-800 px-1 rounded font-black">SÍ</span> : '-'}
+                          </TableCell>
+                          <TableCell className="p-1 text-[7pt] text-right text-black">{t.cash > 0 ? t.cash.toFixed(2) : '-'}</TableCell>
+                          <TableCell className="p-1 text-[7pt] text-right text-black">{t.bac > 0 ? t.bac.toFixed(2) : '-'}</TableCell>
+                          <TableCell className="p-1 text-[7pt] text-right text-black">{t.general > 0 ? t.general.toFixed(2) : '-'}</TableCell>
+                          <TableCell className="p-1 text-[7pt] text-right text-black">{t.debit > 0 ? t.debit.toFixed(2) : '-'}</TableCell>
+                      </TableRow>
+                      ))
+                  ) : (
+                      <TableRow><TableCell colSpan={7} className="text-center py-10 text-[8pt] text-slate-400 font-bold uppercase italic">Sin transacciones registradas</TableCell></TableRow>
+                  )}
               </TableBody>
               </Table>
           </div>
 
           <div className="grid grid-cols-2 gap-8">
-            <div className="border border-black p-3 space-y-2">
-              <h3 className="text-[9px] font-black uppercase bg-slate-100 p-1 border-b border-black text-center">DESGLOSE EFECTIVO</h3>
+            <div className="border border-black p-3 space-y-2 rounded-sm">
+              <h3 className="text-[9px] font-black uppercase bg-slate-100 p-1 border-b border-black text-center">DESGLOSE FÍSICO (ARQUEO)</h3>
               {Object.keys(billQuantities).map(val => (
                 <div key={val} className="flex justify-between items-center text-[8pt]">
-                  <span className="font-bold">B/. {val}:</span>
-                  <div className="flex gap-4">
-                      <Input type="number" className="h-5 w-12 text-[8pt] p-1 border-black print:hidden" value={billQuantities[val] || ''} onChange={(e) => setBillQuantities(prev => ({ ...prev, [val]: parseInt(e.target.value) || 0 }))} />
-                      <span className="w-12 text-right">{(parseFloat(val) * (billQuantities[val] || 0)).toFixed(2)}</span>
+                  <span className="font-bold w-20">B/. {val}:</span>
+                  <div className="flex gap-4 flex-1 justify-end">
+                      <Input 
+                        type="number" 
+                        className="h-5 w-12 text-[8pt] p-1 border-black print:hidden text-center font-bold" 
+                        value={billQuantities[val] || ''} 
+                        onChange={(e) => setBillQuantities(prev => ({ ...prev, [val]: parseInt(e.target.value) || 0 }))} 
+                        disabled={isReportSaved}
+                      />
+                      <span className="w-16 text-right font-medium">{(parseFloat(val) * (billQuantities[val] || 0)).toFixed(2)}</span>
                   </div>
                 </div>
               ))}
-              <div className="flex justify-between font-black border-t border-black pt-1">
-                <span>TOTAL FÍSICO:</span>
+              <div className="flex justify-between font-black border-t border-black pt-1 text-[9pt]">
+                <span>TOTAL ARQUEO:</span>
                 <span>B/. {cashBreakdownTotals.total.toFixed(2)}</span>
               </div>
             </div>
 
-            <div className="border-2 border-black p-4 bg-slate-50 space-y-2">
-                <div className="flex justify-between font-black text-black">
-                  <span>TOTAL FACTURADO:</span>
-                  <span>{currencyFormatter.format(grandTotals.totalFacturado)}</span>
+            <div className="space-y-4">
+                <div className="border border-black p-3 space-y-2 rounded-sm">
+                    <div className="flex justify-between items-center bg-slate-100 p-1 border-b border-black">
+                        <h3 className="text-[9px] font-black uppercase">GASTOS DEL DÍA</h3>
+                        <Button variant="ghost" size="icon" className="h-4 w-4 print:hidden" onClick={addExpense} disabled={isReportSaved}><Plus className="h-3 w-3" /></Button>
+                    </div>
+                    <div className="space-y-1">
+                        {expenses.map((exp, idx) => (
+                            <div key={idx} className="flex gap-2 items-center">
+                                <Input 
+                                    placeholder="Descripción" 
+                                    className="h-5 text-[7pt] flex-1 border-black print:border-none" 
+                                    value={exp.description} 
+                                    onChange={(e) => updateExpense(idx, 'description', e.target.value)}
+                                    disabled={isReportSaved}
+                                />
+                                <Input 
+                                    type="number" 
+                                    placeholder="0.00" 
+                                    className="h-5 w-14 text-[7pt] border-black print:border-none text-right" 
+                                    value={exp.amount || ''} 
+                                    onChange={(e) => updateExpense(idx, 'amount', parseFloat(e.target.value) || 0)}
+                                    disabled={isReportSaved}
+                                />
+                                <Button variant="ghost" size="icon" className="h-4 w-4 text-red-500 print:hidden" onClick={() => removeExpense(idx)} disabled={isReportSaved}><Trash2 className="h-3 w-3" /></Button>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-                <div className="flex justify-between text-[9pt] font-bold text-red-600">
-                  <span>(-) GASTOS:</span>
-                  <span>- {totalExpenses.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-[10pt] font-black border-t border-black pt-1">
-                  <span>EFECTIVO ESPERADO:</span>
-                  <span>B/. {grandTotals.efectivoEsperado.toFixed(2)}</span>
-                </div>
-                <div className={cn("flex justify-between text-[11pt] font-black p-1", grandTotals.diferencia === 0 ? "text-green-700" : "text-red-700")}>
-                  <span>DIFERENCIA:</span>
-                  <span>B/. {grandTotals.diferencia.toFixed(2)}</span>
+
+                <div className="border-2 border-black p-4 bg-slate-50 space-y-2 rounded-sm">
+                    <div className="flex justify-between font-black text-black text-[9pt]">
+                      <span>TOTAL FACTURADO:</span>
+                      <span>{currencyFormatter.format(grandTotals.totalFacturado)}</span>
+                    </div>
+                    <div className="flex justify-between text-[8pt] font-bold text-red-600">
+                      <span>(-) GASTOS:</span>
+                      <span>- {totalExpenses.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-[10pt] font-black border-t border-black pt-1">
+                      <span>EFECTIVO ESPERADO:</span>
+                      <span>B/. {grandTotals.efectivoEsperado.toFixed(2)}</span>
+                    </div>
+                    <div className={cn("flex justify-between text-[11pt] font-black p-1 rounded-sm mt-2", grandTotals.diferencia === 0 ? "text-green-700 bg-green-50" : "text-red-700 bg-red-50")}>
+                      <span>DIFERENCIA:</span>
+                      <span>B/. {grandTotals.diferencia.toFixed(2)}</span>
+                    </div>
                 </div>
             </div>
           </div>
+        </div>
+
+        <div className="mt-12 flex justify-around print:mt-24">
+            <div className="text-center w-40 border-t border-black pt-1">
+                <p className="text-[7pt] font-black uppercase">Responsable de Caja</p>
+            </div>
+            <div className="text-center w-40 border-t border-black pt-1">
+                <p className="text-[7pt] font-black uppercase">Auditoría / Gerencia</p>
+            </div>
         </div>
       </div>
     </div>
@@ -351,7 +402,7 @@ function DailyCashReportContent() {
 
 export default function DailyCashReportPage() {
   return (
-    <Suspense fallback={<div className="p-12 text-center"><Loader2 className="animate-spin h-8 w-8 mx-auto" /></div>}>
+    <Suspense fallback={<div className="p-12 text-center"><Loader2 className="animate-spin h-8 w-8 mx-auto text-primary" /></div>}>
       <DailyCashReportContent />
     </Suspense>
   );

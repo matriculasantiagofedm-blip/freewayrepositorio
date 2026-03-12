@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,8 +30,8 @@ export default function ReportsIndexPage() {
       roles: ['Administrador', 'Ventas', 'Ventas Externas']
     },
     {
-      title: 'Ocupación de Flota',
-      description: 'Agenda consolidada por vehículo y disponibilidad de turnos prácticos.',
+      title: 'Agenda Práctica Semanal',
+      description: 'Agenda consolidada por vehículo y disponibilidad de turnos prácticos en formato semanal.',
       href: '/informes/vehicle-schedule',
       icon: CalendarRange,
       color: 'text-blue-600',

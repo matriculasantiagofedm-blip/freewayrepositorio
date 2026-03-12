@@ -1,6 +1,5 @@
 
 /**
  * ESTE ARCHIVO HA SIDO DESACTIVADO PARA ELIMINAR EL ERROR DE RUTA PARALELA.
- * LA ÚNICA RUTA VÁLIDA ES: src/app/(app)/reports/update-payments/page.tsx
  */
 export default function InactivePage() { return null; }

@@ -14,8 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Printer, CalendarIcon, Loader2, Save, Plus, Trash2, CheckCircle2 } from 'lucide-react';
-import { useCurrentRole } from '@/hooks/use-current-role';
+import { Printer, CalendarIcon, Loader2, Save, Plus, Trash2 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import {
   Popover,
@@ -23,7 +22,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { useDb, useUser } from '@/firebase';
+import { useDb, useUser, useFirebase } from '@/firebase';
 import { collection, query, getDocs, Timestamp, where, doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import type { Contract, Payment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -41,9 +40,9 @@ const currencyFormatter = new Intl.NumberFormat('en-US', {
 });
 
 function DailyCashReportContent() {
-  const { role } = useCurrentRole();
   const db = useDb();
   const { user } = useUser();
+  const { role } = useFirebase();
   const { toast } = useToast();
   
   const [reportDate, setReportDate] = useState<Date>(new Date());
@@ -67,7 +66,6 @@ function DailyCashReportContent() {
     const dateKey = format(date, 'yyyy-MM-dd');
     
     try {
-      // 1. Verificar si hay un reporte guardado para esta fecha
       const savedReportRef = doc(db, 'daily_cash_reports', dateKey);
       const savedSnap = await getDoc(savedReportRef);
 
@@ -84,18 +82,15 @@ function DailyCashReportContent() {
           setIsReportSaved(false);
       }
 
-      // 2. Cargar transacciones dinámicas del día
       const fetchedTransactions: any[] = [];
       const start = startOfDay(date);
       const end = endOfDay(date);
 
-      // Cargar contratos (abonos iniciales)
       const contractsSnap = await getDocs(collection(db, 'contracts'));
       contractsSnap.docs.forEach(docSnap => {
           const contract = { id: docSnap.id, ...docSnap.data() } as Contract;
           if (contract.status === 'expired') return;
 
-          // Verificamos si se creó o se activó en esta fecha
           const createdDate = toDate(contract.createdAt);
           const activatedDate = contract.activatedAt ? toDate(contract.activatedAt) : null;
           const isMatch = isSameDay(createdDate, date) || (activatedDate && isSameDay(activatedDate, date));
@@ -133,7 +128,6 @@ function DailyCashReportContent() {
           }
       });
 
-      // Cargar pagos de saldo
       const qCancellations = query(
         collection(db, 'cancellation_payments'),
         where('paymentDate', '>=', Timestamp.fromDate(start)),
@@ -241,7 +235,7 @@ function DailyCashReportContent() {
   if (!mounted) return null;
 
   return (
-    <div className="space-y-6 print:bg-white min-h-screen pb-12">
+    <div className="space-y-6 print:bg-white min-h-screen pb-12 p-4 md:p-8">
       <div className="flex flex-col gap-4 print:hidden">
         <div className="flex justify-between items-center">
             <div>
@@ -269,7 +263,7 @@ function DailyCashReportContent() {
         </div>
       </div>
 
-      <div id="report-to-export" className="bg-white mx-auto p-8 border shadow-sm max-w-[8.5in] print:border-none print:shadow-none">
+      <div id="report-to-export" className="bg-white mx-auto p-8 border shadow-sm max-w-[10in] print:border-none print:shadow-none">
         <div className="text-center mb-6 border-b-2 border-black pb-2">
           <h2 className="text-xl font-black uppercase text-black tracking-tight">FREEWAY ESCUELA DE MANEJO</h2>
           <p className="text-[10px] font-bold text-black uppercase tracking-[0.2em]">REPORTE DE CAJA - {format(reportDate, "PPP", { locale: es }).toUpperCase()}</p>
@@ -281,21 +275,24 @@ function DailyCashReportContent() {
               <TableHeader>
                   <TableRow className="bg-slate-100 font-bold border-b border-black">
                   <TableHead className="text-black p-1 text-[7pt] text-center w-16">Contrato</TableHead>
+                  <TableHead className="text-black p-1 text-[7pt] text-center w-16">Cédula</TableHead>
                   <TableHead className="text-black p-1 text-[7pt]">Cliente</TableHead>
                   <TableHead className="text-black p-1 text-[7pt] text-center w-10">Web</TableHead>
-                  <TableHead className="text-black p-1 text-[7pt] text-right w-16">Efectivo</TableHead>
-                  <TableHead className="text-black p-1 text-[7pt] text-right w-16">BAC</TableHead>
-                  <TableHead className="text-black p-1 text-[7pt] text-right w-16">Gral/Yappy</TableHead>
-                  <TableHead className="text-black p-1 text-[7pt] text-right w-16">Débito</TableHead>
+                  <TableHead className="text-black p-1 text-[7pt] text-right w-14">Efectivo</TableHead>
+                  <TableHead className="text-black p-1 text-[7pt] text-right w-14">BAC</TableHead>
+                  <TableHead className="text-black p-1 text-[7pt] text-right w-14">Gral/Yappy</TableHead>
+                  <TableHead className="text-black p-1 text-[7pt] text-right w-14">T. Débito</TableHead>
+                  <TableHead className="text-black p-1 text-[7pt] text-right w-14">T. Crédito</TableHead>
                   </TableRow>
               </TableHeader>
               <TableBody>
                   {isLoading ? (
-                      <TableRow><TableCell colSpan={7} className="text-center py-10"><Loader2 className="h-6 w-6 animate-spin mx-auto text-slate-300" /></TableCell></TableRow>
+                      <TableRow><TableCell colSpan={9} className="text-center py-10"><Loader2 className="h-6 w-6 animate-spin mx-auto text-slate-300" /></TableCell></TableRow>
                   ) : transactions.length > 0 ? (
                       transactions.map((t) => (
                       <TableRow key={t.id} className="h-6 border-b border-black hover:bg-transparent last:border-0">
                           <TableCell className="p-1 text-[7pt] text-center text-black font-bold">{t.contrato}</TableCell>
+                          <TableCell className="p-1 text-[7pt] text-center text-black">{t.cedula}</TableCell>
                           <TableCell className="p-1 text-[7pt] uppercase text-black truncate max-w-[150px]">{t.clientName}</TableCell>
                           <TableCell className="p-1 text-[7pt] text-center">
                               {t.isWeb ? <span className="bg-blue-100 text-blue-800 px-1 rounded font-black text-[6pt]">SÍ</span> : '-'}
@@ -304,10 +301,11 @@ function DailyCashReportContent() {
                           <TableCell className="p-1 text-[7pt] text-right text-black">{t.bac > 0 ? t.bac.toFixed(2) : '-'}</TableCell>
                           <TableCell className="p-1 text-[7pt] text-right text-black">{t.general > 0 ? t.general.toFixed(2) : '-'}</TableCell>
                           <TableCell className="p-1 text-[7pt] text-right text-black">{t.debit > 0 ? t.debit.toFixed(2) : '-'}</TableCell>
+                          <TableCell className="p-1 text-[7pt] text-right text-black">{t.credit > 0 ? t.credit.toFixed(2) : '-'}</TableCell>
                       </TableRow>
                       ))
                   ) : (
-                      <TableRow><TableCell colSpan={7} className="text-center py-10 text-[8pt] text-slate-400 font-bold uppercase italic">Sin transacciones registradas</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={9} className="text-center py-10 text-[8pt] text-slate-400 font-bold uppercase italic">Sin transacciones registradas</TableCell></TableRow>
                   )}
               </TableBody>
               </Table>

@@ -1,10 +1,9 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
-import { collection, query, orderBy, where, Timestamp } from 'firebase/firestore';
-import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
-import { useDb, useUser } from '@/components/firebase-provider';
+import { useState, useMemo, useEffect } from 'react';
+import { collection, query, orderBy, where, Timestamp, getDocs } from 'firebase/firestore';
+import { useDb, useUser } from '@/firebase';
 import type { Payment } from '@/lib/types';
 import {
   Table,
@@ -17,7 +16,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Loader2, CalendarIcon } from 'lucide-react';
-import Link from 'next/link';
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -29,169 +27,97 @@ export default function CancellationPaymentsPage() {
   const { user } = useUser();
   const [searchTerm, setSearchTerm] = useState('');
   const [reportDate, setReportDate] = useState<Date>(new Date());
+  const [payments, setPayments] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
+  const fetchPayments = async (date: Date) => {
+    if (!db || !user) return;
+    setIsLoading(true);
+    try {
+        const start = startOfDay(date);
+        const end = endOfDay(date);
+        const q = query(
+            collection(db, 'cancellation_payments'), 
+            where('paymentDate', '>=', Timestamp.fromDate(start)),
+            where('paymentDate', '<=', Timestamp.fromDate(end)),
+            orderBy('paymentDate', 'desc')
+        );
+        const snap = await getDocs(q);
+        setPayments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (e) {
+        console.error(e);
+    } finally {
+        setIsLoading(false);
+    }
+  };
 
-  const paymentsQuery = useMemoQuery(() => {
-    if (!db || !user || !reportDate) return null;
-
-    const start = startOfDay(reportDate);
-    const end = endOfDay(reportDate);
-    
-    return query(
-        collection(db, 'cancellation_payments'), 
-        where('paymentDate', '>=', Timestamp.fromDate(start)),
-        where('paymentDate', '<=', Timestamp.fromDate(end)),
-        orderBy('paymentDate', 'desc')
-    );
+  useEffect(() => {
+    fetchPayments(reportDate);
   }, [db, user, reportDate]);
 
-  const { data: payments, isLoading } = useCollection<Payment>(paymentsQuery);
-
   const filteredPayments = useMemo(() => {
-    if (!payments) return [];
     if (!searchTerm) return payments;
-
     const search = searchTerm.toLowerCase();
-
     return payments.filter((payment) => {
       const cancellationFolio = String(payment.cancellationFolio || '').padStart(6, '0');
-      const contractFolio = String(payment.contractFolio || '').padStart(6, '0');
       const clientName = payment.clientName?.toLowerCase() || '';
       const studentId = payment.studentIdNumber?.toLowerCase() || '';
-
-      return (
-        cancellationFolio.includes(search) ||
-        contractFolio.includes(search) ||
-        clientName.includes(search) ||
-        studentId.includes(search)
-      );
+      return cancellationFolio.includes(search) || clientName.includes(search) || studentId.includes(search);
     });
   }, [payments, searchTerm]);
-
-  const renderContent = () => {
-    if (isLoading) {
-      return (
-        <div className="flex items-center justify-center p-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="ml-4 text-muted-foreground">Cargando pagos...</p>
-        </div>
-      );
-    }
-    
-    if (!user && !isLoading) {
-        return (
-             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
-                <h3 className="mt-4 text-lg font-semibold text-foreground">
-                    Acceso Denegado
-                </h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                    Debes iniciar sesión para ver este reporte.
-                </p>
-                <Button asChild className="mt-4">
-                    <Link href="/">Iniciar Sesión</Link>
-                </Button>
-            </div>
-        );
-    }
-
-    if (filteredPayments.length === 0) {
-        return (
-            <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
-                <h3 className="mt-4 text-lg font-semibold text-foreground">
-                    No se encontraron pagos
-                </h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                    {searchTerm ? "Intenta con otro término de búsqueda." : "No se han registrado pagos de cancelación para la fecha seleccionada."}
-                </p>
-            </div>
-        );
-    }
-
-    return (
-      <div className="rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Folio Pago</TableHead>
-              <TableHead>Folio Contrato</TableHead>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Cédula</TableHead>
-              <TableHead>Fecha de Pago</TableHead>
-              <TableHead className="text-right">Monto (B/.)</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredPayments.map((payment) => {
-              const paymentDate = toDate(payment.paymentDate);
-              return (
-                <TableRow key={payment.id}>
-                  <TableCell className="font-medium text-primary">
-                      {String(payment.cancellationFolio).padStart(6, '0')}
-                  </TableCell>
-                  <TableCell>
-                      <Link href={`/contracts/${payment.contractId}`} className="hover:underline text-blue-600">
-                          {String(payment.contractFolio).padStart(6, '0')}
-                      </Link>
-                  </TableCell>
-                  <TableCell>{payment.clientName}</TableCell>
-                  <TableCell>{payment.studentIdNumber}</TableCell>
-                  <TableCell>
-                    {!isNaN(paymentDate.getTime()) ? format(paymentDate, 'dd/MM/yyyy HH:mm', { locale: es }) : 'Fecha inválida'}
-                  </TableCell>
-                  <TableCell className="text-right font-semibold">
-                    {payment.amount.toFixed(2)}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
-    );
-  };
 
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <h1 className="font-headline text-3xl font-bold">Listado de Pagos de Cancelación</h1>
+        <h1 className="font-headline text-3xl font-bold">Pagos de Cancelación</h1>
         <div className="flex items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-[240px] justify-start text-left font-normal",
-                    !reportDate && "text-muted-foreground"
-                  )}
-                >
+                <Button variant={"outline"} className="w-[240px] justify-start text-left font-normal h-11">
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {reportDate ? format(reportDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                  {format(reportDate, "PPP", { locale: es })}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                  mode="single"
-                  selected={reportDate}
-                  onSelect={(date) => setReportDate(date || new Date())}
-                  initialFocus
-                />
+                <Calendar mode="single" selected={reportDate} onSelect={(date) => date && setReportDate(date)} initialFocus />
               </PopoverContent>
             </Popover>
             <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-                type="search"
-                placeholder="Buscar por folio, cliente..."
-                className="pl-8 sm:w-[250px]"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-            />
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input type="search" placeholder="Buscar..." className="pl-8 sm:w-[250px] h-11" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
         </div>
       </div>
-      {renderContent()}
+
+      <div className="rounded-lg border bg-white shadow-sm overflow-hidden">
+        <Table>
+          <TableHeader className="bg-slate-50">
+            <TableRow>
+              <TableHead className="font-bold">Folio Pago</TableHead>
+              <TableHead className="font-bold">Cliente</TableHead>
+              <TableHead className="font-bold">Cédula</TableHead>
+              <TableHead className="font-bold">Fecha</TableHead>
+              <TableHead className="text-right font-bold">Monto (B/.)</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+                <TableRow><TableCell colSpan={5} className="text-center py-12"><Loader2 className="animate-spin mx-auto" /></TableCell></TableRow>
+            ) : filteredPayments.map((p) => (
+                <TableRow key={p.id}>
+                  <TableCell className="font-black text-primary">{String(p.cancellationFolio || '').padStart(6, '0')}</TableCell>
+                  <TableCell className="uppercase text-xs font-bold">{p.clientName}</TableCell>
+                  <TableCell>{p.studentIdNumber}</TableCell>
+                  <TableCell className="text-xs">{format(toDate(p.paymentDate), 'dd/MM/yyyy HH:mm')}</TableCell>
+                  <TableCell className="text-right font-black">B/. {p.amount.toFixed(2)}</TableCell>
+                </TableRow>
+            ))}
+            {!isLoading && filteredPayments.length === 0 && (
+                <TableRow><TableCell colSpan={5} className="text-center py-12 text-muted-foreground italic">No se hallaron registros.</TableCell></TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
-
-    

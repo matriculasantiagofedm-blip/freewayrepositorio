@@ -87,6 +87,7 @@ const ampliacionesSchema = z.object({
   idType: z.string().default('C.I.P.'),
   studentIdNumber: z.string().min(5, 'ID requerido'),
   studentAddress: z.string().min(5, 'Dirección requerida'),
+  studentAddressLocality: z.string().optional(),
   studentPhone1: z.string().min(7, 'Teléfono requerido'),
   studentPhone2: z.string().optional(),
   licenseCategory: z.string().min(1, 'Seleccione al menos una categoría'),
@@ -200,6 +201,7 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
     try {
       const balance = values.courseValue - values.downPayment;
       const { clientName, clientEmail, ...detailsOnly } = values;
+      const finalRole = role || 'Sistema';
 
       if (isEdit) {
         const contractRef = doc(db, 'contracts', contract.id);
@@ -214,7 +216,7 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
             balance: balance,
           },
           updatedAt: serverTimestamp(),
-          updatedBy: role || 'Sistema',
+          updatedBy: finalRole,
         });
         toast({ title: 'Ampliación Actualizada' });
         router.push(`/contracts/${contract.id}`);
@@ -243,8 +245,9 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
             type: 'Ampliaciones',
             status: balance <= 0 ? 'completed' : 'active',
             userId: user.uid,
-            createdBy: role || 'Sistema',
+            createdBy: finalRole,
             createdAt: serverTimestamp(),
+            activatedAt: serverTimestamp(), // Vital para reportes
             ampliacionesDetails: {
               ...detailsOnly,
               paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null,

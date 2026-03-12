@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useDb } from '@/firebase';
-import { collection, query, where, Timestamp } from 'firebase/firestore';
+import { collection, query, where, Timestamp, getDocs } from 'firebase/firestore';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -53,8 +53,19 @@ export default function DailyCashReport() {
   const [coinCounts, setCoinCounts] = useState<Record<number, number>>({});
   const [expenses, setExpenses] = useState<{ id: string; desc: string; amount: number }[]>([]);
 
-  // 1. Contratos (Abono Inicial)
-  const contractsQuery = useMemoQuery(() => {
+  // 1. Contratos (Consulta por createdAt y activatedAt para capturar todos los roles)
+  const contractsQueryCreated = useMemoQuery(() => {
+    if (!db) return null;
+    const start = startOfDay(selectedDate);
+    const end = endOfDay(selectedDate);
+    return query(
+      collection(db, 'contracts'),
+      where('createdAt', '>=', Timestamp.fromDate(start)),
+      where('createdAt', '<=', Timestamp.fromDate(end))
+    );
+  }, [db, selectedDate]);
+
+  const contractsQueryActivated = useMemoQuery(() => {
     if (!db) return null;
     const start = startOfDay(selectedDate);
     const end = endOfDay(selectedDate);
@@ -101,30 +112,37 @@ export default function DailyCashReport() {
     );
   }, [db, selectedDate]);
 
-  const { data: contracts, isLoading: loadingC } = useCollection(contractsQuery);
+  const { data: contractsCreated, isLoading: loadingC1 } = useCollection(contractsQueryCreated);
+  const { data: contractsActivated, isLoading: loadingC2 } = useCollection(contractsQueryActivated);
   const { data: cancellations, isLoading: loadingCanc } = useCollection(cancellationsQuery);
   const { data: updates, isLoading: loadingU } = useCollection(updatesQuery);
   const { data: bookSales, isLoading: loadingB } = useCollection(bookSalesQuery);
 
   const transactions = useMemo(() => {
     const list: any[] = [];
+    const processedIds = new Set<string>();
     
-    contracts?.forEach(c => {
+    const addContract = (c: any) => {
+      if (processedIds.has(c.id)) return;
       const details = c.autoMotoDetails || c.deluxeDetails || c.ampliacionesDetails;
       if (Number(details?.downPayment) > 0) {
         list.push({
           id: c.id,
-          folio: String(c.folioNumber).padStart(6, '0'),
+          folio: String(c.folioNumber || 'S-N').padStart(6, '0'),
           cedula: details?.studentIdNumber || '---',
           client: c.clientName,
           service: c.type,
           amount: Number(details?.downPayment) || 0,
           method: mapMethod(details?.paymentType),
-          date: toDate(c.activatedAt),
+          date: toDate(c.activatedAt || c.createdAt),
           seller: c.createdBy || 'Sistema'
         });
+        processedIds.add(c.id);
       }
-    });
+    };
+
+    contractsCreated?.forEach(addContract);
+    contractsActivated?.forEach(addContract);
 
     cancellations?.forEach(p => {
       list.push({
@@ -169,7 +187,7 @@ export default function DailyCashReport() {
     });
 
     return list.sort((a, b) => b.date.getTime() - a.date.getTime());
-  }, [contracts, cancellations, updates, bookSales]);
+  }, [contractsCreated, contractsActivated, cancellations, updates, bookSales]);
 
   function mapMethod(m?: string) {
     if (!m) return 'Efectivo';
@@ -218,7 +236,7 @@ export default function DailyCashReport() {
     } catch (e) { console.error(e); } finally { setIsDownloading(false); }
   };
 
-  const isLoading = loadingC || loadingCanc || loadingU || loadingB;
+  const isLoading = loadingC1 || loadingC2 || loadingCanc || loadingU || loadingB;
 
   return (
     <div className="flex flex-col gap-4 bg-slate-100 min-h-screen">
@@ -283,7 +301,7 @@ export default function DailyCashReport() {
                       <td className="border border-black p-1 font-mono">{t.cedula}</td>
                       <td className="border border-black p-1 font-bold uppercase truncate max-w-[140px]">{t.client}</td>
                       <td className="border border-black p-1 italic truncate max-w-[140px]">{t.service}</td>
-                      <td className="border border-black p-1 uppercase font-medium text-[6pt]">{t.seller}</td>
+                      <td className="border border-black p-1 uppercase font-black text-[6pt] text-blue-700">{t.seller}</td>
                       {COLUMNS.map(c => (
                         <td key={c.id} className={cn("border border-black p-1 text-right", t.method === c.id ? "font-bold bg-slate-50/50 text-slate-900" : "text-slate-300")}>
                           {t.method === c.id ? t.amount.toFixed(2) : '-'}

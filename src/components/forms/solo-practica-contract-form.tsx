@@ -61,8 +61,6 @@ import { useCurrentRole } from '@/hooks/use-current-role';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { isPanamaHoliday } from '@/lib/holidays';
 import type { Contract } from '@/lib/types';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { AutoMotoContractTemplate } from '@/components/auto-moto-contract';
 
 const PRACTICE_PLANS = ["Basico 8 Hrs", "Plus 10 Hrs", "Premium 12 Hrs"];
@@ -251,6 +249,7 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
       const balance = values.courseValue - values.downPayment;
       const { clientName, clientEmail, ...detailsOnly } = values;
       const formattedPracticalSchedules = (values.practicalClassSchedules || []).map(s => ({ ...s, date: Timestamp.fromDate(s.date) }));
+      const finalRole = role || 'Sistema';
 
       if (isEdit) {
         const contractRef = doc(db, 'contracts', contract.id);
@@ -265,7 +264,7 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
             balance: balance,
           },
           updatedAt: serverTimestamp(),
-          updatedBy: role || 'Sistema',
+          updatedBy: finalRole,
         };
 
         await updateDoc(contractRef, updateData);
@@ -296,8 +295,9 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
             type: 'Curso Solo Practica',
             status: balance <= 0 ? 'completed' : 'active',
             userId: user.uid,
-            createdBy: role || 'Sistema',
+            createdBy: finalRole,
             createdAt: serverTimestamp(),
+            activatedAt: serverTimestamp(), // Vital para reportes de caja
             autoMotoDetails: {
               ...detailsOnly,
               paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null,

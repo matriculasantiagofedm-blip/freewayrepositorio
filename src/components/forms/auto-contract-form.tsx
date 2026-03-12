@@ -379,6 +379,8 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
         date: Timestamp.fromDate(s.date)
       }));
 
+      const finalRole = role || 'Sistema';
+
       if (isEdit && contract) {
         const contractRef = doc(db, 'contracts', contract.id);
         const updateData = {
@@ -394,7 +396,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
             balance: balance,
           },
           updatedAt: serverTimestamp(),
-          updatedBy: role || 'Sistema',
+          updatedBy: finalRole,
         };
 
         await updateDoc(contractRef, updateData);
@@ -425,8 +427,9 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
             type: 'Curso Auto',
             status: balance <= 0 ? 'completed' : 'active',
             userId: user.uid,
-            createdBy: role || 'Sistema',
+            createdBy: finalRole,
             createdAt: serverTimestamp(),
+            activatedAt: serverTimestamp(), // Vital para reportes inmediatos
             autoMotoDetails: {
               ...detailsOnly,
               paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null,
@@ -652,7 +655,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
 
                 <FormField control={form.control} name="additionalService" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1"><Plus className="h-3 w-3" /> Añadir (Moto)</FormLabel>
+                    <FormLabel className="text-[10px] font-bold uppercase flex items-center gap-1"><Plus className="h-3 w-3" /> Añadir (Moto)</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl>
                       <SelectContent>

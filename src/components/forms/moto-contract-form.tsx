@@ -285,6 +285,8 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
       const formattedMotoPracticalSchedules = (values.practicalClassSchedules || []).map(s => ({ ...s, date: Timestamp.fromDate(s.date) }));
       const formattedAutoPracticalSchedules = (values.autoPracticalClassSchedules || []).map(s => ({ ...s, date: Timestamp.fromDate(s.date) }));
 
+      const finalRole = role || 'Sistema';
+
       if (isEdit && contract) {
         const contractRef = doc(db, 'contracts', contract.id);
         const updateData = {
@@ -298,7 +300,8 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
             practicalClassSchedules: formattedAutoPracticalSchedules,
             balance 
           },
-          updatedAt: serverTimestamp(), updatedBy: role || 'Sistema',
+          updatedAt: serverTimestamp(), 
+          updatedBy: finalRole,
         };
         await updateDoc(contractRef, updateData);
         toast({ title: 'Moto Actualizada' });
@@ -323,8 +326,9 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
             type: 'Curso Moto', 
             status: balance <= 0 ? 'completed' : 'active', 
             userId: user.uid, 
-            createdBy: role || 'Sistema', 
+            createdBy: finalRole, 
             createdAt: serverTimestamp(), 
+            activatedAt: serverTimestamp(), // Vital para reportes de caja
             autoMotoDetails: { 
               ...detailsOnly, 
               paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null, 

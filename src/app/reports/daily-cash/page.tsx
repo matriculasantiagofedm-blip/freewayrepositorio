@@ -1,4 +1,2 @@
-/** 
- * ARCHIVO DESACTIVADO PARA ELIMINAR DUPLICIDAD DE RUTAS.
- */
-export default function InactivePage() { return null; }
+// Archivo desactivado para evitar el error de "Parallel Pages" en Next.js.
+// La estructura de rutas ahora reside exclusivamente dentro de la carpeta (app).

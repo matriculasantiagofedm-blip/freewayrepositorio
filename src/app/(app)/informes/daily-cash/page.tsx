@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn, toDate } from '@/lib/utils';
 import Link from 'next/link';
+import { useCurrentRole } from '@/hooks/use-current-role';
 
 const COLUMNS = [
   { id: 'Efectivo', label: 'Efectivo' },
@@ -46,6 +47,7 @@ const COINS = [
 
 export default function DailyCashReport() {
   const db = useDb();
+  const { role } = useCurrentRole();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isDownloading, setIsDownloading] = useState(false);
 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -138,11 +137,6 @@ const navLinks = [
       },
       {
           separator: true,
-          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
-      },
-      {
-          href: '/reports/daily-cash',
-          label: 'Caja Diario',
           roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
       {

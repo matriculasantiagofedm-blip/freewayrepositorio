@@ -52,13 +52,6 @@ export default function ReportsPage() {
       roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     },
     {
-      title: 'Reporte de Caja Diario',
-      description: 'Genera el reporte de caja para el día actual.',
-      href: '/reports/daily-cash',
-      icon: ClipboardPenLine,
-      roles: ['Administrador', 'Ventas', 'Ventas Externas'],
-    },
-    {
       title: 'Reporte Financiero',
       description: 'Analiza los ingresos por tipo de curso y período.',
       href: '/reports/finance',

@@ -54,6 +54,7 @@ export default function DailyCashReport() {
   const [coinCounts, setCoinCounts] = useState<Record<number, number>>({});
   const [expenses, setExpenses] = useState<{ id: string; desc: string; amount: number }[]>([]);
 
+  // 1. Contratos Nuevos (Abono Inicial)
   const contractsQuery = useMemoQuery(() => {
     if (!db) return null;
     const start = startOfDay(selectedDate);
@@ -65,6 +66,7 @@ export default function DailyCashReport() {
     );
   }, [db, selectedDate]);
 
+  // 2. Abonos a Saldos
   const cancellationsQuery = useMemoQuery(() => {
     if (!db) return null;
     const start = startOfDay(selectedDate);
@@ -76,6 +78,7 @@ export default function DailyCashReport() {
     );
   }, [db, selectedDate]);
 
+  // 3. Actualizaciones de Certificados
   const updatesQuery = useMemoQuery(() => {
     if (!db) return null;
     const start = startOfDay(selectedDate);
@@ -87,9 +90,22 @@ export default function DailyCashReport() {
     );
   }, [db, selectedDate]);
 
+  // 4. Venta de Libros
+  const bookSalesQuery = useMemoQuery(() => {
+    if (!db) return null;
+    const start = startOfDay(selectedDate);
+    const end = endOfDay(selectedDate);
+    return query(
+      collection(db, 'book_sale_payments'),
+      where('paymentDate', '>=', Timestamp.fromDate(start)),
+      where('paymentDate', '<=', Timestamp.fromDate(end))
+    );
+  }, [db, selectedDate]);
+
   const { data: contracts, isLoading: loadingC } = useCollection(contractsQuery);
   const { data: cancellations, isLoading: loadingCanc } = useCollection(cancellationsQuery);
   const { data: updates, isLoading: loadingU } = useCollection(updatesQuery);
+  const { data: bookSales, isLoading: loadingB } = useCollection(bookSalesQuery);
 
   const transactions = useMemo(() => {
     const list: any[] = [];
@@ -137,8 +153,22 @@ export default function DailyCashReport() {
       });
     });
 
+    bookSales?.forEach(p => {
+      list.push({
+        id: p.id,
+        folio: String(p.bookSaleFolio || '').padStart(6, '0'),
+        cedula: p.studentIdNumber || '---',
+        client: p.clientName,
+        service: `Libro: ${p.bookTitle}`,
+        amount: Number(p.amount) || 0,
+        method: mapMethod(p.paymentType),
+        date: toDate(p.paymentDate),
+        seller: p.createdBy || 'Caja'
+      });
+    });
+
     return list.sort((a, b) => b.date.getTime() - a.date.getTime());
-  }, [contracts, cancellations, updates]);
+  }, [contracts, cancellations, updates, bookSales]);
 
   function mapMethod(m?: string) {
     if (!m) return 'Efectivo';
@@ -187,14 +217,14 @@ export default function DailyCashReport() {
     } catch (e) { console.error(e); } finally { setIsDownloading(false); }
   };
 
-  const isLoading = loadingC || loadingCanc || loadingU;
+  const isLoading = loadingC || loadingCanc || loadingU || loadingB;
 
   return (
     <div className="flex flex-col gap-4 bg-slate-100 min-h-screen">
       <div className="flex items-center justify-between p-4 bg-white border-b sticky top-0 z-50 shadow-sm print:hidden">
         <div className="flex items-center gap-3">
           <Button variant="outline" size="icon" asChild><Link href="/informes"><ChevronLeft className="h-4 w-4" /></Link></Button>
-          <h1 className="text-xl font-black uppercase tracking-tight text-slate-900">Cierre de Caja</h1>
+          <h1 className="text-xl font-black uppercase tracking-tight text-slate-900">Cierre de Caja Diario</h1>
         </div>
         <div className="flex items-center gap-2">
           <Popover>

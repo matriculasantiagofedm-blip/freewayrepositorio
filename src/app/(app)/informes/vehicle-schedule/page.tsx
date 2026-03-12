@@ -33,6 +33,11 @@ import {
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import Link from 'next/link';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 const TIME_SLOTS = [
   { id: '8am-10am', label: '08:00 - 10:00' },
@@ -262,35 +267,41 @@ export default function WeeklyScheduleReport() {
                         ) : (
                           <div className="space-y-2">
                             {sessions.map((s, idx) => (
-                              <div key={s.id || idx} className={cn(
-                                "relative p-3 rounded-lg border-l-4 shadow-sm flex flex-col gap-1 transition-all hover:scale-[1.02] group",
-                                getVehicleColor(s.vehicle)
-                              )}>
-                                <div className="absolute top-1 right-1.5 flex items-center gap-1">
-                                    {idx === 0 && <span className="bg-white/80 text-[7pt] font-black px-1 rounded-sm border border-current/20">{sessions.length}/{capacity}</span>}
-                                </div>
-                                
-                                <p className="text-[9px] font-black uppercase leading-tight truncate pr-6">{s.student}</p>
-                                <p className="text-[7px] font-bold opacity-70 uppercase truncate">{s.plan}</p>
-                                
-                                <div className="flex items-center gap-1 mt-1 opacity-80">
-                                    <User className="h-2.5 w-2.5" />
-                                    <span className="text-[7px] font-black uppercase truncate">{s.instructor}</span>
-                                </div>
-
-                                <div className="flex justify-between items-end mt-1 border-t border-current/10 pt-1">
-                                    <div className="flex flex-col">
-                                        <span className="text-[7.5px] font-black uppercase truncate max-w-[60px]">{s.vehicle}</span>
-                                        <Link 
-                                            href={s.contractId ? `/contracts/${s.contractId}` : `/manual-schedule`}
-                                            className="text-[6.5px] font-black uppercase text-blue-700 hover:underline flex items-center gap-0.5 mt-0.5 print:hidden"
-                                        >
-                                            <Settings2 className="h-2 w-2" /> Gestión de clases
-                                        </Link>
+                              <Popover key={s.id || idx}>
+                                <PopoverTrigger asChild>
+                                  <div className={cn(
+                                    "relative p-3 rounded-lg border-l-4 shadow-sm flex flex-col gap-1 cursor-pointer transition-all hover:scale-[1.02] group",
+                                    getVehicleColor(s.vehicle)
+                                  )}>
+                                    <div className="absolute top-1 right-1.5 flex items-center gap-1">
+                                        {idx === 0 && <span className="bg-white/80 text-[7pt] font-black px-1 rounded-sm border border-current/20">{sessions.length}/{capacity}</span>}
                                     </div>
-                                    <span className="bg-black text-white text-[7px] font-black px-1 rounded-full h-3.5 min-w-[14px] flex items-center justify-center">#{s.sessionNum}</span>
-                                </div>
-                              </div>
+                                    
+                                    <p className="text-[9px] font-black uppercase leading-tight truncate pr-6">{s.student}</p>
+                                    <p className="text-[7px] font-bold opacity-70 uppercase truncate">{s.plan}</p>
+                                    
+                                    <div className="flex items-center gap-1 mt-1 opacity-80">
+                                        <User className="h-2.5 w-2.5" />
+                                        <span className="text-[7px] font-black uppercase truncate">{s.instructor}</span>
+                                    </div>
+
+                                    <div className="flex justify-between items-end mt-1 border-t border-current/10 pt-1">
+                                        <div className="flex flex-col">
+                                            <span className="text-[7.5px] font-black uppercase truncate max-w-[60px]">{s.vehicle}</span>
+                                        </div>
+                                        <span className="bg-black text-white text-[7px] font-black px-1 rounded-full h-3.5 min-w-[14px] flex items-center justify-center">#{s.sessionNum}</span>
+                                    </div>
+                                  </div>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-2" side="top" align="center">
+                                  <Link 
+                                      href={s.contractId ? `/contracts/${s.contractId}` : `/manual-schedule`}
+                                      className="text-[9px] font-black uppercase text-blue-700 hover:underline flex items-center gap-1.5 p-1 px-2 bg-blue-50 rounded-md border border-blue-100 print:hidden"
+                                  >
+                                      <Settings2 className="h-3 w-3" /> Gestión de clases
+                                  </Link>
+                                </PopoverContent>
+                              </Popover>
                             ))}
                             {sessions.length === 0 && (
                               <div className="h-full flex items-center justify-center opacity-5">

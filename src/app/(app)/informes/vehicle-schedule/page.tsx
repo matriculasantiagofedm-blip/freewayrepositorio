@@ -59,9 +59,10 @@ const getGlobalCapacity = (date: Date, slotId: string) => {
     return 3;
 };
 
-// Nueva lógica de color por VEHÍCULO con Pick up en naranja
+// Nueva lógica de color por VEHÍCULO con Moto Negra en Gris
 const getVehicleColor = (vehicleName: string = '') => {
     const v = vehicleName.toUpperCase();
+    if (v.includes('MOTO NEGRA')) return 'border-slate-500 bg-slate-50 text-slate-900';
     if (v.includes('MOTO')) return 'border-red-500 bg-red-50 text-red-900';
     if (v.includes('BLANCO')) return 'border-emerald-500 bg-emerald-50 text-emerald-900';
     if (v.includes('BRONCE')) return 'border-blue-500 bg-blue-50 text-blue-900';
@@ -271,7 +272,8 @@ export default function WeeklyScheduleReport() {
       </div>
 
       <div className="flex flex-wrap items-center justify-center gap-6 p-6 bg-white border-t sticky bottom-0 print:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-50 border-l-4 border-red-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Motos</span></div>
+        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-50 border-l-4 border-red-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Moto Roja</span></div>
+        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-slate-50 border-l-4 border-slate-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Moto Negra</span></div>
         <div className="flex items-center gap-2"><div className="w-3 h-3 bg-emerald-50 border-l-4 border-emerald-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Picanto Blanco</span></div>
         <div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-50 border-l-4 border-blue-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Picanto Bronce</span></div>
         <div className="flex items-center gap-2"><div className="w-3 h-3 bg-orange-50 border-l-4 border-orange-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Pick up</span></div>

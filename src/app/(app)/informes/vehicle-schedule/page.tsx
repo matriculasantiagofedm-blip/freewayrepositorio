@@ -27,7 +27,9 @@ import {
   User,
   Car,
   Bike,
-  Info
+  Info,
+  ExternalLink,
+  Settings2
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import Link from 'next/link';
@@ -86,13 +88,12 @@ export default function WeeklyScheduleReport() {
 
   const scheduleData = useMemo(() => {
     const data: Record<string, any[]> = {};
-    const seenSessions = new Set<string>(); // Para evitar duplicados exactos
+    const seenSessions = new Set<string>(); 
     
     const addEntry = (date: Date, slotId: string, entry: any) => {
       const dateStr = format(date, 'yyyy-MM-dd');
       const key = `${dateStr}|${slotId}`;
       
-      // Crear un identificador único para la sesión para evitar duplicados visuales
       const sessionFingerprint = `${entry.student}|${dateStr}|${slotId}|${entry.vehicle}|${entry.sessionNum}`.toLowerCase();
       
       if (seenSessions.has(sessionFingerprint)) return;
@@ -119,6 +120,7 @@ export default function WeeklyScheduleReport() {
 
             addEntry(slotDate, slotId, {
               id: `${c.id}-${typeLabel}-${idx}`,
+              contractId: c.id,
               student: c.clientName,
               plan: (details as any)?.coursePlan || c.type,
               instructor: s.instructor || 'Sin asignar',
@@ -131,7 +133,6 @@ export default function WeeklyScheduleReport() {
         });
       };
 
-      // Procesar cada lista de agenda por separado si existen
       if (c.autoMotoDetails?.practicalClassSchedules) {
         processSlots(c.autoMotoDetails.practicalClassSchedules, 'auto');
       }
@@ -150,6 +151,7 @@ export default function WeeklyScheduleReport() {
       if (slotDate >= weekStart && slotDate <= weekEnd) {
         addEntry(slotDate, e.timeSlot, {
           id: e.id,
+          manualId: e.id,
           student: e.studentName,
           plan: e.coursePlan || 'Plan no especificado',
           instructor: e.instructor,
@@ -261,7 +263,7 @@ export default function WeeklyScheduleReport() {
                           <div className="space-y-2">
                             {sessions.map((s, idx) => (
                               <div key={s.id || idx} className={cn(
-                                "relative p-3 rounded-lg border-l-4 shadow-sm flex flex-col gap-1 transition-all hover:scale-[1.02]",
+                                "relative p-3 rounded-lg border-l-4 shadow-sm flex flex-col gap-1 transition-all hover:scale-[1.02] group",
                                 getVehicleColor(s.vehicle)
                               )}>
                                 <div className="absolute top-1 right-1.5 flex items-center gap-1">
@@ -277,7 +279,15 @@ export default function WeeklyScheduleReport() {
                                 </div>
 
                                 <div className="flex justify-between items-end mt-1 border-t border-current/10 pt-1">
-                                    <span className="text-[7.5px] font-black uppercase truncate max-w-[60px]">{s.vehicle}</span>
+                                    <div className="flex flex-col">
+                                        <span className="text-[7.5px] font-black uppercase truncate max-w-[60px]">{s.vehicle}</span>
+                                        <Link 
+                                            href={s.contractId ? `/contracts/${s.contractId}` : `/manual-schedule`}
+                                            className="text-[6.5px] font-black uppercase text-blue-700 hover:underline flex items-center gap-0.5 mt-0.5 print:hidden"
+                                        >
+                                            <Settings2 className="h-2 w-2" /> Gestión de clases
+                                        </Link>
+                                    </div>
                                     <span className="bg-black text-white text-[7px] font-black px-1 rounded-full h-3.5 min-w-[14px] flex items-center justify-center">#{s.sessionNum}</span>
                                 </div>
                               </div>

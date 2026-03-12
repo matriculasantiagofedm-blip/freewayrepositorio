@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useDb } from '@/firebase';
-import { collection, query, where, Timestamp } from 'firebase/firestore';
+import { collection, query, where, Timestamp, doc, runTransaction, updateDoc } from 'firebase/firestore';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { 
   format, 
@@ -29,7 +29,12 @@ import {
   Bike,
   Info,
   ExternalLink,
-  Settings2
+  Settings2,
+  Fuel,
+  XCircle,
+  Clock,
+  RotateCcw,
+  AlertCircle
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import Link from 'next/link';
@@ -38,6 +43,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useToast } from '@/hooks/use-toast';
+import type { ClassStatus } from '@/lib/types';
 
 const TIME_SLOTS = [
   { id: '8am-10am', label: '08:00 - 10:00' },
@@ -66,20 +73,29 @@ const getGlobalCapacity = (date: Date, slotId: string) => {
     return 3;
 };
 
-const getVehicleColor = (vehicleName: string = '') => {
+const getVehicleColor = (vehicleName: string = '', status?: ClassStatus) => {
     const v = vehicleName.toUpperCase();
-    if (v.includes('MOTO NEGRA')) return 'border-slate-500 bg-slate-50 text-slate-900';
-    if (v.includes('MOTO')) return 'border-red-500 bg-red-50 text-red-900';
-    if (v.includes('BLANCO')) return 'border-emerald-500 bg-emerald-50 text-emerald-900';
-    if (v.includes('BRONCE')) return 'border-blue-500 bg-blue-50 text-blue-900';
-    if (v.includes('PICK UP') || v.includes('PICKUP')) return 'border-orange-500 bg-orange-50 text-orange-900';
-    return 'border-amber-500 bg-amber-50 text-amber-900'; 
+    let base = 'border-amber-500 bg-amber-50 text-amber-900'; 
+    
+    if (v.includes('MOTO NEGRA')) base = 'border-slate-500 bg-slate-50 text-slate-900';
+    else if (v.includes('MOTO')) base = 'border-red-500 bg-red-50 text-red-900';
+    else if (v.includes('BLANCO')) base = 'border-emerald-500 bg-emerald-50 text-emerald-900';
+    else if (v.includes('BRONCE')) base = 'border-blue-500 bg-blue-50 text-blue-900';
+    else if (v.includes('PICK UP') || v.includes('PICKUP')) base = 'border-orange-500 bg-orange-50 text-orange-900';
+
+    if (status === 'missed' || status === 'cancelled_vehicle' || status === 'rescheduled') {
+        return cn(base, "opacity-40 grayscale-[0.5] border-dashed");
+    }
+    
+    return base;
 };
 
 export default function WeeklyScheduleReport() {
   const db = useDb();
+  const { toast } = useToast();
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isUpdating, setIsUpdating] = useState<string | null>(null);
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
@@ -108,14 +124,13 @@ export default function WeeklyScheduleReport() {
       data[key].push(entry);
     };
 
-    // Procesar Contratos (Auto, Moto, Deluxe)
     const uniqueContracts = new Map();
     contracts?.forEach(c => uniqueContracts.set(c.id, c));
 
     uniqueContracts.forEach(c => {
       const details = c.autoMotoDetails || c.deluxeDetails || c.ampliacionesDetails;
       
-      const processSlots = (slots: any[], typeLabel: string) => {
+      const processSlots = (slots: any[], typeLabel: string, fieldPath: string) => {
         slots?.forEach((s, idx) => {
           if (!s.date) return;
           const slotDate = toDate(s.date);
@@ -132,24 +147,25 @@ export default function WeeklyScheduleReport() {
               vehicle: s.vehicle || 'Sin vehículo',
               sessionNum: idx + 1,
               isManual: false,
-              status: s.status
+              status: s.status,
+              refueled: s.refueled,
+              fieldPath // para saber qué array actualizar (practicalClassSchedules, etc)
             });
           }
         });
       };
 
       if (c.autoMotoDetails?.practicalClassSchedules) {
-        processSlots(c.autoMotoDetails.practicalClassSchedules, 'auto');
+        processSlots(c.autoMotoDetails.practicalClassSchedules, 'auto', 'autoMotoDetails.practicalClassSchedules');
       }
       if (c.autoMotoDetails?.motoPracticalClassSchedules) {
-        processSlots(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');
+        processSlots(c.autoMotoDetails.motoPracticalClassSchedules, 'moto', 'autoMotoDetails.motoPracticalClassSchedules');
       }
       if (c.deluxeDetails?.classSchedules) {
-        processSlots(c.deluxeDetails.classSchedules, 'deluxe');
+        processSlots(c.deluxeDetails.classSchedules, 'deluxe', 'deluxeDetails.classSchedules');
       }
     });
 
-    // Procesar Entradas Manuales
     manualEntries?.forEach(e => {
       if (!e.date || !e.timeSlot) return;
       const slotDate = toDate(e.date);
@@ -163,7 +179,8 @@ export default function WeeklyScheduleReport() {
           vehicle: e.vehicle,
           sessionNum: e.classNumber,
           isManual: true,
-          status: e.status
+          status: e.status,
+          refueled: e.refueled
         });
       }
     });
@@ -173,6 +190,45 @@ export default function WeeklyScheduleReport() {
 
   const handlePrevWeek = () => setCurrentDate(subDays(currentDate, 7));
   const handleNextWeek = () => setCurrentDate(addDays(currentDate, 7));
+
+  const updateSession = async (session: any, updates: { status?: ClassStatus, refueled?: boolean }) => {
+    if (!db) return;
+    setIsUpdating(session.id);
+    try {
+        if (session.isManual) {
+            const ref = doc(db, 'manual_schedules', session.manualId);
+            await updateDoc(ref, updates);
+        } else {
+            await runTransaction(db, async (transaction) => {
+                const ref = doc(db, 'contracts', session.contractId);
+                const snap = await transaction.get(ref);
+                if (!snap.exists()) return;
+                
+                const data = snap.data();
+                const pathParts = session.fieldPath.split('.');
+                let currentArray = data;
+                for (const part of pathParts) {
+                    currentArray = currentArray?.[part];
+                }
+
+                if (Array.isArray(currentArray)) {
+                    const newArray = [...currentArray];
+                    const idx = session.sessionNum - 1;
+                    if (newArray[idx]) {
+                        newArray[idx] = { ...newArray[idx], ...updates };
+                        transaction.update(ref, { [session.fieldPath]: newArray });
+                    }
+                }
+            });
+        }
+        toast({ title: 'Estado actualizado', description: 'La agenda ha sido sincronizada correctamente.' });
+    } catch (e) {
+        console.error(e);
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo actualizar el estado.' });
+    } finally {
+        setIsUpdating(null);
+    }
+  };
 
   const handleDownloadPdf = async () => {
     const element = document.getElementById('weekly-agenda-print');
@@ -271,9 +327,10 @@ export default function WeeklyScheduleReport() {
                                 <PopoverTrigger asChild>
                                   <div className={cn(
                                     "relative p-3 rounded-lg border-l-4 shadow-sm flex flex-col gap-1 cursor-pointer transition-all hover:scale-[1.02] group",
-                                    getVehicleColor(s.vehicle)
+                                    getVehicleColor(s.vehicle, s.status)
                                   )}>
                                     <div className="absolute top-1 right-1.5 flex items-center gap-1">
+                                        {s.refueled && <Fuel className="h-2.5 w-2.5 text-blue-600 animate-pulse" />}
                                         {idx === 0 && <span className="bg-white/80 text-[7pt] font-black px-1 rounded-sm border border-current/20">{sessions.length}/{capacity}</span>}
                                     </div>
                                     
@@ -288,18 +345,81 @@ export default function WeeklyScheduleReport() {
                                     <div className="flex justify-between items-end mt-1 border-t border-current/10 pt-1">
                                         <div className="flex flex-col">
                                             <span className="text-[7.5px] font-black uppercase truncate max-w-[60px]">{s.vehicle}</span>
+                                            {s.status && s.status !== 'scheduled' && (
+                                                <span className="text-[6px] font-black uppercase text-red-600 leading-none">{s.status === 'missed' ? 'Inasistencia' : s.status === 'cancelled_vehicle' ? 'Falló Vehículo' : 'Reagendada'}</span>
+                                            )}
                                         </div>
                                         <span className="bg-black text-white text-[7px] font-black px-1 rounded-full h-3.5 min-w-[14px] flex items-center justify-center">#{s.sessionNum}</span>
                                     </div>
                                   </div>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-2" side="top" align="center">
-                                  <Link 
-                                      href={s.contractId ? `/contracts/${s.contractId}` : `/manual-schedule`}
-                                      className="text-[9px] font-black uppercase text-blue-700 hover:underline flex items-center gap-1.5 p-1 px-2 bg-blue-50 rounded-md border border-blue-100 print:hidden"
-                                  >
-                                      <Settings2 className="h-3 w-3" /> Gestión de clases
-                                  </Link>
+                                <PopoverContent className="w-[240px] p-0 overflow-hidden shadow-2xl border-slate-200" side="right" align="start">
+                                  <div className="p-3 bg-slate-900 text-white">
+                                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Gestión de Turno</p>
+                                      <p className="text-sm font-black uppercase truncate">{s.student}</p>
+                                  </div>
+                                  <div className="p-2 grid grid-cols-1 gap-1 bg-white">
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className={cn("justify-start h-9 text-[10px] font-black uppercase gap-3", s.refueled ? "text-blue-600 bg-blue-50" : "text-slate-600")}
+                                        onClick={() => updateSession(s, { refueled: !s.refueled })}
+                                        disabled={!!isUpdating}
+                                      >
+                                          <Fuel className="h-4 w-4" /> {s.refueled ? 'Quitar Gasolina' : 'Marcó Gasolina'}
+                                      </Button>
+                                      
+                                      <div className="h-px bg-slate-100 my-1"></div>
+
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="justify-start h-9 text-[10px] font-black uppercase gap-3 text-red-600 hover:bg-red-50"
+                                        onClick={() => updateSession(s, { status: 'cancelled_vehicle' })}
+                                        disabled={!!isUpdating}
+                                      >
+                                          <XCircle className="h-4 w-4" /> Cancelada por Vehículo
+                                      </Button>
+
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="justify-start h-9 text-[10px] font-black uppercase gap-3 text-amber-600 hover:bg-amber-50"
+                                        onClick={() => updateSession(s, { status: 'rescheduled' })}
+                                        disabled={!!isUpdating}
+                                      >
+                                          <RotateCcw className="h-4 w-4" /> Reagendada
+                                      </Button>
+
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="justify-start h-9 text-[10px] font-black uppercase gap-3 text-red-800 hover:bg-red-100"
+                                        onClick={() => updateSession(s, { status: 'missed' })}
+                                        disabled={!!isUpdating}
+                                      >
+                                          <AlertCircle className="h-4 w-4" /> No Asistió
+                                      </Button>
+
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="justify-start h-9 text-[10px] font-black uppercase gap-3 text-green-600 hover:bg-green-50"
+                                        onClick={() => updateSession(s, { status: 'scheduled' })}
+                                        disabled={!!isUpdating}
+                                      >
+                                          <Clock className="h-4 w-4" /> Restablecer Programada
+                                      </Button>
+
+                                      <div className="h-px bg-slate-100 my-1"></div>
+
+                                      <Link 
+                                          href={s.contractId ? `/contracts/${s.contractId}` : `/manual-schedule`}
+                                          className="text-[10px] font-black uppercase text-blue-700 hover:underline flex items-center gap-3 p-2 bg-blue-50 rounded-md border border-blue-100 print:hidden"
+                                      >
+                                          <Settings2 className="h-4 w-4" /> Ver Expediente Completo
+                                      </Link>
+                                  </div>
                                 </PopoverContent>
                               </Popover>
                             ))}

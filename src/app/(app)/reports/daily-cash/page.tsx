@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Printer, CalendarIcon, Loader2, Save, Plus, Trash2 } from 'lucide-react';
+import { Printer, CalendarIcon, Loader2, Save, Plus, Trash2, CheckCircle2 } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { cn, toDate } from '@/lib/utils';
 import {
@@ -46,29 +46,28 @@ function DailyCashReportContent() {
   const { user } = useUser();
   const { toast } = useToast();
   
-  const [reportDate, setReportDate] = useState<Date | undefined>(undefined);
+  const [reportDate, setReportDate] = useState<Date>(new Date());
   const [transactions, setTransactions] = useState<any[]>([]);
   const [billQuantities, setBillQuantities] = useState(initialBillQuantities);
   const [coinQuantities, setCoinQuantities] = useState(initialCoinQuantities);
   const [expenses, setExpenses] = useState<{ description: string; amount: number }[]>([{ description: '', amount: 0 }]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const [isReportSaved, setIsReportSaved] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    setReportDate(new Date());
   }, []);
 
-  const fetchDailyData = async () => {
-    if (!db || !user || !reportDate) return;
+  const fetchDailyData = async (date: Date) => {
+    if (!db || !user) return;
     
     setIsLoading(true);
-    const fetchedTransactionsMap = new Map<string, any>();
-
+    const dateKey = format(date, 'yyyy-MM-dd');
+    
     try {
-      const dateKey = format(reportDate, 'yyyy-MM-dd');
+      // 1. Verificar si hay un reporte guardado para esta fecha
       const savedReportRef = doc(db, 'daily_cash_reports', dateKey);
       const savedSnap = await getDoc(savedReportRef);
 
@@ -85,16 +84,21 @@ function DailyCashReportContent() {
           setIsReportSaved(false);
       }
 
-      // 1. Obtener Contratos creados o activados hoy
+      // 2. Cargar transacciones dinámicas del día
+      const fetchedTransactions: any[] = [];
+      const start = startOfDay(date);
+      const end = endOfDay(date);
+
+      // Cargar contratos (abonos iniciales)
       const contractsSnap = await getDocs(collection(db, 'contracts'));
-      
       contractsSnap.docs.forEach(docSnap => {
           const contract = { id: docSnap.id, ...docSnap.data() } as Contract;
           if (contract.status === 'expired') return;
 
+          // Verificamos si se creó o se activó en esta fecha
           const createdDate = toDate(contract.createdAt);
           const activatedDate = contract.activatedAt ? toDate(contract.activatedAt) : null;
-          const isMatch = isSameDay(createdDate, reportDate) || (activatedDate && isSameDay(activatedDate, reportDate));
+          const isMatch = isSameDay(createdDate, date) || (activatedDate && isSameDay(activatedDate, date));
 
           if (!isMatch) return;
 
@@ -125,13 +129,11 @@ function DailyCashReportContent() {
               else if (pType === 'cheques') transaction.cheques = amount;
               else transaction.cash = amount;
 
-              fetchedTransactionsMap.set(contract.id, transaction);
+              fetchedTransactions.push(transaction);
           }
       });
 
-      // 2. Obtener Pagos de Cancelación
-      const start = startOfDay(reportDate);
-      const end = endOfDay(reportDate);
+      // Cargar pagos de saldo
       const qCancellations = query(
         collection(db, 'cancellation_payments'),
         where('paymentDate', '>=', Timestamp.fromDate(start)),
@@ -157,21 +159,21 @@ function DailyCashReportContent() {
           else if (pType === 'bac') transaction.bac = payment.amount;
           else if (pType === 'yappy' || pType === 'general') transaction.general = payment.amount;
           else if (pType === 'cheques') transaction.cheques = payment.amount;
-          fetchedTransactionsMap.set(docSnap.id, transaction);
+          fetchedTransactions.push(transaction);
       });
 
-      setTransactions(Array.from(fetchedTransactionsMap.values()));
+      setTransactions(fetchedTransactions);
     } catch (err: any) {
       console.error(err);
-      toast({ variant: 'destructive', title: 'Error', description: 'Error al cargar datos.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'Error al sincronizar datos.' });
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (mounted && reportDate && user) {
-      fetchDailyData();
+    if (mounted && user) {
+      fetchDailyData(reportDate);
     }
   }, [reportDate, user, mounted]);
 
@@ -222,7 +224,7 @@ function DailyCashReportContent() {
             userId: user.uid
         }, { merge: true });
         setIsReportSaved(true);
-        toast({ title: "Caja Guardada", description: "El reporte se ha almacenado en el historial." });
+        toast({ title: "Caja Guardada", description: "El reporte se ha congelado para esta fecha." });
     } catch (err) {
         toast({ variant: "destructive", title: "Error al Guardar" });
     } finally {
@@ -230,8 +232,6 @@ function DailyCashReportContent() {
     }
   };
 
-  const addExpense = () => setExpenses([...expenses, { description: '', amount: 0 }]);
-  const removeExpense = (index: number) => setExpenses(expenses.filter((_, i) => i !== index));
   const updateExpense = (index: number, field: string, value: any) => {
     const newExpenses = [...expenses];
     (newExpenses[index] as any)[field] = value;
@@ -246,23 +246,23 @@ function DailyCashReportContent() {
         <div className="flex justify-between items-center">
             <div>
                 <h1 className="text-2xl font-black font-headline text-slate-900 uppercase">Caja Diaria</h1>
-                <p className="text-xs text-muted-foreground font-medium">Gestión de ingresos y arqueo de efectivo.</p>
+                <p className="text-xs text-muted-foreground font-medium">Historial y cierres oficiales.</p>
             </div>
             <div className="flex items-center gap-2">
                 <Popover>
                     <PopoverTrigger asChild>
                     <Button variant={"outline"} className="w-[220px] text-xs h-10 border-slate-300">
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {reportDate ? format(reportDate, "PPP", { locale: es }) : <span>Elegir fecha</span>}
+                        {format(reportDate, "PPP", { locale: es })}
                     </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="end">
-                    <Calendar mode="single" selected={reportDate} onSelect={(date) => setReportDate(date || new Date())} initialFocus />
+                    <Calendar mode="single" selected={reportDate} onSelect={(date) => date && setReportDate(date)} initialFocus />
                     </PopoverContent>
                 </Popover>
                 <Button onClick={handleSaveReport} disabled={isSaving || isReportSaved} className="bg-blue-600 hover:bg-blue-700 h-10 px-6 font-black text-[10px] uppercase tracking-widest shadow-md">
                     {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                    {isReportSaved ? 'Caja Cerrada' : 'Cerrar Caja'}
+                    {isReportSaved ? 'Caja Cerrada' : 'Guardar Cierre'}
                 </Button>
                 <Button variant="outline" onClick={() => window.print()} className="h-10 border-slate-300"><Printer className="h-4 w-4" /></Button>
             </div>
@@ -272,7 +272,7 @@ function DailyCashReportContent() {
       <div id="report-to-export" className="bg-white mx-auto p-8 border shadow-sm max-w-[8.5in] print:border-none print:shadow-none">
         <div className="text-center mb-6 border-b-2 border-black pb-2">
           <h2 className="text-xl font-black uppercase text-black tracking-tight">FREEWAY ESCUELA DE MANEJO</h2>
-          <p className="text-[10px] font-bold text-black uppercase tracking-[0.2em]">REPORTE DE CAJA - {reportDate ? format(reportDate, "PPP", { locale: es }).toUpperCase() : ''}</p>
+          <p className="text-[10px] font-bold text-black uppercase tracking-[0.2em]">REPORTE DE CAJA - {format(reportDate, "PPP", { locale: es }).toUpperCase()}</p>
         </div>
 
         <div className="space-y-6">
@@ -315,7 +315,7 @@ function DailyCashReportContent() {
 
           <div className="grid grid-cols-2 gap-8">
             <div className="border border-black p-3 space-y-2 rounded-sm">
-              <h3 className="text-[9px] font-black uppercase bg-slate-100 p-1 border-b border-black text-center">DESGLOSE FÍSICO (ARQUEO)</h3>
+              <h3 className="text-[9px] font-black uppercase bg-slate-100 p-1 border-b border-black text-center">ARQUEO FÍSICO</h3>
               {Object.keys(billQuantities).map(val => (
                 <div key={val} className="flex justify-between items-center text-[8pt]">
                   <span className="font-bold w-20">B/. {val}:</span>
@@ -340,8 +340,8 @@ function DailyCashReportContent() {
             <div className="space-y-4">
                 <div className="border border-black p-3 space-y-2 rounded-sm">
                     <div className="flex justify-between items-center bg-slate-100 p-1 border-b border-black">
-                        <h3 className="text-[9px] font-black uppercase">GASTOS DEL DÍA</h3>
-                        <Button variant="ghost" size="icon" className="h-4 w-4 print:hidden" onClick={addExpense} disabled={isReportSaved}><Plus className="h-3 w-3" /></Button>
+                        <h3 className="text-[9px] font-black uppercase">SALIDAS DE CAJA</h3>
+                        <Button variant="ghost" size="icon" className="h-4 w-4 print:hidden" onClick={() => setExpenses([...expenses, { description: '', amount: 0 }])} disabled={isReportSaved}><Plus className="h-3 w-3" /></Button>
                     </div>
                     <div className="space-y-1">
                         {expenses.map((exp, idx) => (
@@ -361,7 +361,7 @@ function DailyCashReportContent() {
                                     onChange={(e) => updateExpense(idx, 'amount', parseFloat(e.target.value) || 0)}
                                     disabled={isReportSaved}
                                 />
-                                <Button variant="ghost" size="icon" className="h-4 w-4 text-red-500 print:hidden" onClick={() => removeExpense(idx)} disabled={isReportSaved}><Trash2 className="h-3 w-3" /></Button>
+                                <Button variant="ghost" size="icon" className="h-4 w-4 text-red-500 print:hidden" onClick={() => setExpenses(expenses.filter((_, i) => i !== idx))} disabled={isReportSaved}><Trash2 className="h-3 w-3" /></Button>
                             </div>
                         ))}
                     </div>

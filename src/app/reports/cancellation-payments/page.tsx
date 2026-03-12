@@ -1,7 +1,6 @@
 
 /**
- * ARCHIVO DESACTIVADO PARA EVITAR CONFLICTOS DE RUTA PARALELA.
+ * ESTE ARCHIVO HA SIDO DESACTIVADO PARA ELIMINAR EL ERROR DE RUTA PARALELA.
+ * LA ÚNICA RUTA VÁLIDA ES: src/app/(app)/reports/cancellation-payments/page.tsx
  */
-export default function ConflictResolver() {
-    return null;
-}
+export default function InactivePage() { return null; }

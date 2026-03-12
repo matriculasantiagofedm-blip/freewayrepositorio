@@ -1,3 +1,3 @@
-// Archivo neutralizado para evitar conflicto de rutas paralelas.
-// La ruta oficial es src/app/(app)/reports/daily-cash/page.tsx
-export default function InactivePage() { return null; }
+// Ruta neutralizada para evitar conflicto de Parallel Pages.
+// La carpeta oficial de reportes es src/app/(app)/reportes-nuevos-2026/
+export default function NeutralPage() { return null; }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,7 @@ import { collection } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo, useState, useEffect } from 'react';
 import type { Contract } from '@/lib/types';
-import { Car, Bike, Plus, Repeat, Dumbbell, CalendarCheck, ArrowRight, Clock, ShieldCheck, Wallet, Globe, AlertTriangle, CalendarX, FileText, ClipboardCheck } from 'lucide-react';
+import { Car, Bike, Plus, Repeat, Dumbbell, CalendarCheck, ArrowRight, Clock, ShieldCheck, Wallet, Globe, AlertTriangle, CalendarX, FileText, ClipboardCheck, BarChart3 } from 'lucide-react';
 import { isToday, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -138,18 +137,17 @@ export default function DashboardPage() {
       ]
     },
     {
-      title: 'Gestión de Trámites y Agenda',
+      title: 'Reportes y Control 2026',
       actions: [
-        { name: 'Bitácoras Semanales', href: '/reports/weekly-starts', bgColor: 'bg-cyan-50', textColor: 'text-cyan-600', roles: ['Administrador', 'Ventas Externas'] },
-        { name: 'Encuesta de Satisfacción', href: '/surveys', bgColor: 'bg-purple-50', textColor: 'text-purple-600', roles: ['Administrador', 'Ventas Externas'] },
-        { name: 'Constancia de Evaluación ATTT', href: '/att-evaluations', bgColor: 'bg-blue-50', textColor: 'text-blue-700', roles: ['Administrador', 'Ventas Externas'] },
+        { name: 'Reporte de Caja', href: '/reportes-nuevos-2026/daily-cash', bgColor: 'bg-green-50', textColor: 'text-green-700', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+        { name: 'Agenda por Vehículo', href: '/reportes-nuevos-2026/vehicle-schedule', bgColor: 'bg-blue-50', textColor: 'text-blue-700', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+        { name: 'Bitácoras de Clase', href: '/logs', bgColor: 'bg-slate-50', textColor: 'text-slate-600', roles: ['Administrador', 'Ventas Externas'] },
+        { name: 'Constancia ATTT', href: '/att-evaluations', bgColor: 'bg-blue-50', textColor: 'text-blue-700', roles: ['Administrador', 'Ventas Externas'] },
         { name: 'Exámenes Teóricos', isDropdown: true, roles: ['Administrador'], bgColor: 'bg-orange-50', textColor: 'text-orange-600' },
-        { name: 'Generar Certificado Manual', href: '/certificates?mode=manual', bgColor: 'bg-amber-50', textColor: 'text-amber-600', roles: ['Administrador'] },
-        { name: 'Agenda Manual', href: '/manual-schedule', bgColor: 'bg-rose-50', textColor: 'text-rose-600', roles: ['Administrador'] },
       ]
     },
     {
-      title: 'Flota y Mantenimiento',
+      title: 'Administración Flota',
       actions: [
         { name: 'Kilometraje', href: '/mileage-log', bgColor: 'bg-gray-50', textColor: 'text-gray-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
         { name: 'Mantenimiento', href: '/maintenance', bgColor: 'bg-stone-50', textColor: 'text-stone-600', roles: ['Administrador'] },
@@ -159,9 +157,16 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex flex-col">
-        <h1 className="font-headline text-3xl font-bold text-slate-900 uppercase tracking-tight">Panel de Control</h1>
-        <p className="text-muted-foreground font-medium">Gestión unificada de Freeway Escuela de Manejo</p>
+      <div className="flex items-center justify-between">
+        <div className="flex flex-col">
+          <h1 className="font-headline text-3xl font-bold text-slate-900 uppercase tracking-tight">Panel de Control</h1>
+          <p className="text-muted-foreground font-medium">Gestión unificada de Freeway Escuela de Manejo</p>
+        </div>
+        <Button asChild variant="outline" className="border-primary text-primary font-black uppercase text-xs tracking-widest h-11 px-6">
+          <Link href="/reportes-nuevos-2026">
+            <BarChart3 className="mr-2 h-4 w-4" /> Centro de Reportes
+          </Link>
+        </Button>
       </div>
 
       {isAdmin && !isContractsLoading && statsValues.pendingAgenda.length > 0 && (
@@ -199,49 +204,6 @@ export default function DashboardPage() {
                 </div>
                 ))}
             </div>
-            {statsValues.pendingAgenda.length > 5 && (
-                <div className="pt-2 text-center">
-                    <Link href="/contracts" className="text-xs font-black text-red-600 uppercase hover:underline">Ver todos los pendientes ({statsValues.pendingAgenda.length})</Link>
-                </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {isAdmin && !isContractsLoading && statsValues.webEnrollments.length > 0 && (
-        <Card className="border-blue-200 bg-blue-50/30 overflow-hidden shadow-sm">
-          <CardHeader className="pb-3 border-b border-blue-100 flex flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-blue-100 p-2 rounded-xl">
-                <Globe className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <CardTitle className="text-blue-900 text-sm font-bold uppercase tracking-wider">Inscripciones Web de Hoy</CardTitle>
-                <CardDescription className="text-blue-700/70 text-xs">Hay {statsValues.webEnrollments.length} alumnos que se inscribieron por el portal público hoy.</CardDescription>
-              </div>
-            </div>
-            <Button asChild variant="outline" size="sm" className="bg-white border-blue-200 text-blue-700 hover:bg-blue-50">
-              <Link href="/contracts?filter=today">Ver Todas</Link>
-            </Button>
-          </CardHeader>
-          <CardContent className="p-4 space-y-2">
-            {statsValues.webEnrollments.slice(0, 3).map(enrollment => (
-              <div key={enrollment.id} className="bg-white p-3 rounded-xl border border-blue-100 flex items-center justify-between group hover:border-blue-300 transition-all">
-                <div className="flex flex-col">
-                  <span className="font-bold text-sm uppercase text-slate-800">{enrollment.clientName}</span>
-                  <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-bold uppercase mt-0.5">
-                    <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {format(toDate(enrollment.createdAt), "hh:mm a", { locale: es })}</span>
-                    <span className="bg-green-100 text-green-800 px-1.5 py-0.5 rounded-md">PAGO VALIDADO</span>
-                    <span className="font-black text-blue-600">FOLIO {String(enrollment.folioNumber).padStart(6, '0')}</span>
-                  </div>
-                </div>
-                <Button asChild size="sm" variant="ghost" className="text-blue-600 hover:bg-blue-50 rounded-full h-8 px-4">
-                  <Link href={`/contracts/${enrollment.id}`}>
-                    Ver Registro <ArrowRight className="ml-2 h-3 w-3" />
-                  </Link>
-                </Button>
-              </div>
-            ))}
           </CardContent>
         </Card>
       )}

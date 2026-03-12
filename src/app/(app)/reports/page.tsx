@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +9,6 @@ import {
   FileText, 
   Car, 
   BookOpen, 
-  Users, 
   ClipboardCheck, 
   Settings,
   ArrowRight,
@@ -18,17 +16,17 @@ import {
   Tag
 } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
+import { cn } from '@/lib/utils';
 
 export default function ReportsHubPage() {
   const { role } = useCurrentRole();
-  const isAdmin = role === 'Administrador';
-
+  
   const reportGroups = [
     {
       title: "Finanzas y Caja",
       description: "Control de ingresos y pagos diarios.",
       reports: [
-        { title: "Caja Diaria", href: "/reports/daily-cash", icon: Wallet, color: "text-green-600", bg: "bg-green-50", roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+        { title: "Caja Diario", href: "/reports/daily-cash", icon: Wallet, color: "text-green-600", bg: "bg-green-50", roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
         { title: "Cancelaciones", href: "/reports/cancellation-payments", icon: TrendingUp, color: "text-blue-600", bg: "bg-blue-50", roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
         { title: "Actualizaciones", href: "/reports/update-payments", icon: Tag, color: "text-amber-600", bg: "bg-amber-50", roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       ]
@@ -37,8 +35,7 @@ export default function ReportsHubPage() {
       title: "Agenda y Capacitación",
       description: "Seguimiento de clases y certificados.",
       reports: [
-        { title: "Agenda Práctica", href: "/reports/vehicle-schedule", icon: Car, color: "text-indigo-600", bg: "bg-indigo-50", roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-        { title: "Asistencia Teórica", href: "/reports/theory-attendance", icon: BookOpen, color: "text-purple-600", bg: "bg-purple-50", roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+        { title: "Agenda por Vehículo", href: "/reports/vehicle-schedule", icon: Car, color: "text-indigo-600", bg: "bg-indigo-50", roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
         { title: "Consolidado Certificados", href: "/reports/certificates-summary", icon: FileText, color: "text-slate-600", bg: "bg-slate-50", roles: ['Administrador'] },
       ]
     },
@@ -47,7 +44,7 @@ export default function ReportsHubPage() {
         description: "Registros históricos del sistema.",
         reports: [
           { title: "Todos los Contratos", href: "/contracts", icon: ClipboardCheck, color: "text-rose-600", bg: "bg-rose-50", roles: ['Administrador'] },
-          { title: "Kilometraje", href: "/reports/mileage-log", icon: Settings, color: "text-cyan-600", bg: "bg-cyan-50", roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+          { title: "Kilometraje", href: "/mileage-log", icon: Settings, color: "text-cyan-600", bg: "bg-cyan-50", roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
         ]
       }
   ];

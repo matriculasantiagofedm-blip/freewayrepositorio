@@ -1,3 +1,2 @@
-
-// Archivo neutralizado para evitar el conflicto de Parallel Pages
-export default function Redirect() { return null; }
+// Archivo neutralizado para evitar conflicto de rutas paralelas.
+export default function InactivePage() { return null; }

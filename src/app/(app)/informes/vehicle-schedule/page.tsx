@@ -74,9 +74,9 @@ const getGlobalCapacity = (date: Date, slotId: string) => {
 };
 
 const getVehicleColor = (vehicleName: string = '', status?: ClassStatus) => {
-    // REGLA PRIORITARIA: Si no asistió, la tarjeta es ROJA
+    // REGLA PRIORITARIA: Si no asistió, la tarjeta es ROJO INTENSO
     if (status === 'missed') {
-        return 'border-red-600 bg-red-50 text-red-900 shadow-[inset_0_0_0_1px_rgba(220,38,38,0.2)]';
+        return 'border-red-900 bg-red-600 text-white shadow-xl scale-[1.02] z-10';
     }
 
     const v = vehicleName.toUpperCase();
@@ -336,8 +336,8 @@ export default function WeeklyScheduleReport() {
                                     getVehicleColor(s.vehicle, s.status)
                                   )}>
                                     <div className="absolute top-1 right-1.5 flex items-center gap-1">
-                                        {s.refueled && <Fuel className="h-2.5 w-2.5 text-blue-600 animate-pulse" />}
-                                        {idx === 0 && <span className="bg-white/80 text-[7pt] font-black px-1 rounded-sm border border-current/20">{sessions.length}/{capacity}</span>}
+                                        {s.refueled && <Fuel className={cn("h-2.5 w-2.5 animate-pulse", s.status === 'missed' ? 'text-white' : 'text-blue-600')} />}
+                                        {idx === 0 && <span className="bg-white/80 text-[7pt] font-black px-1 rounded-sm border border-current/20 text-slate-900">{sessions.length}/{capacity}</span>}
                                     </div>
                                     
                                     <p className="text-[9px] font-black uppercase leading-tight truncate pr-6">{s.student}</p>
@@ -352,12 +352,12 @@ export default function WeeklyScheduleReport() {
                                         <div className="flex flex-col">
                                             <span className="text-[7.5px] font-black uppercase truncate max-w-[60px]">{s.vehicle}</span>
                                             {s.status && s.status !== 'scheduled' && (
-                                                <span className={cn("text-[6px] font-black uppercase leading-none", s.status === 'missed' ? 'text-red-900' : 'text-red-600')}>
+                                                <span className={cn("text-[6px] font-black uppercase leading-none", s.status === 'missed' ? 'text-white' : 'text-red-600')}>
                                                   {s.status === 'missed' ? 'Inasistencia' : s.status === 'cancelled_vehicle' ? 'Falló Vehículo' : 'Reagendada'}
                                                 </span>
                                             )}
                                         </div>
-                                        <span className="bg-black text-white text-[7px] font-black px-1 rounded-full h-3.5 min-w-[14px] flex items-center justify-center">#{s.sessionNum}</span>
+                                        <span className={cn("text-[7px] font-black px-1 rounded-full h-3.5 min-w-[14px] flex items-center justify-center", s.status === 'missed' ? 'bg-white text-red-600' : 'bg-black text-white')}>#{s.sessionNum}</span>
                                     </div>
                                   </div>
                                 </PopoverTrigger>
@@ -455,7 +455,7 @@ export default function WeeklyScheduleReport() {
         <div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-50 border-l-4 border-blue-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Picanto Bronce</span></div>
         <div className="flex items-center gap-2"><div className="w-3 h-3 bg-orange-50 border-l-4 border-orange-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Pick up</span></div>
         <div className="flex items-center gap-2"><div className="w-3 h-3 bg-amber-50 border-l-4 border-amber-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Spark</span></div>
-        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-50 border-l-4 border-red-600 rounded"></div> <span className="text-[9px] font-black uppercase text-red-600">No Asistió</span></div>
+        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-600 border border-red-900 rounded"></div> <span className="text-[9px] font-black uppercase text-red-600">No Asistió</span></div>
         <div className="ml-auto flex items-center gap-2 text-slate-400"><Info className="h-3 w-3" /> <span className="text-[8px] font-bold uppercase tracking-widest italic">Capacidad regulada por ATTT según turnos</span></div>
       </div>
 

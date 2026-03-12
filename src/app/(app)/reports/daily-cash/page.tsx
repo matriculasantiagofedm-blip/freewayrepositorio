@@ -88,6 +88,7 @@ function DailyCashReportContent() {
           const createdDate = toDate(contract.createdAt);
           const activatedDate = contract.activatedAt ? toDate(contract.activatedAt) : null;
           
+          // Buscar coincidencias por fecha de creación o activación
           const isMatch = isSameDay(createdDate, reportDate) || (activatedDate && isSameDay(activatedDate, reportDate));
 
           if (!isMatch || fetchedTransactionsMap.has(contract.id)) return;
@@ -126,6 +127,7 @@ function DailyCashReportContent() {
       const start = startOfDay(reportDate);
       const end = endOfDay(reportDate);
       
+      // Consultar pagos de saldos
       const qCancellations = query(
         collection(db, 'cancellation_payments'),
         where('paymentDate', '>=', Timestamp.fromDate(start)),
@@ -156,6 +158,7 @@ function DailyCashReportContent() {
           fetchedTransactionsMap.set(docSnap.id, transaction);
       });
 
+      // Consultar actualizaciones
       const qUpdates = query(
         collection(db, 'update_payments'),
         where('paymentDate', '>=', Timestamp.fromDate(start)),
@@ -190,7 +193,7 @@ function DailyCashReportContent() {
       setIsReady(true);
     } catch (err: any) {
       console.error(err);
-      toast({ variant: 'destructive', title: 'Error', description: 'Fallo al cargar reporte.' });
+      toast({ variant: 'destructive', title: 'Error de Permisos', description: 'No tienes acceso a los datos de caja.' });
     } finally {
       setIsLoading(false);
     }
@@ -296,7 +299,7 @@ function DailyCashReportContent() {
         <div className="flex justify-between items-center">
             <div className='flex flex-col'>
                 <h1 className="text-2xl font-bold font-headline text-slate-900">Reporte de Caja Diario</h1>
-                <p className="text-xs text-muted-foreground">Sistema de Control Freeway</p>
+                <p className="text-xs text-muted-foreground">Sistema de Control Freeway - Acceso Expandido</p>
             </div>
             <div className="flex items-center gap-2">
                 <Button onClick={fetchDailyData} variant="ghost" size="icon" className="h-9 w-9"><RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} /></Button>

@@ -6,18 +6,12 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // REGLAS PARA USUARIOS Y PERFILES
-    match /users/{userId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn() && request.auth.uid == userId;
-    }
-
-    // REGLAS PARA CONTRATOS
-    match /contracts/{contractId} {
+    // REGLAS PARA OPERACIONES DE CAJA Y REPORTES
+    // Permitir acceso total a personal administrativo autenticado
+    match /contracts/{id} {
       allow read, write: if isSignedIn();
     }
-
-    // REGLAS PARA PAGOS, CAJA Y LIBROS
+    
     match /cancellation_payments/{id} {
       allow read, write: if isSignedIn();
     }
@@ -29,39 +23,25 @@ service cloud.firestore {
     match /book_sale_payments/{id} {
       allow read, write: if isSignedIn();
     }
-
-    // REGLAS PARA AGENDA Y CONTROL FLOTA
-    match /manual_schedules/{id} {
-      allow read, write: if isSignedIn();
-    }
     
-    match /mileage_logs/{id} {
-      allow read, write: if isSignedIn();
-    }
-    
-    match /maintenance_logs/{id} {
+    match /counters/{id} {
       allow read, write: if isSignedIn();
     }
 
-    // REGLAS PARA CHAT
-    match /chatChannels/{channelId} {
-      allow read, write: if isSignedIn();
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == userId;
     }
 
-    match /chatChannels/{channelId}/messages/{messageId} {
-      allow read, write: if isSignedIn();
-    }
-
-    // REGLAS PARA CLIENTES Y CONTADORES
     match /clients/{clientId} {
       allow read, write: if isSignedIn();
     }
 
-    match /counters/{counterId} {
+    match /chatChannels/{path=**} {
       allow read, write: if isSignedIn();
     }
 
-    // REGLA GLOBAL PARA OPERACIONES INTERNAS DE LA ESCUELA
+    // REGLA GLOBAL DE RESPALDO PARA OPERACIONES INTERNAS
     match /{path=**} {
       allow read, write: if isSignedIn();
     }

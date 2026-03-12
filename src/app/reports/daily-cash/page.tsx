@@ -1,5 +1,4 @@
 /**
- * ARCHIVO ELIMINADO PARA RESOLVER CONFLICTO DE RUTAS PARALELAS.
- * La funcionalidad administrativa se encuentra en: src/app/(app)/reports/daily-cash/page.tsx
+ * ARCHIVO ELIMINADO PARA RESOLVER CONFLICTO DE RUTAS.
  */
 export default function DeletedPage() { return null; }

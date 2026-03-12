@@ -86,21 +86,39 @@ export default function WeeklyScheduleReport() {
 
   const scheduleData = useMemo(() => {
     const data: Record<string, any[]> = {};
+    const seenSessions = new Set<string>(); // Para evitar duplicados exactos
     
     const addEntry = (date: Date, slotId: string, entry: any) => {
-      const key = `${format(date, 'yyyy-MM-dd')}|${slotId}`;
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const key = `${dateStr}|${slotId}`;
+      
+      // Crear un identificador único para la sesión para evitar duplicados visuales
+      const sessionFingerprint = `${entry.student}|${dateStr}|${slotId}|${entry.vehicle}|${entry.sessionNum}`.toLowerCase();
+      
+      if (seenSessions.has(sessionFingerprint)) return;
+      
+      seenSessions.add(sessionFingerprint);
       if (!data[key]) data[key] = [];
       data[key].push(entry);
     };
 
-    contracts?.forEach(c => {
+    // Procesar Contratos (Auto, Moto, Deluxe)
+    const uniqueContracts = new Map();
+    contracts?.forEach(c => uniqueContracts.set(c.id, c));
+
+    uniqueContracts.forEach(c => {
       const details = c.autoMotoDetails || c.deluxeDetails || c.ampliacionesDetails;
-      const processSlots = (slots: any[]) => {
+      
+      const processSlots = (slots: any[], typeLabel: string) => {
         slots?.forEach((s, idx) => {
+          if (!s.date) return;
           const slotDate = toDate(s.date);
           if (slotDate >= weekStart && slotDate <= weekEnd) {
             const slotId = TIME_STRING_MAP[s.time] || s.time;
+            if (!slotId) return;
+
             addEntry(slotDate, slotId, {
+              id: `${c.id}-${typeLabel}-${idx}`,
               student: c.clientName,
               plan: (details as any)?.coursePlan || c.type,
               instructor: s.instructor || 'Sin asignar',
@@ -112,15 +130,26 @@ export default function WeeklyScheduleReport() {
           }
         });
       };
-      processSlots(c.autoMotoDetails?.practicalClassSchedules || []);
-      processSlots(c.autoMotoDetails?.motoPracticalClassSchedules || []);
-      processSlots(c.deluxeDetails?.classSchedules || []);
+
+      // Procesar cada lista de agenda por separado si existen
+      if (c.autoMotoDetails?.practicalClassSchedules) {
+        processSlots(c.autoMotoDetails.practicalClassSchedules, 'auto');
+      }
+      if (c.autoMotoDetails?.motoPracticalClassSchedules) {
+        processSlots(c.autoMotoDetails.motoPracticalClassSchedules, 'moto');
+      }
+      if (c.deluxeDetails?.classSchedules) {
+        processSlots(c.deluxeDetails.classSchedules, 'deluxe');
+      }
     });
 
+    // Procesar Entradas Manuales
     manualEntries?.forEach(e => {
+      if (!e.date || !e.timeSlot) return;
       const slotDate = toDate(e.date);
       if (slotDate >= weekStart && slotDate <= weekEnd) {
         addEntry(slotDate, e.timeSlot, {
+          id: e.id,
           student: e.studentName,
           plan: e.coursePlan || 'Plan no especificado',
           instructor: e.instructor,
@@ -231,7 +260,7 @@ export default function WeeklyScheduleReport() {
                         ) : (
                           <div className="space-y-2">
                             {sessions.map((s, idx) => (
-                              <div key={idx} className={cn(
+                              <div key={s.id || idx} className={cn(
                                 "relative p-3 rounded-lg border-l-4 shadow-sm flex flex-col gap-1 transition-all hover:scale-[1.02]",
                                 getVehicleColor(s.vehicle)
                               )}>

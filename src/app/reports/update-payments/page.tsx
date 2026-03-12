@@ -1,2 +1,2 @@
-// Archivo neutralizado para evitar conflicto de rutas paralelas. Use la versión en (app)
+// Ruta eliminada para resolver conflicto de Parallel Pages. Use src/app/(app)/reports/update-payments/page.tsx
 export default function DeletedPage() { return null; }

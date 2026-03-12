@@ -137,7 +137,7 @@ const navLinks = [
       },
       {
           separator: true,
-          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+          roles: ['Administrador', 'Ventas Externas'],
       },
       {
           href: '/reports/finance',

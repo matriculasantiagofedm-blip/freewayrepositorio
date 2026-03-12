@@ -1,6 +1,4 @@
 /**
- * ARCHIVO DESACTIVADO
- * El reporte de caja diaria ha sido eliminado por solicitud del usuario
- * para evitar conflictos de duplicidad y simplificar el sistema.
+ * ARCHIVO DESACTIVADO PERMANENTEMENTE
+ * Esta ruta ha sido eliminada para resolver el conflicto de "Parallel Pages".
  */
-export default function InactivePage() { return null; }

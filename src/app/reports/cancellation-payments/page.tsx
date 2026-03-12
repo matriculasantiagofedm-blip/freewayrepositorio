@@ -1,5 +1,4 @@
 /**
- * ARCHIVO DESACTIVADO
- * Esta ruta ha sido movida a src/app/(app)/reports/cancellation-payments/page.tsx
+ * ARCHIVO DESACTIVADO PERMANENTEMENTE
+ * Esta ruta ha sido eliminada para resolver el conflicto de "Parallel Pages".
  */
-export default function InactivePage() { return null; }

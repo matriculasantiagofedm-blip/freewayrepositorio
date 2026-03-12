@@ -1,6 +1,6 @@
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ClipboardPenLine, ListChecks, Award, Gauge, FileText, Banknote, CalendarClock, ScrollText, GraduationCap, ClipboardSignature, FileSpreadsheet, UserPlus } from 'lucide-react';
+import { ListChecks, Award, Gauge, FileText, Banknote, CalendarClock, ScrollText, GraduationCap, ClipboardSignature, FileSpreadsheet, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Button } from '@/components/ui/button';

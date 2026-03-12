@@ -43,20 +43,6 @@
         "clientName": { "type": "string" },
         "type": { "type": "string", "enum": ["abono", "cancelacion", "actualizacion"] }
       }
-    },
-    "DailyCashReport": {
-      "title": "DailyCashReport",
-      "type": "object",
-      "description": "Cierre de caja guardado para una fecha específica.",
-      "properties": {
-        "reportDate": { "type": "string", "format": "date" },
-        "billQuantities": { "type": "object" },
-        "coinQuantities": { "type": "object" },
-        "expenses": { "type": "array" },
-        "totals": { "type": "object" },
-        "savedAt": { "type": "string", "format": "date-time" },
-        "savedBy": { "type": "string" }
-      }
     }
   },
   "auth": {
@@ -78,10 +64,6 @@
     "/update_payments/{paymentId}": {
       "schema": { "$ref": "#/entities/Payment" },
       "description": "Pagos por actualización de certificados."
-    },
-    "/daily_cash_reports/{reportId}": {
-      "schema": { "$ref": "#/entities/DailyCashReport" },
-      "description": "Historial de cierres de caja oficiales."
     },
     "/book_sale_payments/{saleId}": {
       "schema": { "type": "object" },

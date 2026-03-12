@@ -1,2 +1,2 @@
-// ARCHIVO ELIMINADO PARA RESOLVER CONFLICTO DE RUTAS PARALELAS
-export default function RemovedPage() { return null; }
+// ARCHIVO ELIMINADO PARA RESOLVER CONFLICTO DE RUTAS PARALELAS Y DUPLICIDAD
+// La funcionalidad de Caja Diaria ha sido removida del sistema por solicitud del usuario.

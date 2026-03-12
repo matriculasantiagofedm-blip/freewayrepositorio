@@ -1,2 +1,2 @@
 // ARCHIVO ELIMINADO PARA RESOLVER CONFLICTO DE RUTAS PARALELAS
-export default function RemovedPage() { return null; }
+// Use src/app/(app)/reports/cancellation-payments/page.tsx en su lugar.

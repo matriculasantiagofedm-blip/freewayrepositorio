@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
@@ -66,7 +65,6 @@ function DailyCashReportContent() {
     const dateKey = format(date, 'yyyy-MM-dd');
     
     try {
-      // 1. Verificar si existe un reporte guardado para esta fecha
       const savedReportRef = doc(db, 'daily_cash_reports', dateKey);
       const savedSnap = await getDoc(savedReportRef);
 
@@ -83,12 +81,10 @@ function DailyCashReportContent() {
           setIsReportSaved(false);
       }
 
-      // 2. Cargar transacciones del sistema
       const fetchedTransactions: any[] = [];
       const start = startOfDay(date);
       const end = endOfDay(date);
 
-      // Cargar contratos activados hoy
       const contractsSnap = await getDocs(collection(db, 'contracts'));
       contractsSnap.docs.forEach(docSnap => {
           const contract = { id: docSnap.id, ...docSnap.data() } as Contract;
@@ -105,7 +101,6 @@ function DailyCashReportContent() {
 
           const pType = (details as any).paymentType || 'cash';
           const amount = Number(details.downPayment) || 0;
-          const isWeb = contract.createdBy === 'Web Pública';
 
           if (amount > 0) {
               const transaction: any = {
@@ -115,7 +110,6 @@ function DailyCashReportContent() {
                   clientName: contract.clientName || '',
                   service: contract.type,
                   vendedor: contract.createdBy || 'Sistema',
-                  isWeb: isWeb,
                   cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0
               };
 
@@ -131,7 +125,6 @@ function DailyCashReportContent() {
           }
       });
 
-      // Cargar pagos de cancelación realizados hoy
       const qCancellations = query(
         collection(db, 'cancellation_payments'),
         where('paymentDate', '>=', Timestamp.fromDate(start)),
@@ -148,7 +141,6 @@ function DailyCashReportContent() {
               clientName: payment.clientName || '',
               service: 'Abono Saldo',
               vendedor: payment.createdBy || 'Sistema',
-              isWeb: false,
               cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0
           };
           if (pType === 'cash') transaction.cash = payment.amount;
@@ -281,12 +273,12 @@ function DailyCashReportContent() {
                   <TableHead className="text-black p-1 text-[7pt] text-center w-16">Contrato</TableHead>
                   <TableHead className="text-black p-1 text-[7pt] text-center w-16">Cédula</TableHead>
                   <TableHead className="text-black p-1 text-[7pt]">Cliente</TableHead>
-                  <TableHead className="text-black p-1 text-[7pt] text-center w-10">Web</TableHead>
                   <TableHead className="text-black p-1 text-[7pt] text-right w-14">Efectivo</TableHead>
                   <TableHead className="text-black p-1 text-[7pt] text-right w-14">BAC</TableHead>
                   <TableHead className="text-black p-1 text-[7pt] text-right w-14">Gral/Yappy</TableHead>
                   <TableHead className="text-black p-1 text-[7pt] text-right w-14">T. Débito</TableHead>
                   <TableHead className="text-black p-1 text-[7pt] text-right w-14">T. Crédito</TableHead>
+                  <TableHead className="text-black p-1 text-[7pt] text-right w-14">Cheque</TableHead>
                   </TableRow>
               </TableHeader>
               <TableBody>
@@ -298,14 +290,12 @@ function DailyCashReportContent() {
                           <TableCell className="p-1 text-[7pt] text-center text-black font-bold">{t.contrato}</TableCell>
                           <TableCell className="p-1 text-[7pt] text-center text-black">{t.cedula}</TableCell>
                           <TableCell className="p-1 text-[7pt] uppercase text-black truncate max-w-[150px]">{t.clientName}</TableCell>
-                          <TableCell className="p-1 text-[7pt] text-center">
-                              {t.isWeb ? <span className="bg-blue-100 text-blue-800 px-1 rounded font-black text-[6pt]">SÍ</span> : '-'}
-                          </TableCell>
                           <TableCell className="p-1 text-[7pt] text-right text-black">{t.cash > 0 ? t.cash.toFixed(2) : '-'}</TableCell>
                           <TableCell className="p-1 text-[7pt] text-right text-black">{t.bac > 0 ? t.bac.toFixed(2) : '-'}</TableCell>
                           <TableCell className="p-1 text-[7pt] text-right text-black">{t.general > 0 ? t.general.toFixed(2) : '-'}</TableCell>
                           <TableCell className="p-1 text-[7pt] text-right text-black">{t.debit > 0 ? t.debit.toFixed(2) : '-'}</TableCell>
                           <TableCell className="p-1 text-[7pt] text-right text-black">{t.credit > 0 ? t.credit.toFixed(2) : '-'}</TableCell>
+                          <TableCell className="p-1 text-[7pt] text-right text-black">{t.cheques > 0 ? t.cheques.toFixed(2) : '-'}</TableCell>
                       </TableRow>
                       ))
                   ) : (

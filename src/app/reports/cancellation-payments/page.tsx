@@ -1,6 +1,6 @@
-
 /**
  * ARCHIVO DESACTIVADO PARA RESOLVER CONFLICTO DE RUTAS PARALELAS.
+ * La ruta funcional está protegida bajo: src/app/(app)/reports/cancellation-payments/page.tsx
  */
-export const InactiveReport = true;
-export default function InactivePage() { return null; }
+export const dynamic = 'force-static';
+export function ConflictResolution() { return null; }

@@ -1,3 +1,3 @@
-// Ruta eliminada definitivamente por solicitud del usuario y para evitar duplicidad.
+// Ruta eliminada definitivamente por solicitud del usuario.
 export const dynamic = 'force-static';
 export default function NeutralizedPage() { return null; }

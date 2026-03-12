@@ -1,6 +1,6 @@
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ListChecks, Award, Gauge, FileText, Banknote, CalendarClock, ScrollText, GraduationCap, ClipboardSignature, FileSpreadsheet, UserPlus } from 'lucide-react';
+import { ListChecks, Award, Gauge, FileText, CalendarClock, ScrollText, GraduationCap, ClipboardSignature, FileSpreadsheet, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Button } from '@/components/ui/button';
@@ -52,13 +52,6 @@ export default function ReportsPage() {
       roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     },
     {
-      title: 'Reporte Financiero',
-      description: 'Analiza los ingresos por tipo de curso y período.',
-      href: '/reports/finance',
-      icon: Banknote,
-      roles: ['Administrador'],
-    },
-    {
       title: 'Encuesta de Satisfacción',
       description: 'Genera el formato físico de evaluación al instructor.',
       href: '/surveys',
@@ -90,34 +83,13 @@ export default function ReportsPage() {
 
   if (!role) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
-        <h3 className="mt-4 text-lg font-semibold text-foreground">
-          Cargando...
-        </h3>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Verificando permisos de usuario.
-        </p>
+      <div className="flex flex-col items-center justify-center p-12">
+        <p className="animate-pulse font-bold text-slate-400">Verificando permisos...</p>
       </div>
     );
   }
 
   const reports = allReports.filter(report => report.roles.includes(role));
-
-  if (reports.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/20 py-12 text-center">
-          <h3 className="mt-4 text-lg font-semibold text-foreground">
-          Acceso Restringido
-          </h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-          No tienes informes asignados para tu rol.
-          </p>
-          <Button asChild className="mt-4">
-              <Link href="/dashboard">Volver al Panel</Link>
-          </Button>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -125,15 +97,17 @@ export default function ReportsPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {reports.map((report) => (
           <Link href={report.href} key={report.title} className="no-underline">
-            <Card className="hover:shadow-lg transition-shadow h-full">
+            <Card className="hover:shadow-lg transition-shadow h-full border-slate-200">
               <CardHeader>
                 <div className="flex items-start gap-4">
-                  <report.icon className="h-6 w-6 text-primary" />
-                  <CardTitle>{report.title}</CardTitle>
+                  <div className="bg-primary/5 p-2 rounded-lg">
+                    <report.icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <CardTitle className="text-lg">{report.title}</CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
-                <CardDescription>{report.description}</CardDescription>
+                <CardDescription className="text-xs">{report.description}</CardDescription>
               </CardContent>
             </Card>
           </Link>

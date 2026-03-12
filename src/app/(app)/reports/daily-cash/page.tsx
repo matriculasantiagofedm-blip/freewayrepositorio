@@ -85,6 +85,7 @@ function DailyCashReportContent() {
           setIsReportSaved(false);
       }
 
+      // 1. Obtener Contratos creados o activados hoy
       const contractsSnap = await getDocs(collection(db, 'contracts'));
       
       contractsSnap.docs.forEach(docSnap => {
@@ -128,6 +129,7 @@ function DailyCashReportContent() {
           }
       });
 
+      // 2. Obtener Pagos de Cancelación
       const start = startOfDay(reportDate);
       const end = endOfDay(reportDate);
       const qCancellations = query(
@@ -296,7 +298,7 @@ function DailyCashReportContent() {
                           <TableCell className="p-1 text-[7pt] text-center text-black font-bold">{t.contrato}</TableCell>
                           <TableCell className="p-1 text-[7pt] uppercase text-black truncate max-w-[150px]">{t.clientName}</TableCell>
                           <TableCell className="p-1 text-[7pt] text-center">
-                              {t.isWeb ? <span className="bg-blue-100 text-blue-800 px-1 rounded font-black">SÍ</span> : '-'}
+                              {t.isWeb ? <span className="bg-blue-100 text-blue-800 px-1 rounded font-black text-[6pt]">SÍ</span> : '-'}
                           </TableCell>
                           <TableCell className="p-1 text-[7pt] text-right text-black">{t.cash > 0 ? t.cash.toFixed(2) : '-'}</TableCell>
                           <TableCell className="p-1 text-[7pt] text-right text-black">{t.bac > 0 ? t.bac.toFixed(2) : '-'}</TableCell>

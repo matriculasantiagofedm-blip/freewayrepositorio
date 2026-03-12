@@ -267,7 +267,7 @@ export type MaintenanceLog = {
   nextServiceDate?: any;
 };
 
-export type VehicleName = 'Picanto Blanco' | 'Picanto Bronce' | 'Spark' | 'Auto Diesel' | 'Moto Roja' | 'Moto Negra';
+export type VehicleName = 'Picanto Blanco' | 'Picanto Bronce' | 'Spark' | 'Pick up' | 'Moto Roja' | 'Moto Negra';
 export type TimeSlot = '8am-10am' | '10am-12pm' | '1pm-3pm' | '3pm-5pm';
 export type InstructorName = 'Julisse Alonso' | 'Emmanuel Camargo' | 'Adrian Gordon' | '';
 export type MaintenanceType = 'Cambio de Aceite' | 'Revisión de Frenos' | 'Rotación de Llantas' | 'Mantenimiento General' | 'Otro';

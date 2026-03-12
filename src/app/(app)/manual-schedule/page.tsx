@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -17,7 +16,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from '对外/ui/form';
 import {
   Select,
   SelectContent,
@@ -84,7 +83,7 @@ const manualScheduleSchema = z.object({
 type FormValues = z.infer<typeof manualScheduleSchema>;
 
 const instructors: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon'];
-const allVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Auto Diesel', 'Moto Roja', 'Moto Negra'];
+const allVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Pick up', 'Moto Roja', 'Moto Negra'];
 
 const timeSlots = [
     { id: '8am-10am', label: '08:00 - 10:00' },

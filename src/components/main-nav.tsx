@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -41,16 +42,16 @@ const navLinks = [
     ]
   },
   {
-    label: 'Reportes 2026',
+    label: 'Informes',
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     children: [
-      { href: '/reportes-nuevos-2026/daily-cash', label: 'Reporte de Caja', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-      { href: '/reportes-nuevos-2026/vehicle-schedule', label: 'Agenda por Vehículo', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-      { href: '/reportes-nuevos-2026/cancellation-payments', label: 'Reporte Cancelaciones', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-      { href: '/reportes-nuevos-2026/update-payments', label: 'Reporte Actualizaciones', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-      { href: '/reportes-nuevos-2026/certificates-summary', label: 'Consolidado Certificados', roles: ['Administrador'] },
+      { href: '/informes/daily-cash', label: 'Cierre de Caja', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+      { href: '/informes/vehicle-schedule', label: 'Ocupación Flota', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+      { href: '/informes/cancellation-payments', label: 'Reporte Abonos', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+      { href: '/informes/update-payments', label: 'Reporte Actualización', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+      { href: '/informes/certificates-summary', label: 'Control Certificados', roles: ['Administrador'] },
       { separator: true, roles: ['Administrador'] },
-      { href: '/contracts', label: 'Listado de Contratos', roles: ['Administrador'] }
+      { href: '/contracts', label: 'Archivo de Contratos', roles: ['Administrador'] }
     ]
   },
 ];

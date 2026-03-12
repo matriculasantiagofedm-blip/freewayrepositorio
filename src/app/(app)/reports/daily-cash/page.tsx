@@ -66,6 +66,7 @@ function DailyCashReportContent() {
     const dateKey = format(date, 'yyyy-MM-dd');
     
     try {
+      // 1. Verificar si existe un reporte guardado para esta fecha
       const savedReportRef = doc(db, 'daily_cash_reports', dateKey);
       const savedSnap = await getDoc(savedReportRef);
 
@@ -82,10 +83,12 @@ function DailyCashReportContent() {
           setIsReportSaved(false);
       }
 
+      // 2. Cargar transacciones del sistema
       const fetchedTransactions: any[] = [];
       const start = startOfDay(date);
       const end = endOfDay(date);
 
+      // Cargar contratos activados hoy
       const contractsSnap = await getDocs(collection(db, 'contracts'));
       contractsSnap.docs.forEach(docSnap => {
           const contract = { id: docSnap.id, ...docSnap.data() } as Contract;
@@ -128,6 +131,7 @@ function DailyCashReportContent() {
           }
       });
 
+      // Cargar pagos de cancelación realizados hoy
       const qCancellations = query(
         collection(db, 'cancellation_payments'),
         where('paymentDate', '>=', Timestamp.fromDate(start)),
@@ -239,8 +243,8 @@ function DailyCashReportContent() {
       <div className="flex flex-col gap-4 print:hidden">
         <div className="flex justify-between items-center">
             <div>
-                <h1 className="text-2xl font-black font-headline text-slate-900 uppercase">Caja Diaria</h1>
-                <p className="text-xs text-muted-foreground font-medium">Historial y cierres oficiales.</p>
+                <h1 className="text-2xl font-black font-headline text-slate-900 uppercase">Reporte de Caja Diario</h1>
+                <p className="text-xs text-muted-foreground font-medium">Historial y cierres oficiales por fecha.</p>
             </div>
             <div className="flex items-center gap-2">
                 <Popover>
@@ -263,7 +267,7 @@ function DailyCashReportContent() {
         </div>
       </div>
 
-      <div id="report-to-export" className="bg-white mx-auto p-8 border shadow-sm max-w-[10in] print:border-none print:shadow-none">
+      <div id="report-to-export" className="bg-white mx-auto p-8 border shadow-sm max-w-[10.5in] print:border-none print:shadow-none">
         <div className="text-center mb-6 border-b-2 border-black pb-2">
           <h2 className="text-xl font-black uppercase text-black tracking-tight">FREEWAY ESCUELA DE MANEJO</h2>
           <p className="text-[10px] font-bold text-black uppercase tracking-[0.2em]">REPORTE DE CAJA - {format(reportDate, "PPP", { locale: es }).toUpperCase()}</p>

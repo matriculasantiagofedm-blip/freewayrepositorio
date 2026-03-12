@@ -1,5 +1,6 @@
 
 /**
- * ESTE ARCHIVO HA SIDO DESACTIVADO PARA ELIMINAR EL ERROR DE RUTA PARALELA.
+ * ARCHIVO DESACTIVADO PARA RESOLVER CONFLICTO DE RUTAS PARALELAS.
  */
+export const InactiveReport = true;
 export default function InactivePage() { return null; }

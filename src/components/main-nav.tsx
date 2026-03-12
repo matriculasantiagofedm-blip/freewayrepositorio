@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -92,6 +93,11 @@ const navLinks = [
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     children: [
       {
+          href: '/reports/daily-cash',
+          label: 'Reporte de Caja',
+          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
+      },
+      {
           href: '/reports/vehicle-schedule',
           label: 'Agenda Práctica',
           roles: ['Administrador', 'Ventas', 'Ventas Externas'],
@@ -102,13 +108,8 @@ const navLinks = [
           roles: ['Administrador', 'Ventas Externas'],
       },
       {
-          href: '/reports/theory-schedule',
-          label: 'Agenda Teórica (Semanal)',
-          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
-      },
-      {
           href: '/reports/theory-attendance',
-          label: 'Asistencia Teórica (Lista)',
+          label: 'Asistencia Teórica',
           roles: ['Administrador', 'Ventas', 'Ventas Externas'],
       },
       {
@@ -134,16 +135,7 @@ const navLinks = [
           href: '/reports/update-payments',
           label: 'Actualizaciones',
           roles: ['Administrador', 'Ventas', 'Ventas Externas'],
-      },
-      {
-          separator: true,
-          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
-      },
-      {
-          href: '/reports/mileage-log',
-          label: 'Kilometraje',
-          roles: ['Administrador', 'Ventas', 'Ventas Externas'],
-      },
+      }
     ]
   },
 ];

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
@@ -13,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Printer, CalendarIcon, Loader2, Download, RefreshCw } from 'lucide-react';
+import { Printer, CalendarIcon, Loader2, Download, RefreshCw, Save, History, Search } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { cn, toDate } from '@/lib/utils';
 import {
@@ -30,7 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useDb, useUser } from '@/firebase';
-import { collection, query, getDocs, Timestamp, where } from 'firebase/firestore';
+import { collection, query, getDocs, Timestamp, where, doc, setDoc, serverTimestamp, orderBy, limit } from 'firebase/firestore';
 import type { Contract, Payment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -59,10 +60,12 @@ function DailyCashReportContent() {
   const [coinQuantities, setCoinQuantities] = useState(initialCoinQuantities);
   const [expenses, setExpenses] = useState(initialExpenses);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [sellerFilter, setSellerFilter] = useState('all');
   const [mounted, setMounted] = useState(false);
+  const [isReportSaved, setIsReportSaved] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -74,24 +77,42 @@ function DailyCashReportContent() {
     
     setIsLoading(true);
     setIsReady(false);
+    setIsReportSaved(false);
     
     const fetchedTransactionsMap = new Map<string, any>();
 
     try {
+      // 1. Buscar si ya existe un reporte guardado para este día
+      const dateKey = format(reportDate, 'yyyy-MM-dd');
+      const savedReportRef = collection(db, 'daily_cash_reports');
+      const qSaved = query(savedReportRef, where('reportDate', '==', dateKey));
+      const savedSnap = await getDocs(qSaved);
+
+      if (!savedSnap.empty) {
+          const savedData = savedSnap.docs[0].data();
+          setBillQuantities(savedData.billQuantities || initialBillQuantities);
+          setCoinQuantities(savedData.coinQuantities || initialCoinQuantities);
+          setExpenses(savedData.expenses || initialExpenses);
+          setIsReportSaved(true);
+          toast({ title: "Reporte Cargado", description: `Se recuperó el cierre guardado para esta fecha.` });
+      } else {
+          setBillQuantities(initialBillQuantities);
+          setCoinQuantities(initialCoinQuantities);
+          setExpenses(initialExpenses);
+      }
+
+      // 2. Cargar transacciones del día
       const contractsSnap = await getDocs(collection(db, 'contracts'));
       
       contractsSnap.docs.forEach(docSnap => {
           const contract = { id: docSnap.id, ...docSnap.data() } as Contract;
-          
           if (contract.status === 'expired') return;
 
           const createdDate = toDate(contract.createdAt);
           const activatedDate = contract.activatedAt ? toDate(contract.activatedAt) : null;
-          
-          // Buscar coincidencias por fecha de creación o activación
           const isMatch = isSameDay(createdDate, reportDate) || (activatedDate && isSameDay(activatedDate, reportDate));
 
-          if (!isMatch || fetchedTransactionsMap.has(contract.id)) return;
+          if (!isMatch) return;
 
           const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
           if (!details) return;
@@ -106,7 +127,7 @@ function DailyCashReportContent() {
                   contrato: String(contract.folioNumber || '').padStart(6, '0'),
                   cedula: details.studentIdNumber || contract.studentIdNumber || '',
                   clientName: contract.clientName || '',
-                  service: contract.type === 'Curso Deluxe' ? 'Matrícula Deluxe' : `Abono ${contract.type}`,
+                  service: contract.type,
                   vendedor: contract.createdBy || 'Sistema',
                   isWeb: isWeb,
                   cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0
@@ -127,7 +148,7 @@ function DailyCashReportContent() {
       const start = startOfDay(reportDate);
       const end = endOfDay(reportDate);
       
-      // Consultar pagos de saldos
+      // Pagos de saldos
       const qCancellations = query(
         collection(db, 'cancellation_payments'),
         where('paymentDate', '>=', Timestamp.fromDate(start)),
@@ -147,18 +168,16 @@ function DailyCashReportContent() {
               isWeb: false,
               cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0
           };
-
           if (pType === 'cash') transaction.cash = payment.amount;
           else if (pType === 'debit') transaction.debit = payment.amount;
           else if (pType === 'credit') transaction.credit = payment.amount;
           else if (pType === 'bac') transaction.bac = payment.amount;
           else if (pType === 'yappy' || pType === 'general') transaction.general = payment.amount;
           else if (pType === 'cheques') transaction.cheques = payment.amount;
-          
           fetchedTransactionsMap.set(docSnap.id, transaction);
       });
 
-      // Consultar actualizaciones
+      // Actualizaciones
       const qUpdates = query(
         collection(db, 'update_payments'),
         where('paymentDate', '>=', Timestamp.fromDate(start)),
@@ -173,19 +192,17 @@ function DailyCashReportContent() {
               contrato: String(payment.updateFolio || '').padStart(6, '0'),
               cedula: payment.studentIdNumber || '',
               clientName: payment.clientName || '',
-              service: 'Actualización Certificado',
+              service: 'Actualización',
               vendedor: payment.createdBy || 'Sistema',
               isWeb: false,
               cash: 0, debit: 0, credit: 0, bac: 0, general: 0, cheques: 0
           };
-
           if (pType === 'cash') transaction.cash = payment.amount;
           else if (pType === 'debit') transaction.debit = payment.amount;
           else if (pType === 'credit') transaction.credit = payment.amount;
           else if (pType === 'bac') transaction.bac = payment.amount;
           else if (pType === 'yappy' || pType === 'general') transaction.general = payment.amount;
           else if (pType === 'cheques') transaction.cheques = payment.amount;
-
           fetchedTransactionsMap.set(docSnap.id, transaction);
       });
 
@@ -193,17 +210,17 @@ function DailyCashReportContent() {
       setIsReady(true);
     } catch (err: any) {
       console.error(err);
-      toast({ variant: 'destructive', title: 'Error de Permisos', description: 'No tienes acceso a los datos de caja.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cargar la información de caja.' });
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (mounted && reportDate && !isUserLoading && !isRoleLoading && user) {
+    if (mounted && reportDate && user) {
       fetchDailyData();
     }
-  }, [reportDate, user, isUserLoading, isRoleLoading, mounted]);
+  }, [reportDate, user, mounted]);
 
   const filteredTransactions = useMemo(() => {
     if (role !== 'Administrador') return transactions.filter(t => t.vendedor === role);
@@ -254,6 +271,31 @@ function DailyCashReportContent() {
     setExpenses(updated);
   };
 
+  const handleSaveReport = async () => {
+    if (!db || !reportDate || !user) return;
+    setIsSaving(true);
+    try {
+        const dateKey = format(reportDate, 'yyyy-MM-dd');
+        const reportRef = doc(db, 'daily_cash_reports', dateKey);
+        await setDoc(reportRef, {
+            reportDate: dateKey,
+            billQuantities,
+            coinQuantities,
+            expenses,
+            totals: grandTotals,
+            savedAt: serverTimestamp(),
+            savedBy: role || 'Sistema',
+            userId: user.uid
+        }, { merge: true });
+        setIsReportSaved(true);
+        toast({ title: "Caja Cerrada", description: "El reporte ha sido guardado exitosamente en el historial." });
+    } catch (err) {
+        toast({ variant: "destructive", title: "Error al Guardar", description: "No se pudo cerrar la caja." });
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
   const handleDownloadPdf = async () => {
     const element = document.getElementById('report-to-export');
     if (!element) return;
@@ -298,8 +340,11 @@ function DailyCashReportContent() {
       <div className="flex flex-col gap-4 print-hide">
         <div className="flex justify-between items-center">
             <div className='flex flex-col'>
-                <h1 className="text-2xl font-bold font-headline text-slate-900">Reporte de Caja Diario</h1>
-                <p className="text-xs text-muted-foreground">Sistema de Control Freeway - Acceso Expandido</p>
+                <h1 className="text-2xl font-black font-headline text-slate-900 uppercase tracking-tight">Reporte de Caja Diario</h1>
+                <p className="text-xs text-muted-foreground flex items-center gap-2">
+                    {isReportSaved ? <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-black text-[9px] uppercase border border-green-200">Caja Cerrada</span> : <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-black text-[9px] uppercase border border-amber-200">Caja Abierta</span>}
+                    Sistema de Control Freeway
+                </p>
             </div>
             <div className="flex items-center gap-2">
                 <Button onClick={fetchDailyData} variant="ghost" size="icon" className="h-9 w-9"><RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} /></Button>
@@ -325,15 +370,21 @@ function DailyCashReportContent() {
                     <Calendar mode="single" selected={reportDate} onSelect={(date) => setReportDate(date || new Date())} initialFocus />
                     </PopoverContent>
                 </Popover>
-                <Button onClick={handleDownloadPdf} disabled={isDownloading || !isReady} size="sm" className="bg-blue-600 hover:bg-blue-700 h-9 px-4">
+                
+                <Button onClick={handleSaveReport} disabled={isSaving || isReportSaved} className="bg-green-600 hover:bg-green-700 h-9 font-black uppercase text-[10px] tracking-widest px-4 shadow-lg border-b-4 border-green-800 active:border-b-0 transition-all">
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                    {isReportSaved ? 'Caja Cerrada' : 'Cerrar Caja'}
+                </Button>
+
+                <Button onClick={handleDownloadPdf} disabled={isDownloading || !isReady} size="sm" className="bg-blue-600 hover:bg-blue-700 h-9 px-4 font-black uppercase text-[10px] tracking-widest shadow-lg border-b-4 border-blue-800 active:border-b-0 transition-all">
                     {isDownloading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Download className="mr-2 h-4 w-4 mr-2" />}
-                    Descargar PDF
+                    PDF
                 </Button>
             </div>
         </div>
       </div>
 
-      <div id="report-to-export" className="print-container bg-white mx-auto p-8 border shadow-sm" style={{ width: '8.5in', height: '11in', maxWidth: '8.5in', boxSizing: 'border-box' }}>
+      <div id="report-to-export" className="print-container bg-white mx-auto p-8 border shadow-2xl" style={{ width: '8.5in', height: '11in', maxWidth: '8.5in', boxSizing: 'border-box' }}>
         <div className="text-center mb-6 border-b-4 border-black pb-2">
           <h2 className="text-2xl font-black uppercase tracking-tighter text-black">FREEWAY ESCUELA DE MANEJO</h2>
           <p className="text-[11px] font-black uppercase tracking-widest text-black">REPORTE DE CAJA DIARIO - {reportDate ? format(reportDate, "EEEE d 'de' MMMM 'de' yyyy", { locale: es }).toUpperCase() : ''}</p>
@@ -401,7 +452,7 @@ function DailyCashReportContent() {
                     <div key={val} className="flex justify-between items-center text-[8pt]">
                       <span className="font-bold text-black">B/. {val}:</span>
                       <div className="flex items-center gap-1">
-                          <Input type="number" className="h-5 w-10 text-[8pt] p-1 border-black print-hide" value={billQuantities[val] || ''} onChange={(e) => handleCashChange('bill', val, e.target.value)} />
+                          <Input type="number" disabled={isReportSaved} className="h-5 w-10 text-[8pt] p-1 border-black print-hide" value={billQuantities[val] || ''} onChange={(e) => handleCashChange('bill', val, e.target.value)} />
                           <span className="print-show-val text-black">{billQuantities[val]}</span>
                           <span className="w-12 text-right text-black">{(parseFloat(val) * (billQuantities[val] || 0)).toFixed(2)}</span>
                       </div>
@@ -413,7 +464,7 @@ function DailyCashReportContent() {
                     <div key={val} className="flex justify-between items-center text-[8pt]">
                       <span className="font-bold text-black">B/. {val}:</span>
                       <div className="flex items-center gap-1">
-                          <Input type="number" className="h-5 w-10 text-[8pt] p-1 border-black print-hide" value={coinQuantities[val] || ''} onChange={(e) => handleCashChange('coin', val, e.target.value)} />
+                          <Input type="number" disabled={isReportSaved} className="h-5 w-10 text-[8pt] p-1 border-black print-hide" value={coinQuantities[val] || ''} onChange={(e) => handleCashChange('coin', val, e.target.value)} />
                           <span className="print-show-val text-black">{coinQuantities[val]}</span>
                           <span className="w-12 text-right text-black">{(parseFloat(val) * (coinQuantities[val] || 0)).toFixed(2)}</span>
                       </div>
@@ -431,14 +482,14 @@ function DailyCashReportContent() {
               <div className="border border-black p-3 rounded-sm bg-white">
                 <h3 className="text-[10px] font-black uppercase bg-slate-100 p-1.5 border-b border-black flex justify-between text-black">
                   <span>GASTOS DEL DÍA</span>
-                  <Button variant="ghost" size="sm" className="h-4 w-4 p-0 print-hide" onClick={() => setExpenses([...expenses, { description: '', amount: 0 }])}>+</Button>
+                  {!isReportSaved && <Button variant="ghost" size="sm" className="h-4 w-4 p-0 print-hide" onClick={() => setExpenses([...expenses, { description: '', amount: 0 }])}>+</Button>}
                 </h3>
                 <div className="space-y-1.5 pt-2">
                   {expenses.map((exp, idx) => (
                     <div key={idx} className="flex gap-2 items-center">
-                      <Input placeholder="Descripción..." className="h-5 text-[8pt] p-1 border-black flex-1 print-hide" value={exp.description} onChange={(e) => handleExpenseChange(idx, 'description', e.target.value)} />
+                      <Input placeholder="Descripción..." disabled={isReportSaved} className="h-5 text-[8pt] p-1 border-black flex-1 print-hide" value={exp.description} onChange={(e) => handleExpenseChange(idx, 'description', e.target.value)} />
                       <span className="print-show-val flex-1 uppercase text-[8pt] text-black">{exp.description}</span>
-                      <Input type="number" placeholder="0.00" className="h-5 w-16 text-[8pt] p-1 border-black print-hide" value={exp.amount || ''} onChange={(e) => handleExpenseChange(idx, 'amount', e.target.value)} />
+                      <Input type="number" placeholder="0.00" disabled={isReportSaved} className="h-5 w-16 text-[8pt] p-1 border-black print-hide" value={exp.amount || ''} onChange={(e) => handleExpenseChange(idx, 'amount', e.target.value)} />
                       <span className="print-show-val w-16 text-right text-[8pt] text-black">{Number(exp.amount || 0).toFixed(2)}</span>
                     </div>
                   ))}

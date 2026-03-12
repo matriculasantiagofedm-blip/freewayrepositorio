@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, CalendarIcon, Printer, Save, Plus, Trash2, Banknote, Landmark } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, CalendarIcon, Printer, Save, Plus, Trash2, Landmark } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -60,7 +60,6 @@ export default function DailyCashReportPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
-  // Arqueo físico
   const [billQuantities, setBillQuantities] = useState<Record<number, number>>({});
   const [coinQuantities, setCoinQuantities] = useState<Record<number, number>>({});
   const [expenses, setExpenses] = useState<{ description: string; amount: number }[]>([]);
@@ -73,7 +72,6 @@ export default function DailyCashReportPage() {
       const start = startOfDay(reportDate);
       const end = endOfDay(reportDate);
 
-      // Cargar reporte guardado si existe
       const reportId = format(reportDate, 'yyyy-MM-dd');
       const savedReportRef = doc(db, 'daily_cash_reports', reportId);
       const savedSnap = await getDoc(savedReportRef);
@@ -89,7 +87,7 @@ export default function DailyCashReportPage() {
         setExpenses([]);
       }
 
-      // Consultar transacciones
+      // Consultar todas las colecciones que generan ingresos
       const contractsQ = query(collection(db, 'contracts'), where('activatedAt', '>=', Timestamp.fromDate(start)), where('activatedAt', '<=', Timestamp.fromDate(end)));
       const cancellationsQ = query(collection(db, 'cancellation_payments'), where('paymentDate', '>=', Timestamp.fromDate(start)), where('paymentDate', '<=', Timestamp.fromDate(end)));
       const updatesQ = query(collection(db, 'update_payments'), where('paymentDate', '>=', Timestamp.fromDate(start)), where('paymentDate', '<=', Timestamp.fromDate(end)));
@@ -213,7 +211,6 @@ export default function DailyCashReportPage() {
   }, [billQuantities, coinQuantities]);
 
   const expensesTotal = useMemo(() => expenses.reduce((sum, exp) => sum + exp.amount, 0), [expenses]);
-  
   const balance = physicalCashTotal - (totals.cash - expensesTotal);
 
   const handleSaveReport = async () => {
@@ -266,18 +263,18 @@ export default function DailyCashReportPage() {
         <Table className="border-collapse">
           <TableHeader>
             <TableRow className="bg-slate-100 hover:bg-slate-100 h-10 border-black">
-              <TableHead className="border border-black font-black text-black text-[8px] uppercase p-1">Contrato</TableHead>
-              <TableHead className="border border-black font-black text-black text-[8px] uppercase p-1">Cédula</TableHead>
-              <TableHead className="border border-black font-black text-black text-[8px] uppercase p-1">Cliente</TableHead>
-              <TableHead className="border border-black font-black text-black text-[8px] uppercase p-1">Servicio</TableHead>
-              <TableHead className="border border-black font-black text-black text-[8px] uppercase p-1">Vendedor</TableHead>
-              <TableHead className="border border-black font-black text-black text-[8px] uppercase p-1 text-center">Efectivo</TableHead>
-              <TableHead className="border border-black font-black text-black text-[8px] uppercase p-1 text-center">T. Débito</TableHead>
-              <TableHead className="border border-black font-black text-black text-[8px] uppercase p-1 text-center">T. Crédito</TableHead>
-              <TableHead className="border border-black font-black text-black text-[8px] uppercase p-1 text-center">BAC</TableHead>
-              <TableHead className="border border-black font-black text-black text-[8px] uppercase p-1 text-center">Gral/Yappy</TableHead>
-              <TableHead className="border border-black font-black text-black text-[8px] uppercase p-1 text-center">Cheque</TableHead>
-              <TableHead className="border border-black font-black text-black text-[8px] uppercase p-1 text-right">Monto</TableHead>
+              <TableHead className="border border-black font-black text-black text-[8pt] uppercase p-1">Contrato</TableHead>
+              <TableHead className="border border-black font-black text-black text-[8pt] uppercase p-1">Cédula</TableHead>
+              <TableHead className="border border-black font-black text-black text-[8pt] uppercase p-1">Cliente</TableHead>
+              <TableHead className="border border-black font-black text-black text-[8pt] uppercase p-1">Servicio</TableHead>
+              <TableHead className="border border-black font-black text-black text-[8pt] uppercase p-1">Vendedor</TableHead>
+              <TableHead className="border border-black font-black text-black text-[8pt] uppercase p-1 text-center">Efectivo</TableHead>
+              <TableHead className="border border-black font-black text-black text-[8pt] uppercase p-1 text-center">T. Débito</TableHead>
+              <TableHead className="border border-black font-black text-black text-[8pt] uppercase p-1 text-center">T. Crédito</TableHead>
+              <TableHead className="border border-black font-black text-black text-[8pt] uppercase p-1 text-center">BAC</TableHead>
+              <TableHead className="border border-black font-black text-black text-[8pt] uppercase p-1 text-center">Gral/Yappy</TableHead>
+              <TableHead className="border border-black font-black text-black text-[8pt] uppercase p-1 text-center">Cheque</TableHead>
+              <TableHead className="border border-black font-black text-black text-[8pt] uppercase p-1 text-right">Monto</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -285,31 +282,31 @@ export default function DailyCashReportPage() {
               <TableRow><TableCell colSpan={12} className="text-center py-12"><Loader2 className="animate-spin mx-auto" /></TableCell></TableRow>
             ) : transactions.map((t) => (
               <TableRow key={t.id} className="h-8 border-black hover:bg-slate-50">
-                <TableCell className="border border-black font-bold text-[8px] text-primary p-1">{t.folio}</TableCell>
-                <TableCell className="border border-black text-[8px] p-1">{t.cedula}</TableCell>
-                <TableCell className="border border-black text-[8px] font-bold uppercase p-1 truncate max-w-[120px]">{t.clientName}</TableCell>
-                <TableCell className="border border-black text-[8px] p-1 truncate max-w-[80px]">{t.service}</TableCell>
-                <TableCell className="border border-black text-[8px] p-1">{t.createdBy}</TableCell>
-                <TableCell className="border border-black text-[8px] text-center p-1">{t.cash > 0 ? t.cash.toFixed(2) : ''}</TableCell>
-                <TableCell className="border border-black text-[8px] text-center p-1">{t.debit > 0 ? t.debit.toFixed(2) : ''}</TableCell>
-                <TableCell className="border border-black text-[8px] text-center p-1">{t.credit > 0 ? t.credit.toFixed(2) : ''}</TableCell>
-                <TableCell className="border border-black text-[8px] text-center p-1">{t.bac > 0 ? t.bac.toFixed(2) : ''}</TableCell>
-                <TableCell className="border border-black text-[8px] text-center p-1 font-bold text-blue-700">{t.general > 0 ? t.general.toFixed(2) : ''}</TableCell>
-                <TableCell className="border border-black text-[8px] text-center p-1">{t.cheque > 0 ? t.cheque.toFixed(2) : ''}</TableCell>
-                <TableCell className="border border-black text-[8px] text-right font-black p-1">B/. {t.total.toFixed(2)}</TableCell>
+                <TableCell className="border border-black font-bold text-[8pt] text-primary p-1">{t.folio}</TableCell>
+                <TableCell className="border border-black text-[8pt] p-1">{t.cedula}</TableCell>
+                <TableCell className="border border-black text-[8pt] font-bold uppercase p-1 truncate max-w-[120px]">{t.clientName}</TableCell>
+                <TableCell className="border border-black text-[8pt] p-1 truncate max-w-[80px]">{t.service}</TableCell>
+                <TableCell className="border border-black text-[8pt] p-1">{t.createdBy}</TableCell>
+                <TableCell className="border border-black text-[8pt] text-center p-1">{t.cash > 0 ? t.cash.toFixed(2) : ''}</TableCell>
+                <TableCell className="border border-black text-[8pt] text-center p-1">{t.debit > 0 ? t.debit.toFixed(2) : ''}</TableCell>
+                <TableCell className="border border-black text-[8pt] text-center p-1">{t.credit > 0 ? t.credit.toFixed(2) : ''}</TableCell>
+                <TableCell className="border border-black text-[8pt] text-center p-1">{t.bac > 0 ? t.bac.toFixed(2) : ''}</TableCell>
+                <TableCell className="border border-black text-[8pt] text-center p-1 font-bold text-blue-700">{t.general > 0 ? t.general.toFixed(2) : ''}</TableCell>
+                <TableCell className="border border-black text-[8pt] text-center p-1">{t.cheque > 0 ? t.cheque.toFixed(2) : ''}</TableCell>
+                <TableCell className="border border-black text-[8pt] text-right font-black p-1">B/. {t.total.toFixed(2)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
           <TableFooter>
             <TableRow className="h-10 bg-slate-100 font-black border-black">
-              <TableCell colSpan={5} className="border border-black text-[9px] uppercase text-right">Totales por Método:</TableCell>
-              <TableCell className="border border-black text-[9px] text-center">{totals.cash.toFixed(2)}</TableCell>
-              <TableCell className="border border-black text-[9px] text-center">{totals.debit.toFixed(2)}</TableCell>
-              <TableCell className="border border-black text-[9px] text-center">{totals.credit.toFixed(2)}</TableCell>
-              <TableCell className="border border-black text-[9px] text-center">{totals.bac.toFixed(2)}</TableCell>
-              <TableCell className="border border-black text-[9px] text-center text-blue-700">{totals.general.toFixed(2)}</TableCell>
-              <TableCell className="border border-black text-[9px] text-center">{totals.cheque.toFixed(2)}</TableCell>
-              <TableCell className="border border-black text-[10px] text-right bg-slate-900 text-white">B/. {totals.total.toFixed(2)}</TableCell>
+              <TableCell colSpan={5} className="border border-black text-[9pt] uppercase text-right">Totales por Método:</TableCell>
+              <TableCell className="border border-black text-[9pt] text-center">{totals.cash.toFixed(2)}</TableCell>
+              <TableCell className="border border-black text-[9pt] text-center">{totals.debit.toFixed(2)}</TableCell>
+              <TableCell className="border border-black text-[9pt] text-center">{totals.credit.toFixed(2)}</TableCell>
+              <TableCell className="border border-black text-[9pt] text-center">{totals.bac.toFixed(2)}</TableCell>
+              <TableCell className="border border-black text-[9pt] text-center text-blue-700">{totals.general.toFixed(2)}</TableCell>
+              <TableCell className="border border-black text-[9pt] text-center">{totals.cheque.toFixed(2)}</TableCell>
+              <TableCell className="border border-black text-[10pt] text-right bg-slate-900 text-white">B/. {totals.total.toFixed(2)}</TableCell>
             </TableRow>
           </TableFooter>
         </Table>
@@ -320,38 +317,38 @@ export default function DailyCashReportPage() {
           <CardHeader className="bg-slate-50 border-b-2 border-black py-3"><CardTitle className="text-xs font-black uppercase">Arqueo Físico de Efectivo</CardTitle></CardHeader>
           <CardContent className="p-4 grid grid-cols-2 gap-8">
             <div className="space-y-2">
-              <p className="text-[10px] font-black uppercase border-b border-black pb-1 mb-3">Billetes</p>
+              <p className="text-[10pt] font-black uppercase border-b border-black pb-1 mb-3">Billetes</p>
               {denominations.map(d => (
                 <div key={d.value} className="flex items-center justify-between gap-2">
-                  <Label className="text-[10px] font-bold w-20">{d.label}</Label>
+                  <Label className="text-[10pt] font-bold w-20">{d.label}</Label>
                   <Input 
                     type="number" 
-                    className="h-7 w-16 text-[10px] text-center border-black" 
+                    className="h-7 w-16 text-[10pt] text-center border-black" 
                     value={billQuantities[d.value] || ''} 
                     onChange={(e) => setBillQuantities(prev => ({ ...prev, [d.value]: parseInt(e.target.value) || 0 }))} 
                   />
-                  <span className="text-[10px] font-mono w-16 text-right">B/. {( (billQuantities[d.value] || 0) * d.value ).toFixed(2)}</span>
+                  <span className="text-[10pt] font-mono w-16 text-right">B/. {( (billQuantities[d.value] || 0) * d.value ).toFixed(2)}</span>
                 </div>
               ))}
             </div>
             <div className="space-y-2">
-              <p className="text-[10px] font-black uppercase border-b border-black pb-1 mb-3">Monedas</p>
+              <p className="text-[10pt] font-black uppercase border-b border-black pb-1 mb-3">Monedas</p>
               {coins.map(c => (
                 <div key={c.value} className="flex items-center justify-between gap-2">
-                  <Label className="text-[10px] font-bold w-20">{c.label}</Label>
+                  <Label className="text-[10pt] font-bold w-20">{c.label}</Label>
                   <Input 
                     type="number" 
-                    className="h-7 w-16 text-[10px] text-center border-black" 
+                    className="h-7 w-16 text-[10pt] text-center border-black" 
                     value={coinQuantities[c.value] || ''} 
                     onChange={(e) => setCoinQuantities(prev => ({ ...prev, [c.value]: parseInt(e.target.value) || 0 }))} 
                   />
-                  <span className="text-[10px] font-mono w-16 text-right">B/. {( (coinQuantities[c.value] || 0) * c.value ).toFixed(2)}</span>
+                  <span className="text-[10pt] font-mono w-16 text-right">B/. {( (coinQuantities[c.value] || 0) * c.value ).toFixed(2)}</span>
                 </div>
               ))}
             </div>
           </CardContent>
           <div className="border-t-2 border-black bg-slate-900 text-white p-3 flex justify-between items-center">
-            <span className="text-[10px] font-black uppercase tracking-widest">Total Efectivo en Caja:</span>
+            <span className="text-[10pt] font-black uppercase tracking-widest">Total Efectivo en Caja:</span>
             <span className="text-xl font-black font-mono">B/. {physicalCashTotal.toFixed(2)}</span>
           </div>
         </Card>
@@ -361,8 +358,8 @@ export default function DailyCashReportPage() {
             <CardHeader className="bg-slate-50 border-b-2 border-black py-3 flex flex-row items-center justify-between">
               <CardTitle className="text-xs font-black uppercase">Gastos del Día</CardTitle>
               <div className="flex gap-2 print:hidden">
-                <Input placeholder="Desc." className="h-7 text-[10px] w-24" value={newExpense.description} onChange={e => setNewExpense(p => ({...p, description: e.target.value}))} />
-                <Input type="number" placeholder="B/." className="h-7 text-[10px] w-16" value={newExpense.amount} onChange={e => setNewExpense(p => ({...p, amount: e.target.value}))} />
+                <Input placeholder="Desc." className="h-7 text-[10pt] w-24" value={newExpense.description} onChange={e => setNewExpense(p => ({...p, description: e.target.value}))} />
+                <Input type="number" placeholder="B/." className="h-7 text-[10pt] w-16" value={newExpense.amount} onChange={e => setNewExpense(p => ({...p, amount: e.target.value}))} />
                 <Button size="icon" className="h-7 w-7" onClick={() => { if(newExpense.description && newExpense.amount) { setExpenses(prev => [...prev, { description: newExpense.description, amount: parseFloat(newExpense.amount) }]); setNewExpense({description: '', amount: ''}); } }}><Plus className="h-3 w-3" /></Button>
               </div>
             </CardHeader>
@@ -371,19 +368,19 @@ export default function DailyCashReportPage() {
                 <TableBody>
                   {expenses.map((exp, idx) => (
                     <TableRow key={idx} className="h-8 border-black">
-                      <TableCell className="text-[10px] font-bold uppercase p-2">{exp.description}</TableCell>
-                      <TableCell className="text-[10px] font-mono text-right p-2 w-24">B/. {exp.amount.toFixed(2)}</TableCell>
+                      <TableCell className="text-[10pt] font-bold uppercase p-2">{exp.description}</TableCell>
+                      <TableCell className="text-[10pt] font-mono text-right p-2 w-24">B/. {exp.amount.toFixed(2)}</TableCell>
                       <TableCell className="w-8 p-0 print:hidden">
                         <Button variant="ghost" size="icon" className="h-6 w-6 text-red-600" onClick={() => setExpenses(prev => prev.filter((_, i) => i !== idx))}><Trash2 className="h-3 w-3" /></Button>
                       </TableCell>
                     </TableRow>
                   ))}
-                  {expenses.length === 0 && <TableRow><TableCell className="text-[10px] text-center py-4 text-slate-400 italic">No hay gastos registrados</TableCell></TableRow>}
+                  {expenses.length === 0 && <TableRow><TableCell className="text-[10pt] text-center py-4 text-slate-400 italic">No hay gastos registrados</TableCell></TableRow>}
                 </TableBody>
                 <TableFooter>
                   <TableRow className="bg-slate-50 border-t-2 border-black font-black">
-                    <TableCell className="text-[10px] uppercase p-2">Total Gastos:</TableCell>
-                    <TableCell className="text-[10px] font-mono text-right p-2">B/. {expensesTotal.toFixed(2)}</TableCell>
+                    <TableCell className="text-[10pt] uppercase p-2">Total Gastos:</TableCell>
+                    <TableCell className="text-[10pt] font-mono text-right p-2">B/. {expensesTotal.toFixed(2)}</TableCell>
                     <TableCell className="print:hidden"></TableCell>
                   </TableRow>
                 </TableFooter>
@@ -393,15 +390,15 @@ export default function DailyCashReportPage() {
 
           <Card className={cn("border-4 rounded-none shadow-xl", balance === 0 ? "border-green-600 bg-green-50" : "border-red-600 bg-red-50")}>
             <CardContent className="p-6 flex flex-col items-center justify-center text-center gap-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Resumen de Cuadre</p>
+              <p className="text-[10pt] font-black uppercase tracking-[0.2em] text-slate-500">Resumen de Cuadre</p>
               <div className="flex flex-col">
-                <span className="text-[10px] font-bold text-slate-400">Diferencia (Sobrante/Faltante):</span>
+                <span className="text-[10pt] font-bold text-slate-400">Diferencia (Sobrante/Faltante):</span>
                 <span className={cn("text-4xl font-black font-mono", balance >= 0 ? "text-green-700" : "text-red-700")}>
                   B/. {balance.toFixed(2)}
                 </span>
               </div>
               <div className="w-full h-px bg-slate-200 my-2"></div>
-              <div className="grid grid-cols-2 w-full gap-4 text-[9px] font-bold uppercase">
+              <div className="grid grid-cols-2 w-full gap-4 text-[9pt] font-bold uppercase">
                 <div className="flex flex-col">
                   <span>Esperado (Neto):</span>
                   <span className="text-sm font-black">B/. {(totals.cash - expensesTotal).toFixed(2)}</span>

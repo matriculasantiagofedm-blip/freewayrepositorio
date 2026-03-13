@@ -2,12 +2,12 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDb, useUser } from '@/firebase';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useCollection } from '@/hooks/use-firestore';
 import { cn, toDate } from '@/lib/utils';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo, useState, useEffect } from 'react';
 import type { Contract } from '@/lib/types';
@@ -25,32 +25,58 @@ import {
   BookOpen,
   FileCheck,
   ChevronRight,
-  Users,
-  PieChart,
   History,
   TrendingUp,
   AlertCircle,
   Loader2,
   RefreshCw,
-  Library
+  Library,
+  GripHorizontal
 } from 'lucide-react';
 import { isToday } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Pie, PieChart as ReChartsPieChart, Cell } from 'recharts';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
 const getBalance = (contract: Contract): number => {
     const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
     return Number(details?.balance) || 0;
 };
 
+// Definición de los pasos del flujo operativo
+const INITIAL_FLOW_STEPS = [
+  { id: 'step-enroll', label: '1. Inscripción', sublabel: 'Nuevo Contrato', icon: Plus, color: 'border-blue-100 text-blue-600', hover: 'group-hover:border-blue-500', href: '/contracts/new?type=Curso Auto', roles: ['Administrador', 'Ventas Externas'] },
+  { id: 'step-schedule', label: '2. Agenda', sublabel: 'Programar Clases', icon: BookOpen, color: 'border-amber-100 text-amber-600', hover: 'group-hover:border-amber-500', href: '/manual-schedule', roles: ['Administrador', 'Ventas Externas'] },
+  { id: 'step-payment', label: '3. Cobranza', sublabel: 'Saldos', icon: Receipt, color: 'border-green-100 text-green-600', hover: 'group-hover:border-green-500', href: '/cancellations', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+  { id: 'step-updates', label: '4. Trámites', sublabel: 'Actualización', icon: RefreshCw, color: 'border-indigo-100 text-indigo-600', hover: 'group-hover:border-indigo-500', href: '/updates', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+  { id: 'step-books', label: '5. Tienda', sublabel: 'Venta Libros', icon: Library, color: 'border-orange-100 text-orange-600', hover: 'group-hover:border-orange-500', href: '/book-sales', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+  { id: 'step-cert', label: '6. Finalización', sublabel: 'Folio Oficial', icon: FileSignature, color: 'border-purple-100 text-purple-600', hover: 'group-hover:border-purple-500', href: '/certificates', roles: ['Administrador', 'Ventas Externas'] },
+];
+
 export default function DashboardPage() {
   const db = useDb();
   const { user } = useUser();
   const { role } = useCurrentRole();
   const [mounted, setMounted] = useState(false);
+  const [flowSteps, setFlowSteps] = useState(INITIAL_FLOW_STEPS);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => { 
+    setMounted(true); 
+    // Cargar orden personalizado de localStorage
+    const savedOrder = localStorage.getItem(`dashboard_flow_order_${role}`);
+    if (savedOrder) {
+      try {
+        const orderIds = JSON.parse(savedOrder);
+        const reordered = orderIds.map((id: string) => INITIAL_FLOW_STEPS.find(s => s.id === id)).filter(Boolean);
+        // Añadir nuevos pasos que no estén en el orden guardado
+        const missing = INITIAL_FLOW_STEPS.filter(s => !orderIds.includes(s.id));
+        setFlowSteps([...reordered, ...missing]);
+      } catch (e) {
+        console.error("Error al cargar orden del flujo:", e);
+      }
+    }
+  }, [role]);
 
   const isAdmin = role === 'Administrador';
   const isVentas = role === 'Ventas';
@@ -77,11 +103,34 @@ export default function DashboardPage() {
     return { active, today, overdue, totalOverdue, chartData };
   }, [allContracts, mounted]);
 
+  // Filtrar pasos según el rol
+  const visibleSteps = useMemo(() => {
+    return flowSteps.filter(step => step.roles.includes(role || ''));
+  }, [flowSteps, role]);
+
+  const onDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+
+    const items = Array.from(flowSteps);
+    // Encontrar el índice global del elemento movido dentro de flowSteps
+    const sourceIndexInGlobal = flowSteps.findIndex(s => s.id === visibleSteps[result.source.index].id);
+    const destinationIndexInGlobal = flowSteps.findIndex(s => s.id === visibleSteps[result.destination!.index].id);
+
+    const [reorderedItem] = items.splice(sourceIndexInGlobal, 1);
+    items.splice(destinationIndexInGlobal, 0, reorderedItem);
+
+    setFlowSteps(items);
+    
+    // Guardar el orden de los IDs
+    const orderIds = items.map(i => i.id);
+    localStorage.setItem(`dashboard_flow_order_${role}`, JSON.stringify(orderIds));
+  };
+
   if (!mounted) return null;
 
   return (
     <div className="flex flex-col gap-6 bg-slate-50/50 -m-4 p-4 md:-m-8 md:p-8 min-h-screen">
-      {/* Cabecera Estilo Sage */}
+      {/* Cabecera */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-6">
         <div>
           <h1 className="font-black text-2xl uppercase tracking-tighter text-slate-900 flex items-center gap-2">
@@ -106,94 +155,62 @@ export default function DashboardPage() {
         {/* COLUMNA IZQUIERDA: FLUJO DE TRABAJO (70%) */}
         <div className="lg:col-span-8 space-y-6">
           <Card className="shadow-sm border-slate-200 overflow-hidden">
-            <CardHeader className="bg-slate-50 border-b py-3">
+            <CardHeader className="bg-slate-50 border-b py-3 flex flex-row items-center justify-between">
               <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-600">Flujo Operativo de Estudiantes</CardTitle>
+              <div className="flex items-center gap-2 text-[8px] font-bold text-slate-400 uppercase bg-white px-2 py-1 rounded border">
+                <GripHorizontal className="h-3 w-3" /> Arrastrar para organizar
+              </div>
             </CardHeader>
             <CardContent className="p-10">
-              <div className="relative flex flex-col md:flex-row items-center justify-center gap-4">
-                {/* Paso 1: Inscripción */}
-                {!isVentas && (
-                  <>
-                    <div className="relative z-10 flex flex-col items-center gap-4 group">
-                        <Link href="/contracts/new?type=Curso Auto" className="w-20 h-20 bg-white border-2 border-blue-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-blue-500">
-                            <Plus className="h-8 w-8 text-blue-600" />
-                        </Link>
-                        <div className="text-center">
-                            <p className="font-black text-[9px] uppercase text-slate-900">1. Inscripción</p>
-                            <p className="text-[7px] font-bold text-slate-400 uppercase">Nuevo Contrato</p>
-                        </div>
+              <DragDropContext onDragEnd={onDragEnd}>
+                <Droppable droppableId="flow-steps" direction="horizontal">
+                  {(provided) => (
+                    <div 
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className="relative flex flex-col md:flex-row items-center justify-center gap-4 flex-wrap"
+                    >
+                      {visibleSteps.map((step, index) => (
+                        <Draggable key={step.id} draggableId={step.id} index={index}>
+                          {(draggableProvided, snapshot) => (
+                            <div
+                              ref={draggableProvided.innerRef}
+                              {...draggableProvided.draggableProps}
+                              {...draggableProvided.dragHandleProps}
+                              className="flex items-center gap-4 group"
+                            >
+                              <div className={cn(
+                                "relative z-10 flex flex-col items-center gap-4 transition-all",
+                                snapshot.isDragging ? "scale-110 rotate-2" : ""
+                              )}>
+                                  <Link 
+                                    href={step.href} 
+                                    className={cn(
+                                      "w-20 h-20 bg-white border-2 rounded-3xl flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110",
+                                      step.color,
+                                      step.hover,
+                                      snapshot.isDragging ? "shadow-2xl border-primary" : "shadow-sm"
+                                    )}
+                                  >
+                                      <step.icon className="h-8 w-8" />
+                                  </Link>
+                                  <div className="text-center">
+                                      <p className="font-black text-[9px] uppercase text-slate-900">{step.label}</p>
+                                      <p className="text-[7px] font-bold text-slate-400 uppercase">{step.sublabel}</p>
+                                  </div>
+                              </div>
+                              {index < visibleSteps.length - 1 && (
+                                <ArrowRight className="h-5 w-5 text-slate-200 hidden md:block" />
+                              )}
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
                     </div>
-                    <ArrowRight className="h-5 w-5 text-slate-200 hidden md:block" />
-                  </>
-                )}
-
-                {/* Paso 2: Agenda */}
-                {!isVentas && (
-                  <>
-                    <div className="relative z-10 flex flex-col items-center gap-4 group">
-                        <Link href="/manual-schedule" className="w-20 h-20 bg-white border-2 border-amber-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-amber-500">
-                            <BookOpen className="h-8 w-8 text-amber-600" />
-                        </Link>
-                        <div className="text-center">
-                            <p className="font-black text-[9px] uppercase text-slate-900">2. Agenda</p>
-                            <p className="text-[7px] font-bold text-slate-400 uppercase">Programar Clases</p>
-                        </div>
-                    </div>
-                    <ArrowRight className="h-5 w-5 text-slate-200 hidden md:block" />
-                  </>
-                )}
-
-                {/* Paso 3: Cobro */}
-                <div className="relative z-10 flex flex-col items-center gap-4 group">
-                    <Link href="/cancellations" className="w-20 h-20 bg-white border-2 border-green-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-green-500">
-                        <Receipt className="h-8 w-8 text-green-600" />
-                    </Link>
-                    <div className="text-center">
-                        <p className="font-black text-[9px] uppercase text-slate-900">3. Cobranza</p>
-                        <p className="text-[7px] font-bold text-slate-400 uppercase">Saldos</p>
-                    </div>
-                </div>
-                <ArrowRight className="h-5 w-5 text-slate-200 hidden md:block" />
-
-                {/* Paso 4: Actualizaciones */}
-                <div className="relative z-10 flex flex-col items-center gap-4 group">
-                    <Link href="/updates" className="w-20 h-20 bg-white border-2 border-indigo-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-indigo-500">
-                        <RefreshCw className="h-8 w-8 text-indigo-600" />
-                    </Link>
-                    <div className="text-center">
-                        <p className="font-black text-[9px] uppercase text-slate-900">4. Trámites</p>
-                        <p className="text-[7px] font-bold text-slate-400 uppercase">Actualización</p>
-                    </div>
-                </div>
-                <ArrowRight className="h-5 w-5 text-slate-200 hidden md:block" />
-
-                {/* Paso 5: Libros */}
-                <div className="relative z-10 flex flex-col items-center gap-4 group">
-                    <Link href="/book-sales" className="w-20 h-20 bg-white border-2 border-orange-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-orange-500">
-                        <Library className="h-8 w-8 text-orange-600" />
-                    </Link>
-                    <div className="text-center">
-                        <p className="font-black text-[9px] uppercase text-slate-900">5. Tienda</p>
-                        <p className="text-[7px] font-bold text-slate-400 uppercase">Venta Libros</p>
-                    </div>
-                </div>
-
-                {/* Paso 6: Certificado */}
-                {!isVentas && (
-                  <>
-                    <ArrowRight className="h-5 w-5 text-slate-200 hidden md:block" />
-                    <div className="relative z-10 flex flex-col items-center gap-4 group">
-                        <Link href="/certificates" className="w-20 h-20 bg-white border-2 border-purple-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-purple-500">
-                            <FileSignature className="h-8 w-8 text-purple-600" />
-                        </Link>
-                        <div className="text-center">
-                            <p className="font-black text-[9px] uppercase text-slate-900">6. Finalización</p>
-                            <p className="text-[7px] font-bold text-slate-400 uppercase">Folio Oficial</p>
-                        </div>
-                    </div>
-                  </>
-                )}
-              </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
             </CardContent>
           </Card>
 
@@ -267,7 +284,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="p-0">
               <Table>
-                <TableHeader className="bg-slate-50">
+                <TableHeader>
                   <TableRow>
                     <TableHead className="text-[9px] font-black uppercase h-8">Estudiante</TableHead>
                     <TableHead className="text-right text-[9px] font-black uppercase h-8">Monto</TableHead>

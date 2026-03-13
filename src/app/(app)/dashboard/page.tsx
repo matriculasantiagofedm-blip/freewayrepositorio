@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -29,7 +30,9 @@ import {
   History,
   TrendingUp,
   AlertCircle,
-  Loader2
+  Loader2,
+  RefreshCw,
+  Library
 } from 'lucide-react';
 import { isToday } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -107,23 +110,20 @@ export default function DashboardPage() {
               <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-600">Flujo Operativo de Estudiantes</CardTitle>
             </CardHeader>
             <CardContent className="p-10">
-              <div className="relative flex flex-col md:flex-row items-center justify-center gap-8">
-                {/* Línea conectora de fondo */}
-                <div className="absolute top-1/2 left-0 w-full h-0.5 bg-slate-100 -translate-y-1/2 hidden md:block"></div>
-                
+              <div className="relative flex flex-col md:flex-row items-center justify-center gap-4">
                 {/* Paso 1: Inscripción */}
                 {!isVentas && (
                   <>
                     <div className="relative z-10 flex flex-col items-center gap-4 group">
-                        <Link href="/contracts/new?type=Curso Auto" className="w-24 h-24 bg-white border-2 border-blue-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-blue-500">
-                            <Plus className="h-10 w-10 text-blue-600" />
+                        <Link href="/contracts/new?type=Curso Auto" className="w-20 h-20 bg-white border-2 border-blue-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-blue-500">
+                            <Plus className="h-8 w-8 text-blue-600" />
                         </Link>
                         <div className="text-center">
-                            <p className="font-black text-[10px] uppercase text-slate-900">1. Inscripción</p>
-                            <p className="text-[8px] font-bold text-slate-400 uppercase">Nuevo Contrato</p>
+                            <p className="font-black text-[9px] uppercase text-slate-900">1. Inscripción</p>
+                            <p className="text-[7px] font-bold text-slate-400 uppercase">Nuevo Contrato</p>
                         </div>
                     </div>
-                    <ArrowRight className="h-6 w-6 text-slate-200 hidden md:block" />
+                    <ArrowRight className="h-5 w-5 text-slate-200 hidden md:block" />
                   </>
                 )}
 
@@ -131,40 +131,64 @@ export default function DashboardPage() {
                 {!isVentas && (
                   <>
                     <div className="relative z-10 flex flex-col items-center gap-4 group">
-                        <Link href="/manual-schedule" className="w-24 h-24 bg-white border-2 border-amber-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-amber-500">
-                            <BookOpen className="h-10 w-10 text-amber-600" />
+                        <Link href="/manual-schedule" className="w-20 h-20 bg-white border-2 border-amber-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-amber-500">
+                            <BookOpen className="h-8 w-8 text-amber-600" />
                         </Link>
                         <div className="text-center">
-                            <p className="font-black text-[10px] uppercase text-slate-900">2. Agenda</p>
-                            <p className="text-[8px] font-bold text-slate-400 uppercase">Programar Clases</p>
+                            <p className="font-black text-[9px] uppercase text-slate-900">2. Agenda</p>
+                            <p className="text-[7px] font-bold text-slate-400 uppercase">Programar Clases</p>
                         </div>
                     </div>
-                    <ArrowRight className="h-6 w-6 text-slate-200 hidden md:block" />
+                    <ArrowRight className="h-5 w-5 text-slate-200 hidden md:block" />
                   </>
                 )}
 
                 {/* Paso 3: Cobro */}
                 <div className="relative z-10 flex flex-col items-center gap-4 group">
-                    <Link href="/cancellations" className="w-24 h-24 bg-white border-2 border-green-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-green-500">
-                        <Receipt className="h-10 w-10 text-green-600" />
+                    <Link href="/cancellations" className="w-20 h-20 bg-white border-2 border-green-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-green-500">
+                        <Receipt className="h-8 w-8 text-green-600" />
                     </Link>
                     <div className="text-center">
-                        <p className="font-black text-[10px] uppercase text-slate-900">{isVentas ? '1. Cobranza' : '3. Cobranza'}</p>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase">Pago de Saldos</p>
+                        <p className="font-black text-[9px] uppercase text-slate-900">3. Cobranza</p>
+                        <p className="text-[7px] font-bold text-slate-400 uppercase">Saldos</p>
+                    </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-slate-200 hidden md:block" />
+
+                {/* Paso 4: Actualizaciones */}
+                <div className="relative z-10 flex flex-col items-center gap-4 group">
+                    <Link href="/updates" className="w-20 h-20 bg-white border-2 border-indigo-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-indigo-500">
+                        <RefreshCw className="h-8 w-8 text-indigo-600" />
+                    </Link>
+                    <div className="text-center">
+                        <p className="font-black text-[9px] uppercase text-slate-900">4. Trámites</p>
+                        <p className="text-[7px] font-bold text-slate-400 uppercase">Actualización</p>
+                    </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-slate-200 hidden md:block" />
+
+                {/* Paso 5: Libros */}
+                <div className="relative z-10 flex flex-col items-center gap-4 group">
+                    <Link href="/book-sales" className="w-20 h-20 bg-white border-2 border-orange-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-orange-500">
+                        <Library className="h-8 w-8 text-orange-600" />
+                    </Link>
+                    <div className="text-center">
+                        <p className="font-black text-[9px] uppercase text-slate-900">5. Tienda</p>
+                        <p className="text-[7px] font-bold text-slate-400 uppercase">Venta Libros</p>
                     </div>
                 </div>
 
-                {/* Paso 4: Certificado */}
+                {/* Paso 6: Certificado */}
                 {!isVentas && (
                   <>
-                    <ArrowRight className="h-6 w-6 text-slate-200 hidden md:block" />
+                    <ArrowRight className="h-5 w-5 text-slate-200 hidden md:block" />
                     <div className="relative z-10 flex flex-col items-center gap-4 group">
-                        <Link href="/certificates" className="w-24 h-24 bg-white border-2 border-indigo-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-indigo-500">
-                            <FileSignature className="h-10 w-10 text-indigo-600" />
+                        <Link href="/certificates" className="w-20 h-20 bg-white border-2 border-purple-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-purple-500">
+                            <FileSignature className="h-8 w-8 text-purple-600" />
                         </Link>
                         <div className="text-center">
-                            <p className="font-black text-[10px] uppercase text-slate-900">4. Finalización</p>
-                            <p className="text-[8px] font-bold text-slate-400 uppercase">Confección Folio</p>
+                            <p className="font-black text-[9px] uppercase text-slate-900">6. Finalización</p>
+                            <p className="text-[7px] font-bold text-slate-400 uppercase">Folio Oficial</p>
                         </div>
                     </div>
                   </>

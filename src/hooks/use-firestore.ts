@@ -63,7 +63,7 @@ export function useDoc<T>(ref: DocumentReference<DocumentData> | null | undefine
 /**
  * Hook para suscribirse a una colección o query de Firestore en tiempo real.
  */
-export function useCollection<T>(q: Query<DocumentData> | CollectionReference<DocumentData> | null | undefined) {
+export function useCollection<T>(q: (Query<DocumentData> | CollectionReference<DocumentData> | null | undefined) & { __memo?: boolean }) {
   const [data, setData] = useState<WithId<T>[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -123,7 +123,11 @@ export function useCollection<T>(q: Query<DocumentData> | CollectionReference<Do
 export function useMemoQuery(factory: () => any, deps: any[]) {
     const [q, setQ] = useState<any>(null);
     useEffect(() => {
-        setQ(factory());
+        const query = factory();
+        if (query) {
+            query.__memo = true;
+        }
+        setQ(query);
     }, deps);
     return q;
 }
@@ -131,7 +135,11 @@ export function useMemoQuery(factory: () => any, deps: any[]) {
 export function useMemoDoc(factory: () => any, deps: any[]) {
     const [d, setD] = useState<any>(null);
     useEffect(() => {
-        setD(factory());
+        const doc = factory();
+        if (doc) {
+            doc.__memo = true;
+        }
+        setD(doc);
     }, deps);
     return d;
 }

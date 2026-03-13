@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useDb } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { 
   format, 
@@ -42,33 +42,36 @@ export default function PracticalStartsReport() {
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
 
-  const activeQuery = useMemoQuery(() => (db ? query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed']), orderBy('folioNumber', 'desc')) : null), [db]);
+  // Consulta simplificada para evitar errores de índices. El filtrado se hace en JS.
+  const activeQuery = useMemoQuery(() => (db ? query(collection(db, 'contracts'), orderBy('folioNumber', 'desc')) : null), [db]);
   const { data: contracts, isLoading } = useCollection<Contract>(activeQuery);
 
   const weeklyStarts = useMemo(() => {
     if (!contracts) return [];
     
-    return contracts.map(c => {
-      const details = c.autoMotoDetails || c.deluxeDetails;
-      const schedules = details?.practicalClassSchedules || details?.motoPracticalClassSchedules || (details as any)?.classSchedules || [];
-      
-      if (schedules.length === 0) return null;
+    return contracts
+      .filter(c => c.status === 'active' || c.status === 'completed')
+      .map(c => {
+        const details = c.autoMotoDetails || c.deluxeDetails;
+        const schedules = details?.practicalClassSchedules || details?.motoPracticalClassSchedules || (details as any)?.classSchedules || [];
+        
+        if (schedules.length === 0) return null;
 
-      const firstClassDate = toDate(schedules[0].date);
-      if (isNaN(firstClassDate.getTime())) return null;
+        const firstClassDate = toDate(schedules[0].date);
+        if (isNaN(firstClassDate.getTime())) return null;
 
-      if (isWithinInterval(firstClassDate, { start: weekStart, end: weekEnd })) {
-        return {
-          contract: c,
-          firstDay: firstClassDate,
-          instructor: schedules[0].instructor || 'Pendiente',
-          vehicle: schedules[0].vehicle || 'Pendiente'
-        };
-      }
-      return null;
-    })
-    .filter((item): item is any => item !== null)
-    .sort((a, b) => a.firstDay.getTime() - b.firstDay.getTime());
+        if (isWithinInterval(firstClassDate, { start: weekStart, end: weekEnd })) {
+          return {
+            contract: c,
+            firstDay: firstClassDate,
+            instructor: schedules[0].instructor || 'Pendiente',
+            vehicle: schedules[0].vehicle || 'Pendiente'
+          };
+        }
+        return null;
+      })
+      .filter((item): item is any => item !== null)
+      .sort((a, b) => a.firstDay.getTime() - b.firstDay.getTime());
   }, [contracts, weekStart, weekEnd]);
 
   const handlePrevWeek = () => setCurrentDate(subDays(currentDate, 7));

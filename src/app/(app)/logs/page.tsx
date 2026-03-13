@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDb } from '@/components/firebase-provider';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { Loader2, ClipboardList, Printer, Car, Bike, CalendarDays, ArrowRight, Calendar } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
@@ -20,37 +19,38 @@ export default function LogsPage() {
   const db = useDb();
   const { role } = useCurrentRole();
 
-  // Consulta global de contratos activos o completados para detectar inicios
-  const activeQuery = useMemoQuery(() => (db ? query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed']), orderBy('folioNumber', 'desc')) : null), [db]);
-  const { data: allActiveContracts, isLoading } = useCollection<Contract>(activeQuery);
+  // Consulta simplificada para evitar errores de índices faltantes en producción
+  const activeQuery = useMemoQuery(() => (db ? query(collection(db, 'contracts'), orderBy('folioNumber', 'desc')) : null), [db]);
+  const { data: contracts, isLoading } = useCollection<Contract>(activeQuery);
 
   // Filtrar estudiantes y obtener su PRIMER DÍA de clases prácticas
   const upcomingStarts = useMemo(() => {
-    if (!allActiveContracts) return [];
+    if (!contracts) return [];
     
     const today = startOfToday();
 
-    return allActiveContracts.map(c => {
-      const details = c.autoMotoDetails || c.deluxeDetails;
-      // Combinar posibles arreglos de agenda según el tipo de contrato
-      const schedules = details?.practicalClassSchedules || details?.motoPracticalClassSchedules || (details as any)?.classSchedules || [];
-      
-      if (schedules.length === 0) return null;
+    return contracts
+      .filter(c => c.status === 'active' || c.status === 'completed')
+      .map(c => {
+        const details = c.autoMotoDetails || c.deluxeDetails;
+        const schedules = details?.practicalClassSchedules || details?.motoPracticalClassSchedules || (details as any)?.classSchedules || [];
+        
+        if (schedules.length === 0) return null;
 
-      // Obtener la fecha de la PRIMERA clase registrada
-      const firstClassDate = toDate(schedules[0].date);
-      if (isNaN(firstClassDate.getTime())) return null;
+        // Obtener la fecha de la PRIMERA clase registrada
+        const firstClassDate = toDate(schedules[0].date);
+        if (isNaN(firstClassDate.getTime())) return null;
 
-      return {
-        contract: c,
-        firstDay: firstClassDate,
-      };
-    })
-    .filter((item): item is { contract: Contract, firstDay: Date } => 
-        item !== null && (isAfter(item.firstDay, today) || format(item.firstDay, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd'))
-    )
-    .sort((a, b) => a.firstDay.getTime() - b.firstDay.getTime());
-  }, [allActiveContracts]);
+        return {
+          contract: c,
+          firstDay: firstClassDate,
+        };
+      })
+      .filter((item): item is { contract: Contract, firstDay: Date } => 
+          item !== null && (isAfter(item.firstDay, today) || format(item.firstDay, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd'))
+      )
+      .sort((a, b) => a.firstDay.getTime() - b.firstDay.getTime());
+  }, [contracts]);
 
   // RESTRICCIÓN DE SEGURIDAD PARA ROL VENTAS
   if (role === 'Ventas') {

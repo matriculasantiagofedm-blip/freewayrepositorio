@@ -1,34 +1,38 @@
+
 'use client';
 
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDb } from '@/components/firebase-provider';
 import { collection, query, orderBy } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
-import { Loader2, ClipboardList, Printer, Car, Bike, CalendarDays, ArrowRight, Calendar } from 'lucide-react';
+import { Loader2, ClipboardList, Printer, Car, Bike, CalendarDays, ArrowRight, Calendar, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Badge } from '@/components/ui/badge';
 import { cn, toDate } from '@/lib/utils';
 import Link from 'next/link';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
-import { format, isAfter, startOfToday } from 'date-fns';
+import { format, startOfWeek, endOfWeek, addDays, subDays, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 export default function LogsPage() {
   const db = useDb();
   const { role } = useCurrentRole();
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
 
-  // Consulta simplificada para evitar errores de índices faltantes en producción
+  // Cálculo del rango semanal (Lunes a Domingo)
+  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+
+  // Consulta simplificada
   const activeQuery = useMemoQuery(() => (db ? query(collection(db, 'contracts'), orderBy('folioNumber', 'desc')) : null), [db]);
   const { data: contracts, isLoading } = useCollection<Contract>(activeQuery);
 
-  // Filtrar estudiantes y obtener su PRIMER DÍA de clases prácticas
-  const upcomingStarts = useMemo(() => {
+  // Filtrar estudiantes por el rango semanal de su PRIMER DÍA
+  const startsInWeek = useMemo(() => {
     if (!contracts) return [];
     
-    const today = startOfToday();
-
     return contracts
       .filter(c => c.status === 'active' || c.status === 'completed')
       .map(c => {
@@ -47,10 +51,15 @@ export default function LogsPage() {
         };
       })
       .filter((item): item is { contract: Contract, firstDay: Date } => 
-          item !== null && (isAfter(item.firstDay, today) || format(item.firstDay, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd'))
+          item !== null && isWithinInterval(item.firstDay, { start: weekStart, end: weekEnd })
       )
       .sort((a, b) => a.firstDay.getTime() - b.firstDay.getTime());
-  }, [contracts]);
+  }, [contracts, weekStart, weekEnd]);
+
+  // Navegación de fechas
+  const handlePrevWeek = () => setCurrentDate(subDays(currentDate, 7));
+  const handleNextWeek = () => setCurrentDate(addDays(currentDate, 7));
+  const handleGoToday = () => setCurrentDate(new Date());
 
   // RESTRICCIÓN DE SEGURIDAD PARA ROL VENTAS
   if (role === 'Ventas') {
@@ -81,12 +90,11 @@ export default function LogsPage() {
     const details = contract.autoMotoDetails || contract.deluxeDetails || contract.ampliacionesDetails;
     const plan = (details as any)?.coursePlan || '';
     const planUpper = plan.toUpperCase();
-    const typeUpper = contract.type.toUpperCase();
     const transmission = (details as any)?.vehicleTransmission || 'Manual';
     
     if (planUpper.includes('YA SE MANEJAR')) return 'already-know';
 
-    const isMoto = typeUpper.includes('MOTO') || planUpper.includes('MOTO');
+    const isMoto = contract.type === 'Curso Moto' || planUpper.includes('MOTO');
     const isAutomatic = transmission === 'Automático';
     const prefix = isMoto ? 'moto-manual-' : (isAutomatic ? 'auto-automatic-' : 'manual-');
     
@@ -113,13 +121,31 @@ export default function LogsPage() {
 
   return (
     <div className="flex flex-col gap-8 pb-20">
-        <div className="flex items-center gap-3">
-            <div className="bg-primary p-2 rounded-lg">
-                <ClipboardList className="h-6 w-6 text-white" />
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+                <div className="bg-primary p-2 rounded-lg">
+                    <ClipboardList className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                    <h1 className="font-headline text-3xl font-bold uppercase tracking-tight">Bitácoras de Control</h1>
+                    <p className="text-muted-foreground text-sm font-medium">Listado semanal de inicios de capacitación práctica.</p>
+                </div>
             </div>
-            <div>
-                <h1 className="font-headline text-3xl font-bold uppercase tracking-tight">Bitácoras de Control</h1>
-                <p className="text-muted-foreground text-sm font-medium">Listado de inicios de capacitación práctica.</p>
+
+            {/* Selector de Semanas */}
+            <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm">
+                <Button variant="ghost" size="icon" onClick={handlePrevWeek} className="h-9 w-9"><ChevronLeft className="h-4 w-4" /></Button>
+                <div className="px-4 text-center min-w-[200px]">
+                    <p className="text-[10px] font-black uppercase text-blue-600 tracking-widest leading-none mb-1">Filtrando Semana:</p>
+                    <p className="text-xs font-bold uppercase text-slate-700">
+                        {format(weekStart, "d MMM", { locale: es })} - {format(weekEnd, "d MMM", { locale: es })}
+                    </p>
+                </div>
+                <Button variant="ghost" size="icon" onClick={handleNextWeek} className="h-9 w-9"><ChevronRight className="h-4 w-4" /></Button>
+                <div className="border-l h-6 mx-1"></div>
+                <Button variant="ghost" size="sm" onClick={handleGoToday} className="h-9 px-3 text-[10px] font-black uppercase text-slate-500 hover:text-primary">
+                    Hoy
+                </Button>
             </div>
         </div>
 
@@ -132,15 +158,15 @@ export default function LogsPage() {
                                 <Calendar className="h-6 w-6 text-blue-400" />
                             </div>
                             <div>
-                                <CardTitle className="text-lg font-black uppercase tracking-widest">Próximos Inicios</CardTitle>
+                                <CardTitle className="text-lg font-black uppercase tracking-widest">Inicios de la Semana</CardTitle>
                                 <CardDescription className="text-xs text-blue-200/60 font-bold uppercase">
-                                    Filtrado por fecha de primera clase
+                                    Estudiantes citados para su primer día
                                 </CardDescription>
                             </div>
                         </div>
                         <div className="text-right">
                             <Badge className="bg-blue-600 text-white border-none font-black text-xs px-3 h-8">
-                                {upcomingStarts.length} ESTUDIANTES
+                                {startsInWeek.length} ENCONTRADOS
                             </Badge>
                         </div>
                     </div>
@@ -151,9 +177,9 @@ export default function LogsPage() {
                             <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
                             <p className="text-xs font-black text-slate-400 uppercase tracking-[0.3em]">Cargando Listado...</p>
                         </div>
-                    ) : upcomingStarts.length > 0 ? (
+                    ) : startsInWeek.length > 0 ? (
                         <div className="divide-y border-b">
-                            {upcomingStarts.map(({ contract, firstDay }) => {
+                            {startsInWeek.map(({ contract, firstDay }) => {
                                 const recommended = getRecommendedLogType(contract);
                                 const instructor = getInstructorName(contract);
                                 const isMoto = recommended.startsWith('moto-');
@@ -210,8 +236,8 @@ export default function LogsPage() {
                                 <ClipboardList className="h-16 w-16 text-slate-300" />
                             </div>
                             <div className="space-y-2">
-                                <p className="text-sm font-black uppercase tracking-widest text-slate-600">Sin nuevos inicios detectados</p>
-                                <p className="text-xs font-medium text-slate-400 max-w-xs mx-auto">No hay contratos activos con clases prácticas futuras programadas en el sistema.</p>
+                                <p className="text-sm font-black uppercase tracking-widest text-slate-600">Sin inicios esta semana</p>
+                                <p className="text-xs font-medium text-slate-400 max-w-xs mx-auto">No se detectaron estudiantes con su primera sesión práctica programada para este rango de fechas.</p>
                             </div>
                         </div>
                     )}
@@ -219,11 +245,11 @@ export default function LogsPage() {
             </Card>
             
             <div className="mt-8 bg-blue-50 border border-blue-100 p-4 rounded-xl flex items-start gap-3">
-                <div className="bg-blue-100 p-1.5 rounded-lg shrink-0 mt-0.5"><ArrowRight className="h-4 w-4 text-blue-600" /></div>
+                <div className="bg-blue-100 p-1.5 rounded-lg shrink-0 mt-0.5"><RefreshCw className="h-4 w-4 text-blue-600" /></div>
                 <div>
-                    <p className="text-[10px] font-black uppercase text-blue-800 mb-1">Nota de Operación</p>
+                    <p className="text-[10px] font-black uppercase text-blue-800 mb-1">Guía de Operación</p>
                     <p className="text-[10px] font-medium text-blue-700 leading-relaxed">
-                        Este listado se alimenta de la **Agenda Práctica** registrada en cada contrato. Los estudiantes se ordenan cronológicamente según su primera sesión de manejo para que puedas preparar la papelería física con antelación.
+                        Navega entre semanas usando los controles superiores. Este tablero filtra automáticamente a los alumnos según la fecha de su **primer turno práctico** agendado en el expediente. Utilízalo para preparar la documentación física antes de que los estudiantes lleguen a su primera sesión.
                     </p>
                 </div>
             </div>

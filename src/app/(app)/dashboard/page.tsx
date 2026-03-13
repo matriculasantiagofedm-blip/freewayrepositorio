@@ -45,11 +45,12 @@ const getBalance = (contract: Contract): number => {
     return Number(details?.balance) || 0;
 };
 
-// Pasos enfocados en la parte COMERCIAL del flujo
+// Pasos enfocados en la parte COMERCIAL del flujo, incluyendo Cierre de Caja
 const INITIAL_FLOW_STEPS = [
   { id: 'step-payment', label: '1. Cobranza', sublabel: 'Saldos Estudiantes', icon: Receipt, color: 'border-green-100 text-green-600', hover: 'group-hover:border-green-500', href: '/cancellations', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
   { id: 'step-updates', label: '2. Trámites', sublabel: 'Actualizaciones', icon: RefreshCw, color: 'border-indigo-100 text-indigo-600', hover: 'group-hover:border-indigo-500', href: '/updates', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
   { id: 'step-books', label: '3. Tienda', sublabel: 'Venta de Libros', icon: Library, color: 'border-orange-100 text-orange-600', hover: 'group-hover:border-orange-500', href: '/book-sales', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+  { id: 'step-cash-close', label: '4. Cierre', sublabel: 'Control de Caja', icon: Wallet, color: 'border-emerald-100 text-emerald-600', hover: 'group-hover:border-emerald-500', href: '/informes/daily-cash', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
 ];
 
 export default function DashboardPage() {
@@ -247,7 +248,6 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent className="p-2 flex flex-col gap-1">
                     {[
-                        { label: 'Cierre de Caja', href: '/informes/daily-cash', icon: Receipt, color: 'text-emerald-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
                         { label: 'Agenda Práctica', href: '/manual-schedule', icon: CalendarClock, color: 'text-amber-600', roles: ['Administrador', 'Ventas Externas'] },
                         { label: 'Impresión Certificados', href: '/certificates', icon: FileSignature, color: 'text-purple-600', roles: ['Administrador'] },
                         { label: 'Bitácoras de Control', href: '/logs', icon: BookOpen, color: 'text-blue-600', roles: ['Administrador', 'Ventas Externas'] },

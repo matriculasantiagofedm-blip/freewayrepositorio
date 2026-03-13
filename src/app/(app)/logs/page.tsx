@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -6,49 +7,49 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useDb } from '@/components/firebase-provider';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
-import { Loader2, ClipboardList, Printer, Car, Bike, CalendarDays, ArrowRight } from 'lucide-react';
+import { Loader2, ClipboardList, Printer, Car, Bike, CalendarDays, ArrowRight, Calendar } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Badge } from '@/components/ui/badge';
 import { cn, toDate } from '@/lib/utils';
 import Link from 'next/link';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
-import { startOfWeek, endOfWeek, isWithinInterval, format } from 'date-fns';
+import { format, isAfter, startOfToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 export default function LogsPage() {
   const db = useDb();
   const { role } = useCurrentRole();
 
-  // Consulta global de contratos activos para detectar inicios de semana
+  // Consulta global de contratos activos o completados para detectar inicios
   const activeQuery = useMemoQuery(() => (db ? query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed']), orderBy('folioNumber', 'desc')) : null), [db]);
-  const { data: allActiveContracts, isLoading: isLoadingWeekly } = useCollection<Contract>(activeQuery);
+  const { data: allActiveContracts, isLoading } = useCollection<Contract>(activeQuery);
 
-  // Filtrar estudiantes que inician clases prácticas ESTA SEMANA (Lunes a Domingo)
-  const startingThisWeek = useMemo(() => {
+  // Filtrar estudiantes y obtener su PRIMER DÍA de clases prácticas
+  const upcomingStarts = useMemo(() => {
     if (!allActiveContracts) return [];
     
-    const now = new Date();
-    const start = startOfWeek(now, { weekStartsOn: 1 });
-    const end = endOfWeek(now, { weekStartsOn: 1 });
+    const today = startOfToday();
 
-    return allActiveContracts.filter(c => {
+    return allActiveContracts.map(c => {
       const details = c.autoMotoDetails || c.deluxeDetails;
       // Combinar posibles arreglos de agenda según el tipo de contrato
       const schedules = details?.practicalClassSchedules || details?.motoPracticalClassSchedules || (details as any)?.classSchedules || [];
       
-      if (schedules.length === 0) return false;
+      if (schedules.length === 0) return null;
 
-      // Obtener la fecha de la PRIMERA clase registrada para determinar el inicio del curso
+      // Obtener la fecha de la PRIMERA clase registrada
       const firstClassDate = toDate(schedules[0].date);
-      if (isNaN(firstClassDate.getTime())) return false;
+      if (isNaN(firstClassDate.getTime())) return null;
 
-      return isWithinInterval(firstClassDate, { start, end });
-    }).sort((a, b) => {
-        // Ordenar por fecha de la primera clase
-        const dateA = toDate(a.autoMotoDetails?.practicalClassSchedules?.[0]?.date || a.autoMotoDetails?.motoPracticalClassSchedules?.[0]?.date || 0);
-        const dateB = toDate(b.autoMotoDetails?.practicalClassSchedules?.[0]?.date || b.autoMotoDetails?.motoPracticalClassSchedules?.[0]?.date || 0);
-        return dateA.getTime() - dateB.getTime();
-    });
+      return {
+        contract: c,
+        firstDay: firstClassDate,
+      };
+    })
+    .filter((item): item is { contract: Contract, firstDay: Date } => 
+        item !== null && (isAfter(item.firstDay, today) || format(item.firstDay, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd'))
+    )
+    .sort((a, b) => a.firstDay.getTime() - b.firstDay.getTime());
   }, [allActiveContracts]);
 
   // RESTRICCIÓN DE SEGURIDAD PARA ROL VENTAS
@@ -118,7 +119,7 @@ export default function LogsPage() {
             </div>
             <div>
                 <h1 className="font-headline text-3xl font-bold uppercase tracking-tight">Bitácoras de Control</h1>
-                <p className="text-muted-foreground text-sm font-medium">Listado de alumnos que inician capacitación práctica esta semana.</p>
+                <p className="text-muted-foreground text-sm font-medium">Listado de inicios de capacitación práctica.</p>
             </div>
         </div>
 
@@ -128,40 +129,35 @@ export default function LogsPage() {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div className="bg-white/10 p-3 rounded-2xl">
-                                <CalendarDays className="h-6 w-6 text-blue-400" />
+                                <Calendar className="h-6 w-6 text-blue-400" />
                             </div>
                             <div>
-                                <CardTitle className="text-lg font-black uppercase tracking-widest">Inicios de Clases Prácticas</CardTitle>
+                                <CardTitle className="text-lg font-black uppercase tracking-widest">Próximos Inicios</CardTitle>
                                 <CardDescription className="text-xs text-blue-200/60 font-bold uppercase">
-                                    Semana: {format(startOfWeek(new Date(), { weekStartsOn: 1 }), "d 'de' MMM", { locale: es })} al {format(endOfWeek(new Date(), { weekStartsOn: 1 }), "d 'de' MMM", { locale: es })}
+                                    Filtrado por fecha de primera clase
                                 </CardDescription>
                             </div>
                         </div>
                         <div className="text-right">
                             <Badge className="bg-blue-600 text-white border-none font-black text-xs px-3 h-8">
-                                {startingThisWeek.length} ESTUDIANTES
+                                {upcomingStarts.length} ESTUDIANTES
                             </Badge>
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                    {isLoadingWeekly ? (
+                    {isLoading ? (
                         <div className="p-24 text-center flex flex-col items-center gap-4">
                             <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
-                            <p className="text-xs font-black text-slate-400 uppercase tracking-[0.3em]">Consultando Agenda Semanal...</p>
+                            <p className="text-xs font-black text-slate-400 uppercase tracking-[0.3em]">Cargando Listado...</p>
                         </div>
-                    ) : startingThisWeek.length > 0 ? (
+                    ) : upcomingStarts.length > 0 ? (
                         <div className="divide-y border-b">
-                            {startingThisWeek.map((contract) => {
+                            {upcomingStarts.map(({ contract, firstDay }) => {
                                 const recommended = getRecommendedLogType(contract);
                                 const instructor = getInstructorName(contract);
                                 const isMoto = recommended.startsWith('moto-');
                                 const transmission = (contract.autoMotoDetails as any)?.vehicleTransmission || 'Manual';
-                                
-                                // Obtener la fecha exacta del primer día
-                                const firstSession = contract.autoMotoDetails?.practicalClassSchedules?.[0] || 
-                                                 contract.autoMotoDetails?.motoPracticalClassSchedules?.[0];
-                                const startDate = toDate(firstSession?.date);
 
                                 return (
                                     <div key={contract.id} className="p-6 hover:bg-slate-50/80 transition-all flex flex-col md:flex-row items-center justify-between gap-6 group">
@@ -178,8 +174,9 @@ export default function LogsPage() {
                                                     <Badge variant="outline" className="text-[9px] font-black uppercase bg-white border-slate-200">
                                                         Folio {String(contract.folioNumber).padStart(6, '0')}
                                                     </Badge>
-                                                    <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded uppercase border border-blue-100">
-                                                        Inicia: {format(startDate, 'EEEE d', { locale: es })}
+                                                    <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded uppercase border border-blue-100 flex items-center gap-1.5">
+                                                        <CalendarDays className="h-3 w-3" /> 
+                                                        PRIMER DÍA: {format(firstDay, "EEEE d 'de' MMMM", { locale: es })}
                                                     </span>
                                                 </div>
                                                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] font-bold text-slate-500 uppercase">
@@ -213,8 +210,8 @@ export default function LogsPage() {
                                 <ClipboardList className="h-16 w-16 text-slate-300" />
                             </div>
                             <div className="space-y-2">
-                                <p className="text-sm font-black uppercase tracking-widest text-slate-600">Sin nuevos inicios registrados</p>
-                                <p className="text-xs font-medium text-slate-400 max-w-xs mx-auto">No se han detectado contratos cuya primera clase práctica sea en el transcurso de esta semana.</p>
+                                <p className="text-sm font-black uppercase tracking-widest text-slate-600">Sin nuevos inicios detectados</p>
+                                <p className="text-xs font-medium text-slate-400 max-w-xs mx-auto">No hay contratos activos con clases prácticas futuras programadas en el sistema.</p>
                             </div>
                         </div>
                     )}
@@ -226,7 +223,7 @@ export default function LogsPage() {
                 <div>
                     <p className="text-[10px] font-black uppercase text-blue-800 mb-1">Nota de Operación</p>
                     <p className="text-[10px] font-medium text-blue-700 leading-relaxed">
-                        Este listado se actualiza en tiempo real basado en la **Agenda Práctica** de cada contrato. Si un estudiante no aparece aquí, verifica que su primera clase esté agendada para una fecha dentro de la semana actual en su expediente correspondiente.
+                        Este listado se alimenta de la **Agenda Práctica** registrada en cada contrato. Los estudiantes se ordenan cronológicamente según su primera sesión de manejo para que puedas preparar la papelería física con antelación.
                     </p>
                 </div>
             </div>

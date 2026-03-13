@@ -96,7 +96,6 @@ export default function DashboardPage() {
       title: 'Informes y Control',
       actions: [
         { name: 'Cierre de Caja', href: '/informes/daily-cash', bgColor: 'bg-green-50', textColor: 'text-green-700', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-        { name: 'Agenda Práctica Semanal', href: '/informes/vehicle-schedule', bgColor: 'bg-blue-50', textColor: 'text-blue-700', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
         { name: 'Bitácoras de Clase', href: '/logs', bgColor: 'bg-slate-50', textColor: 'text-slate-600', roles: ['Administrador', 'Ventas Externas'] },
         { name: 'Constancia ATTT', href: '/att-evaluations', bgColor: 'bg-blue-50', textColor: 'text-blue-700', roles: ['Administrador', 'Ventas Externas'] },
         { name: 'Exámenes Teóricos', isDropdown: true, roles: ['Administrador'], bgColor: 'bg-orange-50', textColor: 'text-orange-600' },

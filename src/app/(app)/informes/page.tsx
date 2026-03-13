@@ -23,15 +23,6 @@ export default function ReportsIndexPage() {
 
   const reportCards = [
     {
-      title: 'Cierre de Caja',
-      description: 'Arqueo diario de ingresos por métodos de pago físicos (Efectivo, Yappy, BAC, etc).',
-      href: '/informes/daily-cash',
-      icon: Wallet,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
-      roles: ['Administrador', 'Ventas', 'Ventas Externas']
-    },
-    {
       title: 'Agenda Práctica Semanal',
       description: 'Agenda consolidada por vehículo y disponibilidad de turnos prácticos en formato semanal.',
       href: '/informes/vehicle-schedule',

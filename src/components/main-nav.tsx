@@ -44,7 +44,6 @@ const navLinks = [
     label: 'Informes',
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     children: [
-      { href: '/informes/daily-cash', label: 'Cierre de Caja', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { href: '/informes/vehicle-schedule', label: 'Agenda Práctica Semanal', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { href: '/informes/theoretical-schedule', label: 'Agenda Teórica Semanal', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { href: '/informes/cancellation-payments', label: 'Reporte Abonos', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },

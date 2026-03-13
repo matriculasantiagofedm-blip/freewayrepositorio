@@ -119,11 +119,6 @@ export default function DashboardPage() {
           <h1 className="font-headline text-3xl font-bold text-slate-900 uppercase tracking-tight">Panel de Control</h1>
           <p className="text-muted-foreground font-medium">Gestión unificada de Freeway Escuela de Manejo</p>
         </div>
-        <Button asChild variant="outline" className="border-primary text-primary font-black uppercase text-xs tracking-widest h-11 px-6">
-          <Link href="/informes">
-            <BarChart3 className="mr-2 h-4 w-4" /> Centro de Informes
-          </Link>
-        </Button>
       </div>
 
       {isAdmin && !isContractsLoading && statsValues.pendingAgenda.length > 0 && (

@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/popover";
 import { useToast } from '@/hooks/use-toast';
 import type { ClassStatus } from '@/lib/types';
+import { useCurrentRole } from '@/hooks/use-current-role';
 
 const TIME_SLOTS = [
   { id: '8am-10am', label: '08:00 - 10:00' },
@@ -99,6 +100,7 @@ const getVehicleColor = (vehicleName: string = '', status?: ClassStatus) => {
 export default function WeeklyScheduleReport() {
   const db = useDb();
   const { toast } = useToast();
+  const { role } = useCurrentRole();
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [isDownloading, setIsDownloading] = useState(false);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
@@ -328,109 +330,121 @@ export default function WeeklyScheduleReport() {
                           </div>
                         ) : (
                           <div className="space-y-2">
-                            {sessions.map((s, idx) => (
-                              <Popover key={s.id || idx}>
-                                <PopoverTrigger asChild>
-                                  <div className={cn(
-                                    "relative p-3 rounded-lg border-l-4 shadow-sm flex flex-col gap-1 cursor-pointer transition-all hover:scale-[1.02] group",
-                                    getVehicleColor(s.vehicle, s.status)
-                                  )}>
-                                    <div className="absolute top-1 right-1.5 flex items-center gap-1">
-                                        {s.refueled && <Fuel className={cn("h-2.5 w-2.5 animate-pulse", s.status === 'missed' ? 'text-white' : 'text-blue-600')} />}
-                                        {idx === 0 && <span className="bg-white/80 text-[7pt] font-black px-1 rounded-sm border border-current/20 text-slate-900">{sessions.length}/{capacity}</span>}
-                                    </div>
-                                    
-                                    <p className="text-[9px] font-black uppercase leading-tight truncate pr-6">{s.student}</p>
-                                    <p className="text-[7px] font-bold opacity-70 uppercase truncate">{s.plan}</p>
-                                    
-                                    <div className="flex items-center gap-1 mt-1 opacity-80">
-                                        <User className="h-2.5 w-2.5" />
-                                        <span className="text-[7px] font-black uppercase truncate">{s.instructor}</span>
-                                    </div>
-
-                                    <div className="flex justify-between items-end mt-1 border-t border-current/10 pt-1">
-                                        <div className="flex flex-col">
-                                            <span className="text-[7.5px] font-black uppercase truncate max-w-[60px]">{s.vehicle}</span>
-                                            {s.status && s.status !== 'scheduled' && (
-                                                <span className={cn("text-[6px] font-black uppercase leading-none", s.status === 'missed' ? 'text-white' : 'text-red-600')}>
-                                                  {s.status === 'missed' ? 'Inasistencia' : s.status === 'cancelled_vehicle' ? 'Falló Vehículo' : 'Reagendada'}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <span className={cn("text-[7px] font-black px-1 rounded-full h-3.5 min-w-[14px] flex items-center justify-center", s.status === 'missed' ? 'bg-white text-red-600' : 'bg-black text-white')}>#{s.sessionNum}</span>
-                                    </div>
+                            {sessions.map((s, idx) => {
+                              const SessionCard = (
+                                <div className={cn(
+                                  "relative p-3 rounded-lg border-l-4 shadow-sm flex flex-col gap-1 cursor-pointer transition-all hover:scale-[1.02] group",
+                                  getVehicleColor(s.vehicle, s.status)
+                                )}>
+                                  <div className="absolute top-1 right-1.5 flex items-center gap-1">
+                                      {s.refueled && <Fuel className={cn("h-2.5 w-2.5 animate-pulse", s.status === 'missed' ? 'text-white' : 'text-blue-600')} />}
+                                      {idx === 0 && <span className="bg-white/80 text-[7pt] font-black px-1 rounded-sm border border-current/20 text-slate-900">{sessions.length}/{capacity}</span>}
                                   </div>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[240px] p-0 overflow-hidden shadow-2xl border-slate-200" side="right" align="start">
-                                  <div className="p-3 bg-slate-900 text-white">
-                                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Gestión de Turno</p>
-                                      <p className="text-sm font-black uppercase truncate">{s.student}</p>
+                                  
+                                  <p className="text-[9px] font-black uppercase leading-tight truncate pr-6">{s.student}</p>
+                                  <p className="text-[7px] font-bold opacity-70 uppercase truncate">{s.plan}</p>
+                                  
+                                  <div className="flex items-center gap-1 mt-1 opacity-80">
+                                      <User className="h-2.5 w-2.5" />
+                                      <span className="text-[7px] font-black uppercase truncate">{s.instructor}</span>
                                   </div>
-                                  <div className="p-2 grid grid-cols-1 gap-1 bg-white">
-                                      <Button 
-                                        variant="ghost" 
-                                        size="sm" 
-                                        className={cn("justify-start h-9 text-[10px] font-black uppercase gap-3", s.refueled ? "text-blue-600 bg-blue-50" : "text-slate-600")}
-                                        onClick={() => updateSession(s, { refueled: !s.refueled })}
-                                        disabled={!!isUpdating}
-                                      >
-                                          <Fuel className="h-4 w-4" /> {s.refueled ? 'Quitar Gasolina' : 'Marcó Gasolina'}
-                                      </Button>
-                                      
-                                      <div className="h-px bg-slate-100 my-1"></div>
 
-                                      <Button 
-                                        variant="ghost" 
-                                        size="sm" 
-                                        className="justify-start h-9 text-[10px] font-black uppercase gap-3 text-red-600 hover:bg-red-50"
-                                        onClick={() => updateSession(s, { status: 'cancelled_vehicle' })}
-                                        disabled={!!isUpdating}
-                                      >
-                                          <XCircle className="h-4 w-4" /> Cancelada por Vehículo
-                                      </Button>
-
-                                      <Button 
-                                        variant="ghost" 
-                                        size="sm" 
-                                        className="justify-start h-9 text-[10px] font-black uppercase gap-3 text-amber-600 hover:bg-amber-50"
-                                        onClick={() => updateSession(s, { status: 'rescheduled' })}
-                                        disabled={!!isUpdating}
-                                      >
-                                          <RotateCcw className="h-4 w-4" /> Reagendada
-                                      </Button>
-
-                                      <Button 
-                                        variant="ghost" 
-                                        size="sm" 
-                                        className="justify-start h-9 text-[10px] font-black uppercase gap-3 text-red-800 hover:bg-red-100"
-                                        onClick={() => updateSession(s, { status: 'missed' })}
-                                        disabled={!!isUpdating}
-                                      >
-                                          <AlertCircle className="h-4 w-4" /> No Asistió
-                                      </Button>
-
-                                      <Button 
-                                        variant="ghost" 
-                                        size="sm" 
-                                        className="justify-start h-9 text-[10px] font-black uppercase gap-3 text-green-600 hover:bg-green-50"
-                                        onClick={() => updateSession(s, { status: 'scheduled' })}
-                                        disabled={!!isUpdating}
-                                      >
-                                          <Clock className="h-4 w-4" /> Restablecer Programada
-                                      </Button>
-
-                                      <div className="h-px bg-slate-100 my-1"></div>
-
-                                      <Link 
-                                          href={s.contractId ? `/contracts/${s.contractId}` : `/manual-schedule`}
-                                          className="text-[10px] font-black uppercase text-blue-700 hover:underline flex items-center gap-3 p-2 bg-blue-50 rounded-md border border-blue-100 print:hidden"
-                                      >
-                                          <Settings2 className="h-4 w-4" /> Ver Expediente Completo
-                                      </Link>
+                                  <div className="flex justify-between items-end mt-1 border-t border-current/10 pt-1">
+                                      <div className="flex flex-col">
+                                          <span className="text-[7.5px] font-black uppercase truncate max-w-[60px]">{s.vehicle}</span>
+                                          {s.status && s.status !== 'scheduled' && (
+                                              <span className={cn("text-[6px] font-black uppercase leading-none", s.status === 'missed' ? 'text-white' : 'text-red-600')}>
+                                                {s.status === 'missed' ? 'Inasistencia' : s.status === 'cancelled_vehicle' ? 'Falló Vehículo' : 'Reagendada'}
+                                              </span>
+                                          )}
+                                      </div>
+                                      <span className={cn("text-[7px] font-black px-1 rounded-full h-3.5 min-w-[14px] flex items-center justify-center", s.status === 'missed' ? 'bg-white text-red-600' : 'bg-black text-white')}>#{s.sessionNum}</span>
                                   </div>
-                                </PopoverContent>
-                              </Popover>
-                            ))}
+                                </div>
+                              );
+
+                              // SEGURIDAD: Solo Administrador y Ventas Externas pueden gestionar turnos.
+                              // Se oculta la gestión para el rol 'Ventas'.
+                              if (role === 'Ventas') {
+                                return <div key={s.id || idx}>{SessionCard}</div>;
+                              }
+
+                              return (
+                                <Popover key={s.id || idx}>
+                                  <PopoverTrigger asChild>
+                                    {SessionCard}
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-[240px] p-0 overflow-hidden shadow-2xl border-slate-200" side="right" align="start">
+                                    <div className="p-3 bg-slate-900 text-white">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Gestión de Turno</p>
+                                        <p className="text-sm font-black uppercase truncate">{s.student}</p>
+                                    </div>
+                                    <div className="p-2 grid grid-cols-1 gap-1 bg-white">
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm" 
+                                          className={cn("justify-start h-9 text-[10px] font-black uppercase gap-3", s.refueled ? "text-blue-600 bg-blue-50" : "text-slate-600")}
+                                          onClick={() => updateSession(s, { refueled: !s.refueled })}
+                                          disabled={!!isUpdating}
+                                        >
+                                            <Fuel className="h-4 w-4" /> {s.refueled ? 'Quitar Gasolina' : 'Marcó Gasolina'}
+                                        </Button>
+                                        
+                                        <div className="h-px bg-slate-100 my-1"></div>
+
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm" 
+                                          className="justify-start h-9 text-[10px] font-black uppercase gap-3 text-red-600 hover:bg-red-50"
+                                          onClick={() => updateSession(s, { status: 'cancelled_vehicle' })}
+                                          disabled={!!isUpdating}
+                                        >
+                                            <XCircle className="h-4 w-4" /> Cancelada por Vehículo
+                                        </Button>
+
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm" 
+                                          className="justify-start h-9 text-[10px] font-black uppercase gap-3 text-amber-600 hover:bg-amber-50"
+                                          onClick={() => updateSession(s, { status: 'rescheduled' })}
+                                          disabled={!!isUpdating}
+                                        >
+                                            <RotateCcw className="h-4 w-4" /> Reagendada
+                                        </Button>
+
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm" 
+                                          className="justify-start h-9 text-[10px] font-black uppercase gap-3 text-red-800 hover:bg-red-100"
+                                          onClick={() => updateSession(s, { status: 'missed' })}
+                                          disabled={!!isUpdating}
+                                        >
+                                            <AlertCircle className="h-4 w-4" /> No Asistió
+                                        </Button>
+
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm" 
+                                          className="justify-start h-9 text-[10px] font-black uppercase gap-3 text-green-600 hover:bg-green-50"
+                                          onClick={() => updateSession(s, { status: 'scheduled' })}
+                                          disabled={!!isUpdating}
+                                        >
+                                            <Clock className="h-4 w-4" /> Restablecer Programada
+                                        </Button>
+
+                                        <div className="h-px bg-slate-100 my-1"></div>
+
+                                        <Link 
+                                            href={s.contractId ? `/contracts/${s.contractId}` : `/manual-schedule`}
+                                            className="text-[10px] font-black uppercase text-blue-700 hover:underline flex items-center gap-3 p-2 bg-blue-50 rounded-md border border-blue-100 print:hidden"
+                                        >
+                                            <Settings2 className="h-4 w-4" /> Ver Expediente Completo
+                                        </Link>
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                              )
+                            })}
                             {sessions.length === 0 && (
                               <div className="h-full flex items-center justify-center opacity-5">
                                 <span className="text-[10px] font-black uppercase tracking-[0.3em]">Libre</span>

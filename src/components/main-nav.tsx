@@ -17,7 +17,7 @@ import {
 import { Separator } from './ui/separator';
 
 const navLinks = [
-  { href: '/dashboard', label: 'Inicio', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+  { href: '/dashboard', label: 'Panel de Control', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
   { href: '/clients', label: 'Clientes', roles: ['Administrador'] },
   {
     label: 'Caja y Operaciones',

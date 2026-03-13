@@ -10,9 +10,33 @@ import { collection } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo, useState, useEffect } from 'react';
 import type { Contract } from '@/lib/types';
-import { Car, Bike, Plus, Repeat, Dumbbell, CalendarCheck, ArrowRight, Clock, ShieldCheck, Wallet, Globe, AlertTriangle, CalendarX, FileText, ClipboardCheck, BarChart3, Settings2, FileSignature } from 'lucide-react';
-import { isToday, format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { 
+  Car, 
+  Bike, 
+  Plus, 
+  Repeat, 
+  Dumbbell, 
+  CalendarCheck, 
+  ArrowRight, 
+  Clock, 
+  ShieldCheck, 
+  Wallet, 
+  AlertTriangle, 
+  CalendarX, 
+  FileText, 
+  ClipboardCheck, 
+  Settings2, 
+  FileSignature,
+  Receipt,
+  RefreshCw,
+  BookOpen,
+  ClipboardList,
+  FileCheck,
+  Gauge,
+  Wrench,
+  ChevronRight
+} from 'lucide-react';
+import { isToday } from 'date-fns';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -86,28 +110,34 @@ export default function DashboardPage() {
   const actionGroups = [
     {
       title: 'Caja y Ventas',
+      icon: Receipt,
+      color: 'text-blue-600',
       actions: [
-        { name: 'Pago de Saldos', href: '/cancellations', bgColor: 'bg-blue-50', textColor: 'text-blue-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-        { name: 'Confección Certificados', href: '/certificates', bgColor: 'bg-purple-50', textColor: 'text-purple-600', roles: ['Administrador'] },
-        { name: 'Actualizaciones', href: '/updates', bgColor: 'bg-green-50', textColor: 'text-green-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-        { name: 'Venta de Libros', href: '/book-sales', bgColor: 'bg-indigo-50', textColor: 'text-indigo-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+        { name: 'Pago de Saldos', href: '/cancellations', icon: Wallet, bgColor: 'bg-blue-50', textColor: 'text-blue-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+        { name: 'Confección Certificados', href: '/certificates', icon: FileSignature, bgColor: 'bg-purple-50', textColor: 'text-purple-600', roles: ['Administrador'] },
+        { name: 'Actualizaciones', href: '/updates', icon: RefreshCw, bgColor: 'bg-green-50', textColor: 'text-green-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+        { name: 'Venta de Libros', href: '/book-sales', icon: BookOpen, bgColor: 'bg-indigo-50', textColor: 'text-indigo-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       ]
     },
     {
-      title: 'Informes y Control',
+      title: 'Operaciones y Control',
+      icon: Settings2,
+      color: 'text-amber-600',
       actions: [
-        { name: 'Cierre de Caja', href: '/informes/daily-cash', bgColor: 'bg-green-50', textColor: 'text-green-700', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-        { name: 'Agenda Manual', href: '/manual-schedule', bgColor: 'bg-amber-50', textColor: 'text-amber-700', roles: ['Administrador', 'Ventas Externas'] },
-        { name: 'Bitácoras de Clase', href: '/logs', bgColor: 'bg-slate-50', textColor: 'text-slate-600', roles: ['Administrador', 'Ventas Externas'] },
-        { name: 'Constancia ATTT', href: '/att-evaluations', bgColor: 'bg-blue-50', textColor: 'text-blue-700', roles: ['Administrador', 'Ventas Externas'] },
-        { name: 'Exámenes Teóricos', isDropdown: true, roles: ['Administrador'], bgColor: 'bg-orange-50', textColor: 'text-orange-600' },
+        { name: 'Cierre de Caja', href: '/informes/daily-cash', icon: Receipt, bgColor: 'bg-emerald-50', textColor: 'text-emerald-700', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+        { name: 'Agenda Manual', href: '/manual-schedule', icon: Settings2, bgColor: 'bg-amber-50', textColor: 'text-amber-700', roles: ['Administrador', 'Ventas Externas'] },
+        { name: 'Bitácoras de Clase', href: '/logs', icon: ClipboardList, bgColor: 'bg-slate-50', textColor: 'text-slate-600', roles: ['Administrador', 'Ventas Externas'] },
+        { name: 'Constancia ATTT', href: '/att-evaluations', icon: FileCheck, bgColor: 'bg-blue-50', textColor: 'text-blue-700', roles: ['Administrador', 'Ventas Externas'] },
+        { name: 'Exámenes Teóricos', isDropdown: true, icon: BookOpen, roles: ['Administrador'], bgColor: 'bg-orange-50', textColor: 'text-orange-600' },
       ]
     },
     {
       title: 'Administración Flota',
+      icon: Car,
+      color: 'text-slate-600',
       actions: [
-        { name: 'Kilometraje', href: '/mileage-log', bgColor: 'bg-gray-50', textColor: 'text-gray-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-        { name: 'Mantenimiento', href: '/maintenance', bgColor: 'bg-stone-50', textColor: 'text-stone-600', roles: ['Administrador'] },
+        { name: 'Kilometraje', href: '/mileage-log', icon: Gauge, bgColor: 'bg-gray-50', textColor: 'text-gray-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+        { name: 'Mantenimiento', href: '/maintenance', icon: Wrench, bgColor: 'bg-stone-50', textColor: 'text-stone-600', roles: ['Administrador'] },
       ]
     }
   ];
@@ -195,27 +225,38 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-6">
         <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
           <span className="h-px bg-slate-200 flex-1"></span>Operaciones Rápidas por Rol<span className="h-px bg-slate-200 flex-1"></span>
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {actionGroups.map((group) => {
             const visibleActions = group.actions.filter(action => action.roles.includes(role || ''));
             if (visibleActions.length === 0) return null;
             return (
-              <div key={group.title} className="space-y-4">
-                <h3 className="text-[10px] font-black uppercase text-slate-500 border-l-2 border-primary pl-3">{group.title}</h3>
-                <div className="flex flex-col gap-2">
+              <Card key={group.title} className="shadow-sm border-slate-200 overflow-hidden">
+                <CardHeader className="bg-slate-50/50 border-b py-3 px-4 flex flex-row items-center gap-3">
+                  <div className={cn("p-2 rounded-lg bg-white shadow-sm border border-slate-100", group.color)}>
+                    <group.icon className="h-4 w-4" />
+                  </div>
+                  <CardTitle className="text-xs font-black uppercase tracking-tight text-slate-700">{group.title}</CardTitle>
+                </CardHeader>
+                <CardContent className="p-2 flex flex-col gap-1">
                     {visibleActions.map((action) => {
+                        const ActionIcon = action.icon;
                         if (action.isDropdown) {
                           return (
                             <DropdownMenu key={action.name}>
                               <DropdownMenuTrigger asChild>
-                                <div className={cn("flex items-center justify-between p-4 rounded-xl border border-slate-200 transition-all hover:translate-x-1 hover:shadow-sm cursor-pointer", action.bgColor)}>
-                                    <span className={cn("font-bold text-sm uppercase tracking-tight", action.textColor)}>{action.name}</span>
-                                    <div className="h-8 w-8 bg-white/50 rounded-full flex items-center justify-center"><FileText className={cn("h-4 w-4", action.textColor)} /></div>
-                                </div>
+                                <button className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 transition-all group text-left">
+                                    <div className="flex items-center gap-3">
+                                      <div className={cn("p-2 rounded-md", action.bgColor, action.textColor)}>
+                                        <ActionIcon className="h-4 w-4" />
+                                      </div>
+                                      <span className="font-bold text-[11px] uppercase text-slate-700">{action.name}</span>
+                                    </div>
+                                    <ChevronRight className="h-3 w-3 text-slate-300 group-hover:translate-x-1 transition-transform" />
+                                </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-56">
                                 {[1,2,3,4,5].map(n => (
@@ -229,20 +270,20 @@ export default function DashboardPage() {
                         }
                         return (
                           <Link key={action.name} href={action.href!} className="no-underline">
-                            <div className={cn("flex items-center justify-between p-4 rounded-xl border border-slate-200 transition-all hover:translate-x-1 hover:shadow-sm", action.bgColor)}>
-                                <span className={cn("font-bold text-sm uppercase tracking-tight", action.textColor)}>{action.name}</span>
-                                <div className="h-8 w-8 bg-white/50 rounded-full flex items-center justify-center">
-                                  {action.name === 'Constancia ATTT' ? <ClipboardCheck className={cn("h-4 w-4", action.textColor)} /> : 
-                                   action.name === 'Confección Certificados' ? <FileSignature className={cn("h-4 w-4", action.textColor)} /> :
-                                   action.name === 'Agenda Manual' ? <Settings2 className={cn("h-4 w-4", action.textColor)} /> :
-                                   <ArrowRight className={cn("h-4 w-4", action.textColor)} />}
+                            <div className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 transition-all group">
+                                <div className="flex items-center gap-3">
+                                  <div className={cn("p-2 rounded-md", action.bgColor, action.textColor)}>
+                                    <ActionIcon className="h-4 w-4" />
+                                  </div>
+                                  <span className="font-bold text-[11px] uppercase text-slate-700">{action.name}</span>
                                 </div>
+                                <ChevronRight className="h-3 w-3 text-slate-300 group-hover:translate-x-1 transition-transform" />
                             </div>
                           </Link>
                         )
                     })}
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             );
           })}
         </div>

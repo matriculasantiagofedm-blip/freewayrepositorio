@@ -226,10 +226,15 @@ export default function DailyCashReport() {
       // @ts-ignore
       const html2pdf = (await import('html2pdf.js')).default;
       const opt = { 
-        margin: 0.3, 
+        margin: 0, // Eliminamos márgenes en el PDF para maximizar espacio
         filename: `Caja_Freeway_${format(selectedDate, 'yyyy-MM-dd')}.pdf`, 
         image: { type: 'jpeg', quality: 0.98 }, 
-        html2canvas: { scale: 2, useCORS: true, logging: false }, 
+        html2canvas: { 
+          scale: 2, 
+          useCORS: true, 
+          logging: false,
+          width: 816 // Forzamos el ancho a 8.5 pulgadas (96 dpi)
+        }, 
         jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } 
       };
       await html2pdf().from(element).set(opt).save();
@@ -265,7 +270,7 @@ export default function DailyCashReport() {
       </div>
 
       <div className="w-full flex justify-center p-2 md:p-4 print:p-0">
-        <div id="report-to-print" className="bg-white w-full max-w-[8.5in] p-6 flex flex-col font-sans text-black min-h-[10.5in] shadow-lg print:shadow-none print:m-0 print:p-4 box-border">
+        <div id="report-to-print" className="bg-white w-full max-w-[8.5in] p-6 flex flex-col font-sans text-black min-h-[10.5in] shadow-lg print:shadow-none print:m-0 print:p-0 box-border overflow-hidden">
           
           {/* Header Identitario */}
           <div className="text-center mb-4">
@@ -447,7 +452,7 @@ export default function DailyCashReport() {
       <style jsx global>{`
         @media print {
           @page { size: letter portrait; margin: 0; }
-          body { background: white !important; }
+          body { background: white !important; margin: 0 !important; }
           header, footer, nav, .print-hidden { display: none !important; }
           #report-to-print { 
             box-shadow: none !important; 
@@ -455,7 +460,7 @@ export default function DailyCashReport() {
             margin: 0 !important; 
             width: 100% !important; 
             max-width: none !important;
-            padding: 0.5in !important;
+            padding: 0 !important;
           }
           input { border: none !important; background: transparent !important; outline: none !important; padding: 0 !important; }
           .bg-slate-50 { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; }

@@ -50,6 +50,8 @@ export default function DashboardPage() {
   useEffect(() => { setMounted(true); }, []);
 
   const isAdmin = role === 'Administrador';
+  const isVentas = role === 'Ventas';
+  
   const contractsQuery = useMemo(() => (db && user) ? collection(db, 'contracts') : null, [db, user]);
   const { data: allContracts, isLoading: isContractsLoading } = useCollection<Contract>(contractsQuery);
 
@@ -105,35 +107,41 @@ export default function DashboardPage() {
               <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-600">Flujo Operativo de Estudiantes</CardTitle>
             </CardHeader>
             <CardContent className="p-10">
-              <div className="relative flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="relative flex flex-col md:flex-row items-center justify-center gap-8">
                 {/* Línea conectora de fondo */}
                 <div className="absolute top-1/2 left-0 w-full h-0.5 bg-slate-100 -translate-y-1/2 hidden md:block"></div>
                 
                 {/* Paso 1: Inscripción */}
-                <div className="relative z-10 flex flex-col items-center gap-4 group">
-                    <Link href="/contracts/new?type=Curso Auto" className="w-24 h-24 bg-white border-2 border-blue-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-blue-500">
-                        <Plus className="h-10 w-10 text-blue-600" />
-                    </Link>
-                    <div className="text-center">
-                        <p className="font-black text-[10px] uppercase text-slate-900">1. Inscripción</p>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase">Nuevo Contrato</p>
+                {!isVentas && (
+                  <>
+                    <div className="relative z-10 flex flex-col items-center gap-4 group">
+                        <Link href="/contracts/new?type=Curso Auto" className="w-24 h-24 bg-white border-2 border-blue-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-blue-500">
+                            <Plus className="h-10 w-10 text-blue-600" />
+                        </Link>
+                        <div className="text-center">
+                            <p className="font-black text-[10px] uppercase text-slate-900">1. Inscripción</p>
+                            <p className="text-[8px] font-bold text-slate-400 uppercase">Nuevo Contrato</p>
+                        </div>
                     </div>
-                </div>
-
-                <ArrowRight className="h-6 w-6 text-slate-200 hidden md:block" />
+                    <ArrowRight className="h-6 w-6 text-slate-200 hidden md:block" />
+                  </>
+                )}
 
                 {/* Paso 2: Agenda */}
-                <div className="relative z-10 flex flex-col items-center gap-4 group">
-                    <Link href="/manual-schedule" className="w-24 h-24 bg-white border-2 border-amber-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-amber-500">
-                        <BookOpen className="h-10 w-10 text-amber-600" />
-                    </Link>
-                    <div className="text-center">
-                        <p className="font-black text-[10px] uppercase text-slate-900">2. Agenda</p>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase">Programar Clases</p>
+                {!isVentas && (
+                  <>
+                    <div className="relative z-10 flex flex-col items-center gap-4 group">
+                        <Link href="/manual-schedule" className="w-24 h-24 bg-white border-2 border-amber-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-amber-500">
+                            <BookOpen className="h-10 w-10 text-amber-600" />
+                        </Link>
+                        <div className="text-center">
+                            <p className="font-black text-[10px] uppercase text-slate-900">2. Agenda</p>
+                            <p className="text-[8px] font-bold text-slate-400 uppercase">Programar Clases</p>
+                        </div>
                     </div>
-                </div>
-
-                <ArrowRight className="h-6 w-6 text-slate-200 hidden md:block" />
+                    <ArrowRight className="h-6 w-6 text-slate-200 hidden md:block" />
+                  </>
+                )}
 
                 {/* Paso 3: Cobro */}
                 <div className="relative z-10 flex flex-col items-center gap-4 group">
@@ -141,23 +149,26 @@ export default function DashboardPage() {
                         <Receipt className="h-10 w-10 text-green-600" />
                     </Link>
                     <div className="text-center">
-                        <p className="font-black text-[10px] uppercase text-slate-900">3. Cobranza</p>
+                        <p className="font-black text-[10px] uppercase text-slate-900">{isVentas ? '1. Cobranza' : '3. Cobranza'}</p>
                         <p className="text-[8px] font-bold text-slate-400 uppercase">Pago de Saldos</p>
                     </div>
                 </div>
 
-                <ArrowRight className="h-6 w-6 text-slate-200 hidden md:block" />
-
                 {/* Paso 4: Certificado */}
-                <div className="relative z-10 flex flex-col items-center gap-4 group">
-                    <Link href="/certificates" className="w-24 h-24 bg-white border-2 border-indigo-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-indigo-500">
-                        <FileSignature className="h-10 w-10 text-indigo-600" />
-                    </Link>
-                    <div className="text-center">
-                        <p className="font-black text-[10px] uppercase text-slate-900">4. Finalización</p>
-                        <p className="text-[8px] font-bold text-slate-400 uppercase">Confección Folio</p>
+                {!isVentas && (
+                  <>
+                    <ArrowRight className="h-6 w-6 text-slate-200 hidden md:block" />
+                    <div className="relative z-10 flex flex-col items-center gap-4 group">
+                        <Link href="/certificates" className="w-24 h-24 bg-white border-2 border-indigo-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-indigo-500">
+                            <FileSignature className="h-10 w-10 text-indigo-600" />
+                        </Link>
+                        <div className="text-center">
+                            <p className="font-black text-[10px] uppercase text-slate-900">4. Finalización</p>
+                            <p className="text-[8px] font-bold text-slate-400 uppercase">Confección Folio</p>
+                        </div>
                     </div>
-                </div>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -204,11 +215,11 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent className="p-2 flex flex-col gap-1">
                     {[
-                        { label: 'Cierre de Caja', href: '/informes/daily-cash', icon: Receipt, color: 'text-emerald-600' },
-                        { label: 'Bitácoras de Control', href: '/logs', icon: BookOpen, color: 'text-blue-600' },
-                        { label: 'Evaluaciones ATTT', href: '/att-evaluations', icon: FileCheck, color: 'text-indigo-600' },
-                        { label: 'Venta de Libros', href: '/book-sales', icon: TrendingUp, color: 'text-amber-600' }
-                    ].map((item) => (
+                        { label: 'Cierre de Caja', href: '/informes/daily-cash', icon: Receipt, color: 'text-emerald-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+                        { label: 'Bitácoras de Control', href: '/logs', icon: BookOpen, color: 'text-blue-600', roles: ['Administrador', 'Ventas Externas'] },
+                        { label: 'Evaluaciones ATTT', href: '/att-evaluations', icon: FileCheck, color: 'text-indigo-600', roles: ['Administrador', 'Ventas Externas'] },
+                        { label: 'Venta de Libros', href: '/book-sales', icon: TrendingUp, color: 'text-amber-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] }
+                    ].filter(item => item.roles.includes(role || '')).map((item) => (
                         <Link key={item.label} href={item.href} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-100 group transition-all">
                             <div className="flex items-center gap-3">
                                 <item.icon className={cn("h-4 w-4 opacity-40 group-hover:opacity-100 transition-opacity", item.color)} />

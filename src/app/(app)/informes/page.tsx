@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +12,8 @@ import {
   RefreshCw,
   ArrowRight,
   ShieldCheck,
-  FileText
+  FileText,
+  BookOpen
 } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 
@@ -36,6 +38,15 @@ export default function ReportsIndexPage() {
       icon: CalendarRange,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
+      roles: ['Administrador', 'Ventas', 'Ventas Externas']
+    },
+    {
+      title: 'Agenda Teórica Semanal',
+      description: 'Listado semanal de alumnos citados para capacitación teórica presencial.',
+      href: '/informes/theoretical-schedule',
+      icon: BookOpen,
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-50',
       roles: ['Administrador', 'Ventas', 'Ventas Externas']
     },
     {

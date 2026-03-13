@@ -8,7 +8,23 @@ import { useDb } from '@/components/firebase-provider';
 import { collection, query, orderBy } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Printer, ClipboardCheck, User, ArrowRight, FileText, Repeat, Download, ChevronLeft, ChevronRight, Calendar, LayoutGrid } from 'lucide-react';
+import { 
+  Loader2, 
+  Printer, 
+  ClipboardCheck, 
+  User, 
+  ArrowRight, 
+  FileText, 
+  Repeat, 
+  Download, 
+  ChevronLeft, 
+  ChevronRight, 
+  Calendar, 
+  LayoutGrid,
+  Car,
+  Bike,
+  Dumbbell
+} from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ATTampliacionTemplate } from '@/components/att-ampliacion-template';
@@ -138,6 +154,19 @@ function ATTEvaluationsContent() {
     }
   };
 
+  const getCourseIcon = (type: string) => {
+    switch (type) {
+      case 'Curso Moto':
+        return <Bike className="h-5 w-5" />;
+      case 'Ampliaciones':
+        return <Repeat className="h-5 w-5" />;
+      case 'Curso Solo Practica':
+        return <Dumbbell className="h-5 w-5" />;
+      default:
+        return <Car className="h-5 w-5" />;
+    }
+  };
+
   if (!mounted) return null;
 
   return (
@@ -221,7 +250,7 @@ function ATTEvaluationsContent() {
                                             "h-10 w-10 rounded-full flex items-center justify-center transition-colors",
                                             modality === 'sabatino' ? "bg-amber-100 text-amber-600" : "bg-blue-100 text-blue-600"
                                         )}>
-                                            <User className="h-5 w-5" />
+                                            {getCourseIcon(c.type)}
                                         </div>
                                         <div>
                                             <p className="font-black text-sm uppercase text-slate-900 leading-none">{c.clientName}</p>

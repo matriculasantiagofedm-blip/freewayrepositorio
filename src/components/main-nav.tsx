@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -47,6 +46,7 @@ const navLinks = [
     children: [
       { href: '/informes/daily-cash', label: 'Cierre de Caja', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { href: '/informes/vehicle-schedule', label: 'Agenda Práctica Semanal', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+      { href: '/informes/practical-starts', label: 'Inicios de Clases (Semanal)', roles: ['Administrador', 'Ventas Externas'] },
       { href: '/informes/theoretical-schedule', label: 'Agenda Teórica Semanal', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { href: '/informes/cancellation-payments', label: 'Reporte Abonos', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { href: '/informes/update-payments', label: 'Reporte Actualización', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },

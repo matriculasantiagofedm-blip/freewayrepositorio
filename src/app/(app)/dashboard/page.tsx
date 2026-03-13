@@ -31,7 +31,8 @@ import {
   Loader2,
   RefreshCw,
   Library,
-  GripHorizontal
+  GripHorizontal,
+  ClipboardSignature
 } from 'lucide-react';
 import { isToday } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -79,7 +80,6 @@ export default function DashboardPage() {
   }, [role]);
 
   const isAdmin = role === 'Administrador';
-  const isVentas = role === 'Ventas';
   
   const contractsQuery = useMemo(() => (db && user) ? collection(db, 'contracts') : null, [db, user]);
   const { data: allContracts, isLoading: isContractsLoading } = useCollection<Contract>(contractsQuery);
@@ -259,6 +259,7 @@ export default function DashboardPage() {
                         { label: 'Cierre de Caja', href: '/informes/daily-cash', icon: Receipt, color: 'text-emerald-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
                         { label: 'Bitácoras de Control', href: '/logs', icon: BookOpen, color: 'text-blue-600', roles: ['Administrador', 'Ventas Externas'] },
                         { label: 'Evaluaciones ATTT', href: '/att-evaluations', icon: FileCheck, color: 'text-indigo-600', roles: ['Administrador', 'Ventas Externas'] },
+                        { label: 'Encuestas', href: '/surveys', icon: ClipboardSignature, color: 'text-rose-600', roles: ['Administrador', 'Ventas Externas'] },
                         { label: 'Venta de Libros', href: '/book-sales', icon: TrendingUp, color: 'text-amber-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] }
                     ].filter(item => item.roles.includes(role || '')).map((item) => (
                         <Link key={item.label} href={item.href} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-100 group transition-all">

@@ -53,7 +53,7 @@ export default function DailyCashReport() {
   const [coinCounts, setCoinCounts] = useState<Record<number, number>>({});
   const [expenses, setExpenses] = useState<{ id: string; desc: string; amount: number }[]>([]);
 
-  // 1. Contratos (Consulta por createdAt y activatedAt para capturar todos los roles)
+  // 1. Contratos
   const contractsQueryCreated = useMemoQuery(() => {
     if (!db) return null;
     const start = startOfDay(selectedDate);
@@ -226,11 +226,11 @@ export default function DailyCashReport() {
       // @ts-ignore
       const html2pdf = (await import('html2pdf.js')).default;
       const opt = { 
-        margin: 0.2, 
+        margin: 0.3, 
         filename: `Caja_Freeway_${format(selectedDate, 'yyyy-MM-dd')}.pdf`, 
         image: { type: 'jpeg', quality: 0.98 }, 
         html2canvas: { scale: 2, useCORS: true, logging: false }, 
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' } 
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } 
       };
       await html2pdf().from(element).set(opt).save();
     } catch (e) { console.error(e); } finally { setIsDownloading(false); }
@@ -242,7 +242,7 @@ export default function DailyCashReport() {
     <div className="flex flex-col gap-4 bg-slate-100 min-h-screen">
       <div className="flex items-center justify-between p-4 bg-white border-b sticky top-0 z-50 shadow-sm print:hidden">
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="icon" asChild><Link href="/informes"><ChevronLeft className="h-4 w-4" /></Link></Button>
+          <Button variant="outline" size="icon" asChild><Link href="/dashboard"><ChevronLeft className="h-4 w-4" /></Link></Button>
           <h1 className="text-xl font-black uppercase tracking-tight text-slate-900">Cierre de Caja Diario</h1>
         </div>
         <div className="flex items-center gap-2">
@@ -265,7 +265,7 @@ export default function DailyCashReport() {
       </div>
 
       <div className="w-full flex justify-center p-2 md:p-4 print:p-0">
-        <div id="report-to-print" className="bg-white w-full max-w-[1200px] p-6 flex flex-col font-sans text-black min-h-[8in] shadow-lg print:shadow-none print:m-0 print:p-4">
+        <div id="report-to-print" className="bg-white w-full max-w-[8.5in] p-6 flex flex-col font-sans text-black min-h-[10.5in] shadow-lg print:shadow-none print:m-0 print:p-4 box-border">
           
           {/* Header Identitario */}
           <div className="text-center mb-4">
@@ -276,32 +276,30 @@ export default function DailyCashReport() {
             </h2>
           </div>
 
-          {/* Tabla de Movimientos */}
-          <div className="mb-6 overflow-x-auto">
-            <table className="w-full border-collapse border border-black text-[7pt]">
+          {/* Tabla de Movimientos - Ajustada para Portrait */}
+          <div className="mb-6 overflow-x-hidden">
+            <table className="w-full border-collapse border border-black text-[6.5pt]">
               <thead>
                 <tr className="bg-slate-100">
-                  <th className="border border-black p-1 text-left w-[50px] font-black uppercase">Folio</th>
-                  <th className="border border-black p-1 text-left w-[80px] font-black uppercase">Cédula</th>
+                  <th className="border border-black p-1 text-left w-[45px] font-black uppercase">Folio</th>
+                  <th className="border border-black p-1 text-left w-[70px] font-black uppercase">Cédula</th>
                   <th className="border border-black p-1 text-left font-black uppercase">Cliente</th>
                   <th className="border border-black p-1 text-left font-black uppercase">Servicio</th>
-                  <th className="border border-black p-1 text-left w-[80px] font-black uppercase">Vendedor</th>
                   {COLUMNS.map(c => (
-                    <th key={c.id} className="border border-black p-1 text-right w-[60px] font-black uppercase">{c.label}</th>
+                    <th key={c.id} className="border border-black p-1 text-right w-[50px] font-black uppercase">{c.label}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
-                  <tr><td colSpan={11} className="p-8 text-center"><Loader2 className="animate-spin h-6 w-6 mx-auto" /></td></tr>
+                  <tr><td colSpan={10} className="p-8 text-center"><Loader2 className="animate-spin h-6 w-6 mx-auto" /></td></tr>
                 ) : transactions.length > 0 ? (
                   transactions.map((t, i) => (
                     <tr key={i} className="hover:bg-slate-50 transition-colors">
                       <td className="border border-black p-1 font-black text-slate-600">{t.folio}</td>
                       <td className="border border-black p-1 font-mono">{t.cedula}</td>
-                      <td className="border border-black p-1 font-bold uppercase truncate max-w-[140px]">{t.client}</td>
-                      <td className="border border-black p-1 italic truncate max-w-[140px]">{t.service}</td>
-                      <td className="border border-black p-1 uppercase font-black text-[6pt] text-blue-700">{t.seller}</td>
+                      <td className="border border-black p-1 font-bold uppercase truncate max-w-[100px]">{t.client}</td>
+                      <td className="border border-black p-1 italic truncate max-w-[100px]">{t.service}</td>
                       {COLUMNS.map(c => (
                         <td key={c.id} className={cn("border border-black p-1 text-right", t.method === c.id ? "font-bold bg-slate-50/50 text-slate-900" : "text-slate-300")}>
                           {t.method === c.id ? t.amount.toFixed(2) : '-'}
@@ -310,11 +308,10 @@ export default function DailyCashReport() {
                     </tr>
                   ))
                 ) : (
-                  <tr><td colSpan={11} className="p-10 text-center italic text-slate-400 font-bold uppercase text-[8pt]">No hay transacciones registradas para este día.</td></tr>
+                  <tr><td colSpan={10} className="p-10 text-center italic text-slate-400 font-bold uppercase text-[8pt]">No hay transacciones registradas para este día.</td></tr>
                 )}
-                {/* Fila de Totales (Sin fondo negro para ahorro de tinta) */}
-                <tr className="bg-slate-200 text-black font-black text-[8pt]">
-                  <td colSpan={5} className="border border-black p-2 text-right tracking-widest">TOTALES DEL DÍA:</td>
+                <tr className="bg-slate-200 text-black font-black text-[7.5pt]">
+                  <td colSpan={4} className="border border-black p-2 text-right tracking-widest">TOTALES DEL DÍA:</td>
                   {COLUMNS.map(c => (
                     <td key={c.id} className="border border-black p-2 text-right">{totalsByMethod[c.id].toFixed(2)}</td>
                   ))}
@@ -323,142 +320,144 @@ export default function DailyCashReport() {
             </table>
           </div>
 
-          {/* Arqueo y Gastos */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-auto">
-            {/* Desglose Físico */}
-            <div className="border border-black p-3 rounded-sm bg-white shadow-sm">
-              <h3 className="font-black text-[9pt] uppercase border-b border-black mb-3 pb-0.5 flex justify-between">
-                <span>Arqueo de Efectivo Físico</span>
-                <span className="text-slate-400 font-bold text-[7pt] tracking-widest">(Manual)</span>
-              </h3>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-1">
-                  <p className="text-[6pt] font-black uppercase text-slate-400 mb-1">Billetes</p>
-                  {BILLS.map(b => (
-                    <div key={b.val} className="flex items-center justify-between gap-2">
-                      <span className="text-[7pt] font-bold w-16">{b.label}:</span>
-                      <input 
-                        type="number" 
-                        className="w-10 h-5 border border-slate-200 rounded text-center text-[7.5pt] font-black focus:border-black print:border-black"
-                        value={billCounts[b.val] || ''}
-                        onChange={(e) => setBillCounts({ ...billCounts, [b.val]: parseInt(e.target.value) || 0 })}
-                      />
-                      <span className="text-[7pt] font-bold w-12 text-right text-slate-500">{( (billCounts[b.val] || 0) * b.val ).toFixed(2)}</span>
+          {/* Arqueo y Gastos - Ajustados para Portrait */}
+          <div className="flex flex-col gap-6 mt-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Desglose Físico */}
+                <div className="border border-black p-3 rounded-sm bg-white shadow-sm">
+                <h3 className="font-black text-[9pt] uppercase border-b border-black mb-3 pb-0.5 flex justify-between">
+                    <span>Arqueo de Efectivo Físico</span>
+                    <span className="text-slate-400 font-bold text-[7pt] tracking-widest">(Manual)</span>
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                    {BILLS.map(b => (
+                        <div key={b.val} className="flex items-center justify-between gap-2">
+                        <span className="text-[7pt] font-bold w-16">{b.label}:</span>
+                        <input 
+                            type="number" 
+                            className="w-10 h-5 border border-slate-200 rounded text-center text-[7.5pt] font-black focus:border-black print:border-black"
+                            value={billCounts[b.val] || ''}
+                            onChange={(e) => setBillCounts({ ...billCounts, [b.val]: parseInt(e.target.value) || 0 })}
+                        />
+                        </div>
+                    ))}
                     </div>
-                  ))}
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[6pt] font-black uppercase text-slate-400 mb-1">Monedas</p>
-                  {COINS.map(c => (
-                    <div key={c.val} className="flex items-center justify-between gap-2">
-                      <span className="text-[7pt] font-bold w-16">{c.label}:</span>
-                      <input 
-                        type="number" 
-                        className="w-10 h-5 border border-slate-200 rounded text-center text-[7.5pt] font-black focus:border-black print:border-black"
-                        value={coinCounts[c.val] || ''}
-                        onChange={(e) => setCoinCounts({ ...coinCounts, [c.val]: parseInt(e.target.value) || 0 })}
-                      />
-                      <span className="text-[7pt] font-bold w-12 text-right text-slate-500">{( (coinCounts[c.val] || 0) * c.val ).toFixed(2)}</span>
+                    <div className="space-y-1">
+                    {COINS.map(c => (
+                        <div key={c.val} className="flex items-center justify-between gap-2">
+                        <span className="text-[7pt] font-bold w-16">{c.label}:</span>
+                        <input 
+                            type="number" 
+                            className="w-10 h-5 border border-slate-200 rounded text-center text-[7.5pt] font-black focus:border-black print:border-black"
+                            value={coinCounts[c.val] || ''}
+                            onChange={(e) => setCoinCounts({ ...coinCounts, [c.val]: parseInt(e.target.value) || 0 })}
+                        />
+                        </div>
+                    ))}
                     </div>
-                  ))}
                 </div>
-              </div>
-              <div className="mt-4 pt-2 border-t-2 border-black flex justify-between items-center bg-slate-50 p-2">
-                <span className="font-black text-[8.5pt] uppercase">Total Físico en Caja:</span>
-                <span className="font-black text-[13pt] px-3 border border-black bg-white">B/. {totalFisico.toFixed(2)}</span>
-              </div>
+                <div className="mt-4 pt-2 border-t-2 border-black flex justify-between items-center bg-slate-50 p-2">
+                    <span className="font-black text-[8.5pt] uppercase">Total Físico en Caja:</span>
+                    <span className="font-black text-[12pt] px-3 border border-black bg-white">B/. {totalFisico.toFixed(2)}</span>
+                </div>
+                </div>
+
+                {/* Egresos y Cuadre */}
+                <div className="flex flex-col gap-4">
+                <div className="border border-black p-3 rounded-sm flex-1 bg-white shadow-sm">
+                    <div className="flex justify-between items-center border-b border-black mb-2 pb-0.5">
+                    <h3 className="font-black text-[9pt] uppercase">Egresos / Gastos</h3>
+                    <Button variant="ghost" size="sm" className="h-6 px-2 text-[7pt] font-black border border-slate-200 print:hidden" onClick={() => setExpenses([...expenses, { id: Math.random().toString(), desc: '', amount: 0 }])}>
+                        <Plus className="h-3 w-3 mr-1" /> Gasto
+                    </Button>
+                    </div>
+                    <div className="space-y-1.5 max-h-[100px] overflow-y-auto mb-2">
+                    {expenses.map(e => (
+                        <div key={e.id} className="flex gap-2 items-center group">
+                        <input 
+                            className="flex-1 h-6 border-b border-slate-100 text-[7.5pt] font-bold uppercase placeholder:text-slate-300 italic px-1 focus:border-black transition-all print:border-black"
+                            placeholder="Descripción..."
+                            value={e.desc}
+                            onChange={(v) => setExpenses(expenses.map(ex => ex.id === e.id ? { ...ex, desc: v.target.value } : ex))}
+                        />
+                        <input 
+                            type="number"
+                            className="w-14 h-6 border border-slate-200 rounded text-right pr-1 text-[7.5pt] font-black focus:border-black print:border-black"
+                            value={e.amount || ''}
+                            onChange={(v) => setExpenses(expenses.map(ex => ex.id === e.id ? { ...ex, amount: parseFloat(v.target.value) || 0 } : ex))}
+                        />
+                        <Button variant="ghost" size="icon" className="h-5 w-5 text-red-500 opacity-0 group-hover:opacity-100 print:hidden" onClick={() => setExpenses(expenses.filter(ex => ex.id !== e.id))}>
+                            <Trash2 className="h-3 w-3" />
+                        </Button>
+                        </div>
+                    ))}
+                    </div>
+                    <div className="mt-auto pt-1.5 border-t border-black flex justify-between font-black text-[8pt] bg-slate-50 px-2">
+                    <span>Total Gastos:</span>
+                    <span className="text-red-600">B/. {totalGastos.toFixed(2)}</span>
+                    </div>
+                </div>
+
+                <div className="bg-white text-black p-4 rounded-sm border-2 border-black shadow-sm">
+                    <div className="space-y-2 text-[8pt]">
+                    <div className="flex justify-between border-b border-slate-200 pb-1">
+                        <span className="opacity-60 uppercase font-bold text-[7pt]">Facturado (Sistema):</span>
+                        <span className="font-black">B/. {totalFacturado.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-slate-200 pb-1">
+                        <span className="opacity-60 uppercase font-bold text-[7pt]">Efectivo Esperado:</span>
+                        <span className="font-black text-blue-700">B/. {efectivoEsperado.toFixed(2)}</span>
+                    </div>
+                    <div className={cn(
+                        "flex justify-between mt-3 p-2 rounded border-2",
+                        diferencia >= 0 ? "border-green-600 text-green-700 bg-green-50" : "border-red-600 text-red-700 bg-red-50"
+                    )}>
+                        <span className="font-black uppercase text-[9pt]">Diferencia Final:</span>
+                        <span className="font-black text-[13pt]">
+                        {diferencia > 0 ? '+' : ''}{diferencia.toFixed(2)}
+                        </span>
+                    </div>
+                    </div>
+                </div>
+                </div>
             </div>
 
-            {/* Egresos y Cuadre */}
-            <div className="flex flex-col gap-4">
-              <div className="border border-black p-3 rounded-sm flex-1 bg-white shadow-sm">
-                <div className="flex justify-between items-center border-b border-black mb-2 pb-0.5">
-                  <h3 className="font-black text-[9pt] uppercase">Egresos / Gastos Operativos</h3>
-                  <Button variant="ghost" size="sm" className="h-6 px-2 text-[7pt] font-black border border-slate-200 print:hidden" onClick={() => setExpenses([...expenses, { id: Math.random().toString(), desc: '', amount: 0 }])}>
-                    <Plus className="h-3 w-3 mr-1" /> Registrar Gasto
-                  </Button>
+            {/* Firmas de Auditoría */}
+            <div className="mt-8 pt-6 grid grid-cols-2 gap-12 px-12 pb-4">
+                <div className="text-center">
+                <div className="border-t border-black mb-1"></div>
+                <p className="text-[8pt] font-black uppercase">Firma del Cajero</p>
+                <p className="text-[6pt] font-bold text-slate-400 uppercase tracking-tighter">{role || 'Responsable'}</p>
                 </div>
-                <div className="space-y-1.5 max-h-[120px] overflow-y-auto mb-2">
-                  {expenses.map(e => (
-                    <div key={e.id} className="flex gap-2 items-center group">
-                      <input 
-                        className="flex-1 h-6 border-b border-slate-100 text-[7.5pt] font-bold uppercase placeholder:text-slate-300 italic px-1 focus:border-black transition-all print:border-black"
-                        placeholder="Descripción del egreso..."
-                        value={e.desc}
-                        onChange={(v) => setExpenses(expenses.map(ex => ex.id === e.id ? { ...ex, desc: v.target.value } : ex))}
-                      />
-                      <input 
-                        type="number"
-                        className="w-14 h-6 border border-slate-200 rounded text-right pr-1 text-[7.5pt] font-black focus:border-black print:border-black"
-                        value={e.amount || ''}
-                        onChange={(v) => setExpenses(expenses.map(ex => ex.id === e.id ? { ...ex, amount: parseFloat(v.target.value) || 0 } : ex))}
-                      />
-                      <Button variant="ghost" size="icon" className="h-5 w-5 text-red-500 opacity-0 group-hover:opacity-100 print:hidden" onClick={() => setExpenses(expenses.filter(ex => ex.id !== e.id))}>
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
+                <div className="text-center">
+                <div className="border-t border-black mb-1"></div>
+                <p className="text-[8pt] font-black uppercase">Firma Administración</p>
+                <p className="text-[6pt] font-bold text-slate-400 uppercase tracking-tighter">Revisión de Auditoría</p>
                 </div>
-                <div className="mt-auto pt-1.5 border-t border-black flex justify-between font-black text-[8.5pt] bg-slate-50 px-2">
-                  <span>Total Gastos:</span>
-                  <span className="text-red-600">B/. {totalGastos.toFixed(2)}</span>
-                </div>
-              </div>
-
-              {/* Bloque de Cuadre Final (Sin fondo negro para ahorro de tinta) */}
-              <div className="bg-white text-black p-4 rounded-sm border-2 border-black shadow-sm">
-                <div className="space-y-2 text-[8.5pt]">
-                  <div className="flex justify-between border-b border-slate-200 pb-1">
-                    <span className="opacity-60 uppercase font-bold text-[7pt]">Total Facturado (Sistema):</span>
-                    <span className="font-black">B/. {totalFacturado.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between border-b border-slate-200 pb-1">
-                    <span className="opacity-60 uppercase font-bold text-[7pt]">Efectivo Esperado (Neto):</span>
-                    <span className="font-black text-blue-700">B/. {efectivoEsperado.toFixed(2)}</span>
-                  </div>
-                  <div className={cn(
-                    "flex justify-between mt-3 p-2 rounded border-2",
-                    diferencia >= 0 ? "border-green-600 text-green-700 bg-green-50" : "border-red-600 text-red-700 bg-red-50"
-                  )}>
-                    <span className="font-black uppercase text-[10pt]">Diferencia Final:</span>
-                    <span className="font-black text-[14pt]">
-                      {diferencia > 0 ? '+' : ''}{diferencia.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
-          {/* Firmas de Auditoría */}
-          <div className="mt-12 pt-8 grid grid-cols-2 gap-24 px-12">
-            <div className="text-center">
-              <div className="border-t border-black mb-1"></div>
-              <p className="text-[8pt] font-black uppercase">Firma del Cajero</p>
-              <p className="text-[6.5pt] font-bold text-slate-400 uppercase tracking-tighter">{role || 'Cajero Responsable'}</p>
-            </div>
-            <div className="text-center">
-              <div className="border-t border-black mb-1"></div>
-              <p className="text-[8pt] font-black uppercase">Firma Administración</p>
-              <p className="text-[6.5pt] font-bold text-slate-400 uppercase tracking-tighter">Revisión y Cuadre de Auditoría</p>
-            </div>
-          </div>
-
-          <div className="text-center text-[6pt] text-slate-400 font-bold uppercase mt-8 tracking-[0.3em] border-t pt-2">
-            FREEWAY SISTEMA CONTRACTTIME • DOCUMENTO DE AUDITORÍA INTERNA • {format(new Date(), 'PPpp', { locale: es })}
+          <div className="text-center text-[6pt] text-slate-400 font-bold uppercase mt-4 tracking-[0.2em] border-t pt-2">
+            SISTEMA CONTRACTTIME • DOCUMENTO DE AUDITORÍA INTERNA • {format(new Date(), 'PPpp', { locale: es })}
           </div>
         </div>
       </div>
 
       <style jsx global>{`
         @media print {
-          @page { size: letter landscape; margin: 0; }
+          @page { size: letter portrait; margin: 0; }
           body { background: white !important; }
           header, footer, nav, .print-hidden { display: none !important; }
-          #report-to-print { box-shadow: none !important; border: none !important; margin: 0 !important; width: 100% !important; max-width: none !important; }
+          #report-to-print { 
+            box-shadow: none !important; 
+            border: none !important; 
+            margin: 0 !important; 
+            width: 100% !important; 
+            max-width: none !important;
+            padding: 0.5in !important;
+          }
           input { border: none !important; background: transparent !important; outline: none !important; padding: 0 !important; }
-          .bg-slate-900 { background-color: transparent !important; color: black !important; border: 2px solid black !important; }
-          .text-white { color: black !important; }
           .bg-slate-50 { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; }
         }
       `}</style>

@@ -170,13 +170,11 @@ export default function TheoreticalSchedulePage() {
                         <span className="bg-indigo-100 text-indigo-700 text-[8px] font-black px-1.5 rounded-full">{data.morning.length}</span>
                     </div>
                     <div className="space-y-1">
-                        {data.morning.map(s => (
-                            <Link key={s.id} href={`/contracts/${s.id}`}>
-                                <div className="p-2 bg-white border border-slate-100 rounded-lg shadow-sm hover:border-indigo-300 hover:shadow-md transition-all group">
-                                    <p className="text-[9px] font-black uppercase truncate leading-tight group-hover:text-indigo-600">{s.name}</p>
-                                    <p className="text-[7px] font-bold text-slate-400 uppercase truncate">{s.type}</p>
-                                </div>
-                            </Link>
+                        {data.morning.map((s, idx) => (
+                            <div key={s.id || idx} className="p-2 bg-white border border-slate-100 rounded-lg shadow-sm">
+                                <p className="text-[9px] font-black uppercase truncate leading-tight text-slate-800">{s.name}</p>
+                                <p className="text-[7px] font-bold text-slate-400 uppercase truncate">{s.type}</p>
+                            </div>
                         ))}
                         {data.morning.length === 0 && <p className="text-[8px] text-slate-300 italic text-center py-2">Sin citados</p>}
                     </div>
@@ -189,13 +187,11 @@ export default function TheoreticalSchedulePage() {
                         <span className="bg-amber-100 text-amber-700 text-[8px] font-black px-1.5 rounded-full">{data.afternoon.length}</span>
                     </div>
                     <div className="space-y-1">
-                        {data.afternoon.map(s => (
-                            <Link key={s.id} href={`/contracts/${s.id}`}>
-                                <div className="p-2 bg-white border border-slate-100 rounded-lg shadow-sm hover:border-amber-300 hover:shadow-md transition-all group">
-                                    <p className="text-[9px] font-black uppercase truncate leading-tight group-hover:text-amber-600">{s.name}</p>
-                                    <p className="text-[7px] font-bold text-slate-400 uppercase truncate">{s.type}</p>
-                                </div>
-                            </Link>
+                        {data.afternoon.map((s, idx) => (
+                            <div key={s.id || idx} className="p-2 bg-white border border-slate-100 rounded-lg shadow-sm">
+                                <p className="text-[9px] font-black uppercase truncate leading-tight text-slate-800">{s.name}</p>
+                                <p className="text-[7px] font-bold text-slate-400 uppercase truncate">{s.type}</p>
+                            </div>
                         ))}
                         {data.afternoon.length === 0 && <p className="text-[8px] text-slate-300 italic text-center py-2">Sin citados</p>}
                     </div>

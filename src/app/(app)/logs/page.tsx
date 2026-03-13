@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -16,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn, toDate } from '@/lib/utils';
 import Link from 'next/link';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
-import { startOfWeek, endOfWeek, isWithinInterval } from 'date-fns';
+import { startOfWeek, endOfWeek, isWithinInterval, format } from 'date-fns';
 
 export default function LogsPage() {
   const db = useDb();

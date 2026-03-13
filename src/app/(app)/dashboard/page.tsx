@@ -31,7 +31,8 @@ import {
   RefreshCw,
   Library,
   GripHorizontal,
-  ClipboardSignature
+  ClipboardSignature,
+  CalendarClock
 } from 'lucide-react';
 import { isToday } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -44,13 +45,11 @@ const getBalance = (contract: Contract): number => {
     return Number(details?.balance) || 0;
 };
 
-// Definición de los pasos del flujo operativo (Inscripción removida para simplificar)
+// Pasos enfocados en la parte COMERCIAL del flujo
 const INITIAL_FLOW_STEPS = [
-  { id: 'step-schedule', label: '1. Agenda', sublabel: 'Programar Clases', icon: BookOpen, color: 'border-amber-100 text-amber-600', hover: 'group-hover:border-amber-500', href: '/manual-schedule', roles: ['Administrador', 'Ventas Externas'] },
-  { id: 'step-payment', label: '2. Cobranza', sublabel: 'Saldos', icon: Receipt, color: 'border-green-100 text-green-600', hover: 'group-hover:border-green-500', href: '/cancellations', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-  { id: 'step-updates', label: '3. Trámites', sublabel: 'Actualización', icon: RefreshCw, color: 'border-indigo-100 text-indigo-600', hover: 'group-hover:border-indigo-500', href: '/updates', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-  { id: 'step-books', label: '4. Tienda', sublabel: 'Venta Libros', icon: Library, color: 'border-orange-100 text-orange-600', hover: 'group-hover:border-orange-500', href: '/book-sales', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-  { id: 'step-cert', label: '5. Finalización', sublabel: 'Folio Oficial', icon: FileSignature, color: 'border-purple-100 text-purple-600', hover: 'group-hover:border-purple-500', href: '/certificates', roles: ['Administrador', 'Ventas Externas'] },
+  { id: 'step-payment', label: '1. Cobranza', sublabel: 'Saldos Estudiantes', icon: Receipt, color: 'border-green-100 text-green-600', hover: 'group-hover:border-green-500', href: '/cancellations', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+  { id: 'step-updates', label: '2. Trámites', sublabel: 'Actualizaciones', icon: RefreshCw, color: 'border-indigo-100 text-indigo-600', hover: 'group-hover:border-indigo-500', href: '/updates', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+  { id: 'step-books', label: '3. Tienda', sublabel: 'Venta de Libros', icon: Library, color: 'border-orange-100 text-orange-600', hover: 'group-hover:border-orange-500', href: '/book-sales', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
 ];
 
 export default function DashboardPage() {
@@ -62,13 +61,11 @@ export default function DashboardPage() {
 
   useEffect(() => { 
     setMounted(true); 
-    // Cargar orden personalizado de localStorage
     const savedOrder = localStorage.getItem(`dashboard_flow_order_${role}`);
     if (savedOrder) {
       try {
         const orderIds = JSON.parse(savedOrder);
         const reordered = orderIds.map((id: string) => INITIAL_FLOW_STEPS.find(s => s.id === id)).filter(Boolean);
-        // Añadir nuevos pasos que no estén en el orden guardado
         const missing = INITIAL_FLOW_STEPS.filter(s => !orderIds.includes(s.id));
         setFlowSteps([...reordered, ...missing]);
       } catch (e) {
@@ -101,7 +98,6 @@ export default function DashboardPage() {
     return { active, today, overdue, totalOverdue, chartData };
   }, [allContracts, mounted]);
 
-  // Filtrar pasos según el rol
   const visibleSteps = useMemo(() => {
     return flowSteps.filter(step => step.roles.includes(role || ''));
   }, [flowSteps, role]);
@@ -110,7 +106,6 @@ export default function DashboardPage() {
     if (!result.destination) return;
 
     const items = Array.from(flowSteps);
-    // Encontrar el índice global del elemento movido dentro de flowSteps
     const sourceIndexInGlobal = flowSteps.findIndex(s => s.id === visibleSteps[result.source.index].id);
     const destinationIndexInGlobal = flowSteps.findIndex(s => s.id === visibleSteps[result.destination!.index].id);
 
@@ -119,7 +114,6 @@ export default function DashboardPage() {
 
     setFlowSteps(items);
     
-    // Guardar el orden de los IDs
     const orderIds = items.map(i => i.id);
     localStorage.setItem(`dashboard_flow_order_${role}`, JSON.stringify(orderIds));
   };
@@ -135,7 +129,7 @@ export default function DashboardPage() {
             <TrendingUp className="h-6 w-6 text-primary" />
             Estado del Negocio
           </h1>
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Freeway Escuela de Manejo • Sistema Global de Gestión</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Freeway Escuela de Manejo • Centro Operativo</p>
         </div>
         <div className="flex items-center gap-3">
             <div className="bg-white border rounded-lg px-4 py-2 shadow-sm text-center">
@@ -150,13 +144,13 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* COLUMNA IZQUIERDA: FLUJO DE TRABAJO (70%) */}
+        {/* COLUMNA IZQUIERDA: FLUJO COMERCIAL (70%) */}
         <div className="lg:col-span-8 space-y-6">
           <Card className="shadow-sm border-slate-200 overflow-hidden">
             <CardHeader className="bg-slate-50 border-b py-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-600">Flujo Operativo de Estudiantes</CardTitle>
+              <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-600">Flujo Comercial de Estudiantes</CardTitle>
               <div className="flex items-center gap-2 text-[8px] font-bold text-slate-400 uppercase bg-white px-2 py-1 rounded border">
-                <GripHorizontal className="h-3 w-3" /> Arrastrar para organizar
+                <GripHorizontal className="h-3 w-3" /> Reorganizar
               </div>
             </CardHeader>
             <CardContent className="p-10">
@@ -166,7 +160,7 @@ export default function DashboardPage() {
                     <div 
                       {...provided.droppableProps}
                       ref={provided.innerRef}
-                      className="relative flex flex-col md:flex-row items-center justify-center gap-4 flex-wrap"
+                      className="relative flex flex-col md:flex-row items-center justify-center gap-12 flex-wrap"
                     >
                       {visibleSteps.map((step, index) => (
                         <Draggable key={step.id} draggableId={step.id} index={index}>
@@ -175,7 +169,7 @@ export default function DashboardPage() {
                               ref={draggableProvided.innerRef}
                               {...draggableProvided.draggableProps}
                               {...draggableProvided.dragHandleProps}
-                              className="flex items-center gap-4 group"
+                              className="flex items-center gap-12 group"
                             >
                               <div className={cn(
                                 "relative z-10 flex flex-col items-center gap-4 transition-all",
@@ -184,21 +178,21 @@ export default function DashboardPage() {
                                   <Link 
                                     href={step.href} 
                                     className={cn(
-                                      "w-20 h-20 bg-white border-2 rounded-3xl flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110",
+                                      "w-24 h-24 bg-white border-2 rounded-[2rem] flex items-center justify-center transition-all group-hover:shadow-2xl group-hover:scale-110",
                                       step.color,
                                       step.hover,
                                       snapshot.isDragging ? "shadow-2xl border-primary" : "shadow-sm"
                                     )}
                                   >
-                                      <step.icon className="h-8 w-8" />
+                                      <step.icon className="h-10 w-10" />
                                   </Link>
                                   <div className="text-center">
-                                      <p className="font-black text-[9px] uppercase text-slate-900">{step.label}</p>
-                                      <p className="text-[7px] font-bold text-slate-400 uppercase">{step.sublabel}</p>
+                                      <p className="font-black text-[10px] uppercase text-slate-900 tracking-tight">{step.label}</p>
+                                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{step.sublabel}</p>
                                   </div>
                               </div>
                               {index < visibleSteps.length - 1 && (
-                                <ArrowRight className="h-5 w-5 text-slate-200 hidden md:block" />
+                                <ArrowRight className="h-6 w-6 text-slate-200 hidden md:block" />
                               )}
                             </div>
                           )}
@@ -212,12 +206,11 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Sección de Accesos Directos por Categoría */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card className="shadow-sm border-slate-200">
                 <CardHeader className="py-3 bg-slate-50/50 border-b flex flex-row items-center gap-2">
                     <Car className="h-4 w-4 text-blue-600" />
-                    <CardTitle className="text-[10px] font-black uppercase text-slate-600">Servicios Presenciales</CardTitle>
+                    <CardTitle className="text-[10px] font-black uppercase text-slate-600">Nueva Inscripción</CardTitle>
                 </CardHeader>
                 <CardContent className="p-2 grid grid-cols-2 gap-2">
                     <Button asChild variant="ghost" className="h-16 justify-start gap-3 bg-white border border-slate-100 hover:bg-blue-50 hover:text-blue-700 transition-all font-bold text-[10px] uppercase group">
@@ -250,11 +243,13 @@ export default function DashboardPage() {
             <Card className="shadow-sm border-slate-200">
                 <CardHeader className="py-3 bg-slate-50/50 border-b flex flex-row items-center gap-2">
                     <History className="h-4 w-4 text-indigo-600" />
-                    <CardTitle className="text-[10px] font-black uppercase text-slate-600">Gestión Administrativa</CardTitle>
+                    <CardTitle className="text-[10px] font-black uppercase text-slate-600">Gestión Operativa y Control</CardTitle>
                 </CardHeader>
                 <CardContent className="p-2 flex flex-col gap-1">
                     {[
                         { label: 'Cierre de Caja', href: '/informes/daily-cash', icon: Receipt, color: 'text-emerald-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+                        { label: 'Agenda Práctica', href: '/manual-schedule', icon: CalendarClock, color: 'text-amber-600', roles: ['Administrador', 'Ventas Externas'] },
+                        { label: 'Impresión Certificados', href: '/certificates', icon: FileSignature, color: 'text-purple-600', roles: ['Administrador'] },
                         { label: 'Bitácoras de Control', href: '/logs', icon: BookOpen, color: 'text-blue-600', roles: ['Administrador', 'Ventas Externas'] },
                         { label: 'Evaluaciones ATTT', href: '/att-evaluations', icon: FileCheck, color: 'text-indigo-600', roles: ['Administrador', 'Ventas Externas'] },
                         { label: 'Encuestas', href: '/surveys', icon: ClipboardSignature, color: 'text-rose-600', roles: ['Administrador', 'Ventas Externas'] }
@@ -272,12 +267,11 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* COLUMNA DERECHA: WIDGETS DE DATOS (30%) */}
+        {/* COLUMNA DERECHA: WIDGETS (30%) */}
         <div className="lg:col-span-4 space-y-6">
-          {/* Widget Alumnos con Saldo */}
           <Card className="shadow-sm border-slate-200">
             <CardHeader className="py-3 bg-white border-b flex flex-row items-center justify-between">
-              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-500">Saldos por Cobrar</CardTitle>
+              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-500">Saldos Estudiantes</CardTitle>
               <Link href="/contracts?filter=overdue" className="text-[9px] font-black uppercase text-blue-600 hover:underline">Ver Todo</Link>
             </CardHeader>
             <CardContent className="p-0">
@@ -309,13 +303,12 @@ export default function DashboardPage() {
                 </TableBody>
               </Table>
               <div className="p-3 bg-red-50 border-t border-red-100 flex justify-between items-center">
-                <span className="text-[9px] font-black uppercase text-red-800">Total en Calle:</span>
+                <span className="text-[9px] font-black uppercase text-red-800">Total por Cobrar:</span>
                 <span className="text-sm font-black text-red-900">B/. {stats.totalOverdue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
               </div>
             </CardContent>
           </Card>
 
-          {/* Widget Gráfico Distribución */}
           <Card className="shadow-sm border-slate-200">
             <CardHeader className="py-3 bg-white border-b">
               <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-500">Distribución de Trámites</CardTitle>
@@ -353,7 +346,6 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Mensajes del Sistema / Alertas */}
           <Card className="bg-slate-900 text-white shadow-xl overflow-hidden relative">
             <div className="absolute top-0 right-0 p-4 opacity-10">
                 <ShieldCheck className="h-24 w-24" />
@@ -363,10 +355,10 @@ export default function DashboardPage() {
                     <AlertCircle className="h-4 w-4 text-blue-400" />
                     <span className="text-[9px] font-black uppercase tracking-widest text-blue-400">Estado del Sistema</span>
                 </div>
-                <h4 className="text-lg font-black uppercase leading-tight mb-2 pr-12">Todas las terminales operando</h4>
-                <p className="text-[10px] font-medium text-slate-400 leading-relaxed">La base de datos de Freeway se encuentra sincronizada. Los folios de certificados se están emitiendo correctamente desde la estación central.</p>
+                <h4 className="text-lg font-black uppercase leading-tight mb-2 pr-12">Conexión Segura Freeway</h4>
+                <p className="text-[10px] font-medium text-slate-400 leading-relaxed">Los datos están protegidos y sincronizados en tiempo real entre todas las estaciones de trabajo.</p>
                 <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
-                    <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">v2.0 Stable Build</span>
+                    <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">v2.1 Build</span>
                     <span className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></span>
                 </div>
             </CardContent>

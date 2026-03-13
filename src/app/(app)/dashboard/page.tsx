@@ -10,7 +10,7 @@ import { collection } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo, useState, useEffect } from 'react';
 import type { Contract } from '@/lib/types';
-import { Car, Bike, Plus, Repeat, Dumbbell, CalendarCheck, ArrowRight, Clock, ShieldCheck, Wallet, Globe, AlertTriangle, CalendarX, FileText, ClipboardCheck, BarChart3 } from 'lucide-react';
+import { Car, Bike, Plus, Repeat, Dumbbell, CalendarCheck, ArrowRight, Clock, ShieldCheck, Wallet, Globe, AlertTriangle, CalendarX, FileText, ClipboardCheck, BarChart3, Settings2, FileSignature } from 'lucide-react';
 import { isToday, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
@@ -88,6 +88,7 @@ export default function DashboardPage() {
       title: 'Caja y Ventas',
       actions: [
         { name: 'Pago de Saldos', href: '/cancellations', bgColor: 'bg-blue-50', textColor: 'text-blue-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+        { name: 'Confección Certificados', href: '/certificates', bgColor: 'bg-purple-50', textColor: 'text-purple-600', roles: ['Administrador'] },
         { name: 'Actualizaciones', href: '/updates', bgColor: 'bg-green-50', textColor: 'text-green-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
         { name: 'Venta de Libros', href: '/book-sales', bgColor: 'bg-indigo-50', textColor: 'text-indigo-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       ]
@@ -96,6 +97,7 @@ export default function DashboardPage() {
       title: 'Informes y Control',
       actions: [
         { name: 'Cierre de Caja', href: '/informes/daily-cash', bgColor: 'bg-green-50', textColor: 'text-green-700', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+        { name: 'Agenda Manual', href: '/manual-schedule', bgColor: 'bg-amber-50', textColor: 'text-amber-700', roles: ['Administrador', 'Ventas Externas'] },
         { name: 'Bitácoras de Clase', href: '/logs', bgColor: 'bg-slate-50', textColor: 'text-slate-600', roles: ['Administrador', 'Ventas Externas'] },
         { name: 'Constancia ATTT', href: '/att-evaluations', bgColor: 'bg-blue-50', textColor: 'text-blue-700', roles: ['Administrador', 'Ventas Externas'] },
         { name: 'Exámenes Teóricos', isDropdown: true, roles: ['Administrador'], bgColor: 'bg-orange-50', textColor: 'text-orange-600' },
@@ -235,7 +237,10 @@ export default function DashboardPage() {
                             <div className={cn("flex items-center justify-between p-4 rounded-xl border border-slate-200 transition-all hover:translate-x-1 hover:shadow-sm", action.bgColor)}>
                                 <span className={cn("font-bold text-sm uppercase tracking-tight", action.textColor)}>{action.name}</span>
                                 <div className="h-8 w-8 bg-white/50 rounded-full flex items-center justify-center">
-                                  {action.name === 'Constancia ATTT' ? <ClipboardCheck className={cn("h-4 w-4", action.textColor)} /> : <ArrowRight className={cn("h-4 w-4", action.textColor)} />}
+                                  {action.name === 'Constancia ATTT' ? <ClipboardCheck className={cn("h-4 w-4", action.textColor)} /> : 
+                                   action.name === 'Confección Certificados' ? <FileSignature className={cn("h-4 w-4", action.textColor)} /> :
+                                   action.name === 'Agenda Manual' ? <Settings2 className={cn("h-4 w-4", action.textColor)} /> :
+                                   <ArrowRight className={cn("h-4 w-4", action.textColor)} />}
                                 </div>
                             </div>
                           </Link>

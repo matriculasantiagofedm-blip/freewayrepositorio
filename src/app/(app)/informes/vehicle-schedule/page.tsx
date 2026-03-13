@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -288,15 +287,22 @@ export default function WeeklyScheduleReport() {
         </div>
       </div>
 
-      <div id="weekly-agenda-print" className="w-full overflow-x-auto pb-10">
-        <div className="min-w-[1200px] bg-white border rounded-xl shadow-xl overflow-hidden m-2">
-          <table className="w-full border-collapse">
+      <div className="w-full flex flex-col gap-2 px-2 md:hidden print:hidden">
+        <div className="flex items-center gap-2 text-blue-600 bg-blue-50 p-2 rounded-lg border border-blue-100">
+            <Info className="h-4 w-4" />
+            <p className="text-[10px] font-bold uppercase">Desliza la tabla hacia la derecha para ver los fines de semana.</p>
+        </div>
+      </div>
+
+      <div id="weekly-agenda-print" className="w-full overflow-x-auto pb-10 custom-scrollbar">
+        <div className="min-w-[1400px] bg-white border rounded-xl shadow-xl overflow-hidden m-2">
+          <table className="w-full border-collapse table-fixed">
             <thead>
               <tr className="bg-slate-50/80 border-b">
-                <th className="w-24 p-4 font-black uppercase text-[10px] text-slate-400 border-r tracking-widest">Turno</th>
+                <th className="w-28 p-4 font-black uppercase text-[10px] text-slate-400 border-r tracking-widest bg-slate-50 sticky left-0 z-20">Turno</th>
                 {weekDays.map(day => (
                   <th key={day.toISOString()} className={cn(
-                    "p-4 border-r last:border-r-0 text-center",
+                    "p-4 border-r last:border-r-0 text-center min-w-[160px]",
                     isSunday(day) ? "bg-red-50/30" : ""
                   )}>
                     <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{format(day, 'eee', { locale: es })}</p>
@@ -308,7 +314,7 @@ export default function WeeklyScheduleReport() {
             <tbody>
               {TIME_SLOTS.map(slot => (
                 <tr key={slot.id} className="border-b last:border-b-0 h-48">
-                  <td className="p-4 border-r bg-slate-50/30 text-center">
+                  <td className="p-4 border-r bg-slate-50 sticky left-0 z-20 text-center shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
                     <span className="text-[10px] font-black text-slate-800 whitespace-nowrap leading-tight">
                       {slot.label.split('-')[0]}<br/>-<br/>{slot.label.split('-')[1]}
                     </span>
@@ -363,8 +369,6 @@ export default function WeeklyScheduleReport() {
                                 </div>
                               );
 
-                              // SEGURIDAD: Solo Administrador y Ventas Externas pueden gestionar turnos.
-                              // Se oculta la gestión para el rol 'Ventas'.
                               if (role === 'Ventas') {
                                 return <div key={s.id || idx}>{SessionCard}</div>;
                               }
@@ -474,14 +478,30 @@ export default function WeeklyScheduleReport() {
       </div>
 
       <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          height: 12px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f5f9;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #94a3b8;
+          border-radius: 10px;
+          border: 3px solid #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #64748b;
+        }
         @media print {
           @page { size: letter landscape; margin: 0.2in; }
           body { background: white !important; }
           header, footer, nav, aside, .print-hidden, button { display: none !important; }
           #weekly-agenda-print { padding: 0 !important; margin: 0 !important; }
-          .min-w-[1200px] { min-width: 100% !important; border: none !important; box-shadow: none !important; }
+          .min-w-[1400px] { min-width: 100% !important; border: none !important; box-shadow: none !important; }
           .h-48 { height: auto !important; min-height: 1.5in; }
           .shadow-sm { box-shadow: none !important; border: 1px solid #ddd !important; }
+          .sticky { position: static !important; }
         }
       `}</style>
     </div>

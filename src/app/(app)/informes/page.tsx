@@ -41,15 +41,6 @@ export default function ReportsIndexPage() {
       roles: ['Administrador', 'Ventas', 'Ventas Externas']
     },
     {
-      title: 'Inicios de Clases',
-      description: 'Listado semanal de estudiantes que inician su capacitación práctica por primera vez.',
-      href: '/informes/practical-starts',
-      icon: ClipboardList,
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-50',
-      roles: ['Administrador', 'Ventas Externas']
-    },
-    {
       title: 'Agenda Teórica Semanal',
       description: 'Listado semanal de alumnos citados para capacitación teórica presencial.',
       href: '/informes/theoretical-schedule',

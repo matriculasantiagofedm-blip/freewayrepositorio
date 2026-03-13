@@ -44,14 +44,13 @@ const getBalance = (contract: Contract): number => {
     return Number(details?.balance) || 0;
 };
 
-// Definición de los pasos del flujo operativo
+// Definición de los pasos del flujo operativo (Inscripción removida para simplificar)
 const INITIAL_FLOW_STEPS = [
-  { id: 'step-enroll', label: '1. Inscripción', sublabel: 'Nuevo Contrato', icon: Plus, color: 'border-blue-100 text-blue-600', hover: 'group-hover:border-blue-500', href: '/contracts/new?type=Curso Auto', roles: ['Administrador', 'Ventas Externas'] },
-  { id: 'step-schedule', label: '2. Agenda', sublabel: 'Programar Clases', icon: BookOpen, color: 'border-amber-100 text-amber-600', hover: 'group-hover:border-amber-500', href: '/manual-schedule', roles: ['Administrador', 'Ventas Externas'] },
-  { id: 'step-payment', label: '3. Cobranza', sublabel: 'Saldos', icon: Receipt, color: 'border-green-100 text-green-600', hover: 'group-hover:border-green-500', href: '/cancellations', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-  { id: 'step-updates', label: '4. Trámites', sublabel: 'Actualización', icon: RefreshCw, color: 'border-indigo-100 text-indigo-600', hover: 'group-hover:border-indigo-500', href: '/updates', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-  { id: 'step-books', label: '5. Tienda', sublabel: 'Venta Libros', icon: Library, color: 'border-orange-100 text-orange-600', hover: 'group-hover:border-orange-500', href: '/book-sales', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-  { id: 'step-cert', label: '6. Finalización', sublabel: 'Folio Oficial', icon: FileSignature, color: 'border-purple-100 text-purple-600', hover: 'group-hover:border-purple-500', href: '/certificates', roles: ['Administrador', 'Ventas Externas'] },
+  { id: 'step-schedule', label: '1. Agenda', sublabel: 'Programar Clases', icon: BookOpen, color: 'border-amber-100 text-amber-600', hover: 'group-hover:border-amber-500', href: '/manual-schedule', roles: ['Administrador', 'Ventas Externas'] },
+  { id: 'step-payment', label: '2. Cobranza', sublabel: 'Saldos', icon: Receipt, color: 'border-green-100 text-green-600', hover: 'group-hover:border-green-500', href: '/cancellations', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+  { id: 'step-updates', label: '3. Trámites', sublabel: 'Actualización', icon: RefreshCw, color: 'border-indigo-100 text-indigo-600', hover: 'group-hover:border-indigo-500', href: '/updates', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+  { id: 'step-books', label: '4. Tienda', sublabel: 'Venta Libros', icon: Library, color: 'border-orange-100 text-orange-600', hover: 'group-hover:border-orange-500', href: '/book-sales', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+  { id: 'step-cert', label: '5. Finalización', sublabel: 'Folio Oficial', icon: FileSignature, color: 'border-purple-100 text-purple-600', hover: 'group-hover:border-purple-500', href: '/certificates', roles: ['Administrador', 'Ventas Externas'] },
 ];
 
 export default function DashboardPage() {

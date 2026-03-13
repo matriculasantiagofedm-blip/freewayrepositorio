@@ -148,20 +148,20 @@ export default function DashboardPage() {
         {/* COLUMNA IZQUIERDA: FLUJO COMERCIAL (70%) */}
         <div className="lg:col-span-8 space-y-6">
           <Card className="shadow-sm border-slate-200 overflow-hidden">
-            <CardHeader className="bg-slate-50 border-b py-3 flex flex-row items-center justify-between">
+            <CardHeader className="bg-slate-50 border-b py-2 flex flex-row items-center justify-between">
               <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-600">Flujo Comercial de Estudiantes</CardTitle>
               <div className="flex items-center gap-2 text-[8px] font-bold text-slate-400 uppercase bg-white px-2 py-1 rounded border">
                 <GripHorizontal className="h-3 w-3" /> Reorganizar
               </div>
             </CardHeader>
-            <CardContent className="p-10">
+            <CardContent className="p-6">
               <DragDropContext onDragEnd={onDragEnd}>
                 <Droppable droppableId="flow-steps" direction="horizontal">
                   {(provided) => (
                     <div 
                       {...provided.droppableProps}
                       ref={provided.innerRef}
-                      className="relative flex flex-col md:flex-row items-center justify-center gap-12 flex-wrap"
+                      className="relative flex flex-col md:flex-row items-center justify-center gap-6 flex-wrap"
                     >
                       {visibleSteps.map((step, index) => (
                         <Draggable key={step.id} draggableId={step.id} index={index}>
@@ -170,30 +170,30 @@ export default function DashboardPage() {
                               ref={draggableProvided.innerRef}
                               {...draggableProvided.draggableProps}
                               {...draggableProvided.dragHandleProps}
-                              className="flex items-center gap-12 group"
+                              className="flex items-center gap-6 group"
                             >
                               <div className={cn(
-                                "relative z-10 flex flex-col items-center gap-4 transition-all",
+                                "relative z-10 flex flex-col items-center gap-2 transition-all",
                                 snapshot.isDragging ? "scale-110 rotate-2" : ""
                               )}>
                                   <Link 
                                     href={step.href} 
                                     className={cn(
-                                      "w-24 h-24 bg-white border-2 rounded-[2rem] flex items-center justify-center transition-all group-hover:shadow-2xl group-hover:scale-110",
+                                      "w-20 h-20 bg-white border-2 rounded-[1.5rem] flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-105",
                                       step.color,
                                       step.hover,
                                       snapshot.isDragging ? "shadow-2xl border-primary" : "shadow-sm"
                                     )}
                                   >
-                                      <step.icon className="h-10 w-10" />
+                                      <step.icon className="h-8 w-8" />
                                   </Link>
                                   <div className="text-center">
-                                      <p className="font-black text-[10px] uppercase text-slate-900 tracking-tight">{step.label}</p>
-                                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{step.sublabel}</p>
+                                      <p className="font-black text-[9px] uppercase text-slate-900 tracking-tight">{step.label}</p>
+                                      <p className="text-[7px] font-bold text-slate-400 uppercase tracking-widest">{step.sublabel}</p>
                                   </div>
                               </div>
                               {index < visibleSteps.length - 1 && (
-                                <ArrowRight className="h-6 w-6 text-slate-200 hidden md:block" />
+                                <ArrowRight className="h-5 w-5 text-slate-200 hidden md:block" />
                               )}
                             </div>
                           )}

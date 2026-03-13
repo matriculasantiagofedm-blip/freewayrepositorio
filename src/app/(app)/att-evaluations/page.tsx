@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 import { useDb } from '@/components/firebase-provider';
 import { collection, query, orderBy } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
@@ -15,7 +16,7 @@ import { ATTstandardTemplate } from '@/components/att-standard-template';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { format, startOfWeek, endOfWeek, isWithinInterval, addDays, subDays, isSaturday, isSunday } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { toDate } from '@/lib/utils';
+import { cn, toDate } from '@/lib/utils';
 
 type TemplateType = 'standard' | 'ampliacion';
 type GroupFilter = 'all' | 'semana' | 'sabatino';

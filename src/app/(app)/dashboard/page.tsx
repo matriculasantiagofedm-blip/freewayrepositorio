@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { useDb, useUser } from '@/firebase';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useCollection } from '@/hooks/use-firestore';
 import { cn, toDate } from '@/lib/utils';
-import { collection } from 'firebase/firestore';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo, useState, useEffect } from 'react';
 import type { Contract } from '@/lib/types';
@@ -16,61 +17,33 @@ import {
   Plus, 
   Repeat, 
   Dumbbell, 
-  CalendarCheck, 
   ArrowRight, 
-  Clock, 
   ShieldCheck, 
   Wallet, 
-  AlertTriangle, 
-  CalendarX, 
-  FileText, 
-  ClipboardCheck, 
-  Settings2, 
   FileSignature,
   Receipt,
-  RefreshCw,
   BookOpen,
-  ClipboardList,
   FileCheck,
-  Gauge,
-  Wrench,
-  ChevronRight
+  ChevronRight,
+  Users,
+  PieChart,
+  History,
+  TrendingUp,
+  AlertCircle
 } from 'lucide-react';
 import { isToday } from 'date-fns';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { Pie, PieChart as ReChartsPieChart, Cell } from 'recharts';
 
 const getBalance = (contract: Contract): number => {
     const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
     return Number(details?.balance) || 0;
 };
 
-const isOverdue = (contract: Contract): boolean => {
-    if (contract.status !== 'active') return false;
-    const balance = getBalance(contract);
-    return balance > 0;
-};
-
-const isPendingAgenda = (c: Contract): boolean => {
-    if (c.status !== 'active') return false;
-    const hasPractical = (c.autoMotoDetails?.practicalClassSchedules?.length || 0) > 0 || 
-                         (c.autoMotoDetails?.motoPracticalClassSchedules?.length || 0) > 0 ||
-                         (c.deluxeDetails?.classSchedules?.length || 0) > 0;
-    const hasTheoretical = (c.autoMotoDetails?.theoreticalClassDates?.length || 0) > 0 ||
-                           (c.deluxeDetails?.theoreticalClasses?.length || 0) > 0 ||
-                           !!c.ampliacionesDetails?.theoreticalClassDate;
-    if (c.type === 'Ampliaciones') return !hasTheoretical;
-    if (c.type === 'Curso Solo Práctica') return !hasPractical;
-    return !hasPractical || !hasTheoretical;
-};
-
 export default function DashboardPage() {
   const db = useDb();
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser();
   const { role } = useCurrentRole();
   const [mounted, setMounted] = useState(false);
 
@@ -80,212 +53,274 @@ export default function DashboardPage() {
   const contractsQuery = useMemo(() => (db && user) ? collection(db, 'contracts') : null, [db, user]);
   const { data: allContracts, isLoading: isContractsLoading } = useCollection<Contract>(contractsQuery);
 
-  const statsValues = useMemo(() => {
-    if (!allContracts || !mounted) return { active: 0, today: 0, overdue: 0, overdueAmount: 0, webEnrollments: [] as Contract[], pendingAgenda: [] as Contract[] };
-    const filteredContracts = allContracts.filter(c => !c.isManualPrint);
-    const active = filteredContracts.filter(c => c.status === 'active' || c.status === 'completed').length;
-    const todayCount = filteredContracts.filter(c => isToday(toDate(c.createdAt))).length;
-    const overdueList = filteredContracts.filter(isOverdue);
-    const overdueCount = overdueList.length;
-    const overdueSum = overdueList.reduce((sum, c) => sum + getBalance(c), 0);
-    const pendingAgenda = filteredContracts.filter(isPendingAgenda);
-    return { active, today: todayCount, overdue: overdueCount, overdueAmount: overdueSum, pendingAgenda };
+  const stats = useMemo(() => {
+    if (!allContracts || !mounted) return { active: 0, today: 0, overdue: [] as Contract[], totalOverdue: 0, chartData: [] };
+    
+    const filtered = allContracts.filter(c => !c.isManualPrint);
+    const active = filtered.filter(c => c.status === 'active' || c.status === 'completed').length;
+    const today = filtered.filter(c => isToday(toDate(c.createdAt))).length;
+    const overdue = filtered.filter(c => getBalance(c) > 0).sort((a,b) => getBalance(b) - getBalance(a)).slice(0, 5);
+    const totalOverdue = filtered.reduce((sum, c) => sum + getBalance(c), 0);
+
+    const types = filtered.reduce((acc: any, c) => {
+        acc[c.type] = (acc[c.type] || 0) + 1;
+        return acc;
+    }, {});
+
+    const chartData = Object.entries(types).map(([name, value]) => ({ name, value }));
+
+    return { active, today, overdue, totalOverdue, chartData };
   }, [allContracts, mounted]);
 
   if (!mounted) return null;
 
-  const stats = [
-    { title: 'Contratos Activos', value: isContractsLoading || isUserLoading ? '...' : statsValues.active, href: '/contracts', icon: ShieldCheck },
-    { title: 'Trámites de Hoy', value: isContractsLoading || isUserLoading ? '...' : statsValues.today, href: '/contracts?filter=today', icon: CalendarCheck, highlight: true },
-    { title: 'Contratos por Cobrar', value: isContractsLoading || isUserLoading ? '...' : statsValues.overdue, secondaryValue: isContractsLoading || isUserLoading ? '' : `B/. ${statsValues.overdueAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, icon: Wallet, href: '/contracts?filter=overdue' },
-  ];
-
-  const contractTypes = [
-    { name: 'Curso Auto', href: '/contracts/new?type=Curso Auto', icon: Car, color: 'text-blue-600', bgColor: 'bg-blue-50' },
-    { name: 'Curso Moto', href: '/contracts/new?type=Curso Moto', icon: Bike, color: 'text-orange-600', bgColor: 'bg-orange-50' },
-    { name: 'Ampliaciones', href: '/contracts/new?type=Ampliaciones', icon: Repeat, color: 'text-amber-600', bgColor: 'bg-amber-50' },
-    { name: 'Solo Práctica', href: '/contracts/new?type=Curso Solo Practica', icon: Dumbbell, color: 'text-emerald-600', bgColor: 'bg-emerald-50' },
-  ];
-
-  const actionGroups = [
-    {
-      title: 'Caja y Ventas',
-      icon: Receipt,
-      color: 'text-blue-600',
-      actions: [
-        { name: 'Pago de Saldos', href: '/cancellations', icon: Wallet, bgColor: 'bg-blue-50', textColor: 'text-blue-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-        { name: 'Confección Certificados', href: '/certificates', icon: FileSignature, bgColor: 'bg-purple-50', textColor: 'text-purple-600', roles: ['Administrador'] },
-        { name: 'Actualizaciones', href: '/updates', icon: RefreshCw, bgColor: 'bg-green-50', textColor: 'text-green-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-        { name: 'Venta de Libros', href: '/book-sales', icon: BookOpen, bgColor: 'bg-indigo-50', textColor: 'text-indigo-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-      ]
-    },
-    {
-      title: 'Operaciones y Control',
-      icon: Settings2,
-      color: 'text-amber-600',
-      actions: [
-        { name: 'Cierre de Caja', href: '/informes/daily-cash', icon: Receipt, bgColor: 'bg-emerald-50', textColor: 'text-emerald-700', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-        { name: 'Agenda Manual', href: '/manual-schedule', icon: Settings2, bgColor: 'bg-amber-50', textColor: 'text-amber-700', roles: ['Administrador', 'Ventas Externas'] },
-        { name: 'Bitácoras de Clase', href: '/logs', icon: ClipboardList, bgColor: 'bg-slate-50', textColor: 'text-slate-600', roles: ['Administrador', 'Ventas Externas'] },
-        { name: 'Constancia ATTT', href: '/att-evaluations', icon: FileCheck, bgColor: 'bg-blue-50', textColor: 'text-blue-700', roles: ['Administrador', 'Ventas Externas'] },
-        { name: 'Exámenes Teóricos', isDropdown: true, icon: BookOpen, roles: ['Administrador'], bgColor: 'bg-orange-50', textColor: 'text-orange-600' },
-      ]
-    },
-    {
-      title: 'Administración Flota',
-      icon: Car,
-      color: 'text-slate-600',
-      actions: [
-        { name: 'Kilometraje', href: '/mileage-log', icon: Gauge, bgColor: 'bg-gray-50', textColor: 'text-gray-600', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-        { name: 'Mantenimiento', href: '/maintenance', icon: Wrench, bgColor: 'bg-stone-50', textColor: 'text-stone-600', roles: ['Administrador'] },
-      ]
-    }
-  ];
-
   return (
-    <div className="flex flex-col gap-8">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col">
-          <h1 className="font-headline text-3xl font-bold text-slate-900 uppercase tracking-tight">Panel de Control</h1>
-          <p className="text-muted-foreground font-medium">Gestión unificada de Freeway Escuela de Manejo</p>
+    <div className="flex flex-col gap-6 bg-slate-50/50 -m-4 p-4 md:-m-8 md:p-8 min-h-screen">
+      {/* Cabecera Estilo Sage */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-6">
+        <div>
+          <h1 className="font-black text-2xl uppercase tracking-tighter text-slate-900 flex items-center gap-2">
+            <TrendingUp className="h-6 w-6 text-primary" />
+            Estado del Negocio
+          </h1>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Freeway Escuela de Manejo • Sistema Global de Gestión</p>
+        </div>
+        <div className="flex items-center gap-3">
+            <div className="bg-white border rounded-lg px-4 py-2 shadow-sm text-center">
+                <p className="text-[9px] font-black uppercase text-blue-600 leading-none mb-1">Contratos Activos</p>
+                <p className="text-xl font-black text-slate-900 leading-none">{isContractsLoading ? '...' : stats.active}</p>
+            </div>
+            <div className="bg-white border rounded-lg px-4 py-2 shadow-sm text-center">
+                <p className="text-[9px] font-black uppercase text-green-600 leading-none mb-1">Trámites Hoy</p>
+                <p className="text-xl font-black text-slate-900 leading-none">{isContractsLoading ? '...' : stats.today}</p>
+            </div>
         </div>
       </div>
 
-      {isAdmin && !isContractsLoading && statsValues.pendingAgenda.length > 0 && (
-        <Card className="border-red-500 border-2 bg-red-50/50 overflow-hidden shadow-xl animate-in slide-in-from-top-4 duration-700">
-          <CardHeader className="pb-3 border-b border-red-200 flex flex-row items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-red-600 p-2.5 rounded-xl shadow-lg animate-pulse"><CalendarX className="h-6 w-6 text-white" /></div>
-              <div>
-                <CardTitle className="text-red-900 text-base font-black uppercase tracking-tight">¡Atención! Agenda Pendiente</CardTitle>
-                <CardDescription className="text-red-700 font-bold">Hay {statsValues.pendingAgenda.length} contratos activos sin fechas asignadas.</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-4 space-y-3">
-            <div className="grid grid-cols-1 gap-2">
-                {statsValues.pendingAgenda.slice(0, 5).map(pending => (
-                <div key={pending.id} className="bg-white p-4 rounded-xl border border-red-200 flex items-center justify-between group hover:border-red-500 hover:shadow-md transition-all">
-                    <div className="flex flex-col">
-                    <span className="font-black text-sm uppercase text-slate-900">{pending.clientName}</span>
-                    <div className="flex items-center gap-3 text-[10px] font-bold uppercase mt-1">
-                        <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded-md flex items-center gap-1.5 border border-red-200"><AlertTriangle className="h-3 w-3" /> REQUIERE PROGRAMACIÓN</span>
-                        <span className="text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-red-200">FOLIO: {String(pending.folioNumber).padStart(6, '0')}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* COLUMNA IZQUIERDA: FLUJO DE TRABAJO (70%) */}
+        <div className="lg:col-span-8 space-y-6">
+          <Card className="shadow-sm border-slate-200 overflow-hidden">
+            <CardHeader className="bg-slate-50 border-b py-3">
+              <CardTitle className="text-xs font-black uppercase tracking-widest text-slate-600">Flujo Operativo de Estudiantes</CardTitle>
+            </CardHeader>
+            <CardContent className="p-10">
+              <div className="relative flex flex-col md:flex-row items-center justify-between gap-8">
+                {/* Línea conectora de fondo */}
+                <div className="absolute top-1/2 left-0 w-full h-0.5 bg-slate-100 -translate-y-1/2 hidden md:block"></div>
+                
+                {/* Paso 1: Inscripción */}
+                <div className="relative z-10 flex flex-col items-center gap-4 group">
+                    <Link href="/contracts/new?type=Curso Auto" className="w-24 h-24 bg-white border-2 border-blue-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-blue-500">
+                        <Plus className="h-10 w-10 text-blue-600" />
+                    </Link>
+                    <div className="text-center">
+                        <p className="font-black text-[10px] uppercase text-slate-900">1. Inscripción</p>
+                        <p className="text-[8px] font-bold text-slate-400 uppercase">Nuevo Contrato</p>
                     </div>
-                    </div>
-                    <Button asChild size="sm" className="bg-red-600 hover:bg-red-700 text-white rounded-full h-9 px-6 font-black uppercase tracking-tighter shadow-sm">
-                    <Link href={`/contracts/${pending.id}`}>AGENDAR <ArrowRight className="ml-2 h-4 w-4" /></Link>
-                    </Button>
                 </div>
-                ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
-      {isAdmin && (
-        <div className="grid gap-4 md:grid-cols-3">
-          {stats.map((stat) => (
-              <Link key={stat.title} href={stat.href} className="no-underline">
-                  <Card className={cn("hover:shadow-md transition-all border-slate-200", stat.highlight && "border-primary/20 bg-primary/5")}>
-                      <CardHeader className="flex flex-row items-center justify-between pb-2">
-                          <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-500">{stat.title}</CardTitle>
-                          <stat.icon className={cn("h-4 w-4", stat.highlight ? "text-primary" : "text-slate-400")} />
-                      </CardHeader>
-                      <CardContent>
-                          <div className="flex items-baseline gap-3">
-                              <div className="text-3xl font-black text-slate-900">{stat.value}</div>
-                              {stat.secondaryValue && <p className="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">{stat.secondaryValue}</p>}
-                          </div>
-                      </CardContent>
-                  </Card>
-              </Link>
-          ))}
-        </div>
-      )}
+                <ArrowRight className="h-6 w-6 text-slate-200 hidden md:block" />
 
-      <div className="space-y-4">
-        <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
-          <span className="h-px bg-slate-200 flex-1"></span>Registrar Nuevo Trámite Presencial<span className="h-px bg-slate-200 flex-1"></span>
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {contractTypes.map((type) => (
-                <Link key={type.name} href={type.href} className="no-underline group">
-                    <Card className={cn("transition-all hover:shadow-lg border-slate-200 overflow-hidden relative", type.bgColor)}>
-                        <CardContent className="p-6 flex flex-col items-center justify-center text-center h-32">
-                            <div className="bg-white p-3 rounded-2xl mb-2 group-hover:scale-110 transition-transform shadow-sm">
-                                <type.icon className={cn("h-6 w-6", type.color)} />
-                            </div>
-                            <span className={cn("font-black text-[10px] uppercase tracking-wider", type.name === 'Ampliaciones' ? 'text-amber-600' : type.color)}>{type.name}</span>
-                            <div className="absolute top-2 right-2 opacity-10 group-hover:opacity-100 transition-opacity"><Plus className="h-4 w-4" /></div>
-                        </CardContent>
-                    </Card>
-                </Link>
-            ))}
-        </div>
-      </div>
+                {/* Paso 2: Agenda */}
+                <div className="relative z-10 flex flex-col items-center gap-4 group">
+                    <Link href="/manual-schedule" className="w-24 h-24 bg-white border-2 border-amber-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-amber-500">
+                        <BookOpen className="h-10 w-10 text-amber-600" />
+                    </Link>
+                    <div className="text-center">
+                        <p className="font-black text-[10px] uppercase text-slate-900">2. Agenda</p>
+                        <p className="text-[8px] font-bold text-slate-400 uppercase">Programar Clases</p>
+                    </div>
+                </div>
 
-      <div className="space-y-6">
-        <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
-          <span className="h-px bg-slate-200 flex-1"></span>Operaciones Rápidas por Rol<span className="h-px bg-slate-200 flex-1"></span>
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {actionGroups.map((group) => {
-            const visibleActions = group.actions.filter(action => action.roles.includes(role || ''));
-            if (visibleActions.length === 0) return null;
-            return (
-              <Card key={group.title} className="shadow-sm border-slate-200 overflow-hidden">
-                <CardHeader className="bg-slate-50/50 border-b py-3 px-4 flex flex-row items-center gap-3">
-                  <div className={cn("p-2 rounded-lg bg-white shadow-sm border border-slate-100", group.color)}>
-                    <group.icon className="h-4 w-4" />
-                  </div>
-                  <CardTitle className="text-xs font-black uppercase tracking-tight text-slate-700">{group.title}</CardTitle>
+                <ArrowRight className="h-6 w-6 text-slate-200 hidden md:block" />
+
+                {/* Paso 3: Cobro */}
+                <div className="relative z-10 flex flex-col items-center gap-4 group">
+                    <Link href="/cancellations" className="w-24 h-24 bg-white border-2 border-green-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-green-500">
+                        <Receipt className="h-10 w-10 text-green-600" />
+                    </Link>
+                    <div className="text-center">
+                        <p className="font-black text-[10px] uppercase text-slate-900">3. Cobranza</p>
+                        <p className="text-[8px] font-bold text-slate-400 uppercase">Pago de Saldos</p>
+                    </div>
+                </div>
+
+                <ArrowRight className="h-6 w-6 text-slate-200 hidden md:block" />
+
+                {/* Paso 4: Certificado */}
+                <div className="relative z-10 flex flex-col items-center gap-4 group">
+                    <Link href="/certificates" className="w-24 h-24 bg-white border-2 border-indigo-100 rounded-3xl shadow-sm flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-110 group-hover:border-indigo-500">
+                        <FileSignature className="h-10 w-10 text-indigo-600" />
+                    </Link>
+                    <div className="text-center">
+                        <p className="font-black text-[10px] uppercase text-slate-900">4. Finalización</p>
+                        <p className="text-[8px] font-bold text-slate-400 uppercase">Confección Folio</p>
+                    </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Sección de Accesos Directos por Categoría */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="shadow-sm border-slate-200">
+                <CardHeader className="py-3 bg-slate-50/50 border-b flex flex-row items-center gap-2">
+                    <Car className="h-4 w-4 text-blue-600" />
+                    <CardTitle className="text-[10px] font-black uppercase text-slate-600">Servicios Presenciales</CardTitle>
+                </CardHeader>
+                <CardContent className="p-2 grid grid-cols-2 gap-2">
+                    <Button asChild variant="ghost" className="h-16 justify-start gap-3 bg-white border border-slate-100 hover:bg-blue-50 hover:text-blue-700 transition-all font-bold text-[10px] uppercase group">
+                        <Link href="/contracts/new?type=Curso Auto">
+                            <Car className="h-5 w-5 opacity-20 group-hover:opacity-100" />
+                            Curso Auto
+                        </Link>
+                    </Button>
+                    <Button asChild variant="ghost" className="h-16 justify-start gap-3 bg-white border border-slate-100 hover:bg-orange-50 hover:text-orange-700 transition-all font-bold text-[10px] uppercase group">
+                        <Link href="/contracts/new?type=Curso Moto">
+                            <Bike className="h-5 w-5 opacity-20 group-hover:opacity-100" />
+                            Curso Moto
+                        </Link>
+                    </Button>
+                    <Button asChild variant="ghost" className="h-16 justify-start gap-3 bg-white border border-slate-100 hover:bg-amber-50 hover:text-amber-700 transition-all font-bold text-[10px] uppercase group">
+                        <Link href="/contracts/new?type=Ampliaciones">
+                            <Repeat className="h-5 w-5 opacity-20 group-hover:opacity-100" />
+                            Ampliación
+                        </Link>
+                    </Button>
+                    <Button asChild variant="ghost" className="h-16 justify-start gap-3 bg-white border border-slate-100 hover:bg-emerald-50 hover:text-emerald-700 transition-all font-bold text-[10px] uppercase group">
+                        <Link href="/contracts/new?type=Curso Solo Practica">
+                            <Dumbbell className="h-5 w-5 opacity-20 group-hover:opacity-100" />
+                            Práctica
+                        </Link>
+                    </Button>
+                </CardContent>
+            </Card>
+
+            <Card className="shadow-sm border-slate-200">
+                <CardHeader className="py-3 bg-slate-50/50 border-b flex flex-row items-center gap-2">
+                    <History className="h-4 w-4 text-indigo-600" />
+                    <CardTitle className="text-[10px] font-black uppercase text-slate-600">Gestión Administrativa</CardTitle>
                 </CardHeader>
                 <CardContent className="p-2 flex flex-col gap-1">
-                    {visibleActions.map((action) => {
-                        const ActionIcon = action.icon;
-                        if (action.isDropdown) {
-                          return (
-                            <DropdownMenu key={action.name}>
-                              <DropdownMenuTrigger asChild>
-                                <button className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 transition-all group text-left">
-                                    <div className="flex items-center gap-3">
-                                      <div className={cn("p-2 rounded-md", action.bgColor, action.textColor)}>
-                                        <ActionIcon className="h-4 w-4" />
-                                      </div>
-                                      <span className="font-bold text-[11px] uppercase text-slate-700">{action.name}</span>
-                                    </div>
-                                    <ChevronRight className="h-3 w-3 text-slate-300 group-hover:translate-x-1 transition-transform" />
-                                </button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-56">
-                                {[1,2,3,4,5].map(n => (
-                                  <DropdownMenuItem key={n} asChild>
-                                    <Link href={`/print-exam/${n}`} target="_blank" className="font-bold uppercase text-[10px] cursor-pointer">Examen Teórico #{n}</Link>
-                                  </DropdownMenuItem>
-                                ))}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          );
-                        }
-                        return (
-                          <Link key={action.name} href={action.href!} className="no-underline">
-                            <div className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 transition-all group">
-                                <div className="flex items-center gap-3">
-                                  <div className={cn("p-2 rounded-md", action.bgColor, action.textColor)}>
-                                    <ActionIcon className="h-4 w-4" />
-                                  </div>
-                                  <span className="font-bold text-[11px] uppercase text-slate-700">{action.name}</span>
-                                </div>
-                                <ChevronRight className="h-3 w-3 text-slate-300 group-hover:translate-x-1 transition-transform" />
+                    {[
+                        { label: 'Cierre de Caja', href: '/informes/daily-cash', icon: Receipt, color: 'text-emerald-600' },
+                        { label: 'Bitácoras de Control', href: '/logs', icon: BookOpen, color: 'text-blue-600' },
+                        { label: 'Evaluaciones ATTT', href: '/att-evaluations', icon: FileCheck, color: 'text-indigo-600' },
+                        { label: 'Venta de Libros', href: '/book-sales', icon: TrendingUp, color: 'text-amber-600' }
+                    ].map((item) => (
+                        <Link key={item.label} href={item.href} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-100 group transition-all">
+                            <div className="flex items-center gap-3">
+                                <item.icon className={cn("h-4 w-4 opacity-40 group-hover:opacity-100 transition-opacity", item.color)} />
+                                <span className="text-[10px] font-bold uppercase text-slate-700">{item.label}</span>
                             </div>
-                          </Link>
-                        )
-                    })}
+                            <ChevronRight className="h-3 w-3 text-slate-300 group-hover:translate-x-1 transition-transform" />
+                        </Link>
+                    ))}
                 </CardContent>
-              </Card>
-            );
-          })}
+            </Card>
+          </div>
+        </div>
+
+        {/* COLUMNA DERECHA: WIDGETS DE DATOS (30%) */}
+        <div className="lg:col-span-4 space-y-6">
+          {/* Widget Alumnos con Saldo */}
+          <Card className="shadow-sm border-slate-200">
+            <CardHeader className="py-3 bg-white border-b flex flex-row items-center justify-between">
+              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-500">Saldos por Cobrar</CardTitle>
+              <Link href="/contracts?filter=overdue" className="text-[9px] font-black uppercase text-blue-600 hover:underline">Ver Todo</Link>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-slate-50">
+                  <TableRow>
+                    <TableHead className="text-[9px] font-black uppercase h-8">Estudiante</TableHead>
+                    <TableHead className="text-right text-[9px] font-black uppercase h-8">Monto</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isContractsLoading ? (
+                    <TableRow><TableCell colSpan={2} className="text-center py-4"><Loader2 className="h-4 w-4 animate-spin mx-auto text-slate-200" /></TableCell></TableRow>
+                  ) : stats.overdue.length > 0 ? (
+                    stats.overdue.map(c => (
+                      <TableRow key={c.id} className="hover:bg-slate-50/50">
+                        <TableCell className="py-2">
+                            <p className="text-[10px] font-bold uppercase truncate max-w-[120px]">{c.clientName}</p>
+                            <p className="text-[8px] text-slate-400 font-medium">Folio {String(c.folioNumber).padStart(6, '0')}</p>
+                        </TableCell>
+                        <TableCell className="text-right py-2 font-black text-red-600 text-xs">
+                            B/. {getBalance(c).toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow><TableCell colSpan={2} className="text-center py-8 text-[9px] font-bold text-slate-300 italic uppercase">Paz y Salvo General</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
+              <div className="p-3 bg-red-50 border-t border-red-100 flex justify-between items-center">
+                <span className="text-[9px] font-black uppercase text-red-800">Total en Calle:</span>
+                <span className="text-sm font-black text-red-900">B/. {stats.totalOverdue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Widget Gráfico Distribución */}
+          <Card className="shadow-sm border-slate-200">
+            <CardHeader className="py-3 bg-white border-b">
+              <CardTitle className="text-[10px] font-black uppercase tracking-widest text-slate-500">Distribución de Trámites</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <ChartContainer config={{}} className="h-[200px] w-full">
+                <ReChartsPieChart>
+                  <Pie
+                    data={stats.chartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {stats.chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={['#2563eb', '#f59e0b', '#10b981', '#6366f1', '#f43f5e'][index % 5]} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                </ReChartsPieChart>
+              </ChartContainer>
+              <div className="mt-4 space-y-1">
+                {stats.chartData.map((item, index) => (
+                    <div key={item.name} className="flex items-center justify-between text-[9px] font-bold uppercase">
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ['#2563eb', '#f59e0b', '#10b981', '#6366f1', '#f43f5e'][index % 5] }}></div>
+                            <span className="text-slate-500 truncate max-w-[150px]">{item.name}</span>
+                        </div>
+                        <span className="text-slate-900">{item.value}</span>
+                    </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Mensajes del Sistema / Alertas */}
+          <Card className="bg-slate-900 text-white shadow-xl overflow-hidden relative">
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+                <ShieldCheck className="h-24 w-24" />
+            </div>
+            <CardContent className="p-6 relative z-10">
+                <div className="flex items-center gap-2 mb-4">
+                    <AlertCircle className="h-4 w-4 text-blue-400" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-blue-400">Estado del Sistema</span>
+                </div>
+                <h4 className="text-lg font-black uppercase leading-tight mb-2 pr-12">Todas las terminales operando</h4>
+                <p className="text-[10px] font-medium text-slate-400 leading-relaxed">La base de datos de Freeway se encuentra sincronizada. Los folios de certificados se están emitiendo correctamente desde la estación central.</p>
+                <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
+                    <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">v2.0 Stable Build</span>
+                    <span className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></span>
+                </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

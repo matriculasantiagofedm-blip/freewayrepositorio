@@ -137,7 +137,6 @@ export default function DailyCashReport() {
       });
     });
 
-    // Filtrar por Rol si es necesario
     if (filterRole !== 'all') {
       list = list.filter(t => t.seller === filterRole);
     }
@@ -203,7 +202,6 @@ export default function DailyCashReport() {
         </div>
         
         <div className="flex flex-wrap items-center gap-2">
-          {/* BUSCADOR/FILTRO POR ROL */}
           <div className="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
             <Filter className="h-3.5 w-3.5 text-slate-500" />
             <Select value={filterRole} onValueChange={setFilterRole}>

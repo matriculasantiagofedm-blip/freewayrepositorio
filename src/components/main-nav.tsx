@@ -26,6 +26,7 @@ const navLinks = [
         { href: '/updates', label: 'Actualizaciones', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
         { href: '/book-sales', label: 'Venta de Libros', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
         { separator: true, roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+        { href: '/exams', label: 'Exámenes Teóricos', roles: ['Administrador', 'Ventas Externas'] },
         { href: '/logs', label: 'Bitácoras de Control', roles: ['Administrador', 'Ventas Externas'] },
         { href: '/surveys', label: 'Encuestas', roles: ['Administrador', 'Ventas Externas'] },
         { href: '/att-evaluations', label: 'Evaluaciones ATTT', roles: ['Administrador', 'Ventas Externas'] },

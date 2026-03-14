@@ -32,7 +32,8 @@ import {
   Library,
   GripHorizontal,
   ClipboardSignature,
-  CalendarClock
+  CalendarClock,
+  FileText
 } from 'lucide-react';
 import { isToday } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -45,7 +46,7 @@ const getBalance = (contract: Contract): number => {
     return Number(details?.balance) || 0;
 };
 
-// Pasos enfocados en la parte COMERCIAL del flujo, incluyendo Cierre de Caja
+// Pasos enfocados en la parte COMERCIAL del flujo
 const INITIAL_FLOW_STEPS = [
   { id: 'step-payment', label: '1. Cobranza', sublabel: 'Saldos Estudiantes', icon: Receipt, color: 'border-green-100 text-green-600', hover: 'group-hover:border-green-500', href: '/cancellations', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
   { id: 'step-updates', label: '2. Trámites', sublabel: 'Actualizaciones', icon: RefreshCw, color: 'border-indigo-100 text-indigo-600', hover: 'group-hover:border-indigo-500', href: '/updates', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
@@ -154,14 +155,14 @@ export default function DashboardPage() {
                 <GripHorizontal className="h-3 w-3" /> Reorganizar
               </div>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-4">
               <DragDropContext onDragEnd={onDragEnd}>
                 <Droppable droppableId="flow-steps" direction="horizontal">
                   {(provided) => (
                     <div 
                       {...provided.droppableProps}
                       ref={provided.innerRef}
-                      className="relative flex flex-col md:flex-row items-center justify-center gap-6 flex-wrap"
+                      className="relative flex flex-col md:flex-row items-center justify-center gap-4 flex-wrap"
                     >
                       {visibleSteps.map((step, index) => (
                         <Draggable key={step.id} draggableId={step.id} index={index}>
@@ -170,30 +171,30 @@ export default function DashboardPage() {
                               ref={draggableProvided.innerRef}
                               {...draggableProvided.draggableProps}
                               {...draggableProvided.dragHandleProps}
-                              className="flex items-center gap-6 group"
+                              className="flex items-center gap-4 group"
                             >
                               <div className={cn(
-                                "relative z-10 flex flex-col items-center gap-2 transition-all",
+                                "relative z-10 flex flex-col items-center gap-1.5 transition-all",
                                 snapshot.isDragging ? "scale-110 rotate-2" : ""
                               )}>
                                   <Link 
                                     href={step.href} 
                                     className={cn(
-                                      "w-20 h-20 bg-white border-2 rounded-[1.5rem] flex items-center justify-center transition-all group-hover:shadow-xl group-hover:scale-105",
+                                      "w-16 h-16 bg-white border-2 rounded-2xl flex items-center justify-center transition-all group-hover:shadow-lg group-hover:scale-105",
                                       step.color,
                                       step.hover,
                                       snapshot.isDragging ? "shadow-2xl border-primary" : "shadow-sm"
                                     )}
                                   >
-                                      <step.icon className="h-8 w-8" />
+                                      <step.icon className="h-7 w-7" />
                                   </Link>
                                   <div className="text-center">
-                                      <p className="font-black text-[9px] uppercase text-slate-900 tracking-tight">{step.label}</p>
-                                      <p className="text-[7px] font-bold text-slate-400 uppercase tracking-widest">{step.sublabel}</p>
+                                      <p className="font-black text-[8px] uppercase text-slate-900 tracking-tight leading-none">{step.label}</p>
+                                      <p className="text-[6px] font-bold text-slate-400 uppercase tracking-widest">{step.sublabel}</p>
                                   </div>
                               </div>
                               {index < visibleSteps.length - 1 && (
-                                <ArrowRight className="h-5 w-5 text-slate-200 hidden md:block" />
+                                <ArrowRight className="h-4 w-4 text-slate-200 hidden md:block" />
                               )}
                             </div>
                           )}
@@ -250,6 +251,7 @@ export default function DashboardPage() {
                     {[
                         { label: 'Agenda Práctica', href: '/manual-schedule', icon: CalendarClock, color: 'text-amber-600', roles: ['Administrador', 'Ventas Externas'] },
                         { label: 'Impresión Certificados', href: '/certificates', icon: FileSignature, color: 'text-purple-600', roles: ['Administrador'] },
+                        { label: 'Exámenes Teóricos', href: '/exams', icon: FileText, color: 'text-violet-600', roles: ['Administrador', 'Ventas Externas'] },
                         { label: 'Bitácoras de Control', href: '/logs', icon: BookOpen, color: 'text-blue-600', roles: ['Administrador', 'Ventas Externas'] },
                         { label: 'Evaluaciones ATTT', href: '/att-evaluations', icon: FileCheck, color: 'text-indigo-600', roles: ['Administrador', 'Ventas Externas'] },
                         { label: 'Encuestas', href: '/surveys', icon: ClipboardSignature, color: 'text-rose-600', roles: ['Administrador', 'Ventas Externas'] }

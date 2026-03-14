@@ -82,7 +82,7 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
 };
 
 const ALL_VEHICLES = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Auto Diesel', 'Moto Roja', 'Moto Negra'];
-const INSTRUCTORS = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon'];
+const INSTRUCTORS = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', 'Carlos Melendes'];
 
 const getGlobalCapacity = (date: Date, slotId: string) => {
     const day = date.getDay(); 

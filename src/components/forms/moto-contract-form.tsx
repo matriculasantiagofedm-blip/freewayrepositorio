@@ -103,7 +103,7 @@ const TIME_OPTIONS = [
 
 const VEHICLES_MOTO = ['Moto Roja', 'Moto Negra'];
 const VEHICLES_AUTO = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Auto Diesel'];
-const INSTRUCTORS = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon'];
+const INSTRUCTORS = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', 'Carlos Melendes'];
 
 const motoContractSchema = z.object({
   clientName: z.string().min(3, 'El nombre es requerido'),

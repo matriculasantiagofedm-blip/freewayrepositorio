@@ -18,7 +18,7 @@ import Link from 'next/link';
 import { format, isToday, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
-import { Eye, Search, CheckCircle, XCircle, CalendarIcon, X } from 'lucide-react';
+import { Eye, Search, CheckCircle, XCircle, CalendarIcon, X, CalendarClock } from 'lucide-react';
 import { useState, Suspense, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useDb, useUser } from '@/components/firebase-provider';
@@ -29,6 +29,13 @@ import { Calendar } from '@/components/ui/calendar';
 const getBalance = (contract: Contract): number => {
     const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
     return Number(details?.balance) || 0;
+}
+
+const getPaymentDeadline = (contract: Contract): Date | null => {
+    const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
+    if (!details?.paymentDeadline) return null;
+    const date = toDate(details.paymentDeadline);
+    return isNaN(date.getTime()) ? null : date;
 }
 
 const isOverdue = (contract: Contract): boolean => {
@@ -157,6 +164,7 @@ function AllContractsContent() {
                 <TableHead className="font-bold text-black">Certificado</TableHead>
                 <TableHead className="font-bold text-black">Fecha Registro</TableHead>
                 <TableHead className="text-right font-bold text-black">Saldo (B/.)</TableHead>
+                <TableHead className="font-bold text-black">Límite Pago</TableHead>
                 {showActions && <TableHead className="text-right font-bold text-black">Acciones</TableHead>}
               </TableRow>
             </TableHeader>
@@ -165,6 +173,8 @@ function AllContractsContent() {
                 filteredContracts.map((contract) => {
                   const contractDate = toDate(contract.createdAt);
                   const isCreatedToday = isToday(contractDate);
+                  const balance = getBalance(contract);
+                  const deadline = getPaymentDeadline(contract);
 
                   return (
                     <TableRow key={contract.id} className={cn(contract.status === 'expired' && 'bg-muted/50', isCreatedToday && "bg-primary/5")}>
@@ -198,8 +208,22 @@ function AllContractsContent() {
                             {isCreatedToday && <Badge className="h-4 px-1 text-[8px] bg-primary">HOY</Badge>}
                         </div>
                       </TableCell>
-                      <TableCell className={cn("text-right font-bold", getBalance(contract) > 0 ? "text-destructive" : "text-green-600")}>
-                          {getBalance(contract).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      <TableCell className={cn("text-right font-bold", balance > 0 ? "text-destructive" : "text-green-600")}>
+                          {balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {balance > 0 ? (
+                          deadline ? (
+                            <div className="flex items-center gap-1.5 font-bold text-slate-700">
+                              <CalendarClock className="h-3.5 w-3.5 text-amber-500" />
+                              {format(deadline, 'dd/MM/yyyy', { locale: es })}
+                            </div>
+                          ) : (
+                            <span className="text-slate-300 italic">No definida</span>
+                          )
+                        ) : (
+                          <span className="text-green-600 font-black text-[9px] uppercase tracking-widest">Paz y Salvo</span>
+                        )}
                       </TableCell>
                       {showActions && (
                         <TableCell className="text-right">
@@ -213,7 +237,7 @@ function AllContractsContent() {
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={showActions ? 8 : 7} className="h-32 text-center text-muted-foreground italic">
+                  <TableCell colSpan={showActions ? 9 : 8} className="h-32 text-center text-muted-foreground italic">
                     {searchTerm || selectedDate ? "No se encontraron contratos con ese criterio." : "No hay trámites registrados para el filtro seleccionado."}
                   </TableCell>
                 </TableRow>

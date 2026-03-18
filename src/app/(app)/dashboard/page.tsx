@@ -28,7 +28,11 @@ import {
   ExternalLink,
   ChevronRight,
   ShieldCheck,
-  ArrowDown
+  ArrowDown,
+  Car,
+  Bike,
+  Repeat,
+  Dumbbell
 } from 'lucide-react';
 import { isToday, format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -37,15 +41,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Pie, PieChart as ReChartsPieChart, Cell } from 'recharts';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 
 const getBalance = (contract: Contract): number => {
     const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
     return Number(details?.balance) || 0;
-};
-
-const getPhone = (contract: Contract): string => {
-    const details = contract.autoMotoDetails || contract.ampliacionesDetails || contract.deluxeDetails;
-    return details?.studentPhone1 || '---';
 };
 
 export default function DashboardPage() {
@@ -65,7 +71,6 @@ export default function DashboardPage() {
     
     const filtered = allContracts.filter(c => !c.isManualPrint);
     const active = filtered.filter(c => c.status === 'active' || c.status === 'completed').length;
-    const today = filtered.filter(c => isToday(toDate(c.createdAt))).length;
     const overdueList = filtered.filter(c => getBalance(c) > 0).sort((a,b) => getBalance(b) - getBalance(a));
     const overdue = overdueList.slice(0, 10);
     const totalOverdue = filtered.reduce((sum, c) => sum + getBalance(c), 0);
@@ -77,7 +82,7 @@ export default function DashboardPage() {
 
     const chartData = Object.entries(types).map(([name, value]) => ({ name, value }));
 
-    return { active, today, overdue, totalOverdue, chartData };
+    return { active, overdue, totalOverdue, chartData };
   }, [allContracts, mounted]);
 
   if (!mounted) return null;
@@ -149,7 +154,52 @@ export default function DashboardPage() {
                             <div className="flex flex-col gap-16 relative">
                                 {/* Fila 1: Captación */}
                                 <div className="flex justify-around items-start relative">
-                                    <WorkflowItem icon={UserPlus} label="Inscripción" sub="Nuevos Alumnos" href="/contracts/new?type=Curso Auto" color="text-blue-600" />
+                                    {/* BOTÓN INSCRIPCIÓN CON MENÚ MULTI-CONTRATO */}
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <button className="flex flex-col items-center gap-3 group outline-none">
+                                                <div className={cn(
+                                                    "w-16 h-16 bg-white border-2 border-slate-200 rounded-2xl flex items-center justify-center shadow-sm transition-all group-hover:shadow-lg group-hover:-translate-y-1 group-hover:border-blue-500",
+                                                    "text-blue-600"
+                                                )}>
+                                                    <UserPlus className="h-7 w-7" />
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-[10px] font-black uppercase text-slate-900 leading-none">Inscripción</p>
+                                                    <p className="text-[8px] font-bold text-slate-400 uppercase mt-1 tracking-tight">Nuevo Estudiante</p>
+                                                </div>
+                                            </button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="center" className="w-56 p-2 rounded-xl shadow-2xl border-slate-200">
+                                            <p className="text-[9px] font-black uppercase text-slate-400 px-2 py-1.5 tracking-widest">Seleccionar Trámite</p>
+                                            <DropdownMenuItem asChild className="rounded-lg cursor-pointer py-2.5">
+                                                <Link href="/contracts/new?type=Curso Auto" className="flex items-center gap-3">
+                                                    <div className="bg-blue-50 p-1.5 rounded-md"><Car className="h-4 w-4 text-blue-600" /></div>
+                                                    <span className="text-xs font-bold uppercase text-slate-700">Curso de Auto</span>
+                                                </Link>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem asChild className="rounded-lg cursor-pointer py-2.5">
+                                                <Link href="/contracts/new?type=Curso Moto" className="flex items-center gap-3">
+                                                    <div className="bg-orange-50 p-1.5 rounded-md"><Bike className="h-4 w-4 text-orange-600" /></div>
+                                                    <span className="text-xs font-bold uppercase text-slate-700">Curso de Moto</span>
+                                                </Link>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem asChild className="rounded-lg cursor-pointer py-2.5">
+                                                <Link href="/contracts/new?type=Ampliaciones" className="flex items-center gap-3">
+                                                    <div className="bg-amber-50 p-1.5 rounded-md"><Repeat className="h-4 w-4 text-amber-600" /></div>
+                                                    <span className="text-xs font-bold uppercase text-slate-700">Ampliaciones</span>
+                                                </Link>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem asChild className="rounded-lg cursor-pointer py-2.5">
+                                                <Link href="/contracts/new?type=Curso Solo Practica" className="flex items-center gap-3">
+                                                    <div className="bg-emerald-50 p-1.5 rounded-md"><Dumbbell className="h-4 w-4 text-emerald-600" /></div>
+                                                    <span className="text-xs font-bold uppercase text-slate-700">Solo Práctica</span>
+                                                </Link>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+
                                     <ArrowRightConnector />
                                     <WorkflowItem icon={Receipt} label="Cobranza" sub="Gestión de Saldos" href="/cancellations" color="text-green-600" />
                                     <ArrowRightConnector />
@@ -202,7 +252,7 @@ export default function DashboardPage() {
                         <CardContent className="p-2">
                             <div className="grid grid-cols-1 gap-1">
                                 <QuickReportLink href="/informes/vehicle-schedule" label="Agenda de Vehículos" />
-                                <QuickReportLink href="/informes/theoretical-schedule" label="Citaciones Teóricas" />
+                                <QuickReportLink href="/informes/theoretical-schedule" label="Agenda Teórica Semanal" />
                                 <QuickReportLink href="/informes/cancellation-payments" label="Resumen de Cobranza" />
                             </div>
                         </CardContent>
@@ -314,7 +364,7 @@ export default function DashboardPage() {
 
 function WorkflowItem({ icon: Icon, label, sub, href, color }: any) {
     return (
-        <Link href={href} className="flex flex-col items-center gap-3 group">
+        <Link href={href} className="flex flex-col items-center gap-3 group outline-none">
             <div className={cn(
                 "w-16 h-16 bg-white border-2 border-slate-200 rounded-2xl flex items-center justify-center shadow-sm transition-all group-hover:shadow-lg group-hover:-translate-y-1 group-hover:border-blue-500",
                 color

@@ -121,7 +121,7 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
       theoreticalClassDate: toDate(contract.ampliacionesDetails?.theoreticalClassDate),
     } : {
       clientName: '', clientEmail: '', idType: 'C.I.P.', studentIdNumber: '',
-      studentAddress: '', studentPhone1: '', licenseCategory: '',
+      studentAddress: '', studentPhone1: '', studentPhone2: '', licenseCategory: '',
       courseValue: 0, downPayment: 0, paymentType: 'cash',
       theoreticalClassTime: 'Semanal 8:00 am a 10:00 am',
     },
@@ -345,12 +345,17 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
                 </div>
 
                 <div className="col-span-12 md:col-span-6">
-                  <FormField control={form.control} name="studentPhone1" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Teléfono Principal</FormLabel>
-                      <FormControl><Input placeholder="6000-0000" {...field} className="h-9" /></FormControl>
-                    </FormItem>
-                  )} />
+                  <div className="space-y-2">
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Teléfonos de Contacto</FormLabel>
+                    <div className="grid grid-cols-2 gap-2">
+                      <FormField control={form.control} name="studentPhone1" render={({ field }) => (
+                        <FormItem><FormControl><Input placeholder="Principal" {...field} className="h-9" /></FormControl><FormMessage /></FormItem>
+                      )} />
+                      <FormField control={form.control} name="studentPhone2" render={({ field }) => (
+                        <FormItem><FormControl><Input placeholder="Opcional" {...field} className="h-9" /></FormControl><FormMessage /></FormItem>
+                      )} />
+                    </div>
+                  </div>
                 </div>
                 <div className="col-span-12">
                   <FormField control={form.control} name="studentAddress" render={({ field }) => (

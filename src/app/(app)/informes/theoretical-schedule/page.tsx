@@ -197,20 +197,20 @@ export default function TheoreticalSchedulePage() {
       </div>
 
       {/* Reporte de un solo listado */}
-      <Card id="theory-report-print" className="shadow-xl border-none m-2 overflow-hidden">
-        <CardHeader className="bg-slate-900 text-white py-6">
+      <Card id="theory-report-print" className="shadow-xl border-none m-2 overflow-hidden bg-white">
+        <CardHeader className="bg-white border-b py-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <CardTitle className="text-xl font-black uppercase tracking-widest">
+                    <CardTitle className="text-xl font-black uppercase tracking-widest text-slate-900">
                         Citaciones Teóricas: {groupFilter === 'all' ? 'Semana Completa' : groupFilter === 'semana' ? 'Grupo Semanal' : 'Grupo Sabatino'}
                     </CardTitle>
-                    <p className="text-xs font-bold text-indigo-400 mt-1 uppercase">
+                    <p className="text-xs font-bold text-indigo-600 mt-1 uppercase">
                         Periodo: {format(weekStart, 'PP', { locale: es })} al {format(weekEnd, 'PP', { locale: es })}
                     </p>
                 </div>
-                <div className="bg-white/10 px-4 py-2 rounded-xl border border-white/20 text-center">
+                <div className="bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100 text-center">
                     <p className="text-[10px] font-black uppercase text-slate-400">Total Alumnos</p>
-                    <p className="text-2xl font-black text-indigo-400 leading-none">{weeklyCitations.length}</p>
+                    <p className="text-2xl font-black text-indigo-600 leading-none">{weeklyCitations.length}</p>
                 </div>
             </div>
         </CardHeader>
@@ -292,8 +292,6 @@ export default function TheoreticalSchedulePage() {
           body { background: white !important; }
           header, footer, nav, aside, .print-hidden, button { display: none !important; }
           #theory-report-print { border: none !important; box-shadow: none !important; width: 100% !important; margin: 0 !important; border-radius: 0 !important; }
-          .bg-slate-900 { background-color: #0f172a !important; color: white !important; -webkit-print-color-adjust: exact; }
-          .text-indigo-400 { color: #818cf8 !important; -webkit-print-color-adjust: exact; }
           .bg-slate-50 { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; }
         }
       `}</style>

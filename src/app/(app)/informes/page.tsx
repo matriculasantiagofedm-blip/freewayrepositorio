@@ -13,7 +13,8 @@ import {
   ShieldCheck,
   FileText,
   BookOpen,
-  ClipboardList
+  ClipboardList,
+  Package
 } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 
@@ -22,6 +23,15 @@ export default function ReportsIndexPage() {
   const isAdmin = role === 'Administrador';
 
   const reportCards = [
+    {
+      title: 'Catálogo de Planes',
+      description: 'Guía oficial de precios y paquetes comerciales de la escuela.',
+      href: '/informes/packages',
+      icon: Package,
+      color: 'text-slate-900',
+      bgColor: 'bg-slate-100',
+      roles: ['Administrador', 'Ventas', 'Ventas Externas']
+    },
     {
       title: 'Agenda Práctica Semanal',
       description: 'Agenda consolidada por vehículo y disponibilidad de turnos prácticos en formato semanal.',

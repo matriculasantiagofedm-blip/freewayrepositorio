@@ -32,7 +32,9 @@ import {
   Car,
   Bike,
   Repeat,
-  Dumbbell
+  Dumbbell,
+  DollarSign,
+  Settings
 } from 'lucide-react';
 import { isToday, format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -86,6 +88,8 @@ export default function DashboardPage() {
   }, [allContracts, mounted]);
 
   if (!mounted) return null;
+
+  const isAdmin = role === 'Administrador';
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f4f7f9] -m-4 md:-m-8">
@@ -225,6 +229,16 @@ export default function DashboardPage() {
                                 <WorkflowItem icon={FileCheck} label="Bitácoras" sub="Control de Clases" href="/logs" color="text-blue-600" />
                                 <WorkflowItem icon={TrendingUp} label="ATTT" sub="Evaluaciones" href="/att-evaluations" color="text-indigo-600" />
                                 <WorkflowItem icon={ShieldCheck} label="Seguridad" sub="Control Vehicular" href="/mileage-log" color="text-slate-600" />
+                                
+                                {isAdmin && (
+                                  <WorkflowItem 
+                                    icon={DollarSign} 
+                                    label="Precios" 
+                                    sub="Mantenimiento" 
+                                    href="/settings/prices" 
+                                    color="text-red-600" 
+                                  />
+                                )}
                             </div>
                         )}
 

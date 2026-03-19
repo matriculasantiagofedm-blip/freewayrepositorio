@@ -104,6 +104,7 @@ export interface AutoMotoContractDetails {
   paidInFull?: boolean;
   paymentType?: string;
   instructor?: InstructorName;
+  photoDataUri?: string;
 }
 
 export interface AmpliacionesContractDetails {
@@ -120,6 +121,7 @@ export interface AmpliacionesContractDetails {
   theoreticalClassDate?: any;
   theoreticalClassTime?: string;
   paymentType: string;
+  photoDataUri?: string;
 }
 
 export interface Contract {
@@ -153,6 +155,7 @@ export interface Contract {
   isCorrection?: boolean;
   isUpdate?: boolean;
   isManualPrint?: boolean;
+  photoDataUri?: string;
 }
 
 export interface ManualSchedule {
@@ -189,6 +192,7 @@ export interface Certificate {
   lastName?: string;
   secondLastName?: string;
   marriedLastName?: string;
+  photoDataUri?: string;
 }
 
 export interface Transaction {

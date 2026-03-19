@@ -6,7 +6,6 @@ import { toDate } from '@/lib/utils';
 
 /**
  * PLANTILLA DE CERTIFICADO OPTIMIZADA PARA EVITAR CRASHES EN TABLET
- * Se redujo el texto un 25% manteniendo la estructura física.
  */
 
 function CertificateFront({ certificate }: { certificate: Certificate }) {
@@ -15,6 +14,9 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
     const formattedMonth = !isNaN(issueDate.getTime()) ? format(issueDate, 'MMMM', { locale: es }) : '-------';
     const formattedYear = !isNaN(issueDate.getTime()) ? format(issueDate, 'yyyy', { locale: es }) : '0000';
     
+    // Obtener foto desde el certificado o el contrato asociado
+    const photo = certificate.photoDataUri || (certificate.contract?.autoMotoDetails as any)?.photoDataUri || (certificate.contract?.ampliacionesDetails as any)?.photoDataUri;
+
     const getCourseHours = (licenseType?: string, courseName?: string) => {
         if (licenseType?.includes('F')) return '36';
         if (!courseName) return '36';
@@ -59,6 +61,15 @@ function CertificateFront({ certificate }: { certificate: Certificate }) {
                 <div className="w-[10.2in] h-[7.8in] border-[3px] border-black flex flex-col p-10 relative bg-white">
                     
                     <header className="flex w-full flex-col items-center justify-center relative pt-2">
+                        {/* FOTO DEL ESTUDIANTE (RECUADRO SUPERIOR IZQUIERDO) */}
+                        <div className="absolute top-0 left-0 w-24 h-28 border-2 border-black bg-slate-50 flex items-center justify-center overflow-hidden">
+                            {photo ? (
+                                <img src={photo} alt="Estudiante" className="w-full h-full object-cover" />
+                            ) : (
+                                <span className="text-[6pt] font-black uppercase text-slate-300 text-center px-2">Espacio para Foto</span>
+                            )}
+                        </div>
+
                         <h2 className="text-[9.5pt] font-bold tracking-tight mb-1 uppercase">FREEWAY ESCUELA DE MANEJO S.A.</h2>
                         <h1 className="text-[33pt] font-black tracking-[0.12em] leading-none mb-1 text-black">FREEWAY</h1>
                         <p className="text-[12pt] tracking-[0.3em] font-semibold text-black uppercase">Escuela de Manejo</p>

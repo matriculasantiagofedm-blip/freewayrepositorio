@@ -23,6 +23,7 @@ export function CameraCapture({ onCapture, initialImage }: CameraCaptureProps) {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ 
             video: { 
+              facingMode: "environment", // Fuerza el uso de la cámara trasera
               aspectRatio: 1,
               width: { ideal: 400 },
               height: { ideal: 400 }
@@ -101,7 +102,8 @@ export function CameraCapture({ onCapture, initialImage }: CameraCaptureProps) {
           </>
         ) : isCapturing ? (
           <div className="w-full h-full bg-black">
-            <video ref={videoRef} className="w-full h-full object-cover scale-x-[-1]" autoPlay muted playsInline />
+            {/* Se elimina scale-x-[-1] porque la cámara trasera no debe estar espejada */}
+            <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
             <canvas ref={canvasRef} className="hidden" />
           </div>
         ) : (

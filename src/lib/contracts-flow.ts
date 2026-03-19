@@ -5,6 +5,7 @@
 
 import { ai } from './genkit';
 import { z } from 'zod';
+import { withExponentialBackoff } from './gemini-retry';
 
 const AnalyzeContractInputSchema = z.object({
   text: z.string().describe('El texto completo del contrato.'),
@@ -17,19 +18,21 @@ const AnalyzeContractOutputSchema = z.object({
 });
 
 /**
- * Analiza un contrato utilizando IA para extraer información clave.
+ * Analiza un contrato utilizando IA para extraer información clave con política de reintentos.
  */
 export async function analyzeContract(input: z.infer<typeof AnalyzeContractInputSchema>) {
-  const { output } = await ai.generate({
-    prompt: `Eres un experto legal analizando documentos. Por favor analiza el siguiente texto de contrato y devuelve un JSON estructurado con un resumen, los riesgos principales detectados y la fecha de expiración si la encuentras.
-    
-    TEXTO DEL CONTRATO:
-    ${input.text}`,
-    output: {
-      schema: AnalyzeContractOutputSchema
-    }
-  });
+  return withExponentialBackoff(async () => {
+    const { output } = await ai.generate({
+      prompt: `Eres un experto legal analizando documentos. Por favor analiza el siguiente texto de contrato y devuelve un JSON estructurado con un resumen, los riesgos principales detectados y la fecha de expiración si la encuentras.
+      
+      TEXTO DEL CONTRATO:
+      ${input.text}`,
+      output: {
+        schema: AnalyzeContractOutputSchema
+      }
+    });
 
-  if (!output) throw new Error('No se pudo procesar el análisis del contrato.');
-  return output;
+    if (!output) throw new Error('No se pudo procesar el análisis del contrato.');
+    return output;
+  });
 }

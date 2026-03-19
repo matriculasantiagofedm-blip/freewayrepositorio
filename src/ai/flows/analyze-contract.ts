@@ -9,6 +9,7 @@
 
 import { ai } from '@/lib/genkit';
 import { z } from 'zod';
+import { withExponentialBackoff } from '@/lib/gemini-retry';
 
 const AnalyzeContractInputSchema = z.object({
   text: z.string().describe('El texto completo del contrato que se desea analizar.'),
@@ -41,7 +42,9 @@ const analyzeContractFlow = ai.defineFlow(
     outputSchema: AnalyzeContractOutputSchema,
   },
   async (input) => {
-    const { output } = await analyzeContractPrompt(input);
+    // Aplicamos backoff exponencial para manejar límites de cuota de Gemini
+    const { output } = await withExponentialBackoff(() => analyzeContractPrompt(input));
+    
     if (!output) throw new Error('No se pudo generar el análisis del contrato.');
     return output;
   }

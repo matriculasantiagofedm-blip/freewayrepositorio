@@ -18,7 +18,7 @@ const AnalyzeContractOutputSchema = z.object({
 });
 
 /**
- * Analiza un contrato utilizando IA para extraer información clave con política de reintentos.
+ * Analiza un contrato utilizando IA para extraer información clave con política de reintentos optimizada.
  */
 export async function analyzeContract(input: z.infer<typeof AnalyzeContractInputSchema>) {
   return withExponentialBackoff(async () => {

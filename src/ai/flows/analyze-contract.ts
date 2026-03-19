@@ -42,11 +42,11 @@ const analyzeContractFlow = ai.defineFlow(
     outputSchema: AnalyzeContractOutputSchema,
   },
   async (input) => {
-    // Aplicamos backoff exponencial para manejar límites de cuota de Gemini
-    const { output } = await withExponentialBackoff(() => analyzeContractPrompt(input));
+    // Aplicamos backoff exponencial optimizado para manejar límites de cuota de Gemini
+    const result = await withExponentialBackoff(() => analyzeContractPrompt(input));
     
-    if (!output) throw new Error('No se pudo generar el análisis del contrato.');
-    return output;
+    if (!result || !result.output) throw new Error('No se pudo generar el análisis del contrato.');
+    return result.output;
   }
 );
 

@@ -1,38 +1,35 @@
-'use client';
-
 /**
- * @fileOverview Utilidad para manejar reintentos con espera exponencial.
- * Útil para mitigar errores 429 (Rate Limit) de APIs de IA.
+ * @fileOverview Utilidad para ejecutar funciones con reintentos automáticos y espera exponencial.
+ * Específicamente diseñado para manejar límites de cuota (429) y errores de servidor (500) en la API de Gemini.
  */
 
 export async function withExponentialBackoff<T>(
   fn: () => Promise<T>,
   maxRetries: number = 3,
-  initialDelay: number = 2000
+  delay: number = 2000
 ): Promise<T> {
-  let currentDelay = initialDelay;
+  try {
+    return await fn();
+  } catch (error: any) {
+    // Verificamos si es un error de cuota (429), del servidor (500) o agotamiento de recursos
+    const isRetryable = 
+      error.status === 429 || 
+      error.status === 500 || 
+      error.message?.includes('429') || 
+      error.message?.includes('500') ||
+      error.code === 'RESOURCE_EXHAUSTED';
 
-  for (let i = 0; i <= maxRetries; i++) {
-    try {
-      return await fn();
-    } catch (error: any) {
-      // Verificamos si es error de cuota (429) o error de servidor (500)
-      const isRateLimit = error.status === 429 || error.message?.includes('429') || error.code === 'RESOURCE_EXHAUSTED';
-      const isServerError = error.status === 500 || error.message?.includes('500');
-
-      if ((isRateLimit || isServerError) && i < maxRetries) {
-        console.warn(`[IA Retry] Intento ${i + 1} fallido. Reintentando en ${currentDelay}ms...`);
-        
-        await new Promise((resolve) => setTimeout(resolve, currentDelay));
-        
-        // Aumentamos el tiempo de espera exponencialmente (2s, 4s, 8s...)
-        currentDelay *= 2;
-        continue;
-      }
-
-      // Si no es reintentable o agotamos intentos, lanzamos el error
-      throw error;
+    if (isRetryable && maxRetries > 0) {
+      console.warn(`⚠️ Límite de cuota o error de servidor detectado. Reintentando en ${delay}ms... (Intentos restantes: ${maxRetries})`);
+      
+      // Esperamos el tiempo definido
+      await new Promise(resolve => setTimeout(resolve, delay));
+      
+      // Reintentamos con el doble de tiempo (Backoff Exponencial)
+      return withExponentialBackoff(fn, maxRetries - 1, delay * 2);
     }
+
+    // Si no es un error reintentable o no quedan intentos, lanzamos el error
+    throw error;
   }
-  throw new Error("Máximo de reintentos alcanzado en la comunicación con el modelo de IA");
 }

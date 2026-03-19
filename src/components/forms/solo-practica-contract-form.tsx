@@ -62,6 +62,7 @@ import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { isPanamaHoliday } from '@/lib/holidays';
 import type { Contract } from '@/lib/types';
 import { AutoMotoContractTemplate } from '@/components/auto-moto-contract';
+import { CameraCapture } from '@/components/camera-capture';
 
 const PRACTICE_PLANS = ["Basico 8 Hrs", "Plus 10 Hrs", "Premium 12 Hrs"];
 const PLAN_PRICES: Record<string, number> = { "Basico 8 Hrs": 123.00, "Plus 10 Hrs": 135.00, "Premium 12 Hrs": 160.00 };
@@ -116,6 +117,7 @@ const soloPracticaSchema = z.object({
     vehicle: z.string().optional(),
     instructor: z.string().optional(),
   })).optional(),
+  photoDataUri: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof soloPracticaSchema>;
@@ -147,11 +149,13 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
         ...s,
         date: toDate(s.date)
       })),
+      photoDataUri: (contract.autoMotoDetails as any)?.photoDataUri || '',
     } : {
       clientName: '', clientEmail: '', idType: 'C.I.P.', studentIdNumber: '',
-      studentAddress: '', studentPhone1: '', vehicleType: 'Auto',
+      studentAddress: '', studentPhone1: '', studentPhone2: '', vehicleType: 'Auto',
       vehicleTransmission: 'Automático', coursePlan: '', courseValue: 0,
       downPayment: 0, paymentType: 'cash', practicalClassSchedules: [],
+      photoDataUri: '',
     },
   });
 
@@ -350,21 +354,30 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
               </div>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="grid grid-cols-12 gap-4">
-                <div className="col-span-12 md:col-span-8">
-                  <FormField control={form.control} name="clientName" render={({ field }) => (
-                    <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Nombre</FormLabel><FormControl><Input placeholder="Nombre..." {...field} className="h-9 uppercase font-bold" /></FormControl><FormMessage /></FormItem>
-                  )} />
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+                <div className="md:col-span-4 flex justify-center md:justify-start">
+                  <CameraCapture 
+                    initialImage={form.getValues('photoDataUri')} 
+                    onCapture={(uri) => form.setValue('photoDataUri', uri || '')} 
+                  />
                 </div>
-                <div className="col-span-12 md:col-span-4">
-                  <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
-                    <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">ID</FormLabel><FormControl><Input placeholder="8-000-000" {...field} className="h-9 font-mono" readOnly={isEdit} /></FormControl></FormItem>
-                  )} />
-                </div>
-                <div className="col-span-12">
-                  <FormField control={form.control} name="studentAddress" render={({ field }) => (
-                    <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Dirección</FormLabel><FormControl><Input placeholder="Ubicación..." {...field} className="h-9 uppercase" /></FormControl></FormItem>
-                  )} />
+
+                <div className="md:col-span-8 grid grid-cols-12 gap-4">
+                  <div className="col-span-12 md:col-span-8">
+                    <FormField control={form.control} name="clientName" render={({ field }) => (
+                      <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Nombre</FormLabel><FormControl><Input placeholder="Nombre..." {...field} className="h-9 uppercase font-bold" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                  </div>
+                  <div className="col-span-12 md:col-span-4">
+                    <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
+                      <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">ID</FormLabel><FormControl><Input placeholder="8-000-000" {...field} className="h-9 font-mono" readOnly={isEdit} /></FormControl></FormItem>
+                    )} />
+                  </div>
+                  <div className="col-span-12">
+                    <FormField control={form.control} name="studentAddress" render={({ field }) => (
+                      <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Dirección</FormLabel><FormControl><Input placeholder="Ubicación..." {...field} className="h-9 uppercase" /></FormControl></FormItem>
+                    )} />
+                  </div>
                 </div>
               </div>
             </CardContent>

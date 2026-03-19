@@ -6,7 +6,7 @@ import { toDate } from '@/lib/utils';
 
 /**
  * PLANTILLA DE AMPLIACIÓN OPTIMIZADA PARA EVITAR CRASHES EN TABLET
- * Se redujo el texto un 25% manteniendo la estructura física.
+ * Se añadió recuadro para foto del estudiante.
  */
 
 const getHighestLicenseType = (licenseTypes: string = ''): string => {
@@ -39,12 +39,23 @@ function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate 
     const formattedYear = !isNaN(issueDate.getTime()) ? format(issueDate, 'yyyy', { locale: es }) : '0000';
     const { num: folioNum, year: folioYear } = getFolioParts(certificate.folio);
     
+    const photo = certificate.photoDataUri || (certificate.contract?.ampliacionesDetails as any)?.photoDataUri;
+
     return (
         <div className="certificate-page-container print:m-0 print:p-0">
             <div className="w-[11in] h-[8.5in] bg-white text-black font-serif relative flex items-center justify-center p-0 break-after-page overflow-hidden">
                 <div className="w-[10.2in] h-[7.8in] border-[3px] border-black flex flex-col p-10 relative bg-white">
                     
                     <header className="flex w-full flex-col items-center justify-center relative pt-2">
+                        {/* FOTO DEL ESTUDIANTE (RECUADRO SUPERIOR IZQUIERDO) */}
+                        <div className="absolute top-0 left-0 w-24 h-28 border-2 border-black bg-slate-50 flex items-center justify-center overflow-hidden">
+                            {photo ? (
+                                <img src={photo} alt="Estudiante" className="w-full h-full object-cover" />
+                            ) : (
+                                <span className="text-[6pt] font-black uppercase text-slate-300 text-center px-2">Espacio para Foto</span>
+                            )}
+                        </div>
+
                         <h2 className="text-[9.5pt] font-bold tracking-tight mb-1 uppercase">FREEWAY ESCUELA DE MANEJO S.A.</h2>
                         <h1 className="text-[33pt] font-black tracking-[0.12em] leading-none mb-1 text-black">FREEWAY</h1>
                         <p className="text-[12pt] tracking-[0.3em] font-semibold text-black uppercase">Escuela de Manejo</p>

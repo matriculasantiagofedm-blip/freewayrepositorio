@@ -19,7 +19,7 @@ const INSTRUCTORS = [
     { id: '1', name: 'Emmanuel Camargo' },
     { id: '2', name: 'Julisse Alonso' },
     { id: '3', name: 'Adrian Gordon' },
-    { id: '4', name: 'Carlos Melendes' },
+    { id: '4', name: 'Roberto Brown' },
 ];
 
 export default function QualityMonitoringPage() {

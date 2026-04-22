@@ -61,6 +61,7 @@ export interface PracticalClassSlot {
 }
 
 export interface DeluxeContractDetails {
+  coursePlan?: string;
   idType?: string;
   studentIdNumber: string;
   studentAddress: string;
@@ -105,6 +106,8 @@ export interface AutoMotoContractDetails {
   paymentType?: string;
   instructor?: InstructorName;
   photoDataUri?: string;
+  idCardDataUri?: string;
+  licenseDataUri?: string;
 }
 
 export interface AmpliacionesContractDetails {
@@ -122,6 +125,8 @@ export interface AmpliacionesContractDetails {
   theoreticalClassTime?: string;
   paymentType: string;
   photoDataUri?: string;
+  idCardDataUri?: string;
+  licenseDataUri?: string;
 }
 
 export interface Contract {
@@ -156,6 +161,8 @@ export interface Contract {
   isUpdate?: boolean;
   isManualPrint?: boolean;
   photoDataUri?: string;
+  idCardDataUri?: string;
+  licenseDataUri?: string;
 }
 
 export interface ManualSchedule {
@@ -193,6 +200,8 @@ export interface Certificate {
   secondLastName?: string;
   marriedLastName?: string;
   photoDataUri?: string;
+  idCardDataUri?: string;
+  licenseDataUri?: string;
 }
 
 export interface Transaction {
@@ -273,5 +282,14 @@ export type MaintenanceLog = {
 
 export type VehicleName = 'Picanto Blanco' | 'Picanto Bronce' | 'Spark' | 'Pick up' | 'Moto Roja' | 'Moto Negra';
 export type TimeSlot = '8am-10am' | '10am-12pm' | '1pm-3pm' | '3pm-5pm';
-export type InstructorName = 'Julisse Alonso' | 'Emmanuel Camargo' | 'Adrian Gordon' | 'Carlos Melendes' | '';
+export type InstructorName = 'Julisse Alonso' | 'Emmanuel Camargo' | 'Adrian Gordon' | 'Roberto Brown' | '';
 export type MaintenanceType = 'Cambio de Aceite' | 'Revisión de Frenos' | 'Rotación de Llantas' | 'Mantenimiento General' | 'Otro';
+
+export type Message = {
+    id: string;
+    text: string;
+    sender: 'me' | 'client';
+    time: string;
+    status: 'sent' | 'delivered' | 'read';
+    timestamp?: any;
+};

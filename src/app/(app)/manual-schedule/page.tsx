@@ -82,7 +82,7 @@ const manualScheduleSchema = z.object({
 
 type FormValues = z.infer<typeof manualScheduleSchema>;
 
-const instructors: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', 'Carlos Melendes'];
+const instructors: InstructorName[] = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', 'Roberto Brown'];
 const allVehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Pick up', 'Moto Roja', 'Moto Negra'];
 
 const timeSlots = [
@@ -161,7 +161,7 @@ export default function ManualSchedulePage() {
         allContracts?.forEach(c => {
             if (selectedContract && c.id === selectedContract.id) return;
             const details = c.autoMotoDetails || c.deluxeDetails;
-            const isEval = (details?.coursePlan === 'evaluacion-estacionamiento' || details?.coursePlan === 'moto-evaluacion-estacionamiento');
+            const isEval = ((details as any)?.coursePlan === 'evaluacion-estacionamiento' || (details as any)?.coursePlan === 'moto-evaluacion-estacionamiento');
             const processSlots = (slots: any[]) => {
                 slots.forEach(s => {
                     const slotIdVal = TIME_STRING_TO_SLOT_MAP[s.time] || s.time;
@@ -193,46 +193,21 @@ export default function ManualSchedulePage() {
         try {
             const results: Contract[] = [];
             allContracts?.forEach(c => {
-                const details = c.autoMotoDetails || c.deluxeDetails;
-                const studentIdNum = details?.studentIdNumber || '';
-                if (studentIdNum === searchId.trim()) {
+                if (
+                    String(c.folioNumber).includes(searchId) || 
+                    c.clientName?.toLowerCase().includes(searchId.toLowerCase()) || 
+                    c.id.includes(searchId) || 
+                    (c as any).cedula?.toLowerCase().includes(searchId.toLowerCase()) ||
+                    (c as any).passport?.toLowerCase().includes(searchId.toLowerCase())
+                ) {
                     results.push(c);
                 }
             });
             setFoundContracts(results);
-            if (results.length === 0) toast({ description: 'No se encontraron contratos activos.' });
-        } catch (e) {
-            toast({ variant: 'destructive', description: 'Error al buscar.' });
+        } catch (error) {
+            console.error(error);
         } finally {
             setIsSearching(false);
-        }
-    };
-
-    const loadContractSchedule = (contract: Contract) => {
-        setSelectedContract(contract);
-        setEditingManualEntryId(null);
-        form.setValue('studentName', contract.clientName);
-        form.setValue('coursePlan', contract.type);
-        
-        const details = contract.autoMotoDetails || contract.deluxeDetails;
-        const schedules = details?.practicalClassSchedules || details?.motoPracticalClassSchedules || (details as any)?.classSchedules || [];
-        
-        const missed = schedules.some((s: any) => s.status === 'missed');
-        setHasMissedClasses(missed);
-
-        if (schedules.length > 0) {
-            const mapped = schedules.map((s: any, i: number) => ({
-                date: toDate(s.date),
-                timeSlot: TIME_STRING_TO_SLOT_MAP[s.time] || s.time,
-                vehicle: s.vehicle || '',
-                instructor: s.instructor || '',
-                classNumber: i + 1,
-                classType: 'Práctica' as const,
-                status: s.status || 'scheduled',
-            }));
-            replace(mapped);
-        } else {
-            replace([{ date: new Date(), timeSlot: '8am-10am', vehicle: '', instructor: '', classNumber: 1, classType: 'Práctica', status: 'scheduled' }]);
         }
     };
 
@@ -250,7 +225,7 @@ export default function ManualSchedulePage() {
                 instructor: entry.instructor,
                 classNumber: entry.classNumber,
                 classType: entry.classType,
-                status: entry.status || 'scheduled',
+                status: (entry.status as any) || 'scheduled',
             }]
         });
         window.scrollTo({ top: 0, behavior: 'smooth' });

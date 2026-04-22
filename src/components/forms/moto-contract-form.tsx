@@ -67,17 +67,9 @@ import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import type { Contract } from '@/lib/types';
 import { AutoMotoContractTemplate } from '@/components/auto-moto-contract';
 import { CameraCapture } from '@/components/camera-capture';
+import { useSettingsPrices } from '@/hooks/use-settings-prices';
 
-const MOTO_PLANS = [
-  "Curso Moto Básico (8 Hrs)",
-  "Curso Moto Plus (10 Hrs)",
-  "Curso Moto Premium (12 Hrs)",
-  "Moto Reforzamiento 4 Hrs",
-  "Moto Reforzamiento 2 Hrs",
-  "Ya se manejar (Moto)"
-];
-
-const PLAN_PRICES: Record<string, number> = {
+const DEFAULT_MOTO_PRICES: Record<string, number> = {
   "Curso Moto Básico (8 Hrs)": 115.00,
   "Curso Moto Plus (10 Hrs)": 135.00,
   "Curso Moto Premium (12 Hrs)": 155.00,
@@ -104,11 +96,11 @@ const TIME_OPTIONS = [
 
 const VEHICLES_MOTO = ['Moto Roja', 'Moto Negra'];
 const VEHICLES_AUTO = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Auto Diesel'];
-const INSTRUCTORS = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', 'Carlos Melendes'];
+const INSTRUCTORS = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', 'Roberto Brown'];
 
 const motoContractSchema = z.object({
   clientName: z.string().min(3, 'El nombre es requerido'),
-  clientEmail: z.string().email('Email inválido'),
+  clientEmail: z.string().email('Email inválido').optional().or(z.literal('')),
   idType: z.string().default('C.I.P.'),
   studentIdNumber: z.string().min(5, 'ID requerido'),
   studentAddress: z.string().min(5, 'Dirección requerida'),
@@ -117,10 +109,10 @@ const motoContractSchema = z.object({
   licenseCategory: z.string().min(1, 'Categoría requerida'),
   vehicleTransmission: z.enum(['Moto']).default('Moto'),
   coursePlan: z.string({ required_error: "Seleccione un plan" }),
-  additionalService: z.enum(['Ninguno', 'Ya se manejar', 'Curso Plus Auto 10Hrs']).default('Ninguno'),
+  additionalService: z.string().default('Ninguno'),
   courseValue: z.coerce.number().min(1, 'Monto inválido'),
   downPayment: z.coerce.number().min(0),
-  paymentDeadline: z.date({ required_error: 'Fecha límite requerida' }),
+  paymentDeadline: z.date({ required_error: 'Fecha límite requerida' }).optional().nullable(),
   paymentType: z.string().default('cash'),
   theoreticalClassSchedule: z.enum(['Sabados 3:00 pm a 5:00 pm', 'Semanal 8:00 am a 10:00 am'], { required_error: "Seleccione un horario" }),
   theoreticalClassDates: z.array(z.date()).optional(),
@@ -137,6 +129,8 @@ const motoContractSchema = z.object({
     instructor: z.string().optional(),
   })).optional(),
   photoDataUri: z.string().optional(),
+  idCardDataUri: z.string().optional(),
+  licenseDataUri: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof motoContractSchema>;
@@ -149,7 +143,11 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const { prices: settingsPrices } = useSettingsPrices();
   const isEdit = !!contract;
+
+  const planPrices = settingsPrices?.moto || DEFAULT_MOTO_PRICES;
+  const motoPlans = Object.keys(planPrices);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(motoContractSchema),
@@ -172,9 +170,11 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
       theoreticalClassSchedule: (contract.autoMotoDetails?.theoreticalClassSchedule as any) || 'Sabados 3:00 pm a 5:00 pm',
       paymentDeadline: toDate(contract.autoMotoDetails?.paymentDeadline),
       theoreticalClassDates: (contract.autoMotoDetails?.theoreticalClassDates || []).map(d => toDate(d)),
-      practicalClassSchedules: (contract.autoMotoDetails?.motoPracticalClassSchedules || []).map(s => ({ ...s, date: toDate(s.date) })),
-      autoPracticalClassSchedules: (contract.autoMotoDetails?.practicalClassSchedules || []).map(s => ({ ...s, date: toDate(s.date) })),
+      practicalClassSchedules: (contract.autoMotoDetails?.motoPracticalClassSchedules || (!contract.autoMotoDetails?.motoPracticalClassSchedules ? contract.autoMotoDetails?.practicalClassSchedules : []) || []).map(s => ({ ...s, date: toDate(s.date) })),
+      autoPracticalClassSchedules: (!contract.autoMotoDetails?.motoPracticalClassSchedules ? [] : (contract.autoMotoDetails?.practicalClassSchedules || [])).map(s => ({ ...s, date: toDate(s.date) })),
       photoDataUri: (contract.autoMotoDetails as any)?.photoDataUri || '',
+      idCardDataUri: (contract.autoMotoDetails as any)?.idCardDataUri || '',
+      licenseDataUri: (contract.autoMotoDetails as any)?.licenseDataUri || '',
     } : {
       clientName: '', clientEmail: '', idType: 'C.I.P.', studentIdNumber: '',
       studentAddress: '', studentPhone1: '', studentPhone2: '', licenseCategory: 'A, B',
@@ -184,6 +184,8 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
       practicalClassSchedules: [],
       autoPracticalClassSchedules: [],
       photoDataUri: '',
+      idCardDataUri: '',
+      licenseDataUri: '',
     },
   });
 
@@ -219,10 +221,10 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
         return;
       }
 
-      let price = PLAN_PRICES[watchPlan] || 0;
+      let price = planPrices[watchPlan] || 0;
       
       if (watchAdditional === 'Curso Plus Auto 10Hrs') {
-        price = 290.00;
+        price = settingsPrices?.combos?.["Combo Plus Auto + Moto"] || 310.00;
         // Inicializar agenda de auto (5 sesiones / 10 horas)
         replaceAuto(Array.from({ length: 5 }, () => ({ 
           date: new Date(), 
@@ -248,7 +250,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
         instructor: '' 
       })));
     }
-  }, [watchPlan, watchAdditional, isEdit, replacePractical, replaceAuto, form]);
+  }, [watchPlan, watchAdditional, isEdit, replacePractical, replaceAuto, form, planPrices, settingsPrices]);
 
   const handleDownloadPdf = async () => {
     const element = document.getElementById('contract-preview-hidden');
@@ -368,6 +370,11 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
     }
   };
 
+  const onError = (errors: any) => {
+    console.error("Form validation errors:", errors);
+    toast({ variant: 'destructive', title: 'Campos Inválidos', description: 'Por favor, revisa y completa los campos obligatorios marcados en rojo.' });
+  };
+
   return (
     <>
       <div id="contract-preview-hidden" className="hidden">
@@ -375,7 +382,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-5xl mx-auto pb-20">
+        <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-6 max-w-5xl mx-auto pb-20">
           <Card className="border-t-4 border-t-orange-600 shadow-md">
             <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
               <div className="flex items-center gap-2">
@@ -385,10 +392,21 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-                <div className="md:col-span-4 flex justify-center md:justify-start">
+                <div className="md:col-span-4 flex flex-col gap-4 justify-center md:justify-start">
                   <CameraCapture 
                     initialImage={form.getValues('photoDataUri')} 
                     onCapture={(uri) => form.setValue('photoDataUri', uri || '')} 
+                    label="Foto del Estudiante"
+                  />
+                  <CameraCapture 
+                    initialImage={form.getValues('idCardDataUri')} 
+                    onCapture={(uri) => form.setValue('idCardDataUri', uri || '')} 
+                    label="Cédula o Pasaporte"
+                  />
+                  <CameraCapture 
+                    initialImage={form.getValues('licenseDataUri')} 
+                    onCapture={(uri) => form.setValue('licenseDataUri', uri || '')} 
+                    label="Licencia (Opcional)"
                   />
                 </div>
                 
@@ -429,7 +447,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
                     <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Número de Identificación</FormLabel>
-                        <FormControl><Input placeholder="Ej: 8-000-000" {...field} className="h-9 font-mono" readOnly={isEdit} /></FormControl>
+                        <FormControl><Input placeholder="Ej: 8-000-000" {...field} className="h-9 font-mono" /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
@@ -549,7 +567,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
                     <FormLabel className="text-[10px] font-bold uppercase">Plan</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl><SelectTrigger className="h-10"><SelectValue placeholder="Elegir..." /></SelectTrigger></FormControl>
-                      <SelectContent>{MOTO_PLANS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                      <SelectContent>{motoPlans.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
                     </Select>
                   </FormItem>
                 )} />
@@ -562,7 +580,7 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
                         <SelectItem value="Ninguno">Ninguno</SelectItem>
                         <SelectItem value="Ya se manejar">Ya se manejar (+B/.20)</SelectItem>
                         {watchPlan === "Curso Moto Plus (10 Hrs)" && (
-                          <SelectItem value="Curso Plus Auto 10Hrs">Curso Plus Auto 10Hrs (Combo 290.00)</SelectItem>
+                          <SelectItem value="Curso Plus Auto 10Hrs">Curso Plus Auto 10Hrs (Combo 310.00)</SelectItem>
                         )}
                       </SelectContent>
                     </Select>

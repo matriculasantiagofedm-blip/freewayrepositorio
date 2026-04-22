@@ -59,7 +59,8 @@ import {
   RefreshCw,
   BookOpen,
   Download,
-  Bike
+  Bike,
+  CalendarSearch
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useDb, useUser } from '@/components/firebase-provider';
@@ -69,17 +70,9 @@ import { isPanamaHoliday } from '@/lib/holidays';
 import type { Contract } from '@/lib/types';
 import { AutoMotoContractTemplate } from '@/components/auto-moto-contract';
 import { CameraCapture } from '@/components/camera-capture';
+import { useSettingsPrices } from '@/hooks/use-settings-prices';
 
-const AUTO_PLANS = [
-  "Curso Auto Básico (8 Hrs)",
-  "Curso Auto Plus (10 Hrs)",
-  "Curso Auto Premium (12 Hrs)",
-  "Reforzamiento 4 Hrs",
-  "Reforzamiento 2 Hrs",
-  "Ya se manejar"
-];
-
-const PLAN_PRICES: Record<string, number> = {
+const DEFAULT_AUTO_PRICES: Record<string, number> = {
   "Curso Auto Básico (8 Hrs)": 133.00,
   "Curso Auto Plus (10 Hrs)": 155.00,
   "Curso Auto Premium (12 Hrs)": 180.00,
@@ -113,36 +106,31 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
 
 const VEHICLES = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Auto Diesel'];
 const VEHICLES_MOTO = ['Moto Roja', 'Moto Negra'];
-const INSTRUCTORS = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', 'Carlos Melendes'];
+const INSTRUCTORS = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', 'Roberto Brown'];
 
 const getGlobalCapacity = (date: Date, slotId: string) => {
     const day = date.getDay(); 
-    if (day === 0) return 0; 
-    if (slotId === '8am-10am') {
-        if (day === 1) return 3;
-        if (day >= 2 && day <= 5) return 2;
-    }
-    if (day === 6 && slotId === '3pm-5pm') return 2;
+    if (day === 0) return 0; // Domingo cerrado
     return 3;
 };
 
 const autoContractSchema = z.object({
   clientName: z.string().min(3, 'El nombre es requerido'),
-  clientEmail: z.string().email('Email inválido'),
+  clientEmail: z.string().email('Email inválido').optional().or(z.literal('')),
   idType: z.string().default('C.I.P.'),
   studentIdNumber: z.string().min(5, 'ID requerido'),
   studentAddress: z.string().min(5, 'Dirección requerida'),
   studentPhone1: z.string().min(7, 'Teléfono requerido'),
   studentPhone2: z.string().optional(),
   licenseCategory: z.string().min(1, 'Categoría requerida'),
-  vehicleTransmission: z.enum(['Automático', 'Manual']).default('Automático'),
+  vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).default('Automático'),
   coursePlan: z.string({ required_error: "Seleccione un plan" }),
-  additionalService: z.enum(['Ninguno', 'Ya se manejar Moto', 'Plus Moto 10Hrs']).default('Ninguno'),
+  additionalService: z.string().default('Ninguno'),
   courseValue: z.coerce.number().min(1, 'Monto inválido'),
   downPayment: z.coerce.number().min(0),
-  paymentDeadline: z.date({ required_error: 'Fecha límite requerida' }),
+  paymentDeadline: z.date({ required_error: 'Fecha límite requerida' }).optional().nullable(),
   paymentType: z.string().default('cash'),
-  theoreticalClassSchedule: z.enum(['Sabados 3:00 pm a 5:00 pm', 'Semanal 8:00 am a 10:00 am'], { required_error: "Seleccione un horario" }),
+  theoreticalClassSchedule: z.string().optional(),
   theoreticalClassDates: z.array(z.date()).optional(),
   practicalClassSchedules: z.array(z.object({
     date: z.date({ required_error: 'Fecha requerida' }),
@@ -157,6 +145,8 @@ const autoContractSchema = z.object({
     instructor: z.string().optional(),
   })).optional(),
   photoDataUri: z.string().optional(),
+  idCardDataUri: z.string().optional(),
+  licenseDataUri: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof autoContractSchema>;
@@ -169,7 +159,11 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const { prices: settingsPrices } = useSettingsPrices();
   const isEdit = !!contract;
+
+  const planPrices = settingsPrices?.auto || DEFAULT_AUTO_PRICES;
+  const autoPlans = Object.keys(planPrices);
 
   const activeContractsQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed'])) : null, [db, user]);
   const manualEntriesQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'manual_schedules')) : null, [db, user]);
@@ -207,6 +201,8 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
         date: toDate(s.date)
       })),
       photoDataUri: (contract.autoMotoDetails as any)?.photoDataUri || '',
+      idCardDataUri: (contract.autoMotoDetails as any)?.idCardDataUri || '',
+      licenseDataUri: (contract.autoMotoDetails as any)?.licenseDataUri || '',
     } : {
       clientName: '',
       clientEmail: '',
@@ -227,6 +223,8 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
       practicalClassSchedules: [],
       motoPracticalClassSchedules: [],
       photoDataUri: '',
+      idCardDataUri: '',
+      licenseDataUri: '',
     },
   });
 
@@ -304,10 +302,10 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
         return; 
       }
 
-      let price = PLAN_PRICES[watchPlan] || 0;
+      let price = planPrices[watchPlan] || 0;
       
       if (watchAdditional === 'Plus Moto 10Hrs') {
-        price = 290.00;
+        price = settingsPrices?.combos?.["Combo Plus Auto + Moto"] || 310.00;
         // Inicializar agenda de moto (5 sesiones / 10 horas)
         replaceMotoPractical(Array.from({ length: 5 }, () => ({ 
           date: new Date(), 
@@ -335,7 +333,28 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
       });
       replacePractical(newSchedules);
     }
-  }, [watchPlan, watchAdditional, replacePractical, replaceMotoPractical, form, isEdit]);
+  }, [watchPlan, watchAdditional, replacePractical, replaceMotoPractical, form, isEdit, planPrices, settingsPrices]);
+
+  useEffect(() => {
+    const handleSlotSelected = (e: any) => {
+      const { date, time, vehicle, index } = e.detail;
+      const current = form.getValues('practicalClassSchedules') || [];
+      
+      let indexToUpdate = index !== -1 ? index : current.findIndex((s: any) => format(s.date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') && s.time === '08:00am a 10:00am');
+      if (indexToUpdate === -1) indexToUpdate = 0;
+      
+      if (indexToUpdate < current.length) {
+          form.setValue(`practicalClassSchedules.${indexToUpdate}.date`, date, { shouldDirty: true, shouldValidate: true });
+          form.setValue(`practicalClassSchedules.${indexToUpdate}.time`, time, { shouldDirty: true, shouldValidate: true });
+          if (vehicle) {
+             form.setValue(`practicalClassSchedules.${indexToUpdate}.vehicle`, vehicle, { shouldDirty: true, shouldValidate: true });
+          }
+          toast({ title: "Horario y Auto Asignados", description: `Sesión ${indexToUpdate + 1} programada para ${format(date, 'dd/MM')} a las ${time} en el ${vehicle || 'auto'}` });
+      }
+    };
+    window.addEventListener('agendaSlotSelected', handleSlotSelected);
+    return () => window.removeEventListener('agendaSlotSelected', handleSlotSelected);
+  }, [form, toast]);
 
   const handleDownloadPdf = async () => {
     const element = document.getElementById('contract-preview-hidden');
@@ -473,6 +492,11 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
     }
   };
 
+  const onError = (errors: any) => {
+    console.error("Form validation errors:", errors);
+    toast({ variant: 'destructive', title: 'Campos Inválidos', description: 'Por favor, revisa y completa los campos obligatorios.' });
+  };
+
   return (
     <>
       <div id="contract-preview-hidden" className="hidden">
@@ -480,7 +504,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-5xl mx-auto pb-20">
+        <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-6 max-w-5xl mx-auto pb-20">
           <Card className="border-t-4 border-t-blue-600 shadow-sm">
             <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
               <div className="flex items-center gap-2">
@@ -490,10 +514,21 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-                <div className="md:col-span-4 flex justify-center md:justify-start">
+                <div className="md:col-span-4 flex flex-col gap-4 justify-center md:justify-start">
                   <CameraCapture 
                     initialImage={form.getValues('photoDataUri')} 
                     onCapture={(uri) => form.setValue('photoDataUri', uri || '')} 
+                    label="Foto del Estudiante"
+                  />
+                  <CameraCapture 
+                    initialImage={form.getValues('idCardDataUri')} 
+                    onCapture={(uri) => form.setValue('idCardDataUri', uri || '')} 
+                    label="Cédula o Pasaporte"
+                  />
+                  <CameraCapture 
+                    initialImage={form.getValues('licenseDataUri')} 
+                    onCapture={(uri) => form.setValue('licenseDataUri', uri || '')} 
+                    label="Licencia (Opcional)"
                   />
                 </div>
                 
@@ -531,7 +566,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
                     <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Número de Identificación</FormLabel>
-                        <FormControl><Input placeholder="Ej: 8-000-000" {...field} className="h-9 font-mono" readOnly={isEdit} /></FormControl>
+                        <FormControl><Input placeholder="Ej: 8-000-000" {...field} className="h-9 font-mono" /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />
@@ -580,8 +615,8 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
                         <SelectContent>
                           <SelectItem value="A, C">Tipo A y C</SelectItem>
                           <SelectItem value="A, C, D">Tipo A, C y D</SelectItem>
-                          <SelectItem value="A, C, B">Tipo A, C y B (con Moto)</SelectItem>
-                          <SelectItem value="A, C, B, D">Tipo A, C, B y D (con Moto)</SelectItem>
+                          <SelectItem value="A, C, B">Tipo A, C, B (con Moto)</SelectItem>
+                          <SelectItem value="A, C, B, D">Tipo A, C, B, D (con Moto)</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormItem>
@@ -590,7 +625,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
                   <FormItem>
                     <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Transmisión</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                      <FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl>
+                      <FormControl><SelectTrigger className="h-10 bg-blue-50 border-blue-200"><SelectValue /></SelectTrigger></FormControl>
                       <SelectContent><SelectItem value="Automático">Automático</SelectItem><SelectItem value="Manual">Manual</SelectItem></SelectContent>
                     </Select>
                   </FormItem>
@@ -660,7 +695,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
                     <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1"><Package className="h-3 w-3" /> Plan Principal</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl><SelectTrigger className="h-10"><SelectValue placeholder="Elegir plan..." /></SelectTrigger></FormControl>
-                      <SelectContent>{AUTO_PLANS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                      <SelectContent>{autoPlans.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
@@ -675,7 +710,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
                         <SelectItem value="Ninguno">Ninguno</SelectItem>
                         <SelectItem value="Ya se manejar Moto">Ya se manejar Moto (+B/.20)</SelectItem>
                         {watchPlan === "Curso Auto Plus (10 Hrs)" && (
-                          <SelectItem value="Plus Moto 10Hrs">Plus Moto 10Hrs (Combo 290.00)</SelectItem>
+                          <SelectItem value="Plus Moto 10Hrs">Plus Moto 10Hrs (Combo 310.00)</SelectItem>
                         )}
                       </SelectContent>
                     </Select>
@@ -741,22 +776,24 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
               </div>
             </CardHeader>
             <CardContent className="p-6">
+              
               {!watchPlan ? (
                 <p className="text-center text-muted-foreground italic py-4">Seleccione un plan de curso para programar las clases.</p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {practicalFields.map((field, index) => {
-                    const watchDate = form.watch(`practicalClassSchedules.${index}.date`);
-                    const watchTime = form.watch(`practicalClassSchedules.${index}.time`);
+                    const watchDate = watchAll.practicalClassSchedules?.[index]?.date;
+                    const watchTime = watchAll.practicalClassSchedules?.[index]?.time;
                     
                     const dObj = toDate(watchDate);
                     const isValidDate = !isNaN(dObj.getTime());
                     const holiday = isValidDate ? isPanamaHoliday(dObj) : null;
                     const isSunday = isValidDate && dObj.getDay() === 0;
                     
-                    const slotId = TIME_STRING_TO_SLOT_MAP[watchTime] || watchTime;
+                    const safeWatchTime = String(watchTime || '');
+                    const slotId = TIME_STRING_TO_SLOT_MAP[safeWatchTime] || safeWatchTime;
                     const dateKey = isValidDate ? format(dObj, 'yyyy-MM-dd') : '';
-                    const occupancy = availabilityData.globalCounts[`${dateKey}|${slotId}`] || 0;
+                    const occupancy = availabilityData?.globalCounts?.[`${dateKey}|${slotId}`] || 0;
                     const capacity = isValidDate ? getGlobalCapacity(dObj, slotId) : 3;
                     const isFull = occupancy >= capacity;
 
@@ -772,13 +809,29 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
                         </div>
 
                         <div className="flex gap-4">
-                          <FormField control={form.control} name={`practicalClassSchedules.${index}.date`} render={({ field: f }) => (
-                            <FormItem className="flex-1">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center justify-between">
                               <FormLabel className="text-[10px] font-black uppercase text-slate-500">Clase {index + 1}</FormLabel>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
-                                </PopoverTrigger>
+                              <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-6 text-[10px] px-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                                onClick={() => {
+                                  // @ts-ignore
+                                  window.__ACTIVE_SLOT_INDEX__ = index;
+                                  window.dispatchEvent(new Event('openAvailabilityWidget'));
+                                }}
+                              >
+                                <CalendarSearch className="h-3 w-3 mr-1" /> Libreta
+                              </Button>
+                            </div>
+                            <FormField control={form.control} name={`practicalClassSchedules.${index}.date`} render={({ field: f }) => (
+                              <FormItem>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
+                                  </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0">
                                   <Calendar 
                                     mode="single" 
@@ -790,9 +843,10 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
                               </Popover>
                             </FormItem>
                           )} />
+                          </div>
                           <FormField control={form.control} name={`practicalClassSchedules.${index}.time`} render={({ field: f }) => (
                             <FormItem className="flex-1">
-                              <FormLabel className="text-[10px] font-black uppercase text-slate-500">Horario</FormLabel>
+                              <FormLabel className="text-[10px] font-black uppercase text-slate-500 pt-1 block">Horario</FormLabel>
                               <Select onValueChange={f.onChange} value={f.value}>
                                 <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
                                 <SelectContent>{TIME_OPTIONS.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent>

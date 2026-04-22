@@ -64,9 +64,11 @@ import type { Contract } from '@/lib/types';
 import { AutoMotoContractTemplate } from '@/components/auto-moto-contract';
 import { CameraCapture } from '@/components/camera-capture';
 
-const PRACTICE_PLANS = ["Basico 8 Hrs", "Plus 10 Hrs", "Premium 12 Hrs"];
-const PLAN_PRICES: Record<string, number> = { "Basico 8 Hrs": 123.00, "Plus 10 Hrs": 135.00, "Premium 12 Hrs": 160.00 };
-const PLAN_PRACTICAL_COUNTS: Record<string, number> = { "Basico 8 Hrs": 4, "Plus 10 Hrs": 5, "Premium 12 Hrs": 6 };
+import { useSettingsPrices } from '@/hooks/use-settings-prices';
+
+const PRACTICE_PLANS = ["Basico 8 Hrs", "Plus 10 Hrs", "Premium 12 Hrs", "Reforzamiento 2 Hrs", "Reforzamiento 4 Hrs"];
+const PLAN_PRICES: Record<string, number> = { "Basico 8 Hrs": 123.00, "Plus 10 Hrs": 135.00, "Premium 12 Hrs": 160.00, "Reforzamiento 2 Hrs": 40.00, "Reforzamiento 4 Hrs": 80.00 };
+const PLAN_PRACTICAL_COUNTS: Record<string, number> = { "Basico 8 Hrs": 4, "Plus 10 Hrs": 5, "Premium 12 Hrs": 6, "Reforzamiento 2 Hrs": 1, "Reforzamiento 4 Hrs": 2 };
 
 const TIME_OPTIONS = [
   "08:00am a 10:00am",
@@ -83,7 +85,7 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
 };
 
 const ALL_VEHICLES = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Auto Diesel', 'Moto Roja', 'Moto Negra'];
-const INSTRUCTORS = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', 'Carlos Melendes'];
+const INSTRUCTORS = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', 'Roberto Brown'];
 
 const getGlobalCapacity = (date: Date, slotId: string) => {
     const day = date.getDay(); 
@@ -98,18 +100,18 @@ const getGlobalCapacity = (date: Date, slotId: string) => {
 
 const soloPracticaSchema = z.object({
   clientName: z.string().min(3, 'El nombre es requerido'),
-  clientEmail: z.string().email('Email inválido'),
+  clientEmail: z.string().email('Email inválido').optional().or(z.literal('')),
   idType: z.string().default('C.I.P.'),
   studentIdNumber: z.string().min(5, 'ID requerido'),
   studentAddress: z.string().min(5, 'Dirección requerida'),
   studentPhone1: z.string().min(7, 'Teléfono requerido'),
   studentPhone2: z.string().optional(),
   vehicleType: z.enum(['Auto', 'Motocicleta']).default('Auto'),
-  vehicleTransmission: z.enum(['Automático', 'Manual']).default('Automático'),
+  vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).default('Automático'),
   coursePlan: z.string({ required_error: "Seleccione un paquete" }),
   courseValue: z.coerce.number().min(1, 'Monto inválido'),
   downPayment: z.coerce.number().min(0),
-  paymentDeadline: z.date({ required_error: 'Fecha límite requerida' }),
+  paymentDeadline: z.date({ required_error: 'Fecha límite requerida' }).optional().nullable(),
   paymentType: z.string().default('cash'),
   practicalClassSchedules: z.array(z.object({
     date: z.date({ required_error: 'Fecha requerida' }),
@@ -118,6 +120,8 @@ const soloPracticaSchema = z.object({
     instructor: z.string().optional(),
   })).optional(),
   photoDataUri: z.string().optional(),
+  idCardDataUri: z.string().optional(),
+  licenseDataUri: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof soloPracticaSchema>;
@@ -130,7 +134,10 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const { prices: settingsPrices } = useSettingsPrices();
   const isEdit = !!contract;
+
+  const planPrices = useMemo(() => ({ ...PLAN_PRICES, ...(settingsPrices?.practice || {}) }), [settingsPrices?.practice]);
 
   const activeContractsQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed'])) : null, [db, user]);
   const manualEntriesQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'manual_schedules')) : null, [db, user]);
@@ -150,12 +157,16 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
         date: toDate(s.date)
       })),
       photoDataUri: (contract.autoMotoDetails as any)?.photoDataUri || '',
+      idCardDataUri: (contract.autoMotoDetails as any)?.idCardDataUri || '',
+      licenseDataUri: (contract.autoMotoDetails as any)?.licenseDataUri || '',
     } : {
       clientName: '', clientEmail: '', idType: 'C.I.P.', studentIdNumber: '',
       studentAddress: '', studentPhone1: '', studentPhone2: '', vehicleType: 'Auto',
       vehicleTransmission: 'Automático', coursePlan: '', courseValue: 0,
       downPayment: 0, paymentType: 'cash', practicalClassSchedules: [],
       photoDataUri: '',
+      idCardDataUri: '',
+      licenseDataUri: '',
     },
   });
 
@@ -211,11 +222,11 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
 
   useEffect(() => {
     if (watchPlan && !isEdit) {
-      form.setValue('courseValue', PLAN_PRICES[watchPlan] || 0);
+      form.setValue('courseValue', planPrices[watchPlan] || 0);
       const count = PLAN_PRACTICAL_COUNTS[watchPlan] || 0;
       replacePractical(Array.from({ length: count }, () => ({ date: new Date(), time: '08:00am a 10:00am', vehicle: '', instructor: '' })));
     }
-  }, [watchPlan, replacePractical, form, isEdit]);
+  }, [watchPlan, replacePractical, form, isEdit, planPrices]);
 
   const handleDownloadPdf = async () => {
     const element = document.getElementById('contract-preview-hidden');
@@ -338,6 +349,11 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
     }
   };
 
+  const onError = (errors: any) => {
+    console.error("Form validation errors:", errors);
+    toast({ variant: 'destructive', title: 'Campos Inválidos', description: 'Por favor, revisa y completa los campos obligatorios.' });
+  };
+
   return (
     <>
       <div id="contract-preview-hidden" className="hidden">
@@ -345,7 +361,7 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-5xl mx-auto pb-20">
+        <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-6 max-w-5xl mx-auto pb-20">
           <Card className="border-t-4 border-t-emerald-600 shadow-sm">
             <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
               <div className="flex items-center gap-2">
@@ -355,10 +371,21 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-                <div className="md:col-span-4 flex justify-center md:justify-start">
+                <div className="md:col-span-4 flex flex-col gap-4 justify-center md:justify-start">
                   <CameraCapture 
                     initialImage={form.getValues('photoDataUri')} 
                     onCapture={(uri) => form.setValue('photoDataUri', uri || '')} 
+                    label="Foto del Estudiante"
+                  />
+                  <CameraCapture 
+                    initialImage={form.getValues('idCardDataUri')} 
+                    onCapture={(uri) => form.setValue('idCardDataUri', uri || '')} 
+                    label="Cédula o Pasaporte"
+                  />
+                  <CameraCapture 
+                    initialImage={form.getValues('licenseDataUri')} 
+                    onCapture={(uri) => form.setValue('licenseDataUri', uri || '')} 
+                    label="Licencia (Opcional)"
                   />
                 </div>
 
@@ -370,12 +397,53 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
                   </div>
                   <div className="col-span-12 md:col-span-4">
                     <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
-                      <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">ID</FormLabel><FormControl><Input placeholder="8-000-000" {...field} className="h-9 font-mono" readOnly={isEdit} /></FormControl></FormItem>
+                      <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">ID</FormLabel><FormControl><Input placeholder="8-000-000" {...field} className="h-9 font-mono" /></FormControl></FormItem>
                     )} />
                   </div>
                   <div className="col-span-12">
                     <FormField control={form.control} name="studentAddress" render={({ field }) => (
                       <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Dirección</FormLabel><FormControl><Input placeholder="Ubicación..." {...field} className="h-9 uppercase" /></FormControl></FormItem>
+                    )} />
+                  </div>
+
+                  {/* Teléfonos */}
+                  <div className="col-span-12 md:col-span-6">
+                    <FormField control={form.control} name="studentPhone1" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Teléfono Principal</FormLabel>
+                        <FormControl><Input placeholder="6000-0000" {...field} className="h-9 font-mono" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                  <div className="col-span-12 md:col-span-6">
+                    <FormField control={form.control} name="studentPhone2" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Teléfono Secundario</FormLabel>
+                        <FormControl><Input placeholder="6000-0000 (opcional)" {...field} className="h-9 font-mono" /></FormControl>
+                      </FormItem>
+                    )} />
+                  </div>
+
+                  {/* Tipo de Transmisión */}
+                  <div className="col-span-12">
+                    <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Tipo de Transmisión</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="h-9">
+                              <SelectValue placeholder="Seleccionar transmisión..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Automático">🚗 Automático</SelectItem>
+                            <SelectItem value="Manual">⚙️ Manual</SelectItem>
+                            <SelectItem value="Moto">🏍️ Moto</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
                     )} />
                   </div>
                 </div>
@@ -435,8 +503,8 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {practicalFields.map((field, index) => {
-                    const watchDate = form.watch(`practicalClassSchedules.${index}.date`);
-                    const watchTime = form.watch(`practicalClassSchedules.${index}.time`);
+                    const watchDate = watchAll.practicalClassSchedules?.[index]?.date;
+                    const watchTime = watchAll.practicalClassSchedules?.[index]?.time;
                     
                     const dObj = toDate(watchDate);
                     const isValidDate = !isNaN(dObj.getTime());

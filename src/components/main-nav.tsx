@@ -18,6 +18,7 @@ import { Separator } from './ui/separator';
 const navLinks = [
   { href: '/dashboard', label: 'Panel de Control', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
   { href: '/clients', label: 'Clientes', roles: ['Administrador'] },
+  { href: '/leads', label: 'CRM / Mensajes', roles: ['Administrador', 'Ventas', 'Ventas Externas', 'SuperAdmin', 'Owner', 'Dueño'] },
   {
     label: 'Caja y Operaciones',
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
@@ -45,14 +46,31 @@ const navLinks = [
     label: 'Informes',
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],
     children: [
+      { href: '/informes', label: 'Centro de Informes', roles: ['Administrador', 'Ventas', 'Ventas Externas', 'SuperAdmin', 'Owner', 'Dueño'] },
+      { separator: true, roles: ['Administrador', 'Ventas', 'Ventas Externas', 'SuperAdmin', 'Owner', 'Dueño'] },
       { href: '/informes/packages', label: 'Catálogo de Planes', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { href: '/informes/vehicle-schedule', label: 'Agenda Práctica Semanal', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { href: '/informes/theoretical-schedule', label: 'Agenda Teórica Semanal', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+      { href: '/informes/practical-starts', label: 'Inicios Prácticos', roles: ['Administrador', 'Ventas'] },
+      { href: '/informes/quality-monitoring', label: 'Control de Calidad', roles: ['Administrador', 'SuperAdmin', 'Owner', 'Dueño'] },
       { href: '/informes/cancellation-payments', label: 'Reporte Abonos', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { href: '/informes/update-payments', label: 'Reporte Actualización', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { href: '/informes/certificates-summary', label: 'Control Certificados', roles: ['Administrador'] },
       { separator: true, roles: ['Administrador'] },
       { href: '/contracts', label: 'Archivo de Contratos', roles: ['Administrador'] }
+    ]
+  },
+  {
+    label: 'Contabilidad',
+    roles: ['Administrador', 'SuperAdmin', 'Owner', 'Dueño', 'Ventas', 'Ventas Externas'],
+    children: [
+      { href: '/contabilidad', label: 'Dashboard Gastos', roles: ['Administrador', 'SuperAdmin', 'Owner', 'Dueño'] },
+      { href: '/contabilidad/nuevo', label: 'Registrar Gasto (IA)', roles: ['Administrador', 'SuperAdmin', 'Owner', 'Dueño', 'Ventas', 'Ventas Externas'] },
+      { separator: true, roles: ['Administrador', 'SuperAdmin', 'Owner', 'Dueño', 'Ventas'] },
+      { href: '/informes/financial-statements', label: 'Estados Financieros', roles: ['Administrador', 'SuperAdmin', 'Owner', 'Dueño', 'Ventas', 'Ventas Externas'] },
+      { href: '/informes/general-ledger', label: 'Mayor General', roles: ['Administrador', 'SuperAdmin', 'Owner', 'Dueño', 'Ventas', 'Ventas Externas'] },
+      { href: '/informes/providers-ledger', label: 'Mayor de Proveedores', roles: ['Administrador', 'SuperAdmin', 'Owner', 'Dueño', 'Ventas', 'Ventas Externas'] },
+      { href: '/informes/daily-cash', label: 'Cierre de Caja Diario', roles: ['Administrador', 'SuperAdmin', 'Owner', 'Dueño', 'Ventas', 'Ventas Externas'] }
     ]
   },
 ];
@@ -101,7 +119,7 @@ export function MainNav({ className, isMobile = false }: { className?: string, i
 
   if (!role) return null;
 
-  const links = navLinks.filter(link => link.roles.includes(role));
+  const links = navLinks.filter(link => link.roles.some(r => r.toLowerCase() === role.toLowerCase()));
 
   const navClass = isMobile ? "grid items-start gap-2" : "flex items-center gap-4 lg:gap-5";
   const linkClass = isMobile ? "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground hover:text-primary" : "text-muted-foreground hover:text-foreground text-sm font-medium flex items-center";
@@ -111,7 +129,7 @@ export function MainNav({ className, isMobile = false }: { className?: string, i
     <nav className={cn(navClass, className)}>
       {links.map((link) => {
         if (link.children) {
-            const visibleChildren = link.children.filter(child => child.roles.includes(role));
+            const visibleChildren = link.children.filter(child => child.roles.some((r: string) => r.toLowerCase() === role.toLowerCase()));
             if (visibleChildren.length === 0) return null;
             if (isMobile) {
               const isChildActive = visibleChildren.some(child => child.href && pathname.startsWith(child.href!));

@@ -19,10 +19,10 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useDb, useUser } from '@/components/firebase-provider';
-import { collection, addDoc, query, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, Timestamp, updateDoc, doc } from 'firebase/firestore';
 import type { MaintenanceLog, MaintenanceType, VehicleName } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Wrench, CalendarIcon } from 'lucide-react';
+import { Loader2, Wrench, CalendarIcon, AlertTriangle, Car, CheckCircle2, Clock, User, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
@@ -30,7 +30,7 @@ import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const maintenanceSchema = z.object({
-  vehicle: z.enum(['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Pick up', 'Moto Roja', 'Moto Negra'], { required_error: "Debe seleccionar un vehículo."}),
+  vehicle: z.enum(['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Pick up', 'Moto Roja', 'Moto Negra', 'Skoda Automatico', 'Skoda Manual'], { required_error: "Debe seleccionar un vehículo."}),
   date: z.date({ required_error: 'La fecha es requerida.' }),
   mileage: z.coerce.number().min(1, 'El kilometraje debe ser mayor a 0.'),
   type: z.enum(['Cambio de Aceite', 'Revisión de Frenos', 'Rotación de Llantas', 'Mantenimiento General', 'Otro'], { required_error: "Debe seleccionar un tipo."}),
@@ -42,7 +42,7 @@ const maintenanceSchema = z.object({
 type MaintenanceFormValues = z.infer<typeof maintenanceSchema>;
 
 const maintenanceTypes: MaintenanceType[] = ['Cambio de Aceite', 'Revisión de Frenos', 'Rotación de Llantas', 'Mantenimiento General', 'Otro'];
-const vehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Pick up', 'Moto Roja', 'Moto Negra'];
+const vehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Pick up', 'Moto Roja', 'Moto Negra', 'Skoda Automatico', 'Skoda Manual'];
 
 export default function MaintenancePage() {
     const db = useDb();
@@ -65,7 +65,26 @@ export default function MaintenancePage() {
         return query(collection(db, 'maintenance_logs'), orderBy('date', 'desc'));
     }, [db]);
 
+    const vehicleReportsQuery = useMemoQuery(() => {
+        if (!db) return null;
+        return query(collection(db, 'vehicle_reports'), orderBy('createdAt', 'desc'));
+    }, [db]);
+
     const { data: logs, isLoading: isLoadingLogs } = useCollection<MaintenanceLog>(maintenanceLogsQuery);
+    const { data: vehicleReports, isLoading: isLoadingReports } = useCollection<any>(vehicleReportsQuery);
+
+    const pendingReports = vehicleReports?.filter(r => r.status !== 'resolved') || [];
+    const [expandedReport, setExpandedReport] = useState<string | null>(null);
+
+    const handleResolveReport = async (reportId: string) => {
+        if (!db) return;
+        try {
+            await updateDoc(doc(db, 'vehicle_reports', reportId), { status: 'resolved', resolvedAt: Timestamp.now() });
+            toast({ title: '✅ Reporte marcado como resuelto' });
+        } catch (e) {
+            toast({ variant: 'destructive', title: 'Error al actualizar' });
+        }
+    };
 
     const onSubmit = async (data: MaintenanceFormValues) => {
         if (!db || !user) {
@@ -216,6 +235,106 @@ export default function MaintenancePage() {
                             Guardar Registro
                         </Button>
                     </form>
+                </CardContent>
+            </Card>
+
+            {/* ── ALERTAS DE PROFESORES ── */}
+            <Card className="border-orange-200 shadow-orange-50 shadow-md">
+                <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-orange-100 p-2 rounded-xl">
+                                <AlertTriangle className="h-5 w-5 text-orange-500" />
+                            </div>
+                            <div>
+                                <CardTitle className="text-lg">Alertas de Profesores</CardTitle>
+                                <CardDescription className="text-xs">Problemas reportados desde el portal de instructores</CardDescription>
+                            </div>
+                        </div>
+                        {pendingReports.length > 0 && (
+                            <span className="bg-red-500 text-white text-xs font-black px-2.5 py-1 rounded-full animate-pulse">
+                                {pendingReports.length} pendiente{pendingReports.length > 1 ? 's' : ''}
+                            </span>
+                        )}
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    {isLoadingReports ? (
+                        <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-slate-400" /></div>
+                    ) : pendingReports.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-8 text-center">
+                            <CheckCircle2 className="h-10 w-10 text-emerald-400 mb-2" />
+                            <p className="font-semibold text-slate-600">Sin alertas pendientes</p>
+                            <p className="text-xs text-slate-400 mt-1">Todos los vehículos están en buen estado según los profesores.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {pendingReports.map((report: any) => {
+                                const isOpen = expandedReport === report.id;
+                                const reportDate = report.createdAt?.toDate ? report.createdAt.toDate() : null;
+                                return (
+                                    <div key={report.id} className="border-2 border-orange-100 rounded-xl overflow-hidden">
+                                        {/* Header row */}
+                                        <button
+                                            onClick={() => setExpandedReport(isOpen ? null : report.id)}
+                                            className="w-full flex items-center gap-3 p-4 bg-orange-50 hover:bg-orange-100 transition-colors text-left"
+                                        >
+                                            <Car className="h-4 w-4 text-orange-500 shrink-0" />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-bold text-slate-800 text-sm truncate">{report.vehicle}</p>
+                                                <div className="flex items-center gap-3 mt-0.5">
+                                                    <span className="flex items-center gap-1 text-[11px] text-slate-500">
+                                                        <User className="h-3 w-3" />{report.instructorName}
+                                                    </span>
+                                                    {reportDate && (
+                                                        <span className="flex items-center gap-1 text-[11px] text-slate-400">
+                                                            <Clock className="h-3 w-3" />{format(reportDate, "dd/MM/yyyy HH:mm")}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <span className="text-[10px] font-black bg-red-100 text-red-600 border border-red-200 px-2 py-0.5 rounded-full mr-2 shrink-0">
+                                                {report.issues?.length || 0} problema{(report.issues?.length || 0) > 1 ? 's' : ''}
+                                            </span>
+                                            {isOpen ? <ChevronUp className="h-4 w-4 text-slate-400 shrink-0" /> : <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />}
+                                        </button>
+
+                                        {/* Expanded detail */}
+                                        {isOpen && (
+                                            <div className="p-4 bg-white space-y-3">
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Problemas Reportados</p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {report.issues?.map((issue: string, i: number) => (
+                                                            <span key={i} className="bg-red-50 border border-red-200 text-red-700 text-xs font-semibold px-3 py-1 rounded-full">
+                                                                {issue}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                {report.notes && (
+                                                    <div>
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 flex items-center gap-1">
+                                                            <MessageSquare className="h-3 w-3" /> Observaciones
+                                                        </p>
+                                                        <p className="text-sm text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">{report.notes}</p>
+                                                    </div>
+                                                )}
+                                                <Button
+                                                    onClick={() => handleResolveReport(report.id)}
+                                                    size="sm"
+                                                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider mt-2"
+                                                >
+                                                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                                                    Marcar como Resuelto
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 

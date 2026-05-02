@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 /**
  * FORMULARIO DE CONTRATO: CURSO DE MOTO
@@ -254,9 +254,10 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
       form.setValue('courseValue', price);
       
       const count = PLAN_PRACTICAL_COUNTS[watchPlan] || 0;
+      const defaultTime = watchPlan === 'Ya se manejar (Moto)' ? '10 minutos' : '08:00am a 10:00am';
       replacePractical(Array.from({ length: count }, () => ({ 
         date: new Date(), 
-        time: '08:00am a 10:00am', 
+        time: defaultTime, 
         vehicle: 'Moto Roja', 
         instructor: '' 
       })));

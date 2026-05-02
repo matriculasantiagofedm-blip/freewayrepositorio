@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 /**
  * FORMULARIO DE CONTRATO: CURSO DE AUTO (SINCRONIZADO CON AGENDA)
@@ -338,9 +338,10 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
       
       const count = PLAN_PRACTICAL_COUNTS[watchPlan] || 0;
       const current = form.getValues('practicalClassSchedules') || [];
+      const defaultTime = watchPlan === 'Ya se manejar' ? '10 minutos' : '08:00am a 10:00am';
       const newSchedules = Array.from({ length: count }, (_, i) => current[i] || { 
         date: new Date(), 
-        time: '08:00am a 10:00am', 
+        time: defaultTime, 
         vehicle: '', 
         instructor: '' 
       });

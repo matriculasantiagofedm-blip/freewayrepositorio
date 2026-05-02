@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 /**
  * FORMULARIO DE CONTRATO: AMPLIACIONES DE LICENCIA
@@ -86,6 +86,11 @@ const COMBINATION_PRICES: Record<string, number> = {
 
 const ampliacionesSchema = z.object({
   clientName: z.string().min(3, 'El nombre es requerido'),
+  firstName: z.string().optional().or(z.literal('')),
+  secondName: z.string().optional().or(z.literal('')),
+  firstLastName: z.string().optional().or(z.literal('')),
+  secondLastName: z.string().optional().or(z.literal('')),
+  marriedLastName: z.string().optional().or(z.literal('')),
   clientEmail: z.string().email('Email inválido').optional().or(z.literal('')),
   idType: z.string().default('C.I.P.'),
   studentIdNumber: z.string().min(5, 'ID requerido'),
@@ -126,6 +131,11 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
     defaultValues: isEdit ? {
       ...contract.ampliacionesDetails,
       clientName: contract.clientName,
+      firstName: (contract as any)?.ampliacionDetails?.firstName || (contract as any)?.autoMotoDetails?.firstName || '',
+      secondName: (contract as any)?.ampliacionDetails?.secondName || '',
+      firstLastName: (contract as any)?.ampliacionDetails?.firstLastName || '',
+      secondLastName: (contract as any)?.ampliacionDetails?.secondLastName || '',
+      marriedLastName: (contract as any)?.ampliacionDetails?.marriedLastName || '',
       clientEmail: contract.clientEmail,
       paymentDeadline: toDate(contract.ampliacionesDetails?.paymentDeadline),
       theoreticalClassDate: toDate(contract.ampliacionesDetails?.theoreticalClassDate),
@@ -342,6 +352,14 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
                 </div>
 
                 <div className="md:col-span-8 grid grid-cols-12 gap-4">
+                  {/* Desglose del Nombre */}
+                  <div className="col-span-12 grid grid-cols-2 md:grid-cols-5 gap-2">
+                    <FormField control={form.control} name={"firstName" as any} render={({ field }) => (<FormItem><FormLabel className="text-[9px] font-bold uppercase text-muted-foreground">1er Nombre</FormLabel><FormControl><Input {...field} className="h-9 uppercase" onChange={e => { field.onChange(e.target.value.toUpperCase()); setTimeout(() => { const v = form.getValues(); const full=[v.firstName,v.secondName,v.firstLastName,v.secondLastName,v.marriedLastName].filter(Boolean).join(' '); if(full) form.setValue('clientName', full); }, 0); }} /></FormControl></FormItem>)} />
+                    <FormField control={form.control} name={"secondName" as any} render={({ field }) => (<FormItem><FormLabel className="text-[9px] font-bold uppercase text-muted-foreground">2do Nombre</FormLabel><FormControl><Input {...field} className="h-9 uppercase" onChange={e => { field.onChange(e.target.value.toUpperCase()); setTimeout(() => { const v = form.getValues(); const full=[v.firstName,v.secondName,v.firstLastName,v.secondLastName,v.marriedLastName].filter(Boolean).join(' '); if(full) form.setValue('clientName', full); }, 0); }} /></FormControl></FormItem>)} />
+                    <FormField control={form.control} name={"firstLastName" as any} render={({ field }) => (<FormItem><FormLabel className="text-[9px] font-bold uppercase text-muted-foreground">1er Apellido</FormLabel><FormControl><Input {...field} className="h-9 uppercase" onChange={e => { field.onChange(e.target.value.toUpperCase()); setTimeout(() => { const v = form.getValues(); const full=[v.firstName,v.secondName,v.firstLastName,v.secondLastName,v.marriedLastName].filter(Boolean).join(' '); if(full) form.setValue('clientName', full); }, 0); }} /></FormControl></FormItem>)} />
+                    <FormField control={form.control} name={"secondLastName" as any} render={({ field }) => (<FormItem><FormLabel className="text-[9px] font-bold uppercase text-muted-foreground">2do Apellido</FormLabel><FormControl><Input {...field} className="h-9 uppercase" onChange={e => { field.onChange(e.target.value.toUpperCase()); setTimeout(() => { const v = form.getValues(); const full=[v.firstName,v.secondName,v.firstLastName,v.secondLastName,v.marriedLastName].filter(Boolean).join(' '); if(full) form.setValue('clientName', full); }, 0); }} /></FormControl></FormItem>)} />
+                    <FormField control={form.control} name={"marriedLastName" as any} render={({ field }) => (<FormItem><FormLabel className="text-[9px] font-bold uppercase text-muted-foreground">Ap. Casada</FormLabel><FormControl><Input {...field} className="h-9 uppercase" onChange={e => { field.onChange(e.target.value.toUpperCase()); setTimeout(() => { const v = form.getValues(); const full=[v.firstName,v.secondName,v.firstLastName,v.secondLastName,v.marriedLastName].filter(Boolean).join(' '); if(full) form.setValue('clientName', full); }, 0); }} /></FormControl></FormItem>)} />
+                  </div>
                   <div className="col-span-12 md:col-span-8">
                     <FormField control={form.control} name="clientName" render={({ field }) => (
                       <FormItem>

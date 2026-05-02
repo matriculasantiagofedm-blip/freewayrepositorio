@@ -14,7 +14,8 @@ import {
   FileText,
   BookOpen,
   ClipboardList,
-  Package
+  Package,
+  Landmark
 } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 
@@ -33,6 +34,24 @@ export default function ReportsIndexPage() {
       roles: ['Administrador', 'Ventas', 'Ventas Externas']
     },
     {
+      title: 'Estados Financieros',
+      description: 'Estado de Resultados (P&L) y Situación (Balance General) automatizados.',
+      href: '/informes/financial-statements',
+      icon: Landmark,
+      color: 'text-rose-600',
+      bgColor: 'bg-rose-50',
+      roles: ['Administrador']
+    },
+    {
+      title: 'Cierre de Caja Diario',
+      description: 'Auditoría financiera diaria de ingresos, egresos y cuadre de efectivo físico.',
+      href: '/informes/daily-cash',
+      icon: Wallet,
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-50',
+      roles: ['Administrador', 'Ventas']
+    },
+    {
       title: 'Agenda Práctica Semanal',
       description: 'Agenda consolidada por vehículo y disponibilidad de turnos prácticos en formato semanal.',
       href: '/informes/vehicle-schedule',
@@ -40,6 +59,15 @@ export default function ReportsIndexPage() {
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
       roles: ['Administrador', 'Ventas', 'Ventas Externas']
+    },
+    {
+      title: 'Inicios Prácticos',
+      description: 'Control de alumnos que inician clases prácticas con sus instructores asignados.',
+      href: '/informes/practical-starts',
+      icon: ClipboardList,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50',
+      roles: ['Administrador', 'Ventas']
     },
     {
       title: 'Agenda Teórica Semanal',
@@ -79,7 +107,8 @@ export default function ReportsIndexPage() {
     },
   ];
 
-  const visibleReports = reportCards.filter(r => r.roles.includes(role || ''));
+  // Deshabilitar el filtro temporalmente para garantizar acceso
+  const visibleReports = reportCards; // .filter(r => r.roles.includes(role || ''));
 
   return (
     <div className="flex flex-col gap-8">

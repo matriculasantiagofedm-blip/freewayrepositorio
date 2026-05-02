@@ -137,7 +137,7 @@ export default function PackagesReportPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow className="bg-indigo-50/30"><TableCell className="text-xs font-black uppercase text-indigo-900">Combo Auto Plus + Moto Plus</TableCell><TableCell className="text-right font-black text-indigo-700 text-sm">290.00</TableCell></TableRow>
+                <TableRow className="bg-indigo-50/30"><TableCell className="text-xs font-black uppercase text-indigo-900">Combo Auto Plus + Moto Plus</TableCell><TableCell className="text-right font-black text-indigo-700 text-sm">310.00</TableCell></TableRow>
                 <TableRow><TableCell className="text-xs font-bold uppercase">Reforzamiento 4 Horas</TableCell><TableCell className="text-right font-black text-slate-700 text-sm">95.00</TableCell></TableRow>
                 <TableRow><TableCell className="text-xs font-bold uppercase">Reforzamiento 2 Horas</TableCell><TableCell className="text-right font-black text-slate-700 text-sm">75.00</TableCell></TableRow>
                 <TableRow><TableCell className="text-xs font-bold uppercase">Ya se manejar Moto (Complemento)</TableCell><TableCell className="text-right font-black text-slate-700 text-sm">20.00</TableCell></TableRow>

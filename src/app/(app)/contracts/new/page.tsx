@@ -9,6 +9,7 @@ import { AutoContractForm } from '@/components/forms/auto-contract-form';
 import { MotoContractForm } from '@/components/forms/moto-contract-form';
 import { AmpliacionesContractForm } from '@/components/forms/ampliaciones-contract-form';
 import { SoloPracticaContractForm } from '@/components/forms/solo-practica-contract-form';
+import { DeluxeContractForm } from '@/components/forms/deluxe-contract-form';
 
 function NewContractPageContent() {
     const searchParams = useSearchParams();
@@ -29,6 +30,8 @@ function NewContractPageContent() {
                 return <AmpliacionesContractForm />;
             case 'Curso Solo Practica':
                 return <SoloPracticaContractForm />;
+            case 'Curso Deluxe':
+                return <DeluxeContractForm />;
             default:
                 return (
                     <div className="p-12 text-center border-2 border-dashed rounded-lg">

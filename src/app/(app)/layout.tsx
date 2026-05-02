@@ -8,8 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { ChatNotificationListener } from '@/components/chat-notification-listener';
-import { FloatingChat } from '@/components/floating-chat';
+import { LiveAvailabilityWidget } from '@/components/live-availability-widget';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { role, isUserLoading } = useFirebase();
@@ -39,14 +38,25 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col">
-      {/* Vigilante de notificaciones de chat */}
-      <ChatNotificationListener />
+    <div className="flex min-h-screen w-full flex-col relative bg-[#eef2f6] selection:bg-primary/20">
+      {/* --- EL FONDO INCREÍBLE ANIMADO (IMPRESSIVE ANIMATED MESH BACKGROUND) --- */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-blue-50">
+        {/* Orbe Azul Principal (Arriba) */}
+        <div className="absolute -top-[30%] -right-[10%] w-[80vw] h-[80vh] rounded-[100%] bg-blue-500/[0.12] blur-[100px] animate-mesh-1 mix-blend-multiply" />
+        
+        {/* Orbe Esmeralda (Abajo Izquierda) */}
+        <div className="absolute -bottom-[20%] -left-[10%] w-[70vw] h-[70vh] rounded-[100%] bg-emerald-400/[0.15] blur-[120px] animate-mesh-2 mix-blend-multiply" />
+        
+        {/* Orbe Índigo Profundo (Medio) */}
+        <div className="absolute top-[20%] left-[20%] w-[60vw] h-[60vh] rounded-[100%] bg-indigo-500/[0.1] blur-[110px] animate-mesh-3 mix-blend-multiply" />
+        
+        {/* Textura de Cristal (Ruido Sutil) */}
+        <div className="absolute inset-0 bg-[url('https://i.imgur.com/3F9j5V1.png')] opacity-[0.03] mix-blend-overlay" />
+      </div>
+
+      <div className="relative z-10 flex flex-col min-h-screen">
       
-      {/* Globo de mensajería flotante */}
-      <FloatingChat />
-      
-      <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 print-hide">
+      <header className="sticky top-0 z-50 flex h-16 items-center gap-4 border-b border-slate-200/60 bg-white/70 backdrop-blur-xl px-4 md:px-6 print:hidden shadow-sm">
         <Link
             href="/dashboard"
             className="flex items-center gap-2 font-semibold"
@@ -88,9 +98,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
 
       </header>
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 print:p-0 print:m-0 print:block">
         {children}
       </main>
+      
+      {/* Widget Global Flotante de Disponibilidad (Option 1) */}
+      <LiveAvailabilityWidget />
+      
+      </div>
     </div>
   );
 }

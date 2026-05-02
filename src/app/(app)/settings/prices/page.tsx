@@ -20,7 +20,8 @@ import {
   Dumbbell, 
   Repeat, 
   ShieldAlert,
-  AlertTriangle
+  AlertTriangle,
+  Crown
 } from 'lucide-react';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -45,7 +46,9 @@ const DEFAULT_PRICES = {
   practice: {
     "Basico 8 Hrs": 123.00,
     "Plus 10 Hrs": 135.00,
-    "Premium 12 Hrs": 160.00
+    "Premium 12 Hrs": 160.00,
+    "Reforzamiento 4 Hrs": 80.00,
+    "Reforzamiento 2 Hrs": 40.00
   },
   ampliaciones: {
     "B": 57.00, "C": 57.00, "D": 57.00, "E1": 57.00,
@@ -63,7 +66,10 @@ const DEFAULT_PRICES = {
     "E2, E3": 85.00,
     "B, F": 85.00,
     "B, D, E1, E2, E3, F": 200.00,
-    "Combo Plus Auto + Moto": 290.00
+    "Combo Plus Auto + Moto": 310.00
+  },
+  deluxe: {
+    "Paquete Deluxe (Edición Especial)": 270.00
   }
 };
 
@@ -82,7 +88,12 @@ export default function PriceMaintenancePage() {
         const docRef = doc(db, 'settings', 'prices');
         const snap = await getDoc(docRef);
         if (snap.exists()) {
-          setPrices(snap.data().values);
+          const loadedData = snap.data().values;
+          const merged: any = { ...DEFAULT_PRICES };
+          Object.keys(merged).forEach(category => {
+            merged[category] = { ...merged[category], ...(loadedData[category] || {}) };
+          });
+          setPrices(merged);
         } else {
           setPrices(DEFAULT_PRICES);
         }
@@ -166,12 +177,13 @@ export default function PriceMaintenancePage() {
       </div>
 
       <Tabs defaultValue="auto" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 h-14 bg-slate-100 p-1 rounded-xl">
+        <TabsList className="grid w-full grid-cols-6 h-14 bg-slate-100 p-1 rounded-xl">
           <TabsTrigger value="auto" className="font-bold gap-2"><Car className="h-4 w-4" /> Auto</TabsTrigger>
           <TabsTrigger value="moto" className="font-bold gap-2"><Bike className="h-4 w-4" /> Moto</TabsTrigger>
           <TabsTrigger value="practice" className="font-bold gap-2"><Dumbbell className="h-4 w-4" /> Práctica</TabsTrigger>
           <TabsTrigger value="ampliaciones" className="font-bold gap-2"><Repeat className="h-4 w-4" /> Ampliaciones</TabsTrigger>
           <TabsTrigger value="combos" className="font-bold gap-2"><DollarSign className="h-4 w-4" /> Combos</TabsTrigger>
+          <TabsTrigger value="deluxe" className="font-bold gap-2"><Crown className="h-4 w-4" /> Deluxe</TabsTrigger>
         </TabsList>
 
         {Object.entries(prices).map(([catId, catValues]: [string, any]) => (

@@ -14,6 +14,7 @@ import { AutoContractForm } from '@/components/forms/auto-contract-form';
 import { MotoContractForm } from '@/components/forms/moto-contract-form';
 import { AmpliacionesContractForm } from '@/components/forms/ampliaciones-contract-form';
 import { SoloPracticaContractForm } from '@/components/forms/solo-practica-contract-form';
+import { DeluxeContractForm } from '@/components/forms/deluxe-contract-form';
 
 export default function EditContractPage() {
   const { id } = useParams();
@@ -42,6 +43,8 @@ export default function EditContractPage() {
             return <AmpliacionesContractForm contract={contract} />;
         case 'Curso Solo Practica':
             return <SoloPracticaContractForm contract={contract} />;
+        case 'Curso Deluxe':
+            return <DeluxeContractForm contract={contract} />;
         default:
             return (
                 <div className="p-12 text-center border-2 border-dashed rounded-lg">

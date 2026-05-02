@@ -1,0 +1,14 @@
+{
+  "hosting": {
+    "source": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "package-lock.json"
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}

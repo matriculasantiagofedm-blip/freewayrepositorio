@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 /**
  * FORMULARIO DE CONTRATO: CURSO DE AUTO (SINCRONIZADO CON AGENDA)
@@ -94,7 +94,8 @@ const TIME_OPTIONS = [
   "08:00am a 10:00am",
   "10:00am a 12:00pm",
   "01:00pm a 03:00pm",
-  "03:00pm a 05:00pm"
+  "03:00pm a 05:00pm",
+  "10 minutos"
 ];
 
 const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
@@ -102,9 +103,10 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
     '10:00am a 12:00pm': '10am-12pm',
     '01:00pm a 03:00pm': '1pm-3pm',
     '03:00pm a 05:00pm': '3pm-5pm',
+    '10 minutos': '10min',
 };
 
-const VEHICLES = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Auto Diesel'];
+const VEHICLES = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Skoda Automatico', 'Skoda Manual', 'Hyundai Manual'];
 const VEHICLES_MOTO = ['Moto Roja', 'Moto Negra'];
 const INSTRUCTORS = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', 'Roberto Brown'];
 
@@ -116,6 +118,11 @@ const getGlobalCapacity = (date: Date, slotId: string) => {
 
 const autoContractSchema = z.object({
   clientName: z.string().min(3, 'El nombre es requerido'),
+  firstName: z.string().optional().or(z.literal('')),
+  secondName: z.string().optional().or(z.literal('')),
+  firstLastName: z.string().optional().or(z.literal('')),
+  secondLastName: z.string().optional().or(z.literal('')),
+  marriedLastName: z.string().optional().or(z.literal('')),
   clientEmail: z.string().email('Email inválido').optional().or(z.literal('')),
   idType: z.string().default('C.I.P.'),
   studentIdNumber: z.string().min(5, 'ID requerido'),
@@ -176,6 +183,11 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
     defaultValues: isEdit ? {
       ...contract.autoMotoDetails,
       clientName: contract.clientName || '',
+      firstName: (contract.autoMotoDetails as any)?.firstName || '',
+      secondName: (contract.autoMotoDetails as any)?.secondName || '',
+      firstLastName: (contract.autoMotoDetails as any)?.firstLastName || '',
+      secondLastName: (contract.autoMotoDetails as any)?.secondLastName || '',
+      marriedLastName: (contract.autoMotoDetails as any)?.marriedLastName || '',
       clientEmail: contract.clientEmail || '',
       idType: contract.autoMotoDetails?.idType || 'C.I.P.',
       studentIdNumber: contract.autoMotoDetails?.studentIdNumber || '',
@@ -205,6 +217,7 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
       licenseDataUri: (contract.autoMotoDetails as any)?.licenseDataUri || '',
     } : {
       clientName: '',
+      firstName: '', secondName: '', firstLastName: '', secondLastName: '', marriedLastName: '',
       clientEmail: '',
       idType: 'C.I.P.',
       studentIdNumber: '',
@@ -533,7 +546,14 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
                 </div>
                 
                 <div className="md:col-span-8 grid grid-cols-12 gap-4">
-                  <div className="col-span-12 md:col-span-8">
+                  {/* Desglose del Nombre */}
+                  <div className="col-span-12 grid grid-cols-2 md:grid-cols-5 gap-2">
+                    <FormField control={form.control} name={"firstName" as any} render={({ field }) => (<FormItem><FormLabel className="text-[9px] font-bold uppercase text-muted-foreground">1er Nombre</FormLabel><FormControl><Input {...field} className="h-9 uppercase" onChange={e => { field.onChange(e.target.value.toUpperCase()); setTimeout(() => { const v = form.getValues(); const full=[v.firstName,v.secondName,v.firstLastName,v.secondLastName,v.marriedLastName].filter(Boolean).join(' '); if(full) form.setValue('clientName', full); }, 0); }} /></FormControl></FormItem>)} />
+                    <FormField control={form.control} name={"secondName" as any} render={({ field }) => (<FormItem><FormLabel className="text-[9px] font-bold uppercase text-muted-foreground">2do Nombre</FormLabel><FormControl><Input {...field} className="h-9 uppercase" onChange={e => { field.onChange(e.target.value.toUpperCase()); setTimeout(() => { const v = form.getValues(); const full=[v.firstName,v.secondName,v.firstLastName,v.secondLastName,v.marriedLastName].filter(Boolean).join(' '); if(full) form.setValue('clientName', full); }, 0); }} /></FormControl></FormItem>)} />
+                    <FormField control={form.control} name={"firstLastName" as any} render={({ field }) => (<FormItem><FormLabel className="text-[9px] font-bold uppercase text-muted-foreground">1er Apellido</FormLabel><FormControl><Input {...field} className="h-9 uppercase" onChange={e => { field.onChange(e.target.value.toUpperCase()); setTimeout(() => { const v = form.getValues(); const full=[v.firstName,v.secondName,v.firstLastName,v.secondLastName,v.marriedLastName].filter(Boolean).join(' '); if(full) form.setValue('clientName', full); }, 0); }} /></FormControl></FormItem>)} />
+                    <FormField control={form.control} name={"secondLastName" as any} render={({ field }) => (<FormItem><FormLabel className="text-[9px] font-bold uppercase text-muted-foreground">2do Apellido</FormLabel><FormControl><Input {...field} className="h-9 uppercase" onChange={e => { field.onChange(e.target.value.toUpperCase()); setTimeout(() => { const v = form.getValues(); const full=[v.firstName,v.secondName,v.firstLastName,v.secondLastName,v.marriedLastName].filter(Boolean).join(' '); if(full) form.setValue('clientName', full); }, 0); }} /></FormControl></FormItem>)} />
+                    <FormField control={form.control} name={"marriedLastName" as any} render={({ field }) => (<FormItem><FormLabel className="text-[9px] font-bold uppercase text-muted-foreground">Ap. Casada</FormLabel><FormControl><Input {...field} className="h-9 uppercase" onChange={e => { field.onChange(e.target.value.toUpperCase()); setTimeout(() => { const v = form.getValues(); const full=[v.firstName,v.secondName,v.firstLastName,v.secondLastName,v.marriedLastName].filter(Boolean).join(' '); if(full) form.setValue('clientName', full); }, 0); }} /></FormControl></FormItem>)} />
+                  </div>                  <div className="col-span-12 md:col-span-8">
                     <FormField control={form.control} name="clientName" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Nombre Completo</FormLabel>

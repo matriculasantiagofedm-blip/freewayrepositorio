@@ -61,6 +61,8 @@ import type { Contract } from '@/lib/types';
 import { AmpliacionesContractTemplate } from '@/components/ampliaciones-contract';
 import { CameraCapture } from '@/components/camera-capture';
 
+import { useSettingsPrices } from '@/hooks/use-settings-prices';
+
 const LICENSE_CATEGORIES = ['B', 'C', 'D', 'E1', 'E2', 'E3', 'F'];
 
 const CATEGORY_PRICES: Record<string, number> = {
@@ -84,7 +86,7 @@ const COMBINATION_PRICES: Record<string, number> = {
 
 const ampliacionesSchema = z.object({
   clientName: z.string().min(3, 'El nombre es requerido'),
-  clientEmail: z.string().email('Email inválido'),
+  clientEmail: z.string().email('Email inválido').optional().or(z.literal('')),
   idType: z.string().default('C.I.P.'),
   studentIdNumber: z.string().min(5, 'ID requerido'),
   studentAddress: z.string().min(5, 'Dirección requerida'),
@@ -94,11 +96,13 @@ const ampliacionesSchema = z.object({
   licenseCategory: z.string().min(1, 'Seleccione al menos una categoría'),
   courseValue: z.coerce.number().min(1, 'Monto inválido'),
   downPayment: z.coerce.number().min(0),
-  paymentDeadline: z.date({ required_error: 'Fecha límite requerida' }),
+  paymentDeadline: z.date({ required_error: 'Fecha límite requerida' }).optional().nullable(),
   paymentType: z.string().default('cash'),
-  theoreticalClassDate: z.date({ required_error: 'Fecha de teoría requerida' }),
+  theoreticalClassDate: z.date({ required_error: 'Fecha de teoría requerida' }).optional().nullable(),
   theoreticalClassTime: z.string().default('Semanal 8:00 am a 10:00 am'),
   photoDataUri: z.string().optional(),
+  idCardDataUri: z.string().optional(),
+  licenseDataUri: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof ampliacionesSchema>;
@@ -111,7 +115,11 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const { prices: settingsPrices } = useSettingsPrices();
   const isEdit = !!contract;
+
+  const categoryPrices = settingsPrices?.ampliaciones || CATEGORY_PRICES;
+  const comboPrices = settingsPrices?.combos || COMBINATION_PRICES;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(ampliacionesSchema),
@@ -122,12 +130,16 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
       paymentDeadline: toDate(contract.ampliacionesDetails?.paymentDeadline),
       theoreticalClassDate: toDate(contract.ampliacionesDetails?.theoreticalClassDate),
       photoDataUri: (contract.ampliacionesDetails as any)?.photoDataUri || '',
+      idCardDataUri: (contract.ampliacionesDetails as any)?.idCardDataUri || '',
+      licenseDataUri: (contract.ampliacionesDetails as any)?.licenseDataUri || '',
     } : {
       clientName: '', clientEmail: '', idType: 'C.I.P.', studentIdNumber: '',
       studentAddress: '', studentPhone1: '', studentPhone2: '', licenseCategory: '',
       courseValue: 0, downPayment: 0, paymentType: 'cash',
       theoreticalClassTime: 'Semanal 8:00 am a 10:00 am',
       photoDataUri: '',
+      idCardDataUri: '',
+      licenseDataUri: '',
     },
   });
 
@@ -144,15 +156,15 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
         // Ordenar alfabéticamente para buscar en COMBINATION_PRICES
         const sortedKey = [...categories].sort().join(', ');
         
-        if (COMBINATION_PRICES[sortedKey]) {
-          form.setValue('courseValue', COMBINATION_PRICES[sortedKey]);
+        if (comboPrices[sortedKey]) {
+          form.setValue('courseValue', comboPrices[sortedKey]);
         } else {
           // Si no es una combinación exacta, sumar los precios individuales
-          const total = categories.reduce((sum, cat) => sum + (CATEGORY_PRICES[cat] || 0), 0);
+          const total = categories.reduce((sum, cat) => sum + (categoryPrices[cat] || 0), 0);
           form.setValue('courseValue', total);
         }
     }
-  }, [watchCategories, form, isEdit]);
+  }, [watchCategories, form, isEdit, categoryPrices, comboPrices]);
 
   const toggleCategory = (category: string) => {
     const current = form.getValues('licenseCategory');
@@ -289,6 +301,11 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
     }
   };
 
+  const onError = (errors: any) => {
+    console.error("Form validation errors:", errors);
+    toast({ variant: 'destructive', title: 'Campos Inválidos', description: 'Por favor, revisa y completa los campos obligatorios.' });
+  };
+
   return (
     <>
       <div id="contract-preview-hidden" className="hidden">
@@ -296,7 +313,7 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-w-5xl mx-auto pb-20">
+        <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-6 max-w-5xl mx-auto pb-20">
           <Card className="border-t-4 border-t-amber-600 shadow-sm">
             <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
               <div className="flex items-center gap-2">
@@ -306,10 +323,21 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
             </CardHeader>
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-                <div className="md:col-span-4 flex justify-center md:justify-start">
+                <div className="md:col-span-4 flex flex-col gap-4 justify-center md:justify-start">
                   <CameraCapture 
                     initialImage={form.getValues('photoDataUri')} 
                     onCapture={(uri) => form.setValue('photoDataUri', uri || '')} 
+                    label="Foto del Estudiante"
+                  />
+                  <CameraCapture 
+                    initialImage={form.getValues('idCardDataUri')} 
+                    onCapture={(uri) => form.setValue('idCardDataUri', uri || '')} 
+                    label="Cédula o Pasaporte"
+                  />
+                  <CameraCapture 
+                    initialImage={form.getValues('licenseDataUri')} 
+                    onCapture={(uri) => form.setValue('licenseDataUri', uri || '')} 
+                    label="Licencia Actual"
                   />
                 </div>
 
@@ -350,7 +378,7 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
                     <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Número de Identificación</FormLabel>
-                        <FormControl><Input placeholder="Ej: 8-000-000" {...field} className="h-9 font-mono" readOnly={isEdit} /></FormControl>
+                        <FormControl><Input placeholder="Ej: 8-000-000" {...field} className="h-9 font-mono" /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )} />

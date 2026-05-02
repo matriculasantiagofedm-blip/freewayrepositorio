@@ -30,7 +30,7 @@ import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const maintenanceSchema = z.object({
-  vehicle: z.enum(['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Pick up', 'Moto Roja', 'Moto Negra', 'Skoda Automatico', 'Skoda Manual'], { required_error: "Debe seleccionar un vehículo."}),
+  vehicle: z.enum(['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Pick up', 'Moto Roja', 'Moto Negra', 'Skoda Automatico', 'Skoda Manual', 'Hyundai Manual'], { required_error: "Debe seleccionar un vehículo."}),
   date: z.date({ required_error: 'La fecha es requerida.' }),
   mileage: z.coerce.number().min(1, 'El kilometraje debe ser mayor a 0.'),
   type: z.enum(['Cambio de Aceite', 'Revisión de Frenos', 'Rotación de Llantas', 'Mantenimiento General', 'Otro'], { required_error: "Debe seleccionar un tipo."}),
@@ -42,7 +42,7 @@ const maintenanceSchema = z.object({
 type MaintenanceFormValues = z.infer<typeof maintenanceSchema>;
 
 const maintenanceTypes: MaintenanceType[] = ['Cambio de Aceite', 'Revisión de Frenos', 'Rotación de Llantas', 'Mantenimiento General', 'Otro'];
-const vehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Pick up', 'Moto Roja', 'Moto Negra', 'Skoda Automatico', 'Skoda Manual'];
+const vehicles: VehicleName[] = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Pick up', 'Moto Roja', 'Moto Negra', 'Skoda Automatico', 'Skoda Manual', 'Hyundai Manual'];
 
 export default function MaintenancePage() {
     const db = useDb();

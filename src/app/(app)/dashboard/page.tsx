@@ -34,7 +34,13 @@ import {
   Repeat,
   Dumbbell,
   DollarSign,
-  Settings
+  Settings,
+  Landmark,
+  PieChart,
+  Bot,
+  Building2,
+  MessageSquareText,
+  Star
 } from 'lucide-react';
 import { isToday, format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -128,131 +134,143 @@ export default function DashboardPage() {
       <div className="flex-1 p-6 flex flex-col gap-6">
         {/* TABS DE MÓDULOS */}
         <Tabs defaultValue="comercial" className="w-full" onValueChange={setActiveTab}>
-          <TabsList className="bg-transparent h-auto p-0 flex gap-1 border-b border-slate-300 w-full justify-start rounded-none">
-            <TabsTrigger 
-                value="comercial" 
-                className="rounded-t-lg rounded-b-none border border-b-0 border-slate-300 bg-slate-100 data-[state=active]:bg-white data-[state=active]:border-slate-300 data-[state=active]:border-b-white px-6 py-2 text-xs font-black uppercase tracking-tight -mb-px transition-all"
-            >
-                Flujo Comercial y Ventas
-            </TabsTrigger>
-            <TabsTrigger 
-                value="operativo" 
-                className="rounded-t-lg rounded-b-none border border-b-0 border-slate-300 bg-slate-100 data-[state=active]:bg-white data-[state=active]:border-slate-300 data-[state=active]:border-b-white px-6 py-2 text-xs font-black uppercase tracking-tight -mb-px transition-all"
-            >
-                Gestión Operativa
-            </TabsTrigger>
-          </TabsList>
+          <div className="w-full overflow-x-auto pb-4 scrollbar-none">
+            <TabsList className="bg-slate-200/50 backdrop-blur-md p-1 flex gap-1 w-max min-w-full md:min-w-0 md:mx-auto border border-slate-200/60 shadow-inner justify-start md:justify-center rounded-[1rem] mb-2">
+              <TabsTrigger 
+                  value="comercial" 
+                  className="rounded-[10px] data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-600 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-bold transition-all duration-300 text-slate-500 hover:text-slate-800 hover:bg-white/50 data-[state=active]:hover:bg-transparent flex items-center gap-2 whitespace-nowrap"
+              >
+                  <DollarSign className="h-3.5 w-3.5 md:h-4 md:w-4" /> <span className="hidden sm:inline">Flujo</span> Comercial
+              </TabsTrigger>
+              <TabsTrigger 
+                  value="operativo" 
+                  className="rounded-[10px] data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-500 data-[state=active]:to-orange-500 data-[state=active]:text-white data-[state=active]:shadow-md px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-bold transition-all duration-300 text-slate-500 hover:text-slate-800 hover:bg-white/50 data-[state=active]:hover:bg-transparent flex items-center gap-2 whitespace-nowrap"
+              >
+                  <Settings className="h-3.5 w-3.5 md:h-4 md:w-4" /> <span className="hidden sm:inline">Gestión</span> Operativa
+              </TabsTrigger>
+              <TabsTrigger 
+                  value="contabilidad" 
+                  className="rounded-[10px] data-[state=active]:bg-gradient-to-br data-[state=active]:from-emerald-500 data-[state=active]:to-teal-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-bold transition-all duration-300 text-slate-500 hover:text-slate-800 hover:bg-white/50 data-[state=active]:hover:bg-transparent flex items-center gap-2 whitespace-nowrap"
+              >
+                  <Landmark className="h-3.5 w-3.5 md:h-4 md:w-4" /> Contabilidad
+              </TabsTrigger>
+              <TabsTrigger 
+                  value="crm" 
+                  className="rounded-[10px] data-[state=active]:bg-gradient-to-br data-[state=active]:from-pink-500 data-[state=active]:to-rose-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-bold transition-all duration-300 text-slate-500 hover:text-slate-800 hover:bg-white/50 data-[state=active]:hover:bg-transparent flex items-center gap-2 whitespace-nowrap"
+              >
+                  <MessageSquareText className="h-3.5 w-3.5 md:h-4 md:w-4" /> CRM <span className="hidden sm:inline">/ Mensajes</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
             {/* ÁREA DE TAREAS (IZQUIERDA - 70%) */}
             <div className="lg:col-span-8 flex flex-col gap-6">
-                <Card className="shadow-md border-slate-300 rounded-sm bg-white min-h-[500px]">
+                <Card className="shadow-md border-slate-300 rounded-sm bg-white">
                     <CardHeader className="bg-[#f8fafc] border-b py-3 px-6">
                         <CardTitle className="text-xs font-black uppercase tracking-[0.15em] text-slate-500">
-                            {activeTab === 'comercial' ? 'Mapa de Procesos: Ciclo de Ingresos' : 'Control Operativo y Académico'}
+                            {activeTab === 'comercial' ? 'Mapa de Procesos: Ciclo de Ingresos' : activeTab === 'operativo' ? 'Control Operativo y Académico' : activeTab === 'contabilidad' ? 'Centro de Control Financiero' : 'Control de Prospectos y Mensajería'}
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-12 relative">
+                    <CardContent className="p-6 relative">
                         {activeTab === 'comercial' ? (
-                            /* WORKFLOW COMERICAL */
-                            <div className="flex flex-col gap-16 relative">
-                                {/* Fila 1: Captación */}
-                                <div className="flex justify-around items-start relative">
-                                    {/* BOTÓN INSCRIPCIÓN CON MENÚ MULTI-CONTRATO */}
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <button className="flex flex-col items-center gap-3 group outline-none">
-                                                <div className={cn(
-                                                    "w-16 h-16 bg-white border-2 border-slate-200 rounded-2xl flex items-center justify-center shadow-sm transition-all group-hover:shadow-lg group-hover:-translate-y-1 group-hover:border-blue-500",
-                                                    "text-blue-600"
-                                                )}>
-                                                    <UserPlus className="h-7 w-7" />
-                                                </div>
-                                                <div className="text-center">
-                                                    <p className="text-[10px] font-black uppercase text-slate-900 leading-none">Inscripción</p>
-                                                    <p className="text-[8px] font-bold text-slate-400 uppercase mt-1 tracking-tight">Nuevo Estudiante</p>
-                                                </div>
-                                            </button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="center" className="w-56 p-2 rounded-xl shadow-2xl border-slate-200">
-                                            <p className="text-[9px] font-black uppercase text-slate-400 px-2 py-1.5 tracking-widest">Seleccionar Trámite</p>
-                                            <DropdownMenuItem asChild className="rounded-lg cursor-pointer py-2.5">
-                                                <Link href="/contracts/new?type=Curso Auto" className="flex items-center gap-3">
-                                                    <div className="bg-blue-50 p-1.5 rounded-md"><Car className="h-4 w-4 text-blue-600" /></div>
-                                                    <span className="text-xs font-bold uppercase text-slate-700">Curso de Auto</span>
-                                                </Link>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem asChild className="rounded-lg cursor-pointer py-2.5">
-                                                <Link href="/contracts/new?type=Curso Moto" className="flex items-center gap-3">
-                                                    <div className="bg-orange-50 p-1.5 rounded-md"><Bike className="h-4 w-4 text-orange-600" /></div>
-                                                    <span className="text-xs font-bold uppercase text-slate-700">Curso de Moto</span>
-                                                </Link>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem asChild className="rounded-lg cursor-pointer py-2.5">
-                                                <Link href="/contracts/new?type=Ampliaciones" className="flex items-center gap-3">
-                                                    <div className="bg-amber-50 p-1.5 rounded-md"><Repeat className="h-4 w-4 text-amber-600" /></div>
-                                                    <span className="text-xs font-bold uppercase text-slate-700">Ampliaciones</span>
-                                                </Link>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem asChild className="rounded-lg cursor-pointer py-2.5">
-                                                <Link href="/contracts/new?type=Curso Solo Practica" className="flex items-center gap-3">
-                                                    <div className="bg-emerald-50 p-1.5 rounded-md"><Dumbbell className="h-4 w-4 text-emerald-600" /></div>
-                                                    <span className="text-xs font-bold uppercase text-slate-700">Solo Práctica</span>
-                                                </Link>
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 pt-2">
+                                {/* Inscripción Multi-Contrato */}
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <button className="flex flex-col items-center gap-2 group outline-none w-full">
+                                            <div className={cn(
+                                                "w-12 h-12 bg-white border border-slate-200 rounded-xl flex items-center justify-center shadow-sm transition-all group-hover:shadow-md group-hover:-translate-y-0.5 group-hover:border-blue-500",
+                                                "text-blue-600"
+                                            )}>
+                                                <UserPlus className="h-5 w-5" />
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-[10px] font-bold uppercase text-slate-800 leading-none">Inscripción</p>
+                                                <p className="text-[9px] text-slate-400 mt-1">Nuevo Estudiante</p>
+                                            </div>
+                                        </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="center" className="w-56 p-2 rounded-xl shadow-2xl border-slate-200">
+                                        <p className="text-[9px] font-black uppercase text-slate-400 px-2 py-1.5 tracking-widest">Seleccionar Trámite</p>
+                                        <DropdownMenuItem asChild className="rounded-lg cursor-pointer py-2.5">
+                                            <Link href="/contracts/new?type=Curso Auto" className="flex items-center gap-3">
+                                                <div className="bg-blue-50 p-1.5 rounded-md"><Car className="h-4 w-4 text-blue-600" /></div>
+                                                <span className="text-xs font-bold uppercase text-slate-700">Curso de Auto</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem asChild className="rounded-lg cursor-pointer py-2.5">
+                                            <Link href="/contracts/new?type=Curso Moto" className="flex items-center gap-3">
+                                                <div className="bg-orange-50 p-1.5 rounded-md"><Bike className="h-4 w-4 text-orange-600" /></div>
+                                                <span className="text-xs font-bold uppercase text-slate-700">Curso de Moto</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem asChild className="rounded-lg cursor-pointer py-2.5">
+                                            <Link href="/contracts/new?type=Ampliaciones" className="flex items-center gap-3">
+                                                <div className="bg-amber-50 p-1.5 rounded-md"><Repeat className="h-4 w-4 text-amber-600" /></div>
+                                                <span className="text-xs font-bold uppercase text-slate-700">Ampliaciones</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem asChild className="rounded-lg cursor-pointer py-2.5">
+                                            <Link href="/contracts/new?type=Curso Deluxe" className="flex items-center gap-3">
+                                                <div className="bg-purple-50 p-1.5 rounded-md"><Star className="h-4 w-4 text-purple-600" /></div>
+                                                <span className="text-xs font-bold uppercase text-slate-700">Curso Deluxe</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem asChild className="rounded-lg cursor-pointer py-2.5">
+                                            <Link href="/contracts/new?type=Curso Solo Practica" className="flex items-center gap-3">
+                                                <div className="bg-emerald-50 p-1.5 rounded-md"><Dumbbell className="h-4 w-4 text-emerald-600" /></div>
+                                                <span className="text-xs font-bold uppercase text-slate-700">Solo Práctica</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
 
-                                    <ArrowRightConnector />
-                                    <WorkflowItem icon={Receipt} label="Cobranza" sub="Gestión de Saldos" href="/cancellations" color="text-green-600" />
-                                    <ArrowRightConnector />
-                                    <WorkflowItem icon={RefreshCw} label="Trámites" sub="Actualizaciones" href="/updates" color="text-indigo-600" />
-                                </div>
-
-                                {/* Conector Vertical */}
-                                <div className="absolute top-24 left-[83%] h-12 w-px bg-slate-200 border-r border-dashed border-slate-400"></div>
-
-                                {/* Fila 2: Ventas y Cierre */}
-                                <div className="flex justify-end items-start gap-32 pr-12">
-                                    <WorkflowItem icon={Library} label="Tienda" sub="Venta de Libros" href="/book-sales" color="text-orange-600" />
-                                    <ArrowLeftConnector />
-                                    <WorkflowItem icon={Wallet} label="Cierre Caja" sub="Final de Turno" href="/informes/daily-cash" color="text-emerald-600" />
-                                </div>
+                                <WorkflowItem icon={Receipt} label="Cobranza" sub="Gestión Saldos" href="/cancellations" color="text-green-600" />
+                                <WorkflowItem icon={RefreshCw} label="Trámites" sub="Actualizaciones" href="/updates" color="text-indigo-600" />
+                                <WorkflowItem icon={Library} label="Tienda" sub="Venta Libros" href="/book-sales" color="text-orange-600" />
+                            </div>
+                        ) : activeTab === 'operativo' ? (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 pt-2">
+                                <WorkflowItem icon={CalendarClock} label="Práctica" sub="Turnos" href="/manual-schedule" color="text-amber-600" />
+                                <WorkflowItem icon={FileSignature} label="Certificados" sub="Físicos" href="/certificates" color="text-purple-600" />
+                                <WorkflowItem icon={BookOpen} label="Exámenes" sub="Teoría" href="/exams" color="text-violet-600" />
+                                <WorkflowItem icon={FileCheck} label="Bitácoras" sub="Impresión" href="/logs" color="text-blue-600" />
+                                <WorkflowItem icon={TrendingUp} label="ATTT" sub="Evaluación" href="/att-evaluations" color="text-indigo-600" />
+                                <WorkflowItem icon={ShieldCheck} label="Seguridad" sub="Vehicular" href="/mileage-log" color="text-slate-600" />
+                                {isAdmin && (
+                                  <WorkflowItem icon={DollarSign} label="Precios" sub="Ajustes" href="/settings/prices" color="text-red-600" />
+                                )}
+                            </div>
+                        ) : activeTab === 'contabilidad' ? (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 pt-2">
+                                <WorkflowItem icon={Wallet} label="Caja" sub="Cierre Turno" href="/informes/daily-cash" color="text-emerald-600" />
+                                <WorkflowItem icon={PieChart} label="Gastos" sub="Dashboard" href="/contabilidad" color="text-indigo-600" />
+                                <WorkflowItem icon={Bot} label="Ticket IA" sub="Registro" href="/contabilidad/nuevo" color="text-cyan-600" />
+                                <WorkflowItem icon={Landmark} label="P&L" sub="Finanzas" href="/informes/financial-statements" color="text-rose-600" />
+                                <WorkflowItem icon={BookOpen} label="Mayor" sub="Libro" href="/informes/general-ledger" color="text-slate-600" />
+                                <WorkflowItem icon={Building2} label="Proveedores" sub="Por Pagar" href="/informes/providers-ledger" color="text-red-700" />
                             </div>
                         ) : (
-                            /* WORKFLOW OPERATIVO */
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-12 pt-4">
-                                <WorkflowItem icon={CalendarClock} label="Agenda Práctica" sub="Turnos Semanales" href="/manual-schedule" color="text-amber-600" />
-                                <WorkflowItem icon={FileSignature} label="Certificados" sub="Impresión Física" href="/certificates" color="text-purple-600" />
-                                <WorkflowItem icon={BookOpen} label="Exámenes" sub="Evaluación Teórica" href="/exams" color="text-violet-600" />
-                                <WorkflowItem icon={FileCheck} label="Bitácoras" sub="Control de Clases" href="/logs" color="text-blue-600" />
-                                <WorkflowItem icon={TrendingUp} label="ATTT" sub="Evaluaciones" href="/att-evaluations" color="text-indigo-600" />
-                                <WorkflowItem icon={ShieldCheck} label="Seguridad" sub="Control Vehicular" href="/mileage-log" color="text-slate-600" />
-                                
-                                {isAdmin && (
-                                  <WorkflowItem 
-                                    icon={DollarSign} 
-                                    label="Precios" 
-                                    sub="Mantenimiento" 
-                                    href="/settings/prices" 
-                                    color="text-red-600" 
-                                  />
-                                )}
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 pt-2">
+                                <WorkflowItem icon={LayoutGrid} label="Embudo" sub="Ventas" href="/leads" color="text-pink-600" />
+                                <WorkflowItem icon={MessageSquareText} label="WhatsApp" sub="Mensajes" href="/leads" color="text-green-600" />
+                                <WorkflowItem icon={PieChart} label="Analítica" sub="Métricas" href="/leads" color="text-blue-600" />
                             </div>
                         )}
 
                         {/* Pie del Mapa */}
-                        <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between border-t border-slate-100 pt-4">
+                        <div className="absolute bottom-4 left-6 right-6 flex items-center justify-between border-t border-slate-100 pt-3">
                             <div className="flex gap-4">
-                                <Link href="/informes" className="flex items-center gap-1.5 text-[9px] font-black uppercase text-slate-400 hover:text-blue-600 transition-colors">
-                                    <FileText className="h-3 w-3" /> Ver Informes Completos
+                                <Link href="/informes" className="flex items-center gap-1.5 text-[9px] font-bold uppercase text-slate-400 hover:text-blue-600 transition-colors">
+                                    <FileText className="h-3 w-3" /> Ver Informes
                                 </Link>
-                                <Link href="/contracts" className="flex items-center gap-1.5 text-[9px] font-black uppercase text-slate-400 hover:text-blue-600 transition-colors">
-                                    <Library className="h-3 w-3" /> Archivo de Contratos
+                                <Link href="/contracts" className="flex items-center gap-1.5 text-[9px] font-bold uppercase text-slate-400 hover:text-blue-600 transition-colors">
+                                    <Library className="h-3 w-3" /> Contratos
                                 </Link>
                             </div>
-                            <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest italic">ContractTime Management Suite v3.0</span>
+                            <span className="text-[8px] text-slate-300">v3.0</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -361,7 +379,7 @@ export default function DashboardPage() {
                                             <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: ['#0f172a', '#2563eb', '#10b981', '#f59e0b', '#f43f5e'][index % 5] }}></div>
                                             <span className="text-slate-500 font-bold uppercase truncate max-w-[140px]">{item.name}</span>
                                         </div>
-                                        <span className="text-slate-900 font-black">{( (item.value / stats.active) * 100).toFixed(1)}%</span>
+                                        <span className="text-slate-900 font-black">{( ((item.value as number) / stats.active) * 100).toFixed(1)}%</span>
                                     </div>
                                 ))}
                             </div>
@@ -378,38 +396,22 @@ export default function DashboardPage() {
 
 function WorkflowItem({ icon: Icon, label, sub, href, color }: any) {
     return (
-        <Link href={href} className="flex flex-col items-center gap-3 group outline-none">
+        <Link href={href} className="flex flex-col items-center gap-2 group outline-none w-full">
             <div className={cn(
-                "w-16 h-16 bg-white border-2 border-slate-200 rounded-2xl flex items-center justify-center shadow-sm transition-all group-hover:shadow-lg group-hover:-translate-y-1 group-hover:border-blue-500",
+                "w-12 h-12 bg-white border border-slate-200 rounded-xl flex items-center justify-center shadow-sm transition-all group-hover:shadow-md group-hover:-translate-y-0.5 group-hover:border-blue-500",
                 color
             )}>
-                <Icon className="h-7 w-7" />
+                <Icon className="h-5 w-5" />
             </div>
             <div className="text-center">
-                <p className="text-[10px] font-black uppercase text-slate-900 leading-none">{label}</p>
-                <p className="text-[8px] font-bold text-slate-400 uppercase mt-1 tracking-tight">{sub}</p>
+                <p className="text-[10px] font-bold uppercase text-slate-800 leading-none">{label}</p>
+                <p className="text-[9px] text-slate-400 mt-1">{sub}</p>
             </div>
         </Link>
     );
 }
 
-function ArrowRightConnector() {
-    return (
-        <div className="flex items-center pt-8 opacity-20">
-            <div className="w-12 h-px bg-slate-400 border-t border-dashed border-slate-600"></div>
-            <div className="w-2 h-2 border-t-2 border-r-2 border-slate-600 rotate-45 -ml-1"></div>
-        </div>
-    );
-}
 
-function ArrowLeftConnector() {
-    return (
-        <div className="flex items-center pt-8 opacity-20">
-            <div className="w-2 h-2 border-b-2 border-l-2 border-slate-600 rotate-45 -mr-1"></div>
-            <div className="w-12 h-px bg-slate-400 border-t border-dashed border-slate-600"></div>
-        </div>
-    );
-}
 
 function QuickReportLink({ href, label }: { href: string, label: string }) {
     return (

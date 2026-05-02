@@ -27,6 +27,9 @@ const initialVehicles: VehicleMileageState[] = [
     { name: 'Pick up', initialMileage: '', finalMileage: '', distance: 0 },
     { name: 'Moto Roja', initialMileage: '', finalMileage: '', distance: 0 },
     { name: 'Moto Negra', initialMileage: '', finalMileage: '', distance: 0 },
+    { name: 'Skoda Automatico', initialMileage: '', finalMileage: '', distance: 0 },
+    { name: 'Skoda Manual', initialMileage: '', finalMileage: '', distance: 0 },
+    { name: 'Hyundai Manual', initialMileage: '', finalMileage: '', distance: 0 },
 ];
 
 export default function MileageLogPage() {

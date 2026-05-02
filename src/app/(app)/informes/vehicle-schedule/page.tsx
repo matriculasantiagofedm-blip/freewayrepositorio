@@ -65,12 +65,9 @@ const TIME_STRING_MAP: Record<string, string> = {
 const getGlobalCapacity = (date: Date, slotId: string) => {
     const day = date.getDay(); 
     if (day === 0) return 0; 
-    if (slotId === '8am-10am') {
-        if (day === 1) return 3;
-        if (day >= 2 && day <= 5) return 2;
-    }
-    if (day === 6 && slotId === '3pm-5pm') return 2;
-    return 3;
+    if (day >= 2 && day <= 5 && slotId === '8am-10am') return 3; // M-V 8am-10am (Teoría)
+    if (day === 6 && slotId === '3pm-5pm') return 3; // Sábado 3pm-5pm (Teoría)
+    return 4; // Resto de horarios
 };
 
 const getVehicleColor = (vehicleName: string = '', status?: ClassStatus) => {

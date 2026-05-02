@@ -42,28 +42,29 @@ function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate 
     const photo = certificate.photoDataUri || (certificate.contract?.ampliacionesDetails as any)?.photoDataUri;
 
     return (
-        <div className="certificate-page-container print:m-0 print:p-0">
-            <div className="w-[11in] h-[8.5in] bg-white text-black font-serif relative flex items-center justify-center p-0 break-after-page overflow-hidden">
+        <div className="certificate-page-front certificate-page-container print:m-0 print:p-0">
+            <div className="w-[11in] h-[8.5in] bg-white text-black font-serif relative flex items-center justify-center p-0 overflow-hidden">
                 <div className="w-[10.2in] h-[7.8in] border-[3px] border-black flex flex-col p-10 relative bg-white">
                     
                     <header className="flex w-full flex-col items-center justify-center relative pt-2">
-                        {/* FOTO DEL ESTUDIANTE (RECUADRO SUPERIOR IZQUIERDO) */}
-                        <div className="absolute top-0 left-0 w-24 h-28 border-2 border-black bg-slate-50 flex items-center justify-center overflow-hidden">
-                            {photo ? (
-                                <img src={photo} alt="Estudiante" className="w-full h-full object-cover" />
-                            ) : (
-                                <span className="text-[6pt] font-black uppercase text-slate-300 text-center px-2">Espacio para Foto</span>
-                            )}
-                        </div>
-
+                        {/* (FOTO MOVIDA A LA DERECHA) */}
                         <h2 className="text-[9.5pt] font-bold tracking-tight mb-1 uppercase">FREEWAY ESCUELA DE MANEJO S.A.</h2>
                         <h1 className="text-[33pt] font-black tracking-[0.12em] leading-none mb-1 text-black">FREEWAY</h1>
                         <p className="text-[12pt] tracking-[0.3em] font-semibold text-black uppercase">Escuela de Manejo</p>
                         <p className="text-[9.5pt] italic mt-1">Casa Matriz Chorrera</p>
 
-                        <div className="absolute top-0 right-0 text-center">
+                        <div className="absolute top-0 right-0 text-center flex flex-col items-center">
                             <p className="text-[21pt] font-black mb-1">{getHighestLicenseType(certificate.licenseType)}</p>
-                            <p className="text-[8.5pt] font-bold border-t border-black pt-1">{folioNum} / {folioYear}</p>
+                            <p className="text-[8.5pt] font-bold border-t border-black pt-1 w-full">{folioNum} / {folioYear}</p>
+                            
+                            {/* FOTO DEL ESTUDIANTE (DEBAJO DEL FOLIO) */}
+                            <div className="mt-2 border-2 border-black bg-slate-50 flex items-center justify-center overflow-hidden" style={{ width: '30mm', height: '40mm', minWidth: '30mm', minHeight: '40mm' }}>
+                                {photo ? (
+                                    <img src={photo} alt="Estudiante" className="w-full h-full object-cover" />
+                                ) : (
+                                    <span className="text-[6pt] font-black uppercase text-slate-300 text-center px-2">Espacio para Foto</span>
+                                )}
+                            </div>
                         </div>
                     </header>
 
@@ -115,10 +116,10 @@ function CertificateBackAmpliacion({ certificate }: { certificate: Certificate }
     const formattedExpiryDate = expiryDate ? format(expiryDate, 'dd-MM-yyyy') : '00-00-0000';
     
     return (
-        <div className="certificate-page-container print:m-0 print:p-0">
+        <div className="certificate-page-back certificate-page-container print:m-0 print:p-0">
             <div className="w-[11in] h-[8.5in] bg-white text-black font-sans relative flex items-center justify-center p-0 overflow-hidden">
-                <div className="w-[10.5in] h-[8in] p-20 flex flex-col justify-center bg-white text-[13pt] leading-relaxed">
-                    <div className="space-y-8 w-full">
+                <div className="w-[10.5in] h-[8in] p-20 flex items-center justify-between bg-white text-[13pt] leading-relaxed gap-8">
+                    <div className="space-y-8 flex-1">
                         <p className="flex gap-4">Yo, <span className="font-black flex-1 uppercase border-b border-transparent">{certificate.clientName}</span></p>
                         <p>Número de Documento ({certificate.idType || 'C.I.P.'}): <span className="font-black">{certificate.cip}</span></p>
                         <p className="flex gap-4">Resido en: <span className="font-black flex-1 uppercase border-b border-transparent">{details?.studentAddress || ''}</span></p>
@@ -152,6 +153,18 @@ function CertificateBackAmpliacion({ certificate }: { certificate: Certificate }
                             </div>
                         </div>
                     </div>
+
+                    {/* BACK PHOTOS: ID AND LICENSE (RIGHT SIDE) */}
+                    {(certificate.idCardDataUri || certificate.licenseDataUri) && (
+                        <div className="flex flex-col justify-center items-center gap-6 w-[2.8in] h-full">
+                            {certificate.idCardDataUri && (
+                                <img src={certificate.idCardDataUri} alt="Cédula" className="w-full h-auto max-h-[3.2in] object-contain rounded-md" />
+                            )}
+                            {certificate.licenseDataUri && (
+                                <img src={certificate.licenseDataUri} alt="Licencia" className="w-full h-auto max-h-[3.2in] object-contain rounded-md" />
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

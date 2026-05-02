@@ -35,6 +35,28 @@ service cloud.firestore {
       allow read, write: if isSignedIn();
     }
 
+    match /users_crm/{userId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    match /leads/{leadId} {
+      allow read, write: if true;
+      match /messages/{messageId} {
+        allow read, write: if true;
+      }
+    }
+
+    match /settings/{id} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    match /expenses/{id} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() || request.resource.data.source == 'TimeWise Integration';
+    }
+
     match /{path=**} {
       allow read, write: if isSignedIn();
     }

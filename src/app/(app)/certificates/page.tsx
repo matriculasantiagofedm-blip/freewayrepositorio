@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useDb, useUser } from '@/components/firebase-provider';
+import { useDb, useUser, useAuth } from '@/components/firebase-provider';
 import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp, setDoc, Timestamp } from 'firebase/firestore';
+import { getAuth, signInAnonymously } from 'firebase/auth';
 import type { Contract } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Search, Printer, CheckCircle2, PlusCircle, FileText, Repeat, CalendarIcon, Phone, AlertCircle, RefreshCw, UserPlus } from 'lucide-react';
+import { CameraCapture } from '@/components/camera-capture';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import {
   Dialog,
@@ -56,6 +58,7 @@ const getNextFolio = (lastFolio: string | null): string => {
 function CertificatesContent() {
   const db = useDb();
   const { user } = useUser();
+  const firebaseAuth = useAuth();
   const { toast } = useToast();
   const { role } = useCurrentRole();
   const searchParams = useSearchParams();
@@ -108,6 +111,9 @@ function CertificatesContent() {
     issueDate: new Date(),
     isCorrection: false,
     isUpdate: false,
+    photoDataUri: '',
+    idCardDataUri: '',
+    licenseDataUri: '',
   });
 
   const [isGenerating, setIsGenerating] = useState(false);
@@ -224,6 +230,9 @@ function CertificatesContent() {
       middleName,
       lastName,
       secondLastName,
+      photoDataUri: contract.photoDataUri || (details as any)?.photoDataUri || '',
+      idCardDataUri: contract.idCardDataUri || (details as any)?.idCardDataUri || '',
+      licenseDataUri: contract.licenseDataUri || (details as any)?.licenseDataUri || '',
     }));
   };
 
@@ -261,6 +270,9 @@ function CertificatesContent() {
       issueDate: new Date(),
       isCorrection: false,
       isUpdate: false,
+      photoDataUri: '',
+      idCardDataUri: '',
+      licenseDataUri: '',
     });
     setSearchIdInternal('');
     setIsCertificateModalOpen(true);
@@ -289,8 +301,8 @@ function CertificatesContent() {
   };
 
   const handleProceedToPrint = async (customLicenseType?: string) => {
-    if (!certificateData.folio || !db || !user) {
-        toast({ variant: 'destructive', title: 'Datos Inválidos', description: 'Faltan datos para imprimir.' });
+    if (!certificateData.folio || !db) {
+        toast({ variant: 'destructive', title: 'Datos Inválidos', description: 'Faltan el folio o la conexión a la base de datos.' });
         return;
     }
 
@@ -298,7 +310,19 @@ function CertificatesContent() {
 
     setIsGenerating(true);
     try {
+        // Asegurar sesión activa antes de escribir en Firestore
+        // Usa el auth del contexto o lo obtiene directamente de Firebase como fallback
+        const authInstance = firebaseAuth || getAuth();
+        let currentUser = authInstance.currentUser;
+        if (!currentUser) {
+            const result = await signInAnonymously(authInstance);
+            currentUser = result.user;
+        }
+
         const timestamp = Timestamp.fromDate(certificateData.issueDate);
+
+        // ⚠️ IMPORTANTE: NO guardar fotos base64 en Firestore (límite 1MB por doc)
+        // Las fotos se cachean en localStorage y se leen en la página de impresión
         const sharedData = {
             certificateGeneratedAt: timestamp,
             certificateFolio: certificateData.folio,
@@ -312,11 +336,15 @@ function CertificatesContent() {
             certificateIdType: certificateData.idType,
             isCorrection: certificateData.isCorrection,
             isUpdate: certificateData.isUpdate,
+            // ❌ SIN photoDataUri, idCardDataUri, licenseDataUri → usan localStorage
         };
+
+        let generatedManualId = 'manual';
 
         if (selectedContract) {
             const contractRef = doc(db, 'contracts', selectedContract.id);
             await updateDoc(contractRef, sharedData);
+            generatedManualId = selectedContract.id;
         } else {
             const manualRef = doc(collection(db, 'contracts'));
             await setDoc(manualRef, {
@@ -326,14 +354,23 @@ function CertificatesContent() {
                 type: manualType === 'ampliaciones' ? 'Ampliaciones' : 'Manual',
                 status: 'completed',
                 isManualPrint: true,
-                userId: user.uid,
+                userId: currentUser.uid,
                 createdAt: serverTimestamp(),
                 folioNumber: 0,
             });
+            generatedManualId = manualRef.id;
         }
         
         localStorage.setItem('lastCertificateFolio', certificateData.folio);
         setLastFolio(certificateData.folio);
+
+        // Caché de fotos en localStorage para la página de impresión
+        const cacheData = {
+           photoDataUri: certificateData.photoDataUri,
+           idCardDataUri: certificateData.idCardDataUri,
+           licenseDataUri: certificateData.licenseDataUri
+        };
+        localStorage.setItem(`cert_photos_${generatedManualId}`, JSON.stringify(cacheData));
 
         const queryParams = new URLSearchParams({
             folio: certificateData.folio,
@@ -355,17 +392,22 @@ function CertificatesContent() {
             isUpdate: String(certificateData.isUpdate),
         });
 
-        const printId = selectedContract?.id || 'manual';
-        window.open(`/certificate-print/${printId}?${queryParams.toString()}`, '_blank');
+        window.open(`/certificate-print/${generatedManualId}?${queryParams.toString()}`, '_blank');
         
-        toast({ title: 'Impresión Iniciada', description: 'Se ha abierto la pestaña de impresión.' });
-    } catch (error) {
+        toast({ title: '✅ Impresión Iniciada', description: 'Se abrió la pestaña de impresión.' });
+    } catch (error: any) {
         console.error("Error saving certificate print:", error);
-        toast({ variant: 'destructive', title: 'Error al Guardar', description: 'No se pudo registrar la impresión.' });
+        const msg = error?.code === 'permission-denied'
+            ? 'Sin permisos en Firestore. Verifica que hayas iniciado sesión.'
+            : error?.message?.includes('quota') || error?.message?.includes('size')
+            ? 'La foto es demasiado grande. Reduce el tamaño e intenta de nuevo.'
+            : error?.message || 'No se pudo registrar la impresión.';
+        toast({ variant: 'destructive', title: 'Error al Guardar', description: msg });
     } finally {
         setIsGenerating(false);
     }
   };
+
 
   const groupedLicenses = useMemo(() => {
     const type = certificateData.licenseType.toUpperCase();
@@ -383,7 +425,7 @@ function CertificatesContent() {
   }, [certificateData.licenseType]);
 
   const CategoryGrid = () => {
-    const isAmpliacion = selectedContract ? selectedContract.type === 'Ampliaciones' : manualType === 'ampliaciones';
+    const isAmpliacion = manualType === 'ampliaciones';
     const categoriesToShow = isAmpliacion ? ALL_CATEGORIES : FIRST_TIME_CATEGORIES;
 
     return (
@@ -470,9 +512,8 @@ function CertificatesContent() {
                 </DialogHeader>
                 
                 <div className="flex-1 overflow-y-auto pr-4 py-4 space-y-6">
-                    {!selectedContract && (
-                        <div className="space-y-4">
-                            {/* BUSCADOR INTERNO PARA MANUAL */}
+                    <div className="space-y-4">
+                        {!selectedContract && (
                             <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 space-y-3">
                                 <Label className="text-xs font-black uppercase text-blue-700 flex items-center gap-2">
                                     <Search className="h-3.5 w-3.5" /> ¿Importar datos de estudiante existente?
@@ -496,18 +537,18 @@ function CertificatesContent() {
                                     </Button>
                                 </div>
                             </div>
+                        )}
 
-                            <div className="space-y-3 bg-slate-100 p-4 rounded-xl border">
-                                <Label className="text-xs font-bold uppercase tracking-wider text-slate-600">Tipo de Trámite Manual</Label>
-                                <Tabs value={manualType} onValueChange={(v: any) => setManualType(v)} className="w-full">
-                                    <TabsList className="grid w-full grid-cols-2 h-12">
-                                        <TabsTrigger value="primera-vez" className="gap-2"><FileText className="h-4 w-4" /> Primera Vez</TabsTrigger>
-                                        <TabsTrigger value="ampliaciones" className="gap-2"><Repeat className="h-4 w-4" /> Ampliaciones</TabsTrigger>
-                                    </TabsList>
-                                </Tabs>
-                            </div>
+                        <div className="space-y-3 bg-slate-100 p-4 rounded-xl border mb-4">
+                            <Label className="text-xs font-bold uppercase tracking-wider text-slate-600">Tipo de Trámite</Label>
+                            <Tabs value={manualType} onValueChange={(v: any) => setManualType(v)} className="w-full">
+                                <TabsList className="grid w-full grid-cols-2 h-12">
+                                    <TabsTrigger value="primera-vez" className="gap-2"><FileText className="h-4 w-4" /> Primera Vez</TabsTrigger>
+                                    <TabsTrigger value="ampliaciones" className="gap-2"><Repeat className="h-4 w-4" /> Ampliaciones</TabsTrigger>
+                                </TabsList>
+                            </Tabs>
                         </div>
-                    )}
+                    </div>
 
                     <div className="grid gap-4 p-5 border rounded-xl bg-slate-50/50">
                         <div className="flex flex-wrap justify-between items-center gap-4">
@@ -594,9 +635,28 @@ function CertificatesContent() {
                                 </Popover>
                             </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label className="text-xs uppercase font-bold text-muted-foreground">Nombre Completo (Frente)</Label>
-                            <Input value={certificateData.clientName} onChange={(e) => handleCertDataChange('clientName', e.target.value)} className="bg-white font-bold" />
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+                          <div className="md:col-span-3 flex flex-col gap-4 justify-center md:justify-start">
+                            <CameraCapture 
+                              initialImage={certificateData.photoDataUri} 
+                              onCapture={(uri) => handleCertDataChange('photoDataUri', uri || '')} 
+                              label="Foto del Estudiante"
+                            />
+                            <CameraCapture 
+                              initialImage={certificateData.idCardDataUri} 
+                              onCapture={(uri) => handleCertDataChange('idCardDataUri', uri || '')} 
+                              label="Cédula o Pasaporte"
+                            />
+                            <CameraCapture 
+                              initialImage={certificateData.licenseDataUri} 
+                              onCapture={(uri) => handleCertDataChange('licenseDataUri', uri || '')} 
+                              label="Licencia Actual"
+                            />
+                          </div>
+                          <div className="md:col-span-9 space-y-2">
+                              <Label className="text-xs uppercase font-bold text-muted-foreground">Nombre Completo (Frente)</Label>
+                              <Input value={certificateData.clientName} onChange={(e) => handleCertDataChange('clientName', e.target.value)} className="bg-white font-bold" />
+                          </div>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                             <div className="space-y-2"><Label className="text-[10px] uppercase font-bold text-slate-400">1er Nombre</Label><Input value={certificateData.firstName} onChange={(e) => handleCertDataChange('firstName', e.target.value)} className="bg-white text-xs" /></div>

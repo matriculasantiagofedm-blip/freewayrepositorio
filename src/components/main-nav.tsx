@@ -52,7 +52,7 @@ const navLinks = [
       { href: '/informes/vehicle-schedule', label: 'Agenda Práctica Semanal', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { href: '/informes/theoretical-schedule', label: 'Agenda Teórica Semanal', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { href: '/informes/practical-starts', label: 'Inicios Prácticos', roles: ['Administrador', 'Ventas'] },
-      { href: '/informes/quality-monitoring', label: 'Control de Calidad', roles: ['Administrador', 'SuperAdmin', 'Owner', 'Dueño'] },
+      { href: '/informes/quality-monitoring', label: 'Control de Calidad', roles: ['Administrador', 'SuperAdmin', 'Owner', 'Dueño', 'Ventas Externas'] },
       { href: '/informes/cancellation-payments', label: 'Reporte Abonos', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { href: '/informes/update-payments', label: 'Reporte Actualización', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { href: '/informes/certificates-summary', label: 'Control Certificados', roles: ['Administrador'] },

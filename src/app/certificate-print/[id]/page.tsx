@@ -81,6 +81,12 @@ function CertificatePrintContent() {
           }
       };
 
+      const cachedStr = typeof window !== 'undefined' ? localStorage.getItem(`cert_photos_${contractId}`) : null;
+      let cachedPhotos = { photoDataUri: '', idCardDataUri: '', licenseDataUri: '' };
+      if (cachedStr) {
+          try { cachedPhotos = JSON.parse(cachedStr); } catch(e){}
+      }
+
       const certificateData: Certificate = {
         id: contractId,
         contractId: contractId,
@@ -99,6 +105,9 @@ function CertificatePrintContent() {
         lastName: lastName || undefined,
         secondLastName: secondLastName || undefined,
         marriedLastName: marriedLastName || undefined,
+        photoDataUri: effectiveContract.photoDataUri || (effectiveContract.ampliacionesDetails as any)?.photoDataUri || (effectiveContract.autoMotoDetails as any)?.photoDataUri || cachedPhotos.photoDataUri,
+        idCardDataUri: effectiveContract.idCardDataUri || (effectiveContract.ampliacionesDetails as any)?.idCardDataUri || (effectiveContract.autoMotoDetails as any)?.idCardDataUri || cachedPhotos.idCardDataUri,
+        licenseDataUri: effectiveContract.licenseDataUri || (effectiveContract.ampliacionesDetails as any)?.licenseDataUri || (effectiveContract.autoMotoDetails as any)?.licenseDataUri || cachedPhotos.licenseDataUri,
       };
       setCertificate(certificateData);
 
@@ -133,33 +142,7 @@ function CertificatePrintContent() {
   }
 
   return (
-    <div className="bg-white min-h-screen">
-        <style jsx global>{`
-          @media print {
-            @page { 
-                size: letter landscape; 
-                margin: 0; 
-            }
-            body, html { 
-                background-color: white !important; 
-                margin: 0 !important; 
-                padding: 0 !important; 
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                overflow: visible !important;
-                min-height: auto !important;
-                height: auto !important;
-            }
-            .print-ui-element { display: none !important; }
-            * { box-shadow: none !important; text-shadow: none !important; transition: none !important; }
-            .certificate-page-container {
-                display: block !important;
-                width: 11in !important;
-                height: 8.5in !important;
-                overflow: hidden !important;
-            }
-          }
-        `}</style>
+    <div className="bg-white">
 
         <div className="print-ui-element p-6 bg-white border-b flex flex-col gap-4 shadow-sm sticky top-0 z-[200]">
             <div className="flex items-center gap-2 text-blue-800 bg-blue-50 p-3 rounded-lg border border-blue-100">
@@ -182,7 +165,7 @@ function CertificatePrintContent() {
             )}
         </div>
 
-        <div className="flex flex-col items-center justify-center w-full bg-white print:block print:m-0 print:p-0">
+        <div className="certificate-pages-wrapper">
             {shouldUseAmpliacionTemplate ? (
               <AmpliacionCertificateTemplate certificate={certificate} />
             ) : (

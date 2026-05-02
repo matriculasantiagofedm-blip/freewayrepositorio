@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import type { Contract } from '@/lib/types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -56,6 +56,17 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
           <p className="font-black text-lg text-red-600">N° {String(contract.folioNumber || '').padStart(6, '0')}</p>
         </div>
       </div>
+      {/* Desglose de Nombre */}
+      {(details as any)?.firstName && (
+        <div className="grid grid-cols-5 gap-x-3 gap-y-0 border border-gray-300 rounded-sm p-2 mb-3 text-[7.5pt]">
+          <div className="flex flex-col"><span className="text-[6pt] font-black uppercase text-gray-400 mb-0.5">1er Nombre</span><Line className="text-[7.5pt]">{(details as any)?.firstName}</Line></div>
+          <div className="flex flex-col"><span className="text-[6pt] font-black uppercase text-gray-400 mb-0.5">2do Nombre</span><Line className="text-[7.5pt]">{(details as any)?.secondName || ''}</Line></div>
+          <div className="flex flex-col"><span className="text-[6pt] font-black uppercase text-gray-400 mb-0.5">1er Apellido</span><Line className="text-[7.5pt]">{(details as any)?.firstLastName}</Line></div>
+          <div className="flex flex-col"><span className="text-[6pt] font-black uppercase text-gray-400 mb-0.5">2do Apellido</span><Line className="text-[7.5pt]">{(details as any)?.secondLastName || ''}</Line></div>
+          <div className="flex flex-col"><span className="text-[6pt] font-black uppercase text-gray-400 mb-0.5">Ap. de Casada</span><Line className="text-[7.5pt]">{(details as any)?.marriedLastName || ''}</Line></div>
+        </div>
+      )}
+
 
       <div className="text-justify mb-3">
         La empresa <Value>FREEWAY ESCUELA DE MANEJO S.A.</Value>, con ubicación en La Chorrera, Vía Interamericana, Costa Verde, PH Green Plaza, Local #20, debidamente inscrita <Value>RUC 155628022-2-2016 DV 2</Value>, en adelante denominada <Value>LA EMPRESA</Value>, se compromete a brindar a EL ESTUDIANTE la capacitación teórico-práctica del curso “CURSO DE MANEJO”, que incluye la Certificación según la categoría seleccionada. Entre <Value>{contract.clientName?.toUpperCase()}</Value>, identificado con <Value>{details?.idType || 'C.I.P.'}</Value> N.° <Value>{details?.studentIdNumber}</Value>, con domicilio en <Value>{details?.studentAddress?.toUpperCase()}</Value>, teléfonos: <Value>{details?.studentPhone1}</Value> / <Value>{details?.studentPhone2 || '---'}</Value>, correo electrónico: <Value>{contract.clientEmail}</Value>, en adelante denominado <Value>EL ESTUDIANTE</Value>.

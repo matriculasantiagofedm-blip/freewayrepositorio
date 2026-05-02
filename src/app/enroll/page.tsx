@@ -45,23 +45,31 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { 
-  Loader2, 
-  CalendarIcon, 
-  CheckCircle2,
   GanttChart,
+  UserPlus,
+  ArrowRight,
+  Lock,
   ShieldCheck,
-  BookOpen,
+  Loader2,
+  CalendarIcon,
+  CalendarDays,
   CreditCard,
   Smartphone,
   Hash,
   Car,
-  Info
+  Info,
+  DollarSign,
+  Camera,
+  BookOpen,
+  CheckCircle2
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useDb, useFirebase } from '@/components/firebase-provider';
 import Link from 'next/link';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
+import { useSettingsPrices } from '@/hooks/use-settings-prices';
 import { isPanamaHoliday } from '@/lib/holidays';
+import { validatePaymentFlow } from '@/ai/flows/validate-payment';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   AlertDialog,
@@ -99,8 +107,6 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
     '03:00pm a 05:00pm': '3pm-5pm',
 };
 
-const RESERVATION_FEE = 50.00;
-
 const getGlobalCapacity = (date: Date, slotId: string) => {
     const day = date.getDay(); 
     if (day === 0) return 0; 
@@ -128,7 +134,8 @@ const enrollmentSchema = z.object({
     time: z.string().min(1, 'Hora requerida'),
   })).min(1, 'Debe elegir su horario'),
   paymentMethod: z.enum(['yappy', 'credit_card']).default('yappy'),
-  paymentReference: z.string().min(6, 'Ingresa el número de referencia completo').regex(/^\d+$/, 'Solo se permiten números'),
+  paymentReference: z.string().min(6, 'Ingresa el número de referencia completo'),
+  paymentAmount: z.preprocess((val) => Number(val), z.number().min(50, 'Abono min: B/. 50.00')),
 });
 
 type FormValues = z.infer<typeof enrollmentSchema>;
@@ -141,6 +148,8 @@ function EnrollmentContent() {
   const [submittedFolio, setSubmittedFolio] = useState<number | null>(null);
   const [showCuboModal, setShowCuboModal] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isReadingImage, setIsReadingImage] = useState(false);
+  const { prices } = useSettingsPrices();
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -180,7 +189,7 @@ function EnrollmentContent() {
     defaultValues: {
       clientName: '', clientEmail: '', idType: 'C.I.P.', studentIdNumber: '', studentAddress: '', studentPhone1: '',
       vehicleTransmission: 'Automático', coursePlan: '', theoreticalClassSchedule: 'Sabados 3:00 pm a 5:00 pm',
-      theoreticalClassDates: [], practicalClassSchedules: [], paymentMethod: 'yappy', paymentReference: '',
+      theoreticalClassDates: [], practicalClassSchedules: [], paymentMethod: 'yappy', paymentReference: '', paymentAmount: 50,
     },
   });
 
@@ -198,16 +207,62 @@ function EnrollmentContent() {
   }, [watchPlan, replacePractical, form, mounted]);
 
   useEffect(() => {
-    if (watchTheorySchedule && mounted) {
-      const count = watchTheorySchedule === 'Semanal 8:00 am a 10:00 am' ? 4 : 3;
-      const current = form.getValues('theoreticalClassDates') || [];
-      form.setValue('theoreticalClassDates', Array.from({ length: count }, (_, i) => current[i] || new Date()));
+    if (watchPlan && watchTheorySchedule) {
+        // Placeholder for logic to generate dates based on schedule
     }
   }, [watchTheorySchedule, form, mounted]);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsReadingImage(true);
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Ref = reader.result as string;
+        const mimeType = file.type;
+        const base64Image = base64Ref.split(',')[1];
+        
+        toast({ title: 'Analizando Comprobante...', description: 'Nuestra Inteligencia Artificial está validando tu pago...' });
+
+        const result = await validatePaymentFlow({ base64Image, mimeType });
+        if (result.isValid) {
+          form.setValue('paymentAmount', result.amount || 50);
+          form.setValue('paymentReference', result.reference || '');
+          toast({ title: '✅ Comprobante Aprobado!', description: `Monto detectado: B/. ${result.amount}. Referencia: ${result.reference}`, duration: 7000 });
+        } else {
+          form.setValue('paymentReference', '');
+          toast({ variant: 'destructive', title: 'Comprobante Denegado', description: result.reason || 'Por favor sube una captura válida y exitosa.', duration: 7000 });
+        }
+        setIsReadingImage(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (e) {
+      console.error(e);
+      toast({ variant: 'destructive', title: 'Error de IA', description: 'No pudimos analizar el comprobante. Por favor rellena los datos a mano.' });
+      setIsReadingImage(false);
+    }
+  };
 
   const onSubmit = async (values: FormValues) => {
     if (!db || !auth.currentUser) return;
     
+    const hasInvalidSlot = values.practicalClassSchedules.some(s => {
+      const dObj = s.date;
+      if (!dObj || isNaN(dObj.getTime())) return false;
+      const slotId = TIME_STRING_TO_SLOT_MAP[s.time] || s.time;
+      const dateKey = format(dObj, 'yyyy-MM-dd');
+      const capacity = getGlobalCapacity(dObj, slotId);
+      const isFull = (availabilityData.globalCounts[`${dateKey}|${slotId}`] || 0) >= capacity;
+      return isFull || isPanamaHoliday(dObj) || dObj.getDay() === 0;
+    });
+
+    if (hasInvalidSlot) {
+      toast({ variant: 'destructive', title: 'Horarios Inválidos', description: 'Uno o más horarios seleccionados están llenos, son Feriados o Domingo. Por favor ajusta las casillas marcadas en amarillo / rojo.', duration: 5000 });
+      return;
+    }
+
     setIsSaving(true);
     try {
       const qCheck = query(collection(db, 'contracts'), where('paymentReference', '==', values.paymentReference));
@@ -233,6 +288,9 @@ function EnrollmentContent() {
           phone: values.studentPhone1, createdAt: serverTimestamp(), userId: auth.currentUser?.uid,
         });
 
+        const courseValue = prices?.auto?.[values.coursePlan] || 0;
+        const balance = courseValue - values.paymentAmount;
+
         const contractRef = doc(collection(db, 'contracts'));
         transaction.set(contractRef, {
           title: `Curso de Auto - Folio ${nextFolio}`,
@@ -253,9 +311,9 @@ function EnrollmentContent() {
             theoreticalClassDates: values.theoreticalClassDates.map(d => Timestamp.fromDate(d)),
             practicalClassSchedules: values.practicalClassSchedules.map(s => ({ ...s, date: Timestamp.fromDate(s.date) })),
             paymentType: values.paymentMethod === 'yappy' ? 'yappy' : 'credit', 
-            courseValue: 0, 
-            downPayment: RESERVATION_FEE, 
-            balance: 0,
+            courseValue: courseValue, 
+            downPayment: values.paymentAmount, 
+            balance: balance,
             paymentDeadline: serverTimestamp()
           }
         });
@@ -378,7 +436,11 @@ function EnrollmentContent() {
                             <FormItem><FormLabel className="text-[10px] font-black uppercase text-slate-500">Clase {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className="h-10 w-full text-xs text-left">{f.value ? format(toDate(f.value), "PPP", { locale: es }) : "Elegir día"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={f.value ? toDate(f.value) : undefined} onSelect={(date) => { if (date) f.onChange(date); }} initialFocus disabled={(d) => d < new Date() || d.getDay() === 0} /></PopoverContent></Popover></FormItem>
                           )} />
                           <FormField control={form.control} name={`practicalClassSchedules.${index}.time`} render={({ field: f }) => (
-                            <FormItem><Select onValueChange={f.onChange} value={f.value}><FormControl><SelectTrigger className="h-10 text-xs mt-2"><SelectValue /></SelectTrigger></FormControl><SelectContent>{TIME_OPTIONS.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent></Select></FormItem>
+                            <FormItem><Select onValueChange={f.onChange} value={f.value}><FormControl><SelectTrigger className="h-10 text-xs mt-2"><SelectValue /></SelectTrigger></FormControl><SelectContent>{TIME_OPTIONS.map(t => {
+                              const tSlotId = TIME_STRING_TO_SLOT_MAP[t] || t;
+                              const isSlotFull = isValidDate && (availabilityData.globalCounts[`${dateKey}|${tSlotId}`] || 0) >= getGlobalCapacity(dObj, tSlotId);
+                              return <SelectItem key={t} value={t} disabled={isSlotFull} className={cn("text-xs", isSlotFull && "text-red-500 font-bold")}>{t}{isSlotFull ? ' (Lleno)' : ''}</SelectItem>;
+                            })}</SelectContent></Select></FormItem>
                           )} />
                         </div>
                       );
@@ -429,17 +491,38 @@ function EnrollmentContent() {
                     </TabsContent>
 
                     <div className="pt-4 border-t border-slate-200">
-                      <FormField control={form.control} name="paymentReference" render={({ field }) => (
-                          <FormItem>
-                              <FormLabel className="text-sm font-black text-slate-900 uppercase flex items-center gap-2">
-                                  <Hash className="h-4 w-4 text-primary" /> Número de Confirmación / Comprobante
-                              </FormLabel>
-                              <FormControl>
-                                  <Input placeholder="Ingresa los dígitos aquí..." {...field} className="h-12 text-xl font-mono tracking-widest border-2 focus:ring-primary" />
-                              </FormControl>
-                              <FormMessage />
-                          </FormItem>
+                      
+                      <div className="bg-gradient-to-br from-indigo-50 to-blue-50 border-2 border-indigo-200 rounded-xl p-4 mb-4 text-center">
+                        <Camera className="h-6 w-6 text-indigo-600 mx-auto mb-2" />
+                        <h4 className="font-black text-indigo-900 uppercase text-xs">Validación por Inteligencia Artificial</h4>
+                        <p className="text-[10px] text-indigo-700 font-medium mb-3">Sube la captura de pantalla de tu pago y la IA completará los datos.</p>
+                        
+                        <label className={cn("cursor-pointer bg-white hover:bg-slate-50 border-2 border-dashed border-indigo-300 rounded-lg h-12 flex items-center justify-center gap-2 font-bold text-xs uppercase text-indigo-700 transition", isReadingImage && "opacity-50 pointer-events-none")}>
+                            {isReadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                            {isReadingImage ? 'Analizando...' : (form.watch('paymentReference') ? 'Subir Otra Captura' : 'Subir Screenshot de Pago')}
+                            <input type="file" accept="image/png, image/jpeg, image/webp" className="hidden" onChange={handleImageUpload} disabled={isReadingImage} />
+                        </label>
+                      </div>
+
+                      {form.watch('paymentReference') ? (
+                         <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4 text-center mb-4 shadow-sm">
+                           <div className="flex items-center justify-center gap-2 text-green-700 font-black text-sm mb-1 uppercase tracking-tight">
+                             <ShieldCheck className="h-5 w-5" /> Comprobante Verificado
+                           </div>
+                           <p className="text-green-800 text-xs font-medium text-center">
+                             Depósito validado por <b>B/. {form.watch('paymentAmount')}</b> con la ref: <b className="font-mono">{form.watch('paymentReference')}</b>.
+                           </p>
+                         </div>
+                      ) : null}
+
+                      <div className="hidden">
+                      <FormField control={form.control} name="paymentAmount" render={({ field }) => (
+                          <FormItem><FormControl><Input type="number" step="0.01" min="50" {...field} /></FormControl></FormItem>
                       )} />
+                      <FormField control={form.control} name="paymentReference" render={({ field }) => (
+                          <FormItem><FormControl><Input {...field} /></FormControl></FormItem>
+                      )} />
+                      </div>
                     </div>
                   </div>
                 </Tabs>

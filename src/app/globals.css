@@ -83,4 +83,100 @@
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+}@keyframes mesh-1 {
+  0% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(5vw, 5vh) scale(1.1); }
+  66% { transform: translate(-2vw, 8vh) scale(0.9); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+@keyframes mesh-2 {
+  0% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-5vw, -8vh) scale(1.2); }
+  66% { transform: translate(4vw, -5vh) scale(0.8); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+@keyframes mesh-3 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(8vw, -3vh) scale(1.1); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+.animate-mesh-1 { animation: mesh-1 20s ease-in-out infinite; }
+.animate-mesh-2 { animation: mesh-2 25s ease-in-out infinite; }
+.animate-mesh-3 { animation: mesh-3 22s ease-in-out infinite; }
+
+/* ============================================================
+   CERTIFICATE PRINT STYLES
+   Moved here from the client component <style> tag because
+   Next.js App Router does not reliably inject @media print
+   rules from styled-jsx / inline style tags.
+   ============================================================ */
+@media print {
+  @page {
+    size: letter landscape;
+    margin: 0;
+  }
+
+  html, body {
+    background-color: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    overflow: hidden !important;
+    min-height: 0 !important;
+    height: auto !important;
+    width: auto !important;
+  }
+
+  /* Ocultar UI en impresión */
+  .print-ui-element {
+    display: none !important;
+  }
+
+  /* Quitar decoraciones */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    transition: none !important;
+  }
+
+  /* Wrapper: exactamente 2 hojas (17in) con overflow:hidden — sin espacio extra */
+  .certificate-pages-wrapper {
+    display: block !important;
+    overflow: hidden !important;
+    height: 17in !important;
+    max-height: 17in !important;
+    width: 11in !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Frente: break-after:page para saltar a la hoja del reverso */
+  .certificate-page-front {
+    display: block !important;
+    width: 11in !important;
+    height: 8.5in !important;
+    max-height: 8.5in !important;
+    overflow: hidden !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Reverso: sin break-before (evita la hoja vacía del doble-break) */
+  .certificate-page-back,
+  .certificate-page-container {
+    display: block !important;
+    width: 11in !important;
+    height: 8.5in !important;
+    max-height: 8.5in !important;
+    overflow: hidden !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    box-sizing: border-box !important;
+  }
 }

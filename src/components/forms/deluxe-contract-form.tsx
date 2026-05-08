@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 /**
  * FORMULARIO DE CONTRATO: PAQUETE DELUXE
@@ -59,7 +59,10 @@ import {
   RefreshCw,
   BookOpen,
   Download,
-  Bike
+  Bike,
+  ChevronDown,
+  ChevronUp,
+  CalendarClock
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useDb, useUser } from '@/components/firebase-provider';
@@ -72,7 +75,7 @@ import { CameraCapture } from '@/components/camera-capture';
 import { useSettingsPrices } from '@/hooks/use-settings-prices';
 
 const DEFAULT_DELUXE_PRICES: Record<string, number> = {
-  "Paquete Deluxe (Edición Especial)": 270.00
+  "Paquete Deluxe (Edición Especial)": 300.00
 };
 
 const PLAN_PRACTICAL_COUNTS: Record<string, number> = {
@@ -97,7 +100,7 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
 
 const VEHICLES = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Skoda Automatico', 'Skoda Manual', 'Hyundai Manual'];
 const VEHICLES_MOTO = ['Moto Roja', 'Moto Negra'];
-const INSTRUCTORS = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', 'Roberto Brown'];
+const INSTRUCTORS = ['Emmanuel Camargo', 'Adrian Gordon', 'Roberto Brown', 'Marco Franco'];
 
 const getGlobalCapacity = (date: Date, slotId: string) => {
     const day = date.getDay(); 
@@ -128,6 +131,7 @@ const deluxeContractSchema = z.object({
   coursePlan: z.string({ required_error: "Seleccione un plan" }),
   additionalService: z.string().default('Ninguno'),
   courseValue: z.coerce.number().min(1, 'Monto inválido'),
+  enrollmentFee: z.coerce.number().min(0).default(15),
   downPayment: z.coerce.number().min(0),
   paymentDeadline: z.date({ required_error: 'Fecha límite requerida' }).optional().nullable(),
   paymentType: z.string().default('cash'),
@@ -146,7 +150,7 @@ const deluxeContractSchema = z.object({
 
 type FormValues = z.infer<typeof deluxeContractSchema>;
 
-export function DeluxeContractForm({ contract }: { contract?: Contract }) {
+export function DeluxeContractForm({ contract, initialData }: { contract?: Contract; initialData?: { name?: string; phone?: string } }) {
   const db = useDb();
   const { user } = useUser();
   const { role } = useCurrentRole();
@@ -154,6 +158,12 @@ export function DeluxeContractForm({ contract }: { contract?: Contract }) {
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  // Clases prácticas: colapsadas por defecto; se abren si ya existen datos guardados
+  const [showPractical, setShowPractical] = useState(() => {
+    if (!contract) return false;
+    const existing = (contract.deluxeDetails as any)?.classSchedules;
+    return Array.isArray(existing) && existing.length > 0;
+  });
   const { prices: settingsPrices } = useSettingsPrices();
   const isEdit = !!contract;
 
@@ -187,32 +197,34 @@ export function DeluxeContractForm({ contract }: { contract?: Contract }) {
       coursePlan: contract.deluxeDetails?.coursePlan || '',
       additionalService: (contract.deluxeDetails as any)?.additionalService || 'Ninguno',
       courseValue: contract.deluxeDetails?.courseValue || 0,
+      enrollmentFee: (contract.deluxeDetails as any)?.enrollmentFee ?? 15,
       downPayment: contract.deluxeDetails?.downPayment || 0,
       paymentType: contract.deluxeDetails?.paymentType || 'cash',
       theoreticalClassSchedule: (contract.deluxeDetails?.theoreticalClassSchedule as any) || 'Jueves 7:00 pm a 9:00 pm',
-      paymentDeadline: toDate(contract.deluxeDetails?.paymentDeadline),
-      theoreticalClasses: (contract.deluxeDetails?.theoreticalClasses || []).map(d => toDate(d)),
+      paymentDeadline: contract.deluxeDetails?.paymentDeadline ? toDate(contract.deluxeDetails.paymentDeadline) : null,
+      theoreticalClasses: (contract.deluxeDetails?.theoreticalClasses || []).map(d => toDate(d)).filter(d => !isNaN(d.getTime())),
       classSchedules: (contract.deluxeDetails?.classSchedules || []).map(s => ({
         ...s,
         date: toDate(s.date)
-      })),
+      })).filter(s => !isNaN(s.date.getTime())),
       photoDataUri: (contract.deluxeDetails as any)?.photoDataUri || '',
       idCardDataUri: (contract.deluxeDetails as any)?.idCardDataUri || '',
       licenseDataUri: (contract.deluxeDetails as any)?.licenseDataUri || '',
     } : {
-      clientName: '',
+      clientName: initialData?.name || '',
       firstName: '', secondName: '', firstLastName: '', secondLastName: '', marriedLastName: '',
       clientEmail: '',
       idType: 'C.I.P.',
       studentIdNumber: '',
       studentAddress: '',
-      studentPhone1: '',
+      studentPhone1: initialData?.phone || '',
       studentPhone2: '',
       licenseCategory: 'A, C',
       vehicleTransmission: 'Automático',
       coursePlan: 'Paquete Deluxe (Edición Especial)',
       additionalService: 'Ninguno',
       courseValue: 0,
+      enrollmentFee: 15,
       downPayment: 0,
       paymentType: 'cash',
       theoreticalClassSchedule: 'Jueves 7:00 pm a 9:00 pm',
@@ -386,12 +398,12 @@ export function DeluxeContractForm({ contract }: { contract?: Contract }) {
           const contractRef = doc(collection(db, 'contracts'));
           createdId = contractRef.id;
           transaction.set(contractRef, {
-            title: `Curso de Auto - Folio ${nextFolio}`,
+            title: `Paquete Deluxe - Folio ${nextFolio}`,
             clientName: clientName,
             clientEmail: clientEmail,
             clientId: clientRef.id,
             folioNumber: nextFolio,
-            type: 'Curso Auto',
+            type: 'Curso Deluxe',
             status: balance <= 0 ? 'completed' : 'active',
             userId: user.uid,
             createdBy: finalRole,
@@ -418,6 +430,7 @@ export function DeluxeContractForm({ contract }: { contract?: Contract }) {
     }
   };
 
+  const currentEnrollmentFee = Number(form.watch('enrollmentFee')) || 0;
   const currentBalance = (Number(form.watch('courseValue')) || 0) - (Number(form.watch('downPayment')) || 0);
   const theoryDates = form.watch('theoreticalClasses') || [];
 
@@ -674,15 +687,43 @@ export function DeluxeContractForm({ contract }: { contract?: Contract }) {
                 )} />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                 <FormField control={form.control} name="courseValue" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Valor del Contrato (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold bg-muted/30" readOnly={!isEdit} /></FormControl></FormItem>
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Valor del Curso (B/.)</FormLabel>
+                    <FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold bg-muted/30" readOnly={!isEdit} /></FormControl>
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="enrollmentFee" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Matrícula (B/.)</FormLabel>
+                    <FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold text-purple-700 bg-purple-50" /></FormControl>
+                    <p className="text-[9px] text-muted-foreground">Cobrada por separado</p>
+                  </FormItem>
                 )} />
                 <FormField control={form.control} name="downPayment" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Abono Inicial (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold text-green-600" /></FormControl></FormItem>
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Abono al Curso (B/.)</FormLabel>
+                    <FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold text-green-600" /></FormControl>
+                  </FormItem>
                 )} />
-                <div className="flex flex-col gap-1.5"><Label className="text-[10px] font-bold uppercase text-muted-foreground">Saldo Pendiente</Label><div className="flex items-center justify-between h-10 px-4 bg-blue-50 rounded-md border border-blue-100"><span className="text-lg font-black text-blue-900">B/. {currentBalance.toFixed(2)}</span></div></div>
+                <div className="flex flex-col gap-1.5">
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Saldo del Curso</Label>
+                  <div className="flex items-center justify-between h-10 px-4 bg-blue-50 rounded-md border border-blue-100">
+                    <span className="text-lg font-black text-blue-900">B/. {currentBalance.toFixed(2)}</span>
+                  </div>
+                </div>
               </div>
+              {currentEnrollmentFee > 0 && (
+                <div className="flex items-center gap-3 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                  <CreditCard className="h-4 w-4 text-purple-600 shrink-0" />
+                  <p className="text-xs text-purple-800">
+                    <span className="font-bold">Total del paquete completo:</span>{' '}
+                    B/. {(Number(form.watch('courseValue')) + currentEnrollmentFee).toFixed(2)}{' '}
+                    <span className="text-purple-600">(Curso B/. {Number(form.watch('courseValue')).toFixed(2)} + Matrícula B/. {currentEnrollmentFee.toFixed(2)})</span>
+                  </p>
+                </div>
+              )}
 
               <div className="mt-6 pt-4 border-t">
                 <FormField control={form.control} name="paymentDeadline" render={({ field }) => (
@@ -707,97 +748,127 @@ export function DeluxeContractForm({ contract }: { contract?: Contract }) {
             </CardContent>
           </Card>
 
-          <Card className="shadow-sm">
-            <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-blue-600" />
-                <CardTitle className="text-sm font-bold uppercase tracking-wider">Agenda de Clases Prácticas (AUTO)</CardTitle>
+          {/* === SECCIÓN CLASES PRÁCTICAS === */}
+          <Card className="shadow-sm border-2 border-dashed border-slate-200">
+            <CardHeader
+              className={cn(
+                "py-3 px-6 cursor-pointer select-none transition-colors",
+                showPractical ? "bg-blue-600" : "bg-slate-50 hover:bg-slate-100"
+              )}
+              onClick={() => setShowPractical(v => !v)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CalendarClock className={cn("h-5 w-5", showPractical ? "text-white" : "text-blue-600")} />
+                  <CardTitle className={cn("text-sm font-bold uppercase tracking-wider", showPractical ? "text-white" : "text-slate-700")}>
+                    Agenda de Clases Prácticas
+                    {practicalFields.length > 0 && showPractical && (
+                      <span className="ml-2 text-blue-200 font-normal">({practicalFields.length} clases)</span>
+                    )}
+                  </CardTitle>
+                </div>
+                <div className="flex items-center gap-2">
+                  {!showPractical && practicalFields.some(f => (f as any).date) && (
+                    <span className="text-[10px] bg-green-100 text-green-700 font-bold px-2 py-0.5 rounded-full">Con fechas</span>
+                  )}
+                  {showPractical
+                    ? <ChevronUp className="h-5 w-5 text-white" />
+                    : <ChevronDown className="h-5 w-5 text-slate-500" />}
+                </div>
               </div>
+              {!showPractical && (
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Las clases prácticas del curso Deluxe se programan a futuro. Haz clic para desplegar.
+                </p>
+              )}
             </CardHeader>
-            <CardContent className="p-6">
-              {!watchPlan ? (
-                <p className="text-center text-muted-foreground italic py-4">Seleccione un plan de curso para programar las clases.</p>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {practicalFields.map((field, index) => {
-                    const watchDate = watchAll.classSchedules?.[index]?.date;
-                    const watchTime = watchAll.classSchedules?.[index]?.time;
-                    
-                    const dObj = toDate(watchDate);
-                    const isValidDate = !isNaN(dObj.getTime());
-                    const holiday = isValidDate ? isPanamaHoliday(dObj) : null;
-                    const isSunday = isValidDate && dObj.getDay() === 0;
-                    
-                    const slotId = TIME_STRING_TO_SLOT_MAP[watchTime] || watchTime;
-                    const dateKey = isValidDate ? format(dObj, 'yyyy-MM-dd') : '';
-                    const occupancy = availabilityData?.globalCounts?.[`${dateKey}|${slotId}`] || 0;
-                    const capacity = isValidDate ? getGlobalCapacity(dObj, slotId) : 3;
-                    const isFull = occupancy >= capacity;
 
-                    return (
-                      <div key={field.id} className={cn(
-                        "p-4 border rounded-xl space-y-3 bg-white relative",
-                        (isFull || holiday || isSunday) ? "border-amber-500 bg-amber-50/10" : "border-slate-200"
-                      )}>
-                        <div className="absolute -top-2 right-3 flex gap-1 z-10">
+            {showPractical && (
+              <CardContent className="p-6">
+                {!watchPlan ? (
+                  <p className="text-center text-muted-foreground italic py-4">Seleccione un plan de curso para programar las clases.</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {practicalFields.map((field, index) => {
+                      const watchDate = watchAll.classSchedules?.[index]?.date;
+                      const watchTime = watchAll.classSchedules?.[index]?.time;
+
+                      const dObj = toDate(watchDate);
+                      const isValidDate = !isNaN(dObj.getTime());
+                      const holiday = isValidDate ? isPanamaHoliday(dObj) : null;
+                      const isSunday = isValidDate && dObj.getDay() === 0;
+
+                      const slotId = TIME_STRING_TO_SLOT_MAP[watchTime] || watchTime;
+                      const dateKey = isValidDate ? format(dObj, 'yyyy-MM-dd') : '';
+                      const occupancy = availabilityData?.globalCounts?.[`${dateKey}|${slotId}`] || 0;
+                      const capacity = isValidDate ? getGlobalCapacity(dObj, slotId) : 3;
+                      const isFull = occupancy >= capacity;
+
+                      return (
+                        <div key={field.id} className={cn(
+                          "p-4 border rounded-xl space-y-3 bg-white relative",
+                          (isFull || holiday || isSunday) ? "border-amber-500 bg-amber-50/10" : "border-slate-200"
+                        )}>
+                          <div className="absolute -top-2 right-3 flex gap-1 z-10">
                             {isSunday && <div className="bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Domingo</div>}
                             {holiday && !isSunday && <div className="bg-orange-500 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Feriado</div>}
                             {isFull && !holiday && !isSunday && <div className="bg-amber-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Lleno</div>}
-                        </div>
+                          </div>
 
-                        <div className="flex gap-4">
-                          <FormField control={form.control} name={`classSchedules.${index}.date`} render={({ field: f }) => (
-                            <FormItem className="flex-1">
-                              <FormLabel className="text-[10px] font-black uppercase text-slate-500">Clase {index + 1}</FormLabel>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                  <Calendar 
-                                    mode="single" 
-                                    selected={f.value ? toDate(f.value) : undefined} 
-                                    onSelect={(date) => { if (date) f.onChange(date); }} 
-                                    initialFocus 
-                                  />
-                                </PopoverContent>
-                              </Popover>
-                            </FormItem>
-                          )} />
-                          <FormField control={form.control} name={`classSchedules.${index}.time`} render={({ field: f }) => (
-                            <FormItem className="flex-1">
-                              <FormLabel className="text-[10px] font-black uppercase text-slate-500">Horario</FormLabel>
-                              <Select onValueChange={f.onChange} value={f.value}>
-                                <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
-                                <SelectContent>{TIME_OPTIONS.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent>
-                              </Select>
-                            </FormItem>
-                          )} />
+                          <div className="flex gap-4">
+                            <FormField control={form.control} name={`classSchedules.${index}.date`} render={({ field: f }) => (
+                              <FormItem className="flex-1">
+                                <FormLabel className="text-[10px] font-black uppercase text-slate-500">Clase {index + 1}</FormLabel>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0">
+                                    <Calendar
+                                      mode="single"
+                                      selected={f.value ? toDate(f.value) : undefined}
+                                      onSelect={(date) => { if (date) f.onChange(date); }}
+                                      initialFocus
+                                    />
+                                  </PopoverContent>
+                                </Popover>
+                              </FormItem>
+                            )} />
+                            <FormField control={form.control} name={`classSchedules.${index}.time`} render={({ field: f }) => (
+                              <FormItem className="flex-1">
+                                <FormLabel className="text-[10px] font-black uppercase text-slate-500">Horario</FormLabel>
+                                <Select onValueChange={f.onChange} value={f.value}>
+                                  <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
+                                  <SelectContent>{TIME_OPTIONS.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent>
+                                </Select>
+                              </FormItem>
+                            )} />
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <FormField control={form.control} name={`classSchedules.${index}.vehicle`} render={({ field: f }) => (
+                              <FormItem>
+                                <Select onValueChange={f.onChange} value={f.value}>
+                                  <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
+                                  <SelectContent>{VEHICLES.map(v => <SelectItem key={v} value={v} className="text-[10px]">{v}</SelectItem>)}</SelectContent>
+                                </Select>
+                              </FormItem>
+                            )} />
+                            <FormField control={form.control} name={`classSchedules.${index}.instructor`} render={({ field: f }) => (
+                              <FormItem>
+                                <Select onValueChange={f.onChange} value={f.value}>
+                                  <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
+                                  <SelectContent>{INSTRUCTORS.map(i => <SelectItem key={i} value={i} className="text-[10px]">{i}</SelectItem>)}</SelectContent>
+                                </Select>
+                              </FormItem>
+                            )} />
+                          </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <FormField control={form.control} name={`classSchedules.${index}.vehicle`} render={({ field: f }) => (
-                            <FormItem>
-                              <Select onValueChange={f.onChange} value={f.value}>
-                                <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
-                                <SelectContent>{VEHICLES.map(v => <SelectItem key={v} value={v} className="text-[10px]">{v}</SelectItem>)}</SelectContent>
-                              </Select>
-                            </FormItem>
-                          )} />
-                          <FormField control={form.control} name={`classSchedules.${index}.instructor`} render={({ field: f }) => (
-                            <FormItem>
-                              <Select onValueChange={f.onChange} value={f.value}>
-                                <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
-                                <SelectContent>{INSTRUCTORS.map(i => <SelectItem key={i} value={i} className="text-[10px]">{i}</SelectItem>)}</SelectContent>
-                              </Select>
-                            </FormItem>
-                          )} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            )}
           </Card>
 
           

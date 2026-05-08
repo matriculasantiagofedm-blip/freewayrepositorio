@@ -1,5 +1,6 @@
 'use client';
-import { GanttChart, Menu, Loader2 } from 'lucide-react';
+import { Menu, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { UserNav } from '@/components/user-nav';
 import { MainNav } from '@/components/main-nav';
@@ -61,8 +62,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             href="/dashboard"
             className="flex items-center gap-2 font-semibold"
           >
-            <GanttChart className="h-6 w-6 text-primary" />
-            <span className="font-headline">ContractTime</span>
+            <Image src="/logo.png" alt="ContractTime Logo" width={40} height={40} className="rounded-lg shadow-sm" />
+            <span className="font-headline text-base">ContractTime</span>
         </Link>
         <nav className="hidden md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6 ml-6">
           <MainNav />
@@ -88,7 +89,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   href="/dashboard"
                   className="flex items-center gap-2 text-lg font-semibold"
                 >
-                  <GanttChart className="h-6 w-6 text-primary" />
+                  <Image src="/logo.png" alt="ContractTime Logo" width={40} height={40} className="rounded-lg shadow-sm" />
                   <span className="font-headline">ContractTime</span>
                 </Link>
                 <MainNav isMobile={true} />

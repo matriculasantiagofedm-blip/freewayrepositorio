@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 /**
  * FORMULARIO DE CONTRATO: AMPLIACIONES DE LICENCIA
@@ -112,7 +112,7 @@ const ampliacionesSchema = z.object({
 
 type FormValues = z.infer<typeof ampliacionesSchema>;
 
-export function AmpliacionesContractForm({ contract }: { contract?: Contract }) {
+export function AmpliacionesContractForm({ contract, initialData }: { contract?: Contract; initialData?: { name?: string; phone?: string } }) {
   const db = useDb();
   const { user } = useUser();
   const { role } = useCurrentRole();
@@ -143,8 +143,8 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
       idCardDataUri: (contract.ampliacionesDetails as any)?.idCardDataUri || '',
       licenseDataUri: (contract.ampliacionesDetails as any)?.licenseDataUri || '',
     } : {
-      clientName: '', clientEmail: '', idType: 'C.I.P.', studentIdNumber: '',
-      studentAddress: '', studentPhone1: '', studentPhone2: '', licenseCategory: '',
+      clientName: initialData?.name || '', clientEmail: '', idType: 'C.I.P.', studentIdNumber: '',
+      studentAddress: '', studentPhone1: initialData?.phone || '', studentPhone2: '', licenseCategory: '',
       courseValue: 0, downPayment: 0, paymentType: 'cash',
       theoreticalClassTime: 'Semanal 8:00 am a 10:00 am',
       photoDataUri: '',
@@ -226,21 +226,42 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
     setIsSaving(true);
     try {
       const balance = values.courseValue - values.downPayment;
-      const { clientName, clientEmail, ...detailsOnly } = values;
+      // Excluir campos que NO van dentro de ampliacionesDetails
+      const { 
+        clientName, 
+        clientEmail, 
+        firstName,
+        secondName,
+        firstLastName,
+        secondLastName,
+        marriedLastName,
+        photoDataUri,
+        idCardDataUri,
+        licenseDataUri,
+        paymentDeadline,
+        theoreticalClassDate,
+        ...cleanDetails 
+      } = values;
       const finalRole = role || 'Sistema';
+
+      const ampliacionesDetailsPayload = {
+        ...cleanDetails,
+        paymentDeadline: paymentDeadline ? Timestamp.fromDate(paymentDeadline) : null,
+        theoreticalClassDate: theoreticalClassDate ? Timestamp.fromDate(theoreticalClassDate) : null,
+        balance: balance,
+      };
 
       if (isEdit) {
         const contractRef = doc(db, 'contracts', contract.id);
         await updateDoc(contractRef, {
-          clientName: clientName,
-          clientEmail: clientEmail,
+          clientName,
+          clientEmail,
           status: balance <= 0 ? 'completed' : contract.status,
-          ampliacionesDetails: {
-            ...detailsOnly,
-            paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null,
-            theoreticalClassDate: values.theoreticalClassDate ? Timestamp.fromDate(values.theoreticalClassDate) : null,
-            balance: balance,
-          },
+          ampliacionesDetails: ampliacionesDetailsPayload,
+          // Fotos guardadas a nivel raíz del contrato (igual que auto/moto)
+          ...(photoDataUri ? { photoDataUri } : {}),
+          ...(idCardDataUri ? { idCardDataUri } : {}),
+          ...(licenseDataUri ? { licenseDataUri } : {}),
           updatedAt: serverTimestamp(),
           updatedBy: finalRole,
         });
@@ -264,8 +285,8 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
           createdId = contractRef.id;
           transaction.set(contractRef, {
             title: `Contrato de Ampliación - Folio ${nextFolio}`,
-            clientName: clientName,
-            clientEmail: clientEmail,
+            clientName,
+            clientEmail,
             clientId: clientRef.id,
             folioNumber: nextFolio,
             type: 'Ampliaciones',
@@ -274,20 +295,20 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
             createdBy: finalRole,
             createdAt: serverTimestamp(),
             activatedAt: serverTimestamp(), // Vital para reportes
-            ampliacionesDetails: {
-              ...detailsOnly,
-              paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null,
-              theoreticalClassDate: values.theoreticalClassDate ? Timestamp.fromDate(values.theoreticalClassDate) : null,
-              balance: balance,
-            }
+            // Fotos guardadas a nivel raíz del contrato (igual que auto/moto)
+            ...(photoDataUri ? { photoDataUri } : {}),
+            ...(idCardDataUri ? { idCardDataUri } : {}),
+            ...(licenseDataUri ? { licenseDataUri } : {}),
+            ampliacionesDetails: ampliacionesDetailsPayload,
           });
         });
         toast({ title: 'Ampliación Guardada' });
         if (createdId) router.push(`/contracts/${createdId}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al guardar ampliación:", error);
-      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo guardar el registro.' });
+      const msg = error?.message || 'No se pudo guardar el registro.';
+      toast({ variant: 'destructive', title: 'Error al guardar', description: msg });
     } finally {
       setIsSaving(false);
     }
@@ -365,6 +386,7 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
                       <FormItem>
                         <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Email</FormLabel>
                         <FormControl><Input type="email" placeholder="ejemplo@correo.com" {...field} className="h-9" /></FormControl>
+                        <FormMessage />
                       </FormItem>
                     )} />
                   </div>
@@ -411,6 +433,7 @@ export function AmpliacionesContractForm({ contract }: { contract?: Contract }) 
                       <FormItem>
                         <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Dirección</FormLabel>
                         <FormControl><Input placeholder="Ubicación..." {...field} className="h-9 uppercase" /></FormControl>
+                        <FormMessage />
                       </FormItem>
                     )} />
                   </div>

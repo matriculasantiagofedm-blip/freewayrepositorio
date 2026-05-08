@@ -70,26 +70,34 @@ const getGlobalCapacity = (date: Date, slotId: string) => {
     return 4; // Resto de horarios
 };
 
-const getVehicleColor = (vehicleName: string = '', status?: ClassStatus) => {
+const getVehicleColor = (vehicleName: string = '', status?: ClassStatus, transmission?: string) => {
     // REGLA PRIORITARIA: Si no asistió, la tarjeta es ROJO INTENSO
     if (status === 'missed') {
         return 'border-red-900 bg-red-600 text-white shadow-xl scale-[1.02] z-10';
     }
 
     const v = vehicleName.toUpperCase();
-    let base = 'border-amber-500 bg-amber-50 text-amber-900'; 
-    
-    if (v.includes('MOTO NEGRA')) base = 'border-slate-500 bg-slate-50 text-slate-900';
-    else if (v.includes('MOTO')) base = 'border-red-500 bg-red-50 text-red-900';
-    else if (v.includes('BLANCO')) base = 'border-emerald-500 bg-emerald-50 text-emerald-900';
-    else if (v.includes('BRONCE')) base = 'border-blue-500 bg-blue-50 text-blue-900';
-    else if (v.includes('PICK UP') || v.includes('PICKUP')) base = 'border-orange-500 bg-orange-50 text-orange-900';
+    const t = (transmission || '').toUpperCase();
+    let base: string;
+
+    // MOTOS → Amarillo
+    if (v.includes('MOTO')) {
+        base = 'border-yellow-500 bg-yellow-50 text-yellow-900';
+    }
+    // AUTOS AUTOMÁTICOS → Azul
+    else if (t === 'AUTOMÁTICO' || t === 'AUTOMATICO') {
+        base = 'border-blue-500 bg-blue-50 text-blue-900';
+    }
+    // AUTOS MANUALES → Verde
+    else {
+        base = 'border-emerald-500 bg-emerald-50 text-emerald-900';
+    }
 
     // Estados de atenuación para cancelaciones o reprogramaciones que NO sean inasistencia
     if (status === 'cancelled_vehicle' || status === 'rescheduled') {
         return cn(base, "opacity-40 grayscale-[0.5] border-dashed");
     }
-    
+
     return base;
 };
 
@@ -149,6 +157,7 @@ export default function WeeklyScheduleReport() {
               plan: (details as any)?.coursePlan || c.type,
               instructor: s.instructor || 'Sin asignar',
               vehicle: s.vehicle || 'Sin vehículo',
+              transmission: typeLabel === 'moto' ? 'Moto' : (details as any)?.vehicleTransmission || '',
               sessionNum: idx + 1,
               isManual: false,
               status: s.status,
@@ -181,6 +190,7 @@ export default function WeeklyScheduleReport() {
           plan: e.coursePlan || 'Plan no especificado',
           instructor: e.instructor,
           vehicle: e.vehicle,
+          transmission: (e.vehicle || '').toUpperCase().includes('MOTO') ? 'Moto' : (e.transmission || ''),
           sessionNum: e.classNumber,
           isManual: true,
           status: e.status,
@@ -337,7 +347,7 @@ export default function WeeklyScheduleReport() {
                               const SessionCard = (
                                 <div className={cn(
                                   "relative p-3 rounded-lg border-l-4 shadow-sm flex flex-col gap-1 cursor-pointer transition-all hover:scale-[1.02] group",
-                                  getVehicleColor(s.vehicle, s.status)
+                                  getVehicleColor(s.vehicle, s.status, s.transmission)
                                 )}>
                                   <div className="absolute top-1 right-1.5 flex items-center gap-1">
                                       {s.refueled && <Fuel className={cn("h-2.5 w-2.5 animate-pulse", s.status === 'missed' ? 'text-white' : 'text-blue-600')} />}
@@ -356,8 +366,16 @@ export default function WeeklyScheduleReport() {
                                       <div className="flex flex-col">
                                           <span className="text-[7.5px] font-black uppercase truncate max-w-[60px]">{s.vehicle}</span>
                                           {s.status && s.status !== 'scheduled' && (
-                                              <span className={cn("text-[6px] font-black uppercase leading-none", s.status === 'missed' ? 'text-white' : 'text-red-600')}>
-                                                {s.status === 'missed' ? 'Inasistencia' : s.status === 'cancelled_vehicle' ? 'Falló Vehículo' : 'Reagendada'}
+                                              <span className={cn(
+                                                "text-[6px] font-black uppercase leading-none",
+                                                s.status === 'missed' ? 'text-white' 
+                                                : s.status === 'completed' ? 'text-green-700'
+                                                : 'text-red-600'
+                                              )}>
+                                                {s.status === 'missed' ? 'Inasistencia' 
+                                                : s.status === 'completed' ? '✓ Asistió Escaneado'
+                                                : s.status === 'cancelled_vehicle' ? 'Falló Vehículo' 
+                                                : 'Reagendada'}
                                               </span>
                                           )}
                                       </div>
@@ -464,13 +482,11 @@ export default function WeeklyScheduleReport() {
       </div>
 
       <div className="flex flex-wrap items-center justify-center gap-6 p-6 bg-white border-t sticky bottom-0 print:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-50 border-l-4 border-red-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Moto Roja</span></div>
-        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-slate-50 border-l-4 border-slate-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Moto Negra</span></div>
-        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-emerald-50 border-l-4 border-emerald-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Picanto Blanco</span></div>
-        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-50 border-l-4 border-blue-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Picanto Bronce</span></div>
-        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-orange-50 border-l-4 border-orange-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Pick up</span></div>
-        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-amber-50 border-l-4 border-amber-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Spark</span></div>
+        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-blue-50 border-l-4 border-blue-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Auto Automático</span></div>
+        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-emerald-50 border-l-4 border-emerald-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Auto Manual</span></div>
+        <div className="flex items-center gap-2"><div className="w-3 h-3 bg-yellow-50 border-l-4 border-yellow-500 rounded"></div> <span className="text-[9px] font-black uppercase text-slate-500">Moto</span></div>
         <div className="flex items-center gap-2"><div className="w-3 h-3 bg-red-600 border border-red-900 rounded"></div> <span className="text-[9px] font-black uppercase text-red-600">No Asistió</span></div>
+        <div className="flex items-center gap-2"><span className="text-[9px] font-black uppercase text-green-700">✓ Asistió Escaneado</span></div>
         <div className="ml-auto flex items-center gap-2 text-slate-400"><Info className="h-3 w-3" /> <span className="text-[8px] font-bold uppercase tracking-widest italic">Capacidad regulada por ATTT según turnos</span></div>
       </div>
 

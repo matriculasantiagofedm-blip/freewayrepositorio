@@ -19,6 +19,22 @@ const ptSans = PT_Sans({
 export const metadata: Metadata = {
   title: "ContractTime - Freeway Escuela de Manejo",
   description: "Gestión inteligente de contratos y servicios viales",
+  icons: {
+    icon: "/logo.png",
+    apple: "/icon-192.png",
+    shortcut: "/logo.png",
+  },
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "ContractTime",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+    "msapplication-TileImage": "/icon-192.png",
+    "msapplication-TileColor": "#1d4ed8",
+  },
 };
 
 export default function RootLayout({

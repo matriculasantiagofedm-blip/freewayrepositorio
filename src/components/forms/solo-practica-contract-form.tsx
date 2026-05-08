@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 /**
  * FORMULARIO DE CONTRATO: CURSO DE SOLO PRÁCTICA
@@ -87,7 +87,7 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
 };
 
 const ALL_VEHICLES = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Skoda Automatico', 'Skoda Manual', 'Hyundai Manual', 'Moto Roja', 'Moto Negra'];
-const INSTRUCTORS = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', 'Roberto Brown'];
+const INSTRUCTORS = ['Emmanuel Camargo', 'Adrian Gordon', 'Roberto Brown', 'Marco Franco'];
 
 const getGlobalCapacity = (date: Date, slotId: string) => {
     const day = date.getDay(); 
@@ -113,6 +113,7 @@ const soloPracticaSchema = z.object({
   studentAddress: z.string().min(5, 'Dirección requerida'),
   studentPhone1: z.string().min(7, 'Teléfono requerido'),
   studentPhone2: z.string().optional(),
+  licenseCategory: z.string().default('A, C'),
   vehicleType: z.enum(['Auto', 'Motocicleta']).default('Auto'),
   vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).default('Automático'),
   coursePlan: z.string({ required_error: "Seleccione un paquete" }),
@@ -133,7 +134,7 @@ const soloPracticaSchema = z.object({
 
 type FormValues = z.infer<typeof soloPracticaSchema>;
 
-export function SoloPracticaContractForm({ contract }: { contract?: Contract }) {
+export function SoloPracticaContractForm({ contract, initialData }: { contract?: Contract; initialData?: { name?: string; phone?: string } }) {
   const db = useDb();
   const { user } = useUser();
   const { role } = useCurrentRole();
@@ -163,17 +164,32 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
       secondLastName: (contract.autoMotoDetails as any)?.secondLastName || '',
       marriedLastName: (contract.autoMotoDetails as any)?.marriedLastName || '',
       clientEmail: contract.clientEmail,
-      paymentDeadline: toDate(contract.autoMotoDetails?.paymentDeadline),
+      idType: contract.autoMotoDetails?.idType || 'C.I.P.',
+      studentIdNumber: contract.autoMotoDetails?.studentIdNumber || '',
+      studentAddress: contract.autoMotoDetails?.studentAddress || '',
+      studentPhone1: contract.autoMotoDetails?.studentPhone1 || '',
+      studentPhone2: contract.autoMotoDetails?.studentPhone2 || '',
+      licenseCategory: contract.autoMotoDetails?.licenseCategory || 'A, C',
+      vehicleType: (contract.autoMotoDetails as any)?.vehicleType || 'Auto',
+      vehicleTransmission: contract.autoMotoDetails?.vehicleTransmission || 'Automático',
+      coursePlan: contract.autoMotoDetails?.coursePlan || '',
+      courseValue: contract.autoMotoDetails?.courseValue || 0,
+      downPayment: contract.autoMotoDetails?.downPayment || 0,
+      paymentType: contract.autoMotoDetails?.paymentType || 'cash',
+      paymentDeadline: contract.autoMotoDetails?.paymentDeadline ? toDate(contract.autoMotoDetails.paymentDeadline) : null,
       practicalClassSchedules: (contract.autoMotoDetails?.practicalClassSchedules || []).map(s => ({
         ...s,
         date: toDate(s.date)
-      })),
+      })).filter(s => !isNaN(s.date.getTime())),
       photoDataUri: (contract.autoMotoDetails as any)?.photoDataUri || '',
       idCardDataUri: (contract.autoMotoDetails as any)?.idCardDataUri || '',
       licenseDataUri: (contract.autoMotoDetails as any)?.licenseDataUri || '',
     } : {
-      clientName: '', firstName: '', secondName: '', firstLastName: '', secondLastName: '', marriedLastName: '', clientEmail: '', idType: 'C.I.P.', studentIdNumber: '',
-      studentAddress: '', studentPhone1: '', studentPhone2: '', vehicleType: 'Auto',
+      clientName: initialData?.name || '', firstName: '', secondName: '', firstLastName: '', secondLastName: '', marriedLastName: '',
+      clientEmail: '', idType: 'C.I.P.', studentIdNumber: '',
+      studentAddress: '', studentPhone1: initialData?.phone || '', studentPhone2: '',
+      licenseCategory: 'A, C',
+      vehicleType: 'Auto',
       vehicleTransmission: 'Automático', coursePlan: '', courseValue: 0,
       downPayment: 0, paymentType: 'cash', practicalClassSchedules: [],
       photoDataUri: '',
@@ -412,17 +428,33 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
                     <FormField control={form.control} name={"marriedLastName" as any} render={({ field }) => (<FormItem><FormLabel className="text-[9px] font-bold uppercase text-muted-foreground">Ap. Casada</FormLabel><FormControl><Input {...field} className="h-9 uppercase" onChange={e => { field.onChange(e.target.value.toUpperCase()); setTimeout(() => { const v = form.getValues(); const full=[v.firstName,v.secondName,v.firstLastName,v.secondLastName,v.marriedLastName].filter(Boolean).join(' '); if(full) form.setValue('clientName', full); }, 0); }} /></FormControl></FormItem>)} />
                   </div><div className="col-span-12 md:col-span-8">
                     <FormField control={form.control} name="clientName" render={({ field }) => (
-                      <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Nombre</FormLabel><FormControl><Input placeholder="Nombre..." {...field} className="h-9 uppercase font-bold" /></FormControl><FormMessage /></FormItem>
+                      <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Nombre Completo</FormLabel><FormControl><Input placeholder="Nombre..." {...field} className="h-9 uppercase font-bold" /></FormControl><FormMessage /></FormItem>
                     )} />
                   </div>
                   <div className="col-span-12 md:col-span-4">
+                    <FormField control={form.control} name="clientEmail" render={({ field }) => (
+                      <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Correo Electrónico</FormLabel><FormControl><Input type="email" placeholder="ejemplo@correo.com" {...field} className="h-9" /></FormControl></FormItem>
+                    )} />
+                  </div>
+                  <div className="col-span-4 md:col-span-3">
+                    <FormField control={form.control} name="idType" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Tipo ID</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
+                          <FormControl><SelectTrigger className="h-9"><SelectValue /></SelectTrigger></FormControl>
+                          <SelectContent><SelectItem value="C.I.P.">C.I.P.</SelectItem><SelectItem value="Pasaporte">Pasaporte</SelectItem></SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+                  </div>
+                  <div className="col-span-8 md:col-span-9">
                     <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
-                      <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">ID</FormLabel><FormControl><Input placeholder="8-000-000" {...field} className="h-9 font-mono" /></FormControl></FormItem>
+                      <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Número de Identificación</FormLabel><FormControl><Input placeholder="8-000-000" {...field} className="h-9 font-mono" /></FormControl><FormMessage /></FormItem>
                     )} />
                   </div>
                   <div className="col-span-12">
                     <FormField control={form.control} name="studentAddress" render={({ field }) => (
-                      <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Dirección</FormLabel><FormControl><Input placeholder="Ubicación..." {...field} className="h-9 uppercase" /></FormControl></FormItem>
+                      <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Dirección Residencial</FormLabel><FormControl><Input placeholder="Ubicación..." {...field} className="h-9 uppercase" /></FormControl></FormItem>
                     )} />
                   </div>
 
@@ -445,8 +477,24 @@ export function SoloPracticaContractForm({ contract }: { contract?: Contract }) 
                     )} />
                   </div>
 
-                  {/* Tipo de Transmisión */}
-                  <div className="col-span-12">
+                  {/* Categoría y Transmisión */}
+                  <div className="col-span-12 md:col-span-6">
+                    <FormField control={form.control} name="licenseCategory" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Categoría de Licencia</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl><SelectTrigger className="h-9"><SelectValue /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            <SelectItem value="A, C">A y C</SelectItem>
+                            <SelectItem value="A, C, D">A, C y D</SelectItem>
+                            <SelectItem value="A, C, B">A, C, B (con Moto)</SelectItem>
+                            <SelectItem value="A, C, B, D">A, C, B, D (con Moto)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
+                    )} />
+                  </div>
+                  <div className="col-span-12 md:col-span-6">
                     <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Tipo de Transmisión</FormLabel>

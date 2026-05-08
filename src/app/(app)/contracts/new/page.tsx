@@ -14,24 +14,28 @@ import { DeluxeContractForm } from '@/components/forms/deluxe-contract-form';
 function NewContractPageContent() {
     const searchParams = useSearchParams();
     const contractType = searchParams.get('type') || 'Desconocido';
+    const leadName = searchParams.get('lead') || '';
+    const leadPhone = searchParams.get('phone') || '';
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => { setMounted(true); }, []);
 
     if (!mounted) return <div className="p-12 text-center">Iniciando...</div>;
 
+    const initialData = leadName ? { name: leadName, phone: leadPhone } : undefined;
+
     const renderForm = () => {
         switch (contractType) {
             case 'Curso Auto':
-                return <AutoContractForm />;
+                return <AutoContractForm initialData={initialData} />;
             case 'Curso Moto':
-                return <MotoContractForm />;
+                return <MotoContractForm initialData={initialData} />;
             case 'Ampliaciones':
-                return <AmpliacionesContractForm />;
+                return <AmpliacionesContractForm initialData={initialData} />;
             case 'Curso Solo Practica':
-                return <SoloPracticaContractForm />;
+                return <SoloPracticaContractForm initialData={initialData} />;
             case 'Curso Deluxe':
-                return <DeluxeContractForm />;
+                return <DeluxeContractForm initialData={initialData} />;
             default:
                 return (
                     <div className="p-12 text-center border-2 border-dashed rounded-lg">

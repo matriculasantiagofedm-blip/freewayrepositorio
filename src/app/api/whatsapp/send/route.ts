@@ -16,8 +16,14 @@ export async function POST(req: Request) {
         const { to, text, leadId, platform, socialId } = await req.json();
         
         let response;
-        if (platform === 'Instagram' || platform === 'Facebook') {
-            const PAGE_ACCESS_TOKEN = process.env.INSTAGRAM_ACCESS_TOKEN || 'EAAR0VzJgjMwBRIgyGhXhgYZCBkZACKWlFYhULaehAFmVaog3lRxJLPtVLDyfrAAvQuVfgg1jyGSokuubcZAOVImN3ZAjAijg5kEcM0AZCxEfsE5kkqKWeQf4TkLzXLchLWZBkRkCtnBbve7i3Blzc5yC0coDkJYduT0jvMnkZCf4IGa2wmig8slPeZArsImBxJWaucEbsshKaFZCDtnlHVGDj1BUBXgZDZD';
+        // INSTAGRAM DESACTIVADO: Meta aún no aprobó los permisos de respuesta.
+        if (platform === 'Instagram') {
+            return NextResponse.json({ success: false, error: 'Instagram está desactivado temporalmente (pendiente aprobación de Meta). Solo puedes ver el historial de este chat.' }, { status: 403 });
+        }
+        
+        if (platform === 'Facebook') {
+            const PAGE_ACCESS_TOKEN = process.env.INSTAGRAM_ACCESS_TOKEN || '';
+            if (!PAGE_ACCESS_TOKEN) return NextResponse.json({ success: false, error: 'Facebook: token no configurado.' }, { status: 400 });
             response = await fetch(`https://graph.facebook.com/v21.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

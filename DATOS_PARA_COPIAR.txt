@@ -1,0 +1,10 @@
+=== VALOR ORIGINAL DEL REGISTRO EMAIL _dmarc (Ya lo hiciste) ===
+v=DMARC1; p=cuarentena; adkim=r; aspf=r; rua=mailto:dmarc_rua@onsecureserver.net;
+
+
+=== VALOR DE FIREBASE PARA EL REGISTRO TXT 'www' (Ya lo hiciste) ===
+hosting-site=contracttime3-15048626-b65e6
+
+
+=== NUEVO VALOR PARA EL REGISTRO CNAME 'www' (Paso Final) ===
+contracttime3-15048626-b65e6.web.app

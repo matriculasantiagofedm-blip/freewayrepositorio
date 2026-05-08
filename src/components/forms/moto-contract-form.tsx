@@ -97,7 +97,7 @@ const TIME_OPTIONS = [
 
 const VEHICLES_MOTO = ['Moto Roja', 'Moto Negra'];
 const VEHICLES_AUTO = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Skoda Automatico', 'Skoda Manual', 'Hyundai Manual'];
-const INSTRUCTORS = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', 'Roberto Brown'];
+const INSTRUCTORS = ['Emmanuel Camargo', 'Adrian Gordon', 'Roberto Brown', 'Marco Franco'];
 
 const motoContractSchema = z.object({
   clientName: z.string().min(3, 'El nombre es requerido'),
@@ -141,7 +141,7 @@ const motoContractSchema = z.object({
 
 type FormValues = z.infer<typeof motoContractSchema>;
 
-export function MotoContractForm({ contract }: { contract?: Contract }) {
+export function MotoContractForm({ contract, initialData }: { contract?: Contract; initialData?: { name?: string; phone?: string } }) {
   const db = useDb();
   const { user } = useUser();
   const { role } = useCurrentRole();
@@ -179,16 +179,16 @@ export function MotoContractForm({ contract }: { contract?: Contract }) {
       downPayment: contract.autoMotoDetails?.downPayment || 0,
       paymentType: contract.autoMotoDetails?.paymentType || 'cash',
       theoreticalClassSchedule: (contract.autoMotoDetails?.theoreticalClassSchedule as any) || 'Sabados 3:00 pm a 5:00 pm',
-      paymentDeadline: toDate(contract.autoMotoDetails?.paymentDeadline),
-      theoreticalClassDates: (contract.autoMotoDetails?.theoreticalClassDates || []).map(d => toDate(d)),
-      practicalClassSchedules: (contract.autoMotoDetails?.motoPracticalClassSchedules || (!contract.autoMotoDetails?.motoPracticalClassSchedules ? contract.autoMotoDetails?.practicalClassSchedules : []) || []).map(s => ({ ...s, date: toDate(s.date) })),
-      autoPracticalClassSchedules: (!contract.autoMotoDetails?.motoPracticalClassSchedules ? [] : (contract.autoMotoDetails?.practicalClassSchedules || [])).map(s => ({ ...s, date: toDate(s.date) })),
+      paymentDeadline: contract.autoMotoDetails?.paymentDeadline ? toDate(contract.autoMotoDetails.paymentDeadline) : null,
+      theoreticalClassDates: (contract.autoMotoDetails?.theoreticalClassDates || []).map(d => toDate(d)).filter(d => !isNaN(d.getTime())),
+      practicalClassSchedules: (contract.autoMotoDetails?.motoPracticalClassSchedules || (!contract.autoMotoDetails?.motoPracticalClassSchedules ? contract.autoMotoDetails?.practicalClassSchedules : []) || []).map(s => ({ ...s, date: toDate(s.date) })).filter(s => !isNaN(s.date.getTime())),
+      autoPracticalClassSchedules: (!contract.autoMotoDetails?.motoPracticalClassSchedules ? [] : (contract.autoMotoDetails?.practicalClassSchedules || [])).map(s => ({ ...s, date: toDate(s.date) })).filter(s => !isNaN(s.date.getTime())),
       photoDataUri: (contract.autoMotoDetails as any)?.photoDataUri || '',
       idCardDataUri: (contract.autoMotoDetails as any)?.idCardDataUri || '',
       licenseDataUri: (contract.autoMotoDetails as any)?.licenseDataUri || '',
     } : {
-      clientName: '', firstName: '', secondName: '', firstLastName: '', secondLastName: '', marriedLastName: '', clientEmail: '', idType: 'C.I.P.', studentIdNumber: '',
-      studentAddress: '', studentPhone1: '', studentPhone2: '', licenseCategory: 'A, B',
+      clientName: initialData?.name || '', firstName: '', secondName: '', firstLastName: '', secondLastName: '', marriedLastName: '', clientEmail: '', idType: 'C.I.P.', studentIdNumber: '',
+      studentAddress: '', studentPhone1: initialData?.phone || '', studentPhone2: '', licenseCategory: 'A, B',
       vehicleTransmission: 'Moto', coursePlan: '', additionalService: 'Ninguno',
       courseValue: 0, downPayment: 0, paymentType: 'cash',
       theoreticalClassSchedule: 'Sabados 3:00 pm a 5:00 pm', theoreticalClassDates: [],

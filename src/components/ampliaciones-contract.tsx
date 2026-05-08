@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import type { Contract } from '@/lib/types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -47,16 +47,7 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
 
       {/* Párrafo Introductorio */}
 
-      {/* Desglose de Nombre */}
-      {(details as any)?.firstName && (
-        <div className="grid grid-cols-5 gap-x-3 border border-gray-300 rounded-sm p-2 mb-3 text-[7.5pt]">
-          <div className="flex flex-col"><span className="text-[6pt] font-black uppercase text-gray-400 mb-0.5">1er Nombre</span><Line className="text-[7.5pt]">{(details as any)?.firstName}</Line></div>
-          <div className="flex flex-col"><span className="text-[6pt] font-black uppercase text-gray-400 mb-0.5">2do Nombre</span><Line className="text-[7.5pt]">{(details as any)?.secondName || ''}</Line></div>
-          <div className="flex flex-col"><span className="text-[6pt] font-black uppercase text-gray-400 mb-0.5">1er Apellido</span><Line className="text-[7.5pt]">{(details as any)?.firstLastName}</Line></div>
-          <div className="flex flex-col"><span className="text-[6pt] font-black uppercase text-gray-400 mb-0.5">2do Apellido</span><Line className="text-[7.5pt]">{(details as any)?.secondLastName || ''}</Line></div>
-          <div className="flex flex-col"><span className="text-[6pt] font-black uppercase text-gray-400 mb-0.5">Ap. de Casada</span><Line className="text-[7.5pt]">{(details as any)?.marriedLastName || ''}</Line></div>
-        </div>
-      )}
+
 
       <div className="text-justify mb-6 leading-relaxed">
         Entre la sociedad <Value>FREEWAY ESCUELA DE MANEJO S.A.</Value>, con domicilio en La Chorrera, Costa Verde, PH Green Plaza, Local #20, con RUC <Value>155628022-2-2016 DV 2</Value>, en adelante denominada <Value>LA EMPRESA</Value>, y el Sr.(a) <Line className="min-w-[280px]">{contract.clientName?.toUpperCase()}</Line>, con <Value>{details?.idType || 'C.I.P.'}</Value> <Line className="min-w-[130px]">{details?.studentIdNumber}</Line>, residente en <Line className="min-w-[250px]">{details?.studentAddress?.toUpperCase()}</Line>, con teléfonos <Line className="min-w-[120px]">{details?.studentPhone1}</Line> / <Line className="min-w-[120px]">{details?.studentPhone2 || '---'}</Line> y correo <Line className="min-w-[200px]">{contract.clientEmail}</Line>, en adelante denominado <Value>EL ESTUDIANTE</Value>, acuerdan los términos del presente contrato.

@@ -78,6 +78,7 @@ export interface DeluxeContractDetails {
   paymentType?: string;
   instructor?: InstructorName;
   courseValue?: number;
+  enrollmentFee?: number;
   downPayment?: number;
   balance?: number;
   paymentDeadline?: any;
@@ -282,7 +283,7 @@ export type MaintenanceLog = {
 
 export type VehicleName = 'Picanto Blanco' | 'Picanto Bronce' | 'Spark' | 'Pick up' | 'Moto Roja' | 'Moto Negra' | 'Skoda Automatico' | 'Skoda Manual' | 'Hyundai Manual';
 export type TimeSlot = '8am-10am' | '10am-12pm' | '1pm-3pm' | '3pm-5pm';
-export type InstructorName = 'Julisse Alonso' | 'Emmanuel Camargo' | 'Adrian Gordon' | 'Roberto Brown' | '';
+export type InstructorName = 'Emmanuel Camargo' | 'Adrian Gordon' | 'Roberto Brown' | 'Marco Franco' | '';
 export type MaintenanceType = 'Cambio de Aceite' | 'Revisión de Frenos' | 'Rotación de Llantas' | 'Mantenimiento General' | 'Otro';
 
 export type Message = {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useDb } from '@/firebase';
+import { useDb } from '@/components/firebase-provider';
 import { doc } from 'firebase/firestore';
 import { useDoc, useMemoDoc } from './use-firestore';
 

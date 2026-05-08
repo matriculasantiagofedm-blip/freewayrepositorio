@@ -17,9 +17,9 @@ import { cn } from '@/lib/utils';
 
 const INSTRUCTORS = [
     { id: '1', name: 'Emmanuel Camargo' },
-    { id: '2', name: 'Julisse Alonso' },
-    { id: '3', name: 'Adrian Gordon' },
-    { id: '4', name: 'Roberto Brown' },
+    { id: '2', name: 'Adrian Gordon' },
+    { id: '3', name: 'Roberto Brown' },
+    { id: '4', name: 'Marco Franco' },
 ];
 
 // Parsea la hora de inicio de un timeSlot como "8:00am a 10:00am" -> 8

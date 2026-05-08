@@ -6,7 +6,8 @@ import { collection, addDoc, serverTimestamp, query, where, getDocs, doc, getDoc
 
 /**
  * WEBHOOK OMNICANAL - FREEWAY CRM
- * Soporta: WhatsApp, Facebook Messenger e Instagram Direct
+ * Soporta: WhatsApp y Facebook Messenger
+ * INSTAGRAM: Desactivado temporalmente (pendiente aprobación de Meta)
  */
 
 export async function GET(req: NextRequest) {
@@ -82,6 +83,13 @@ export async function POST(req: NextRequest) {
 
     const entry = body.entry?.[0];
     const platform = body.object === 'instagram' ? 'Instagram' : body.object === 'page' ? 'Facebook' : 'WhatsApp';
+
+    // INSTAGRAM DESACTIVADO: Meta aún no aprobó los permisos de respuesta.
+    // Se acepta el webhook (200 OK) para que Meta no reintente, pero no se procesa.
+    if (platform === 'Instagram') {
+      console.log('Instagram webhook recibido pero ignorado (pendiente aprobación Meta)');
+      return new Response('OK', { status: 200 });
+    }
 
     if (entry?.changes?.[0]) {
       const change = entry.changes[0];

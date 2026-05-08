@@ -99,7 +99,7 @@ export async function checkSystemStatus() {
         services: {
             whatsapp: META_TOKEN && PHONE_ID,
             facebook: META_TOKEN && VERIFY_TOKEN,
-            instagram: META_TOKEN && VERIFY_TOKEN,
+            instagram: false, // Desactivado: pendiente aprobación de Meta
             ai: AI_OK,
             database: true 
         }

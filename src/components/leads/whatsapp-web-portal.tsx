@@ -23,7 +23,15 @@ import {
     Trash2,
     CircleCheckBig,
     Edit2,
-    CheckCircle
+    CheckCircle,
+    FileText,
+    ChevronDown,
+    Car,
+    Bike,
+    Dumbbell,
+    Repeat,
+    Layers,
+    ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -328,6 +336,64 @@ export function WhatsAppWebPortal({
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
+                                {/* BOTÓN CREAR CONTRATO */}
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" size="sm" className="bg-red-500 border-red-600 text-white font-black text-xs uppercase h-9 px-4 rounded-lg hover:bg-red-600 transition-all gap-2 shadow-lg">
+                                            <FileText className="w-3.5 h-3.5" />
+                                            + Contrato
+                                            <ChevronDown className="w-3 h-3" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-2xl border-slate-100 p-1">
+                                        <DropdownMenuLabel className="text-[10px] font-black uppercase text-slate-400 tracking-widest px-3 py-2">Tipo de Contrato</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem asChild>
+                                            <a href={`/contracts/new?type=Curso%20Auto&lead=${encodeURIComponent(selectedChat.name)}&phone=${selectedChat.phone || ''}`} target="_blank" rel="noreferrer" className="flex items-center gap-3 px-3 py-2.5 cursor-pointer font-bold text-xs rounded-lg">
+                                                <div className="bg-blue-100 p-1.5 rounded-md"><Car className="w-3.5 h-3.5 text-blue-600" /></div>
+                                                <span>Curso Auto</span>
+                                                <ExternalLink className="w-3 h-3 ml-auto text-slate-300" />
+                                            </a>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem asChild>
+                                            <a href={`/contracts/new?type=Curso%20Moto&lead=${encodeURIComponent(selectedChat.name)}&phone=${selectedChat.phone || ''}`} target="_blank" rel="noreferrer" className="flex items-center gap-3 px-3 py-2.5 cursor-pointer font-bold text-xs rounded-lg">
+                                                <div className="bg-orange-100 p-1.5 rounded-md"><Bike className="w-3.5 h-3.5 text-orange-600" /></div>
+                                                <span>Curso Moto</span>
+                                                <ExternalLink className="w-3 h-3 ml-auto text-slate-300" />
+                                            </a>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem asChild>
+                                            <a href={`/contracts/new?type=Curso%20Solo%20Practica&lead=${encodeURIComponent(selectedChat.name)}&phone=${selectedChat.phone || ''}`} target="_blank" rel="noreferrer" className="flex items-center gap-3 px-3 py-2.5 cursor-pointer font-bold text-xs rounded-lg">
+                                                <div className="bg-emerald-100 p-1.5 rounded-md"><Dumbbell className="w-3.5 h-3.5 text-emerald-600" /></div>
+                                                <span>Solo Práctica</span>
+                                                <ExternalLink className="w-3 h-3 ml-auto text-slate-300" />
+                                            </a>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem asChild>
+                                            <a href={`/contracts/new?type=Ampliaciones&lead=${encodeURIComponent(selectedChat.name)}&phone=${selectedChat.phone || ''}`} target="_blank" rel="noreferrer" className="flex items-center gap-3 px-3 py-2.5 cursor-pointer font-bold text-xs rounded-lg">
+                                                <div className="bg-amber-100 p-1.5 rounded-md"><Repeat className="w-3.5 h-3.5 text-amber-600" /></div>
+                                                <span>Ampliación de Licencia</span>
+                                                <ExternalLink className="w-3 h-3 ml-auto text-slate-300" />
+                                            </a>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem asChild>
+                                            <a href={`/contracts/new?type=Curso%20Deluxe&lead=${encodeURIComponent(selectedChat.name)}&phone=${selectedChat.phone || ''}`} target="_blank" rel="noreferrer" className="flex items-center gap-3 px-3 py-2.5 cursor-pointer font-bold text-xs rounded-lg">
+                                                <div className="bg-indigo-100 p-1.5 rounded-md"><Layers className="w-3.5 h-3.5 text-indigo-600" /></div>
+                                                <span>Curso Deluxe</span>
+                                                <ExternalLink className="w-3 h-3 ml-auto text-slate-300" />
+                                            </a>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem asChild>
+                                            <a href="/contracts/new" target="_blank" rel="noreferrer" className="flex items-center gap-3 px-3 py-2.5 cursor-pointer font-bold text-xs rounded-lg text-slate-500">
+                                                <div className="bg-slate-100 p-1.5 rounded-md"><Plus className="w-3.5 h-3.5 text-slate-500" /></div>
+                                                <span>Nuevo Contrato (General)</span>
+                                                <ExternalLink className="w-3 h-3 ml-auto text-slate-300" />
+                                            </a>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+
                                 <Button onClick={async () => { 
                                     try {
                                         setIsLoading(true); 

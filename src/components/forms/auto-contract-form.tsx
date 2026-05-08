@@ -108,7 +108,7 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
 
 const VEHICLES = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Skoda Automatico', 'Skoda Manual', 'Hyundai Manual'];
 const VEHICLES_MOTO = ['Moto Roja', 'Moto Negra'];
-const INSTRUCTORS = ['Julisse Alonso', 'Emmanuel Camargo', 'Adrian Gordon', 'Roberto Brown'];
+const INSTRUCTORS = ['Emmanuel Camargo', 'Adrian Gordon', 'Roberto Brown', 'Marco Franco'];
 
 const getGlobalCapacity = (date: Date, slotId: string) => {
     const day = date.getDay(); 
@@ -158,7 +158,7 @@ const autoContractSchema = z.object({
 
 type FormValues = z.infer<typeof autoContractSchema>;
 
-export function AutoContractForm({ contract }: { contract?: Contract }) {
+export function AutoContractForm({ contract, initialData }: { contract?: Contract; initialData?: { name?: string; phone?: string } }) {
   const db = useDb();
   const { user } = useUser();
   const { role } = useCurrentRole();
@@ -202,27 +202,27 @@ export function AutoContractForm({ contract }: { contract?: Contract }) {
       downPayment: contract.autoMotoDetails?.downPayment || 0,
       paymentType: contract.autoMotoDetails?.paymentType || 'cash',
       theoreticalClassSchedule: (contract.autoMotoDetails?.theoreticalClassSchedule as any) || 'Sabados 3:00 pm a 5:00 pm',
-      paymentDeadline: toDate(contract.autoMotoDetails?.paymentDeadline),
-      theoreticalClassDates: (contract.autoMotoDetails?.theoreticalClassDates || []).map(d => toDate(d)),
+      paymentDeadline: contract.autoMotoDetails?.paymentDeadline ? toDate(contract.autoMotoDetails.paymentDeadline) : null,
+      theoreticalClassDates: (contract.autoMotoDetails?.theoreticalClassDates || []).map(d => toDate(d)).filter(d => !isNaN(d.getTime())),
       practicalClassSchedules: (contract.autoMotoDetails?.practicalClassSchedules || []).map(s => ({
         ...s,
         date: toDate(s.date)
-      })),
+      })).filter(s => !isNaN(s.date.getTime())),
       motoPracticalClassSchedules: (contract.autoMotoDetails?.motoPracticalClassSchedules || []).map(s => ({
         ...s,
         date: toDate(s.date)
-      })),
+      })).filter(s => !isNaN(s.date.getTime())),
       photoDataUri: (contract.autoMotoDetails as any)?.photoDataUri || '',
       idCardDataUri: (contract.autoMotoDetails as any)?.idCardDataUri || '',
       licenseDataUri: (contract.autoMotoDetails as any)?.licenseDataUri || '',
     } : {
-      clientName: '',
+      clientName: initialData?.name || '',
       firstName: '', secondName: '', firstLastName: '', secondLastName: '', marriedLastName: '',
       clientEmail: '',
       idType: 'C.I.P.',
       studentIdNumber: '',
       studentAddress: '',
-      studentPhone1: '',
+      studentPhone1: initialData?.phone || '',
       studentPhone2: '',
       licenseCategory: 'A, C',
       vehicleTransmission: 'Automático',

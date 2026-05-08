@@ -19,6 +19,7 @@ const navLinks = [
   { href: '/dashboard', label: 'Panel de Control', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
   { href: '/clients', label: 'Clientes', roles: ['Administrador'] },
   { href: '/leads', label: 'CRM / Mensajes', roles: ['Administrador', 'Ventas', 'Ventas Externas', 'SuperAdmin', 'Owner', 'Dueño'] },
+  { href: '/informes/packages', label: 'Catálogo de Precios', roles: ['Ventas Externas'] },
   {
     label: 'Caja y Operaciones',
     roles: ['Administrador', 'Ventas', 'Ventas Externas'],

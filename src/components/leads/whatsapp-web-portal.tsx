@@ -898,14 +898,17 @@ export function WhatsAppWebPortal({
                             )}
                         </AnimatePresence>
 
-                        <footer className="bg-white border-t shrink-0 z-[60] shadow-[0_-4px_20px_rgba(0,0,0,0.04)]" style={{display:'flex', flexDirection:'column'}}>
+                        <footer className="bg-white border-t shrink-0 z-[60] shadow-[0_-4px_20px_rgba(0,0,0,0.04)]">
                             {/* Inputs ocultos para archivos */}
                             <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
                             <input ref={audioInputRef} type="file" accept="audio/*" className="hidden" onChange={handleFileSelect} />
                             <input ref={docInputRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip" className="hidden" onChange={handleFileSelect} />
 
+                            {/* Wrapper block: div + form apilan verticalmente por defecto */}
+                            <div style={{width:'100%'}}>
+
                             {/* ── FILA 1: Toolbar de acciones compacta (encima del input) ── */}
-                            <div style={{display:'flex', flexDirection:'row', alignItems:'center', gap:'4px', width:'100%', padding:'6px 16px', backgroundColor:'#f8fafc', borderBottom:'1px solid #e2e8f0'}}>
+                            <div style={{display:'flex', alignItems:'center', gap:'4px', width:'100%', padding:'6px 16px', backgroundColor:'#f8fafc', borderBottom:'1px solid #e2e8f0'}}>
 
                                 {/* Respuestas Rápidas */}
                                 <Popover>
@@ -1023,6 +1026,7 @@ export function WhatsAppWebPortal({
                                     {isSendingMessage ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <Send className="w-4 h-4 text-white" />}
                                 </Button>
                             </form>
+                            </div>{/* /wrapper block */}
                         </footer>
 
 

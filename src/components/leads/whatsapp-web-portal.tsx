@@ -898,14 +898,14 @@ export function WhatsAppWebPortal({
                             )}
                         </AnimatePresence>
 
-                        <footer className="bg-white border-t shrink-0 z-[60] shadow-[0_-4px_20px_rgba(0,0,0,0.04)] flex flex-col">
+                        <footer className="bg-white border-t shrink-0 z-[60] shadow-[0_-4px_20px_rgba(0,0,0,0.04)]" style={{display:'flex', flexDirection:'column'}}>
                             {/* Inputs ocultos para archivos */}
                             <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
                             <input ref={audioInputRef} type="file" accept="audio/*" className="hidden" onChange={handleFileSelect} />
                             <input ref={docInputRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip" className="hidden" onChange={handleFileSelect} />
 
                             {/* ── FILA 1: Toolbar de acciones compacta (encima del input) ── */}
-                            <div className="flex items-center gap-1 px-3 md:px-4 py-1.5 bg-slate-50 border-b border-slate-200 w-full">
+                            <div style={{display:'flex', flexDirection:'row', alignItems:'center', gap:'4px', width:'100%', padding:'6px 16px', backgroundColor:'#f8fafc', borderBottom:'1px solid #e2e8f0'}}>
 
                                 {/* Respuestas Rápidas */}
                                 <Popover>
@@ -1003,7 +1003,7 @@ export function WhatsAppWebPortal({
                             </div>
 
                             {/* ── FILA 2: Input de mensaje — ocupa todo el ancho ── */}
-                            <form onSubmit={handleSendMessage} className="flex items-center gap-2 px-3 md:px-4 py-2">
+                            <form onSubmit={handleSendMessage} style={{display:'flex', flexDirection:'row', alignItems:'center', gap:'8px', padding:'8px 16px', width:'100%'}}>
                                 <div className="relative flex-grow">
                                     <Input
                                         id="crm-message-input"

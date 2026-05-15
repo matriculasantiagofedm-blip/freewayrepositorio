@@ -913,7 +913,7 @@ export function WhatsAppWebPortal({
                                         <Button variant="ghost" size="sm" title="Respuestas Rápidas"
                                             className="h-7 px-2 gap-1 rounded-lg text-primary hover:bg-primary/8 transition-all relative text-[9px] font-black uppercase">
                                             <Zap className="w-3 h-3" />
-                                            <span className="hidden xs:inline">Respuestas Rápidas</span>
+                                            <span>Rápidas</span>
                                             {quickReplies.length > 0 && <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-primary rounded-full border border-white shadow-sm" />}
                                         </Button>
                                     </PopoverTrigger>
@@ -954,7 +954,7 @@ export function WhatsAppWebPortal({
                                             className="h-7 px-2 gap-1 rounded-lg text-violet-600 hover:bg-violet-50 transition-all text-[9px] font-black uppercase"
                                             disabled={!inputValue.trim() || isImproving}>
                                             <Wand2 className={cn("w-3 h-3", isImproving && "animate-spin")} />
-                                            <span className="hidden xs:inline">Mejorar con IA</span>
+                                            <span>Mejorar con IA</span>
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent className="w-52 rounded-xl border shadow-xl" align="start" side="top">
@@ -976,19 +976,19 @@ export function WhatsAppWebPortal({
                                             className="h-7 px-2 gap-1 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-all text-[9px] font-black uppercase"
                                             disabled={isLoading} onClick={() => fileInputRef.current?.click()}>
                                             <ImageIcon className="w-3 h-3" />
-                                            <span className="hidden xs:inline">Imagen</span>
+                                            <span>Imagen</span>
                                         </Button>
                                         <Button type="button" variant="ghost" size="sm" title="Enviar documento"
                                             className="h-7 px-2 gap-1 rounded-lg text-amber-600 hover:bg-amber-50 transition-all text-[9px] font-black uppercase"
                                             disabled={isLoading} onClick={() => docInputRef.current?.click()}>
                                             <FileIcon className="w-3 h-3" />
-                                            <span className="hidden xs:inline">Documento</span>
+                                            <span>Doc</span>
                                         </Button>
                                         <Button type="button" variant="ghost" size="sm" title="Nota de voz"
                                             className={cn("h-7 px-2 gap-1 rounded-lg transition-all text-[9px] font-black uppercase", isRecording ? 'text-white bg-red-500 hover:bg-red-600 animate-pulse' : 'text-slate-400 hover:bg-slate-100')}
                                             onClick={handleToggleRecording}>
                                             {isRecording ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
-                                            <span className="hidden xs:inline">{isRecording ? 'Detener' : 'Audio'}</span>
+                                            <span>{isRecording ? 'Detener' : 'Audio'}</span>
                                         </Button>
                                     </>
                                 )}
@@ -998,7 +998,7 @@ export function WhatsAppWebPortal({
                                     className="h-7 px-2 gap-1 rounded-lg text-slate-500 hover:bg-slate-100 transition-all text-[9px] font-black uppercase"
                                     onClick={() => fileInputRef.current?.click()}>
                                     <Paperclip className="w-3 h-3" />
-                                    <span className="hidden xs:inline">Adjuntar</span>
+                                    <span>Adjuntar</span>
                                 </Button>
                             </div>
 

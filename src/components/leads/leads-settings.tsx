@@ -9,7 +9,6 @@ import {
     Trash2,
     Users,
     Loader2,
-    Layers,
     Key,
     ChevronUp,
     ChevronDown,
@@ -18,24 +17,26 @@ import {
     ExternalLink,
     CheckCircle2,
     AlertCircle,
-    Globe,
-    Bot
+    Bot,
+    QrCode,
+    Wifi,
+    WifiOff,
+    RefreshCw,
+    Smartphone
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { formadePago } from "@/utils/constants";
 import { WhatsAppIcon } from "../icons/whatsapp";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from "@/components/ui/label";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import { collection, doc, setDoc, deleteDoc, query, orderBy, updateDoc, getDoc } from "firebase/firestore";
-import { useEffect } from "react";
 
 const funnelColors = [
     { name: 'Gris Pizarra', value: '#64748b' },
@@ -49,11 +50,112 @@ const funnelColors = [
     { name: 'Rosa Instagram', value: '#ec4899' },
 ];
 
+type WaStatus = 'disconnected' | 'connecting' | 'qr_ready' | 'connected' | 'error';
+
 export function LeadsSettings() {
     const { toast } = useToast();
     const db = useFirestore();
     
-    // Gestión de Usuarios
+    // ── WhatsApp QR Connection — Multi-instancia ──────────────────────────
+    const WA_INSTANCES = [
+        { id: 'freeway-crm',   label: 'Número Principal',  color: '#25D366' },
+        { id: 'freeway-crm-2', label: 'Número Secundario', color: '#1d4ed8' },
+        { id: 'freeway-crm-3', label: 'Número Adicional',  color: '#7c3aed' },
+    ];
+
+    const [waStates, setWaStates] = useState<Record<string, { status: WaStatus; qr: string | null; phone: string; loading: boolean }>>(
+        Object.fromEntries(WA_INSTANCES.map(i => [i.id, { status: 'disconnected', qr: null, phone: '', loading: false }]))
+    );
+    const pollRefs = useRef<Record<string, any>>({});
+
+    const setWaField = (instId: string, fields: Partial<{ status: WaStatus; qr: string | null; phone: string; loading: boolean }>) => {
+        setWaStates(prev => ({ ...prev, [instId]: { ...prev[instId], ...fields } }));
+    };
+
+    const fetchWaStatus = useCallback(async (instId: string) => {
+        try {
+            const res = await fetch(`/api/whatsapp-instance/multi-status?instance=${instId}`);
+            if (!res.ok) return;
+            const data = await res.json();
+            setWaField(instId, { status: data.status, phone: data.phone || '' });
+            if (data.status === 'connected') {
+                if (pollRefs.current[instId]) { clearInterval(pollRefs.current[instId]); delete pollRefs.current[instId]; }
+                setWaField(instId, { qr: null });
+            }
+        } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useEffect(() => {
+        WA_INSTANCES.forEach(inst => fetchWaStatus(inst.id));
+        return () => { Object.values(pollRefs.current).forEach(clearInterval); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [fetchWaStatus]);
+
+    const handleWaConnect = async (instId: string) => {
+        setWaField(instId, { loading: true, status: 'connecting' });
+        try {
+            const res = await fetch(`/api/whatsapp-instance/multi-status?instance=${instId}&action=connect`, { method: 'POST' });
+            const data = await res.json();
+            if (data.qrCode) {
+                setWaField(instId, { qr: data.qrCode, status: 'qr_ready', loading: false });
+                pollRefs.current[instId] = setInterval(() => fetchWaStatus(instId), 3000);
+            } else if (data.status === 'connected') {
+                fetchWaStatus(instId);
+                setWaField(instId, { loading: false });
+            } else {
+                setWaField(instId, { status: 'error', loading: false });
+            }
+        } catch { setWaField(instId, { status: 'error', loading: false }); }
+    };
+
+    const handleWaDisconnect = async (instId: string) => {
+        setWaField(instId, { loading: true });
+        try {
+            await fetch(`/api/whatsapp-instance/multi-status?instance=${instId}&action=disconnect`, { method: 'POST' });
+            setWaField(instId, { status: 'disconnected', qr: null, phone: '', loading: false });
+            if (pollRefs.current[instId]) { clearInterval(pollRefs.current[instId]); delete pollRefs.current[instId]; }
+        } catch { setWaField(instId, { loading: false }); }
+    };
+
+    const handleWaRefreshQr = async (instId: string) => {
+        setWaField(instId, { loading: true });
+        try {
+            const res = await fetch(`/api/whatsapp-instance/multi-status?instance=${instId}&action=qr`, { method: 'POST' });
+            const d = await res.json();
+            if (d.qrCode) setWaField(instId, { qr: d.qrCode });
+        } catch {} finally { setWaField(instId, { loading: false }); }
+    };
+
+    // ── Sync de Webhooks ──────────────────────────────────────────────────
+    const [syncing, setSyncing] = useState(false);
+    const [syncResult, setSyncResult] = useState<{ message: string; results: any[] } | null>(null);
+    const [evoInstances, setEvoInstances] = useState<any[]>([]);
+
+    const loadEvoInstances = useCallback(async () => {
+        try {
+            const res = await fetch('/api/whatsapp-instance/sync-webhooks');
+            if (!res.ok) return;
+            const d = await res.json();
+            setEvoInstances(d.instances || []);
+        } catch {}
+    }, []);
+
+    useEffect(() => { loadEvoInstances(); }, [loadEvoInstances]);
+
+    const handleSyncWebhooks = async () => {
+        setSyncing(true); setSyncResult(null);
+        try {
+            const res = await fetch('/api/whatsapp-instance/sync-webhooks', { method: 'POST' });
+            const d = await res.json();
+            setSyncResult({ message: d.message || 'Hecho', results: d.results || [] });
+            loadEvoInstances();
+            toast({ title: '✅ Webhooks sincronizados', description: d.message });
+        } catch (e: any) {
+            toast({ title: 'Error', description: e.message, variant: 'destructive' });
+        } finally { setSyncing(false); }
+    };
+
     const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
     const [isSavingUser, setIsSavingUser] = useState(false);
     const usersQuery = useMemoFirebase(() => query(collection(db, 'users_crm'), orderBy('name', 'asc')), [db]);
@@ -326,6 +428,142 @@ export function LeadsSettings() {
                         </Button>
                     </CardContent>
                 </Card>
+
+                {/* ── CONEXIÓN WHATSAPP QR — MULTI-INSTANCIA ──────────────── */}
+                <div>
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="p-2 bg-[#25D366]/10 rounded-lg">
+                            <Smartphone className="w-5 h-5 text-[#25D366]" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-slate-900">Números de WhatsApp</h3>
+                            <p className="text-xs text-slate-500">Conecta hasta 3 números al CRM por código QR</p>
+                        </div>
+                    </div>
+
+                    {/* Banner de sincronización de webhooks */}
+                    <Card className="mb-4 border-2 border-dashed border-blue-200 bg-blue-50/40">
+                        <CardContent className="p-4">
+                            <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Wifi className="w-4 h-4 text-blue-600" />
+                                        <p className="text-sm font-bold text-blue-900">Instancias detectadas en Evolution API</p>
+                                    </div>
+                                    {evoInstances.length === 0 ? (
+                                        <p className="text-xs text-slate-500">Cargando instancias...</p>
+                                    ) : (
+                                        <div className="space-y-1">
+                                            {evoInstances.map((inst: any) => (
+                                                <div key={inst.instance} className="flex items-center gap-2 text-xs">
+                                                    <span className={`w-2 h-2 rounded-full shrink-0 ${inst.status === 'open' ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                                                    <span className="font-mono font-bold text-slate-700">{inst.instance}</span>
+                                                    {inst.phone && <span className="text-slate-500">→ {inst.phone}</span>}
+                                                    <span className={`text-[10px] font-bold uppercase ${inst.status === 'open' ? 'text-emerald-600' : 'text-slate-400'}`}>{inst.status === 'open' ? '● activo' : '○ inactivo'}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {syncResult && (
+                                        <p className="text-xs text-emerald-700 font-bold mt-2">✅ {syncResult.message}</p>
+                                    )}
+                                </div>
+                                <Button
+                                    onClick={handleSyncWebhooks}
+                                    disabled={syncing}
+                                    size="sm"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shrink-0"
+                                >
+                                    {syncing ? <><Loader2 className="h-3 w-3 animate-spin mr-1" /> Sincronizando...</> : <><RefreshCw className="h-3 w-3 mr-1" /> Sincronizar Webhooks</>}
+                                </Button>
+                            </div>
+                            <p className="text-[10px] text-blue-600 mt-2">⚡ Si no ves mensajes entrantes, haz clic en &quot;Sincronizar Webhooks&quot; para registrar el CRM en todos los números.</p>
+                        </CardContent>
+                    </Card>
+                    <div className="grid grid-cols-1 gap-4">
+                        {WA_INSTANCES.map(inst => {
+                            const wa = waStates[inst.id] || { status: 'disconnected', qr: null, phone: '', loading: false };
+                            return (
+                                <Card key={inst.id} className={cn("border shadow-md bg-white transition-all", wa.status === 'connected' && "border-emerald-200 bg-emerald-50/30")}>
+                                    <CardHeader className="pb-2 pt-4 px-5">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ backgroundColor: inst.color + '20' }}>
+                                                    <Smartphone className="w-4 h-4" style={{ color: inst.color }} />
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-sm text-slate-900">{inst.label}</p>
+                                                    <p className="text-[10px] text-slate-400 font-mono">{inst.id}</p>
+                                                </div>
+                                            </div>
+                                            {wa.status === 'connected' && (
+                                                <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px] font-black uppercase">
+                                                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5 animate-pulse inline-block" />
+                                                    Conectado
+                                                </Badge>
+                                            )}
+                                            {wa.status === 'qr_ready' && (
+                                                <Badge className="bg-amber-100 text-amber-700 text-[10px] font-black uppercase">⏳ Esperando QR</Badge>
+                                            )}
+                                            {wa.status === 'disconnected' && (
+                                                <Badge variant="outline" className="text-[10px] font-black uppercase text-slate-400">Sin conexión</Badge>
+                                            )}
+                                            {wa.status === 'error' && (
+                                                <Badge className="bg-red-100 text-red-700 text-[10px] font-black uppercase">Error</Badge>
+                                            )}
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent className="px-5 pb-5 space-y-3">
+                                        {wa.status === 'connected' && (
+                                            <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                                                <div>
+                                                    <p className="font-black text-emerald-900 text-base">{wa.phone || '—'}</p>
+                                                    <p className="text-[10px] text-emerald-700">Listo para mensajes</p>
+                                                </div>
+                                                <Button variant="outline" size="sm" onClick={() => handleWaDisconnect(inst.id)} disabled={wa.loading} className="border-red-200 text-red-600 hover:bg-red-50 text-xs font-bold">
+                                                    {wa.loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <WifiOff className="h-3 w-3 mr-1" />}
+                                                    Desconectar
+                                                </Button>
+                                            </div>
+                                        )}
+                                        {wa.status === 'qr_ready' && wa.qr && (
+                                            <div className="flex flex-col items-center gap-3 p-3 bg-amber-50/50 rounded-xl border border-amber-100">
+                                                <div className="bg-white p-2 rounded-xl border-4 border-amber-200/50 shadow-inner">
+                                                    <img src={wa.qr.startsWith('data:') ? wa.qr : `data:image/png;base64,${wa.qr}`} alt="QR WhatsApp" className="w-44 h-44 rounded-lg" />
+                                                </div>
+                                                <p className="text-xs text-slate-500 text-center">WhatsApp → Dispositivos vinculados → Vincular dispositivo</p>
+                                                <div className="flex gap-2">
+                                                    <Button variant="outline" size="sm" onClick={() => handleWaRefreshQr(inst.id)} disabled={wa.loading} className="text-xs font-bold">
+                                                        <RefreshCw className="h-3 w-3 mr-1" /> Nuevo QR
+                                                    </Button>
+                                                    <Button variant="outline" size="sm" onClick={() => fetchWaStatus(inst.id)} className="text-xs font-bold text-emerald-600 border-emerald-200">
+                                                        <Wifi className="h-3 w-3 mr-1" /> Verificar
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {wa.status === 'connecting' && (
+                                            <div className="flex items-center justify-center gap-3 py-4 text-blue-600">
+                                                <Loader2 className="h-5 w-5 animate-spin" />
+                                                <span className="font-bold text-sm">Generando código QR...</span>
+                                            </div>
+                                        )}
+                                        {(wa.status === 'disconnected' || wa.status === 'error') && (
+                                            <Button onClick={() => handleWaConnect(inst.id)} disabled={wa.loading} className="w-full h-10 text-white font-bold text-xs" style={{ backgroundColor: inst.color }}>
+                                                {wa.loading ? <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> Iniciando...</> : <><QrCode className="h-3.5 w-3.5 mr-1" /> Conectar Número</>}
+                                            </Button>
+                                        )}
+                                        {wa.status === 'error' && (
+                                            <p className="text-[10px] text-red-500 text-center font-medium">
+                                                Error de conexión. Verifica que Evolution API esté activa.
+                                            </p>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
+                    </div>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
                     {[

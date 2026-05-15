@@ -3,6 +3,10 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore, initializeFirestore, collection, doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { firebaseConfig } from '@/firebase/config';
 
+const EVO_BASE = (process.env.EVOLUTION_API_URL || 'https://evolution-api-production-6437c.up.railway.app').replace(/\/$/, '');
+const EVO_KEY  = process.env.EVOLUTION_API_KEY || 'freeway2025secret';
+const EVO_INST = process.env.EVOLUTION_INSTANCE || 'freeway-crm';
+
 function formatPanamaPhone(phone: string): string {
     if (!phone) return '';
     let cleaned = phone.replace(/\D/g, '');
@@ -11,75 +15,152 @@ function formatPanamaPhone(phone: string): string {
     return cleaned;
 }
 
+function getDb() {
+    let app;
+    let db;
+    if (getApps().length === 0) {
+        app = initializeApp(firebaseConfig);
+        db = initializeFirestore(app, { experimentalForceLongPolling: true });
+    } else {
+        app = getApps()[0];
+        db = getFirestore(app);
+    }
+    return db;
+}
+
 export async function POST(req: Request) {
     try {
-        const { to, text, leadId, platform, socialId } = await req.json();
-        
-        let response;
-        // INSTAGRAM DESACTIVADO: Meta aún no aprobó los permisos de respuesta.
+        const {
+            to, text, leadId, platform, socialId,
+            // Campos de media (opcional)
+            mediaBase64, mediaType, mimeType, fileName,
+            // Instancia de WhatsApp QR (opcional)
+            instance,
+        } = await req.json();
+
+        const EVO_INST_RESOLVED = instance || EVO_INST;
+
+        let response: Response | undefined;
+        let savedMediaUrl: string | undefined;
+
+        // ── INSTAGRAM (desactivado) ────────────────────────────────────────
         if (platform === 'Instagram') {
-            return NextResponse.json({ success: false, error: 'Instagram está desactivado temporalmente (pendiente aprobación de Meta). Solo puedes ver el historial de este chat.' }, { status: 403 });
+            return NextResponse.json({ success: false, error: 'Instagram está desactivado temporalmente.' }, { status: 403 });
         }
-        
+
+        // ── FACEBOOK ──────────────────────────────────────────────────────
         if (platform === 'Facebook') {
             const PAGE_ACCESS_TOKEN = process.env.INSTAGRAM_ACCESS_TOKEN || '';
             if (!PAGE_ACCESS_TOKEN) return NextResponse.json({ success: false, error: 'Facebook: token no configurado.' }, { status: 400 });
             response = await fetch(`https://graph.facebook.com/v21.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ recipient: { id: socialId || to }, message: { text: text } }),
+                body: JSON.stringify({ recipient: { id: socialId || to }, message: { text } }),
             });
-        } else {
-            const ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN || 'EAAR0VzJgjMwBRGjRZBWiYRd9EwZAX0UGGIZC6TjNG0kTuxLNNudSqYpEpoV1dqRQLMzgaa1vJoLUgIvdT39nERilnSOUkM4OZClgbSxf1lVBLDxQ87ZBH0sEcFiKZAlynlESPe7qWzZC2q7dQr0ohSTEWlmKhIyxf9FSRlr3vCHMGgnuS1P0ZA0roRm2Vb77ZAIczRwZDZD';
-            const PHONE_NUMBER_ID = '1045621595304134';
+
+        // ── WHATSAPP QR (Evolution API) ────────────────────────────────────
+        } else if (platform === 'WhatsApp QR') {
             const cleanTo = formatPanamaPhone(to || '');
 
-            if (!ACCESS_TOKEN || !PHONE_NUMBER_ID) return NextResponse.json({ success: false, error: "CONFIG_MISSING" }, { status: 400 });
+            if (mediaBase64 && mediaType) {
+                if (mediaType === 'audio') {
+                    // Enviar como nota de voz (PTT)
+                    response = await fetch(`${EVO_BASE}/message/sendWhatsAppAudio/${EVO_INST_RESOLVED}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'apikey': EVO_KEY },
+                        body: JSON.stringify({ number: cleanTo, audio: mediaBase64 }),
+                    });
+                } else {
+                    // Enviar imagen / video / documento
+                    const evoMediaType = mediaType === 'document' ? 'document'
+                        : mediaType === 'video' ? 'video' : 'image';
+                    response = await fetch(`${EVO_BASE}/message/sendMedia/${EVO_INST_RESOLVED}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'apikey': EVO_KEY },
+                        body: JSON.stringify({
+                            number: cleanTo,
+                            mediatype: evoMediaType,
+                            mimetype: mimeType || 'image/jpeg',
+                            caption: text || '',
+                            media: mediaBase64,
+                            fileName: fileName || 'file',
+                        }),
+                    });
+                }
+                // Para preview inmediato en el CRM antes de que llegue el webhook
+                savedMediaUrl = `data:${mimeType || 'image/jpeg'};base64,${mediaBase64}`;
+            } else {
+                // Solo texto
+                response = await fetch(`${EVO_BASE}/message/sendText/${EVO_INST_RESOLVED}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': EVO_KEY },
+                    body: JSON.stringify({ number: cleanTo, text }),
+                });
+            }
 
-            const url = `https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`;
+        // ── WHATSAPP (cualquier canal → Evolution API) ─────────────────────
+        } else {
+            const cleanTo = formatPanamaPhone(to || '');
+            const resolvedInst = EVO_INST_RESOLVED || 'freeway-crm';
 
-            response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${ACCESS_TOKEN}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messaging_product: 'whatsapp', recipient_type: 'individual', to: cleanTo, type: 'text', text: { body: text } }),
-            });
+            if (mediaBase64 && mediaType) {
+                const evoMediaType = mediaType === 'document' ? 'document'
+                    : mediaType === 'video' ? 'video' : 'image';
+                response = await fetch(`${EVO_BASE}/message/sendMedia/${resolvedInst}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': EVO_KEY },
+                    body: JSON.stringify({
+                        number: cleanTo,
+                        mediatype: evoMediaType,
+                        mimetype: mimeType || 'image/jpeg',
+                        caption: text || '',
+                        media: mediaBase64,
+                        fileName: fileName || 'file',
+                    }),
+                });
+                savedMediaUrl = `data:${mimeType || 'image/jpeg'};base64,${mediaBase64}`;
+            } else {
+                response = await fetch(`${EVO_BASE}/message/sendText/${resolvedInst}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'apikey': EVO_KEY },
+                    body: JSON.stringify({ number: cleanTo, text }),
+                });
+            }
         }
+
+        if (!response) return NextResponse.json({ success: false, error: 'NO_RESPONSE' }, { status: 500 });
 
         if (response.ok) {
             if (leadId) {
                 try {
-                    let app;
-                    let db;
-                    if (getApps().length === 0) {
-                        app = initializeApp(firebaseConfig);
-                        db = initializeFirestore(app, { experimentalForceLongPolling: true });
-                    } else {
-                        app = getApps()[0];
-                        db = getFirestore(app);
-                    }
-                    
+                    const db = getDb();
                     const msgRef = doc(collection(db, `leads/${leadId}/messages`));
-                    await setDoc(msgRef, {
+                    const msgData: any = {
                         id: msgRef.id,
-                        text,
+                        text: text || (mediaType === 'audio' ? '🎤 Audio' : mediaType === 'image' ? '📷 Imagen' : mediaType === 'document' ? '📄 Documento' : '[Media]'),
                         sender: 'me',
                         status: 'sent',
-                        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                        timestamp: serverTimestamp()
-                    });
-                    
+                        time: new Date().toLocaleTimeString('es-PA', { hour: '2-digit', minute: '2-digit' }),
+                        timestamp: serverTimestamp(),
+                    };
+                    if (savedMediaUrl) { msgData.mediaUrl = savedMediaUrl; msgData.mediaType = mediaType; }
+                    if (mimeType && mediaType) msgData.mimeType = mimeType;
+                    if (fileName && mediaType === 'document') msgData.fileName = fileName;
+                    await setDoc(msgRef, msgData);
                     await updateDoc(doc(db, 'leads', leadId), {
-                        lastMessage: text,
-                        lastMessageAt: serverTimestamp()
+                        lastMessage: msgData.text,
+                        lastMessageAt: serverTimestamp(),
                     });
-                } catch(e) {}
+                } catch(e) { console.error('[send] Firestore error:', e); }
             }
             return NextResponse.json({ success: true });
         }
 
-        const errorData = await response.json();
-        return NextResponse.json({ success: false, error: errorData?.error?.message || "META_API_ERROR" }, { status: 400 });
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[send] API error:', errorData);
+        return NextResponse.json({ success: false, error: errorData?.error?.message || errorData?.message || 'API_ERROR' }, { status: 400 });
     } catch (error: any) {
-        return NextResponse.json({ success: false, error: error?.message || "CONNECTION_ERROR" }, { status: 500 });
+        console.error('[send] Exception:', error);
+        return NextResponse.json({ success: false, error: error?.message || 'CONNECTION_ERROR' }, { status: 500 });
     }
 }

@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Car, Bike, Dumbbell, Repeat, Layers, Info } from 'lucide-react';
+import { ChevronLeft, Car, Bike, Dumbbell, Repeat, Layers, Info, Crown } from 'lucide-react';
 import Link from 'next/link';
 
 export default function PackagesReportPage() {
@@ -144,6 +144,59 @@ export default function PackagesReportPage() {
                 <TableRow><TableCell className="text-xs font-black uppercase text-red-600">Multa por Inasistencia</TableCell><TableCell className="text-right font-black text-red-600 text-sm">20.00</TableCell></TableRow>
               </TableBody>
             </Table>
+          </CardContent>
+        </Card>
+
+        {/* PAQUETES DELUXE */}
+        <Card className="shadow-sm border-t-4 border-t-purple-600 bg-white md:col-span-2">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <div className="bg-purple-100 p-1.5 rounded-lg">
+                <Crown className="h-5 w-5 text-purple-600" />
+              </div>
+              <CardTitle className="text-lg font-black uppercase tracking-tight">Paquetes Deluxe</CardTitle>
+            </div>
+            <CardDescription className="text-[10px] font-bold uppercase text-slate-400">20 Horas Teóricas · 16 Horas Prácticas · Plan de Pagos Quincenal</CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader className="bg-slate-50">
+                <TableRow>
+                  <TableHead className="text-[10px] font-black uppercase">Paquete</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase">Enfoque</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase text-center">Matrícula</TableHead>
+                  <TableHead className="text-[10px] font-black uppercase text-center">6 Cuotas</TableHead>
+                  <TableHead className="text-right text-[10px] font-black uppercase">Total (B/.)</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow className="bg-purple-50/30">
+                  <TableCell className="text-xs font-bold uppercase text-purple-900">Deluxe Edición Especial</TableCell>
+                  <TableCell className="text-[10px] font-medium text-slate-500">Manejo General · Teoría + Práctica + Beneficios</TableCell>
+                  <TableCell className="text-center font-black text-purple-700 text-sm">B/. 15.00</TableCell>
+                  <TableCell className="text-center font-black text-purple-700 text-sm">× B/. 45.00</TableCell>
+                  <TableCell className="text-right font-black text-purple-700 text-sm">300.00</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="text-xs font-bold uppercase text-purple-900">Deluxe Énfasis Logística</TableCell>
+                  <TableCell className="text-[10px] font-medium text-slate-500">Transporte de Carga · Rutas Logísticas · Licencia Profesional</TableCell>
+                  <TableCell className="text-center font-black text-purple-700 text-sm">B/. 15.00</TableCell>
+                  <TableCell className="text-center font-black text-purple-700 text-sm">× B/. 55.00</TableCell>
+                  <TableCell className="text-right font-black text-purple-700 text-sm">330.00</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="text-xs font-bold uppercase text-purple-900">Deluxe Énfasis Delivery</TableCell>
+                  <TableCell className="text-[10px] font-medium text-slate-500">Entrega Ágil · Mensajería · Optimización en Moto</TableCell>
+                  <TableCell className="text-center font-black text-purple-700 text-sm">B/. 15.00</TableCell>
+                  <TableCell className="text-center font-black text-purple-700 text-sm">× B/. 48.00</TableCell>
+                  <TableCell className="text-right font-black text-purple-700 text-sm">288.00</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+            <div className="px-6 py-3 bg-purple-50 border-t border-purple-100 flex items-center gap-2">
+              <Info className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+              <p className="text-[10px] font-bold text-purple-700 uppercase">Todos los paquetes incluyen GRATIS: Libro de Estudio · Simulador de Examen · Centro IA · Descuento en Tipaje y Doping</p>
+            </div>
           </CardContent>
         </Card>
 

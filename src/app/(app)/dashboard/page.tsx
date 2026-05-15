@@ -40,7 +40,8 @@ import {
   Bot,
   Building2,
   MessageSquareText,
-  Star
+  Star,
+  ScanLine
 } from 'lucide-react';
 import { isToday, format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -256,6 +257,7 @@ export default function DashboardPage() {
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 pt-2">
                                 <WorkflowItem icon={LayoutGrid} label="Embudo" sub="Ventas" href="/leads" color="text-pink-600" />
                                 <WorkflowItem icon={MessageSquareText} label="WhatsApp" sub="Mensajes" href="/leads" color="text-green-600" />
+                                <WorkflowItem icon={ScanLine} label="Conectar" sub="Número QR" href="/settings/whatsapp" color="text-emerald-600" />
                                 <WorkflowItem icon={PieChart} label="Analítica" sub="Métricas" href="/leads" color="text-blue-600" />
                             </div>
                         )}

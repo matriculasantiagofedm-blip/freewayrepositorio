@@ -69,7 +69,9 @@ const DEFAULT_PRICES = {
     "Combo Plus Auto + Moto": 310.00
   },
   deluxe: {
-    "Paquete Deluxe (Edición Especial)": 270.00
+    "Paquete Deluxe (Edición Especial)": 300.00,
+    "Curso Deluxe con Énfasis en Logística": 330.00,
+    "Curso Deluxe con Énfasis en Delivery": 288.00
   }
 };
 

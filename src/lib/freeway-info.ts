@@ -77,11 +77,27 @@ No alquilamos autos ni motos para la prueba práctica en Sertracen. Sertracen of
   - **Incluye:** 12 Horas Prácticas, Clases Teóricas y Certificado, Uso de equipo de seguridad, Simulador de Examen Teórico, Centro de Estudio IA, Libro Compendio de Conocimientos Viales.
 
 ## Paquete Deluxe (Edición Especial)
-- **Precio Total:** $270.00.
-- **Plan de Pagos:** Matrícula inicial de $15.00, y luego 6 pagos de $45.00 cada dos semanas.
-- **Duración:** 12 semanas, con clases 1 vez por semana los miércoles.
-- **Horario Teórico:** Miércoles de 6:00 p.m. a 8:00 p.m.
+- **Precio Total:** $300.00.
+- **Plan de Pagos:** Matrícula inicial de $15.00, y luego 6 pagos quincenales de $45.00.
+- **Duración:** 12 semanas, con clases 1 vez por semana.
+- **Horario Teórico:** Jueves de 7:00 p.m. a 9:00 p.m.
 - **Incluye:** 20 horas teóricas y 16 horas prácticas.
+- **Beneficios GRATIS:** Plan de Estudio Avanzado (Libro), Acceso a Simulador de Examen, Acceso a Centro de Estudio IA, Descuento en Tipaje y Doping.
+
+## Curso Deluxe con Énfasis en Logística (Edición Profesional)
+- **Precio Total:** $330.00.
+- **Plan de Pagos:** Matrícula inicial de $15.00, y luego 6 pagos quincenales de $55.00.
+- **Duración:** 12 semanas.
+- **Horario Teórico:** Jueves de 7:00 p.m. a 9:00 p.m.
+- **Incluye:** 20 horas teóricas y 16 horas prácticas, con módulos especializados en transporte de carga y rutas logísticas.
+- **Beneficios GRATIS:** Plan de Estudio Avanzado (Libro), Acceso a Simulador de Examen, Acceso a Centro de Estudio IA, Descuento en Tipaje y Doping.
+
+## Curso Deluxe con Énfasis en Delivery (Edición Delivery)
+- **Precio Total:** $288.00.
+- **Plan de Pagos:** Matrícula inicial de $15.00, y luego 6 pagos quincenales de $48.00.
+- **Duración:** 12 semanas.
+- **Horario Teórico:** Jueves de 7:00 p.m. a 9:00 p.m.
+- **Incluye:** 20 horas teóricas y 16 horas prácticas, con enfoque en técnicas de entrega ágil y segura en moto, optimización operativa para servicios de mensajería y delivery.
 - **Beneficios GRATIS:** Plan de Estudio Avanzado (Libro), Acceso a Simulador de Examen, Acceso a Centro de Estudio IA, Descuento en Tipaje y Doping.
 
 ## Ampliaciones (para licencias existentes)
@@ -100,4 +116,13 @@ No alquilamos autos ni motos para la prueba práctica en Sertracen. Sertracen of
 
 ## Sobre la Escuela
 Freeway Escuela de Manejo forma conductores responsables y seguros en Panamá. Ofrecemos instructores calificados, horarios flexibles y un área de práctica segura en Costa Verde, La Chorrera.
+
+## ⚠️ POLÍTICA IMPORTANTE: No Vendemos Diplomas
+Freeway Escuela de Manejo **NO vende diplomas, certificados ni documentos de ningún tipo sin haber completado el curso**. Todo estudiante que desee obtener su certificado de conducción **DEBE inscribirse, asistir y aprobar el curso correspondiente**. No existe ninguna excepción a esta política. Si alguien pregunta si puede obtener un diploma o certificado sin tomar el curso, la respuesta es **un rotundo NO**. Freeway es una institución seria y comprometida con la formación de conductores seguros y responsables.
+
+## 👔 Puestos de Trabajo / Empleo en Freeway
+Freeway Escuela de Manejo **no gestiona solicitudes de empleo por este canal**. Si alguien está interesado en trabajar con nosotros (instructores, personal administrativo, ventas, etc.), debe:
+1. Escribir directamente al WhatsApp **63814115**.
+2. Enviar su **hoja de vida** en ese mismo chat.
+El equipo de recursos humanos revisará su perfil y se comunicará si hay vacantes disponibles.
 `

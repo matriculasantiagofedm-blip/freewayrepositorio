@@ -3,6 +3,7 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore, initializeFirestore } from 'firebase/firestore';
 import { firebaseConfig } from '@/firebase/config';
 import { collection, addDoc, serverTimestamp, query, where, getDocs, doc, getDoc, updateDoc, setDoc, limit } from 'firebase/firestore';
+import { freewayInfo } from '@/lib/freeway-info';
 
 /**
  * WEBHOOK OMNICANAL - FREEWAY CRM
@@ -52,6 +53,10 @@ async function getRandomAgentId() {
 }
 
 export async function POST(req: NextRequest) {
+  // ── Número 61701450 (Meta WhatsApp Business API) DESACTIVADO ──────────────
+  // Todos los números ahora operan vía Evolution API (QR).
+  // Este webhook ya no procesa mensajes.
+  return new Response('OK', { status: 200 });
   try {
     let app;
     let firestore;
@@ -99,13 +104,203 @@ export async function POST(req: NextRequest) {
         const message = value.messages[0];
         const contact = value.contacts?.[0];
         const from = message.from; 
-        const text = message.text?.body || "Mensaje multimedia";
         const name = contact?.profile?.name || `WhatsApp ${from.slice(-4)}`;
         const businessPhoneId = value?.metadata?.phone_number_id;
+        const ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN || 'EAAR0VzJgjMwBRGjRZBWiYRd9EwZAX0UGGIZC6TjNG0kTuxLNNudSqYpEpoV1dqRQLMzgaa1vJoLUgIvdT39nERilnSOUkM4OZClgbSxf1lVBLDxQ87ZBH0sEcFiKZAlynlESPe7qWzZC2q7dQr0ohSTEWlmKhIyxf9FSRlr3vCHMGgnuS1P0ZA0roRm2Vb77ZAIczRwZDZD';
+        const PHONE_NUMBER_ID = businessPhoneId || process.env.WHATSAPP_PHONE_NUMBER_ID || '1045621595304134';
+        const NOTIFY_NUMBER = '50763814115'; // Número del asesor principal para recibir alertas
 
         const { leadId } = await findOrCreateLead(leadsRef, from, name, 'WhatsApp');
+
+        // ── DETECCIÓN DE COMPROBANTE DE PAGO (imagen) ──────────────────────────────
+        const isImage = message.type === 'image' || message.type === 'document';
+        if (isImage) {
+          const mediaId = message.image?.id || message.document?.id;
+          const caption = message.image?.caption || message.document?.caption || '';
+          await saveIncomingMessage(firestore, leadId, caption ? `[Imagen] ${caption}` : '[Imagen adjunta]');
+
+          // Descargar URL de la imagen desde Meta
+          try {
+            const mediaRes = await fetch(`https://graph.facebook.com/v21.0/${mediaId}`, {
+              headers: { Authorization: `Bearer ${ACCESS_TOKEN}` }
+            });
+            const mediaData = await mediaRes.json();
+            const mediaUrl = mediaData?.url;
+
+            if (mediaUrl) {
+              // Descargar los bytes de la imagen para enviarla a Gemini Vision
+              const imgRes = await fetch(mediaUrl, { headers: { Authorization: `Bearer ${ACCESS_TOKEN}` } });
+              const imgBuffer = await imgRes.arrayBuffer();
+              const base64Image = Buffer.from(imgBuffer).toString('base64');
+              const mimeType = imgRes.headers.get('content-type') || 'image/jpeg';
+
+              // Analizar con Gemini Vision si es un comprobante de pago
+              const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyBLj7U7SlWJP9Eq_AjriJR5mXhUKn3lIWA';
+              const visionRes = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+                {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    contents: [{
+                      parts: [
+                        { text: `Analiza esta imagen. ¿Es un comprobante, recibo o confirmación de pago (Yappy, transferencia bancaria, tarjeta, depósito, PayPal, ACH u otro)? Responde SOLO en este formato JSON exacto (sin markdown):
+{"esComprobante": true/false, "monto": "X.XX o null si no se ve", "metodo": "Yappy/Transferencia/Tarjeta/etc o null", "banco": "nombre del banco o null", "referencia": "número de referencia o null"}` },
+                        { inline_data: { mime_type: mimeType, data: base64Image } }
+                      ]
+                    }],
+                    generationConfig: { temperature: 0.1, maxOutputTokens: 300 }
+                  })
+                }
+              );
+              const visionData = await visionRes.json();
+              const visionText = visionData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+
+              let visionResult: any = null;
+              try { visionResult = JSON.parse(visionText); } catch { /* no es JSON válido */ }
+
+              if (visionResult?.esComprobante === true) {
+                // ✅ ES UN COMPROBANTE → Actualizar estado del lead a "pagado"
+                const leadRef = doc(firestore, 'leads', leadId);
+                await updateDoc(leadRef, {
+                  status: 'pagado',
+                  paymentReceivedAt: serverTimestamp(),
+                  paymentAmount: visionResult.monto || null,
+                  paymentMethod: visionResult.metodo || null,
+                  paymentBank: visionResult.banco || null,
+                  paymentReference: visionResult.referencia || null,
+                });
+
+                // Guardar el comprobante en subcolección de pagos del lead
+                await addDoc(collection(firestore, `leads/${leadId}/payment_receipts`), {
+                  mediaId,
+                  monto: visionResult.monto,
+                  metodo: visionResult.metodo,
+                  banco: visionResult.banco,
+                  referencia: visionResult.referencia,
+                  receivedAt: serverTimestamp(),
+                });
+
+                // 📲 Confirmar al cliente que se recibió el comprobante
+                const confirmMsg = `✅ ¡Listo! Recibimos tu comprobante de pago. En breve un asesor de Freeway confirmará tu matrícula. ¡Bienvenido(a) a la familia Freeway! 🎉`;
+                await fetch(`https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`, {
+                  method: 'POST',
+                  headers: { Authorization: `Bearer ${ACCESS_TOKEN}`, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ messaging_product: 'whatsapp', to: from, type: 'text', text: { body: confirmMsg } })
+                });
+                await addDoc(collection(firestore, `leads/${leadId}/messages`), {
+                  text: confirmMsg, sender: 'me', isAi: true, status: 'sent',
+                  time: new Date().toLocaleTimeString('es-PA', { hour: '2-digit', minute: '2-digit' }),
+                  timestamp: serverTimestamp()
+                });
+
+                // 🔔 Notificar al asesor con los datos del cliente y el monto
+                const leadSnap = await getDoc(doc(firestore, 'leads', leadId));
+                const clientName = leadSnap.data()?.name || name;
+                const notifyMsg = `🔔 *COMPROBANTE DE PAGO RECIBIDO*\n\n👤 *Cliente:* ${clientName}\n📱 *Teléfono:* +${from}\n💰 *Monto:* ${visionResult.monto ? `$${visionResult.monto}` : 'No detectado'}\n💳 *Método:* ${visionResult.metodo || 'No detectado'}\n🏦 *Banco/Referencia:* ${visionResult.referencia || 'N/A'}\n\n⚡ El lead fue marcado como *PAGADO* automáticamente.\nCrea el contrato en Contract Time para cerrar la venta.`;
+                await fetch(`https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`, {
+                  method: 'POST',
+                  headers: { Authorization: `Bearer ${ACCESS_TOKEN}`, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ messaging_product: 'whatsapp', to: NOTIFY_NUMBER, type: 'text', text: { body: notifyMsg } })
+                });
+
+                // Guardar notificación en Firestore para el CRM
+                await addDoc(collection(firestore, 'notifications'), {
+                  type: 'payment_received',
+                  leadId,
+                  clientName,
+                  clientPhone: from,
+                  amount: visionResult.monto,
+                  method: visionResult.metodo,
+                  reference: visionResult.referencia,
+                  createdAt: serverTimestamp(),
+                  read: false,
+                });
+
+                // 🎉 SECUENCIA DE BIENVENIDA POST-PAGO (2 mensajes automáticos)
+                // Mensaje 1: Confirmación y próximos pasos (tras 3 segundos)
+                await new Promise(r => setTimeout(r, 3000));
+                const welcomeMsg1 = `🎊 *¡Bienvenido(a) a Freeway Escuela de Manejo!*\n\nTu inscripción está siendo procesada por nuestro equipo. En las próximas horas recibirás la confirmación oficial de tu matrícula con el número de folio.\n\nMientras tanto, esto es lo que debes saber:`;
+                await fetch(`https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`, {
+                  method: 'POST',
+                  headers: { Authorization: `Bearer ${ACCESS_TOKEN}`, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ messaging_product: 'whatsapp', to: from, type: 'text', text: { body: welcomeMsg1 } })
+                });
+                await addDoc(collection(firestore, `leads/${leadId}/messages`), {
+                  text: welcomeMsg1, sender: 'me', isAi: true, status: 'sent',
+                  time: new Date().toLocaleTimeString('es-PA', { hour: '2-digit', minute: '2-digit' }),
+                  timestamp: serverTimestamp()
+                });
+
+                // Mensaje 2: Instrucciones completas (tras 5 segundos más)
+                await new Promise(r => setTimeout(r, 5000));
+                const welcomeMsg2 = `📋 *Tus próximos pasos:*\n\n1️⃣ *Clases Teóricas:* Se realizan los Sábados de 3pm a 5pm o según tu horario acordado.\n\n2️⃣ *Clases Prácticas:* Un asesor te contactará para coordinar las fechas y vehículo asignado.\n\n3️⃣ *Documentos a traer:* Cédula original + copia (o pasaporte). Ropa cómoda para las prácticas.\n\n4️⃣ *Ubicación:* Costa Verde, La Chorrera, Green Plaza.\n   📍 https://maps.app.goo.gl/uF8NPvCFtZJWfQpj8\n\n¿Tienes alguna pregunta? Aquí estamos para ayudarte. 😊`;
+                await fetch(`https://graph.facebook.com/v21.0/${PHONE_NUMBER_ID}/messages`, {
+                  method: 'POST',
+                  headers: { Authorization: `Bearer ${ACCESS_TOKEN}`, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ messaging_product: 'whatsapp', to: from, type: 'text', text: { body: welcomeMsg2 } })
+                });
+                await addDoc(collection(firestore, `leads/${leadId}/messages`), {
+                  text: welcomeMsg2, sender: 'me', isAi: true, status: 'sent',
+                  time: new Date().toLocaleTimeString('es-PA', { hour: '2-digit', minute: '2-digit' }),
+                  timestamp: serverTimestamp()
+                });
+
+                return new Response('OK', { status: 200 });
+              }
+            }
+          } catch (visionErr) {
+            console.error('Error analizando imagen de comprobante:', visionErr);
+          }
+
+          // Si la imagen no es comprobante, procesar normalmente sin pasar por IA de texto
+          return new Response('OK', { status: 200 });
+        }
+        // ── FIN DETECCIÓN DE COMPROBANTE ───────────────────────────────────────────
+
+        const text = message.text?.body || 'Mensaje';
         await saveIncomingMessage(firestore, leadId, text);
-        
+
+        // ── DETECCIÓN DE INTENCIÓN Y LEAD SCORING ─────────────────────────────────
+        try {
+          const textLower = text.toLowerCase();
+          const leadRef = doc(firestore, 'leads', leadId);
+          const updatePayload: any = { status: 'interested' };
+
+          // Clasificar interés
+          if (/\b(auto|carro|coche|automático|automatico|manual|picanto|sedan|4 ruedas)\b/.test(textLower)) {
+            updatePayload.interest = textLower.includes('manual') ? 'Curso Auto Manual' : 'Curso Auto';
+          } else if (/\b(moto|mototaxi|motocicleta|bike|delivery|domicilio|deliveri)\b/.test(textLower)) {
+            updatePayload.interest = 'Curso Moto';
+          } else if (/\b(deluxe|logística|logistica|delivery avanzado|profesional|installment|cuotas)\b/.test(textLower)) {
+            updatePayload.interest = 'Curso Deluxe';
+          } else if (/\b(ampliación|ampliacion|categoria|categoría|licencia nueva)\b/.test(textLower)) {
+            updatePayload.interest = 'Ampliación';
+          }
+
+          // Lead scoring: heat level
+          const hotKeywords = /\b(cuánto|cuanto|precio|costo|pago|inscrib|matricul|quiero|anoto|empez|inscripción|reserv|cupo|hoy|mañana|esta semana)\b/;
+          const coldKeywords = /\b(info|información|solo pregunt|curiosidad|averiguando|luego|después|despues)\b/;
+          
+          if (hotKeywords.test(textLower)) {
+            updatePayload.heat = 'hot';
+          } else if (coldKeywords.test(textLower)) {
+            updatePayload.heat = 'cold';
+          } else {
+            updatePayload.heat = 'warm';
+          }
+
+          // Si menciona ya haber pagado → recordar comprobante
+          if (/\b(ya pagué|ya pague|hice la transferencia|envié el yappy|envie el yappy|ya realicé|ya realize|pagué|pague)\b/.test(textLower)) {
+            updatePayload.mentioned_payment = true;
+          }
+
+          await updateDoc(leadRef, updatePayload);
+        } catch (scoreErr) {
+          console.error('Error en lead scoring:', scoreErr);
+        }
+        // ── FIN DETECCIÓN DE INTENCIÓN ─────────────────────────────────────────────
+
         // Dispara la IA solo para WhatsApp
         await handleAIResponse(firestore, leadId, from, text, 'WhatsApp', businessPhoneId).catch(console.error);
       } else if (value?.item === 'comment' || value?.verb === 'add' || change.field === 'comments') {
@@ -210,6 +405,24 @@ async function handleAIResponse(firestore: any, leadId: string, from: string, ne
             return;
         }
 
+        // ── Horario: Auto-Bot solo activo de 5:30 PM a 7:30 AM (Panama UTC-5) ──
+        const nowUTCmin = new Date().getUTCHours() * 60 + new Date().getUTCMinutes();
+        const panamaMin = ((nowUTCmin - 5 * 60) + 24 * 60) % (24 * 60);
+        const panamaHour = panamaMin / 60;
+        const isAfterHours = panamaHour >= 17.5 || panamaHour < 7.5;
+        if (!isAfterHours) {
+            console.log(`[Meta webhook] Horario de oficina (${panamaHour.toFixed(1)}h Panama) → IA no responde.`);
+            return;
+        }
+        // Verificar que el Auto-Bot global está habilitado
+        const cfgSnap = await getDoc(doc(firestore, 'settings', 'crm_config'));
+        const autoBotEnabled = cfgSnap.exists() ? !!cfgSnap.data()?.autobot_enabled : false;
+        if (!autoBotEnabled) {
+            console.log('[Meta webhook] Auto-Bot deshabilitado → IA no responde.');
+            return;
+        }
+        // ─────────────────────────────────────────────────────────────────────────
+
         // 1. Fetch conversation history
         const qMsgs = query(collection(firestore, `leads/${leadId}/messages`));
         const querySnapshot = await getDocs(qMsgs);
@@ -243,14 +456,10 @@ async function handleAIResponse(firestore: any, leadId: string, from: string, ne
 
         // 3. Fetch AI Knowledge Base
         const aiDoc = await getDoc(doc(firestore, 'settings', 'ai_knowledge'));
-        let customKnowledge = "";
-        if (aiDoc.exists() && aiDoc.data()?.text) {
-            customKnowledge = aiDoc.data().text;
-        } else {
-            customKnowledge = `- El proceso para licencia por primera vez en Panamá requiere: 1. Hacer examen Teórico online y Práctico con nosotros. 2. Hacer examen de tipaje de sangre, validación auditiva y visual en cualquier clínica autorizada. 3. Ir a SERTRACEN a validar los certificados y sacar la licencia.
-- Requisitos de inscripción con Freeway: Copia de Cédula (o Pasaporte/Carnet de Migración), Tipaje de Sangre, y abono inicial desde $30 o $40 (dependiendo del curso).
-- Horarios de clases prácticas: Presencial de lunes a sábado de 7:30 am a 5:10 pm. Nos acoplamos a la disponibilidad del estudiante en clases de 2 a 4 horas diarias. (Domingos cerrado). Curso Teórico: 100% Online asincrónico 24/7.
-- Métodos de pago: Banco General, Yappy, ACH, Tarjeta en sucursal. Ofrecemos pagos fraccionados mientras toman el curso.`;
+        let customKnowledge = freewayInfo; // Fallback a la base de conocimiento oficial
+        if (aiDoc.exists() && aiDoc.data()?.text && aiDoc.data().text.length > 50) {
+            // Si hay conocimiento personalizado en Firestore, combinar con el oficial
+            customKnowledge = aiDoc.data().text + '\n\n' + freewayInfo;
         }
 
         const prompt = `COMPORTAMIENTO OBLIGATORIO:
@@ -259,6 +468,11 @@ Tu tono jamás debe sonar a robot, ni a inteligencia artificial, ni a menú de o
 
 Misión: Conversar fluidamente, responder dudas usando la base de conocimientos, dar precios y guiar a inscripción. Si te hacen una pregunta difícil que no está en tu base o exigen un humano, di naturalmente algo como "Dame un segundito, te verifico eso con uno de mis compañeros..." Y OBLIGATORIAMENTE incluye la palabra secreta [HUMANO] al final de tu mensaje.
 Si el usuario viene de Facebook o Instagram (${platform}), recuérdate al final invitarlo sutilmente a continuar por WhatsApp pidiendo su número para enviarle el mapa o darle seguimiento más rápido.
+
+INSTRUCCIÓN CRÍTICA DE CIERRE DE VENTA:
+Si el cliente menciona que ya pagó, que hizo la transferencia, que envió el Yappy, que realizó el pago, o cualquier confirmación de pago, responde SIEMPRE pidiéndole que envíe el comprobante/captura de pantalla POR ESTE MISMO CHAT.
+Ejemplo: "¡Perfecto! 🎉 Para confirmar tu matrícula solo envíanos aquí la captura o foto del comprobante de pago."
+Cuando detectes que el cliente está listo para pagar, envíale la dirección de inscripción: https://www.contractimefedm.online/
 
 Base de Conocimientos Freeway:
 ${customKnowledge}

@@ -96,7 +96,7 @@ const TIME_OPTIONS = [
 ];
 
 const VEHICLES_MOTO = ['Moto Roja', 'Moto Negra'];
-const VEHICLES_AUTO = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Skoda Automatico', 'Skoda Manual', 'Hyundai Manual'];
+const VEHICLES_AUTO = ['Picanto Blanco', 'Picanto Bronce', 'Skoda Automatico', 'Spark', 'Hyundai Manual', 'Skoda Manual', 'Pick Up'];
 const INSTRUCTORS = ['Emmanuel Camargo', 'Adrian Gordon', 'Roberto Brown', 'Marco Franco'];
 
 const motoContractSchema = z.object({

@@ -129,11 +129,11 @@ export default function Home() {
                 </div>
                 <div className="flex flex-col items-center gap-1.5">
                   <div className="bg-white/5 p-2 rounded-full"><Smartphone className="h-4 w-4 text-blue-400" /></div>
-                  <span className="text-center leading-tight">Aceptamos<br/>Yappy</span>
+                  <span className="text-center leading-tight">Yappy &<br/>Tarjetas</span>
                 </div>
                 <div className="flex flex-col items-center gap-1.5">
                   <div className="bg-white/5 p-2 rounded-full"><CreditCard className="h-4 w-4 text-indigo-400" /></div>
-                  <span className="text-center leading-tight">Tarjetas<br/>Crédito</span>
+                  <span className="text-center leading-tight">PayPal<br/>Aceptado</span>
                 </div>
               </div>
 

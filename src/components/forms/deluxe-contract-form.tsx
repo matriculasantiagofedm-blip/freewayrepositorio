@@ -75,11 +75,15 @@ import { CameraCapture } from '@/components/camera-capture';
 import { useSettingsPrices } from '@/hooks/use-settings-prices';
 
 const DEFAULT_DELUXE_PRICES: Record<string, number> = {
-  "Paquete Deluxe (Edición Especial)": 300.00
+  "Paquete Deluxe (Edición Especial)": 300.00,
+  "Curso Deluxe con Énfasis en Logística": 330.00,
+  "Curso Deluxe con Énfasis en Delivery": 288.00
 };
 
 const PLAN_PRACTICAL_COUNTS: Record<string, number> = {
-  "Paquete Deluxe (Edición Especial)": 8
+  "Paquete Deluxe (Edición Especial)": 8,
+  "Curso Deluxe con Énfasis en Logística": 8,
+  "Curso Deluxe con Énfasis en Delivery": 8
 };
 
 const TIME_OPTIONS = [

@@ -4,7 +4,8 @@
  * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN AUTOMÁTICA
  */
 
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -61,7 +62,8 @@ import {
   DollarSign,
   Camera,
   BookOpen,
-  CheckCircle2
+  CheckCircle2,
+  Globe
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useDb, useFirebase } from '@/components/firebase-provider';
@@ -133,7 +135,7 @@ const enrollmentSchema = z.object({
     date: z.date({ required_error: 'Fecha requerida' }),
     time: z.string().min(1, 'Hora requerida'),
   })).min(1, 'Debe elegir su horario'),
-  paymentMethod: z.enum(['yappy', 'credit_card']).default('yappy'),
+  paymentMethod: z.enum(['yappy', 'credit_card', 'paypal']).default('yappy'),
   paymentReference: z.string().min(6, 'Ingresa el número de referencia completo'),
   paymentAmount: z.preprocess((val) => Number(val), z.number().min(50, 'Abono min: B/. 50.00')),
 });
@@ -149,9 +151,88 @@ function EnrollmentContent() {
   const [showCuboModal, setShowCuboModal] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isReadingImage, setIsReadingImage] = useState(false);
+  const [receiptBase64, setReceiptBase64] = useState<string | null>(null);
+  const [receiptMime, setReceiptMime] = useState<string>('image/jpeg');
+  const [paypalLoading, setPaypalLoading] = useState(false);
+  const [paypalError, setPaypalError] = useState('');
+  const [paypalEmail, setPaypalEmail] = useState('');
+  const searchParams = useSearchParams();
   const { prices } = useSettingsPrices();
 
   useEffect(() => { setMounted(true); }, []);
+
+  // Detectar retorno de PayPal (?paypal=success&token=ORDEN_ID)
+  useEffect(() => {
+    const paypalStatus = searchParams?.get('paypal');
+    const token = searchParams?.get('token'); // PayPal devuelve ?token=ORDER_ID
+    if (paypalStatus === 'success' && token) {
+      // Capturar el pago automáticamente
+      (async () => {
+        try {
+          const res = await fetch('/api/paypal/capture-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: token })
+          });
+          const data = await res.json();
+          if (data.ok && data.reference) {
+            form.setValue('paymentMethod', 'paypal');
+            form.setValue('paymentAmount', data.amount || 50);
+            form.setValue('paymentReference', data.reference);
+            toast({
+              title: '✅ Pago de PayPal Confirmado',
+              description: `Monto: $${data.amount} — Ref: ${data.reference}`,
+              duration: 8000
+            });
+          } else {
+            toast({ variant: 'destructive', title: 'Error al capturar pago PayPal', description: data.error || 'Intenta de nuevo.' });
+          }
+        } catch (e) {
+          console.error('PayPal capture error:', e);
+        }
+      })();
+    } else if (paypalStatus === 'cancel') {
+      toast({ variant: 'destructive', title: 'Pago cancelado', description: 'Cancelaste el pago con PayPal. Puedes intentar de nuevo.' });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  // Iniciar pago PayPal
+  const handlePayPal = async () => {
+    if (!paypalEmail || !paypalEmail.includes('@')) {
+      setPaypalError('Por favor ingresa un email válido.'); return;
+    }
+    const plan = form.getValues('coursePlan');
+    if (!plan) { setPaypalError('⚠ Selecciona un plan de curso en la sección 2 antes de pagar.'); return; }
+
+    // Calcular precio real del plan seleccionado
+    const coursePrice = prices?.auto?.[plan] || 0;
+    if (coursePrice <= 0) { setPaypalError('No se pudo obtener el precio del plan. Intenta de nuevo.'); return; }
+
+    setPaypalError('');
+    setPaypalLoading(true);
+
+    // Actualizar el monto en el formulario con el precio real
+    form.setValue('paymentAmount', coursePrice);
+
+    try {
+      const res = await fetch('/api/paypal/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: coursePrice, coursePlan: plan, email: paypalEmail })
+      });
+      const data = await res.json();
+      if (data.approveUrl) {
+        // Guardar datos del formulario + email en sessionStorage antes de redirigir
+        sessionStorage.setItem('fw_enroll_draft', JSON.stringify(form.getValues()));
+        sessionStorage.setItem('fw_paypal_email', paypalEmail);
+        window.location.href = data.approveUrl;
+      } else {
+        setPaypalError(data.error || 'No se pudo iniciar PayPal. Intenta de nuevo.');
+        setPaypalLoading(false);
+      }
+    } catch { setPaypalError('Error de conexión con PayPal. Verifica tu internet e intenta de nuevo.'); setPaypalLoading(false); }
+  };
 
   const activeContractsQuery = useMemoQuery(() => (db && auth.currentUser) ? query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed'])) : null, [db, auth.currentUser]);
   const manualEntriesQuery = useMemoQuery(() => (db && auth.currentUser) ? query(collection(db, 'manual_schedules')) : null, [db, auth.currentUser]);
@@ -193,6 +274,19 @@ function EnrollmentContent() {
     },
   });
 
+  // Restaurar formulario tras retorno de PayPal
+  useEffect(() => {
+    const draft = sessionStorage.getItem('fw_enroll_draft');
+    if (draft && searchParams?.get('paypal') === 'success') {
+      try {
+        const saved = JSON.parse(draft);
+        Object.entries(saved).forEach(([k, v]) => form.setValue(k as any, v));
+        sessionStorage.removeItem('fw_enroll_draft');
+      } catch {}
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const { fields: practicalFields, replace: replacePractical } = useFieldArray({ control: form.control, name: "practicalClassSchedules" });
   const watchPlan = form.watch('coursePlan');
   const watchTheorySchedule = form.watch('theoreticalClassSchedule');
@@ -224,6 +318,10 @@ function EnrollmentContent() {
         const mimeType = file.type;
         const base64Image = base64Ref.split(',')[1];
         
+        // Guardar imagen para enviar al asesor después
+        setReceiptBase64(base64Image);
+        setReceiptMime(mimeType);
+
         toast({ title: 'Analizando Comprobante...', description: 'Nuestra Inteligencia Artificial está validando tu pago...' });
 
         const result = await validatePaymentFlow({ base64Image, mimeType });
@@ -290,6 +388,9 @@ function EnrollmentContent() {
 
         const courseValue = prices?.auto?.[values.coursePlan] || 0;
         const balance = courseValue - values.paymentAmount;
+        const isPayPal = values.paymentMethod === 'paypal';
+        const isYappy = values.paymentMethod === 'yappy';
+        const paymentType = isYappy ? 'yappy' : isPayPal ? 'paypal' : 'credit';
 
         const contractRef = doc(collection(db, 'contracts'));
         transaction.set(contractRef, {
@@ -303,24 +404,57 @@ function EnrollmentContent() {
           userId: auth.currentUser?.uid, 
           createdBy: 'Web Pública', 
           createdAt: serverTimestamp(),
-          activatedAt: serverTimestamp(), // Campo crítico para el reporte de caja
+          activatedAt: serverTimestamp(),
           paymentReference: values.paymentReference,
+          // PayPal: pago ya confirmado electrónicamente por PayPal
+          ...(isPayPal && {
+            paypalConfirmed: true,
+            paypalCaptureId: values.paymentReference,
+            paymentVerified: true,
+          }),
           autoMotoDetails: {
             ...values, 
             licenseCategory: 'A, C',
             theoreticalClassDates: values.theoreticalClassDates.map(d => Timestamp.fromDate(d)),
             practicalClassSchedules: values.practicalClassSchedules.map(s => ({ ...s, date: Timestamp.fromDate(s.date) })),
-            paymentType: values.paymentMethod === 'yappy' ? 'yappy' : 'credit', 
+            paymentType,
             courseValue: courseValue, 
             downPayment: values.paymentAmount, 
             balance: balance,
             paymentDeadline: serverTimestamp()
           }
         });
+        // Guardar contractId para la notificación
+        (finalFolio as any)._contractId = contractRef.id;
       });
       
       setSubmittedFolio(finalFolio);
       toast({ title: '¡Inscripción Exitosa!', description: `Se ha generado el Folio ${finalFolio}` });
+
+      // 🔔 Notificar al asesor
+      const isPayPalPayment = values.paymentMethod === 'paypal';
+      try {
+        await fetch('/api/contracts/notify-advisor', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            folio: finalFolio,
+            clientName: values.clientName,
+            clientPhone: values.studentPhone1,
+            clientEmail: values.clientEmail,
+            coursePlan: values.coursePlan,
+            vehicleTransmission: values.vehicleTransmission,
+            paymentReference: values.paymentReference,
+            paymentAmount: values.paymentAmount,
+            paymentMethod: values.paymentMethod,
+            paypalConfirmed: isPayPalPayment, // PayPal ya confirmó el pago
+            base64Image: isPayPalPayment ? null : receiptBase64, // No hay imagen si pagó con PayPal
+            mimeType: receiptMime,
+          })
+        });
+      } catch (notifyErr) {
+        console.warn('Notificación al asesor falló (no crítico):', notifyErr);
+      }
     } catch (error) { 
       console.error(error);
       toast({ variant: 'destructive', title: 'Error en el procesamiento' }); 
@@ -454,9 +588,10 @@ function EnrollmentContent() {
               <CardHeader className="bg-slate-900 text-white"><CardTitle className="text-lg font-bold uppercase flex items-center gap-2"><CreditCard className="h-5 w-5" /> 4. Pago de Reserva Automatizado</CardTitle></CardHeader>
               <CardContent className="p-6">
                 <Tabs value={watchPaymentMethod} onValueChange={(v: any) => form.setValue('paymentMethod', v)} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 h-14 bg-slate-100 rounded-xl p-1">
-                    <TabsTrigger value="yappy" className="rounded-lg data-[state=active]:bg-[#004fb9] data-[state=active]:text-white font-bold gap-2"><Smartphone className="h-4 w-4" /> Yappy</TabsTrigger>
-                    <TabsTrigger value="credit_card" className="rounded-lg data-[state=active]:bg-[#16a34a] data-[state=active]:text-white font-bold gap-2"><CreditCard className="h-4 w-4" /> Tarjeta</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-3 h-14 bg-slate-100 rounded-xl p-1">
+                    <TabsTrigger value="yappy" className="rounded-lg data-[state=active]:bg-[#004fb9] data-[state=active]:text-white font-bold gap-1 text-xs"><Smartphone className="h-4 w-4" /> Yappy</TabsTrigger>
+                    <TabsTrigger value="credit_card" className="rounded-lg data-[state=active]:bg-[#16a34a] data-[state=active]:text-white font-bold gap-1 text-xs"><CreditCard className="h-4 w-4" /> Tarjeta</TabsTrigger>
+                    <TabsTrigger value="paypal" className="rounded-lg data-[state=active]:bg-[#003087] data-[state=active]:text-white font-bold gap-1 text-xs"><Globe className="h-4 w-4" /> PayPal</TabsTrigger>
                   </TabsList>
                   
                   <div className="mt-6 p-6 bg-slate-50 border rounded-2xl space-y-6">
@@ -487,6 +622,59 @@ function EnrollmentContent() {
                         <Button type="button" onClick={() => setShowCuboModal(true)} className="w-full bg-[#16a34a] hover:bg-[#11823b] font-bold h-12 shadow-md">
                           <CreditCard className="mr-2 h-5 w-5" /> Pagar con Tarjeta
                         </Button>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="paypal" className="m-0 space-y-6">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3 bg-[#003087]/5 border border-[#003087]/20 rounded-xl p-4">
+                          <div className="w-10 h-10 rounded-lg bg-[#003087] flex items-center justify-center flex-shrink-0">
+                            <Globe className="h-5 w-5 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-black text-[#003087] text-sm uppercase">PayPal</p>
+                            <p className="text-xs text-slate-500">Tarjeta de crédito, débito o saldo PayPal</p>
+                          </div>
+                          {watchPlan && prices?.auto?.[watchPlan] && (
+                            <div className="text-right">
+                              <p className="text-[10px] text-slate-400 uppercase font-bold">Total</p>
+                              <p className="text-xl font-black text-[#003087]">B/. {prices.auto[watchPlan].toFixed(2)}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {!watchPlan && (
+                          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 font-medium">
+                            ⚠ Primero selecciona un plan de curso en la Sección 2 para ver el precio total.
+                          </div>
+                        )}
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold uppercase text-slate-500">Tu email de contacto</label>
+                          <input
+                            type="email"
+                            placeholder="correo@ejemplo.com"
+                            value={paypalEmail}
+                            onChange={e => { setPaypalEmail(e.target.value); setPaypalError(''); }}
+                            className="w-full h-11 rounded-lg border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#003087]/30"
+                          />
+                          <p className="text-[10px] text-slate-400">Lo usamos para enviarte el recibo de tu inscripción.</p>
+                        </div>
+                        {paypalError && (
+                          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700 font-medium">{paypalError}</div>
+                        )}
+                        <Button
+                          type="button"
+                          onClick={handlePayPal}
+                          disabled={paypalLoading}
+                          className="w-full h-12 bg-[#003087] hover:bg-[#002060] font-bold shadow-md text-white disabled:opacity-70"
+                        >
+                          {paypalLoading
+                            ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Conectando con PayPal...</>
+                            : <><Globe className="mr-2 h-5 w-5" /> {watchPlan && prices?.auto?.[watchPlan] ? `Pagar B/. ${prices.auto[watchPlan].toFixed(2)} con PayPal` : 'Pagar con PayPal'}</>
+                          }
+                        </Button>
+                        <p className="text-[9px] text-center text-slate-400 uppercase font-bold tracking-widest">🔒 Pago 100% seguro procesado por PayPal</p>
                       </div>
                     </TabsContent>
 

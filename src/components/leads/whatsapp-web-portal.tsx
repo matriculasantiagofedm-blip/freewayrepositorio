@@ -898,23 +898,23 @@ export function WhatsAppWebPortal({
                             )}
                         </AnimatePresence>
 
-                        <footer className="bg-white border-t shrink-0 z-[60] shadow-[0_-4px_20px_rgba(0,0,0,0.04)] px-3 md:px-4 pt-2 pb-3">
+                        <footer className="bg-white border-t shrink-0 z-[60] shadow-[0_-4px_20px_rgba(0,0,0,0.04)] px-3 md:px-4 pt-1.5 pb-3">
                             {/* Inputs ocultos para archivos */}
                             <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
                             <input ref={audioInputRef} type="file" accept="audio/*" className="hidden" onChange={handleFileSelect} />
                             <input ref={docInputRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip" className="hidden" onChange={handleFileSelect} />
 
-                            {/* ── FILA 1: Toolbar de acciones (íconos compactos) ── */}
-                            <div className="flex items-center gap-1.5 mb-2 px-1">
+                            {/* ── FILA 1: Toolbar de acciones compacta (encima del input) ── */}
+                            <div className="flex items-center gap-1 mb-1.5 px-0.5 border-b border-slate-100 pb-1.5">
 
                                 {/* Respuestas Rápidas */}
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <Button variant="ghost" size="sm" title="Respuestas Rápidas"
-                                            className="h-8 px-2.5 gap-1.5 rounded-lg text-primary hover:bg-primary/8 transition-all relative text-[10px] font-black uppercase">
-                                            <Zap className="w-3.5 h-3.5" />
-                                            <span className="hidden sm:inline">Rápidas</span>
-                                            {quickReplies.length > 0 && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary rounded-full border-2 border-white shadow-sm" />}
+                                            className="h-7 px-2 gap-1 rounded-lg text-primary hover:bg-primary/8 transition-all relative text-[9px] font-black uppercase">
+                                            <Zap className="w-3 h-3" />
+                                            <span className="hidden xs:inline">Respuestas Rápidas</span>
+                                            {quickReplies.length > 0 && <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-primary rounded-full border border-white shadow-sm" />}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-80 p-0 rounded-xl shadow-2xl border-primary/10" align="start" side="top">
@@ -951,10 +951,10 @@ export function WhatsAppWebPortal({
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" size="sm" title="Mejorar con IA"
-                                            className="h-8 px-2.5 gap-1.5 rounded-lg text-violet-600 hover:bg-violet-50 transition-all text-[10px] font-black uppercase"
+                                            className="h-7 px-2 gap-1 rounded-lg text-violet-600 hover:bg-violet-50 transition-all text-[9px] font-black uppercase"
                                             disabled={!inputValue.trim() || isImproving}>
-                                            <Wand2 className={cn("w-3.5 h-3.5", isImproving && "animate-spin")} />
-                                            <span className="hidden sm:inline">IA</span>
+                                            <Wand2 className={cn("w-3 h-3", isImproving && "animate-spin")} />
+                                            <span className="hidden xs:inline">Mejorar con IA</span>
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent className="w-52 rounded-xl border shadow-xl" align="start" side="top">
@@ -967,44 +967,48 @@ export function WhatsAppWebPortal({
                                 </DropdownMenu>
 
                                 {/* Separador */}
-                                <div className="w-px h-5 bg-slate-200 mx-0.5" />
+                                <div className="w-px h-4 bg-slate-200 mx-0.5" />
 
                                 {/* Adjuntar imagen / documento / audio (solo WhatsApp QR) */}
                                 {selectedChat?.source === 'WhatsApp QR' && (
                                     <>
                                         <Button type="button" variant="ghost" size="sm" title="Enviar imagen"
-                                            className="h-8 w-8 p-0 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-all"
+                                            className="h-7 px-2 gap-1 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-all text-[9px] font-black uppercase"
                                             disabled={isLoading} onClick={() => fileInputRef.current?.click()}>
-                                            <ImageIcon className="w-3.5 h-3.5" />
+                                            <ImageIcon className="w-3 h-3" />
+                                            <span className="hidden xs:inline">Imagen</span>
                                         </Button>
                                         <Button type="button" variant="ghost" size="sm" title="Enviar documento"
-                                            className="h-8 w-8 p-0 rounded-lg text-amber-600 hover:bg-amber-50 transition-all"
+                                            className="h-7 px-2 gap-1 rounded-lg text-amber-600 hover:bg-amber-50 transition-all text-[9px] font-black uppercase"
                                             disabled={isLoading} onClick={() => docInputRef.current?.click()}>
-                                            <FileIcon className="w-3.5 h-3.5" />
+                                            <FileIcon className="w-3 h-3" />
+                                            <span className="hidden xs:inline">Documento</span>
                                         </Button>
                                         <Button type="button" variant="ghost" size="sm" title="Nota de voz"
-                                            className={cn("h-8 w-8 p-0 rounded-lg transition-all", isRecording ? 'text-white bg-red-500 hover:bg-red-600 animate-pulse' : 'text-slate-400 hover:bg-slate-100')}
+                                            className={cn("h-7 px-2 gap-1 rounded-lg transition-all text-[9px] font-black uppercase", isRecording ? 'text-white bg-red-500 hover:bg-red-600 animate-pulse' : 'text-slate-400 hover:bg-slate-100')}
                                             onClick={handleToggleRecording}>
-                                            {isRecording ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+                                            {isRecording ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
+                                            <span className="hidden xs:inline">{isRecording ? 'Detener' : 'Audio'}</span>
                                         </Button>
                                     </>
                                 )}
 
                                 {/* Adjuntar genérico */}
                                 <Button type="button" variant="ghost" size="sm" title="Adjuntar archivo"
-                                    className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:bg-slate-100 transition-all"
+                                    className="h-7 px-2 gap-1 rounded-lg text-slate-500 hover:bg-slate-100 transition-all text-[9px] font-black uppercase"
                                     onClick={() => fileInputRef.current?.click()}>
-                                    <Paperclip className="w-3.5 h-3.5" />
+                                    <Paperclip className="w-3 h-3" />
+                                    <span className="hidden xs:inline">Adjuntar</span>
                                 </Button>
                             </div>
 
-                            {/* ── FILA 2: Input de mensaje (ancho completo) ── */}
+                            {/* ── FILA 2: Input de mensaje — ocupa todo el ancho ── */}
                             <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                                 <div className="relative flex-grow">
                                     <Input
                                         id="crm-message-input"
                                         placeholder={pendingMedia ? `${pendingMedia.fileName} — añade un pie de foto...` : "Escribe un mensaje..."}
-                                        className="bg-slate-50 border border-slate-200 h-11 rounded-xl px-4 text-sm font-medium focus-visible:ring-2 focus-visible:ring-primary/20 shadow-none transition-all pr-10 w-full"
+                                        className="bg-slate-50 border border-slate-200 h-12 rounded-xl px-4 text-sm font-medium focus-visible:ring-2 focus-visible:ring-primary/20 shadow-none transition-all pr-10 w-full"
                                         value={inputValue}
                                         onChange={(e) => setInputValue(e.target.value)}
                                         disabled={isSendingMessage || isImproving}
@@ -1014,7 +1018,7 @@ export function WhatsAppWebPortal({
                                     </div>
                                 </div>
                                 <Button type="submit" size="icon"
-                                    className="bg-primary hover:bg-blue-700 rounded-xl h-11 w-11 shrink-0 shadow-lg shadow-primary/20 transition-all active:scale-95"
+                                    className="bg-primary hover:bg-blue-700 rounded-xl h-12 w-12 shrink-0 shadow-lg shadow-primary/20 transition-all active:scale-95"
                                     disabled={(!inputValue.trim() && !pendingMedia) || isSendingMessage || isImproving}>
                                     {isSendingMessage ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <Send className="w-4 h-4 text-white" />}
                                 </Button>

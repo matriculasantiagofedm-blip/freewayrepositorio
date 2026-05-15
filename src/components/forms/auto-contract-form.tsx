@@ -106,7 +106,8 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
     '10 minutos': '10min',
 };
 
-const VEHICLES = ['Picanto Blanco', 'Picanto Bronce', 'Spark', 'Skoda Automatico', 'Skoda Manual', 'Hyundai Manual'];
+const VEHICLES_AUTO_AUTOMATICO = ['Picanto Blanco', 'Picanto Bronce', 'Skoda Automatico'];
+const VEHICLES_AUTO_MANUAL = ['Spark', 'Hyundai Manual', 'Skoda Manual', 'Pick Up'];
 const VEHICLES_MOTO = ['Moto Roja', 'Moto Negra'];
 const INSTRUCTORS = ['Emmanuel Camargo', 'Adrian Gordon', 'Roberto Brown', 'Marco Franco'];
 
@@ -297,6 +298,8 @@ export function AutoContractForm({ contract, initialData }: { contract?: Contrac
   const watchPlan = form.watch('coursePlan');
   const watchAdditional = form.watch('additionalService');
   const watchTheorySchedule = form.watch('theoreticalClassSchedule');
+  const watchTransmission = form.watch('vehicleTransmission');
+  const vehiclesForTransmission = watchTransmission === 'Manual' ? VEHICLES_AUTO_MANUAL : VEHICLES_AUTO_AUTOMATICO;
 
   useEffect(() => {
     if (watchTheorySchedule && !isEdit) {
@@ -872,7 +875,7 @@ export function AutoContractForm({ contract, initialData }: { contract?: Contrac
                             <FormItem>
                               <Select onValueChange={f.onChange} value={f.value}>
                                 <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
-                                <SelectContent>{VEHICLES.map(v => <SelectItem key={v} value={v} className="text-[10px]">{v}</SelectItem>)}</SelectContent>
+                                <SelectContent>{vehiclesForTransmission.map(v => <SelectItem key={v} value={v} className="text-[10px]">{v}</SelectItem>)}</SelectContent>
                               </Select>
                             </FormItem>
                           )} />

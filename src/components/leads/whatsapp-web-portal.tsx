@@ -898,14 +898,14 @@ export function WhatsAppWebPortal({
                             )}
                         </AnimatePresence>
 
-                        <footer className="bg-white border-t shrink-0 z-[60] shadow-[0_-4px_20px_rgba(0,0,0,0.04)] px-3 md:px-4 pt-2 pb-3 flex flex-col gap-1.5">
+                        <footer className="bg-white border-t shrink-0 z-[60] shadow-[0_-4px_20px_rgba(0,0,0,0.04)] flex flex-col">
                             {/* Inputs ocultos para archivos */}
                             <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
                             <input ref={audioInputRef} type="file" accept="audio/*" className="hidden" onChange={handleFileSelect} />
                             <input ref={docInputRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip" className="hidden" onChange={handleFileSelect} />
 
                             {/* ── FILA 1: Toolbar de acciones compacta (encima del input) ── */}
-                            <div className="flex items-center gap-1 px-0.5 border-b border-slate-100 pb-1.5">
+                            <div className="flex items-center gap-1 px-3 md:px-4 py-1.5 bg-slate-50 border-b border-slate-200 w-full">
 
                                 {/* Respuestas Rápidas */}
                                 <Popover>
@@ -1003,7 +1003,7 @@ export function WhatsAppWebPortal({
                             </div>
 
                             {/* ── FILA 2: Input de mensaje — ocupa todo el ancho ── */}
-                            <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+                            <form onSubmit={handleSendMessage} className="flex items-center gap-2 px-3 md:px-4 py-2">
                                 <div className="relative flex-grow">
                                     <Input
                                         id="crm-message-input"

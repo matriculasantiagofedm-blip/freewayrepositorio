@@ -898,136 +898,131 @@ export function WhatsAppWebPortal({
                             )}
                         </AnimatePresence>
 
-                        <footer className="bg-white border-t shrink-0 z-[60] shadow-[0_-4px_20px_rgba(0,0,0,0.04)]">
-                            {/* Inputs ocultos para archivos */}
-                            <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
-                            <input ref={audioInputRef} type="file" accept="audio/*" className="hidden" onChange={handleFileSelect} />
-                            <input ref={docInputRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip" className="hidden" onChange={handleFileSelect} />
+                        <footer className="bg-white border-t shrink-0 z-[60]" style={{boxShadow:'0 -4px 20px rgba(0,0,0,0.04)'}}>
+                            {/* Inputs ocultos */}
+                            <input ref={fileInputRef} type="file" accept="image/*,video/*" style={{display:'none'}} onChange={handleFileSelect} />
+                            <input ref={audioInputRef} type="file" accept="audio/*" style={{display:'none'}} onChange={handleFileSelect} />
+                            <input ref={docInputRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip" style={{display:'none'}} onChange={handleFileSelect} />
 
-                            {/* Wrapper block: div + form apilan verticalmente por defecto */}
-                            <div style={{width:'100%'}}>
+                            {/* ═══ FILA 1: Barra de acciones — chips/pills ═══ */}
+                            <nav style={{display:'block', width:'100%', padding:'8px 16px 6px', background:'linear-gradient(135deg,#f0f7ff 0%,#f5f0ff 100%)', borderBottom:'1px solid #e5e7eb'}}>
+                                <div style={{display:'flex', gap:'6px', alignItems:'center', overflowX:'auto', scrollbarWidth:'none' as const}}>
 
-                            {/* ── FILA 1: Toolbar de acciones compacta (encima del input) ── */}
-                            <div style={{display:'flex', alignItems:'center', gap:'4px', width:'100%', padding:'6px 16px', backgroundColor:'#f8fafc', borderBottom:'1px solid #e2e8f0'}}>
-
-                                {/* Respuestas Rápidas */}
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="ghost" size="sm" title="Respuestas Rápidas"
-                                            className="h-7 px-2 gap-1 rounded-lg text-primary hover:bg-primary/8 transition-all relative text-[9px] font-black uppercase">
-                                            <Zap className="w-3 h-3" />
-                                            <span>Rápidas</span>
-                                            {quickReplies.length > 0 && <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-primary rounded-full border border-white shadow-sm" />}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-80 p-0 rounded-xl shadow-2xl border-primary/10" align="start" side="top">
-                                        <div className="p-4 border-b flex justify-between items-center bg-slate-50 rounded-t-xl">
-                                            <div className="flex items-center gap-2">
-                                                <Zap className="w-4 h-4 text-primary" />
-                                                <span className="text-[10px] font-bold uppercase text-slate-600 tracking-wider">Plantillas de Respuesta</span>
+                                    {/* Chip: Plantillas */}
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <button type="button" style={{display:'inline-flex',alignItems:'center',gap:'5px',padding:'5px 13px',borderRadius:'100px',background:'#eff6ff',color:'#1d4ed8',border:'1.5px solid #bfdbfe',fontSize:'11px',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap' as const,transition:'opacity 0.15s'}}>
+                                                <Zap style={{width:'12px',height:'12px',flexShrink:0}} />
+                                                Plantillas
+                                                {quickReplies.length > 0 && <span style={{width:'6px',height:'6px',borderRadius:'50%',background:'#2563eb',display:'inline-block',marginLeft:'1px'}} />}
+                                            </button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-80 p-0 rounded-xl shadow-2xl border-primary/10" align="start" side="top">
+                                            <div className="p-4 border-b flex justify-between items-center bg-slate-50 rounded-t-xl">
+                                                <div className="flex items-center gap-2">
+                                                    <Zap className="w-4 h-4 text-primary" />
+                                                    <span className="text-[10px] font-bold uppercase text-slate-600 tracking-wider">Plantillas de Respuesta</span>
+                                                </div>
+                                                <Button variant="ghost" size="sm" className="h-7 text-[10px] uppercase font-bold text-primary hover:bg-primary/5" onClick={() => setIsManageRepliesOpen(true)}>Gestionar</Button>
                                             </div>
-                                            <Button variant="ghost" size="sm" className="h-7 text-[10px] uppercase font-bold text-primary hover:bg-primary/5" onClick={() => setIsManageRepliesOpen(true)}>Gestionar</Button>
+                                            <ScrollArea className="max-h-72">
+                                                {quickReplies.length > 0 ? (
+                                                    <div className="flex flex-col">
+                                                        {quickReplies.map((reply) => (
+                                                            <button key={reply.id} className="w-full text-left p-4 hover:bg-slate-50 border-b last:border-0 transition-colors group"
+                                                                onClick={() => setInputValue(reply.content)}>
+                                                                <p className="font-bold text-xs mb-1 text-slate-900 group-hover:text-primary transition-colors">{reply.title}</p>
+                                                                <p className="text-[10px] text-slate-400 line-clamp-2 leading-tight">{reply.content}</p>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <div className="p-10 text-center flex flex-col items-center gap-2">
+                                                        <div className="bg-slate-100 p-3 rounded-full"><Zap className="w-6 h-6 text-slate-300" /></div>
+                                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sin plantillas guardadas</p>
+                                                        <Button variant="link" size="sm" className="text-[10px] uppercase font-bold p-0 h-auto" onClick={() => setIsManageRepliesOpen(true)}>Crear la primera</Button>
+                                                    </div>
+                                                )}
+                                            </ScrollArea>
+                                        </PopoverContent>
+                                    </Popover>
+
+                                    {/* Chip: IA Copilot */}
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <button type="button" disabled={!inputValue.trim() || isImproving} style={{display:'inline-flex',alignItems:'center',gap:'5px',padding:'5px 13px',borderRadius:'100px',background:'#f5f3ff',color:'#6d28d9',border:'1.5px solid #ddd6fe',fontSize:'11px',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap' as const,opacity:(!inputValue.trim()||isImproving)?0.45:1,transition:'opacity 0.15s'}}>
+                                                <Wand2 style={{width:'12px',height:'12px',flexShrink:0}} className={isImproving ? 'animate-spin' : ''} />
+                                                IA Copilot
+                                            </button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent className="w-52 rounded-xl border shadow-xl" align="start" side="top">
+                                            <DropdownMenuLabel className="text-[10px] font-bold uppercase text-slate-400 px-4 py-2 tracking-widest">Estilo de Mejora</DropdownMenuLabel>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem onClick={() => handleImproveMessage('Profesional')} className="gap-3 font-bold text-xs py-3 cursor-pointer"><ShieldCheck className="w-4 h-4 text-slate-400" /> Profesional</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleImproveMessage('Suave')} className="gap-3 font-bold text-xs py-3 cursor-pointer"><Smile className="w-4 h-4 text-emerald-500" /> Suave</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleImproveMessage('Negociación')} className="gap-3 font-bold text-xs py-3 cursor-pointer"><CheckCircle className="w-4 h-4 text-primary" /> Negociación</DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+
+                                    {/* Separador visual */}
+                                    <span style={{width:'1px',height:'18px',background:'#d1d5db',flexShrink:0}} />
+
+                                    {/* Chips adjuntos (solo WhatsApp QR) */}
+                                    {selectedChat?.source === 'WhatsApp QR' && (<>
+                                        <button type="button" disabled={isLoading} onClick={() => fileInputRef.current?.click()} style={{display:'inline-flex',alignItems:'center',gap:'5px',padding:'5px 13px',borderRadius:'100px',background:'#f0fdf4',color:'#15803d',border:'1.5px solid #bbf7d0',fontSize:'11px',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap' as const}}>
+                                            <ImageIcon style={{width:'12px',height:'12px',flexShrink:0}} />
+                                            Foto
+                                        </button>
+                                        <button type="button" disabled={isLoading} onClick={() => docInputRef.current?.click()} style={{display:'inline-flex',alignItems:'center',gap:'5px',padding:'5px 13px',borderRadius:'100px',background:'#fffbeb',color:'#b45309',border:'1.5px solid #fde68a',fontSize:'11px',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap' as const}}>
+                                            <FileIcon style={{width:'12px',height:'12px',flexShrink:0}} />
+                                            Archivo
+                                        </button>
+                                        <button type="button" onClick={handleToggleRecording} style={{display:'inline-flex',alignItems:'center',gap:'5px',padding:'5px 13px',borderRadius:'100px',background:isRecording?'#fef2f2':'#f9fafb',color:isRecording?'#dc2626':'#6b7280',border:isRecording?'1.5px solid #fecaca':'1.5px solid #e5e7eb',fontSize:'11px',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap' as const}}>
+                                            {isRecording ? <MicOff style={{width:'12px',height:'12px',flexShrink:0}} /> : <Mic style={{width:'12px',height:'12px',flexShrink:0}} />}
+                                            {isRecording ? 'Detener' : 'Voz'}
+                                        </button>
+                                    </>)}
+
+                                    {/* Chip: Adjuntar genérico */}
+                                    <button type="button" onClick={() => fileInputRef.current?.click()} style={{display:'inline-flex',alignItems:'center',gap:'5px',padding:'5px 13px',borderRadius:'100px',background:'#f9fafb',color:'#6b7280',border:'1.5px solid #e5e7eb',fontSize:'11px',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap' as const}}>
+                                        <Paperclip style={{width:'12px',height:'12px',flexShrink:0}} />
+                                        Adjuntar
+                                    </button>
+
+                                </div>
+                            </nav>
+
+                            {/* ═══ FILA 2: Input de mensaje ═══ */}
+                            <div style={{display:'block', padding:'10px 16px'}}>
+                                <form onSubmit={handleSendMessage} style={{display:'flex', gap:'10px', alignItems:'center'}}>
+                                    <div style={{position:'relative', flex:1}}>
+                                        <Input
+                                            id="crm-message-input"
+                                            placeholder={pendingMedia ? `${pendingMedia.fileName} — añade un pie de foto...` : "Escribe un mensaje..."}
+                                            className="bg-slate-50 border border-slate-200 h-11 rounded-xl px-4 text-sm font-medium focus-visible:ring-2 focus-visible:ring-primary/20 shadow-none transition-all pr-10 w-full"
+                                            value={inputValue}
+                                            onChange={(e) => setInputValue(e.target.value)}
+                                            disabled={isSendingMessage || isImproving}
+                                        />
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300">
+                                            <Smile className="w-4 h-4 cursor-pointer hover:text-slate-400 transition-colors" />
                                         </div>
-                                        <ScrollArea className="max-h-72">
-                                            {quickReplies.length > 0 ? (
-                                                <div className="flex flex-col">
-                                                    {quickReplies.map((reply) => (
-                                                        <button key={reply.id} className="w-full text-left p-4 hover:bg-slate-50 border-b last:border-0 transition-colors group"
-                                                            onClick={() => setInputValue(reply.content)}>
-                                                            <p className="font-bold text-xs mb-1 text-slate-900 group-hover:text-primary transition-colors">{reply.title}</p>
-                                                            <p className="text-[10px] text-slate-400 line-clamp-2 leading-tight">{reply.content}</p>
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <div className="p-10 text-center flex flex-col items-center gap-2">
-                                                    <div className="bg-slate-100 p-3 rounded-full"><Zap className="w-6 h-6 text-slate-300" /></div>
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sin respuestas guardadas</p>
-                                                    <Button variant="link" size="sm" className="text-[10px] uppercase font-bold p-0 h-auto" onClick={() => setIsManageRepliesOpen(true)}>Crear la primera</Button>
-                                                </div>
-                                            )}
-                                        </ScrollArea>
-                                    </PopoverContent>
-                                </Popover>
-
-                                {/* Mejorar con IA */}
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="sm" title="Mejorar con IA"
-                                            className="h-7 px-2 gap-1 rounded-lg text-violet-600 hover:bg-violet-50 transition-all text-[9px] font-black uppercase"
-                                            disabled={!inputValue.trim() || isImproving}>
-                                            <Wand2 className={cn("w-3 h-3", isImproving && "animate-spin")} />
-                                            <span>Mejorar con IA</span>
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent className="w-52 rounded-xl border shadow-xl" align="start" side="top">
-                                        <DropdownMenuLabel className="text-[10px] font-bold uppercase text-slate-400 px-4 py-2 tracking-widest">Estilo de Mejora</DropdownMenuLabel>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={() => handleImproveMessage('Profesional')} className="gap-3 font-bold text-xs py-3 cursor-pointer"><ShieldCheck className="w-4 h-4 text-slate-400" /> Profesional</DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleImproveMessage('Suave')} className="gap-3 font-bold text-xs py-3 cursor-pointer"><Smile className="w-4 h-4 text-emerald-500" /> Suave</DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleImproveMessage('Negociación')} className="gap-3 font-bold text-xs py-3 cursor-pointer"><CheckCircle className="w-4 h-4 text-primary" /> Negociación</DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-
-                                {/* Separador */}
-                                <div className="w-px h-4 bg-slate-200 mx-0.5" />
-
-                                {/* Adjuntar imagen / documento / audio (solo WhatsApp QR) */}
-                                {selectedChat?.source === 'WhatsApp QR' && (
-                                    <>
-                                        <Button type="button" variant="ghost" size="sm" title="Enviar imagen"
-                                            className="h-7 px-2 gap-1 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-all text-[9px] font-black uppercase"
-                                            disabled={isLoading} onClick={() => fileInputRef.current?.click()}>
-                                            <ImageIcon className="w-3 h-3" />
-                                            <span>Imagen</span>
-                                        </Button>
-                                        <Button type="button" variant="ghost" size="sm" title="Enviar documento"
-                                            className="h-7 px-2 gap-1 rounded-lg text-amber-600 hover:bg-amber-50 transition-all text-[9px] font-black uppercase"
-                                            disabled={isLoading} onClick={() => docInputRef.current?.click()}>
-                                            <FileIcon className="w-3 h-3" />
-                                            <span>Doc</span>
-                                        </Button>
-                                        <Button type="button" variant="ghost" size="sm" title="Nota de voz"
-                                            className={cn("h-7 px-2 gap-1 rounded-lg transition-all text-[9px] font-black uppercase", isRecording ? 'text-white bg-red-500 hover:bg-red-600 animate-pulse' : 'text-slate-400 hover:bg-slate-100')}
-                                            onClick={handleToggleRecording}>
-                                            {isRecording ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
-                                            <span>{isRecording ? 'Detener' : 'Audio'}</span>
-                                        </Button>
-                                    </>
-                                )}
-
-                                {/* Adjuntar genérico */}
-                                <Button type="button" variant="ghost" size="sm" title="Adjuntar archivo"
-                                    className="h-7 px-2 gap-1 rounded-lg text-slate-500 hover:bg-slate-100 transition-all text-[9px] font-black uppercase"
-                                    onClick={() => fileInputRef.current?.click()}>
-                                    <Paperclip className="w-3 h-3" />
-                                    <span>Adjuntar</span>
-                                </Button>
+                                    </div>
+                                    <Button type="submit" size="icon"
+                                        className="bg-primary hover:bg-blue-700 rounded-xl h-11 w-11 shrink-0 shadow-lg shadow-primary/20 transition-all active:scale-95"
+                                        disabled={(!inputValue.trim() && !pendingMedia) || isSendingMessage || isImproving}>
+                                        {isSendingMessage ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <Send className="w-4 h-4 text-white" />}
+                                    </Button>
+                                </form>
                             </div>
 
-                            {/* ── FILA 2: Input de mensaje — ocupa todo el ancho ── */}
-                            <form onSubmit={handleSendMessage} style={{display:'flex', flexDirection:'row', alignItems:'center', gap:'8px', padding:'8px 16px', width:'100%'}}>
-                                <div className="relative flex-grow">
-                                    <Input
-                                        id="crm-message-input"
-                                        placeholder={pendingMedia ? `${pendingMedia.fileName} — añade un pie de foto...` : "Escribe un mensaje..."}
-                                        className="bg-slate-50 border border-slate-200 h-12 rounded-xl px-4 text-sm font-medium focus-visible:ring-2 focus-visible:ring-primary/20 shadow-none transition-all pr-10 w-full"
-                                        value={inputValue}
-                                        onChange={(e) => setInputValue(e.target.value)}
-                                        disabled={isSendingMessage || isImproving}
-                                    />
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300">
-                                        <Smile className="w-4 h-4 cursor-pointer hover:text-slate-400 transition-colors" />
-                                    </div>
-                                </div>
-                                <Button type="submit" size="icon"
-                                    className="bg-primary hover:bg-blue-700 rounded-xl h-12 w-12 shrink-0 shadow-lg shadow-primary/20 transition-all active:scale-95"
-                                    disabled={(!inputValue.trim() && !pendingMedia) || isSendingMessage || isImproving}>
-                                    {isSendingMessage ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <Send className="w-4 h-4 text-white" />}
-                                </Button>
-                            </form>
-                            </div>{/* /wrapper block */}
                         </footer>
+
+
+
+
+
+
 
 
                         {/* DIÁLOGO GESTIÓN RESPUESTAS RÁPIDAS */}

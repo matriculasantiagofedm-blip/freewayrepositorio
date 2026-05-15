@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
     Search, 
     MoreVertical, 
@@ -31,7 +31,19 @@ import {
     Dumbbell,
     Repeat,
     Layers,
-    ExternalLink
+    ExternalLink,
+    X,
+    Bot as BotIcon,
+    User as UserIcon,
+    Calendar,
+    DollarSign,
+    HelpCircle,
+    ImageIcon,
+    Mic,
+    MicOff,
+    Download,
+    Volume2,
+    FileIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -51,9 +63,10 @@ import { Message } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { WhatsAppIcon } from '../icons/whatsapp';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, updateDoc, setDoc, collection, query, orderBy, limit } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, getDoc, collection, query, orderBy, limit, where, getDocs, Timestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { buildScheduleContext } from '@/lib/schedule-context';
 
 export function WhatsAppWebPortal({ 
     leads,
@@ -65,8 +78,10 @@ export function WhatsAppWebPortal({
     currentUser: any
 }) {
     const [selectedChat, setSelectedChat] = useState<any | null>(null);
+    const [showChatList, setShowChatList] = useState(true); // mobile: toggle between list and chat
     const [inputValue, setInputValue] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);      // Co-piloto IA
+    const [isSendingMessage, setIsSendingMessage] = useState(false); // Envío de mensajes
     const [isImproving, setIsImproving] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
@@ -75,9 +90,126 @@ export function WhatsAppWebPortal({
     const [isManageRepliesOpen, setIsManageRepliesOpen] = useState(false);
     const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
     const [newReply, setNewReply] = useState({ title: '', content: '' });
+    const [isConsultorOpen, setIsConsultorOpen] = useState(false);
+    
+    // ── MULTIMEDIA ────────────────────────────────────────────────────────
+    const [pendingMedia, setPendingMedia] = useState<{ base64: string; mediaType: string; mimeType: string; fileName: string; previewUrl: string } | null>(null);
+    const [isRecording, setIsRecording]   = useState(false);
+    const [lightboxUrl, setLightboxUrl]   = useState<string | null>(null);
+    const [isSendingMedia, setIsSendingMedia] = useState(false);
+
+    const fileInputRef  = useRef<HTMLInputElement>(null);
+    const audioInputRef = useRef<HTMLInputElement>(null);
+    const docInputRef   = useRef<HTMLInputElement>(null);
+    const mediaRecRef   = useRef<MediaRecorder | null>(null);
+    const chunksRef     = useRef<Blob[]>([]);
+
+    const [consultorMessages, setConsultorMessages] = useState<{id:string;role:'user'|'ai';text:string}[]>([
+        { id: 'welcome', role: 'ai', text: '¡Hola! 👋 Soy tu **Consultor IA**. Pregúntame sobre:\n\n• 💰 Precios de cursos\n• 📅 Horarios disponibles esta semana\n• ❓ Cualquier duda sobre los servicios\n\nEjemplo: *"¿Qué horarios libres hay para auto automático esta semana?"*' }
+    ]);
+    const [consultorInput, setConsultorInput] = useState('');
+    const [consultorLoading, setConsultorLoading] = useState(false);
+    const consultorScrollRef = useRef<HTMLDivElement>(null);
     
     const scrollRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
+
+    // ── Seleccionar archivo (imagen / documento / audio) ─────────────────────
+    const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            const result = reader.result as string;
+            const base64 = result.split(',')[1];
+            const mediaType = file.type.startsWith('image/') ? 'image'
+                : file.type.startsWith('video/') ? 'video'
+                : 'document';
+            setPendingMedia({ base64, mediaType, mimeType: file.type, fileName: file.name, previewUrl: result });
+        };
+        reader.readAsDataURL(file);
+        e.target.value = '';
+    }, []);
+
+    // ── Grabar audio (nota de voz) ───────────────────────────────────────────
+    const handleToggleRecording = useCallback(async () => {
+        if (isRecording) {
+            mediaRecRef.current?.stop();
+            setIsRecording(false);
+            return;
+        }
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            chunksRef.current = [];
+            const rec = new MediaRecorder(stream);
+            mediaRecRef.current = rec;
+            rec.ondataavailable = (ev) => { if (ev.data.size > 0) chunksRef.current.push(ev.data); };
+            rec.onstop = () => {
+                stream.getTracks().forEach(t => t.stop());
+                const blob = new Blob(chunksRef.current, { type: 'audio/ogg; codecs=opus' });
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const result = reader.result as string;
+                    setPendingMedia({ base64: result.split(',')[1], mediaType: 'audio', mimeType: 'audio/ogg; codecs=opus', fileName: 'nota_de_voz.ogg', previewUrl: URL.createObjectURL(blob) });
+                };
+                reader.readAsDataURL(blob);
+            };
+            rec.start();
+            setIsRecording(true);
+        } catch { toast({ title: 'Micrófono no disponible', variant: 'destructive' }); }
+    }, [isRecording, toast]);
+
+    const sendConsultorMessage = async (question: string) => {
+        if (!question.trim() || consultorLoading) return;
+        const userMsg = { id: Date.now().toString(), role: 'user' as const, text: question };
+        setConsultorMessages(prev => [...prev, userMsg]);
+        setConsultorInput('');
+        setConsultorLoading(true);
+        try {
+            let scheduleContext = '';
+            if (db) {
+                try {
+                    const today = new Date(); today.setHours(0, 0, 0, 0);
+                    const endDate = new Date(today); endDate.setDate(endDate.getDate() + 90); endDate.setHours(23,59,59,999);
+
+                    const [contractsSnap, manualSnap] = await Promise.all([
+                        getDocs(query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed']))),
+                        getDocs(query(
+                            collection(db, 'manual_schedules'),
+                            where('date', '>=', Timestamp.fromDate(today)),
+                            where('date', '<=', Timestamp.fromDate(endDate))
+                        ))
+                    ]);
+
+                    const contracts = contractsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    const manualEntries = manualSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    scheduleContext = buildScheduleContext(contracts, manualEntries);
+                } catch (schedErr) {
+                    console.warn('[Consultor] Error cargando agenda:', schedErr);
+                    scheduleContext = 'NOTA: No se pudo cargar la agenda en este momento.';
+                }
+            }
+
+            const res = await fetch('/api/ai/consultant', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question, scheduleContext }),
+            });
+            const data = await res.json();
+            setConsultorMessages(prev => [...prev, { id: (Date.now()+1).toString(), role: 'ai', text: data.text || 'Sin respuesta.' }]);
+        } catch {
+            setConsultorMessages(prev => [...prev, { id: (Date.now()+1).toString(), role: 'ai', text: '❌ Error de conexión.' }]);
+        } finally {
+            setConsultorLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (consultorScrollRef.current) {
+            const el = consultorScrollRef.current;
+            el.scrollTop = el.scrollHeight;
+        }
+    }, [consultorMessages, consultorLoading]);
     const db = useFirestore();
 
     useEffect(() => {
@@ -85,8 +217,8 @@ export function WhatsAppWebPortal({
             setSelectedChat((prev: any) => {
                 const updatedChat = leads.find(l => l.id === preselectedId);
                 if (!updatedChat) return prev;
-                // Si es un chat nuevo, carga desde cero. Si es una actualizacion en vivo (lastMessage), manten los mensajes.
                 if (!prev || prev.id !== preselectedId) {
+                    setShowChatList(false); // auto-open chat on mobile when preselected
                     return { ...updatedChat, messages: [] };
                 }
                 return { ...updatedChat, messages: prev.messages || [] };
@@ -94,7 +226,6 @@ export function WhatsAppWebPortal({
         }
     }, [preselectedId, leads]);
 
-    // Reemplazo del fetch estático por uno en tiempo real
     const chatQuery = useMemoFirebase(() => {
         if (!db || !selectedChat?.id) return null;
         return query(collection(db, `leads/${selectedChat.id}/messages`), orderBy('timestamp', 'asc'), limit(50));
@@ -117,37 +248,43 @@ export function WhatsAppWebPortal({
 
     const handleSendMessage = async (e?: React.FormEvent) => {
         e?.preventDefault();
-        if (!inputValue.trim() || !selectedChat || isLoading) return;
+        const hasText  = inputValue.trim();
+        const hasMedia = !!pendingMedia;
+        if ((!hasText && !hasMedia) || !selectedChat || isSendingMessage) return;
+
         const textToSend = inputValue;
+        const mediaToSend = pendingMedia;
         setInputValue('');
-        setIsLoading(true);
+        setPendingMedia(null);
+        setIsSendingMessage(true);
         try {
-            const reqUrl = `/api/whatsapp/send`;
-            const payload = { 
+            const payload: any = { 
                 to: selectedChat.phone || selectedChat.socialId, 
-                text: textToSend, 
+                text: textToSend || '', 
                 leadId: selectedChat.id,
                 platform: selectedChat.source || 'WhatsApp',
-                socialId: selectedChat.socialId
+                socialId: selectedChat.socialId,
+                // Enviar desde la misma instancia que usó el cliente
+                instance: selectedChat.whatsappInstance || 'freeway-crm',
             };
-            
-            const response = await fetch(reqUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
+            if (mediaToSend) {
+                payload.mediaBase64 = mediaToSend.base64;
+                payload.mediaType   = mediaToSend.mediaType;
+                payload.mimeType    = mediaToSend.mimeType;
+                payload.fileName    = mediaToSend.fileName;
+            }
+            const response = await fetch('/api/whatsapp/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
             const result = await response.json();
-            
-            if (result?.success) {
-                // No se empuja `tempMsg` localmente porque el webhook/API crea el documento 
-                // en Firestore y `useCollection(chatQuery)` se actualiza instantáneamente en tiempo real. 
-                // Esto previene que se duplique el mensaje en la interfaz.
-            } else {
-                toast({ title: "Error al enviar", description: result?.error || "Error desconocido", variant: "destructive" });
+            if (!result?.success) {
+                toast({ title: 'Error al enviar', description: result?.error || 'Error desconocido', variant: 'destructive' });
             }
-        } catch(e) {
-             toast({ title: "Error de Red", description: "No se pudo conectar con el servidor", variant: "destructive" });
-        } finally { setIsLoading(false); }
+        } catch(err) {
+            toast({ title: 'Error de Red', description: 'No se pudo conectar con el servidor', variant: 'destructive' });
+        } finally { setIsSendingMessage(false); }
     };
 
     const handleImproveMessage = async (style: 'Profesional' | 'Suave' | 'Negociación') => {
@@ -160,29 +297,47 @@ export function WhatsAppWebPortal({
                 body: JSON.stringify({ text: inputValue, style })
             });
             const response = await req.json();
-            if (response?.text && req.ok) setInputValue(response.text);
-            else setInputValue("Error de respuesta IA.");
+            if (response?.text && req.ok) {
+                setInputValue(response.text);
+            } else {
+                // Muestra el error real del servidor en un toast, no en el input
+                const errMsg = response?.text || 'Error al mejorar el mensaje.';
+                toast({ title: '⚠️ Mejorar con IA', description: errMsg, variant: 'destructive' });
+            }
         } catch (err) {
-            setInputValue("Error de conexión al servidor IA.");
+            toast({ title: '⚠️ Error de conexión', description: 'No se pudo contactar el servidor de IA.', variant: 'destructive' });
         } finally { 
             setIsImproving(false); 
         }
     };
 
+
     const handleUpdateBotStatus = async (enabled: boolean) => {
         if (!db) return;
         setIsBotEnabled(enabled);
-        const userRef = doc(db, 'users_crm', currentUser.id);
-        setDoc(userRef, { chatbotEnabled: enabled }, { merge: true })
-            .catch(async (err) => {
-                setIsBotEnabled(!enabled);
-                errorEmitter.emit('permission-error', new FirestorePermissionError({
-                    path: userRef.path,
-                    operation: 'update',
-                    requestResourceData: { chatbotEnabled: enabled },
-                }));
-            });
+        // Guardar como configuración GLOBAL del CRM (no por usuario)
+        const cfgRef = doc(db, 'settings', 'crm_config');
+        setDoc(cfgRef, { autobot_enabled: enabled }, { merge: true })
+            .catch(() => { setIsBotEnabled(!enabled); });
     };
+
+    // Leer estado global del autobot al cargar
+    useEffect(() => {
+        if (!db) return;
+        const cfgRef = doc(db, 'settings', 'crm_config');
+        getDoc(cfgRef).then(snap => {
+            if (snap.exists()) setIsBotEnabled(!!snap.data()?.autobot_enabled);
+        }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [db]);
+
+    // Indica si ahora mismo es horario fuera de oficina (5:30PM – 7:30AM Panama)
+    const isAfterHoursNow = (() => {
+        const now = new Date();
+        const panamaMin = ((now.getUTCHours() * 60 + now.getUTCMinutes()) - 5 * 60 + 24 * 60) % (24 * 60);
+        const h = panamaMin / 60; // hora decimal en Panama
+        return h >= 17.5 || h < 7.5;
+    })();
 
     const handleSaveReply = async () => {
         if (!newReply.title || !newReply.content || !db) return;
@@ -259,73 +414,103 @@ export function WhatsAppWebPortal({
 
     return (
         <div className="flex h-full bg-white overflow-hidden border-t">
-            {/* LISTA DE CHATS */}
-            <div className="w-80 lg:w-96 border-r flex flex-col shrink-0 bg-slate-50/50">
-                <header className="h-16 bg-white px-6 flex items-center justify-between shrink-0 border-b">
-                    <h3 className="font-bold text-slate-900">Bandeja de Entrada</h3>
-                    <div className="flex items-center gap-3">
-                        <div className="flex flex-col items-end mr-1">
-                            <p className="text-[8px] font-bold text-emerald-600 uppercase">Auto-Bot</p>
-                            <Switch checked={isBotEnabled} onCheckedChange={handleUpdateBotStatus} className="scale-75 data-[state=checked]:bg-emerald-500" />
-                        </div>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400"><Settings className="w-4 h-4" /></Button>
+            {/* LISTA DE CHATS — oculta en mobile cuando hay chat abierto */}
+            <div className={cn(
+                "border-r flex flex-col shrink-0 bg-slate-50/50",
+                "w-full md:w-56 lg:w-72", // tablet: narrower, desktop: full width
+                selectedChat && !showChatList ? "hidden md:flex" : "flex"
+            )}>
+                <header className="h-16 bg-white px-4 flex items-center justify-between shrink-0 border-b">
+                    <span className="text-xs font-black text-slate-700 uppercase tracking-widest">Mensajes</span>
+                    <div className="flex flex-col items-center gap-0.5">
+                        <p className="text-[8px] font-bold text-emerald-600 uppercase">Auto-Bot</p>
+                        <Switch checked={isBotEnabled} onCheckedChange={handleUpdateBotStatus} className="scale-75 data-[state=checked]:bg-emerald-500" />
+                        {isBotEnabled && (
+                            <p className={`text-[7px] font-bold uppercase ${isAfterHoursNow ? 'text-emerald-500' : 'text-amber-500'}`}>
+                                {isAfterHoursNow ? '● activo' : '○ 5:30PM'}
+                            </p>
+                        )}
                     </div>
                 </header>
 
-                <div className="p-4 bg-white shrink-0 border-b">
+                <div className="px-3 py-2 bg-white shrink-0 border-b">
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <Input placeholder="Buscar alumno..." className="bg-slate-50 border-none h-10 pl-10 rounded-lg text-sm" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                        <Input placeholder="Buscar contacto..." className="bg-slate-50 border-none h-9 pl-9 rounded-xl text-xs" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                     </div>
                 </div>
 
                 <ScrollArea className="flex-grow">
-                    <div className="flex flex-col">
+                    <div className="flex flex-col divide-y divide-slate-100">
                         {leads
-                            .filter(l => l.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                            .filter(l => l.name?.toLowerCase().includes(searchQuery.toLowerCase()) || l.phone?.includes(searchQuery))
                             .sort((a, b) => {
                                 const tA = a.lastMessageAt?.toMillis ? a.lastMessageAt.toMillis() : a.createdAt?.toMillis?.() || 0;
                                 const tB = b.lastMessageAt?.toMillis ? b.lastMessageAt.toMillis() : b.createdAt?.toMillis?.() || 0;
                                 return tB - tA;
                             })
-                            .map((chat) => (
-                                <button 
-                                    key={chat.id}
-                                onClick={() => setSelectedChat(chat)}
-                                className={cn(
-                                    "flex items-center gap-4 p-4 cursor-pointer transition-all duration-300 border-b border-white/40",
-                                    selectedChat?.id === chat.id 
-                                        ? "bg-gradient-to-r from-primary/10 to-transparent shadow-[inset_4px_0_0_url(#primary)]" 
-                                        : "hover:bg-slate-100/60"
-                                )}
-                                style={{ boxShadow: selectedChat?.id === chat.id ? 'inset 4px 0 0 hsl(var(--primary))' : 'none' }}
-                            >
-                                <Avatar className="h-12 w-12 border shadow-sm">
-                                    <AvatarFallback className={cn("font-bold text-xs", selectedChat?.id === chat.id ? "bg-primary text-white" : "bg-slate-200 text-slate-500")}>{chat.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div className="flex-grow min-w-0 text-left">
-                                    <div className="flex justify-between items-center mb-0.5">
-                                        <h4 className={cn("font-bold truncate text-sm", selectedChat?.id === chat.id ? "text-primary" : "text-slate-900")}>{chat.name}</h4>
-                                        <span className="text-[9px] font-bold text-slate-400 uppercase">HOY</span>
-                                    </div>
-                                    <p className="text-[11px] text-slate-400 truncate leading-tight">
-                                        {chat.lastMessage || `Interesado en ${chat.interest || 'Manejo'}`}
-                                    </p>
-                                </div>
-                            </button>
-                        ))}
+                            .map((chat) => {
+                                const lastMsg = chat.lastMessage || '';
+                                const preview = lastMsg === '[Multimedia]' ? '📎 Multimedia' : lastMsg;
+                                const timeLabel = (() => {
+                                    const t = chat.lastMessageAt || chat.createdAt;
+                                    if (!t) return '';
+                                    try {
+                                        const d = t?.toDate ? t.toDate() : new Date(t);
+                                        const now = new Date();
+                                        const isToday = d.toDateString() === now.toDateString();
+                                        return isToday
+                                            ? d.toLocaleTimeString('es-PA', { hour: '2-digit', minute: '2-digit' })
+                                            : d.toLocaleDateString('es-PA', { day: '2-digit', month: '2-digit' });
+                                    } catch { return ''; }
+                                })();
+                                return (
+                                    <button 
+                                        key={chat.id}
+                                        onClick={() => { setSelectedChat(chat); setShowChatList(false); }}
+                                        className={cn(
+                                            "flex items-center gap-3 px-3 py-3 cursor-pointer transition-all duration-150 text-left w-full",
+                                            selectedChat?.id === chat.id 
+                                                ? "bg-primary/8 border-l-4 border-primary" 
+                                                : "hover:bg-slate-100/80 border-l-4 border-transparent"
+                                        )}
+                                    >
+                                        <Avatar className="h-10 w-10 border shadow-sm shrink-0">
+                                            <AvatarFallback className={cn("font-bold text-sm", selectedChat?.id === chat.id ? "bg-primary text-white" : "bg-slate-200 text-slate-600")}>{chat.name?.charAt(0) || '?'}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between gap-1">
+                                                <span className={cn("text-xs font-bold truncate", selectedChat?.id === chat.id ? 'text-primary' : 'text-slate-800')}>{chat.name}</span>
+                                                <span className="text-[9px] text-slate-400 shrink-0">{timeLabel}</span>
+                                            </div>
+                                            <p className="text-[10px] text-slate-400 truncate mt-0.5">{chat.phone || ''}</p>
+                                            {preview && <p className="text-[10px] text-slate-500 truncate mt-0.5 italic">{preview}</p>}
+                                        </div>
+                                    </button>
+                                );
+                            })}
                     </div>
                 </ScrollArea>
             </div>
 
-            {/* ÁREA DE CHAT */}
-            <div className="flex-grow flex flex-col relative bg-slate-50/80 overflow-hidden">
+            {/* ÁREA DE CHAT — oculta en mobile cuando se muestra la lista */}
+            <div className={cn(
+                "flex-grow flex flex-col relative bg-slate-50/80 overflow-hidden",
+                showChatList && !selectedChat ? "hidden md:flex" : selectedChat ? "flex" : "hidden md:flex"
+            )}>
                 <div className="absolute inset-0 bg-[url('https://i.imgur.com/3F9j5V1.png')] opacity-[0.03] pointer-events-none mix-blend-multiply" />
                 {selectedChat ? (
                     <>
-                        <header className="h-16 bg-white/80 backdrop-blur-md flex items-center justify-between px-6 border-b border-slate-200/60 shrink-0 z-30 shadow-sm">
-                            <div className="flex items-center gap-4">
-                                <Avatar className="h-10 w-10 border shadow-sm">
+                        <header className="h-14 md:h-16 bg-white/80 backdrop-blur-md flex items-center justify-between px-3 md:px-6 border-b border-slate-200/60 shrink-0 z-30 shadow-sm">
+                            <div className="flex items-center gap-2 md:gap-4">
+                                {/* Botón volver en mobile */}
+                                <button
+                                    className="md:hidden p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"
+                                    onClick={() => { setShowChatList(true); }}
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                                </button>
+                                <Avatar className="h-9 w-9 md:h-10 md:w-10 border shadow-sm">
                                     <AvatarFallback className="bg-primary text-white font-bold text-xs">{selectedChat.name.charAt(0)}</AvatarFallback>
                                 </Avatar>
                                 <div>
@@ -336,12 +521,11 @@ export function WhatsAppWebPortal({
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                {/* BOTÓN CREAR CONTRATO */}
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="outline" size="sm" className="bg-red-500 border-red-600 text-white font-black text-xs uppercase h-9 px-4 rounded-lg hover:bg-red-600 transition-all gap-2 shadow-lg">
+                                        <Button variant="default" size="sm" className="bg-gradient-to-r from-primary to-blue-600 text-white font-bold text-[11px] uppercase h-9 px-3 lg:px-4 rounded-xl hover:opacity-90 transition-all gap-1.5 shadow-lg shadow-primary/20">
                                             <FileText className="w-3.5 h-3.5" />
-                                            + Contrato
+                                            <span className="hidden lg:inline">Crear Contrato</span>
                                             <ChevronDown className="w-3 h-3" />
                                         </Button>
                                     </DropdownMenuTrigger>
@@ -383,34 +567,21 @@ export function WhatsAppWebPortal({
                                                 <ExternalLink className="w-3 h-3 ml-auto text-slate-300" />
                                             </a>
                                         </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem asChild>
-                                            <a href="/contracts/new" target="_blank" rel="noreferrer" className="flex items-center gap-3 px-3 py-2.5 cursor-pointer font-bold text-xs rounded-lg text-slate-500">
-                                                <div className="bg-slate-100 p-1.5 rounded-md"><Plus className="w-3.5 h-3.5 text-slate-500" /></div>
-                                                <span>Nuevo Contrato (General)</span>
-                                                <ExternalLink className="w-3 h-3 ml-auto text-slate-300" />
-                                            </a>
-                                        </DropdownMenuItem>
+
                                     </DropdownMenuContent>
                                 </DropdownMenu>
 
-                                <Button onClick={async () => { 
+                                 <Button onClick={async () => { 
                                     try {
                                         setIsLoading(true); 
-                                        
-                                        // Extraer el historial de mensajes visibles (los últimos 15)
                                         const recentMessages = selectedChat.messages?.slice(-15).map((m: any) => {
                                             const senderName = m.sender === 'client' ? 'Cliente' : 'Asesor Freeway';
                                             return `${senderName}: ${m.text}`;
                                         }).join('\n') || '';
-
                                         const req = await fetch('/api/ai/copilot', {
                                             method: "POST",
                                             headers: { "Content-Type": "application/json" },
-                                            body: JSON.stringify({ 
-                                                historyString: recentMessages,
-                                                leadId: selectedChat.id 
-                                            })
+                                            body: JSON.stringify({ historyString: recentMessages, leadId: selectedChat.id })
                                         });
                                         const r = await req.json();
                                         if (r?.text && req.ok) setAiSuggestion(r.text); 
@@ -420,8 +591,21 @@ export function WhatsAppWebPortal({
                                     } finally {
                                         setIsLoading(false); 
                                     }
-                                }} variant="outline" size="sm" className="bg-primary/5 border-primary/10 text-primary font-bold text-[10px] uppercase h-9 px-4 rounded-lg hover:bg-primary hover:text-white transition-all gap-2">
-                                    <Wand2 className="w-3.5 h-3.5" /> Co-piloto IA 3.0
+                                }} variant="outline" size="sm" className="bg-primary/5 border-primary/10 text-primary font-bold text-[10px] uppercase h-9 px-3 lg:px-4 rounded-lg hover:bg-primary hover:text-white transition-all gap-2">
+                                    <Wand2 className="w-3.5 h-3.5" /> <span className="hidden lg:inline">Co-piloto IA</span>
+                                </Button>
+                                <Button
+                                    onClick={() => setIsConsultorOpen(v => !v)}
+                                    variant="outline"
+                                    size="sm"
+                                    className={cn(
+                                        "font-bold text-[10px] uppercase h-9 px-3 lg:px-4 rounded-lg transition-all gap-2",
+                                        isConsultorOpen
+                                            ? "bg-violet-600 border-violet-600 text-white hover:bg-violet-700"
+                                            : "bg-violet-50 border-violet-200 text-violet-700 hover:bg-violet-100"
+                                    )}
+                                >
+                                    <Sparkles className="w-3.5 h-3.5" /> <span className="hidden lg:inline">Consultor</span>
                                 </Button>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -447,9 +631,29 @@ export function WhatsAppWebPortal({
                                     </div>
                                 </div>
 
+                                {/* LIGHTBOX para imágenes */}
+                                {lightboxUrl && (
+                                    <div
+                                        className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
+                                        onClick={() => setLightboxUrl(null)}
+                                    >
+                                        <button className="absolute top-4 right-4 text-white/70 hover:text-white" onClick={() => setLightboxUrl(null)}>
+                                            <X className="w-8 h-8" />
+                                        </button>
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src={lightboxUrl} alt="Media" className="max-w-full max-h-full rounded-xl object-contain shadow-2xl" />
+                                    </div>
+                                )}
+
                                 {selectedChat.messages?.map((m: any) => {
                                     const isMe = m.sender === 'me';
                                     const message = { ...m, isAi: m.isAi || false };
+                                    // Normalizar tipo (acepta 'image'/'imageMessage', 'audio'/'audioMessage', etc.)
+                                    const mt: string = m.mediaType || '';
+                                    const isImage = (mt === 'image' || mt === 'imageMessage') && m.mediaUrl;
+                                    const isAudio = (mt === 'audio' || mt === 'audioMessage') && m.mediaUrl;
+                                    const isVideo = (mt === 'video' || mt === 'videoMessage') && m.mediaUrl;
+                                    const isDoc   = (mt === 'document' || mt === 'documentMessage');
                                     return (
                                         <motion.div key={m.id} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className={cn("flex w-full", isMe ? "justify-end" : "justify-start")}>
                                             <div 
@@ -464,7 +668,77 @@ export function WhatsAppWebPortal({
                                                         <Wand2 className="w-2.5 h-2.5" /> IA Respondió
                                                     </div>
                                                 )}
-                                                <p className={cn("text-sm whitespace-pre-wrap leading-relaxed", isMe ? "text-white/95" : "text-slate-700")}>{message.text}</p>
+                                                {/* ── IMAGEN ── */}
+                                                {isImage && (
+                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                    <img
+                                                        src={m.mediaUrl}
+                                                        alt={m.text || 'Imagen'}
+                                                        className="max-w-full max-h-56 w-full object-cover rounded-xl mb-2 cursor-zoom-in hover:opacity-90 transition-opacity"
+                                                        onClick={() => setLightboxUrl(m.mediaUrl)}
+                                                    />
+                                                )}
+                                                {/* ── AUDIO ── */}
+                                                {isAudio && (
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <Volume2 className="w-4 h-4 shrink-0 opacity-70" />
+                                                        <audio controls src={m.mediaUrl} className="h-9 w-44 rounded-lg" style={{ accentColor: isMe ? '#fff' : '#1d4ed8' }} />
+                                                    </div>
+                                                )}
+                                                {/* ── VIDEO ── */}
+                                                {isVideo && (
+                                                    <video controls src={m.mediaUrl} className="max-w-full max-h-48 rounded-xl mb-2 w-full" />
+                                                )}
+                                                {/* ── DOCUMENTO ── */}
+                                                {isDoc && (
+                                                    <button
+                                                        type="button"
+                                                        title={m.mediaUrl ? undefined : 'Documento sin enlace de descarga'}
+                                                        onClick={() => {
+                                                            const url = m.mediaUrl as string;
+                                                            if (!url) return;
+                                                            const anchor = document.createElement('a');
+                                                            if (url.startsWith('data:')) {
+                                                                // base64 inline → convertir a blob y descargar
+                                                                const arr = url.split(',');
+                                                                const mime = arr[0].match(/:(.*?);/)?.[1] || 'application/octet-stream';
+                                                                const bstr = atob(arr[1]);
+                                                                const u8 = new Uint8Array(bstr.length);
+                                                                for (let i = 0; i < bstr.length; i++) u8[i] = bstr.charCodeAt(i);
+                                                                const blob = new Blob([u8], { type: mime });
+                                                                anchor.href = URL.createObjectURL(blob);
+                                                                anchor.download = m.fileName || 'documento';
+                                                            } else {
+                                                                // URL real → abrir en nueva pestaña
+                                                                anchor.href = url;
+                                                                anchor.target = '_blank';
+                                                                anchor.rel = 'noreferrer';
+                                                            }
+                                                            document.body.appendChild(anchor);
+                                                            anchor.click();
+                                                            setTimeout(() => {
+                                                                document.body.removeChild(anchor);
+                                                                if (anchor.href.startsWith('blob:')) URL.revokeObjectURL(anchor.href);
+                                                            }, 1000);
+                                                        }}
+                                                        className={cn(
+                                                            "flex items-center gap-2 mb-2 p-3 rounded-xl w-full text-left transition-colors",
+                                                            isMe ? 'bg-white/10 hover:bg-white/20' : 'bg-slate-100 hover:bg-slate-200',
+                                                            !m.mediaUrl && 'opacity-60 cursor-not-allowed'
+                                                        )}
+                                                    >
+                                                        <FileIcon className="w-5 h-5 shrink-0" />
+                                                        <span className="text-xs font-medium truncate flex-1">{m.fileName || m.text || 'Documento'}</span>
+                                                        {m.mediaUrl
+                                                            ? <Download className="w-4 h-4 shrink-0 opacity-60" />
+                                                            : <span className="text-[9px] opacity-50 shrink-0">Sin enlace</span>
+                                                        }
+                                                    </button>
+                                                )}
+                                                {/* ── TEXTO ── (ocultar si es placeholder de multimedia) */}
+                                                {message.text && !isDoc && !isImage && !isAudio && !isVideo && message.text !== '[Multimedia]' && (
+                                                    <p className={cn("text-sm whitespace-pre-wrap leading-relaxed", isMe ? "text-white/95" : "text-slate-700")}>{message.text}</p>
+                                                )}
                                                 <div className={cn("text-[9px] font-bold mt-2 flex items-center justify-end gap-1.5", isMe ? "text-white/70" : "text-slate-400")}>
                                                     <span className="text-[9px] font-bold uppercase">{m.time || 'Ahora'}</span>
                                                     {isMe && <CheckCheck className="w-3 h-3" />}
@@ -487,7 +761,7 @@ export function WhatsAppWebPortal({
 
                         <AnimatePresence>
                             {aiSuggestion && (
-                                <motion.div initial={{ x: 400 }} animate={{ x: 0 }} exit={{ x: 400 }} className="absolute right-0 top-16 bottom-0 w-96 bg-white border-l z-40 shadow-2xl flex flex-col">
+                                <motion.div initial={{ x: 400 }} animate={{ x: 0 }} exit={{ x: 400 }} className="absolute right-0 top-14 md:top-16 bottom-0 w-full md:w-96 bg-white border-l z-40 shadow-2xl flex flex-col">
                                     <div className="p-6 pb-4 bg-slate-50 shrink-0 border-b">
                                         <div className="flex items-center justify-between mb-4">
                                             <div className="flex items-center gap-3">
@@ -532,7 +806,104 @@ export function WhatsAppWebPortal({
                             )}
                         </AnimatePresence>
 
-                        <footer className="bg-white p-6 border-t shrink-0 z-30 shadow-[0_-4px_20px_rgba(0,0,0,0.02)]">
+                        {/* PANEL CONSULTOR IA */}
+                        <AnimatePresence>
+                            {isConsultorOpen && (
+                                <motion.div
+                                    initial={{ x: 400, opacity: 0 }}
+                                    animate={{ x: 0, opacity: 1 }}
+                                    exit={{ x: 400, opacity: 0 }}
+                                    transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                                    className="absolute right-0 top-14 md:top-16 bottom-0 w-full md:w-[360px] bg-white border-l z-50 shadow-2xl flex flex-col"
+                                >
+                                    <div className="h-14 px-4 bg-gradient-to-r from-violet-600 to-indigo-600 flex items-center justify-between shrink-0">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center">
+                                                <Sparkles className="w-4 h-4 text-white" />
+                                            </div>
+                                            <div>
+                                                <p className="text-white font-black text-sm leading-none">Consultor IA</p>
+                                                <p className="text-white/70 text-[9px] font-bold uppercase tracking-wider">Precios · Horarios · Cursos</p>
+                                            </div>
+                                        </div>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20 rounded-lg" onClick={() => setIsConsultorOpen(false)}>
+                                            <X className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                    <div className="px-3 py-2 flex flex-wrap gap-1.5 border-b bg-slate-50/80 shrink-0">
+                                        {[
+                                            { icon: DollarSign, label: 'Precio Auto', q: '¿Cuánto cuesta el Curso Auto Básico y el Plus?' },
+                                            { icon: Calendar, label: 'Horarios semana', q: 'Dime qué horarios libres hay esta semana para auto automático.' },
+                                            { icon: HelpCircle, label: 'Diferencia planes', q: '¿Cuál es la diferencia entre Básico, Plus y Deluxe?' },
+                                        ].map(p => (
+                                            <button key={p.label} onClick={() => sendConsultorMessage(p.q)} disabled={consultorLoading}
+                                                className="flex items-center gap-1 px-2 py-1 bg-white border border-slate-200 rounded-full text-[9px] font-bold text-slate-600 hover:border-violet-400 hover:text-violet-600 hover:bg-violet-50 transition-all disabled:opacity-50">
+                                                <p.icon className="w-2.5 h-2.5" />{p.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div ref={consultorScrollRef} className="flex-grow overflow-y-auto px-3 py-3 space-y-3">
+                                        {consultorMessages.map(msg => (
+                                            <div key={msg.id} className={cn('flex gap-2', msg.role === 'user' ? 'justify-end' : 'justify-start')}>
+                                                {msg.role === 'ai' && (
+                                                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shrink-0 mt-1">
+                                                        <BotIcon className="w-3 h-3 text-white" />
+                                                    </div>
+                                                )}
+                                                <div className={cn(
+                                                    'max-w-[82%] px-3 py-2 rounded-2xl text-xs shadow-sm',
+                                                    msg.role === 'user'
+                                                        ? 'bg-gradient-to-br from-violet-500 to-indigo-600 text-white rounded-tr-sm'
+                                                        : 'bg-slate-100 text-slate-800 rounded-tl-sm'
+                                                )}>
+                                                    {msg.role === 'ai'
+                                                        ? <div className="prose prose-xs max-w-none prose-p:my-0 prose-strong:text-violet-700" dangerouslySetInnerHTML={{ __html: (() => { try { const r = marked.parse(msg.text); return typeof r === 'string' ? r : msg.text; } catch { return msg.text; } })() }} />
+                                                        : <p>{msg.text}</p>
+                                                    }
+                                                </div>
+                                                {msg.role === 'user' && (
+                                                    <div className="w-6 h-6 rounded-full bg-violet-500 flex items-center justify-center shrink-0 mt-1">
+                                                        <UserIcon className="w-3 h-3 text-white" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                        {consultorLoading && (
+                                            <div className="flex gap-2 justify-start">
+                                                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shrink-0">
+                                                    <BotIcon className="w-3 h-3 text-white" />
+                                                </div>
+                                                <div className="bg-slate-100 rounded-2xl rounded-tl-sm px-3 py-2">
+                                                    <Loader2 className="w-3 h-3 animate-spin text-violet-500" />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="p-3 border-t bg-white shrink-0">
+                                        <form onSubmit={e => { e.preventDefault(); sendConsultorMessage(consultorInput); }} className="flex gap-2">
+                                            <input
+                                                value={consultorInput}
+                                                onChange={e => setConsultorInput(e.target.value)}
+                                                placeholder="Ej: horarios libres auto esta semana"
+                                                disabled={consultorLoading}
+                                                className="flex-grow h-9 px-3 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-300 transition-all disabled:opacity-50 font-medium"
+                                            />
+                                            <Button type="submit" disabled={!consultorInput.trim() || consultorLoading}
+                                                className="h-9 w-9 p-0 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 hover:opacity-90 shadow shrink-0">
+                                                {consultorLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin text-white" /> : <Send className="w-3.5 h-3.5 text-white" />}
+                                            </Button>
+                                        </form>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        <footer className="bg-white p-6 border-t shrink-0 z-[60] shadow-[0_-4px_20px_rgba(0,0,0,0.02)]">
+                            {/* Inputs ocultos para seleccionar archivos */}
+                            <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
+                            <input ref={audioInputRef} type="file" accept="audio/*" className="hidden" onChange={handleFileSelect} />
+                            <input ref={docInputRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip" className="hidden" onChange={handleFileSelect} />
+
                             <div className="flex items-center gap-4">
                                 <div className="flex gap-2 shrink-0">
                                     <Popover>
@@ -591,23 +962,59 @@ export function WhatsAppWebPortal({
                                             <DropdownMenuItem onClick={() => handleImproveMessage('Negociación')} className="gap-3 font-bold text-xs py-3 cursor-pointer"><CheckCircle className="w-4 h-4 text-primary" /> Negociación</DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
+
+                                    {/* ── ADJUNTAR: imagen / audio / documento ── */}
+                                    {selectedChat?.source === 'WhatsApp QR' && (
+                                        <>
+                                            <Button
+                                                type="button" variant="outline"
+                                                className="h-12 px-3 rounded-xl border-emerald-200 text-emerald-600 hover:bg-emerald-50 transition-all"
+                                                title="Enviar imagen" disabled={isLoading}
+                                                onClick={() => fileInputRef.current?.click()}
+                                            >
+                                                <ImageIcon className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                type="button" variant="outline"
+                                                className="h-12 px-3 rounded-xl border-amber-200 text-amber-600 hover:bg-amber-50 transition-all"
+                                                title="Enviar documento (PDF, Word...)"
+                                                disabled={isLoading}
+                                                onClick={() => docInputRef.current?.click()}
+                                            >
+                                                <FileIcon className="w-4 h-4" />
+                                            </Button>
+                                        </>
+                                    )}
                                 </div>
 
                                 <form onSubmit={handleSendMessage} className="flex-grow flex items-center gap-3">
+                                    {/* Botón adjuntar */}
+                                    <Button type="button" variant="ghost" size="icon" className="h-12 w-12 rounded-xl text-slate-400 hover:text-primary hover:bg-primary/5 shrink-0 transition-all" onClick={() => fileInputRef.current?.click()} title="Adjuntar archivo">
+                                        <Paperclip className="w-5 h-5" />
+                                    </Button>
                                     <div className="relative flex-grow">
                                         <Input 
-                                            placeholder="Escribe un mensaje..." 
+                                            id="crm-message-input"
+                                            placeholder={pendingMedia ? `${pendingMedia.fileName} — añade un pie de foto...` : "Escribe un mensaje..."} 
                                             className="bg-slate-50 border-none h-12 rounded-xl px-6 text-sm font-medium focus-visible:ring-2 focus-visible:ring-primary/20 shadow-none transition-all pr-12" 
                                             value={inputValue} 
                                             onChange={(e) => setInputValue(e.target.value)} 
-                                            disabled={isLoading || isImproving} 
+                                            disabled={isSendingMessage || isImproving} 
                                         />
                                         <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300">
                                             <Smile className="w-5 h-5 cursor-pointer hover:text-slate-400 transition-colors" />
                                         </div>
                                     </div>
-                                    <Button type="submit" size="icon" className="bg-primary hover:bg-blue-700 rounded-xl h-12 w-12 shrink-0 shadow-lg shadow-primary/20 transition-all active:scale-95" disabled={!inputValue.trim() || isLoading || isImproving}>
-                                        <Send className="w-5 h-5 text-white" />
+                                    {/* Botón micrófono */}
+                                    {selectedChat?.source === 'WhatsApp QR' && (
+                                        <Button type="button" variant="ghost" size="icon"
+                                            className={cn("h-12 w-12 rounded-xl shrink-0 transition-all", isRecording ? 'text-white bg-red-500 hover:bg-red-600 animate-pulse' : 'text-slate-400 hover:text-primary hover:bg-primary/5')}
+                                            onClick={handleToggleRecording} title={isRecording ? 'Detener grabación' : 'Nota de voz'}>
+                                            {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                                        </Button>
+                                    )}
+                                    <Button type="submit" size="icon" className="bg-primary hover:bg-blue-700 rounded-xl h-12 w-12 shrink-0 shadow-lg shadow-primary/20 transition-all active:scale-95" disabled={(!inputValue.trim() && !pendingMedia) || isSendingMessage || isImproving}>
+                                        {isSendingMessage ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : <Send className="w-5 h-5 text-white" />}
                                     </Button>
                                 </form>
                             </div>

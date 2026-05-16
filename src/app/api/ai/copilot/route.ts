@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 
-// ═══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // COPILOTO IA - Freeway Escuela de Manejo
-// Versión: 2.0 - Construido desde cero
-// ═══════════════════════════════════════════════════════
+// VersiÃ³n: 2.0 - Construido desde cero
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 export const maxDuration = 55;
 
@@ -40,7 +40,7 @@ async function callGeminiWithRetry(prompt: string, apiKey: string): Promise<stri
 
         try {
             const res = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -58,7 +58,7 @@ async function callGeminiWithRetry(prompt: string, apiKey: string): Promise<stri
 
             clearTimeout(timeoutId);
 
-            // 429 = rate limit → esperar y reintentar
+            // 429 = rate limit â†’ esperar y reintentar
             if (res.status === 429) {
                 const waitMs = (attempt + 1) * 3000;
                 console.log(`[copilot] 429 rate limit, retrying in ${waitMs}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
@@ -165,3 +165,4 @@ Responde UNICAMENTE con este JSON valido (sin markdown, sin backticks):
         return NextResponse.json({ ok: false, error: friendlyError });
     }
 }
+

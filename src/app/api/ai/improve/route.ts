@@ -1,52 +1,52 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 
-// ══════════════════════════════════════════════════════════
-// FRAMEWORK DE COMUNICACIÓN — Freeway Escuela de Manejo
-// ══════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// FRAMEWORK DE COMUNICACIÃ“N â€” Freeway Escuela de Manejo
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //
 // DIRECTRICES GLOBALES (aplican a todos los estilos):
 // - Nunca uses tono confrontativo ni autoritario.
-// - Evita respuestas cortantes o monosílabos.
+// - Evita respuestas cortantes o monosÃ­labos.
 // - No prometas cosas que no se pueden cumplir.
 // - PROHIBIDO: [Nombre], [Cliente], [Fecha] ni texto entre corchetes.
-// - Máximo 3 oraciones. Listo para pegar en WhatsApp.
+// - MÃ¡ximo 3 oraciones. Listo para pegar en WhatsApp.
 
 const STYLE_GUIDE: Record<string, string> = {
 
     'Profesional': `
 Aplica estas reglas en orden:
 1. TONO: Lenguaje preciso y formal, propio de un asesor de una escuela de manejo reconocida.
-   Sin jerga, sin emojis, sin expresiones informales. Estructura lógica y clara.
-2. CONTENIDO: Mantén la intención del mensaje original. Eleva el vocabulario sin cambiar el sentido.
-3. CIERRE: Si aplica, termina con una invitación respetuosa a responder o actuar.
+   Sin jerga, sin emojis, sin expresiones informales. Estructura lÃ³gica y clara.
+2. CONTENIDO: MantÃ©n la intenciÃ³n del mensaje original. Eleva el vocabulario sin cambiar el sentido.
+3. CIERRE: Si aplica, termina con una invitaciÃ³n respetuosa a responder o actuar.
 
 Ejemplo entrada: "me indica su cedula"
-Ejemplo salida: "Buenos días. Para continuar con su proceso de inscripción, le solicito amablemente su número de cédula."`,
+Ejemplo salida: "Buenos dÃ­as. Para continuar con su proceso de inscripciÃ³n, le solicito amablemente su nÃºmero de cÃ©dula."`,
 
     'Suave': `
 Aplica estas reglas en orden:
-1. VALIDACIÓN PREVIA: Empieza reconociendo la situación del cliente con una frase de transición
+1. VALIDACIÃ“N PREVIA: Empieza reconociendo la situaciÃ³n del cliente con una frase de transiciÃ³n
    como "Con gusto te ayudo con eso", "Entiendo perfectamente" o "Aprecio tu mensaje".
    Esto reduce la resistencia antes de pedir algo.
-2. TONO: Cálido, empático y cercano. Puedes usar 1 emoji apropiado máximo.
+2. TONO: CÃ¡lido, empÃ¡tico y cercano. Puedes usar 1 emoji apropiado mÃ¡ximo.
 3. CIERRE COLABORATIVO: Termina con una pregunta abierta que invite a cooperar,
-   como "¿Cómo te queda eso?" o "¿Cuándo te vendría bien?"
+   como "Â¿CÃ³mo te queda eso?" o "Â¿CuÃ¡ndo te vendrÃ­a bien?"
 
 Ejemplo entrada: "me indica su cedula"
-Ejemplo salida: "Con gusto te ayudo con tu proceso 😊 Para poder avanzar, ¿me puedes compartir tu número de cédula?"`,
+Ejemplo salida: "Con gusto te ayudo con tu proceso ðŸ˜Š Para poder avanzar, Â¿me puedes compartir tu nÃºmero de cÃ©dula?"`,
 
-    'Negociación': `
+    'NegociaciÃ³n': `
 Aplica estas reglas en orden:
 1. ESCUCHA ACTIVA: Resume brevemente lo que el cliente dijo o necesita (1 frase).
-   Esto demuestra comprensión antes de responder.
-2. ENFOQUE GANAR-GANAR: Presenta el beneficio concreto para el cliente de tomar acción.
-   Si hay una limitación, ofrece siempre una alternativa o concesión. Nunca cierres sin salida.
-   No cedas por cortesía ni impongas por autoridad — busca lo que conviene a ambos.
+   Esto demuestra comprensiÃ³n antes de responder.
+2. ENFOQUE GANAR-GANAR: Presenta el beneficio concreto para el cliente de tomar acciÃ³n.
+   Si hay una limitaciÃ³n, ofrece siempre una alternativa o concesiÃ³n. Nunca cierres sin salida.
+   No cedas por cortesÃ­a ni impongas por autoridad â€” busca lo que conviene a ambos.
 3. CIERRE COLABORATIVO: Termina con una pregunta que invite a decidir hoy,
-   como "¿Te animas si lo coordinamos ahora?" o "¿Cómo te sentirías si exploramos esta opción?"
+   como "Â¿Te animas si lo coordinamos ahora?" o "Â¿CÃ³mo te sentirÃ­as si exploramos esta opciÃ³n?"
 
 Ejemplo entrada: "me indica su cedula"
-Ejemplo salida: "Para reservar tu cupo antes de que se llene — que es lo que quieres asegurar — solo necesito tu cédula. ¿Te animas a compartirla ahora y coordinamos todo?"`,
+Ejemplo salida: "Para reservar tu cupo antes de que se llene â€” que es lo que quieres asegurar â€” solo necesito tu cÃ©dula. Â¿Te animas a compartirla ahora y coordinamos todo?"`,
 };
 
 export async function POST(req: Request) {
@@ -54,29 +54,29 @@ export async function POST(req: Request) {
         const { text, style } = await req.json();
 
         if (!text?.trim()) {
-            return NextResponse.json({ text: 'El mensaje no puede estar vacío.' }, { status: 400 });
+            return NextResponse.json({ text: 'El mensaje no puede estar vacÃ­o.' }, { status: 400 });
         }
 
         const guia = STYLE_GUIDE[style as string] || STYLE_GUIDE['Profesional'];
 
-        const prompt = `Eres el asistente experto en comunicación de ventas de Freeway Escuela de Manejo en Panamá.
+        const prompt = `Eres el asistente experto en comunicaciÃ³n de ventas de Freeway Escuela de Manejo en PanamÃ¡.
 
-Tu única tarea es reescribir el mensaje de un asesor aplicando el estilo y las técnicas indicadas.
+Tu Ãºnica tarea es reescribir el mensaje de un asesor aplicando el estilo y las tÃ©cnicas indicadas.
 
-━━━ ESTILO: ${style} ━━━
+â”â”â” ESTILO: ${style} â”â”â”
 ${guia}
 
-━━━ RESTRICCIONES ABSOLUTAS ━━━
-- Devuelve ÚNICAMENTE el mensaje mejorado. Sin explicaciones, sin encabezados, sin comillas.
+â”â”â” RESTRICCIONES ABSOLUTAS â”â”â”
+- Devuelve ÃšNICAMENTE el mensaje mejorado. Sin explicaciones, sin encabezados, sin comillas.
 - PROHIBIDO usar placeholders: [Nombre], [Cliente], [Fecha] ni NADA entre corchetes [ ].
 - El mensaje debe poder copiarse y pegarse en WhatsApp exactamente como sale.
-- No inventes datos (nombres, precios, fechas) que no estén en el mensaje original.
-- Máximo 3 oraciones. Idioma: español panameño estándar.
+- No inventes datos (nombres, precios, fechas) que no estÃ©n en el mensaje original.
+- MÃ¡ximo 3 oraciones. Idioma: espaÃ±ol panameÃ±o estÃ¡ndar.
 
-━━━ MENSAJE ORIGINAL ━━━
+â”â”â” MENSAJE ORIGINAL â”â”â”
 "${text.trim()}"
 
-━━━ MENSAJE MEJORADO ━━━`;
+â”â”â” MENSAJE MEJORADO â”â”â”`;
 
         const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
         if (!GEMINI_API_KEY) {
@@ -85,7 +85,7 @@ ${guia}
         }
 
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -111,7 +111,7 @@ ${guia}
 
         if (!result) {
             const reason = data.candidates?.[0]?.finishReason || 'sin respuesta';
-            console.error('[/api/ai/improve] Sin texto. Razón:', reason);
+            console.error('[/api/ai/improve] Sin texto. RazÃ³n:', reason);
             return NextResponse.json({ text: `Sin respuesta del modelo (${reason}).` }, { status: 500 });
         }
 
@@ -120,7 +120,7 @@ ${guia}
             .trim()
             .replace(/\[.*?\]/g, '')                              // elimina [placeholders]
             .replace(/^["'""''`]+|["'""''`]+$/g, '')              // quita comillas decorativas
-            .replace(/^(Mensaje mejorado:|Respuesta:|Resultado:|━+.*?━+\s*)/i, '') // etiquetas residuales
+            .replace(/^(Mensaje mejorado:|Respuesta:|Resultado:|â”+.*?â”+\s*)/i, '') // etiquetas residuales
             .replace(/\n{2,}/g, ' ')                              // colapsa saltos dobles
             .trim();
 
@@ -128,6 +128,7 @@ ${guia}
 
     } catch (e: any) {
         console.error('[/api/ai/improve] Error inesperado:', e);
-        return NextResponse.json({ text: 'Error de conexión con la IA.' }, { status: 500 });
+        return NextResponse.json({ text: 'Error de conexiÃ³n con la IA.' }, { status: 500 });
     }
 }
+

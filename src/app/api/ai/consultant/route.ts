@@ -119,7 +119,7 @@ Responde en espaÃ±ol panameÃ±o. SÃ© directo, entusiasta y orientado al cie
 
         const GEMINI_API_KEY = process.env.GEMINI_API_KEY ;
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -142,5 +142,6 @@ Responde en espaÃ±ol panameÃ±o. SÃ© directo, entusiasta y orientado al cie
         return NextResponse.json({ text: 'Error interno: ' + String(e.message) }, { status: 500 });
     }
 }
+
 
 

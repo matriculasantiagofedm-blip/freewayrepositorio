@@ -3,18 +3,27 @@ import { NextResponse } from 'next/server';
 export const maxDuration = 55;
 
 const KNOWLEDGE = `
-Freeway Escuela de Manejo - Panama (La Chorrera, Green Plaza)
-WhatsApp: +507-6381-4115
+EMPRESA: Freeway Escuela de Manejo - Panama
+WhatsApp Ventas: +507-6381-4115
+Inscripcion online: https://www.contractimefedm.online/
 
-CURSOS:
-- Auto Manual o Automatico: desde $133 (8h teoria + 8h practica, Certificado A,B)
-- Motocicleta: desde $115 (traer casco y pasaportania)
-- Mixto (Auto + Moto): precio combinado con descuento
-- Deluxe Estandar: $300 total (matricula $15 + 6 pagos de $45)
-- Deluxe Logistica: $330 total (matricula $15 + 6 pagos de $55)
-- Deluxe Delivery: $288 total (matricula $15 + 6 pagos de $48)
-- PAGO: Efectivo, tarjeta, transferencia, cuotas quincenales
-- HORARIOS: Lunes a sabado
+CURSOS Y PRECIOS EXACTOS:
+1. Curso de Auto Manual    : $133 (incluye 8h teoria + 8h practica + Certificado A y B)
+2. Curso de Auto Automatico: $133 (incluye 8h teoria + 8h practica + Certificado A y B)
+3. Curso de Motocicleta    : $115 (estudiante debe traer casco y pasaportania)
+4. Curso Mixto Auto + Moto : precio combinado con descuento especial
+5. Plan Deluxe Estandar    : $300 total en cuotas (matricula $15 + 6 pagos quincenales de $45)
+6. Plan Deluxe Logistica   : $330 total en cuotas (matricula $15 + 6 pagos quincenales de $55)
+7. Plan Deluxe Delivery    : $288 total en cuotas (matricula $15 + 6 pagos quincenales de $48)
+
+FORMAS DE PAGO: Efectivo, tarjeta de credito/debito, transferencia bancaria, cuotas quincenales.
+HORARIOS: Lunes a sabado (horarios especificos se coordinan con el cliente al inscribirse).
+
+IMPORTANTE - NO INVENTAR:
+- No inventar fechas de inicio (ej: 19 de mayo) - decir que se coordinan al inscribirse
+- No inventar nombres de cursos que no estan en esta lista
+- No inventar ubicaciones especificas que no esten confirmadas
+- No inventar precios distintos a los indicados arriba
 `;
 
 async function callGemini(prompt: string, apiKey: string): Promise<string> {
@@ -78,19 +87,23 @@ export async function POST(req: Request) {
 
         const prompt = `Eres el copiloto de ventas de Freeway Escuela de Manejo (Panama).
 
-INFORMACION DE LA EMPRESA:
+INFORMACION DE LA EMPRESA (SOLO usa estos datos, NADA mas):
 ${KNOWLEDGE}
 
 HISTORIAL DE CONVERSACION:
 ${history || '(Cliente nuevo)'}
 
-INSTRUCCION: Escribe 3 mensajes de WhatsApp para que el asesor responda al cliente.
-Cada mensaje debe ser maximo 2 oraciones. Tono panamenio, natural y profesional.
+INSTRUCCION: Escribe 3 mensajes de WhatsApp listos para que el asesor los envie al cliente.
+- Maximo 2 oraciones por mensaje.
+- Tono panamenio, natural y profesional.
+- USA SOLO los datos de la empresa indicados arriba.
+- PROHIBIDO inventar: fechas de inicio, nombres de cursos que no existen, precios incorrectos, o ubicaciones no confirmadas.
+- Si el cliente pregunta algo que no esta en la informacion, di que lo pueden coordinar directamente.
 
-FORMATO DE RESPUESTA (escribe EXACTAMENTE asi, 3 lineas, nada mas):
-DIRECTA: [mensaje que responde la duda con informacion del catalogo]
-CIERRE: [mensaje que invita a inscribirse hoy, pregunta horario o pago]
-PERSUASIVA: [mensaje corto y entusiasta con un emoji]`;
+FORMATO EXACTO (3 lineas, sin texto adicional antes o despues):
+DIRECTA: [responde la consulta exacta del cliente con datos reales del catalogo]
+CIERRE: [invita a inscribirse hoy, pregunta horario disponible o metodo de pago]
+PERSUASIVA: [mensaje breve y entusiasta con un emoji]`;
 
         const rawText = await callGemini(prompt, GEMINI_API_KEY);
         console.log('[copilot] raw:', rawText.substring(0, 300));

@@ -3,54 +3,19 @@ import { NextResponse } from 'next/server';
 export const maxDuration = 55;
 
 const KNOWLEDGE = `
-EMPRESA: Freeway Escuela de Manejo - Panama (La Chorrera, Green Plaza)
+Freeway Escuela de Manejo - Panama (La Chorrera, Green Plaza)
 WhatsApp: +507-6381-4115
 
 CURSOS:
-- Auto Manual o Automatico: desde $133 (8h teorica + 8h practica, Certificado A,B)
+- Auto Manual o Automatico: desde $133 (8h teoria + 8h practica, Certificado A,B)
 - Motocicleta: desde $115 (traer casco y pasaportania)
 - Mixto (Auto + Moto): precio combinado con descuento
 - Deluxe Estandar: $300 total (matricula $15 + 6 pagos de $45)
 - Deluxe Logistica: $330 total (matricula $15 + 6 pagos de $55)
 - Deluxe Delivery: $288 total (matricula $15 + 6 pagos de $48)
-
-PAGO: Efectivo, tarjeta, transferencia, cuotas quincenales.
-HORARIOS: Lunes a sabado, distintos turnos.
-WEB: https://www.contractimefedm.online/
+- PAGO: Efectivo, tarjeta, transferencia, cuotas quincenales
+- HORARIOS: Lunes a sabado
 `;
-
-function extractJSON(text: string): { directa: string; cierre: string; persuasiva: string } | null {
-    // Estrategia 1: limpiar markdown y parsear directo
-    try {
-        const cleaned = text
-            .replace(/```json\s*/gi, '')
-            .replace(/```\s*/g, '')
-            .trim();
-        const start = cleaned.indexOf('{');
-        const end = cleaned.lastIndexOf('}');
-        if (start !== -1 && end > start) {
-            const jsonStr = cleaned.substring(start, end + 1);
-            const parsed = JSON.parse(jsonStr);
-            if (parsed.directa && parsed.cierre && parsed.persuasiva) return parsed;
-        }
-    } catch {}
-
-    // Estrategia 2: regex para extraer cada campo
-    try {
-        const d = text.match(/"directa"\s*:\s*"((?:[^"\\]|\\.)*)"/)?.[1];
-        const c = text.match(/"cierre"\s*:\s*"((?:[^"\\]|\\.)*)"/)?.[1];
-        const p = text.match(/"persuasiva"\s*:\s*"((?:[^"\\]|\\.)*)"/)?.[1];
-        if (d && c && p) {
-            return {
-                directa: d.replace(/\\n/g, ' ').replace(/\\"/g, '"'),
-                cierre: c.replace(/\\n/g, ' ').replace(/\\"/g, '"'),
-                persuasiva: p.replace(/\\n/g, ' ').replace(/\\"/g, '"'),
-            };
-        }
-    } catch {}
-
-    return null;
-}
 
 async function callGemini(prompt: string, apiKey: string): Promise<string> {
     const MAX_RETRIES = 3;
@@ -68,10 +33,7 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
                     signal: controller.signal,
                     body: JSON.stringify({
                         contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: {
-                            temperature: 0.65,
-                            maxOutputTokens: 800,
-                        }
+                        generationConfig: { temperature: 0.7, maxOutputTokens: 8192 }
                     })
                 }
             );
@@ -79,9 +41,7 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
             clearTimeout(timeoutId);
 
             if (res.status === 429) {
-                const waitMs = (attempt + 1) * 4000;
-                console.log(`[copilot] 429 rate limit, retrying in ${waitMs}ms`);
-                await new Promise(r => setTimeout(r, waitMs));
+                await new Promise(r => setTimeout(r, (attempt + 1) * 4000));
                 continue;
             }
 
@@ -92,9 +52,7 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
             }
 
             const data = await res.json();
-            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!text) throw new Error('EMPTY_RESPONSE');
-            console.log('[copilot] raw response:', text.substring(0, 200));
+            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
             return text;
 
         } catch (err: any) {
@@ -115,54 +73,68 @@ export async function POST(req: Request) {
 
         const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
         if (!GEMINI_API_KEY) {
-            return NextResponse.json({ ok: false, error: 'API Key no configurada.' });
+            return NextResponse.json({ ok: false, error: 'API Key no configurada en el servidor.' });
         }
 
-        const prompt = `Eres copiloto de ventas de Freeway Escuela de Manejo (Panama).
+        const prompt = `Eres el copiloto de ventas de Freeway Escuela de Manejo (Panama).
 
-CONOCIMIENTO:
+INFORMACION DE LA EMPRESA:
 ${KNOWLEDGE}
 
-HISTORIAL WHATSAPP:
-${history || '(Cliente nuevo sin historial)'}
+HISTORIAL DE CONVERSACION:
+${history || '(Cliente nuevo)'}
 
-TAREA: Genera exactamente 3 respuestas de WhatsApp para el asesor de ventas.
-- directa: Responde la duda principal con datos concretos del catalogo.
-- cierre: Impulsa al cliente a inscribirse hoy. Pregunta disponibilidad o forma de pago.
-- persuasiva: Mensaje corto, amigable, con un emoji que genere interes.
+INSTRUCCION: Escribe 3 mensajes de WhatsApp para que el asesor responda al cliente.
+Cada mensaje debe ser maximo 2 oraciones. Tono panamenio, natural y profesional.
 
-REGLAS:
-- Maximo 2 oraciones por respuesta.
-- Tono natural panamenio, profesional pero cercano.
-- NO incluyas etiquetas ni titulos dentro del texto de cada respuesta.
-- Responde SOLO con el siguiente JSON (sin explicaciones, sin codigo markdown):
-
-{"directa":"RESPUESTA_DIRECTA_AQUI","cierre":"RESPUESTA_CIERRE_AQUI","persuasiva":"RESPUESTA_PERSUASIVA_AQUI"}`;
+FORMATO DE RESPUESTA (escribe EXACTAMENTE asi, 3 lineas, nada mas):
+DIRECTA: [mensaje que responde la duda con informacion del catalogo]
+CIERRE: [mensaje que invita a inscribirse hoy, pregunta horario o pago]
+PERSUASIVA: [mensaje corto y entusiasta con un emoji]`;
 
         const rawText = await callGemini(prompt, GEMINI_API_KEY);
-        const options = extractJSON(rawText);
+        console.log('[copilot] raw:', rawText.substring(0, 300));
 
-        if (options) {
-            return NextResponse.json({ ok: true, options });
+        // Parsear por prefijos de línea — mucho más robusto que JSON
+        const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+
+        const findLine = (prefix: string) =>
+            lines.find(l => l.toUpperCase().startsWith(prefix.toUpperCase()))
+                ?.replace(new RegExp(`^${prefix}:?\\s*`, 'i'), '')
+                .replace(/\*\*/g, '')   // quitar markdown bold
+                .trim() ?? '';
+
+        const directa    = findLine('DIRECTA');
+        const cierre     = findLine('CIERRE');
+        const persuasiva = findLine('PERSUASIVA');
+
+        if (!directa && !cierre && !persuasiva) {
+            console.error('[copilot] parsing failed, rawText:', rawText.substring(0, 400));
+            return NextResponse.json({
+                ok: false,
+                error: 'La IA no pudo generar sugerencias. Intenta de nuevo.'
+            });
         }
 
-        // Si ninguna estrategia funcionó, devolver error informativo
-        console.error('[copilot] JSON extraction failed. rawText:', rawText.substring(0, 400));
         return NextResponse.json({
-            ok: false,
-            error: 'La IA no respondio en el formato esperado. Intenta de nuevo.'
+            ok: true,
+            options: {
+                directa:    directa    || '(Sin respuesta directa)',
+                cierre:     cierre     || '(Sin respuesta de cierre)',
+                persuasiva: persuasiva || '(Sin respuesta persuasiva)',
+            }
         });
 
     } catch (err: any) {
         const msg = err?.message || 'ERROR_DESCONOCIDO';
-        console.error('[copilot] Fatal error:', msg);
+        console.error('[copilot] Fatal:', msg);
 
         const friendlyError =
-            msg === 'TIMEOUT' ? 'Tiempo de espera agotado. Intenta de nuevo.' :
-            msg.includes('GEMINI_HTTP_429') || msg === 'MAX_RETRIES_EXCEEDED'
-                ? 'La IA esta ocupada. Espera unos segundos e intenta de nuevo.' :
-            msg.includes('GEMINI_HTTP_') ? `Error de la IA. Intenta de nuevo.` :
-            'Error inesperado. Intenta de nuevo.';
+            msg === 'TIMEOUT'                ? 'Tiempo de espera agotado. Intenta de nuevo.' :
+            msg === 'MAX_RETRIES_EXCEEDED'   ? 'La IA esta ocupada. Espera unos segundos.' :
+            msg.includes('GEMINI_HTTP_429')  ? 'Limite de uso alcanzado. Espera 30 segundos.' :
+            msg.includes('GEMINI_HTTP_')     ? 'Error de la IA. Intenta de nuevo.' :
+                                               'Error inesperado. Intenta de nuevo.';
 
         return NextResponse.json({ ok: false, error: friendlyError });
     }

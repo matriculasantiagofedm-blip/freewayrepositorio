@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 
 // Base de conocimientos por defecto (si no se carga desde Firestore)
 const DEFAULT_KB = `Freeway Escuela de Manejo - Panama
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
         const { historyString, leadId } = await req.json();
 
         const kbText = DEFAULT_KB;
-        const historyText = historyString || '';
+        const historyText = historyString ;
 
         const prompt = `Eres un copiloto experto en cierre de ventas por WhatsApp (Asesor de Freeway Panama).
 Acabas de leer el historial reciente de una conversacion con un prospecto interesado en cursos de manejo o licencia.
@@ -45,7 +45,7 @@ ${historyText || "(El cliente acaba de escribir para pedir informacion por prime
 
 Escribe las 3 opciones para responderle al cliente de la mejor manera. No incluyas nada mas que las opciones.`;
 
-        const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyBLj7U7SlWJP9Eq_AjriJR5mXhUKn3lIWA';
+        const GEMINI_API_KEY = process.env.GEMINI_API_KEY ;
         const response = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
             {
@@ -73,3 +73,4 @@ Escribe las 3 opciones para responderle al cliente de la mejor manera. No incluy
         return NextResponse.json({ text: 'Error procesando IA: ' + String(e.message) }, { status: 500 });
     }
 }
+

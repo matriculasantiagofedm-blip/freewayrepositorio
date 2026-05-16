@@ -117,7 +117,7 @@ Responde en espaÃ±ol panameÃ±o. SÃ© directo, entusiasta y orientado al cie
 - Si el cliente estÃ¡ listo para inscribirse, incluye el bloque de cierre con la URL.
 - Siempre termina con una pregunta de acciÃ³n o siguiente paso.`;
 
-        const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyBLj7U7SlWJP9Eq_AjriJR5mXhUKn3lIWA';
+        const GEMINI_API_KEY = process.env.GEMINI_API_KEY ;
         const response = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
             {
@@ -142,4 +142,5 @@ Responde en espaÃ±ol panameÃ±o. SÃ© directo, entusiasta y orientado al cie
         return NextResponse.json({ text: 'Error interno: ' + String(e.message) }, { status: 500 });
     }
 }
+
 

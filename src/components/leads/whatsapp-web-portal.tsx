@@ -80,11 +80,15 @@ export function WhatsAppWebPortal({
     const [selectedChat, setSelectedChat] = useState<any | null>(null);
     const [showChatList, setShowChatList] = useState(true); // mobile: toggle between list and chat
     const [inputValue, setInputValue] = useState('');
-    const [isLoading, setIsLoading] = useState(false);      // Co-piloto IA
+    // ── COPILOTO IA v2 ────────────────────────────────────────
+    const [copilotLoading, setCopilotLoading] = useState(false);
+    const [copilotOptions, setCopilotOptions] = useState<{directa:string;cierre:string;persuasiva:string}|null>(null);
+    const [copilotError, setCopilotError] = useState<string|null>(null);
+    const [showCopilot, setShowCopilot] = useState(false);
     const [isSendingMessage, setIsSendingMessage] = useState(false); // EnvÃ­o de mensajes
     const [isImproving, setIsImproving] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
+
     const [isBotEnabled, setIsBotEnabled] = useState(currentUser?.chatbotEnabled || false);
     const [quickReplies, setQuickReplies] = useState<any[]>(currentUser?.quickReplies || []);
     const [isManageRepliesOpen, setIsManageRepliesOpen] = useState(false);
@@ -246,7 +250,7 @@ export function WhatsAppWebPortal({
             const viewport = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
             if (viewport) viewport.scrollTop = viewport.scrollHeight;
         }
-    }, [selectedChat?.messages, isLoading]);
+    }, [selectedChat?.messages, copilotLoading]);
 
     const handleSendMessage = async (e?: React.FormEvent) => {
         e?.preventDefault();
@@ -389,22 +393,7 @@ export function WhatsAppWebPortal({
         toast({ title: "Respuesta eliminada" });
     };
 
-    const parsedOptions = (() => {
-        if (!aiSuggestion) return null;
-        const parts = aiSuggestion.split(/(?=1ï¸âƒ£|2ï¸âƒ£|3ï¸âƒ£)/).filter(p => p.trim());
-        if (parts.length >= 2 && parts.some(p => p.includes('1ï¸âƒ£'))) {
-            return parts.map(part => {
-                let text = part.trim();
-                let type = "OpciÃ³n";
-                if (text.startsWith("1ï¸âƒ£")) { type = "Directa"; text = text.replace(/1ï¸âƒ£[^:]*:\s*/, '').trim(); }
-                else if (text.startsWith("2ï¸âƒ£")) { type = "Al Cierre"; text = text.replace(/2ï¸âƒ£[^:]*:\s*/, '').trim(); }
-                else if (text.startsWith("3ï¸âƒ£")) { type = "Persuasiva"; text = text.replace(/3ï¸âƒ£[^:]*:\s*/, '').trim(); }
-                else { text = text.replace(/^[0-9]ï¸âƒ£[^:]*:\s*/, '').trim(); }
-                return { type, text: text.replace(/^\*+/, '').replace(/\*+$/, '') };
-            });
-        }
-        return null;
-    })();
+    // Copiloto v2: opciones estructuradas - procesadas por el API directamente como JSON
 
     const renderText = (text: string) => {
         if (!text) return null;
@@ -573,28 +562,49 @@ export function WhatsAppWebPortal({
                                     </DropdownMenuContent>
                                 </DropdownMenu>
 
-                                 <Button onClick={async () => { 
-                                    try {
-                                        setIsLoading(true); 
-                                        const recentMessages = selectedChat.messages?.slice(-15).map((m: any) => {
-                                            const senderName = m.sender === 'client' ? 'Cliente' : 'Asesor Freeway';
-                                            return `${senderName}: ${m.text}`;
-                                        }).join('\n') || '';
-                                        const req = await fetch('/api/ai/copilot', {
-                                            method: "POST",
-                                            headers: { "Content-Type": "application/json" },
-                                            body: JSON.stringify({ historyString: recentMessages, leadId: selectedChat.id })
-                                        });
-                                        const r = await req.json();
-                                        if (r?.text && req.ok) setAiSuggestion(r.text); 
-                                        else setAiSuggestion("Hubo un error contactando a la IA.");
-                                        } catch (err) {
-                                            setAiSuggestion('Error de conexion con la IA.');
-                                    } finally {
-                                        setIsLoading(false); 
+                                 {/* ── CO-PILOTO IA v2 ── */}
+                                <Button
+                                    onClick={async () => {
+                                        if (copilotLoading) return;
+                                        setShowCopilot(true);
+                                        setCopilotLoading(true);
+                                        setCopilotError(null);
+                                        setCopilotOptions(null);
+                                        try {
+                                            const history = (selectedChat.messages || [])
+                                                .slice(-20)
+                                                .map((m: any) => `${m.sender === 'client' ? 'Cliente' : 'Asesor'}: ${m.text || ''}`.trim())
+                                                .filter(Boolean)
+                                                .join('\n');
+                                            const res = await fetch('/api/ai/copilot', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ historyString: history })
+                                            });
+                                            const data = await res.json();
+                                            if (data.ok && data.options) {
+                                                setCopilotOptions(data.options);
+                                            } else {
+                                                setCopilotError(data.error || 'Error desconocido. Intenta de nuevo.');
+                                            }
+                                        } catch {
+                                            setCopilotError('Sin conexion al servidor. Verifica tu internet.');
+                                        } finally {
+                                            setCopilotLoading(false);
+                                        }
+                                    }}
+                                    variant="outline" size="sm"
+                                    className={`font-bold text-[10px] uppercase h-9 px-3 lg:px-4 rounded-lg transition-all gap-2 ${
+                                        showCopilot
+                                            ? 'bg-primary border-primary text-white hover:bg-primary/90'
+                                            : 'bg-primary/5 border-primary/10 text-primary hover:bg-primary hover:text-white'
+                                    }`}
+                                >
+                                    {copilotLoading
+                                        ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        : <Wand2 className="w-3.5 h-3.5" />
                                     }
-                                }} variant="outline" size="sm" className="bg-primary/5 border-primary/10 text-primary font-bold text-[10px] uppercase h-9 px-3 lg:px-4 rounded-lg hover:bg-primary hover:text-white transition-all gap-2">
-                                    <Wand2 className="w-3.5 h-3.5" /> <span className="hidden lg:inline">Co-piloto IA</span>
+                                    <span className="hidden lg:inline">Co-piloto IA</span>
                                 </Button>
 
                                 {/* ── Respuestas Rápidas (junto al copiloto) ── */}
@@ -810,60 +820,126 @@ export function WhatsAppWebPortal({
                                     );
                                 })}
 
-                                {isLoading && !aiSuggestion && (
-                                    <div className="flex justify-start">
-                                        <div className="bg-white px-4 py-3 rounded-2xl shadow-sm border flex items-center gap-3">
-                                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">IA Generando...</span>
-                                        </div>
-                                    </div>
-                                )}
+
                             </div>
                         </ScrollArea>
 
+                        {/* ═══ COPILOTO IA v2 - PANEL ═══ */}
                         <AnimatePresence>
-                            {aiSuggestion && (
-                                <motion.div initial={{ x: 400 }} animate={{ x: 0 }} exit={{ x: 400 }} className="absolute right-0 top-14 md:top-16 bottom-0 w-full md:w-96 bg-white border-l z-40 shadow-2xl flex flex-col">
-                                    <div className="p-6 pb-4 bg-slate-50 shrink-0 border-b">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-primary rounded-lg text-white shadow-md shadow-primary/20"><Sparkles className="w-4 h-4 animate-pulse" /></div>
-                                                <div>
-                                                    <h5 className="font-bold text-slate-900 text-sm">Sugerencia IA</h5>
-                                                    <p className="text-[9px] text-slate-400 font-bold uppercase">Basado en datos de Freeway</p>
+                            {showCopilot && (
+                                <motion.div
+                                    initial={{ x: 420, opacity: 0 }}
+                                    animate={{ x: 0, opacity: 1 }}
+                                    exit={{ x: 420, opacity: 0 }}
+                                    transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+                                    className="absolute right-0 top-14 md:top-16 bottom-0 w-full md:w-[380px] bg-[#0f172a] border-l border-slate-700 z-40 shadow-2xl flex flex-col"
+                                >
+                                    {/* Header */}
+                                    <div className="px-5 py-4 border-b border-slate-700/60 flex items-center justify-between shrink-0">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center shadow-lg">
+                                                <Wand2 className="w-4 h-4 text-white" />
+                                            </div>
+                                            <div>
+                                                <p className="text-white font-bold text-sm leading-tight">Co-piloto IA</p>
+                                                <p className="text-slate-400 text-[10px] uppercase tracking-widest">3 opciones de respuesta</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => { setShowCopilot(false); setCopilotOptions(null); setCopilotError(null); }}
+                                            className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-all"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+
+                                    {/* Body */}
+                                    <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                                        {/* Loading */}
+                                        {copilotLoading && (
+                                            <div className="flex flex-col items-center justify-center h-48 gap-4">
+                                                <div className="w-12 h-12 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+                                                <div className="text-center">
+                                                    <p className="text-white font-bold text-sm">Generando opciones...</p>
+                                                    <p className="text-slate-400 text-xs mt-1">Analizando conversacion con IA</p>
                                                 </div>
                                             </div>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setAiSuggestion(null)}><History className="w-4 h-4 rotate-180" /></Button>
-                                        </div>
-                                        {parsedOptions ? (
-                                            <div className="flex flex-col gap-3 mt-2 max-h-[400px] overflow-y-auto px-1 pb-4">
-                                                {parsedOptions.map((opt, i) => (
-                                                    <div key={i} className="p-4 border rounded-2xl bg-white hover:border-primary hover:shadow-md cursor-pointer transition-all shadow-sm group" onClick={() => { setInputValue(opt.text); setAiSuggestion(null); }}>
-                                                        <div className="flex justify-between items-center mb-2">
-                                                            <span className="text-[10px] font-black tracking-widest text-primary uppercase bg-primary/10 px-2 py-0.5 rounded-md">{opt.type}</span>
-                                                            <span className="text-[9px] font-bold uppercase text-slate-300 group-hover:text-primary transition-colors flex items-center gap-1"><Send className="w-3 h-3" /> Usar</span>
-                                                        </div>
-                                                        <p className="text-xs text-slate-700 leading-relaxed font-medium">{opt.text}</p>
+                                        )}
+
+                                        {/* Error */}
+                                        {copilotError && !copilotLoading && (
+                                            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-center">
+                                                <p className="text-red-400 font-bold text-xs mb-3">{copilotError}</p>
+                                                <button
+                                                    onClick={() => {
+                                                        setCopilotError(null);
+                                                        // Re-trigger by clicking the header button logic inline
+                                                        setCopilotLoading(true);
+                                                        const history = (selectedChat?.messages || [])
+                                                            .slice(-20)
+                                                            .map((m: any) => `${m.sender === 'client' ? 'Cliente' : 'Asesor'}: ${m.text || ''}`)
+                                                            .filter(Boolean).join('\n');
+                                                        fetch('/api/ai/copilot', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({historyString:history}) })
+                                                            .then(r => r.json())
+                                                            .then(d => { if(d.ok) setCopilotOptions(d.options); else setCopilotError(d.error); })
+                                                            .catch(() => setCopilotError('Error de red.'))
+                                                            .finally(() => setCopilotLoading(false));
+                                                    }}
+                                                    className="bg-red-500 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
+                                                >
+                                                    Reintentar
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {/* Options */}
+                                        {copilotOptions && !copilotLoading && (() => {
+                                            const opts = [
+                                                { key: 'directa',    label: 'Directa',    color: 'from-blue-500 to-blue-600',   badge: 'bg-blue-500/20 text-blue-300',   text: copilotOptions.directa },
+                                                { key: 'cierre',     label: 'Al Cierre',  color: 'from-emerald-500 to-emerald-600', badge: 'bg-emerald-500/20 text-emerald-300', text: copilotOptions.cierre },
+                                                { key: 'persuasiva', label: 'Persuasiva', color: 'from-violet-500 to-violet-600', badge: 'bg-violet-500/20 text-violet-300', text: copilotOptions.persuasiva },
+                                            ];
+                                            return opts.filter(o => o.text).map((opt, i) => (
+                                                <div
+                                                    key={opt.key}
+                                                    className="bg-slate-800 border border-slate-700 hover:border-slate-500 rounded-xl p-4 cursor-pointer transition-all group hover:bg-slate-750 active:scale-[0.99]"
+                                                    onClick={() => { setInputValue(opt.text); setShowCopilot(false); setCopilotOptions(null); }}
+                                                >
+                                                    <div className="flex items-center justify-between mb-2.5">
+                                                        <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md ${opt.badge}`}>{opt.label}</span>
+                                                        <span className="text-[10px] text-slate-500 group-hover:text-slate-300 transition-colors flex items-center gap-1 font-bold uppercase">
+                                                            <Send className="w-3 h-3" /> Usar
+                                                        </span>
                                                     </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="p-4 bg-white rounded-xl border shadow-inner max-h-[300px] overflow-y-auto">
-                                                <div className="text-slate-700 text-xs leading-relaxed italic">{renderText(aiSuggestion)}</div>
-                                            </div>
-                                        )}
+                                                    <p className="text-slate-200 text-sm leading-relaxed">{opt.text}</p>
+                                                </div>
+                                            ));
+                                        })()}
                                     </div>
-                                    <div className="p-6 flex flex-col gap-3 mt-auto border-t bg-white">
-                                        {!parsedOptions && (
-                                            <>
-                                                <Button className="w-full h-12 rounded-lg bg-primary font-bold text-xs uppercase" onClick={() => { setInputValue(aiSuggestion); setAiSuggestion(null); }}>
-                                                    <Send className="w-4 h-4 mr-2" /> Usar esta respuesta
-                                                </Button>
-                                                <Button variant="outline" className="w-full h-10 text-[10px] uppercase font-bold" onClick={() => { navigator.clipboard.writeText(aiSuggestion); toast({ title: "Copiado" }); }}><Copy className="w-3.5 h-3.5 mr-2" /> Copiar Todo</Button>
-                                            </>
-                                        )}
-                                        <Button variant="ghost" className="w-full h-10 text-[10px] uppercase font-bold text-slate-400 hover:text-red-500 hover:bg-red-50" onClick={() => setAiSuggestion(null)}>Descartar y Cerrar</Button>
-                                    </div>
+
+                                    {/* Footer */}
+                                    {copilotOptions && !copilotLoading && (
+                                        <div className="px-4 py-3 border-t border-slate-700/60 shrink-0">
+                                            <button
+                                                onClick={() => {
+                                                    setCopilotOptions(null);
+                                                    setCopilotLoading(true);
+                                                    const history = (selectedChat?.messages || [])
+                                                        .slice(-20)
+                                                        .map((m: any) => `${m.sender === 'client' ? 'Cliente' : 'Asesor'}: ${m.text || ''}`)
+                                                        .filter(Boolean).join('\n');
+                                                    fetch('/api/ai/copilot', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({historyString:history}) })
+                                                        .then(r => r.json())
+                                                        .then(d => { if(d.ok) setCopilotOptions(d.options); else setCopilotError(d.error); })
+                                                        .catch(() => setCopilotError('Error de red.'))
+                                                        .finally(() => setCopilotLoading(false));
+                                                }}
+                                                className="w-full h-10 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white text-[11px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                                            >
+                                                <Loader2 className="w-3 h-3" /> Regenerar opciones
+                                            </button>
+                                        </div>
+                                    )}
                                 </motion.div>
                             )}
                         </AnimatePresence>

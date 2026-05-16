@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
@@ -203,6 +203,31 @@ export function WhatsAppWebPortal({
             setConsultorLoading(false);
         }
     };
+
+    // ── Mejorar mensaje con IA ──────────────────────────────────────
+    const handleImproveMessage = async (style: string) => {
+        if (!inputValue.trim() || isImproving) return;
+        setIsImproving(true);
+        try {
+            const res = await fetch('/api/ai/improve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: inputValue.trim(), style })
+            });
+            const data = await res.json();
+            if (res.ok && data?.text) {
+                setInputValue(data.text);
+                toast({ title: `✨ Mejorado (${style})`, description: 'El mensaje fue reescrito con IA.', duration: 2500 });
+            } else {
+                toast({ title: 'Error IA', description: data?.text || 'No se pudo mejorar el mensaje.', variant: 'destructive' });
+            }
+        } catch {
+            toast({ title: 'Error de conexión', description: 'No se pudo contactar la IA.', variant: 'destructive' });
+        } finally {
+            setIsImproving(false);
+        }
+    };
+
 
     useEffect(() => {
         if (consultorScrollRef.current) {
@@ -594,6 +619,60 @@ export function WhatsAppWebPortal({
                                 }} variant="outline" size="sm" className="bg-primary/5 border-primary/10 text-primary font-bold text-[10px] uppercase h-9 px-3 lg:px-4 rounded-lg hover:bg-primary hover:text-white transition-all gap-2">
                                     <Wand2 className="w-3.5 h-3.5" /> <span className="hidden lg:inline">Co-piloto IA</span>
                                 </Button>
+
+                                {/* ── Respuestas Rápidas (junto al copiloto) ── */}
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" size="sm" className="bg-blue-50 border-blue-200 text-blue-700 font-bold text-[10px] uppercase h-9 px-3 lg:px-4 rounded-lg hover:bg-blue-100 transition-all gap-2 relative">
+                                            <Zap className="w-3.5 h-3.5" />
+                                            <span className="hidden lg:inline">Rápidas</span>
+                                            {quickReplies.length > 0 && <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full border border-white" />}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-80 p-0 rounded-xl shadow-2xl" align="end" side="bottom">
+                                        <div className="p-3 border-b flex justify-between items-center bg-slate-50 rounded-t-xl">
+                                            <div className="flex items-center gap-2"><Zap className="w-4 h-4 text-blue-600" /><span className="text-[10px] font-bold uppercase text-slate-600 tracking-wider">Plantillas de Respuesta</span></div>
+                                            <Button variant="ghost" size="sm" className="h-7 text-[10px] uppercase font-bold text-primary" onClick={() => setIsManageRepliesOpen(true)}>Gestionar</Button>
+                                        </div>
+                                        <ScrollArea className="max-h-64">
+                                            {quickReplies.length > 0 ? (
+                                                <div className="flex flex-col">
+                                                    {quickReplies.map((reply) => (
+                                                        <button key={reply.id} className="w-full text-left p-3 hover:bg-slate-50 border-b last:border-0 transition-colors group" onClick={() => setInputValue(reply.content)}>
+                                                            <p className="font-bold text-xs mb-0.5 text-slate-900 group-hover:text-primary">{reply.title}</p>
+                                                            <p className="text-[10px] text-slate-400 line-clamp-2">{reply.content}</p>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="p-8 text-center">
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Sin plantillas</p>
+                                                    <Button variant="link" size="sm" className="text-[10px] font-bold p-0 h-auto" onClick={() => setIsManageRepliesOpen(true)}>Crear la primera</Button>
+                                                </div>
+                                            )}
+                                        </ScrollArea>
+                                    </PopoverContent>
+                                </Popover>
+
+                                {/* ── Mejorar con IA (junto al copiloto) ── */}
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" size="sm"
+                                            disabled={!inputValue.trim() || isImproving}
+                                            className="bg-violet-50 border-violet-200 text-violet-700 font-bold text-[10px] uppercase h-9 px-3 lg:px-4 rounded-lg hover:bg-violet-100 transition-all gap-2">
+                                            <Wand2 className={cn("w-3.5 h-3.5", isImproving && "animate-spin")} />
+                                            <span className="hidden lg:inline">Mejorar</span>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-48 rounded-xl border shadow-xl" align="end" side="bottom">
+                                        <DropdownMenuLabel className="text-[10px] font-bold uppercase text-slate-400 px-3 py-2 tracking-widest">Estilo de mejora</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => handleImproveMessage('Profesional')} className="gap-2 font-bold text-xs py-2.5 cursor-pointer"><ShieldCheck className="w-4 h-4 text-slate-400" /> Profesional</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleImproveMessage('Suave')} className="gap-2 font-bold text-xs py-2.5 cursor-pointer"><Smile className="w-4 h-4 text-emerald-500" /> Suave</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleImproveMessage('Negociación')} className="gap-2 font-bold text-xs py-2.5 cursor-pointer"><CheckCircle className="w-4 h-4 text-primary" /> Negociación</DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+
                                 <Button
                                     onClick={() => setIsConsultorOpen(v => !v)}
                                     variant="outline"

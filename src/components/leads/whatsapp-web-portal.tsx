@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
@@ -105,7 +105,7 @@ export function WhatsAppWebPortal({
     const chunksRef     = useRef<Blob[]>([]);
 
     const [consultorMessages, setConsultorMessages] = useState<{id:string;role:'user'|'ai';text:string}[]>([
-        { id: 'welcome', role: 'ai', text: 'Â¡Hola! ðŸ‘‹ Soy tu **Consultor IA**. PregÃºntame sobre:\n\nâ€¢ ðŸ’° Precios de cursos\nâ€¢ ðŸ“… Horarios disponibles esta semana\nâ€¢ â“ Cualquier duda sobre los servicios\n\nEjemplo: *"Â¿QuÃ© horarios libres hay para auto automÃ¡tico esta semana?"*' }
+        { id: 'welcome', role: 'ai', text: 'Hola! Soy tu Consultor IA.\n\nPreguntame sobre:\n- Precios de cursos\n- Horarios disponibles esta semana\n- Cualquier duda sobre los servicios\n\nEjemplo: que horarios libres hay para auto automatico esta semana?' }
     ]);
     const [consultorInput, setConsultorInput] = useState('');
     const [consultorLoading, setConsultorLoading] = useState(false);
@@ -198,7 +198,7 @@ export function WhatsAppWebPortal({
             const data = await res.json();
             setConsultorMessages(prev => [...prev, { id: (Date.now()+1).toString(), role: 'ai', text: data.text || 'Sin respuesta.' }]);
         } catch {
-            setConsultorMessages(prev => [...prev, { id: (Date.now()+1).toString(), role: 'ai', text: 'âŒ Error de conexiÃ³n.' }]);
+            setConsultorMessages(prev => [...prev, { id: (Date.now()+1).toString(), role: 'ai', text: 'âŒ Error de conexion.' }]);
         } finally {
             setConsultorLoading(false);
         }
@@ -307,7 +307,7 @@ export function WhatsAppWebPortal({
                 toast({ title: 'âš ï¸ Mejorar con IA', description: errMsg, variant: 'destructive' });
             }
         } catch (err) {
-            toast({ title: 'âš ï¸ Error de conexiÃ³n', description: 'No se pudo contactar el servidor de IA.', variant: 'destructive' });
+            toast({ title: 'âš ï¸ Error de conexion', description: 'No se pudo contactar el servidor de IA.', variant: 'destructive' });
         } finally { 
             setIsImproving(false); 
         }
@@ -588,8 +588,8 @@ export function WhatsAppWebPortal({
                                         const r = await req.json();
                                         if (r?.text && req.ok) setAiSuggestion(r.text); 
                                         else setAiSuggestion("Hubo un error contactando a la IA.");
-                                    } catch (err) {
-                                        setAiSuggestion("Error de conexiÃ³n al servidor de IA.");
+                                        } catch (err) {
+                                            setAiSuggestion('Error de conexion con la IA.');
                                     } finally {
                                         setIsLoading(false); 
                                     }
@@ -895,7 +895,7 @@ export function WhatsAppWebPortal({
                                     <div className="px-3 py-2 flex flex-wrap gap-1.5 border-b bg-slate-50/80 shrink-0">
                                         {[
                                             { icon: DollarSign, label: 'Precio Auto', q: 'Â¿CuÃ¡nto cuesta el Curso Auto BÃ¡sico y el Plus?' },
-                                            { icon: Calendar, label: 'Horarios semana', q: 'Dime quÃ© horarios libres hay esta semana para auto automÃ¡tico.' },
+                                            { icon: Calendar, label: 'Horarios semana', q: 'Dime quÃ© horarios libres hay esta semana para auto automatico.' },
                                             { icon: HelpCircle, label: 'Diferencia planes', q: 'Â¿CuÃ¡l es la diferencia entre BÃ¡sico, Plus y Deluxe?' },
                                         ].map(p => (
                                             <button key={p.label} onClick={() => sendConsultorMessage(p.q)} disabled={consultorLoading}
@@ -987,59 +987,6 @@ export function WhatsAppWebPortal({
                                         }
                                         {isRecording ? 'Detener' : 'Nota de Voz'}
                                     </button>
-
-                                    {/* BotÃ³n 2: Emoji rÃ¡pido */}
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <button
-                                                type="button"
-                                                style={{
-                                                    display:'inline-flex', alignItems:'center', gap:'6px',
-                                                    padding:'6px 14px', borderRadius:'10px',
-                                                    background:'#ffffff', color:'#374151',
-                                                    border:'1.5px solid #d1d5db',
-                                                    fontSize:'12px', fontWeight:600,
-                                                    cursor:'pointer', transition:'all 0.2s',
-                                                    boxShadow:'0 1px 3px rgba(0,0,0,0.08)',
-                                                }}
-                                            >
-                                                <span style={{fontSize:'14px'}}>ðŸ˜Š</span>
-                                                Emoji
-                                            </button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent className="w-64 rounded-xl border shadow-xl p-2" align="start" side="top">
-                                            <p style={{fontSize:'10px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', padding:'4px 8px 8px', letterSpacing:'0.05em'}}>Insertar emoji</p>
-                                            <div style={{display:'flex', flexWrap:'wrap' as const, gap:'4px', padding:'0 4px'}}>
-                                                {['ðŸ‘‹','âœ…','ðŸ”¥','â­','ðŸ’¯','ðŸŽ‰','ðŸ‘','ðŸ˜Š','ðŸ™','ðŸ“ž','ðŸ“…','ðŸ’ª','ðŸš—','ðŸ“','âš¡','â¤ï¸','ðŸ¤','âœ¨'].map(emoji => (
-                                                    <button key={emoji} type="button"
-                                                        onClick={() => setInputValue(prev => prev + emoji)}
-                                                        style={{fontSize:'20px', padding:'4px 6px', borderRadius:'6px', border:'none', background:'transparent', cursor:'pointer', transition:'background 0.1s'}}
-                                                    >
-                                                        {emoji}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-
-                                    {/* BotÃ³n 3: Marcar urgente */}
-                                    <button
-                                        type="button"
-                                        onClick={() => setInputValue(prev => 'ðŸš¨ URGENTE: ' + prev)}
-                                        style={{
-                                            display:'inline-flex', alignItems:'center', gap:'6px',
-                                            padding:'6px 14px', borderRadius:'10px',
-                                            background:'#ffffff', color:'#374151',
-                                            border:'1.5px solid #d1d5db',
-                                            fontSize:'12px', fontWeight:600,
-                                            cursor:'pointer', transition:'all 0.2s',
-                                            boxShadow:'0 1px 3px rgba(0,0,0,0.08)',
-                                        }}
-                                    >
-                                        <span style={{fontSize:'14px'}}>ðŸš¨</span>
-                                        Urgente
-                                    </button>
-
                                 </div>
                             </nav>
 
@@ -1049,7 +996,7 @@ export function WhatsAppWebPortal({
                                     <div style={{position:'relative', flex:1}}>
                                         <Input
                                             id="crm-message-input"
-                                            placeholder={pendingMedia ? `${pendingMedia.fileName} â€” aÃ±ade un pie de foto...` : "Escribe un mensaje..."}
+                                            placeholder={pendingMedia ? `${pendingMedia.fileName} â€” añade un pie de foto...` : "Escribe un mensaje..."}
                                             className="bg-slate-50 border border-slate-200 h-11 rounded-xl px-4 text-sm font-medium focus-visible:ring-2 focus-visible:ring-primary/20 shadow-none transition-all pr-10 w-full"
                                             value={inputValue}
                                             onChange={(e) => setInputValue(e.target.value)}

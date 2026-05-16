@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
@@ -81,7 +81,7 @@ export function WhatsAppWebPortal({
     const [showChatList, setShowChatList] = useState(true); // mobile: toggle between list and chat
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);      // Co-piloto IA
-    const [isSendingMessage, setIsSendingMessage] = useState(false); // Envío de mensajes
+    const [isSendingMessage, setIsSendingMessage] = useState(false); // EnvÃ­o de mensajes
     const [isImproving, setIsImproving] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
@@ -92,7 +92,7 @@ export function WhatsAppWebPortal({
     const [newReply, setNewReply] = useState({ title: '', content: '' });
     const [isConsultorOpen, setIsConsultorOpen] = useState(false);
     
-    // ── MULTIMEDIA ────────────────────────────────────────────────────────
+    // â”€â”€ MULTIMEDIA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const [pendingMedia, setPendingMedia] = useState<{ base64: string; mediaType: string; mimeType: string; fileName: string; previewUrl: string } | null>(null);
     const [isRecording, setIsRecording]   = useState(false);
     const [lightboxUrl, setLightboxUrl]   = useState<string | null>(null);
@@ -105,7 +105,7 @@ export function WhatsAppWebPortal({
     const chunksRef     = useRef<Blob[]>([]);
 
     const [consultorMessages, setConsultorMessages] = useState<{id:string;role:'user'|'ai';text:string}[]>([
-        { id: 'welcome', role: 'ai', text: '¡Hola! 👋 Soy tu **Consultor IA**. Pregúntame sobre:\n\n• 💰 Precios de cursos\n• 📅 Horarios disponibles esta semana\n• ❓ Cualquier duda sobre los servicios\n\nEjemplo: *"¿Qué horarios libres hay para auto automático esta semana?"*' }
+        { id: 'welcome', role: 'ai', text: 'Â¡Hola! ðŸ‘‹ Soy tu **Consultor IA**. PregÃºntame sobre:\n\nâ€¢ ðŸ’° Precios de cursos\nâ€¢ ðŸ“… Horarios disponibles esta semana\nâ€¢ â“ Cualquier duda sobre los servicios\n\nEjemplo: *"Â¿QuÃ© horarios libres hay para auto automÃ¡tico esta semana?"*' }
     ]);
     const [consultorInput, setConsultorInput] = useState('');
     const [consultorLoading, setConsultorLoading] = useState(false);
@@ -114,7 +114,7 @@ export function WhatsAppWebPortal({
     const scrollRef = useRef<HTMLDivElement>(null);
     const { toast } = useToast();
 
-    // ── Seleccionar archivo (imagen / documento / audio) ─────────────────────
+    // â”€â”€ Seleccionar archivo (imagen / documento / audio) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -131,7 +131,7 @@ export function WhatsAppWebPortal({
         e.target.value = '';
     }, []);
 
-    // ── Grabar audio (nota de voz) ───────────────────────────────────────────
+    // â”€â”€ Grabar audio (nota de voz) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleToggleRecording = useCallback(async () => {
         if (isRecording) {
             mediaRecRef.current?.stop();
@@ -156,7 +156,7 @@ export function WhatsAppWebPortal({
             };
             rec.start();
             setIsRecording(true);
-        } catch { toast({ title: 'Micrófono no disponible', variant: 'destructive' }); }
+        } catch { toast({ title: 'MicrÃ³fono no disponible', variant: 'destructive' }); }
     }, [isRecording, toast]);
 
     const sendConsultorMessage = async (question: string) => {
@@ -198,7 +198,7 @@ export function WhatsAppWebPortal({
             const data = await res.json();
             setConsultorMessages(prev => [...prev, { id: (Date.now()+1).toString(), role: 'ai', text: data.text || 'Sin respuesta.' }]);
         } catch {
-            setConsultorMessages(prev => [...prev, { id: (Date.now()+1).toString(), role: 'ai', text: '❌ Error de conexión.' }]);
+            setConsultorMessages(prev => [...prev, { id: (Date.now()+1).toString(), role: 'ai', text: 'âŒ Error de conexiÃ³n.' }]);
         } finally {
             setConsultorLoading(false);
         }
@@ -264,7 +264,7 @@ export function WhatsAppWebPortal({
                 leadId: selectedChat.id,
                 platform: selectedChat.source || 'WhatsApp',
                 socialId: selectedChat.socialId,
-                // Enviar desde la misma instancia que usó el cliente
+                // Enviar desde la misma instancia que usÃ³ el cliente
                 instance: selectedChat.whatsappInstance || 'freeway-crm',
             };
             if (mediaToSend) {
@@ -287,7 +287,7 @@ export function WhatsAppWebPortal({
         } finally { setIsSendingMessage(false); }
     };
 
-    const handleImproveMessage = async (style: 'Profesional' | 'Suave' | 'Negociación') => {
+    const handleImproveMessage = async (style: 'Profesional' | 'Suave' | 'NegociaciÃ³n') => {
         if (!inputValue.trim() || isImproving) return;
         setIsImproving(true);
         try {
@@ -302,10 +302,10 @@ export function WhatsAppWebPortal({
             } else {
                 // Muestra el error real del servidor en un toast, no en el input
                 const errMsg = response?.text || 'Error al mejorar el mensaje.';
-                toast({ title: '⚠️ Mejorar con IA', description: errMsg, variant: 'destructive' });
+                toast({ title: 'âš ï¸ Mejorar con IA', description: errMsg, variant: 'destructive' });
             }
         } catch (err) {
-            toast({ title: '⚠️ Error de conexión', description: 'No se pudo contactar el servidor de IA.', variant: 'destructive' });
+            toast({ title: 'âš ï¸ Error de conexiÃ³n', description: 'No se pudo contactar el servidor de IA.', variant: 'destructive' });
         } finally { 
             setIsImproving(false); 
         }
@@ -315,7 +315,7 @@ export function WhatsAppWebPortal({
     const handleUpdateBotStatus = async (enabled: boolean) => {
         if (!db) return;
         setIsBotEnabled(enabled);
-        // Guardar como configuración GLOBAL del CRM (no por usuario)
+        // Guardar como configuraciÃ³n GLOBAL del CRM (no por usuario)
         const cfgRef = doc(db, 'settings', 'crm_config');
         setDoc(cfgRef, { autobot_enabled: enabled }, { merge: true })
             .catch(() => { setIsBotEnabled(!enabled); });
@@ -331,7 +331,7 @@ export function WhatsAppWebPortal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [db]);
 
-    // Indica si ahora mismo es horario fuera de oficina (5:30PM – 7:30AM Panama)
+    // Indica si ahora mismo es horario fuera de oficina (5:30PM â€“ 7:30AM Panama)
     const isAfterHoursNow = (() => {
         const now = new Date();
         const panamaMin = ((now.getUTCHours() * 60 + now.getUTCMinutes()) - 5 * 60 + 24 * 60) % (24 * 60);
@@ -389,15 +389,15 @@ export function WhatsAppWebPortal({
 
     const parsedOptions = (() => {
         if (!aiSuggestion) return null;
-        const parts = aiSuggestion.split(/(?=1️⃣|2️⃣|3️⃣)/).filter(p => p.trim());
-        if (parts.length >= 2 && parts.some(p => p.includes('1️⃣'))) {
+        const parts = aiSuggestion.split(/(?=1ï¸âƒ£|2ï¸âƒ£|3ï¸âƒ£)/).filter(p => p.trim());
+        if (parts.length >= 2 && parts.some(p => p.includes('1ï¸âƒ£'))) {
             return parts.map(part => {
                 let text = part.trim();
-                let type = "Opción";
-                if (text.startsWith("1️⃣")) { type = "Directa"; text = text.replace(/1️⃣[^:]*:\s*/, '').trim(); }
-                else if (text.startsWith("2️⃣")) { type = "Al Cierre"; text = text.replace(/2️⃣[^:]*:\s*/, '').trim(); }
-                else if (text.startsWith("3️⃣")) { type = "Persuasiva"; text = text.replace(/3️⃣[^:]*:\s*/, '').trim(); }
-                else { text = text.replace(/^[0-9]️⃣[^:]*:\s*/, '').trim(); }
+                let type = "OpciÃ³n";
+                if (text.startsWith("1ï¸âƒ£")) { type = "Directa"; text = text.replace(/1ï¸âƒ£[^:]*:\s*/, '').trim(); }
+                else if (text.startsWith("2ï¸âƒ£")) { type = "Al Cierre"; text = text.replace(/2ï¸âƒ£[^:]*:\s*/, '').trim(); }
+                else if (text.startsWith("3ï¸âƒ£")) { type = "Persuasiva"; text = text.replace(/3ï¸âƒ£[^:]*:\s*/, '').trim(); }
+                else { text = text.replace(/^[0-9]ï¸âƒ£[^:]*:\s*/, '').trim(); }
                 return { type, text: text.replace(/^\*+/, '').replace(/\*+$/, '') };
             });
         }
@@ -414,7 +414,7 @@ export function WhatsAppWebPortal({
 
     return (
         <div className="flex h-full bg-white overflow-hidden border-t">
-            {/* LISTA DE CHATS — oculta en mobile cuando hay chat abierto */}
+            {/* LISTA DE CHATS â€” oculta en mobile cuando hay chat abierto */}
             <div className={cn(
                 "border-r flex flex-col shrink-0 bg-slate-50/50",
                 "w-full md:w-56 lg:w-72", // tablet: narrower, desktop: full width
@@ -427,7 +427,7 @@ export function WhatsAppWebPortal({
                         <Switch checked={isBotEnabled} onCheckedChange={handleUpdateBotStatus} className="scale-75 data-[state=checked]:bg-emerald-500" />
                         {isBotEnabled && (
                             <p className={`text-[7px] font-bold uppercase ${isAfterHoursNow ? 'text-emerald-500' : 'text-amber-500'}`}>
-                                {isAfterHoursNow ? '● activo' : '○ 5:30PM'}
+                                {isAfterHoursNow ? 'â— activo' : 'â—‹ 5:30PM'}
                             </p>
                         )}
                     </div>
@@ -451,7 +451,7 @@ export function WhatsAppWebPortal({
                             })
                             .map((chat) => {
                                 const lastMsg = chat.lastMessage || '';
-                                const preview = lastMsg === '[Multimedia]' ? '📎 Multimedia' : lastMsg;
+                                const preview = lastMsg === '[Multimedia]' ? 'ðŸ“Ž Multimedia' : lastMsg;
                                 const timeLabel = (() => {
                                     const t = chat.lastMessageAt || chat.createdAt;
                                     if (!t) return '';
@@ -493,7 +493,7 @@ export function WhatsAppWebPortal({
                 </ScrollArea>
             </div>
 
-            {/* ÁREA DE CHAT — oculta en mobile cuando se muestra la lista */}
+            {/* ÃREA DE CHAT â€” oculta en mobile cuando se muestra la lista */}
             <div className={cn(
                 "flex-grow flex flex-col relative bg-slate-50/80 overflow-hidden",
                 showChatList && !selectedChat ? "hidden md:flex" : selectedChat ? "flex" : "hidden md:flex"
@@ -503,7 +503,7 @@ export function WhatsAppWebPortal({
                     <>
                         <header className="h-14 md:h-16 bg-white/80 backdrop-blur-md flex items-center justify-between px-3 md:px-6 border-b border-slate-200/60 shrink-0 z-30 shadow-sm">
                             <div className="flex items-center gap-2 md:gap-4">
-                                {/* Botón volver en mobile */}
+                                {/* BotÃ³n volver en mobile */}
                                 <button
                                     className="md:hidden p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-all"
                                     onClick={() => { setShowChatList(true); }}
@@ -549,14 +549,14 @@ export function WhatsAppWebPortal({
                                         <DropdownMenuItem asChild>
                                             <a href={`/contracts/new?type=Curso%20Solo%20Practica&lead=${encodeURIComponent(selectedChat.name)}&phone=${selectedChat.phone || ''}`} target="_blank" rel="noreferrer" className="flex items-center gap-3 px-3 py-2.5 cursor-pointer font-bold text-xs rounded-lg">
                                                 <div className="bg-emerald-100 p-1.5 rounded-md"><Dumbbell className="w-3.5 h-3.5 text-emerald-600" /></div>
-                                                <span>Solo Práctica</span>
+                                                <span>Solo PrÃ¡ctica</span>
                                                 <ExternalLink className="w-3 h-3 ml-auto text-slate-300" />
                                             </a>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem asChild>
                                             <a href={`/contracts/new?type=Ampliaciones&lead=${encodeURIComponent(selectedChat.name)}&phone=${selectedChat.phone || ''}`} target="_blank" rel="noreferrer" className="flex items-center gap-3 px-3 py-2.5 cursor-pointer font-bold text-xs rounded-lg">
                                                 <div className="bg-amber-100 p-1.5 rounded-md"><Repeat className="w-3.5 h-3.5 text-amber-600" /></div>
-                                                <span>Ampliación de Licencia</span>
+                                                <span>AmpliaciÃ³n de Licencia</span>
                                                 <ExternalLink className="w-3 h-3 ml-auto text-slate-300" />
                                             </a>
                                         </DropdownMenuItem>
@@ -587,7 +587,7 @@ export function WhatsAppWebPortal({
                                         if (r?.text && req.ok) setAiSuggestion(r.text); 
                                         else setAiSuggestion("Hubo un error contactando a la IA.");
                                     } catch (err) {
-                                        setAiSuggestion("Error de conexión al servidor de IA.");
+                                        setAiSuggestion("Error de conexiÃ³n al servidor de IA.");
                                     } finally {
                                         setIsLoading(false); 
                                     }
@@ -631,7 +631,7 @@ export function WhatsAppWebPortal({
                                     </div>
                                 </div>
 
-                                {/* LIGHTBOX para imágenes */}
+                                {/* LIGHTBOX para imÃ¡genes */}
                                 {lightboxUrl && (
                                     <div
                                         className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
@@ -665,10 +665,10 @@ export function WhatsAppWebPortal({
                                             >
                                                 {message.isAi && (
                                                     <div className="absolute -top-3 -right-3 bg-white text-emerald-600 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full shadow-lg border border-emerald-100 flex items-center gap-1">
-                                                        <Wand2 className="w-2.5 h-2.5" /> IA Respondió
+                                                        <Wand2 className="w-2.5 h-2.5" /> IA RespondiÃ³
                                                     </div>
                                                 )}
-                                                {/* ── IMAGEN ── */}
+                                                {/* â”€â”€ IMAGEN â”€â”€ */}
                                                 {isImage && (
                                                     // eslint-disable-next-line @next/next/no-img-element
                                                     <img
@@ -678,18 +678,18 @@ export function WhatsAppWebPortal({
                                                         onClick={() => setLightboxUrl(m.mediaUrl)}
                                                     />
                                                 )}
-                                                {/* ── AUDIO ── */}
+                                                {/* â”€â”€ AUDIO â”€â”€ */}
                                                 {isAudio && (
                                                     <div className="flex items-center gap-2 mb-2">
                                                         <Volume2 className="w-4 h-4 shrink-0 opacity-70" />
                                                         <audio controls src={m.mediaUrl} className="h-9 w-44 rounded-lg" style={{ accentColor: isMe ? '#fff' : '#1d4ed8' }} />
                                                     </div>
                                                 )}
-                                                {/* ── VIDEO ── */}
+                                                {/* â”€â”€ VIDEO â”€â”€ */}
                                                 {isVideo && (
                                                     <video controls src={m.mediaUrl} className="max-w-full max-h-48 rounded-xl mb-2 w-full" />
                                                 )}
-                                                {/* ── DOCUMENTO ── */}
+                                                {/* â”€â”€ DOCUMENTO â”€â”€ */}
                                                 {isDoc && (
                                                     <button
                                                         type="button"
@@ -699,7 +699,7 @@ export function WhatsAppWebPortal({
                                                             if (!url) return;
                                                             const anchor = document.createElement('a');
                                                             if (url.startsWith('data:')) {
-                                                                // base64 inline → convertir a blob y descargar
+                                                                // base64 inline â†’ convertir a blob y descargar
                                                                 const arr = url.split(',');
                                                                 const mime = arr[0].match(/:(.*?);/)?.[1] || 'application/octet-stream';
                                                                 const bstr = atob(arr[1]);
@@ -709,7 +709,7 @@ export function WhatsAppWebPortal({
                                                                 anchor.href = URL.createObjectURL(blob);
                                                                 anchor.download = m.fileName || 'documento';
                                                             } else {
-                                                                // URL real → abrir en nueva pestaña
+                                                                // URL real â†’ abrir en nueva pestaÃ±a
                                                                 anchor.href = url;
                                                                 anchor.target = '_blank';
                                                                 anchor.rel = 'noreferrer';
@@ -735,7 +735,7 @@ export function WhatsAppWebPortal({
                                                         }
                                                     </button>
                                                 )}
-                                                {/* ── TEXTO ── (ocultar si es placeholder de multimedia) */}
+                                                {/* â”€â”€ TEXTO â”€â”€ (ocultar si es placeholder de multimedia) */}
                                                 {message.text && !isDoc && !isImage && !isAudio && !isVideo && message.text !== '[Multimedia]' && (
                                                     <p className={cn("text-sm whitespace-pre-wrap leading-relaxed", isMe ? "text-white/95" : "text-slate-700")}>{message.text}</p>
                                                 )}
@@ -823,7 +823,7 @@ export function WhatsAppWebPortal({
                                             </div>
                                             <div>
                                                 <p className="text-white font-black text-sm leading-none">Consultor IA</p>
-                                                <p className="text-white/70 text-[9px] font-bold uppercase tracking-wider">Precios · Horarios · Cursos</p>
+                                                <p className="text-white/70 text-[9px] font-bold uppercase tracking-wider">Precios Â· Horarios Â· Cursos</p>
                                             </div>
                                         </div>
                                         <Button variant="ghost" size="icon" className="h-8 w-8 text-white/80 hover:text-white hover:bg-white/20 rounded-lg" onClick={() => setIsConsultorOpen(false)}>
@@ -832,9 +832,9 @@ export function WhatsAppWebPortal({
                                     </div>
                                     <div className="px-3 py-2 flex flex-wrap gap-1.5 border-b bg-slate-50/80 shrink-0">
                                         {[
-                                            { icon: DollarSign, label: 'Precio Auto', q: '¿Cuánto cuesta el Curso Auto Básico y el Plus?' },
-                                            { icon: Calendar, label: 'Horarios semana', q: 'Dime qué horarios libres hay esta semana para auto automático.' },
-                                            { icon: HelpCircle, label: 'Diferencia planes', q: '¿Cuál es la diferencia entre Básico, Plus y Deluxe?' },
+                                            { icon: DollarSign, label: 'Precio Auto', q: 'Â¿CuÃ¡nto cuesta el Curso Auto BÃ¡sico y el Plus?' },
+                                            { icon: Calendar, label: 'Horarios semana', q: 'Dime quÃ© horarios libres hay esta semana para auto automÃ¡tico.' },
+                                            { icon: HelpCircle, label: 'Diferencia planes', q: 'Â¿CuÃ¡l es la diferencia entre BÃ¡sico, Plus y Deluxe?' },
                                         ].map(p => (
                                             <button key={p.label} onClick={() => sendConsultorMessage(p.q)} disabled={consultorLoading}
                                                 className="flex items-center gap-1 px-2 py-1 bg-white border border-slate-200 rounded-full text-[9px] font-bold text-slate-600 hover:border-violet-400 hover:text-violet-600 hover:bg-violet-50 transition-all disabled:opacity-50">
@@ -899,106 +899,95 @@ export function WhatsAppWebPortal({
                         </AnimatePresence>
 
                         <footer className="bg-white border-t shrink-0 z-[60]" style={{boxShadow:'0 -4px 20px rgba(0,0,0,0.04)'}}>
-                            {/* Inputs ocultos */}
-                            <input ref={fileInputRef} type="file" accept="image/*,video/*" style={{display:'none'}} onChange={handleFileSelect} />
-                            <input ref={audioInputRef} type="file" accept="audio/*" style={{display:'none'}} onChange={handleFileSelect} />
-                            <input ref={docInputRef} type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip" style={{display:'none'}} onChange={handleFileSelect} />
 
-                            {/* ═══ FILA 1: Barra de acciones — chips/pills ═══ */}
-                            <nav style={{display:'block', width:'100%', padding:'8px 16px 6px', background:'linear-gradient(135deg,#f0f7ff 0%,#f5f0ff 100%)', borderBottom:'1px solid #e5e7eb'}}>
-                                <div style={{display:'flex', gap:'6px', alignItems:'center', overflowX:'auto', scrollbarWidth:'none' as const}}>
+                            {/* â•â•â• FILA 1: Acciones nuevas â•â•â• */}
+                            <nav style={{display:'block', width:'100%', padding:'7px 16px', background:'#f8fafc', borderBottom:'1px solid #e5e7eb'}}>
+                                <div style={{display:'flex', gap:'8px', alignItems:'center'}}>
 
-                                    {/* Chip: Plantillas */}
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <button type="button" style={{display:'inline-flex',alignItems:'center',gap:'5px',padding:'5px 13px',borderRadius:'100px',background:'#eff6ff',color:'#1d4ed8',border:'1.5px solid #bfdbfe',fontSize:'11px',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap' as const,transition:'opacity 0.15s'}}>
-                                                <Zap style={{width:'12px',height:'12px',flexShrink:0}} />
-                                                Plantillas
-                                                {quickReplies.length > 0 && <span style={{width:'6px',height:'6px',borderRadius:'50%',background:'#2563eb',display:'inline-block',marginLeft:'1px'}} />}
-                                            </button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-80 p-0 rounded-xl shadow-2xl border-primary/10" align="start" side="top">
-                                            <div className="p-4 border-b flex justify-between items-center bg-slate-50 rounded-t-xl">
-                                                <div className="flex items-center gap-2">
-                                                    <Zap className="w-4 h-4 text-primary" />
-                                                    <span className="text-[10px] font-bold uppercase text-slate-600 tracking-wider">Plantillas de Respuesta</span>
-                                                </div>
-                                                <Button variant="ghost" size="sm" className="h-7 text-[10px] uppercase font-bold text-primary hover:bg-primary/5" onClick={() => setIsManageRepliesOpen(true)}>Gestionar</Button>
-                                            </div>
-                                            <ScrollArea className="max-h-72">
-                                                {quickReplies.length > 0 ? (
-                                                    <div className="flex flex-col">
-                                                        {quickReplies.map((reply) => (
-                                                            <button key={reply.id} className="w-full text-left p-4 hover:bg-slate-50 border-b last:border-0 transition-colors group"
-                                                                onClick={() => setInputValue(reply.content)}>
-                                                                <p className="font-bold text-xs mb-1 text-slate-900 group-hover:text-primary transition-colors">{reply.title}</p>
-                                                                <p className="text-[10px] text-slate-400 line-clamp-2 leading-tight">{reply.content}</p>
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                ) : (
-                                                    <div className="p-10 text-center flex flex-col items-center gap-2">
-                                                        <div className="bg-slate-100 p-3 rounded-full"><Zap className="w-6 h-6 text-slate-300" /></div>
-                                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sin plantillas guardadas</p>
-                                                        <Button variant="link" size="sm" className="text-[10px] uppercase font-bold p-0 h-auto" onClick={() => setIsManageRepliesOpen(true)}>Crear la primera</Button>
-                                                    </div>
-                                                )}
-                                            </ScrollArea>
-                                        </PopoverContent>
-                                    </Popover>
+                                    {/* BotÃ³n 1: Nota de Voz */}
+                                    <button
+                                        type="button"
+                                        onClick={handleToggleRecording}
+                                        style={{
+                                            display:'inline-flex', alignItems:'center', gap:'6px',
+                                            padding:'6px 14px', borderRadius:'10px',
+                                            background: isRecording ? '#dc2626' : '#ffffff',
+                                            color: isRecording ? '#ffffff' : '#374151',
+                                            border: isRecording ? '1.5px solid #dc2626' : '1.5px solid #d1d5db',
+                                            fontSize:'12px', fontWeight:600,
+                                            cursor:'pointer', transition:'all 0.2s',
+                                            boxShadow:'0 1px 3px rgba(0,0,0,0.08)',
+                                        }}
+                                    >
+                                        {isRecording
+                                            ? <MicOff style={{width:'14px',height:'14px'}} />
+                                            : <Mic style={{width:'14px',height:'14px'}} />
+                                        }
+                                        {isRecording ? 'Detener' : 'Nota de Voz'}
+                                    </button>
 
-                                    {/* Chip: IA Copilot */}
+                                    {/* BotÃ³n 2: Emoji rÃ¡pido */}
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <button type="button" disabled={!inputValue.trim() || isImproving} style={{display:'inline-flex',alignItems:'center',gap:'5px',padding:'5px 13px',borderRadius:'100px',background:'#f5f3ff',color:'#6d28d9',border:'1.5px solid #ddd6fe',fontSize:'11px',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap' as const,opacity:(!inputValue.trim()||isImproving)?0.45:1,transition:'opacity 0.15s'}}>
-                                                <Wand2 style={{width:'12px',height:'12px',flexShrink:0}} className={isImproving ? 'animate-spin' : ''} />
-                                                IA Copilot
+                                            <button
+                                                type="button"
+                                                style={{
+                                                    display:'inline-flex', alignItems:'center', gap:'6px',
+                                                    padding:'6px 14px', borderRadius:'10px',
+                                                    background:'#ffffff', color:'#374151',
+                                                    border:'1.5px solid #d1d5db',
+                                                    fontSize:'12px', fontWeight:600,
+                                                    cursor:'pointer', transition:'all 0.2s',
+                                                    boxShadow:'0 1px 3px rgba(0,0,0,0.08)',
+                                                }}
+                                            >
+                                                <span style={{fontSize:'14px'}}>ðŸ˜Š</span>
+                                                Emoji
                                             </button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent className="w-52 rounded-xl border shadow-xl" align="start" side="top">
-                                            <DropdownMenuLabel className="text-[10px] font-bold uppercase text-slate-400 px-4 py-2 tracking-widest">Estilo de Mejora</DropdownMenuLabel>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem onClick={() => handleImproveMessage('Profesional')} className="gap-3 font-bold text-xs py-3 cursor-pointer"><ShieldCheck className="w-4 h-4 text-slate-400" /> Profesional</DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleImproveMessage('Suave')} className="gap-3 font-bold text-xs py-3 cursor-pointer"><Smile className="w-4 h-4 text-emerald-500" /> Suave</DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleImproveMessage('Negociación')} className="gap-3 font-bold text-xs py-3 cursor-pointer"><CheckCircle className="w-4 h-4 text-primary" /> Negociación</DropdownMenuItem>
+                                        <DropdownMenuContent className="w-64 rounded-xl border shadow-xl p-2" align="start" side="top">
+                                            <p style={{fontSize:'10px', fontWeight:700, color:'#9ca3af', textTransform:'uppercase', padding:'4px 8px 8px', letterSpacing:'0.05em'}}>Insertar emoji</p>
+                                            <div style={{display:'flex', flexWrap:'wrap' as const, gap:'4px', padding:'0 4px'}}>
+                                                {['ðŸ‘‹','âœ…','ðŸ”¥','â­','ðŸ’¯','ðŸŽ‰','ðŸ‘','ðŸ˜Š','ðŸ™','ðŸ“ž','ðŸ“…','ðŸ’ª','ðŸš—','ðŸ“','âš¡','â¤ï¸','ðŸ¤','âœ¨'].map(emoji => (
+                                                    <button key={emoji} type="button"
+                                                        onClick={() => setInputValue(prev => prev + emoji)}
+                                                        style={{fontSize:'20px', padding:'4px 6px', borderRadius:'6px', border:'none', background:'transparent', cursor:'pointer', transition:'background 0.1s'}}
+                                                    >
+                                                        {emoji}
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
 
-                                    {/* Separador visual */}
-                                    <span style={{width:'1px',height:'18px',background:'#d1d5db',flexShrink:0}} />
-
-                                    {/* Chips adjuntos (solo WhatsApp QR) */}
-                                    {selectedChat?.source === 'WhatsApp QR' && (<>
-                                        <button type="button" disabled={isLoading} onClick={() => fileInputRef.current?.click()} style={{display:'inline-flex',alignItems:'center',gap:'5px',padding:'5px 13px',borderRadius:'100px',background:'#f0fdf4',color:'#15803d',border:'1.5px solid #bbf7d0',fontSize:'11px',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap' as const}}>
-                                            <ImageIcon style={{width:'12px',height:'12px',flexShrink:0}} />
-                                            Foto
-                                        </button>
-                                        <button type="button" disabled={isLoading} onClick={() => docInputRef.current?.click()} style={{display:'inline-flex',alignItems:'center',gap:'5px',padding:'5px 13px',borderRadius:'100px',background:'#fffbeb',color:'#b45309',border:'1.5px solid #fde68a',fontSize:'11px',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap' as const}}>
-                                            <FileIcon style={{width:'12px',height:'12px',flexShrink:0}} />
-                                            Archivo
-                                        </button>
-                                        <button type="button" onClick={handleToggleRecording} style={{display:'inline-flex',alignItems:'center',gap:'5px',padding:'5px 13px',borderRadius:'100px',background:isRecording?'#fef2f2':'#f9fafb',color:isRecording?'#dc2626':'#6b7280',border:isRecording?'1.5px solid #fecaca':'1.5px solid #e5e7eb',fontSize:'11px',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap' as const}}>
-                                            {isRecording ? <MicOff style={{width:'12px',height:'12px',flexShrink:0}} /> : <Mic style={{width:'12px',height:'12px',flexShrink:0}} />}
-                                            {isRecording ? 'Detener' : 'Voz'}
-                                        </button>
-                                    </>)}
-
-                                    {/* Chip: Adjuntar genérico */}
-                                    <button type="button" onClick={() => fileInputRef.current?.click()} style={{display:'inline-flex',alignItems:'center',gap:'5px',padding:'5px 13px',borderRadius:'100px',background:'#f9fafb',color:'#6b7280',border:'1.5px solid #e5e7eb',fontSize:'11px',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap' as const}}>
-                                        <Paperclip style={{width:'12px',height:'12px',flexShrink:0}} />
-                                        Adjuntar
+                                    {/* BotÃ³n 3: Marcar urgente */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setInputValue(prev => 'ðŸš¨ URGENTE: ' + prev)}
+                                        style={{
+                                            display:'inline-flex', alignItems:'center', gap:'6px',
+                                            padding:'6px 14px', borderRadius:'10px',
+                                            background:'#ffffff', color:'#374151',
+                                            border:'1.5px solid #d1d5db',
+                                            fontSize:'12px', fontWeight:600,
+                                            cursor:'pointer', transition:'all 0.2s',
+                                            boxShadow:'0 1px 3px rgba(0,0,0,0.08)',
+                                        }}
+                                    >
+                                        <span style={{fontSize:'14px'}}>ðŸš¨</span>
+                                        Urgente
                                     </button>
 
                                 </div>
                             </nav>
 
-                            {/* ═══ FILA 2: Input de mensaje ═══ */}
+                            {/* â•â•â• FILA 2: Input de mensaje â•â•â• */}
                             <div style={{display:'block', padding:'10px 16px'}}>
                                 <form onSubmit={handleSendMessage} style={{display:'flex', gap:'10px', alignItems:'center'}}>
                                     <div style={{position:'relative', flex:1}}>
                                         <Input
                                             id="crm-message-input"
-                                            placeholder={pendingMedia ? `${pendingMedia.fileName} — añade un pie de foto...` : "Escribe un mensaje..."}
+                                            placeholder={pendingMedia ? `${pendingMedia.fileName} â€” aÃ±ade un pie de foto...` : "Escribe un mensaje..."}
                                             className="bg-slate-50 border border-slate-200 h-11 rounded-xl px-4 text-sm font-medium focus-visible:ring-2 focus-visible:ring-primary/20 shadow-none transition-all pr-10 w-full"
                                             value={inputValue}
                                             onChange={(e) => setInputValue(e.target.value)}
@@ -1025,31 +1014,31 @@ export function WhatsAppWebPortal({
 
 
 
-                        {/* DIÁLOGO GESTIÓN RESPUESTAS RÁPIDAS */}
+                        {/* DIÃLOGO GESTIÃ“N RESPUESTAS RÃPIDAS */}
                         <Dialog open={isManageRepliesOpen} onOpenChange={(open) => { setIsManageRepliesOpen(open); if(!open) { setEditingReplyId(null); setNewReply({ title: '', content: '' }); } }}>
                             <DialogContent className="sm:max-w-md rounded-2xl">
                                 <DialogHeader>
                                     <div className="flex items-center gap-3 mb-2">
                                         <div className="p-2 bg-primary/10 rounded-lg text-primary"><Zap className="w-5 h-5" /></div>
                                         <div>
-                                            <DialogTitle className="text-xl font-bold">Mis Respuestas Rápidas</DialogTitle>
+                                            <DialogTitle className="text-xl font-bold">Mis Respuestas RÃ¡pidas</DialogTitle>
                                             <DialogDescription className="text-xs">Crea y edita mensajes frecuentes para responder en un clic.</DialogDescription>
                                         </div>
                                     </div>
                                 </DialogHeader>
                                 <div className="space-y-6 py-4">
-                                    {/* FORMULARIO DE CREACIÓN / EDICIÓN */}
+                                    {/* FORMULARIO DE CREACIÃ“N / EDICIÃ“N */}
                                     <div className="space-y-4 p-5 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
                                         <div className="space-y-1.5">
-                                            <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Título del Mensaje</Label>
-                                            <Input value={newReply.title} onChange={e => setNewReply({...newReply, title: e.target.value})} placeholder="Ej: Precios Auto Básico" className="h-11 rounded-xl text-sm" />
+                                            <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">TÃ­tulo del Mensaje</Label>
+                                            <Input value={newReply.title} onChange={e => setNewReply({...newReply, title: e.target.value})} placeholder="Ej: Precios Auto BÃ¡sico" className="h-11 rounded-xl text-sm" />
                                         </div>
                                         <div className="space-y-1.5">
                                             <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Contenido del Mensaje</Label>
                                             <textarea 
                                                 value={newReply.content} 
                                                 onChange={e => setNewReply({...newReply, content: e.target.value})} 
-                                                placeholder="Escribe el mensaje completo aquí..." 
+                                                placeholder="Escribe el mensaje completo aquÃ­..." 
                                                 className="w-full min-h-[100px] p-4 rounded-xl text-sm bg-white border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
                                             />
                                         </div>
@@ -1091,7 +1080,7 @@ export function WhatsAppWebPortal({
                                             ) : (
                                                 <div className="flex flex-col items-center justify-center h-full p-8 text-slate-300 gap-2">
                                                     <Zap className="w-8 h-8 opacity-20" />
-                                                    <p className="text-[10px] font-bold uppercase tracking-widest">Aún no tienes plantillas</p>
+                                                    <p className="text-[10px] font-bold uppercase tracking-widest">AÃºn no tienes plantillas</p>
                                                 </div>
                                             )}
                                         </ScrollArea>
@@ -1106,7 +1095,7 @@ export function WhatsAppWebPortal({
                             <MessageCircle className="w-10 h-10 text-primary/20" />
                         </div>
                         <h2 className="text-xl font-bold text-slate-900 tracking-tight">Centro de Mensajes Freeway</h2>
-                        <p className="text-slate-400 text-sm max-w-xs mt-2 leading-relaxed font-medium">Selecciona un alumno de la lista de la izquierda para iniciar una conversación profesional.</p>
+                        <p className="text-slate-400 text-sm max-w-xs mt-2 leading-relaxed font-medium">Selecciona un alumno de la lista de la izquierda para iniciar una conversaciÃ³n profesional.</p>
                         <div className="mt-8 grid grid-cols-3 gap-4 w-full max-w-md">
                             {[
                                 { label: 'IA Copiloto', icon: Wand2 },

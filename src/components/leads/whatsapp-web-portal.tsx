@@ -204,29 +204,6 @@ export function WhatsAppWebPortal({
         }
     };
 
-    // ── Mejorar mensaje con IA ──────────────────────────────────────
-    const handleImproveMessage = async (style: string) => {
-        if (!inputValue.trim() || isImproving) return;
-        setIsImproving(true);
-        try {
-            const res = await fetch('/api/ai/improve', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: inputValue.trim(), style })
-            });
-            const data = await res.json();
-            if (res.ok && data?.text) {
-                setInputValue(data.text);
-                toast({ title: `✨ Mejorado (${style})`, description: 'El mensaje fue reescrito con IA.', duration: 2500 });
-            } else {
-                toast({ title: 'Error IA', description: data?.text || 'No se pudo mejorar el mensaje.', variant: 'destructive' });
-            }
-        } catch {
-            toast({ title: 'Error de conexión', description: 'No se pudo contactar la IA.', variant: 'destructive' });
-        } finally {
-            setIsImproving(false);
-        }
-    };
 
 
     useEffect(() => {
@@ -819,7 +796,13 @@ export function WhatsAppWebPortal({
                                                     <p className={cn("text-sm whitespace-pre-wrap leading-relaxed", isMe ? "text-white/95" : "text-slate-700")}>{message.text}</p>
                                                 )}
                                                 <div className={cn("text-[9px] font-bold mt-2 flex items-center justify-end gap-1.5", isMe ? "text-white/70" : "text-slate-400")}>
-                                                    <span className="text-[9px] font-bold uppercase">{m.time || 'Ahora'}</span>
+                                                    <span className="text-[9px] font-bold uppercase">{(() => {
+                                                        const ts = m.timestamp;
+                                                        if (ts?.toDate) return ts.toDate().toLocaleTimeString('es-PA', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Panama' });
+                                                        if (ts?.seconds) return new Date(ts.seconds * 1000).toLocaleTimeString('es-PA', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Panama' });
+                                                        if (m.time) return m.time;
+                                                        return '';
+                                                    })()}</span>
                                                     {isMe && <CheckCheck className="w-3 h-3" />}
                                                 </div>
                                             </div>

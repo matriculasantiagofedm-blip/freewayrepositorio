@@ -110,17 +110,15 @@ function RoleBadge({ instance, source, channel }: { instance?: string; source?: 
   // ── Leads de WhatsApp QR → mostrar rol ──
   if (role === 'Ventas') {
     return (
-      <span className="inline-flex items-center gap-1 text-[9px] font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200 shrink-0">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-        Ventas
+      <span className="inline-flex items-center text-[9px] font-black text-white bg-emerald-500 px-1.5 py-0.5 rounded-full shrink-0">
+        QR vts
       </span>
     );
   }
   if (role === 'Ventas Externas') {
     return (
-      <span className="inline-flex items-center gap-1 text-[9px] font-black text-violet-700 bg-violet-50 px-1.5 py-0.5 rounded-full border border-violet-200 shrink-0">
-        <span className="w-1.5 h-1.5 rounded-full bg-violet-500 inline-block" />
-        Ventas Ext.
+      <span className="inline-flex items-center text-[9px] font-black text-white bg-violet-500 px-1.5 py-0.5 rounded-full shrink-0">
+        QR vxt
       </span>
     );
   }
@@ -129,25 +127,22 @@ function RoleBadge({ instance, source, channel }: { instance?: string; source?: 
   const src = source || channel || '';
   if (src.toLowerCase().includes('facebook')) {
     return (
-      <span className="inline-flex items-center gap-1 text-[9px] font-black text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded-full border border-blue-200 shrink-0">
-        <span className="w-1.5 h-1.5 rounded-full bg-blue-600 inline-block" />
-        Facebook
+      <span className="inline-flex items-center text-[9px] font-black text-white bg-blue-600 px-1.5 py-0.5 rounded-full shrink-0">
+        FB
       </span>
     );
   }
   if (src.toLowerCase().includes('instagram')) {
     return (
-      <span className="inline-flex items-center gap-1 text-[9px] font-black text-pink-700 bg-pink-50 px-1.5 py-0.5 rounded-full border border-pink-200 shrink-0">
-        <span className="w-1.5 h-1.5 rounded-full bg-pink-500 inline-block" />
-        Instagram
+      <span className="inline-flex items-center text-[9px] font-black text-white bg-pink-500 px-1.5 py-0.5 rounded-full shrink-0">
+        IG
       </span>
     );
   }
   if (src.toLowerCase().includes('whatsapp')) {
     return (
-      <span className="inline-flex items-center gap-1 text-[9px] font-black text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded-full border border-teal-200 shrink-0">
-        <span className="w-1.5 h-1.5 rounded-full bg-teal-500 inline-block" />
-        WhatsApp
+      <span className="inline-flex items-center text-[9px] font-black text-white bg-teal-500 px-1.5 py-0.5 rounded-full shrink-0">
+        WA
       </span>
     );
   }

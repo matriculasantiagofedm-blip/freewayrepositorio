@@ -10,7 +10,7 @@ import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '../ui/button';
 import { WhatsAppIcon } from '../icons/whatsapp';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useFirebase } from '@/firebase';
 import { collection, query, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -158,10 +158,13 @@ function RoleBadge({ instance, source, channel }: { instance?: string; source?: 
 }
 
 
-export function LeadsFunnel({ leads: initialLeads, onUpdate, onOpenChat, currentRole }: {
+export function LeadsFunnel({ leads: initialLeads, onUpdate, onOpenChat, currentRole: _currentRoleProp }: {
   leads: any[]; onUpdate: () => void; onOpenChat?: (id: string) => void; currentRole?: string | null;
 }) {
   const db = useFirestore();
+  const { role: contextRole } = useFirebase();
+  // Usamos el rol del contexto directamente (más confiable que el prop)
+  const isAdmin = contextRole === 'Administrador';
   const { toast } = useToast();
   const stagesQuery = useMemoFirebase(() => query(collection(db, 'funnel_stages'), orderBy('order', 'asc')), [db]);
   const { data: dbStages, isLoading } = useCollection(stagesQuery);
@@ -335,7 +338,7 @@ export function LeadsFunnel({ leads: initialLeads, onUpdate, onOpenChat, current
                                 </p>
                               )}
                             </div>
-                            {currentRole === 'Administrador' && <RoleBadge instance={lead.whatsappInstance} source={lead.source} channel={lead.channel} />}
+                            {isAdmin && <RoleBadge instance={lead.whatsappInstance} source={lead.source} channel={lead.channel} />}
                           </div>
                           <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                             <HeatDot heat={lead.heat} />
@@ -428,7 +431,7 @@ export function LeadsFunnel({ leads: initialLeads, onUpdate, onOpenChat, current
                               )}
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
-                              {currentRole === 'Administrador' && <RoleBadge instance={lead.whatsappInstance} source={lead.source} channel={lead.channel} />}
+                              {isAdmin && <RoleBadge instance={lead.whatsappInstance} source={lead.source} channel={lead.channel} />}
                               <GripVertical className="w-3.5 h-3.5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
                           </div>
@@ -475,7 +478,7 @@ export function LeadsFunnel({ leads: initialLeads, onUpdate, onOpenChat, current
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <span className="text-[10px] font-black px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: stg.color }}>{selectedLead.folio || 'QR-' + (selectedLead.id || '').slice(-6).toUpperCase()}</span>
                       <HeatDot heat={selectedLead.heat} />
-                      {currentRole === 'Administrador' && <RoleBadge instance={selectedLead.whatsappInstance} source={selectedLead.source} channel={selectedLead.channel} />}
+                      {isAdmin && <RoleBadge instance={selectedLead.whatsappInstance} source={selectedLead.source} channel={selectedLead.channel} />}
                     </div>
                   </div>
                 </div>

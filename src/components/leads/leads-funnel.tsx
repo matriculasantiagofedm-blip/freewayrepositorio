@@ -96,29 +96,28 @@ function LeadAvatar({ name, color }: { name: string; color: string }) {
 }
 
 /** Mapea la instancia de WhatsApp al rol responsable del lead */
-function getRoleFromInstance(instance?: string): 'Ventas' | 'Ventas Externas' | null {
-  if (!instance) return null;
-  if (instance === 'freeway-crm') return 'Ventas';
+function getRoleFromInstance(instance?: string, channel?: string): 'Ventas' | 'Ventas Externas' | null {
+  if (instance === 'freeway-crm' || (channel === 'whatsapp-qr' && !instance)) return 'Ventas';
   if (instance === 'freeway-crm-2' || instance === 'freeway-crm-3') return 'Ventas Externas';
   return null;
 }
 
 /** Badge que muestra el equipo/canal responsable del lead (solo visible para Administrador) */
 function RoleBadge({ instance, source, channel }: { instance?: string; source?: string; channel?: string }) {
-  const role = getRoleFromInstance(instance);
+  const role = getRoleFromInstance(instance, channel);
 
-  // ── Leads de WhatsApp QR → mostrar rol ──
+  // ── Leads de WhatsApp QR o CRM asignados → mostrar rol ──
   if (role === 'Ventas') {
     return (
-      <span className="inline-flex items-center text-[9px] font-black text-white bg-emerald-500 px-1.5 py-0.5 rounded-full shrink-0">
-        QR vts
+      <span className="inline-flex items-center text-[9px] font-black text-white bg-emerald-500 px-2 py-0.5 rounded-full shrink-0 shadow-sm" title="Lead de Ventas">
+        Ventas
       </span>
     );
   }
   if (role === 'Ventas Externas') {
     return (
-      <span className="inline-flex items-center text-[9px] font-black text-white bg-violet-500 px-1.5 py-0.5 rounded-full shrink-0">
-        QR vxt
+      <span className="inline-flex items-center text-[9px] font-black text-white bg-violet-500 px-2 py-0.5 rounded-full shrink-0 shadow-sm" title="Lead de Ventas Externas">
+        Ventas Ext.
       </span>
     );
   }

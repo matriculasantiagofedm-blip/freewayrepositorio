@@ -81,9 +81,9 @@ const getLabelForInterest = (interest: string | undefined): string => {
 };
 
 function HeatDot({ heat }: { heat?: string }) {
-  if (heat === 'hot')  return <span className="inline-flex items-center gap-1 text-[9px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded-full border border-red-100"><Flame className="w-2.5 h-2.5" />Hot</span>;
-  if (heat === 'cold') return <span className="inline-flex items-center gap-1 text-[9px] font-bold text-blue-400 bg-blue-50 px-1.5 py-0.5 rounded-full border border-blue-100"><Snowflake className="w-2.5 h-2.5" />FrÃ­o</span>;
-  return <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-500 bg-amber-50 px-1.5 py-0.5 rounded-full border border-amber-100"><Thermometer className="w-2.5 h-2.5" />Tibio</span>;
+  if (heat === 'hot')  return <span className="inline-flex items-center gap-1 text-[9px] font-black text-red-700 bg-white px-1.5 py-0.5 rounded-sm border border-red-200 shadow-sm uppercase"><Flame className="w-2.5 h-2.5" />Hot</span>;
+  if (heat === 'cold') return <span className="inline-flex items-center gap-1 text-[9px] font-black text-[#0f2d5e] bg-white px-1.5 py-0.5 rounded-sm border border-slate-200 shadow-sm uppercase"><Snowflake className="w-2.5 h-2.5" />Frío</span>;
+  return <span className="inline-flex items-center gap-1 text-[9px] font-black text-amber-700 bg-white px-1.5 py-0.5 rounded-sm border border-amber-200 shadow-sm uppercase"><Thermometer className="w-2.5 h-2.5" />Tibio</span>;
 }
 
 function LeadAvatar({ name, color }: { name: string; color: string }) {
@@ -108,38 +108,101 @@ function RoleBadge({ instance, source, channel }: { instance?: string; source?: 
 
   if (role === 'Ventas') {
     return (
-      <span className="inline-flex items-center text-[9px] font-black text-white bg-emerald-500 px-2 py-0.5 rounded-full shrink-0 shadow-sm" title="Lead de Ventas">
+      <span className="inline-flex items-center text-[9px] font-black text-white bg-[#1d4ed8] px-2 py-0.5 rounded-sm shadow-sm tracking-wider uppercase">
         Ventas
       </span>
     );
   }
   if (role === 'Ventas Externas') {
     return (
-      <span className="inline-flex items-center text-[9px] font-black text-white bg-violet-500 px-2 py-0.5 rounded-full shrink-0 shadow-sm" title="Lead de Ventas Externas">
+      <span className="inline-flex items-center text-[9px] font-black text-white bg-[#0f2d5e] px-2 py-0.5 rounded-sm shadow-sm tracking-wider uppercase">
         Ventas Ext.
       </span>
     );
   }
 
-  // ── Leads sin instancia específica → mostrar canal de origen o default ──
   const src = source || channel || 'Ventas (Histórico)';
-  if (src.toLowerCase().includes('facebook')) {
-    return <span className="inline-flex items-center text-[9px] font-black text-white bg-blue-600 px-2 py-0.5 rounded-full shrink-0 shadow-sm">Facebook</span>;
-  }
-  if (src.toLowerCase().includes('instagram')) {
-    return <span className="inline-flex items-center text-[9px] font-black text-white bg-pink-500 px-2 py-0.5 rounded-full shrink-0 shadow-sm">Instagram</span>;
-  }
-  if (src.toLowerCase().includes('whatsapp')) {
-    return <span className="inline-flex items-center text-[9px] font-black text-white bg-emerald-500 px-2 py-0.5 rounded-full shrink-0 shadow-sm">Ventas</span>;
-  }
-  if (src.toLowerCase().includes('registro') || src.toLowerCase().includes('crm')) {
-    return <span className="inline-flex items-center gap-1 text-[9px] font-black text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200 shrink-0 shadow-sm">CRM</span>;
-  }
+  const label = src.toLowerCase().includes('facebook') ? 'Facebook' :
+                src.toLowerCase().includes('instagram') ? 'Instagram' :
+                src.toLowerCase().includes('whatsapp') ? 'Ventas' :
+                (src.toLowerCase().includes('registro') || src.toLowerCase().includes('crm')) ? 'CRM' : src;
 
   return (
-    <span className="inline-flex items-center text-[9px] font-black text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200 shrink-0 shadow-sm truncate max-w-[80px]" title={src}>
-      {src}
+    <span className="inline-flex items-center text-[9px] font-black text-[#0f2d5e] bg-slate-100 px-2 py-0.5 rounded-sm border border-slate-200 shadow-sm uppercase tracking-wider truncate max-w-[80px]" title={src}>
+      {label}
     </span>
+  );
+}
+
+const fmtDate = (v: any) => {
+  if (!v) return '';
+  try { return format(v?.toDate ? v.toDate() : new Date(v), 'dd MMM', { locale: es }); } catch { return ''; }
+};
+
+function CorporateLeadCard({
+  lead,
+  stageColor,
+  isDragged,
+  onDragStart,
+  onDragEnd,
+  onClick
+}: {
+  lead: any;
+  stageColor: string;
+  isDragged?: boolean;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragEnd?: () => void;
+  onClick?: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.14 }}
+      draggable={!!onDragStart}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onClick={onClick}
+      className={cn(
+        'bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer group select-none overflow-hidden hover:-translate-y-0.5 hover:border-[#1d4ed8]',
+        isDragged && 'opacity-40 scale-95'
+      )}
+      style={{ flexShrink: 0 }}
+    >
+      <div className="flex h-full">
+        <div className="w-1.5 shrink-0 transition-colors duration-200" style={{ backgroundColor: stageColor }} />
+        
+        <div className="flex-1 p-3 flex flex-col gap-2.5">
+          <div className="flex items-center justify-between">
+            <RoleBadge instance={lead.whatsappInstance} source={lead.source} channel={lead.channel} />
+            {lead.createdAt && <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{fmtDate(lead.createdAt)}</span>}
+          </div>
+
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center justify-between">
+              <p className="text-[12px] font-black text-[#0f2d5e] truncate group-hover:text-[#1d4ed8] transition-colors">{lead.name}</p>
+              {onDragStart && <GripVertical className="w-3.5 h-3.5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />}
+            </div>
+            {lead.phone && (
+              <p className="text-[10px] text-slate-500 font-semibold flex items-center gap-1.5">
+                <Phone className="w-3 h-3 text-slate-400" /> {lead.phone}
+              </p>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black text-[#0f2d5e] bg-slate-50 px-2 py-0.5 rounded-sm border border-slate-200">
+                B/. {getPriceForInterest(lead.interest)}
+              </span>
+              <span className="text-[9px] font-bold text-slate-500 max-w-[80px] truncate">{getLabelForInterest(lead.interest)}</span>
+            </div>
+            <HeatDot heat={lead.heat} />
+          </div>
+        </div>
+      </div>
+    </motion.div>
   );
 }
 
@@ -224,10 +287,6 @@ export function LeadsFunnel({ leads: initialLeads, onUpdate, onOpenChat, current
     return (knownStatuses.has(s) ? s : 'new') === id;
   });
   const stageVal  = (ls: any[])  => ls.reduce((acc, l) => acc + getPriceForInterest(l.interest), 0);
-  const fmtDate   = (v: any) => {
-    if (!v) return '';
-    try { return format(v?.toDate ? v.toDate() : new Date(v), 'dd MMM', { locale: es }); } catch { return ''; }
-  };
 
   if (isLoading) return (
     <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-400">
@@ -301,40 +360,12 @@ export function LeadsFunnel({ leads: initialLeads, onUpdate, onOpenChat, current
                 <div className="flex flex-col gap-2.5 overflow-y-auto flex-grow">
                   <AnimatePresence>
                     {stageLeads.slice(0, getLimit(stage.id)).map(lead => (
-                      <motion.div
+                      <CorporateLeadCard
                         key={lead.id}
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.14 }}
+                        lead={lead}
+                        stageColor={stage.color}
                         onClick={() => setSelectedLead(lead)}
-                        className={cn(
-                          'bg-white rounded-xl border border-slate-200/70 shadow-sm hover:shadow-md transition-all duration-150 cursor-pointer group select-none overflow-hidden hover:-translate-y-0.5 hover:border-slate-300',
-                          draggedId === lead.id && 'opacity-40 scale-95'
-                        )}
-                        style={{ borderLeft: `3px solid ${stage.color}`, flexShrink: 0 }}
-                      >
-                        <div className="p-3.5 space-y-2.5">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[12px] font-bold text-slate-800 truncate group-hover:text-blue-700 transition-colors">{lead.name}</p>
-                              {lead.phone && (
-                                <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1 mt-0.5">
-                                  <Phone className="w-2.5 h-2.5 shrink-0" />{lead.phone}
-                                </p>
-                              )}
-                            </div>
-                            {isAdmin && <RoleBadge instance={lead.whatsappInstance} source={lead.source} channel={lead.channel} />}
-                          </div>
-                          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                            <HeatDot heat={lead.heat} />
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">B/. {getPriceForInterest(lead.interest)}</span>
-                              {lead.createdAt && <span className="text-[9px] text-slate-400 font-semibold">{fmtDate(lead.createdAt)}</span>}
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
+                      />
                     ))}
                   </AnimatePresence>
                   {stageLeads.length === 0 && (
@@ -390,48 +421,15 @@ export function LeadsFunnel({ leads: initialLeads, onUpdate, onOpenChat, current
                 >
                   <AnimatePresence>
                     {stageLeads.map(lead => (
-                      <motion.div
+                      <CorporateLeadCard
                         key={lead.id}
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.14 }}
-                        draggable
+                        lead={lead}
+                        stageColor={stage.color}
+                        isDragged={draggedId === lead.id}
                         onDragStart={e => { (e as unknown as React.DragEvent).dataTransfer.setData('leadId', lead.id); setDraggedId(lead.id); }}
                         onDragEnd={() => { setDraggedId(null); setOverId(null); }}
                         onClick={() => setSelectedLead(lead)}
-                        className={cn(
-                          'bg-white rounded-xl border border-slate-200/70 shadow-sm hover:shadow-md transition-all duration-150 cursor-pointer group select-none overflow-hidden hover:-translate-y-0.5 hover:border-slate-300',
-                          draggedId === lead.id && 'opacity-40 scale-95'
-                        )}
-                        style={{ borderLeft: `3px solid ${stage.color}`, minHeight: '88px', flexShrink: 0 }}
-                      >
-                        <div className="p-3.5 space-y-2.5">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[12px] font-bold text-slate-800 truncate group-hover:text-blue-700 transition-colors">{lead.name}</p>
-                              {lead.phone && (
-                                <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1 mt-0.5">
-                                  <Phone className="w-2.5 h-2.5 shrink-0" />{lead.phone}
-                                </p>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              {showRoleBadge && <RoleBadge instance={lead.whatsappInstance} source={lead.source} channel={lead.channel} />}
-                              <GripVertical className="w-3.5 h-3.5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                            <HeatDot heat={lead.heat} />
-                            <div className="flex items-center gap-2">
-                              <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
-                                B/. {getPriceForInterest(lead.interest)}
-                              </span>
-                              {lead.createdAt && <span className="text-[9px] text-slate-400 font-semibold">{fmtDate(lead.createdAt)}</span>}
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
+                      />
                     ))}
                   </AnimatePresence>
 

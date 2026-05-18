@@ -102,11 +102,10 @@ function getRoleFromInstance(instance?: string, channel?: string): 'Ventas' | 'V
   return null;
 }
 
-/** Badge que muestra el equipo/canal responsable del lead (solo visible para Administrador) */
+/** Badge que muestra el equipo/canal responsable del lead */
 function RoleBadge({ instance, source, channel }: { instance?: string; source?: string; channel?: string }) {
   const role = getRoleFromInstance(instance, channel);
 
-  // ── Leads de WhatsApp QR o CRM asignados → mostrar rol ──
   if (role === 'Ventas') {
     return (
       <span className="inline-flex items-center text-[9px] font-black text-white bg-emerald-500 px-2 py-0.5 rounded-full shrink-0 shadow-sm" title="Lead de Ventas">
@@ -122,38 +121,26 @@ function RoleBadge({ instance, source, channel }: { instance?: string; source?: 
     );
   }
 
-  // ── Leads sin instancia QR → mostrar canal de origen ──
-  const src = source || channel || '';
+  // ── Leads sin instancia específica → mostrar canal de origen o default ──
+  const src = source || channel || 'Ventas (Histórico)';
   if (src.toLowerCase().includes('facebook')) {
-    return (
-      <span className="inline-flex items-center text-[9px] font-black text-white bg-blue-600 px-1.5 py-0.5 rounded-full shrink-0">
-        FB
-      </span>
-    );
+    return <span className="inline-flex items-center text-[9px] font-black text-white bg-blue-600 px-2 py-0.5 rounded-full shrink-0 shadow-sm">Facebook</span>;
   }
   if (src.toLowerCase().includes('instagram')) {
-    return (
-      <span className="inline-flex items-center text-[9px] font-black text-white bg-pink-500 px-1.5 py-0.5 rounded-full shrink-0">
-        IG
-      </span>
-    );
+    return <span className="inline-flex items-center text-[9px] font-black text-white bg-pink-500 px-2 py-0.5 rounded-full shrink-0 shadow-sm">Instagram</span>;
   }
   if (src.toLowerCase().includes('whatsapp')) {
-    return (
-      <span className="inline-flex items-center text-[9px] font-black text-white bg-teal-500 px-1.5 py-0.5 rounded-full shrink-0">
-        WA
-      </span>
-    );
+    return <span className="inline-flex items-center text-[9px] font-black text-white bg-emerald-500 px-2 py-0.5 rounded-full shrink-0 shadow-sm">Ventas</span>;
   }
   if (src.toLowerCase().includes('registro') || src.toLowerCase().includes('crm')) {
-    return (
-      <span className="inline-flex items-center gap-1 text-[9px] font-black text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-full border border-slate-200 shrink-0">
-        <span className="w-1.5 h-1.5 rounded-full bg-slate-400 inline-block" />
-        CRM
-      </span>
-    );
+    return <span className="inline-flex items-center gap-1 text-[9px] font-black text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200 shrink-0 shadow-sm">CRM</span>;
   }
-  return null;
+
+  return (
+    <span className="inline-flex items-center text-[9px] font-black text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200 shrink-0 shadow-sm truncate max-w-[80px]" title={src}>
+      {src}
+    </span>
+  );
 }
 
 
@@ -162,8 +149,8 @@ export function LeadsFunnel({ leads: initialLeads, onUpdate, onOpenChat, current
 }) {
   const db = useFirestore();
   const { role: contextRole } = useFirebase();
-  // Usamos el rol del contexto directamente (más confiable que el prop)
-  const isAdmin = contextRole === 'Administrador';
+  // Mostrar la etiqueta de rol siempre para que cualquier supervisor/vendedor vea a quién pertenece
+  const showRoleBadge = true;
   const { toast } = useToast();
   const stagesQuery = useMemoFirebase(() => query(collection(db, 'funnel_stages'), orderBy('order', 'asc')), [db]);
   const { data: dbStages, isLoading } = useCollection(stagesQuery);
@@ -430,7 +417,7 @@ export function LeadsFunnel({ leads: initialLeads, onUpdate, onOpenChat, current
                               )}
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
-                              {isAdmin && <RoleBadge instance={lead.whatsappInstance} source={lead.source} channel={lead.channel} />}
+                              {showRoleBadge && <RoleBadge instance={lead.whatsappInstance} source={lead.source} channel={lead.channel} />}
                               <GripVertical className="w-3.5 h-3.5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>
                           </div>
@@ -477,7 +464,7 @@ export function LeadsFunnel({ leads: initialLeads, onUpdate, onOpenChat, current
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <span className="text-[10px] font-black px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: stg.color }}>{selectedLead.folio || 'QR-' + (selectedLead.id || '').slice(-6).toUpperCase()}</span>
                       <HeatDot heat={selectedLead.heat} />
-                      {isAdmin && <RoleBadge instance={selectedLead.whatsappInstance} source={selectedLead.source} channel={selectedLead.channel} />}
+                      {showRoleBadge && <RoleBadge instance={selectedLead.whatsappInstance} source={selectedLead.source} channel={selectedLead.channel} />}
                     </div>
                   </div>
                 </div>

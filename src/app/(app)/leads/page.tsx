@@ -229,7 +229,7 @@ export default function LeadsPage() {
                 transition={{ duration: 0.2 }}
                 className="h-full"
             >
-                {activeTab === 'funnel' && <div className="h-full overflow-x-auto p-3 md:p-4 lg:p-6">{isLoading ? <div className="flex flex-col items-center justify-center h-64 gap-2 text-slate-400"><Loader2 className="animate-spin w-8 h-8" /><p className="text-xs font-bold uppercase tracking-widest">Cargando tablero...</p></div> : <LeadsFunnel leads={filteredLeads} onUpdate={() => {}} onOpenChat={(id) => { setSelectedLeadForChat(id); setActiveTab('whatsapp-web'); }} />}</div>}
+                {activeTab === 'funnel' && <div className="h-full overflow-x-auto p-3 md:p-4 lg:p-6">{isLoading ? <div className="flex flex-col items-center justify-center h-64 gap-2 text-slate-400"><Loader2 className="animate-spin w-8 h-8" /><p className="text-xs font-bold uppercase tracking-widest">Cargando tablero...</p></div> : <LeadsFunnel leads={filteredLeads} onUpdate={() => {}} onOpenChat={(id) => { setSelectedLeadForChat(id); setActiveTab('whatsapp-web'); }} currentRole={role} />}</div>}
                 {activeTab === 'whatsapp-web' && <WhatsAppWebPortal leads={filteredLeads} preselectedId={selectedLeadForChat} currentUser={currentUserProfile} />}
                 {activeTab === 'settings' && <LeadsSettings />}
             </motion.div>

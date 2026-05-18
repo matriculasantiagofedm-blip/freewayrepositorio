@@ -95,8 +95,76 @@ function LeadAvatar({ name, color }: { name: string; color: string }) {
   );
 }
 
-export function LeadsFunnel({ leads: initialLeads, onUpdate, onOpenChat }: {
-  leads: any[]; onUpdate: () => void; onOpenChat?: (id: string) => void;
+/** Mapea la instancia de WhatsApp al rol responsable del lead */
+function getRoleFromInstance(instance?: string): 'Ventas' | 'Ventas Externas' | null {
+  if (!instance) return null;
+  if (instance === 'freeway-crm') return 'Ventas';
+  if (instance === 'freeway-crm-2' || instance === 'freeway-crm-3') return 'Ventas Externas';
+  return null;
+}
+
+/** Badge que muestra el equipo/canal responsable del lead (solo visible para Administrador) */
+function RoleBadge({ instance, source, channel }: { instance?: string; source?: string; channel?: string }) {
+  const role = getRoleFromInstance(instance);
+
+  // ── Leads de WhatsApp QR → mostrar rol ──
+  if (role === 'Ventas') {
+    return (
+      <span className="inline-flex items-center gap-1 text-[9px] font-black text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full border border-emerald-200 shrink-0">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+        Ventas
+      </span>
+    );
+  }
+  if (role === 'Ventas Externas') {
+    return (
+      <span className="inline-flex items-center gap-1 text-[9px] font-black text-violet-700 bg-violet-50 px-1.5 py-0.5 rounded-full border border-violet-200 shrink-0">
+        <span className="w-1.5 h-1.5 rounded-full bg-violet-500 inline-block" />
+        Ventas Ext.
+      </span>
+    );
+  }
+
+  // ── Leads sin instancia QR → mostrar canal de origen ──
+  const src = source || channel || '';
+  if (src.toLowerCase().includes('facebook')) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[9px] font-black text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded-full border border-blue-200 shrink-0">
+        <span className="w-1.5 h-1.5 rounded-full bg-blue-600 inline-block" />
+        Facebook
+      </span>
+    );
+  }
+  if (src.toLowerCase().includes('instagram')) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[9px] font-black text-pink-700 bg-pink-50 px-1.5 py-0.5 rounded-full border border-pink-200 shrink-0">
+        <span className="w-1.5 h-1.5 rounded-full bg-pink-500 inline-block" />
+        Instagram
+      </span>
+    );
+  }
+  if (src.toLowerCase().includes('whatsapp')) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[9px] font-black text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded-full border border-teal-200 shrink-0">
+        <span className="w-1.5 h-1.5 rounded-full bg-teal-500 inline-block" />
+        WhatsApp
+      </span>
+    );
+  }
+  if (src.toLowerCase().includes('registro') || src.toLowerCase().includes('crm')) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[9px] font-black text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-full border border-slate-200 shrink-0">
+        <span className="w-1.5 h-1.5 rounded-full bg-slate-400 inline-block" />
+        CRM
+      </span>
+    );
+  }
+  return null;
+}
+
+
+export function LeadsFunnel({ leads: initialLeads, onUpdate, onOpenChat, currentRole }: {
+  leads: any[]; onUpdate: () => void; onOpenChat?: (id: string) => void; currentRole?: string | null;
 }) {
   const db = useFirestore();
   const { toast } = useToast();
@@ -272,6 +340,7 @@ export function LeadsFunnel({ leads: initialLeads, onUpdate, onOpenChat }: {
                                 </p>
                               )}
                             </div>
+                            {currentRole === 'Administrador' && <RoleBadge instance={lead.whatsappInstance} source={lead.source} channel={lead.channel} />}
                           </div>
                           <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                             <HeatDot heat={lead.heat} />
@@ -363,7 +432,10 @@ export function LeadsFunnel({ leads: initialLeads, onUpdate, onOpenChat }: {
                                 </p>
                               )}
                             </div>
-                            <GripVertical className="w-3.5 h-3.5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {currentRole === 'Administrador' && <RoleBadge instance={lead.whatsappInstance} source={lead.source} channel={lead.channel} />}
+                              <GripVertical className="w-3.5 h-3.5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
                           </div>
                           <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                             <HeatDot heat={lead.heat} />
@@ -405,9 +477,10 @@ export function LeadsFunnel({ leads: initialLeads, onUpdate, onOpenChat }: {
                   <LeadAvatar name={selectedLead.name || '?'} color={stg.color} />
                   <div>
                     <SheetTitle className="text-lg font-bold text-slate-900">{selectedLead.name}</SheetTitle>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <span className="text-[10px] font-black px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: stg.color }}>{selectedLead.folio || 'QR-' + (selectedLead.id || '').slice(-6).toUpperCase()}</span>
                       <HeatDot heat={selectedLead.heat} />
+                      {currentRole === 'Administrador' && <RoleBadge instance={selectedLead.whatsappInstance} source={selectedLead.source} channel={selectedLead.channel} />}
                     </div>
                   </div>
                 </div>

@@ -12,7 +12,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'No image provided.' }, { status: 400 });
     }
 
-    const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ success: false, error: 'Configuración: No se encontró la clave de API en el servidor.' }, { status: 400 });
     }

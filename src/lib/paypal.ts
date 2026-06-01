@@ -48,18 +48,14 @@ export async function createFreewayPayPalOrder(
         },
         custom_id: JSON.stringify({ coursePlan, email: buyerEmail }),
       }],
-      payment_source: {
-        paypal: {
-          experience_context: {
-            payment_method_preference: 'IMMEDIATE_PAYMENT_REQUIRED',
-            brand_name: 'Freeway Escuela de Manejo',
-            locale: 'es-PA',
-            landing_page: 'LOGIN',
-            user_action: 'PAY_NOW',
-            return_url: `${APP_URL}/enroll?paypal=success`,
-            cancel_url: `${APP_URL}/enroll?paypal=cancel`,
-          },
-        },
+      application_context: {
+        brand_name: 'Freeway Escuela de Manejo',
+        locale: 'es-PA',
+        landing_page: 'BILLING',
+        shipping_preference: 'NO_SHIPPING',
+        user_action: 'PAY_NOW',
+        return_url: `${APP_URL}/enroll?paypal=success`,
+        cancel_url: `${APP_URL}/enroll?paypal=cancel`,
       },
     }),
   });

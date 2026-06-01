@@ -8,3 +8,11 @@ options:
 env:
   - variable: GOOGLE_GENAI_API_KEY
     secret: GOOGLE_GENAI_API_KEY
+  - variable: PAYPAL_CLIENT_ID
+    secret: PAYPAL_CLIENT_ID
+  - variable: PAYPAL_CLIENT_SECRET
+    secret: PAYPAL_CLIENT_SECRET
+  - variable: PAYPAL_BASE_URL
+    value: https://api-m.paypal.com
+  - variable: NEXT_PUBLIC_APP_URL
+    value: https://contractimefedm.online

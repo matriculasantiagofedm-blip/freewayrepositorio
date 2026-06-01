@@ -32,7 +32,9 @@ const navLinks = [
         { href: '/logs', label: 'Bitácoras de Control', roles: ['Administrador', 'Ventas Externas'] },
         { href: '/surveys', label: 'Encuestas', roles: ['Administrador', 'Ventas Externas'] },
         { href: '/att-evaluations', label: 'Evaluaciones ATTT', roles: ['Administrador', 'Ventas Externas'] },
-        { href: '/certificates', label: 'Impresión Certificados', roles: ['Administrador'] }
+        { href: '/certificates', label: 'Impresión Certificados', roles: ['Administrador'] },
+        { separator: true, roles: ['Administrador'] },
+        { href: '/digital-access', label: '🔓 Acceso Digital', roles: ['Administrador'] }
     ]
   },
   {

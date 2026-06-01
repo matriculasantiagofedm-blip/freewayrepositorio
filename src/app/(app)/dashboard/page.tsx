@@ -41,7 +41,8 @@ import {
   Building2,
   MessageSquareText,
   Star,
-  ScanLine
+  ScanLine,
+  Unlock
 } from 'lucide-react';
 import { isToday, format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -237,11 +238,14 @@ export default function DashboardPage() {
                                 <WorkflowItem icon={CalendarClock} label="Práctica" sub="Turnos" href="/manual-schedule" color="text-amber-600" />
                                 <WorkflowItem icon={FileSignature} label="Certificados" sub="Físicos" href="/certificates" color="text-purple-600" />
                                 <WorkflowItem icon={BookOpen} label="Exámenes" sub="Teoría" href="/exams" color="text-violet-600" />
-                                <WorkflowItem icon={FileCheck} label="Bitácoras" sub="Impresión" href="/logs" color="text-blue-600" />
+
                                 <WorkflowItem icon={TrendingUp} label="ATTT" sub="Evaluación" href="/att-evaluations" color="text-indigo-600" />
                                 <WorkflowItem icon={ShieldCheck} label="Seguridad" sub="Vehicular" href="/mileage-log" color="text-slate-600" />
                                 {isAdmin && (
                                   <WorkflowItem icon={DollarSign} label="Precios" sub="Ajustes" href="/settings/prices" color="text-red-600" />
+                                )}
+                                {isAdmin && (
+                                  <WorkflowItem icon={Unlock} label="Acceso" sub="Digital" href="/digital-access" color="text-emerald-600" />
                                 )}
                             </div>
                         ) : activeTab === 'contabilidad' ? (

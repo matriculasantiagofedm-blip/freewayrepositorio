@@ -4,7 +4,8 @@
  * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN AUTOMÁTICA
  */
 
-import { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo, Suspense, useCallback } from 'react';
+import Script from 'next/script';
 import { useSearchParams } from 'next/navigation';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -135,7 +136,7 @@ const enrollmentSchema = z.object({
     date: z.date({ required_error: 'Fecha requerida' }),
     time: z.string().min(1, 'Hora requerida'),
   })).min(1, 'Debe elegir su horario'),
-  paymentMethod: z.enum(['yappy', 'credit_card', 'paypal']).default('yappy'),
+  paymentMethod: z.enum(['yappy', 'credit_card', 'paypal']).default('paypal'),
   paymentReference: z.string().min(6, 'Ingresa el número de referencia completo'),
   paymentAmount: z.preprocess((val) => Number(val), z.number().min(50, 'Abono min: B/. 50.00')),
 });
@@ -156,6 +157,7 @@ function EnrollmentContent() {
   const [paypalLoading, setPaypalLoading] = useState(false);
   const [paypalError, setPaypalError] = useState('');
   const [paypalEmail, setPaypalEmail] = useState('');
+  const [showPaypalModal, setShowPaypalModal] = useState(false);
   const searchParams = useSearchParams();
   const { prices } = useSettingsPrices();
 
@@ -197,41 +199,40 @@ function EnrollmentContent() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  // Iniciar pago PayPal
+  // Iniciar pago PayPal desde modal
   const handlePayPal = async () => {
-    if (!paypalEmail || !paypalEmail.includes('@')) {
-      setPaypalError('Por favor ingresa un email válido.'); return;
-    }
     const plan = form.getValues('coursePlan');
-    if (!plan) { setPaypalError('⚠ Selecciona un plan de curso en la sección 2 antes de pagar.'); return; }
-
-    // Calcular precio real del plan seleccionado
+    const email = paypalEmail || form.getValues('clientEmail');
+    if (!email || !email.includes('@')) { setPaypalError('Por favor ingresa un email válido.'); return; }
     const coursePrice = prices?.auto?.[plan] || 0;
-    if (coursePrice <= 0) { setPaypalError('No se pudo obtener el precio del plan. Intenta de nuevo.'); return; }
-
+    if (coursePrice <= 0) { setPaypalError('No se pudo obtener el precio del plan.'); return; }
     setPaypalError('');
     setPaypalLoading(true);
-
-    // Actualizar el monto en el formulario con el precio real
     form.setValue('paymentAmount', coursePrice);
-
     try {
       const res = await fetch('/api/paypal/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: coursePrice, coursePlan: plan, email: paypalEmail })
+        body: JSON.stringify({ amount: coursePrice, coursePlan: plan, email })
       });
       const data = await res.json();
       if (data.approveUrl) {
-        // Guardar datos del formulario + email en sessionStorage antes de redirigir
         sessionStorage.setItem('fw_enroll_draft', JSON.stringify(form.getValues()));
-        sessionStorage.setItem('fw_paypal_email', paypalEmail);
         window.location.href = data.approveUrl;
       } else {
         setPaypalError(data.error || 'No se pudo iniciar PayPal. Intenta de nuevo.');
         setPaypalLoading(false);
       }
-    } catch { setPaypalError('Error de conexión con PayPal. Verifica tu internet e intenta de nuevo.'); setPaypalLoading(false); }
+    } catch { setPaypalError('Error de conexión. Verifica tu internet.'); setPaypalLoading(false); }
+  };
+
+  // Abrir modal PayPal (pre-llenar email del formulario)
+  const openPaypalModal = () => {
+    const plan = form.getValues('coursePlan');
+    if (!plan) { return; }
+    setPaypalEmail(form.getValues('clientEmail') || '');
+    setPaypalError('');
+    setShowPaypalModal(true);
   };
 
   const activeContractsQuery = useMemoQuery(() => (db && auth.currentUser) ? query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed'])) : null, [db, auth.currentUser]);
@@ -270,7 +271,7 @@ function EnrollmentContent() {
     defaultValues: {
       clientName: '', clientEmail: '', idType: 'C.I.P.', studentIdNumber: '', studentAddress: '', studentPhone1: '',
       vehicleTransmission: 'Automático', coursePlan: '', theoreticalClassSchedule: 'Sabados 3:00 pm a 5:00 pm',
-      theoreticalClassDates: [], practicalClassSchedules: [], paymentMethod: 'yappy', paymentReference: '', paymentAmount: 50,
+      theoreticalClassDates: [], practicalClassSchedules: [], paymentMethod: 'paypal', paymentReference: '', paymentAmount: 50,
     },
   });
 
@@ -625,57 +626,38 @@ function EnrollmentContent() {
                       </div>
                     </TabsContent>
 
-                    <TabsContent value="paypal" className="m-0 space-y-6">
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-3 bg-[#003087]/5 border border-[#003087]/20 rounded-xl p-4">
-                          <div className="w-10 h-10 rounded-lg bg-[#003087] flex items-center justify-center flex-shrink-0">
-                            <Globe className="h-5 w-5 text-white" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-black text-[#003087] text-sm uppercase">PayPal</p>
-                            <p className="text-xs text-slate-500">Tarjeta de crédito, débito o saldo PayPal</p>
-                          </div>
-                          {watchPlan && prices?.auto?.[watchPlan] && (
-                            <div className="text-right">
-                              <p className="text-[10px] text-slate-400 uppercase font-bold">Total</p>
-                              <p className="text-xl font-black text-[#003087]">B/. {prices.auto[watchPlan].toFixed(2)}</p>
-                            </div>
-                          )}
+                    <TabsContent value="paypal" className="m-0 space-y-4">
+                      <div className="flex items-center gap-3 bg-[#003087]/5 border border-[#003087]/20 rounded-xl p-4">
+                        <div className="w-10 h-10 rounded-lg bg-[#003087] flex items-center justify-center flex-shrink-0">
+                          <Globe className="h-5 w-5 text-white" />
                         </div>
-
-                        {!watchPlan && (
-                          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 font-medium">
-                            ⚠ Primero selecciona un plan de curso en la Sección 2 para ver el precio total.
+                        <div className="flex-1">
+                          <p className="font-black text-[#003087] text-sm uppercase">PayPal</p>
+                          <p className="text-xs text-slate-500">Tarjeta de crédito, débito o cuenta PayPal</p>
+                        </div>
+                        {watchPlan && prices?.auto?.[watchPlan] && (
+                          <div className="text-right">
+                            <p className="text-[10px] text-slate-400 uppercase font-bold">Total</p>
+                            <p className="text-xl font-black text-[#003087]">B/. {prices.auto[watchPlan].toFixed(2)}</p>
                           </div>
                         )}
+                      </div>
 
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-bold uppercase text-slate-500">Tu email de contacto</label>
-                          <input
-                            type="email"
-                            placeholder="correo@ejemplo.com"
-                            value={paypalEmail}
-                            onChange={e => { setPaypalEmail(e.target.value); setPaypalError(''); }}
-                            className="w-full h-11 rounded-lg border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#003087]/30"
-                          />
-                          <p className="text-[10px] text-slate-400">Lo usamos para enviarte el recibo de tu inscripción.</p>
+                      {!watchPlan ? (
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 font-medium">
+                          ⚠ Selecciona un plan en la Sección 2 para continuar.
                         </div>
-                        {paypalError && (
-                          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700 font-medium">{paypalError}</div>
-                        )}
+                      ) : (
                         <Button
                           type="button"
-                          onClick={handlePayPal}
-                          disabled={paypalLoading}
-                          className="w-full h-12 bg-[#003087] hover:bg-[#002060] font-bold shadow-md text-white disabled:opacity-70"
+                          onClick={openPaypalModal}
+                          className="w-full h-12 bg-[#003087] hover:bg-[#002060] font-bold shadow-md text-white"
                         >
-                          {paypalLoading
-                            ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Conectando con PayPal...</>
-                            : <><Globe className="mr-2 h-5 w-5" /> {watchPlan && prices?.auto?.[watchPlan] ? `Pagar B/. ${prices.auto[watchPlan].toFixed(2)} con PayPal` : 'Pagar con PayPal'}</>
-                          }
+                          <Globe className="mr-2 h-5 w-5" />
+                          Continuar con PayPal →
                         </Button>
-                        <p className="text-[9px] text-center text-slate-400 uppercase font-bold tracking-widest">🔒 Pago 100% seguro procesado por PayPal</p>
-                      </div>
+                      )}
+                      <p className="text-[9px] text-center text-slate-400 uppercase font-bold tracking-widest">🔒 Pago 100% seguro — Visa, Mastercard, PayPal</p>
                     </TabsContent>
 
                     <div className="pt-4 border-t border-slate-200">
@@ -750,6 +732,74 @@ function EnrollmentContent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── Modal PayPal ─────────────────────────────────────────── */}
+      {showPaypalModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.55)', backdropFilter:'blur(4px)'}}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative animate-in fade-in zoom-in-95 duration-200">
+            {/* Cerrar */}
+            <button onClick={() => { setShowPaypalModal(false); setPaypalError(''); setPaypalLoading(false); }}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 text-xl font-bold leading-none">&times;</button>
+
+            {/* Header */}
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Pago de Inscripción</p>
+            <h2 className="text-xl font-black text-slate-900 mb-4">{watchPlan || 'Curso de Manejo'}</h2>
+
+            {/* Precio */}
+            <div className="flex justify-between items-center bg-slate-50 rounded-xl px-4 py-3 mb-5">
+              <span className="text-sm text-slate-600 font-medium">Total del curso</span>
+              <span className="text-xl font-black text-slate-900">
+                ${watchPlan && prices?.auto?.[watchPlan] ? prices.auto[watchPlan].toFixed(2) : '0.00'} <span className="text-xs font-bold text-slate-400">USD</span>
+              </span>
+            </div>
+
+            {/* PayPal badge */}
+            <div className="flex items-center gap-3 border border-slate-200 rounded-xl px-4 py-3 mb-5">
+              <div className="w-8 h-8 rounded-lg bg-[#003087] flex items-center justify-center flex-shrink-0">
+                <Globe className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-black text-[#003087]">PayPal</p>
+                <p className="text-[10px] text-slate-400">Serás redirigido a PayPal para completar el pago</p>
+              </div>
+            </div>
+
+            {/* Email */}
+            <div className="mb-4 space-y-1">
+              <label className="text-[10px] font-bold uppercase text-slate-500">Tu email de contacto <span className="text-red-500">*</span></label>
+              <input
+                type="email"
+                placeholder="correo@tuempresa.com"
+                value={paypalEmail}
+                onChange={e => { setPaypalEmail(e.target.value); setPaypalError(''); }}
+                className="w-full h-11 rounded-xl border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#003087]/30 bg-slate-50"
+              />
+              <p className="text-[10px] text-slate-400">Lo usamos para enviarte el recibo de tu inscripción.</p>
+            </div>
+
+            {paypalError && (
+              <div className="mb-3 bg-red-50 border border-red-200 rounded-lg p-2 text-xs text-red-700 font-medium">{paypalError}</div>
+            )}
+
+            {/* Botón */}
+            <button
+              onClick={handlePayPal}
+              disabled={paypalLoading}
+              className="w-full h-12 rounded-xl bg-[#003087] hover:bg-[#002060] text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg transition disabled:opacity-70"
+            >
+              {paypalLoading
+                ? <><Loader2 className="h-4 w-4 animate-spin" /> Conectando...</>
+                : <><Globe className="h-4 w-4" /> Continuar con PayPal →</>
+              }
+            </button>
+
+            <div className="mt-3 flex items-center justify-center gap-4 text-[10px] text-slate-400 font-medium">
+              <span>🔒 Pago 100% seguro</span>
+              <span>✓ Cancela cuando quieras</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

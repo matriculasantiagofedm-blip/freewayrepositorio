@@ -120,7 +120,7 @@ const motoContractSchema = z.object({
   downPayment: z.coerce.number().min(0),
   paymentDeadline: z.date({ required_error: 'Fecha límite requerida' }).optional().nullable(),
   paymentType: z.string().default('cash'),
-  theoreticalClassSchedule: z.enum(['Sabados 3:00 pm a 5:00 pm', 'Semanal 8:00 am a 10:00 am'], { required_error: "Seleccione un horario" }),
+  theoreticalClassSchedule: z.enum(['Sabados 3:00 pm a 5:00 pm', 'Semanal 8:00 am a 10:00 am', 'Semanal 10:00 am a 12:00 pm'], { required_error: "Seleccione un horario" }),
   theoreticalClassDates: z.array(z.date()).optional(),
   practicalClassSchedules: z.array(z.object({
     date: z.date({ required_error: 'Fecha requerida' }),
@@ -218,7 +218,7 @@ export function MotoContractForm({ contract, initialData }: { contract?: Contrac
 
   useEffect(() => {
     if (watchTheorySchedule && !isEdit) {
-      const count = watchTheorySchedule === 'Semanal 8:00 am a 10:00 am' ? 4 : 3;
+      const count = (watchTheorySchedule === 'Semanal 8:00 am a 10:00 am' || watchTheorySchedule === 'Semanal 10:00 am a 12:00 pm') ? 4 : 3;
       const current = form.getValues('theoreticalClassDates') || [];
       form.setValue('theoreticalClassDates', Array.from({ length: count }, (_, i) => current[i] || new Date()));
     }
@@ -529,6 +529,7 @@ export function MotoContractForm({ contract, initialData }: { contract?: Contrac
                       <SelectContent>
                         <SelectItem value="Sabados 3:00 pm a 5:00 pm">Sábados 3:00 pm a 5:00 pm</SelectItem>
                         <SelectItem value="Semanal 8:00 am a 10:00 am">Semanal 8:00 am a 10:00 am</SelectItem>
+                        <SelectItem value="Semanal 10:00 am a 12:00 pm">Semanal 10:00 am a 12:00 pm</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormItem>

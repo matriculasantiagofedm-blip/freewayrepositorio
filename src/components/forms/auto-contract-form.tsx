@@ -303,7 +303,7 @@ export function AutoContractForm({ contract, initialData }: { contract?: Contrac
 
   useEffect(() => {
     if (watchTheorySchedule && !isEdit) {
-      const count = watchTheorySchedule === 'Semanal 8:00 am a 10:00 am' ? 4 : 3;
+      const count = (watchTheorySchedule === 'Semanal 8:00 am a 10:00 am' || watchTheorySchedule === 'Semanal 10:00 am a 12:00 pm') ? 4 : 3;
       const current = form.getValues('theoreticalClassDates') || [];
       const newDates = Array.from({ length: count }, (_, i) => current[i] || new Date());
       form.setValue('theoreticalClassDates', newDates);
@@ -654,6 +654,7 @@ export function AutoContractForm({ contract, initialData }: { contract?: Contrac
                       <SelectContent>
                         <SelectItem value="Sabados 3:00 pm a 5:00 pm">Sábados 3:00 pm a 5:00 pm</SelectItem>
                         <SelectItem value="Semanal 8:00 am a 10:00 am">Semanal 8:00 am a 10:00 am</SelectItem>
+                        <SelectItem value="Semanal 10:00 am a 12:00 pm">Semanal 10:00 am a 12:00 pm</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormItem>

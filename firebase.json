@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "contracttime3-15048626-b65e6",
     "source": ".",
     "ignore": [
       "firebase.json",
@@ -11,4 +12,4 @@
   "firestore": {
     "rules": "firestore.rules"
   }
-}
+}

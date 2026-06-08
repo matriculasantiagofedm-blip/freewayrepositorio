@@ -139,29 +139,113 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
         </section>
 
         <div className="space-y-1.5 text-[8pt] leading-snug text-justify">
-            <p><span className="font-bold uppercase">CLÁUSULA TERCERA - INASISTENCIAS Y REPROGRAMACIONES:</span> EL ESTUDIANTE que no asista a una clase práctica en el horario establecido perderá automáticamente la misma sin derecho a reposición ni reclamo. Excepción: Si la falta es por motivo de salud, deberá presentar constancia médica válida y coordinar con la administración para una reprogramación, la cual dependerá de la disponibilidad. Si EL ESTUDIANTE falta a más de una clase práctica sin justificar, no tendrá derecho a certificado y deberá pagar un recargo de <span className="font-black">$20.00</span> por cada clase para poder reprogramarla.</p>
-            
-            <p><span className="font-bold uppercase">CLÁUSULA CUARTA - LUGAR DE INICIO Y TRASLADO:</span> Las clases prácticas iniciarán en la oficina de LA ESCUELA. Desde allí, EL ESTUDIANTE será trasladado al circuito de prácticas y posteriormente de regreso. Dicho traslado se encuentra incluido dentro del tiempo de las 2 horas de clase práctica.</p>
-            
-            <p><span className="font-bold uppercase">CLÁUSULA QUINTA - PUNTUALIDAD:</span> En caso de que EL ESTUDIANTE llegue tarde a su clase, solo recibirá el tiempo restante de las 2 horas programadas, sin derecho a reposición.</p>
-            
-            <p><span className="font-bold uppercase">CLÁUSULA SEXTA - NORMAS DE COMPORTAMIENTO Y VESTIMENTA:</span> EL ESTUDIANTE se compromete a seguir las instrucciones del instructor y asistir con ropa adecuada. Se prohíbe presentarse con: Escotes pronunciados, minifaldas, camisetas sin mangas, pantalones cortos, leggins o chancletas. El incumplimiento implica la pérdida automática de la clase.</p>
-            
-            <p><span className="font-bold uppercase">CLÁUSULA NOVENA - CANCELACIÓN DEL CONTRATO:</span> En caso de que EL ESTUDIANTE decida cancelar el curso o el contrato, no habrá devolución de dinero bajo ninguna circunstancia.</p>
-            
-            <p><span className="font-bold uppercase">CLÁUSULA DÉCIMA - CERTIFICACIÓN:</span> El certificado de aprobación del curso será entregado únicamente si EL ESTUDIANTE está paz y salvo en sus pagos y ha completado la totalidad del curso teórico y práctico.</p>
-            
-            <p><span className="font-bold uppercase">CLÁUSULA UNDÉCIMA - VIGENCIA:</span> Si EL ESTUDIANTE no establece contacto para finalizar su curso en un plazo de tres (3) meses desde la fecha de inicio, se entenderá que renuncia a continuar, sin derecho a devolución del dinero.</p>
+
+          {/* CLÁUSULA TERCERA */}
+          <div>
+            <p className="font-bold uppercase mb-0.5">CLÁUSULA TERCERA - INASISTENCIAS Y REPROGRAMACIONES</p>
+            <ul className="space-y-0.5 pl-1">
+              <li className="flex items-start gap-1.5">
+                <span className="mt-0.5 shrink-0">▪</span>
+                <span>EL ESTUDIANTE que no asista a una clase práctica en el horario establecido <strong>perderá automáticamente la clase práctica sin derecho a reposición ni reclamo.</strong></span>
+              </li>
+              <li className="flex items-start gap-1.5">
+                <span className="mt-0.5 shrink-0">▪</span>
+                <span><strong>Excepción</strong>: Si la falta es por <strong>motivo de salud</strong>, deberá presentar constancia médica válida y coordinar con la administración para una reprogramación, la cual dependerá de la disponibilidad de horarios.</span>
+              </li>
+              <li className="flex items-start gap-1.5">
+                <span className="mt-0.5 shrink-0">▪</span>
+                <span>Si EL ESTUDIANTE falta a una o más de una clase práctica sin justificar médicamente, <strong>no tendrá derecho a certificado</strong> y deberá pagar un <strong>recargo de $20.00 por cada clase perdida</strong> para poder reprogramarla.</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* CLÁUSULA CUARTA */}
+          <div>
+            <p className="font-bold uppercase mb-0.5">CLÁUSULA CUARTA - LUGAR DE INICIO Y TRASLADO</p>
+            <p>Las clases prácticas iniciarán en la oficina de LA ESCUELA. Desde allí, EL ESTUDIANTE será trasladado al circuito de prácticas y posteriormente de regreso. Dicho traslado se encuentra incluido dentro del tiempo de las <strong>2 horas de clase práctica.</strong></p>
+          </div>
+
+          {/* CLÁUSULA QUINTA */}
+          <div>
+            <p className="font-bold uppercase mb-0.5">CLÁUSULA QUINTA - RESTRICCIONES DE ACOMPAÑANTES</p>
+            <p>No se permitirá bajo ningún concepto el ingreso de acompañantes, niños, mascotas o terceras personas durante las clases teóricas o prácticas.</p>
+          </div>
+
+          {/* CLÁUSULA SEXTA */}
+          <div>
+            <p className="font-bold uppercase mb-0.5">CLÁUSULA SEXTA - PUNTUALIDAD</p>
+            <p>En caso de que EL ESTUDIANTE llegue tarde a su clase, <strong>solo recibirá el tiempo restante de las 2 horas programadas</strong>, sin derecho a reposición.</p>
+          </div>
+
+          {/* CLÁUSULA SÉPTIMA */}
+          <div>
+            <p className="font-bold uppercase mb-0.5">CLÁUSULA SÉPTIMA - CANCELACIÓN DEL CURSO</p>
+            <p>Si EL ESTUDIANTE decide cancelar el curso una vez iniciada la inscripción, no habrá devolución de dinero bajo ninguna circunstancia.</p>
+          </div>
+
+          {/* CLÁUSULA OCTAVA */}
+          <div>
+            <p className="font-bold uppercase mb-0.5">CLÁUSULA OCTAVA - OBLIGACIONES DEL ESTUDIANTE</p>
+            <p className="mb-0.5">EL ESTUDIANTE se compromete a:</p>
+            <ol className="list-decimal pl-5 space-y-0.5">
+              <li>Seguir las instrucciones del instructor.</li>
+              <li>Mantener una actitud respetuosa y adecuada durante las clases.</li>
+              <li>Asistir en estado óptimo de salud física, mental y emocional.</li>
+            </ol>
+          </div>
+
+          {/* CLÁUSULA NOVENA */}
+          <div>
+            <p className="font-bold uppercase mb-0.5">CLÁUSULA NOVENA - VESTIMENTA</p>
+            <p className="mb-0.5">Para las clases prácticas y teóricas, EL ESTUDIANTE deberá asistir con ropa adecuada. Se prohíbe presentarse con:</p>
+            <ul className="space-y-0.5 pl-1">
+              <li className="flex items-start gap-1.5">
+                <span className="mt-0.5 shrink-0">▪</span>
+                <span>Escotes pronunciados, minifaldas, camisetas sin mangas, pantalones cortos, leggins, chancletas o sandalias.</span>
+              </li>
+              <li className="flex items-start gap-1.5">
+                <span className="mt-0.5 shrink-0">▪</span>
+                <span>El incumplimiento de esta norma implica la <strong>pérdida automática de la clase</strong>, sin derecho a reposición.</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* CLÁUSULA DÉCIMA */}
+          <div>
+            <p className="font-bold uppercase mb-0.5">CLÁUSULA DÉCIMA - CERTIFICACIÓN</p>
+            <p className="mb-0.5">El certificado de aprobación del curso será entregado únicamente si EL ESTUDIANTE:</p>
+            <ol className="list-decimal pl-5 space-y-0.5">
+              <li>Está paz y salvo en sus pagos.</li>
+              <li>Ha completado la totalidad del curso teórico y práctico.</li>
+            </ol>
+          </div>
+
+          {/* CLÁUSULA DÉCIMA PRIMERA */}
+          <div>
+            <p className="font-bold uppercase mb-0.5">CLÁUSULA DÉCIMA PRIMERA - VIGENCIA DEL CURSO</p>
+            <p>Si EL ESTUDIANTE no establece contacto para finalizar su curso en un plazo de <strong>tres (3) meses</strong> desde la fecha de inicio, se entenderá que renuncia a continuar, sin derecho a devolución del dinero ni a reclamos posteriores.</p>
+          </div>
         </div>
 
         <section className="mt-2 pt-2 border-t-2 border-black">
             <h3 className="font-bold uppercase text-center mb-1 text-[8.5pt]">CLÁUSULA DÉCIMA SEGUNDA - ACEPTACIÓN</h3>
-            <p className="text-center italic text-[8pt] mb-6">Suscrito en la ciudad de Panamá, el día <Value>{!isNaN(creationDate.getTime()) ? format(creationDate, 'd', { locale: es }) : '---'}</Value> de <Value>{!isNaN(creationDate.getTime()) ? format(creationDate, 'MMMM', { locale: es }) : '---'}</Value> de <Value>{!isNaN(creationDate.getTime()) ? format(creationDate, 'yyyy', { locale: es }) : '---'}</Value>.</p>
+            <p className="text-justify text-[8pt] mb-2">Ambas partes declaran haber leído, entendido y aceptado el presente contrato, firmándolo en señal de conformidad.</p>
+            <p className="text-[8pt] mb-6">
+              En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los{' '}
+              <Line className="min-w-[50px]">{!isNaN(creationDate.getTime()) ? format(creationDate, 'd', { locale: es }) : ''}</Line>{' '}
+              días del mes de{' '}
+              <Line className="min-w-[90px]">{!isNaN(creationDate.getTime()) ? format(creationDate, 'MMMM', { locale: es }) : ''}</Line>
+              {', de '}
+              <Line className="min-w-[40px]">{!isNaN(creationDate.getTime()) ? format(creationDate, 'yyyy', { locale: es }) : ''}</Line>
+              {', a las '}
+              <Line className="min-w-[60px]" />.
+            </p>
             <div className="flex justify-between px-16 pt-6">
                 <div className="text-center w-[220px]"><div className="border-t border-black mb-1"></div><p className="font-bold uppercase text-[7pt]">Por la Empresa</p></div>
                 <div className="text-center w-[220px]"><div className="border-t border-black mb-1"></div><p className="font-bold uppercase text-[7pt]">Firma del Estudiante</p></div>
             </div>
         </section>
+
       </div>
       <div className="mt-6 text-center text-[6pt] text-gray-400 uppercase tracking-tighter">Documento interno • Confeccionado por: {contract.createdBy || 'Sistema'} • {format(new Date(), 'PPpp', { locale: es })}</div>
     </div>

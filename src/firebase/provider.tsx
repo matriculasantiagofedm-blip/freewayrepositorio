@@ -39,22 +39,28 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   auth,
 }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isUserLoading, setIsUserLoading] = useState(true);
-  const [role, setRoleState] = useState<string | null>(null);
-
-  useEffect(() => {
-    // 1. Recuperar rol de persistencia
+  // El rol se inicializa de forma SÍNCRONA desde localStorage usando un inicializador lazy.
+  // Esto evita la condición de carrera donde onAuthStateChanged ponía isUserLoading=false
+  // antes de que el rol del localStorage fuera leído, causando una redirección incorrecta al login.
+  const [role, setRoleState] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
       const storedRoleKey = window.localStorage.getItem('userRoleKey');
       if (storedRoleKey && roleMapping[storedRoleKey]) {
-        setRoleState(roleMapping[storedRoleKey]);
-        if (!auth.currentUser) {
-          signInAnonymously(auth).catch(console.error);
-        }
+        return roleMapping[storedRoleKey];
       }
     }
+    return null;
+  });
+  // isUserLoading se inicia en true. Se pone en false cuando onAuthStateChanged responde.
+  const [isUserLoading, setIsUserLoading] = useState(true);
 
-    // 2. Escuchar cambios de autenticación
+  useEffect(() => {
+    // Si hay un rol guardado pero no hay sesión Firebase activa, iniciar sesión anónima.
+    if (role && !auth.currentUser) {
+      signInAnonymously(auth).catch(console.error);
+    }
+
+    // Escuchar cambios de autenticación de Firebase
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       setIsUserLoading(false);

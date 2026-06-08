@@ -4,6 +4,7 @@ import "./globals.css";
 // build: 2026-05-16-v5
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from "@/firebase";
+import { ServiceWorkerCleanup } from "@/components/sw-cleanup";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -48,6 +49,7 @@ export default function RootLayout({
       <body
         className={`${poppins.variable} ${ptSans.variable} font-body antialiased bg-background text-foreground`}
       >
+        <ServiceWorkerCleanup />
         <FirebaseClientProvider>
           {children}
         </FirebaseClientProvider>

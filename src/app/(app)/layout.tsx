@@ -8,12 +8,17 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/s
 import { Button } from '@/components/ui/button';
 import { useFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { LiveAvailabilityWidget } from '@/components/live-availability-widget';
+import { WindowManagerProvider } from '@/contexts/window-manager-context';
+import { WindowLayer } from '@/components/window-layer';
+import { WindowTaskbar } from '@/components/window-taskbar';
+
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { role, isUserLoading } = useFirebase();
   const router = useRouter();
+  const [isEmbedded, setIsEmbedded] = useState(false);
 
   /**
    * GUARDIA DE SEGURIDAD ADMINISTRATIVA
@@ -27,18 +32,42 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [role, isUserLoading, router]);
 
+  // Detect if this page is running inside a floating window (iframe)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setIsEmbedded(params.get('embed') === '1');
+  }, []);
+
+  // NOTA: WindowManagerProvider siempre envuelve el contenido, incluso durante
+  // la pantalla de carga, para que useWindowManager() nunca falle en páginas
+  // como el dashboard que lo usan incondicionalmente.
+
   if (isUserLoading || !role) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Verificando Credenciales de Acceso...</p>
+      <WindowManagerProvider>
+        <div className="flex min-h-screen items-center justify-center bg-slate-50">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Verificando Credenciales de Acceso...</p>
+          </div>
         </div>
-      </div>
+      </WindowManagerProvider>
+    );
+  }
+
+  // When embedded inside a floating window, skip the full shell (header/nav)
+  if (isEmbedded) {
+    return (
+      <WindowManagerProvider>
+        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 print:p-0 print:m-0 print:block min-h-screen bg-[#eef2f6]">
+          {children}
+        </main>
+      </WindowManagerProvider>
     );
   }
 
   return (
+    <WindowManagerProvider>
     <div className="flex min-h-screen w-full flex-col relative bg-[#eef2f6] selection:bg-primary/20">
       {/* --- EL FONDO INCREÍBLE ANIMADO (IMPRESSIVE ANIMATED MESH BACKGROUND) --- */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-blue-50">
@@ -99,7 +128,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
 
       </header>
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 print:p-0 print:m-0 print:block">
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 print:p-0 print:m-0 print:block pb-16">
         {children}
       </main>
       
@@ -107,6 +136,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <LiveAvailabilityWidget />
       
       </div>
+
+      {/* Sistema de Ventanas Flotantes */}
+      <WindowLayer />
+      <WindowTaskbar />
     </div>
+    </WindowManagerProvider>
   );
+
 }

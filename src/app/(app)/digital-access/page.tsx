@@ -1,15 +1,14 @@
 'use client';
 import { useState } from 'react';
-import { useDb, useUser } from '@/firebase';
+import { useDb } from '@/firebase';
 import { useCurrentRole } from '@/hooks/use-current-role';
-import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Search, Unlock, Lock, Loader2, CheckCircle2 } from 'lucide-react';
+import { ShieldAlert, Search, Unlock, Lock, Loader2, CheckCircle2, BookOpen, MonitorPlay } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DigitalAccessPage() {
   const db = useDb();
-  const { user } = useUser();
   const { role, isLoading: isRoleLoading } = useCurrentRole();
 
   const [cedula, setCedula] = useState('');
@@ -28,7 +27,6 @@ export default function DigitalAccessPage() {
     setResults([]);
 
     try {
-      // Buscar por cédula del estudiante en autoMotoDetails y deluxeDetails
       const snap = await getDocs(collection(db, 'contracts'));
       const matches: any[] = [];
       snap.forEach(docSnap => {
@@ -52,14 +50,15 @@ export default function DigitalAccessPage() {
     }
   };
 
-  const handleToggle = async (contract: any) => {
+  const handleToggle = async (contract: any, field: 'simulatorAccess' | 'bookAccess') => {
     if (!db) return;
-    setTogglingId(contract.id);
+    const key = `${contract.id}_${field}`;
+    setTogglingId(key);
     try {
-      const newValue = !contract.digitalAccess;
-      await updateDoc(doc(db, 'contracts', contract.id), { digitalAccess: newValue });
+      const newValue = !contract[field];
+      await updateDoc(doc(db, 'contracts', contract.id), { [field]: newValue });
       setResults(prev =>
-        prev.map(c => c.id === contract.id ? { ...c, digitalAccess: newValue } : c)
+        prev.map(c => c.id === contract.id ? { ...c, [field]: newValue } : c)
       );
     } catch (err) {
       console.error(err);
@@ -93,7 +92,25 @@ export default function DigitalAccessPage() {
           </div>
           <div>
             <h1 className="font-black text-xl uppercase tracking-tight text-slate-800">Acceso Digital</h1>
-            <p className="text-xs text-slate-400 font-medium">Habilita o revoca el acceso al Simulador y Compendio Vial</p>
+            <p className="text-xs text-slate-400 font-medium">Gestiona el acceso al Simulador y Compendio de forma independiente</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Leyenda */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center gap-2.5">
+          <MonitorPlay className="h-5 w-5 text-blue-600 shrink-0" />
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-wider text-blue-700">Simulador</p>
+            <p className="text-[10px] text-blue-500 font-medium">Domina el Volante</p>
+          </div>
+        </div>
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2.5">
+          <BookOpen className="h-5 w-5 text-amber-600 shrink-0" />
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-wider text-amber-700">Compendio</p>
+            <p className="text-[10px] text-amber-500 font-medium">Libro Digital Vial</p>
           </div>
         </div>
       </div>
@@ -137,45 +154,76 @@ export default function DigitalAccessPage() {
       {results.map(contract => (
         <div
           key={contract.id}
-          className={`rounded-2xl border-2 p-5 shadow-sm transition-all ${
-            contract.digitalAccess
-              ? 'bg-emerald-50 border-emerald-300'
-              : 'bg-white border-slate-200'
-          }`}
+          className="bg-white rounded-2xl border-2 border-slate-200 p-5 shadow-sm space-y-4"
         >
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex flex-col gap-1">
-              <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">
-                Folio #{String(contract.folioNumber || '—').padStart(6, '0')} · {contract.title || contract.type}
-              </p>
-              <h2 className="font-black text-lg uppercase text-slate-800 leading-tight">{contract.clientName}</h2>
-              <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                Cédula: {contract.studentIdNumber || contract.autoMotoDetails?.studentIdNumber || contract.deluxeDetails?.studentIdNumber || '—'}
-              </p>
+          {/* Info del alumno */}
+          <div>
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+              Folio #{String(contract.folioNumber || '—').padStart(6, '0')} · {contract.title || contract.type}
+            </p>
+            <h2 className="font-black text-lg uppercase text-slate-800 leading-tight">{contract.clientName}</h2>
+            <p className="text-xs font-semibold text-slate-500 mt-0.5">
+              Cédula: {contract.studentIdNumber || contract.autoMotoDetails?.studentIdNumber || contract.deluxeDetails?.studentIdNumber || '—'}
+            </p>
+          </div>
 
-              <div className={`mt-2 flex items-center gap-2 text-xs font-black uppercase ${contract.digitalAccess ? 'text-emerald-700' : 'text-slate-400'}`}>
-                {contract.digitalAccess
-                  ? <><CheckCircle2 className="w-4 h-4" /> Simulador y Compendio habilitados</>
-                  : <><Lock className="w-4 h-4" /> Sin acceso al contenido digital</>
+          {/* Toggles individuales */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Simulador */}
+            <div className={`rounded-xl border-2 p-4 transition-all ${contract.simulatorAccess ? 'bg-blue-50 border-blue-300' : 'bg-slate-50 border-slate-200'}`}>
+              <div className="flex items-center gap-2 mb-3">
+                <MonitorPlay className={`w-4 h-4 ${contract.simulatorAccess ? 'text-blue-600' : 'text-slate-400'}`} />
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-600">Simulador</p>
+              </div>
+              <div className={`flex items-center gap-1.5 text-[10px] font-black uppercase mb-3 ${contract.simulatorAccess ? 'text-blue-700' : 'text-slate-400'}`}>
+                {contract.simulatorAccess
+                  ? <><CheckCircle2 className="w-3.5 h-3.5" /> Habilitado</>
+                  : <><Lock className="w-3.5 h-3.5" /> Bloqueado</>
                 }
               </div>
+              <Button
+                onClick={() => handleToggle(contract, 'simulatorAccess')}
+                disabled={togglingId === `${contract.id}_simulatorAccess`}
+                variant={contract.simulatorAccess ? 'destructive' : 'default'}
+                size="sm"
+                className={`w-full font-black uppercase tracking-wider text-xs rounded-lg ${!contract.simulatorAccess && 'bg-blue-600 hover:bg-blue-700'}`}
+              >
+                {togglingId === `${contract.id}_simulatorAccess`
+                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  : contract.simulatorAccess
+                    ? <><Lock className="w-3 h-3 mr-1" />Revocar</>
+                    : <><Unlock className="w-3 h-3 mr-1" />Habilitar</>
+                }
+              </Button>
             </div>
 
-            <Button
-              onClick={() => handleToggle(contract)}
-              disabled={togglingId === contract.id}
-              variant={contract.digitalAccess ? 'destructive' : 'default'}
-              className={`shrink-0 font-black uppercase tracking-wider text-xs px-5 py-2.5 rounded-xl ${
-                !contract.digitalAccess && 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20 shadow-md'
-              }`}
-            >
-              {togglingId === contract.id
-                ? <Loader2 className="w-4 h-4 animate-spin" />
-                : contract.digitalAccess
-                  ? <><Lock className="w-3.5 h-3.5 mr-1" />Revocar</>
-                  : <><Unlock className="w-3.5 h-3.5 mr-1" />Habilitar</>
-              }
-            </Button>
+            {/* Compendio */}
+            <div className={`rounded-xl border-2 p-4 transition-all ${contract.bookAccess ? 'bg-amber-50 border-amber-300' : 'bg-slate-50 border-slate-200'}`}>
+              <div className="flex items-center gap-2 mb-3">
+                <BookOpen className={`w-4 h-4 ${contract.bookAccess ? 'text-amber-600' : 'text-slate-400'}`} />
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-600">Compendio</p>
+              </div>
+              <div className={`flex items-center gap-1.5 text-[10px] font-black uppercase mb-3 ${contract.bookAccess ? 'text-amber-700' : 'text-slate-400'}`}>
+                {contract.bookAccess
+                  ? <><CheckCircle2 className="w-3.5 h-3.5" /> Habilitado</>
+                  : <><Lock className="w-3.5 h-3.5" /> Bloqueado</>
+                }
+              </div>
+              <Button
+                onClick={() => handleToggle(contract, 'bookAccess')}
+                disabled={togglingId === `${contract.id}_bookAccess`}
+                variant={contract.bookAccess ? 'destructive' : 'default'}
+                size="sm"
+                className={`w-full font-black uppercase tracking-wider text-xs rounded-lg ${!contract.bookAccess && 'bg-amber-600 hover:bg-amber-700'}`}
+              >
+                {togglingId === `${contract.id}_bookAccess`
+                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  : contract.bookAccess
+                    ? <><Lock className="w-3 h-3 mr-1" />Revocar</>
+                    : <><Unlock className="w-3 h-3 mr-1" />Habilitar</>
+                }
+              </Button>
+            </div>
           </div>
         </div>
       ))}

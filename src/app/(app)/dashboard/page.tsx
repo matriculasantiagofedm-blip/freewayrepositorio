@@ -8,6 +8,7 @@ import { useCollection } from '@/hooks/use-firestore';
 import { collection } from 'firebase/firestore';
 import Link from 'next/link';
 import { cn, toDate } from '@/lib/utils';
+import { useWindowManager } from '@/contexts/window-manager-context';
 import type { Contract } from '@/lib/types';
 import { 
   UserPlus, 
@@ -68,6 +69,7 @@ export default function DashboardPage() {
   const db = useDb();
   const { user } = useUser();
   const { role } = useCurrentRole();
+  const { openWindow } = useWindowManager();
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState('comercial');
 
@@ -195,67 +197,66 @@ export default function DashboardPage() {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="center" className="w-56 p-2 rounded-xl shadow-2xl border-slate-200">
                                         <p className="text-[9px] font-black uppercase text-slate-400 px-2 py-1.5 tracking-widest">Seleccionar Trámite</p>
-                                        <DropdownMenuItem asChild className="rounded-lg cursor-pointer py-2.5">
-                                            <Link href="/contracts/new?type=Curso Auto" className="flex items-center gap-3">
+                                        <DropdownMenuItem className="rounded-lg cursor-pointer py-2.5" onClick={() => openWindow('/contracts/new?type=Curso Auto', 'Nuevo — Curso Auto')}>
+                                            <div className="flex items-center gap-3">
                                                 <div className="bg-blue-50 p-1.5 rounded-md"><Car className="h-4 w-4 text-blue-600" /></div>
                                                 <span className="text-xs font-bold uppercase text-slate-700">Curso de Auto</span>
-                                            </Link>
+                                            </div>
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem asChild className="rounded-lg cursor-pointer py-2.5">
-                                            <Link href="/contracts/new?type=Curso Moto" className="flex items-center gap-3">
+                                        <DropdownMenuItem className="rounded-lg cursor-pointer py-2.5" onClick={() => openWindow('/contracts/new?type=Curso Moto', 'Nuevo — Curso Moto')}>
+                                            <div className="flex items-center gap-3">
                                                 <div className="bg-orange-50 p-1.5 rounded-md"><Bike className="h-4 w-4 text-orange-600" /></div>
                                                 <span className="text-xs font-bold uppercase text-slate-700">Curso de Moto</span>
-                                            </Link>
+                                            </div>
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem asChild className="rounded-lg cursor-pointer py-2.5">
-                                            <Link href="/contracts/new?type=Ampliaciones" className="flex items-center gap-3">
+                                        <DropdownMenuItem className="rounded-lg cursor-pointer py-2.5" onClick={() => openWindow('/contracts/new?type=Ampliaciones', 'Nuevo — Ampliación')}>
+                                            <div className="flex items-center gap-3">
                                                 <div className="bg-amber-50 p-1.5 rounded-md"><Repeat className="h-4 w-4 text-amber-600" /></div>
                                                 <span className="text-xs font-bold uppercase text-slate-700">Ampliaciones</span>
-                                            </Link>
+                                            </div>
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem asChild className="rounded-lg cursor-pointer py-2.5">
-                                            <Link href="/contracts/new?type=Curso Deluxe" className="flex items-center gap-3">
+                                        <DropdownMenuItem className="rounded-lg cursor-pointer py-2.5" onClick={() => openWindow('/contracts/new?type=Curso Deluxe', 'Nuevo — Curso Deluxe')}>
+                                            <div className="flex items-center gap-3">
                                                 <div className="bg-purple-50 p-1.5 rounded-md"><Star className="h-4 w-4 text-purple-600" /></div>
                                                 <span className="text-xs font-bold uppercase text-slate-700">Curso Deluxe</span>
-                                            </Link>
+                                            </div>
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem asChild className="rounded-lg cursor-pointer py-2.5">
-                                            <Link href="/contracts/new?type=Curso Solo Practica" className="flex items-center gap-3">
+                                        <DropdownMenuItem className="rounded-lg cursor-pointer py-2.5" onClick={() => openWindow('/contracts/new?type=Curso Solo Practica', 'Nuevo — Solo Práctica')}>
+                                            <div className="flex items-center gap-3">
                                                 <div className="bg-emerald-50 p-1.5 rounded-md"><Dumbbell className="h-4 w-4 text-emerald-600" /></div>
                                                 <span className="text-xs font-bold uppercase text-slate-700">Solo Práctica</span>
-                                            </Link>
+                                            </div>
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
 
-                                <WorkflowItem icon={Receipt} label="Cobranza" sub="Gestión Saldos" href="/cancellations" color="text-green-600" />
-                                <WorkflowItem icon={RefreshCw} label="Trámites" sub="Actualizaciones" href="/updates" color="text-indigo-600" />
-                                <WorkflowItem icon={Library} label="Tienda" sub="Venta Libros" href="/book-sales" color="text-orange-600" />
+                                <WorkflowItem icon={Receipt} label="Cobranza" sub="Gestión Saldos" onClick={() => openWindow('/cancellations', 'Cobranza')} color="text-green-600" />
+                                <WorkflowItem icon={RefreshCw} label="Trámites" sub="Actualizaciones" onClick={() => openWindow('/updates', 'Actualizaciones')} color="text-indigo-600" />
+                                <WorkflowItem icon={Library} label="Tienda" sub="Venta Libros" onClick={() => openWindow('/book-sales', 'Venta de Libros')} color="text-orange-600" />
                             </div>
                         ) : activeTab === 'operativo' ? (
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 pt-2">
-                                <WorkflowItem icon={CalendarClock} label="Práctica" sub="Turnos" href="/manual-schedule" color="text-amber-600" />
-                                <WorkflowItem icon={FileSignature} label="Certificados" sub="Físicos" href="/certificates" color="text-purple-600" />
-                                <WorkflowItem icon={BookOpen} label="Exámenes" sub="Teoría" href="/exams" color="text-violet-600" />
-
-                                <WorkflowItem icon={TrendingUp} label="ATTT" sub="Evaluación" href="/att-evaluations" color="text-indigo-600" />
-                                <WorkflowItem icon={ShieldCheck} label="Seguridad" sub="Vehicular" href="/mileage-log" color="text-slate-600" />
+                                <WorkflowItem icon={CalendarClock} label="Práctica" sub="Turnos" onClick={() => openWindow('/manual-schedule', 'Agenda Práctica')} color="text-amber-600" />
+                                <WorkflowItem icon={FileSignature} label="Certificados" sub="Físicos" onClick={() => openWindow('/certificates', 'Certificados')} color="text-purple-600" />
+                                <WorkflowItem icon={BookOpen} label="Exámenes" sub="Teoría" onClick={() => openWindow('/exams', 'Exámenes')} color="text-violet-600" />
+                                <WorkflowItem icon={TrendingUp} label="ATTT" sub="Evaluación" onClick={() => openWindow('/att-evaluations', 'Evaluaciones ATTT')} color="text-indigo-600" />
+                                <WorkflowItem icon={ShieldCheck} label="Seguridad" sub="Vehicular" onClick={() => openWindow('/mileage-log', 'Kilometraje')} color="text-slate-600" />
                                 {isAdmin && (
-                                  <WorkflowItem icon={DollarSign} label="Precios" sub="Ajustes" href="/settings/prices" color="text-red-600" />
+                                  <WorkflowItem icon={DollarSign} label="Precios" sub="Ajustes" onClick={() => openWindow('/settings/prices', 'Precios')} color="text-red-600" />
                                 )}
                                 {isAdmin && (
-                                  <WorkflowItem icon={Unlock} label="Acceso" sub="Digital" href="/digital-access" color="text-emerald-600" />
+                                  <WorkflowItem icon={Unlock} label="Acceso" sub="Digital" onClick={() => openWindow('/digital-access', 'Acceso Digital')} color="text-emerald-600" />
                                 )}
                             </div>
                         ) : activeTab === 'contabilidad' ? (
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 pt-2">
-                                <WorkflowItem icon={Wallet} label="Caja" sub="Cierre Turno" href="/informes/daily-cash" color="text-emerald-600" />
-                                <WorkflowItem icon={PieChart} label="Gastos" sub="Dashboard" href="/contabilidad" color="text-indigo-600" />
-                                <WorkflowItem icon={Bot} label="Ticket IA" sub="Registro" href="/contabilidad/nuevo" color="text-cyan-600" />
-                                <WorkflowItem icon={Landmark} label="P&L" sub="Finanzas" href="/informes/financial-statements" color="text-rose-600" />
-                                <WorkflowItem icon={BookOpen} label="Mayor" sub="Libro" href="/informes/general-ledger" color="text-slate-600" />
-                                <WorkflowItem icon={Building2} label="Proveedores" sub="Por Pagar" href="/informes/providers-ledger" color="text-red-700" />
+                                <WorkflowItem icon={Wallet} label="Caja" sub="Cierre Turno" onClick={() => openWindow('/informes/daily-cash', 'Cierre de Caja')} color="text-emerald-600" />
+                                <WorkflowItem icon={PieChart} label="Gastos" sub="Dashboard" onClick={() => openWindow('/contabilidad', 'Dashboard Gastos')} color="text-indigo-600" />
+                                <WorkflowItem icon={Bot} label="Ticket IA" sub="Registro" onClick={() => openWindow('/contabilidad/nuevo', 'Registrar Gasto')} color="text-cyan-600" />
+                                <WorkflowItem icon={Landmark} label="P&amp;L" sub="Finanzas" onClick={() => openWindow('/informes/financial-statements', 'Estados Financieros')} color="text-rose-600" />
+                                <WorkflowItem icon={BookOpen} label="Mayor" sub="Libro" onClick={() => openWindow('/informes/general-ledger', 'Mayor General')} color="text-slate-600" />
+                                <WorkflowItem icon={Building2} label="Proveedores" sub="Por Pagar" onClick={() => openWindow('/informes/providers-ledger', 'Mayor de Proveedores')} color="text-red-700" />
                             </div>
                         ) : (
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 pt-2">
@@ -276,7 +277,7 @@ export default function DashboardPage() {
                                     <Library className="h-3 w-3" /> Contratos
                                 </Link>
                             </div>
-                            <span className="text-[8px] text-slate-300">v3.0</span>
+                            <span className="text-[8px] text-slate-300">v5.0</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -289,9 +290,9 @@ export default function DashboardPage() {
                         </CardHeader>
                         <CardContent className="p-2">
                             <div className="grid grid-cols-1 gap-1">
-                                <QuickReportLink href="/informes/vehicle-schedule" label="Agenda de Vehículos" />
-                                <QuickReportLink href="/informes/theoretical-schedule" label="Agenda Teórica Semanal" />
-                                <QuickReportLink href="/informes/cancellation-payments" label="Resumen de Cobranza" />
+                                <QuickReportLink onClick={() => openWindow('/informes/vehicle-schedule', 'Agenda de Vehículos')} label="Agenda de Vehículos" />
+                                <QuickReportLink onClick={() => openWindow('/informes/theoretical-schedule', 'Agenda Teórica Semanal')} label="Agenda Teórica Semanal" />
+                                <QuickReportLink onClick={() => openWindow('/informes/cancellation-payments', 'Resumen de Cobranza')} label="Resumen de Cobranza" />
                             </div>
                         </CardContent>
                     </Card>
@@ -400,9 +401,9 @@ export default function DashboardPage() {
   );
 }
 
-function WorkflowItem({ icon: Icon, label, sub, href, color }: any) {
+function WorkflowItem({ icon: Icon, label, sub, onClick, color }: any) {
     return (
-        <Link href={href} className="flex flex-col items-center gap-2 group outline-none w-full">
+        <button onClick={onClick} className="flex flex-col items-center gap-2 group outline-none w-full cursor-pointer">
             <div className={cn(
                 "w-12 h-12 bg-white border border-slate-200 rounded-xl flex items-center justify-center shadow-sm transition-all group-hover:shadow-md group-hover:-translate-y-0.5 group-hover:border-blue-500",
                 color
@@ -413,18 +414,18 @@ function WorkflowItem({ icon: Icon, label, sub, href, color }: any) {
                 <p className="text-[10px] font-bold uppercase text-slate-800 leading-none">{label}</p>
                 <p className="text-[9px] text-slate-400 mt-1">{sub}</p>
             </div>
-        </Link>
+        </button>
     );
 }
 
 
 
-function QuickReportLink({ href, label }: { href: string, label: string }) {
+function QuickReportLink({ onClick, label }: { onClick: () => void, label: string }) {
     return (
-        <Link href={href} className="flex items-center justify-between p-2 rounded hover:bg-blue-50 group transition-all">
+        <button onClick={onClick} className="flex items-center justify-between p-2 rounded hover:bg-blue-50 group transition-all w-full text-left">
             <span className="text-[10px] font-bold uppercase text-slate-600 group-hover:text-blue-700">{label}</span>
             <ChevronRight className="h-3 w-3 text-slate-300 group-hover:text-blue-400 transition-all" />
-        </Link>
+        </button>
     );
 }
 

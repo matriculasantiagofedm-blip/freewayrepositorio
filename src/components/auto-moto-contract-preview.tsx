@@ -140,11 +140,43 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, idTyp
         </div>
 
         <h3 className="font-bold">CLÁUSULA TERCERA - INASISTENCIAS Y REPROGRAMACIONES</h3>
-        <p className='text-[10px] text-justify'>EL ESTUDIANTE que no asista a una clase práctica en el horario establecido perderá automáticamente la clase práctica sin derecho a reposición ni reclamo. Si falta a más de una clase sin justificar, deberá pagar un recargo de $20.00 por cada clase perdida.</p>
+        <ul className="text-[10px] space-y-0.5 pl-1">
+          <li className="flex items-start gap-1"><span className="shrink-0">▪</span><span>EL ESTUDIANTE que no asista a una clase práctica en el horario establecido <strong>perderá automáticamente la clase práctica sin derecho a reposición ni reclamo.</strong></span></li>
+          <li className="flex items-start gap-1"><span className="shrink-0">▪</span><span><strong>Excepción</strong>: Si la falta es por <strong>motivo de salud</strong>, deberá presentar constancia médica válida y coordinar con la administración para una reprogramación.</span></li>
+          <li className="flex items-start gap-1"><span className="shrink-0">▪</span><span>Si falta sin justificar médicamente, <strong>no tendrá derecho a certificado</strong> y deberá pagar un <strong>recargo de $20.00 por cada clase perdida</strong>.</span></li>
+        </ul>
 
-        <h3 className="font-bold">CLÁUSULA DUODÉCIMA - ACEPTACIÓN</h3>
-        <p className="text-center text-[10px] !mt-4">
-            Suscrito en Panamá, a los <Value>{format(creationDate, 'd')}</Value> días de <Value>{format(creationDate, 'MMMM', { locale: es })}</Value> de <Value>{format(creationDate, 'yyyy')}</Value>.
+        <h3 className="font-bold">CLÁUSULA CUARTA - LUGAR DE INICIO Y TRASLADO</h3>
+        <p className='text-[10px] text-justify'>Las clases prácticas iniciarán en la oficina de LA ESCUELA. Desde allí, EL ESTUDIANTE será trasladado al circuito de prácticas y posteriormente de regreso. Dicho traslado se encuentra incluido dentro del tiempo de las <strong>2 horas de clase práctica.</strong></p>
+
+        <h3 className="font-bold">CLÁUSULA QUINTA - RESTRICCIONES DE ACOMPAÑANTES</h3>
+        <p className='text-[10px] text-justify'>No se permitirá bajo ningún concepto el ingreso de acompañantes, niños, mascotas o terceras personas durante las clases teóricas o prácticas.</p>
+
+        <h3 className="font-bold">CLÁUSULA SEXTA - PUNTUALIDAD</h3>
+        <p className='text-[10px] text-justify'>En caso de que EL ESTUDIANTE llegue tarde a su clase, <strong>solo recibirá el tiempo restante de las 2 horas programadas</strong>, sin derecho a reposición.</p>
+
+        <h3 className="font-bold">CLÁUSULA SÉPTIMA - CANCELACIÓN DEL CURSO</h3>
+        <p className='text-[10px] text-justify'>Si EL ESTUDIANTE decide cancelar el curso una vez iniciada la inscripción, no habrá devolución de dinero bajo ninguna circunstancia.</p>
+
+        <h3 className="font-bold">CLÁUSULA OCTAVA - OBLIGACIONES DEL ESTUDIANTE</h3>
+        <p className='text-[10px]'>EL ESTUDIANTE se compromete a: 1. Seguir las instrucciones del instructor. 2. Mantener una actitud respetuosa y adecuada durante las clases. 3. Asistir en estado óptimo de salud física, mental y emocional.</p>
+
+        <h3 className="font-bold">CLÁUSULA NOVENA - VESTIMENTA</h3>
+        <ul className="text-[10px] space-y-0.5 pl-1">
+          <li className="flex items-start gap-1"><span className="shrink-0">▪</span><span>Se prohíbe: Escotes pronunciados, minifaldas, camisetas sin mangas, pantalones cortos, leggins, chancletas o sandalias.</span></li>
+          <li className="flex items-start gap-1"><span className="shrink-0">▪</span><span>El incumplimiento implica la <strong>pérdida automática de la clase</strong>, sin derecho a reposición.</span></li>
+        </ul>
+
+        <h3 className="font-bold">CLÁUSULA DÉCIMA - CERTIFICACIÓN</h3>
+        <p className='text-[10px]'>El certificado será entregado únicamente si EL ESTUDIANTE: 1. Está paz y salvo en sus pagos. 2. Ha completado la totalidad del curso teórico y práctico.</p>
+
+        <h3 className="font-bold">CLÁUSULA DÉCIMA PRIMERA - VIGENCIA DEL CURSO</h3>
+        <p className='text-[10px] text-justify'>Si EL ESTUDIANTE no establece contacto para finalizar su curso en un plazo de <strong>tres (3) meses</strong> desde la fecha de inicio, se entenderá que renuncia a continuar, sin derecho a devolución del dinero ni a reclamos posteriores.</p>
+
+        <h3 className="font-bold">CLÁUSULA DÉCIMA SEGUNDA - ACEPTACIÓN</h3>
+        <p className='text-[10px] text-justify'>Ambas partes declaran haber leído, entendido y aceptado el presente contrato, firmándolo en señal de conformidad.</p>
+        <p className="text-[10px] !mt-2">
+            En fe de lo cual, se suscribe en la ciudad de Panamá, a los <Value>{format(creationDate, 'd')}</Value> días de <Value>{format(creationDate, 'MMMM', { locale: es })}</Value> de <Value>{format(creationDate, 'yyyy')}</Value>.
         </p>
 
         <div className="flex justify-around pt-6">

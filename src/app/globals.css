@@ -105,15 +105,15 @@
 .animate-mesh-3 { animation: mesh-3 22s ease-in-out infinite; }
 
 /* ============================================================
-   CERTIFICATE PRINT STYLES
-   Moved here from the client component <style> tag because
-   Next.js App Router does not reliably inject @media print
-   rules from styled-jsx / inline style tags.
+   GENERAL PRINT STYLES
+   Applied to all printable pages (reports, contracts, etc.)
    ============================================================ */
 @media print {
+
+  /* Default page: portrait, 1cm margins — good for all reports */
   @page {
-    size: letter landscape;
-    margin: 0;
+    size: letter portrait;
+    margin: 1cm 1.5cm;
   }
 
   html, body {
@@ -122,10 +122,9 @@
     padding: 0 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    overflow: hidden !important;
-    min-height: 0 !important;
-    height: auto !important;
-    width: auto !important;
+    /* NOTE: do NOT use overflow:hidden here — it cuts off multi-page content */
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   /* Ocultar UI en impresión */
@@ -138,8 +137,44 @@
     box-shadow: none !important;
     text-shadow: none !important;
     transition: none !important;
+    /* Prevent content overflow on tablet browsers */
+    max-width: 100% !important;
   }
 
+  /* Make sure tables don't overflow the page width */
+  table {
+    width: 100% !important;
+    table-layout: fixed !important;
+  }
+
+  /* Images should never overflow */
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Avoid cutting rows/sections between pages */
+  tr, .print-no-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+}
+
+/* ============================================================
+   CERTIFICATE PRINT STYLES
+   Moved here from the client component <style> tag because
+   Next.js App Router does not reliably inject @media print
+   rules from styled-jsx / inline style tags.
+   These rules ONLY apply to certificate elements.
+   ============================================================ */
+
+/* Named page for certificate landscape — only used by certificate elements */
+@page certificate-landscape {
+  size: letter landscape;
+  margin: 0;
+}
+
+@media print {
   /* Wrapper: exactamente 2 hojas (17in) con overflow:hidden — sin espacio extra */
   .certificate-pages-wrapper {
     display: block !important;
@@ -149,6 +184,7 @@
     width: 11in !important;
     margin: 0 !important;
     padding: 0 !important;
+    page: certificate-landscape;
   }
 
   /* Frente: break-after:page para saltar a la hoja del reverso */
@@ -163,6 +199,7 @@
     page-break-inside: avoid !important;
     break-inside: avoid !important;
     box-sizing: border-box !important;
+    page: certificate-landscape;
   }
 
   /* Reverso: sin break-before (evita la hoja vacía del doble-break) */
@@ -178,5 +215,7 @@
     page-break-after: avoid !important;
     break-after: avoid !important;
     box-sizing: border-box !important;
+    page: certificate-landscape;
   }
 }
+

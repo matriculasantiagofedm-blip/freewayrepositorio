@@ -250,7 +250,7 @@ export default function DashboardPage() {
                                 <WorkflowItem icon={BookOpen} label="Mayor" sub="Libro" onClick={() => openWindow('/informes/general-ledger', 'Mayor General')} color="text-slate-600" />
                                 <WorkflowItem icon={Building2} label="Proveedores" sub="Por Pagar" onClick={() => openWindow('/informes/providers-ledger', 'Mayor de Proveedores')} color="text-red-700" />
                             </div>
-                        )}
+                        ) : null}
 
                         {/* Pie del Mapa */}
                         <div className="absolute bottom-4 left-6 right-6 flex items-center justify-between border-t border-slate-100 pt-3">

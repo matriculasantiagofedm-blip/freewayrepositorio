@@ -19,19 +19,6 @@ import Link from 'next/link';
 const navLinks = [
   { href: '/dashboard', label: 'Panel de Control', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
   { href: '/clients', label: 'Clientes', roles: ['Administrador'] },
-  {
-    label: 'Contratos',
-    roles: ['Administrador', 'Ventas', 'Ventas Externas'],
-    children: [
-      { href: '/contracts/new?type=Curso Auto',          label: '📋 Nuevo — Curso Auto',           roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-      { href: '/contracts/new?type=Curso Moto',          label: '🏍️ Nuevo — Curso Moto',           roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-      { href: '/contracts/new?type=Curso Deluxe',        label: '⭐ Nuevo — Curso Deluxe',         roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-      { href: '/contracts/new?type=Curso Solo Practica', label: '🔑 Nuevo — Solo Práctica',        roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-      { href: '/contracts/new?type=Ampliaciones',        label: '➕ Nuevo — Ampliación',           roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-      { separator: true,                                                                            roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
-      { href: '/contracts',                              label: '📁 Archivo de Contratos',         roles: ['Administrador'] },
-    ]
-  },
   { href: '/informes/packages', label: 'Catálogo de Precios', roles: ['Ventas Externas'] },
   {
     label: 'Caja y Operaciones',

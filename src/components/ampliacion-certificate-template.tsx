@@ -59,17 +59,19 @@ function CertificateFrontAmpliacion({ certificate }: { certificate: Certificate 
                             
                             {/* FOTO DEL ESTUDIANTE (DEBAJO DEL FOLIO) */}
                             <div
-                                className="mt-2 border-2 border-black bg-slate-50 flex-shrink-0 overflow-hidden"
-                                style={{ width: '30mm', height: '40mm', maxWidth: '30mm', maxHeight: '40mm', overflow: 'hidden', display: 'block', position: 'relative' }}
+                                className="mt-2 border-2 border-black flex-shrink-0"
+                                style={{ width: '30mm', display: 'inline-block' }}
                             >
                                 {photo ? (
                                     <img
                                         src={photo}
                                         alt="Estudiante"
-                                        style={{ width: '30mm', height: '40mm', maxWidth: '30mm', maxHeight: '40mm', objectFit: 'contain', objectPosition: 'center top', display: 'block', backgroundColor: 'white' }}
+                                        style={{ width: '30mm', height: 'auto', display: 'block' }}
                                     />
                                 ) : (
-                                    <span className="text-[6pt] font-black uppercase text-slate-300 text-center px-2">Espacio para Foto</span>
+                                    <div style={{ width: '30mm', height: '40mm', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <span className="text-[6pt] font-black uppercase text-slate-300 text-center px-2">Espacio para Foto</span>
+                                    </div>
                                 )}
                             </div>
                         </div>

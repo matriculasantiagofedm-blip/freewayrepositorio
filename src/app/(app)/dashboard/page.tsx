@@ -78,7 +78,7 @@ export default function DashboardPage() {
   const stats = useMemo(() => {
     if (!allContracts || !mounted) return { active: 0, today: 0, overdue: [] as Contract[], totalOverdue: 0, chartData: [] };
     
-    const filtered = allContracts.filter(c => !c.isManualPrint);
+    const filtered = allContracts.filter(c => !c.isManualPrint && c.status !== 'expired');
     const active = filtered.filter(c => c.status === 'active' || c.status === 'completed').length;
     const overdueList = filtered.filter(c => getBalance(c) > 0).sort((a,b) => getBalance(b) - getBalance(a));
     const overdue = overdueList.slice(0, 10);

@@ -62,23 +62,38 @@ function CertificatePrintContent() {
       
       if (!folio || !clientName || !cip || !licenseType || !courseName || !issueDateStr) return;
 
-      const effectiveContract: any = contract || {
+      // Siempre se priorizan los datos del formulario (address, phone1, phone2)
+      // sobre lo que haya en Firestore. Esto permite certificados de actualización
+      // con datos editados manualmente aunque el contrato original ya exista.
+      const baseContract = contract || {
           id: 'manual',
           clientId: 'manual',
           userId: 'manual',
           type: manualType === 'ampliaciones' ? 'Ampliaciones' : 'Manual',
           clientName,
           clientEmail: '-',
+      };
+
+      const effectiveContract: any = {
+          ...baseContract,
           ampliacionesDetails: {
-              studentAddress: address || '',
-              studentPhone1: phone1 || '',
-              studentPhone2: phone2 || '',
+              ...(baseContract as any).ampliacionesDetails,
+              studentAddress: address || (baseContract as any).ampliacionesDetails?.studentAddress || '',
+              studentPhone1: phone1 || (baseContract as any).ampliacionesDetails?.studentPhone1 || '',
+              studentPhone2: phone2 || (baseContract as any).ampliacionesDetails?.studentPhone2 || '',
           },
           autoMotoDetails: {
-              studentAddress: address || '',
-              studentPhone1: phone1 || '',
-              studentPhone2: phone2 || '',
-          }
+              ...(baseContract as any).autoMotoDetails,
+              studentAddress: address || (baseContract as any).autoMotoDetails?.studentAddress || '',
+              studentPhone1: phone1 || (baseContract as any).autoMotoDetails?.studentPhone1 || '',
+              studentPhone2: phone2 || (baseContract as any).autoMotoDetails?.studentPhone2 || '',
+          },
+          deluxeDetails: {
+              ...(baseContract as any).deluxeDetails,
+              studentAddress: address || (baseContract as any).deluxeDetails?.studentAddress || '',
+              studentPhone1: phone1 || (baseContract as any).deluxeDetails?.studentPhone1 || '',
+              studentPhone2: phone2 || (baseContract as any).deluxeDetails?.studentPhone2 || '',
+          },
       };
 
       const cachedStr = typeof window !== 'undefined' ? localStorage.getItem(`cert_photos_${contractId}`) : null;
@@ -113,7 +128,7 @@ function CertificatePrintContent() {
 
       const timer = setTimeout(() => {
         setIsReady(true);
-      }, 5000);
+      }, 8000);
       
       return () => clearTimeout(timer);
     }
@@ -134,7 +149,34 @@ function CertificatePrintContent() {
   }, [certificate, isManual, searchParams]);
 
   const handleManualPrint = () => {
-    window.print();
+    // Android Chrome no soporta CSS Named Pages (@page certificate-landscape).
+    // Inyectamos el @page landscape directamente en el <head> antes de imprimir.
+    const styleId = 'cert-print-landscape-override';
+    let style = document.getElementById(styleId) as HTMLStyleElement | null;
+    if (!style) {
+      style = document.createElement('style');
+      style.id = styleId;
+      document.head.appendChild(style);
+    }
+    style.textContent = `
+      @page {
+        size: 11in 8.5in landscape !important;
+        margin: 0 !important;
+      }
+      @media print {
+        img { height: auto; max-width: 100%; }
+      }
+    `;
+
+    // Pequeño delay para que el browser renderice antes de abrir el diálogo
+    setTimeout(() => {
+      window.print();
+      // Limpiar el estilo inyectado después de imprimir
+      setTimeout(() => {
+        const el = document.getElementById(styleId);
+        if (el) el.remove();
+      }, 2000);
+    }, 150);
   };
 
   if (!isManual && isContractLoading) {
@@ -152,7 +194,7 @@ function CertificatePrintContent() {
             {!isReady ? (
                 <div className="bg-slate-100 text-slate-500 p-6 rounded-xl text-center font-black uppercase text-lg flex items-center justify-center gap-3 border-2 border-slate-200">
                     <Loader2 className="animate-spin h-6 w-6" />
-                    Optimizando para Tablet (5s)...
+                    Optimizando para Tablet (8s)...
                 </div>
             ) : (
                 <Button 

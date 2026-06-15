@@ -23,6 +23,7 @@ import {
   FileCheck,
   TrendingUp,
   RefreshCcw,
+  LayoutGrid,
   Calendar,
   Clock,
   ExternalLink,

@@ -248,7 +248,7 @@ export default function DailyCashReport() {
             <p className="text-[8pt] font-bold mt-1">{format(selectedDate, "EEEE d 'DE' MMMM 'DE' yyyy", { locale: es }).toUpperCase()}</p>
           </div>
 
-          <div className="mb-6 overflow-x-hidden">
+          <div className="mb-6 overflow-x-auto">
             <table className="w-full border-collapse border border-black text-[6.5pt]">
               <thead>
                 <tr className="bg-slate-100">

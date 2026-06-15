@@ -153,7 +153,7 @@ function AllContractsContent() {
             <p className="animate-pulse font-medium">Cargando base de datos...</p>
         </div>
       ) : (
-        <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
+        <div className="rounded-lg border bg-card shadow-sm overflow-x-auto">
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow>

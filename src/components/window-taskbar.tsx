@@ -13,7 +13,7 @@ export function WindowTaskbar() {
   if (windows.length === 0) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[300] print:hidden">
+    <div className="fixed bottom-0 left-0 right-0 z-[300] print:hidden hidden md:block">
       <div className="flex items-center gap-1 px-3 py-1.5 bg-white/80 backdrop-blur-xl border-t border-slate-200/60 shadow-lg overflow-x-auto">
         {/* Label */}
         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest shrink-0 mr-2">

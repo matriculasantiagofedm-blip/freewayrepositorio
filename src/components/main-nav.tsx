@@ -93,6 +93,7 @@ function HoverDropdownMenu({ link, visibleChildren, linkClass }: any) {
           className={cn(linkClass)}
           onMouseEnter={handleOpen}
           onMouseLeave={handleClose}
+          onClick={() => setOpen(o => !o)}
         >
           {link.label}
         </Button>
@@ -151,13 +152,13 @@ export function MainNav({ className, isMobile = false }: { className?: string, i
                   {visibleChildren.map((child, index) => {
                     if (child.separator) return <Separator key={`sep-mobile-${index}`} className="my-2" />;
                     return (
-                      <button
+                      <Link
                         key={child.href}
+                        href={child.href!}
                         className="rounded-lg py-2 text-muted-foreground hover:text-primary flex items-center text-left"
-                        onClick={() => openWindow(child.href!, child.label)}
                       >
                         {child.label}
-                      </button>
+                      </Link>
                     );
                   })}
                 </div>

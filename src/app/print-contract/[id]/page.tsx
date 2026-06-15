@@ -41,13 +41,37 @@ function PrintContractContent() {
     if (contract && !isLoading) {
       const timer = setTimeout(() => {
         setIsReady(true);
-      }, 3000);
+      }, 8000);
       return () => clearTimeout(timer);
     }
   }, [contract, isLoading]);
 
   const handleManualPrint = () => {
-    window.print();
+    // Android Chrome no soporta CSS Named Pages. Inyectamos @page portrait dinámicamente.
+    const styleId = 'contract-print-override';
+    let style = document.getElementById(styleId) as HTMLStyleElement | null;
+    if (!style) {
+      style = document.createElement('style');
+      style.id = styleId;
+      document.head.appendChild(style);
+    }
+    style.textContent = `
+      @page {
+        size: letter portrait !important;
+        margin: 0 !important;
+      }
+      @media print {
+        .print-ui-element { display: none !important; }
+        body { background: white !important; margin: 0 !important; padding: 0 !important; }
+      }
+    `;
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => {
+        const el = document.getElementById(styleId);
+        if (el) el.remove();
+      }, 2000);
+    }, 150);
   };
 
   const handleDownloadPdf = async () => {
@@ -135,7 +159,7 @@ function PrintContractContent() {
             {!isReady ? (
                 <div className="bg-slate-200 text-slate-500 p-4 rounded-xl text-center font-black uppercase text-sm flex items-center justify-center gap-3">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Preparando visualización (3s)...
+                    Preparando visualización (8s)...
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

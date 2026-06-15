@@ -23,7 +23,6 @@ import {
   FileCheck,
   TrendingUp,
   RefreshCcw,
-  LayoutGrid,
   Calendar,
   Clock,
   ExternalLink,
@@ -40,9 +39,7 @@ import {
   PieChart,
   Bot,
   Building2,
-  MessageSquareText,
   Star,
-  ScanLine,
   Unlock
 } from 'lucide-react';
 import { isToday, format } from 'date-fns';
@@ -158,12 +155,7 @@ export default function DashboardPage() {
               >
                   <Landmark className="h-3.5 w-3.5 md:h-4 md:w-4" /> Contabilidad
               </TabsTrigger>
-              <TabsTrigger 
-                  value="crm" 
-                  className="rounded-[10px] data-[state=active]:bg-gradient-to-br data-[state=active]:from-pink-500 data-[state=active]:to-rose-600 data-[state=active]:text-white data-[state=active]:shadow-md px-4 py-2 md:py-2.5 text-[10px] md:text-xs font-bold transition-all duration-300 text-slate-500 hover:text-slate-800 hover:bg-white/50 data-[state=active]:hover:bg-transparent flex items-center gap-2 whitespace-nowrap"
-              >
-                  <MessageSquareText className="h-3.5 w-3.5 md:h-4 md:w-4" /> CRM <span className="hidden sm:inline">/ Mensajes</span>
-              </TabsTrigger>
+
             </TabsList>
           </div>
 
@@ -173,7 +165,7 @@ export default function DashboardPage() {
                 <Card className="shadow-md border-slate-300 rounded-sm bg-white">
                     <CardHeader className="bg-[#f8fafc] border-b py-3 px-6">
                         <CardTitle className="text-xs font-black uppercase tracking-[0.15em] text-slate-500">
-                            {activeTab === 'comercial' ? 'Mapa de Procesos: Ciclo de Ingresos' : activeTab === 'operativo' ? 'Control Operativo y Académico' : activeTab === 'contabilidad' ? 'Centro de Control Financiero' : 'Control de Prospectos y Mensajería'}
+                            {activeTab === 'comercial' ? 'Mapa de Procesos: Ciclo de Ingresos' : activeTab === 'operativo' ? 'Control Operativo y Académico' : 'Centro de Control Financiero'}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-6 relative">
@@ -257,13 +249,6 @@ export default function DashboardPage() {
                                 <WorkflowItem icon={Landmark} label="P&amp;L" sub="Finanzas" onClick={() => openWindow('/informes/financial-statements', 'Estados Financieros')} color="text-rose-600" />
                                 <WorkflowItem icon={BookOpen} label="Mayor" sub="Libro" onClick={() => openWindow('/informes/general-ledger', 'Mayor General')} color="text-slate-600" />
                                 <WorkflowItem icon={Building2} label="Proveedores" sub="Por Pagar" onClick={() => openWindow('/informes/providers-ledger', 'Mayor de Proveedores')} color="text-red-700" />
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 pt-2">
-                                <WorkflowItem icon={LayoutGrid} label="Embudo" sub="Ventas" href="/leads" color="text-pink-600" />
-                                <WorkflowItem icon={MessageSquareText} label="WhatsApp" sub="Mensajes" href="/leads" color="text-green-600" />
-                                <WorkflowItem icon={ScanLine} label="Conectar" sub="Número QR" href="/settings/whatsapp" color="text-emerald-600" />
-                                <WorkflowItem icon={PieChart} label="Analítica" sub="Métricas" href="/leads" color="text-blue-600" />
                             </div>
                         )}
 

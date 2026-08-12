@@ -33,7 +33,8 @@ const navLinks = [
         { href: '/logs', label: 'Bitácoras de Control', roles: ['Administrador', 'Ventas Externas'] },
         { href: '/surveys', label: 'Encuestas', roles: ['Administrador', 'Ventas Externas'] },
         { href: '/att-evaluations', label: 'Evaluaciones ATTT', roles: ['Administrador', 'Ventas Externas'] },
-        { href: '/certificates', label: 'Impresión Certificados', roles: ['Administrador'] }
+        { href: '/certificates', label: 'Impresión Certificados', roles: ['Administrador'] },
+        { href: '/certificates/delivery', label: '🎓 Entrega de Certificados', roles: ['Administrador', 'Ventas', 'Ventas Externas'] }
     ]
   },
   {
@@ -54,6 +55,7 @@ const navLinks = [
       { href: '/informes/online-contracts', label: '🌐 Contratos Online (Web)', roles: ['Administrador', 'Ventas', 'Ventas Externas', 'SuperAdmin', 'Owner', 'Dueño'] },
       { href: '/informes/vehicle-schedule', label: 'Agenda Práctica Semanal', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { href: '/informes/theoretical-schedule', label: 'Agenda Teórica Semanal', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+      { href: '/certificates/delivery', label: '🎓 Entrega de Certificados', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { href: '/informes/practical-starts', label: 'Inicios Prácticos', roles: ['Administrador', 'Ventas'] },
       { href: '/informes/quality-monitoring', label: 'Control de Calidad', roles: ['Administrador', 'SuperAdmin', 'Owner', 'Dueño', 'Ventas Externas'] },
       { href: '/informes/cancellation-payments', label: 'Reporte Abonos', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },

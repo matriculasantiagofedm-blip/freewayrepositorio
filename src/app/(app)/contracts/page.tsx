@@ -18,7 +18,7 @@ import Link from 'next/link';
 import { format, isToday, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn, toDate } from '@/lib/utils';
-import { Eye, Search, CheckCircle, XCircle, CalendarIcon, X, CalendarClock } from 'lucide-react';
+import { Eye, Search, CheckCircle, XCircle, CalendarIcon, X, CalendarClock, Globe } from 'lucide-react';
 import { useState, Suspense, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useDb, useUser } from '@/components/firebase-provider';
@@ -60,19 +60,31 @@ function AllContractsContent() {
 
   const contractsQuery = useMemo(() => {
     if (!db || !user) return null;
-    return query(collection(db, 'contracts'), orderBy('folioNumber', 'desc'));
+    return query(collection(db, 'contracts'));
   }, [db, user]);
 
-  const { data: allContracts, isLoading } = useCollection<Contract>(contractsQuery);
+  const { data: rawContracts, isLoading } = useCollection<Contract>(contractsQuery);
+
+  const allContracts = useMemo(() => {
+    if (!rawContracts) return [];
+    return [...rawContracts].sort((a, b) => {
+      const dateA = toDate(a.createdAt)?.getTime() || 0;
+      const dateB = toDate(b.createdAt)?.getTime() || 0;
+      if (dateA !== dateB) return dateB - dateA;
+      const folioA = Number(a.folioNumber) || 0;
+      const folioB = Number(b.folioNumber) || 0;
+      return folioB - folioA;
+    });
+  }, [rawContracts]);
 
   const filteredContracts = useMemo(() => {
     if (!allContracts || !mounted) return [];
     return allContracts.filter((contract) => {
       if (contract.isManualPrint) return false;
 
-      const folio = String(contract.folioNumber || '').padStart(6, '0');
+      const folio = contract.folioNumber ? String(contract.folioNumber).padStart(6, '0') : 'SIN FOLIO';
       const client = contract.clientName?.toLowerCase() || '';
-      const type = contract.type?.toLowerCase() || '';
+      const type = (contract.type || contract.contractType || '')?.toLowerCase();
       const search = searchTerm.toLowerCase();
       
       const contractDate = toDate(contract.createdAt);
@@ -96,7 +108,7 @@ function AllContractsContent() {
       return 'Listado Global de Contratos';
   };
 
-  const showActions = role === 'Administrador';
+  const showActions = role === 'Administrador' || role === 'Ventas' || role === 'Ventas Externas';
 
   return (
     <div className="flex flex-col gap-8">
@@ -106,6 +118,11 @@ function AllContractsContent() {
             <p className='text-sm text-muted-foreground'>Consulta y gestiona los registros de la escuela.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Link href="/informes/online-contracts">
+            <Button variant="default" className="bg-blue-600 hover:bg-blue-700 text-white font-bold gap-2 h-10 shadow-sm">
+              <Globe className="h-4 w-4" /> Reporte Contratos Online
+            </Button>
+          </Link>
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -190,7 +207,16 @@ function AllContractsContent() {
                           <Badge variant="outline" className="text-[10px] font-bold bg-green-50 text-green-700 border-green-200">ACTIVO</Badge>
                         )}
                       </TableCell>
-                      <TableCell className="font-semibold uppercase text-xs">{contract.clientName}</TableCell>
+                      <TableCell className="font-semibold uppercase text-xs">
+                        <div className="flex items-center gap-1.5">
+                          <span>{contract.clientName}</span>
+                          {(contract.createdBy === 'Inscripción Web' || contract.isOnline) && (
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-[8px] font-extrabold px-1 py-0 h-4">
+                              WEB
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-xs">{contract.type}</TableCell>
                       <TableCell>
                         {contract.certificateGeneratedAt ? (

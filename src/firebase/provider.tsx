@@ -55,30 +55,66 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const [isUserLoading, setIsUserLoading] = useState(true);
 
   useEffect(() => {
-    // Si hay un rol guardado pero no hay sesión Firebase activa, iniciar sesión anónima.
-    if (role && !auth.currentUser) {
-      signInAnonymously(auth).catch(console.error);
-    }
-
-    // Escuchar cambios de autenticación de Firebase
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-      setIsUserLoading(false);
+    // Esperamos a que onAuthStateChanged confirme el estado inicial antes de actuar.
+    // CRÍTICO: No llamar signInAnonymously() antes de saber si ya hay un usuario
+    // restaurado desde IndexedDB — hacerlo crea dos procesos de auth simultáneos
+    // que ponen al SDK de Firestore en un estado inconsistente → permission denied.
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // Forzar token y esperar a que el SDK de Firestore procese la conexión autenticada
+        try { await firebaseUser.getIdToken(true); } catch {}
+        // Pequeño delay para que el SDK de Firestore complete el handshake con el nuevo token
+        await new Promise(r => setTimeout(r, 300));
+        setUser(firebaseUser);
+        setIsUserLoading(false);
+      } else {
+        // No hay usuario — si tenemos rol, iniciar sesión anónima y ESPERAR
+        if (role) {
+          try {
+            const cred = await signInAnonymously(auth);
+            // Forzar token y dar tiempo al SDK de Firestore
+            try { await cred.user.getIdToken(true); } catch {}
+            await new Promise(r => setTimeout(r, 300));
+            setUser(cred.user);
+          } catch (e) {
+            console.error('Error en signInAnonymously:', e);
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+        }
+        setIsUserLoading(false);
+      }
     });
     return () => unsubscribe();
-  }, [auth]);
+  }, [auth, role]);
 
   // 3. EFECTO CRÍTICO: Sincronizar perfil en Firestore para el CHAT
+  // Solo se ejecuta cuando tenemos un usuario confirmado y válido.
   useEffect(() => {
-    if (user && role && !isUserLoading) {
-      const userRef = doc(firestore, 'users', user.uid);
-      setDoc(userRef, {
-        uid: user.uid,
-        role: role,
-        name: role, // Nombre por defecto es el rol para identificar al personal
-        lastActive: serverTimestamp(),
-      }, { merge: true }).catch(err => console.error("Error al sincronizar perfil de chat:", err));
-    }
+    if (!user || !role || isUserLoading) return;
+
+    let cancelled = false;
+    const syncProfile = async () => {
+      try {
+        // Forzar refresco del token para garantizar que el SDK de Firestore lo recibe
+        await user.getIdToken(true);
+        if (cancelled) return;
+        const userRef = doc(firestore, 'users', user.uid);
+        await setDoc(userRef, {
+          uid: user.uid,
+          role: role,
+          name: role,
+          lastActive: serverTimestamp(),
+        }, { merge: true });
+      } catch (err) {
+        // Error no crítico — el chat puede funcionar sin este perfil
+        if (!cancelled) console.warn('Perfil de chat no sincronizado (no crítico):', err);
+      }
+    };
+
+    syncProfile();
+    return () => { cancelled = true; };
   }, [user, role, isUserLoading, firestore]);
 
   const setRole = (roleKey: string) => {

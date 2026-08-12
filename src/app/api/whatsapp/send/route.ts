@@ -1,3 +1,4 @@
+export const dynamic = 'force-static';
 import { NextResponse } from 'next/server';
 import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore, initializeFirestore, collection, doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';

@@ -1,9 +1,17 @@
+export const dynamic = 'force-static';
 import { NextRequest, NextResponse } from 'next/server';
 
 const EVO_URL = (process.env.EVOLUTION_API_URL || '').replace(/\/$/, '');
 const EVO_KEY = process.env.EVOLUTION_API_KEY || '';
 
 const h = () => ({ 'Content-Type': 'application/json', 'apikey': EVO_KEY });
+
+// Deriva el webhook URL desde el request en runtime → siempre apunta al dominio correcto
+function getWebhookUrl(req: NextRequest): string {
+  const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || new URL(req.url).host;
+  const proto = req.headers.get('x-forwarded-proto') || new URL(req.url).protocol.replace(':', '');
+  return `${proto}://${host}/api/whatsapp-instance/webhook`;
+}
 
 // GET /api/whatsapp-instance/multi-status?instance=freeway-crm-2
 export async function GET(req: NextRequest) {
@@ -67,17 +75,23 @@ export async function POST(req: NextRequest) {
             body: JSON.stringify({ instanceName: instance, qrcode: true, integration: 'WHATSAPP-BAILEYS' }),
         });
 
-        // Registrar webhook
-        const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://contractimefedm.online').replace(/\/$/, '');
-        await fetch(`${EVO_URL}/webhook/set/${instance}`, {
+        // Registrar webhook — formato correcto Evolution API v2
+        const WEBHOOK_URL = getWebhookUrl(req);
+        const wRes = await fetch(`${EVO_URL}/webhook/set/${instance}`, {
             method: 'POST', headers: h(),
             body: JSON.stringify({
-                url: `${appUrl}/api/whatsapp-instance/webhook`,
-                webhook_by_events: false,
-                webhook_base64: false,
-                events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE'],
+                webhook: {
+                    url: WEBHOOK_URL,
+                    webhook_by_events: false,
+                    webhook_base64: false,
+                    enabled: true,
+                    events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE', 'QRCODE_UPDATED'],
+                },
             }),
-        }).catch(() => {});
+        });
+        if (!wRes.ok) {
+            console.warn('[multi-status] webhook set failed:', await wRes.text());
+        }
 
         const qrRes = await fetch(`${EVO_URL}/instance/connect/${instance}`, { headers: h() });
         if (!qrRes.ok) return NextResponse.json({ error: `QR error ${qrRes.status}` }, { status: 500 });

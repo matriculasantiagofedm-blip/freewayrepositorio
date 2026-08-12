@@ -1,3 +1,4 @@
+export const dynamic = 'force-static';
 import { NextResponse } from 'next/server';
 
 const EVO_URL = process.env.EVOLUTION_API_URL || '';

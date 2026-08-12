@@ -21,7 +21,8 @@ import {
   Timestamp,
   query,
   where,
-  updateDoc
+  updateDoc,
+  onSnapshot
 } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
@@ -112,9 +113,11 @@ const VEHICLES_MOTO = ['Moto Roja', 'Moto Negra'];
 const INSTRUCTORS = ['Emmanuel Camargo', 'Adrian Gordon', 'Roberto Brown', 'Marco Franco'];
 
 const getGlobalCapacity = (date: Date, slotId: string) => {
-    const day = date.getDay(); 
-    if (day === 0) return 0; // Domingo cerrado
-    return 3;
+    const day = date.getDay();
+    if (day === 0) return 0;                                    // Domingo cerrado
+    if (day >= 2 && day <= 5 && slotId === '8am-10am') return 3; // Mar-Vie 8am = Teoría (1 en aula)
+    if (day === 6 && slotId === '3pm-5pm') return 3;           // Sáb 3pm = Teoría
+    return 4;                                                   // Normal: 4 instructores
 };
 
 const autoContractSchema = z.object({
@@ -242,6 +245,11 @@ export function AutoContractForm({ contract, initialData }: { contract?: Contrac
     },
   });
 
+  const watchPlan = form.watch('coursePlan');
+  const watchAdditional = form.watch('additionalService');
+  const watchTheorySchedule = form.watch('theoreticalClassSchedule');
+  const watchTransmission = form.watch('vehicleTransmission');
+
   const { fields: practicalFields, replace: replacePractical } = useFieldArray({
     control: form.control,
     name: "practicalClassSchedules"
@@ -251,6 +259,45 @@ export function AutoContractForm({ contract, initialData }: { contract?: Contrac
     control: form.control,
     name: "motoPracticalClassSchedules"
   });
+
+  const [dynamicFleet, setDynamicFleet] = useState<{ instructors: string[]; vehicles: any[] }>({
+    instructors: INSTRUCTORS,
+    vehicles: []
+  });
+
+  useEffect(() => {
+    if (!db) return;
+    const unsub = onSnapshot(doc(db, 'settings', 'fleet'), snap => {
+      if (snap.exists()) {
+        const data = snap.data();
+        const instList = (data.instructors || []).map((i: any) => typeof i === 'string' ? i : i.name);
+        const vehList = data.vehicles || [];
+        setDynamicFleet({
+          instructors: instList.length > 0 ? instList : INSTRUCTORS,
+          vehicles: vehList
+        });
+      }
+    });
+    return () => unsub();
+  }, [db]);
+
+  const vehiclesForTransmission = useMemo(() => {
+    if (dynamicFleet.vehicles.length === 0) {
+      return watchTransmission === 'Manual' ? VEHICLES_AUTO_MANUAL : VEHICLES_AUTO_AUTOMATICO;
+    }
+    return dynamicFleet.vehicles
+      .filter((v: any) => v.transmission === watchTransmission && v.status !== 'Mantenimiento')
+      .map((v: any) => v.name);
+  }, [dynamicFleet.vehicles, watchTransmission]);
+
+  const vehiclesMoto = useMemo(() => {
+    if (dynamicFleet.vehicles.length === 0) {
+      return VEHICLES_MOTO;
+    }
+    return dynamicFleet.vehicles
+      .filter((v: any) => v.transmission === 'Moto' && v.status !== 'Mantenimiento')
+      .map((v: any) => v.name);
+  }, [dynamicFleet.vehicles]);
 
   const availabilityData = useMemo(() => {
     const vehicleOccupancy: Record<string, string[]> = {};
@@ -295,11 +342,6 @@ export function AutoContractForm({ contract, initialData }: { contract?: Contrac
     return { vehicleOccupancy, globalCounts };
   }, [allContracts, allManualEntries, isEdit, contract?.id]);
 
-  const watchPlan = form.watch('coursePlan');
-  const watchAdditional = form.watch('additionalService');
-  const watchTheorySchedule = form.watch('theoreticalClassSchedule');
-  const watchTransmission = form.watch('vehicleTransmission');
-  const vehiclesForTransmission = watchTransmission === 'Manual' ? VEHICLES_AUTO_MANUAL : VEHICLES_AUTO_AUTOMATICO;
 
   useEffect(() => {
     if (watchTheorySchedule && !isEdit) {
@@ -811,18 +853,27 @@ export function AutoContractForm({ contract, initialData }: { contract?: Contrac
                     const slotId = TIME_STRING_TO_SLOT_MAP[safeWatchTime] || safeWatchTime;
                     const dateKey = isValidDate ? format(dObj, 'yyyy-MM-dd') : '';
                     const occupancy = availabilityData?.globalCounts?.[`${dateKey}|${slotId}`] || 0;
-                    const capacity = isValidDate ? getGlobalCapacity(dObj, slotId) : 3;
+                    const capacity = isValidDate ? getGlobalCapacity(dObj, slotId) : 4;
                     const isFull = occupancy >= capacity;
+                    // Detectar duplicado con otras clases del mismo contrato (auto)
+                    const slotKey = dateKey && slotId ? `${dateKey}|${slotId}` : '';
+                    const isDuplicate = slotKey !== '' && (watchAll.practicalClassSchedules || []).filter((s: any, i: number) => {
+                      if (i === index || !s?.date || !s?.time) return false;
+                      const d = toDate(s.date);
+                      const sk = `${format(d, 'yyyy-MM-dd')}|${TIME_STRING_TO_SLOT_MAP[s.time] || s.time}`;
+                      return sk === slotKey;
+                    }).length > 0;
 
                     return (
                       <div key={field.id} className={cn(
                         "p-4 border rounded-xl space-y-3 bg-white relative",
-                        (isFull || holiday || isSunday) ? "border-amber-500 bg-amber-50/10" : "border-slate-200"
+                        (isFull || holiday || isSunday || isDuplicate) ? "border-amber-500 bg-amber-50/10" : "border-slate-200"
                       )}>
                         <div className="absolute -top-2 right-3 flex gap-1 z-10">
                             {isSunday && <div className="bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Domingo</div>}
                             {holiday && !isSunday && <div className="bg-orange-500 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Feriado</div>}
                             {isFull && !holiday && !isSunday && <div className="bg-amber-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Lleno</div>}
+                            {isDuplicate && <div className="bg-red-500 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Duplicado</div>}
                         </div>
 
                         <div className="flex gap-4">
@@ -884,7 +935,7 @@ export function AutoContractForm({ contract, initialData }: { contract?: Contrac
                             <FormItem>
                               <Select onValueChange={f.onChange} value={f.value}>
                                 <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
-                                <SelectContent>{INSTRUCTORS.map(i => <SelectItem key={i} value={i} className="text-[10px]">{i}</SelectItem>)}</SelectContent>
+                                <SelectContent>{dynamicFleet.instructors.map(i => <SelectItem key={i} value={i} className="text-[10px]">{i}</SelectItem>)}</SelectContent>
                               </Select>
                             </FormItem>
                           )} />
@@ -908,52 +959,104 @@ export function AutoContractForm({ contract, initialData }: { contract?: Contrac
               </CardHeader>
               <CardContent className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {motoPracticalFields.map((field, index) => (
-                    <div key={field.id} className="p-4 border rounded-xl space-y-3 bg-white border-slate-200">
-                      <div className="flex gap-4">
-                        <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.date`} render={({ field: f }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel className="text-[10px] font-black uppercase text-slate-500">Sesión Moto {index + 1}</FormLabel>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : 'Fecha'}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0">
-                                <Calendar mode="single" selected={f.value ? toDate(f.value) : undefined} onSelect={(date) => { if (date) f.onChange(date); }} initialFocus />
-                              </PopoverContent>
-                            </Popover>
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.time`} render={({ field: f }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel className="text-[10px] font-black uppercase text-slate-500">Horario</FormLabel>
-                            <Select onValueChange={f.onChange} value={f.value}>
-                              <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
-                              <SelectContent>{TIME_OPTIONS.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent>
-                            </Select>
-                          </FormItem>
-                        )} />
+                  {motoPracticalFields.map((field, index) => {
+                    const watchMotoDate = watchAll.motoPracticalClassSchedules?.[index]?.date;
+                    const watchMotoTime = watchAll.motoPracticalClassSchedules?.[index]?.time;
+                    const dObjMoto = toDate(watchMotoDate);
+                    const isValidMotoDate = !isNaN(dObjMoto.getTime());
+                    const holidayMoto = isValidMotoDate ? isPanamaHoliday(dObjMoto) : null;
+                    const isSundayMoto = isValidMotoDate && dObjMoto.getDay() === 0;
+                    const safeMotoTime = String(watchMotoTime || '');
+                    const motoSlotId = TIME_STRING_TO_SLOT_MAP[safeMotoTime] || safeMotoTime;
+                    const motoDateKey = isValidMotoDate ? format(dObjMoto, 'yyyy-MM-dd') : '';
+                    const motoOccupancy = availabilityData?.globalCounts?.[`${motoDateKey}|${motoSlotId}`] || 0;
+                    const motoCapacity = isValidMotoDate ? getGlobalCapacity(dObjMoto, motoSlotId) : 4;
+                    const isMotoFull = motoOccupancy >= motoCapacity;
+                    // Detectar duplicado con otras clases del mismo contrato (moto)
+                    const motoSlotKey = motoDateKey && motoSlotId ? `${motoDateKey}|${motoSlotId}` : '';
+                    const isMotoDuplicate = motoSlotKey !== '' && (watchAll.motoPracticalClassSchedules || []).filter((s: any, i: number) => {
+                      if (i === index || !s?.date || !s?.time) return false;
+                      const d = toDate(s.date);
+                      const sk = `${format(d, 'yyyy-MM-dd')}|${TIME_STRING_TO_SLOT_MAP[s.time] || s.time}`;
+                      return sk === motoSlotKey;
+                    }).length > 0;
+
+                    return (
+                      <div key={field.id} className={cn(
+                        "p-4 border rounded-xl space-y-3 bg-white relative",
+                        (isMotoFull || holidayMoto || isSundayMoto || isMotoDuplicate) ? "border-amber-500 bg-amber-50/10" : "border-slate-200"
+                      )}>
+                        <div className="absolute -top-2 right-3 flex gap-1 z-10">
+                          {isSundayMoto && <div className="bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Domingo</div>}
+                          {holidayMoto && !isSundayMoto && <div className="bg-orange-500 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Feriado</div>}
+                          {isMotoFull && !holidayMoto && !isSundayMoto && <div className="bg-amber-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Lleno</div>}
+                          {isMotoDuplicate && <div className="bg-red-500 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Duplicado</div>}
+                        </div>
+
+                        <div className="flex gap-4">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <FormLabel className="text-[10px] font-black uppercase text-slate-500">Sesión Moto {index + 1}</FormLabel>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-[10px] px-2 text-orange-600 hover:text-orange-800 hover:bg-orange-50"
+                                onClick={() => {
+                                  // @ts-ignore
+                                  window.__ACTIVE_SLOT_INDEX__ = index;
+                                  // @ts-ignore
+                                  window.__ACTIVE_SLOT_SECTION__ = 'moto';
+                                  window.dispatchEvent(new Event('openAvailabilityWidget'));
+                                }}
+                              >
+                                <CalendarSearch className="h-3 w-3 mr-1" /> Libreta
+                              </Button>
+                            </div>
+                            <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.date`} render={({ field: f }) => (
+                              <FormItem>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : 'Fecha'}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0">
+                                    <Calendar mode="single" selected={f.value ? toDate(f.value) : undefined} onSelect={(date) => { if (date) f.onChange(date); }} initialFocus />
+                                  </PopoverContent>
+                                </Popover>
+                              </FormItem>
+                            )} />
+                          </div>
+                          <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.time`} render={({ field: f }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel className="text-[10px] font-black uppercase text-slate-500 pt-1 block">Horario</FormLabel>
+                              <Select onValueChange={f.onChange} value={f.value}>
+                                <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
+                                <SelectContent>{TIME_OPTIONS.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </FormItem>
+                          )} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.vehicle`} render={({ field: f }) => (
+                            <FormItem>
+                              <Select onValueChange={f.onChange} value={f.value}>
+                                <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
+                                <SelectContent>{vehiclesMoto.map(v => <SelectItem key={v} value={v} className="text-[10px]">{v}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </FormItem>
+                          )} />
+                          <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.instructor`} render={({ field: f }) => (
+                            <FormItem>
+                              <Select onValueChange={f.onChange} value={f.value}>
+                                <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
+                                <SelectContent>{dynamicFleet.instructors.map(i => <SelectItem key={i} value={i} className="text-[10px]">{i}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </FormItem>
+                          )} />
+                        </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.vehicle`} render={({ field: f }) => (
-                          <FormItem>
-                            <Select onValueChange={f.onChange} value={f.value}>
-                              <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
-                              <SelectContent>{VEHICLES_MOTO.map(v => <SelectItem key={v} value={v} className="text-[10px]">{v}</SelectItem>)}</SelectContent>
-                            </Select>
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name={`motoPracticalClassSchedules.${index}.instructor`} render={({ field: f }) => (
-                          <FormItem>
-                            <Select onValueChange={f.onChange} value={f.value}>
-                              <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
-                              <SelectContent>{INSTRUCTORS.map(i => <SelectItem key={i} value={i} className="text-[10px]">{i}</SelectItem>)}</SelectContent>
-                            </Select>
-                          </FormItem>
-                        )} />
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>

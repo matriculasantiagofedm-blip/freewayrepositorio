@@ -1,28 +1,21 @@
 'use client';
 
-/**
- * FORMULARIO PÚBLICO DE AUTO-INSCRIPCIÓN AUTOMÁTICA
- */
-
-import { useState, useEffect, useRef, useMemo, Suspense, useCallback } from 'react';
-import Script from 'next/script';
-import { useSearchParams } from 'next/navigation';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { 
   collection, 
   doc, 
   runTransaction, 
   serverTimestamp, 
-  Timestamp,
-  query,
-  where,
-  getDocs
+  Timestamp
 } from 'firebase/firestore';
 import { signInAnonymously } from 'firebase/auth';
+import { db, auth } from '@/firebase/client';
+import { useSettingsPrices } from '@/hooks/use-settings-prices';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,782 +25,1423 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 import { 
-  GanttChart,
-  UserPlus,
-  ArrowRight,
-  Lock,
+  Car, 
+  CheckCircle2, 
+  CreditCard, 
+  Calendar as CalendarIcon,
+  Clock,
+  MapPin,
+  IdCard,
+  User,
+  Phone,
+  Mail,
   ShieldCheck,
-  Loader2,
-  CalendarIcon,
-  CalendarDays,
-  CreditCard,
-  Smartphone,
-  Hash,
-  Car,
+  ChevronRight,
   Info,
-  DollarSign,
-  Camera,
-  BookOpen,
-  CheckCircle2,
-  Globe
+  Globe,
+  FileText,
+  MessageCircle,
+  AlertCircle,
+  CalendarSearch,
+  Sparkles
 } from 'lucide-react';
-import { cn, toDate } from '@/lib/utils';
-import { useDb, useFirebase } from '@/components/firebase-provider';
 import Link from 'next/link';
-import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
-import { useSettingsPrices } from '@/hooks/use-settings-prices';
-import { isPanamaHoliday } from '@/lib/holidays';
-import { validatePaymentFlow } from '@/ai/flows/validate-payment';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 
-const AUTO_PLANS = [
-  "Curso Auto Básico (8 Hrs)",
-  "Curso Auto Plus (10 Hrs)",
-  "Curso Auto Premium (12 Hrs)"
-];
-
-const PLAN_PRACTICAL_COUNTS: Record<string, number> = {
-  "Curso Auto Básico (8 Hrs)": 4,
-  "Curso Auto Plus (10 Hrs)": 5,
-  "Curso Auto Premium (12 Hrs)": 6
-};
-
-const TIME_OPTIONS = [
-  "08:00am a 10:00am",
-  "10:00am a 12:00pm",
-  "01:00pm a 03:00pm",
-  "03:00pm a 05:00pm"
-];
-
+// --- Mapeo de slots y ocupación ---
 const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
-    '08:00am a 10:00am': '8am-10am',
-    '10:00am a 12:00pm': '10am-12pm',
-    '01:00pm a 03:00pm': '1pm-3pm',
-    '03:00pm a 05:00pm': '3pm-5pm',
+  '08:00am a 10:00am': '8am-10am',
+  '8:00am a 10:00am': '8am-10am',
+  '10:00am a 12:00pm': '10am-12pm',
+  '01:00pm a 03:00pm': '1pm-3pm',
+  '1:00pm a 3:00pm': '1pm-3pm',
+  '03:00pm a 05:00pm': '3pm-5pm',
+  '3:00pm a 5:00pm': '3pm-5pm',
 };
 
-const getGlobalCapacity = (date: Date, slotId: string) => {
-    const day = date.getDay(); 
-    if (day === 0) return 0; 
-    if (slotId === '8am-10am') {
-        if (day === 1) return 3;
-        if (day >= 2 && day <= 5) return 2;
+const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+const getGlobalCapacity = (dObj: Date, slotId: string, blockedSlots?: Record<string, string>, slotCapacities?: Record<string, number>) => {
+  const day = dObj.getDay(); 
+  if (day === 0) return 0; // Domingo cerrado
+  
+  const dayName = DAY_NAMES[day];
+  const bKey = `${dayName}|${slotId}`;
+
+  if (slotCapacities?.[bKey] !== undefined) {
+    return slotCapacities[bKey];
+  }
+
+  const customStatus = blockedSlots?.[bKey];
+
+  if (customStatus === 'bloqueado') return 0; // Bloqueado / No disponible
+  if (customStatus === 'teorico') return 3; // Clase Teórica (1 instructor ocupado)
+  if (customStatus === 'practica') return 4; // Práctica normal
+
+  if (day >= 2 && day <= 5 && slotId === '10am-12pm') return 3; // Martes a Viernes 10am-12pm (Teoría)
+  if (day === 6 && slotId === '3pm-5pm') return 3; // Sábado 3pm-5pm (Teoría)
+  return 4; 
+};
+
+function getSlotOccupancy(
+  dateStr: string, 
+  timeSlotId: string, 
+  globalCounts: Record<string, number>, 
+  blockedSlots?: Record<string, string>,
+  slotCapacities?: Record<string, number>,
+  transmissionCounts?: Record<string, Record<string, number>>,
+  activeVehiclesByTransmission?: Record<string, number>,
+  chosenTransmission?: string,
+  practicaSlots?: Record<string, boolean>,
+  teoricoSlots?: Record<string, boolean>,
+  practicaCapacities?: Record<string, number>,
+  teoricoCapacities?: Record<string, number>
+) {
+  if (!dateStr || !timeSlotId) {
+    return { count: 0, max: 0, available: 0, isFull: false, isEmpty: true, label: 'Pendiente' };
+  }
+  
+  const slotKey = TIME_STRING_TO_SLOT_MAP[timeSlotId] || timeSlotId;
+  const gKey = `${dateStr}|${slotKey}`;
+  const count = globalCounts[gKey] || 0;
+  
+  const dObj = new Date(dateStr + 'T12:00:00');
+  const day = dObj.getDay();
+  if (day === 0) {
+    return { count, max: 0, available: 0, isFull: true, label: '🔴 (CERRADO - Domingo)' };
+  }
+
+  const dayName = DAY_NAMES[day];
+  const bKey = `${dayName}|${slotKey}`;
+
+  // Comportamiento por defecto
+  const defaultPracticaActive = (dayName !== 'Lunes' && dayName !== 'Sábado' && slotKey === '10am-12pm') || (dayName === 'Sábado' && slotKey === '3pm-5pm') ? false : true;
+
+  // Determinar si Práctica está activo para este bloque
+  let isPracticaActive = defaultPracticaActive;
+  if (practicaSlots && practicaSlots[bKey] !== undefined) {
+    isPracticaActive = practicaSlots[bKey];
+  } else if (blockedSlots && blockedSlots[bKey] !== undefined) {
+    isPracticaActive = blockedSlots[bKey] === 'practica';
+  }
+
+  if (!isPracticaActive) {
+    const defaultTeoricoActive = (dayName !== 'Lunes' && dayName !== 'Sábado' && slotKey === '10am-12pm') || (dayName === 'Sábado' && slotKey === '3pm-5pm') ? true : false;
+    let isTeoricoActive = defaultTeoricoActive;
+    if (teoricoSlots && teoricoSlots[bKey] !== undefined) {
+      isTeoricoActive = teoricoSlots[bKey];
+    } else if (blockedSlots && blockedSlots[bKey] !== undefined) {
+      isTeoricoActive = blockedSlots[bKey] === 'teorico';
     }
-    if (day === 6 && slotId === '3pm-5pm') return 2;
-    return 3;
-};
 
+    const label = isTeoricoActive ? '🔴 (RESERVADO PARA CLASE TEÓRICA)' : '🔴 (NO DISPONIBLE / BLOQUEADO)';
+    return { count, max: 0, available: 0, isFull: true, label };
+  }
+
+  // Determinar capacidad de Práctica
+  let max = 4;
+  if (practicaCapacities && practicaCapacities[bKey] !== undefined) {
+    max = practicaCapacities[bKey];
+  } else if (slotCapacities && slotCapacities[bKey] !== undefined) {
+    max = slotCapacities[bKey];
+  }
+
+  // VALIDACIÓN POR TRANSMISIÓN ESPECÍFICA (AUTOMÁTICO / MANUAL / MOTO)
+  if (chosenTransmission && activeVehiclesByTransmission && transmissionCounts) {
+    const maxTrans = activeVehiclesByTransmission[chosenTransmission] || 99;
+    const countTrans = transmissionCounts[gKey]?.[chosenTransmission] || 0;
+    
+    if (countTrans >= maxTrans) {
+      let suffix = '';
+      if (chosenTransmission === 'Automático') {
+        suffix = '🔴 (SIN CARROS AUTOMÁTICOS DISPONIBLES)';
+      } else if (chosenTransmission === 'Manual') {
+        suffix = '🔴 (SIN CARROS MANUALES DISPONIBLES)';
+      } else if (chosenTransmission === 'Moto') {
+        suffix = '🔴 (SIN MOTOS DISPONIBLES)';
+      } else {
+        suffix = `🔴 (SIN ${chosenTransmission.toUpperCase()}S DISPONIBLES)`;
+      }
+
+      return { 
+        count, 
+        max, 
+        available: 0, 
+        isFull: true, 
+        label: suffix
+      };
+    }
+  }
+
+  const available = Math.max(0, max - count);
+  const isFull = available === 0;
+
+  let label = `🟢 (${available} de ${max} cupos libres)`;
+  if (isFull) label = `🔴 (LLENO - 0 cupos)`;
+  else if (available === 1) label = `🟡 (Último cupo de ${max})`;
+
+  return { count, max, available, isFull, label, isEmpty: false };
+}
+
+// --- Esquema Zod ---
 const enrollmentSchema = z.object({
-  clientName: z.string().min(3, 'El nombre es requerido'),
+  clientName: z.string().min(3, 'Ingresa tu nombre completo'),
   clientEmail: z.string().email('Email inválido'),
-  idType: z.string().default('C.I.P.'),
-  studentIdNumber: z.string().min(5, 'ID requerido'),
+  studentIdNumber: z.string().min(5, 'Cédula / ID requerido'),
   studentAddress: z.string().min(5, 'Dirección requerida'),
   studentPhone1: z.string().min(7, 'Teléfono requerido'),
   vehicleTransmission: z.enum(['Automático', 'Manual']).default('Automático'),
-  coursePlan: z.string({ required_error: "Seleccione un plan" }),
-  theoreticalClassSchedule: z.enum(['Sabados 3:00 pm a 5:00 pm', 'Semanal 8:00 am a 10:00 am'], { required_error: "Seleccione un horario teórico" }),
-  theoreticalClassDates: z.array(z.date()).min(3, 'Seleccione las fechas de sus sesiones teóricas'),
-  practicalClassSchedules: z.array(z.object({
-    date: z.date({ required_error: 'Fecha requerida' }),
-    time: z.string().min(1, 'Hora requerida'),
-  })).min(1, 'Debe elegir su horario'),
-  paymentMethod: z.enum(['yappy', 'credit_card', 'paypal']).default('paypal'),
-  paymentReference: z.string().min(6, 'Ingresa el número de referencia completo'),
-  paymentAmount: z.preprocess((val) => Number(val), z.number().min(50, 'Abono min: B/. 50.00')),
+  coursePlan: z.string().min(1, "Selecciona un plan"),
+  theoreticalClassSchedule: z.string().optional(),
+  theoreticalClassDates: z.array(z.date()).optional(),
+  practicalClassSchedules: z.array(
+    z.object({
+      date: z.string().min(1, "Fecha requerida"),
+      time: z.string().min(1, "Horario requerido")
+    })
+  ).optional(),
+  practicalType: z.enum(['semanal', 'sabatino']).default('semanal'),
+  paymentType: z.enum(['cash', 'yappy', 'cubo']).default('cash'),
+  yappyReference: z.string().optional(),
 });
 
-type FormValues = z.infer<typeof enrollmentSchema>;
+const THEORETICAL_SCHEDULES = [
+  { id: 'Sabados 3:00 pm a 5:00 pm', label: 'Sábados (3:00 PM - 5:00 PM)', desc: '3 sábados consecutivos' },
+  { id: 'Semanal 10:00 am a 12:00 pm', label: 'Semanal (10:00 AM - 12:00 PM)', desc: 'Lunes a Miércoles' }
+];
 
-function EnrollmentContent() {
-  const db = useDb();
-  const { auth } = useFirebase();
+const TIME_SLOTS = [
+  { id: '08:00am a 10:00am', label: '08:00 AM - 10:00 AM' },
+  { id: '10:00am a 12:00pm', label: '10:00 AM - 12:00 PM' },
+  { id: '01:00pm a 03:00pm', label: '01:00 PM - 03:00 PM' },
+  { id: '03:00pm a 05:00pm', label: '03:00 PM - 05:00 PM' }
+];
+
+export default function DynamicEnrollPage() {
   const { toast } = useToast();
-  const [isSaving, setIsSaving] = useState(false);
-  const [submittedFolio, setSubmittedFolio] = useState<number | null>(null);
-  const [showCuboModal, setShowCuboModal] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [isReadingImage, setIsReadingImage] = useState(false);
-  const [receiptBase64, setReceiptBase64] = useState<string | null>(null);
-  const [receiptMime, setReceiptMime] = useState<string>('image/jpeg');
-  const [paypalLoading, setPaypalLoading] = useState(false);
-  const [paypalError, setPaypalError] = useState('');
-  const [paypalEmail, setPaypalEmail] = useState('');
-  const [showPaypalModal, setShowPaypalModal] = useState(false);
-  const searchParams = useSearchParams();
-  const { prices } = useSettingsPrices();
+  const { prices: settingsPrices } = useSettingsPrices();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successData, setSuccessData] = useState<{ folio: number; contractId: string; clientName: string; plan: string } | null>(null);
+  const [voucherBase64, setVoucherBase64] = useState<string | null>(null);
+  const [voucherMime, setVoucherMime] = useState<string | null>(null);
 
-  useEffect(() => { setMounted(true); }, []);
-
-  // Detectar retorno de PayPal (?paypal=success&token=ORDEN_ID)
-  useEffect(() => {
-    const paypalStatus = searchParams?.get('paypal');
-    const token = searchParams?.get('token'); // PayPal devuelve ?token=ORDER_ID
-    if (paypalStatus === 'success' && token) {
-      // Capturar el pago automáticamente
-      (async () => {
-        try {
-          const res = await fetch('/api/paypal/capture-order', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ orderId: token })
-          });
-          const data = await res.json();
-          if (data.ok && data.reference) {
-            form.setValue('paymentMethod', 'paypal');
-            form.setValue('paymentAmount', data.amount || 50);
-            form.setValue('paymentReference', data.reference);
-            toast({
-              title: '✅ Pago de PayPal Confirmado',
-              description: `Monto: $${data.amount} — Ref: ${data.reference}`,
-              duration: 8000
-            });
-          } else {
-            toast({ variant: 'destructive', title: 'Error al capturar pago PayPal', description: data.error || 'Intenta de nuevo.' });
-          }
-        } catch (e) {
-          console.error('PayPal capture error:', e);
-        }
-      })();
-    } else if (paypalStatus === 'cancel') {
-      toast({ variant: 'destructive', title: 'Pago cancelado', description: 'Cancelaste el pago con PayPal. Puedes intentar de nuevo.' });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
-
-  // Iniciar pago PayPal desde modal
-  const handlePayPal = async () => {
-    const plan = form.getValues('coursePlan');
-    const email = paypalEmail || form.getValues('clientEmail');
-    if (!email || !email.includes('@')) { setPaypalError('Por favor ingresa un email válido.'); return; }
-    const coursePrice = prices?.auto?.[plan] || 0;
-    if (coursePrice <= 0) { setPaypalError('No se pudo obtener el precio del plan.'); return; }
-    setPaypalError('');
-    setPaypalLoading(true);
-    form.setValue('paymentAmount', coursePrice);
-    try {
-      const res = await fetch('/api/paypal/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: coursePrice, coursePlan: plan, email })
-      });
-      const data = await res.json();
-      if (data.approveUrl) {
-        sessionStorage.setItem('fw_enroll_draft', JSON.stringify(form.getValues()));
-        window.location.href = data.approveUrl;
-      } else {
-        setPaypalError(data.error || 'No se pudo iniciar PayPal. Intenta de nuevo.');
-        setPaypalLoading(false);
-      }
-    } catch { setPaypalError('Error de conexión. Verifica tu internet.'); setPaypalLoading(false); }
-  };
-
-  // Abrir modal PayPal (pre-llenar email del formulario)
-  const openPaypalModal = () => {
-    const plan = form.getValues('coursePlan');
-    if (!plan) { return; }
-    setPaypalEmail(form.getValues('clientEmail') || '');
-    setPaypalError('');
-    setShowPaypalModal(true);
-  };
-
-  const activeContractsQuery = useMemoQuery(() => (db && auth.currentUser) ? query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed'])) : null, [db, auth.currentUser]);
-  const manualEntriesQuery = useMemoQuery(() => (db && auth.currentUser) ? query(collection(db, 'manual_schedules')) : null, [db, auth.currentUser]);
-  
-  const { data: allContracts } = useCollection<any>(activeContractsQuery);
-  const { data: allManualEntries } = useCollection<any>(manualEntriesQuery);
-
-  const availabilityData = useMemo(() => {
-    const globalCounts: Record<string, number> = {};
-    const processEntry = (date: any, slotString: string) => {
-        if (!date || !slotString) return;
-        const dObj = toDate(date);
-        if (isNaN(dObj.getTime())) return;
-        const dateKey = format(dObj, 'yyyy-MM-dd');
-        const slotId = TIME_STRING_TO_SLOT_MAP[slotString] || slotString;
-        const sKey = `${dateKey}|${slotId}`;
-        globalCounts[sKey] = (globalCounts[sKey] || 0) + 1;
-    };
-    allManualEntries?.forEach(entry => { if (entry.classType !== 'Teórica') processEntry(entry.date, entry.timeSlot); });
-    allContracts?.forEach(c => {
-        const proc = (arr: any[]) => arr?.forEach(s => processEntry(s.date, s.time));
-        if (c.autoMotoDetails?.practicalClassSchedules) proc(c.autoMotoDetails.practicalClassSchedules);
-        if (c.autoMotoDetails?.motoPracticalClassSchedules) proc(c.autoMotoDetails.motoPracticalClassSchedules);
-        if (c.deluxeDetails?.classSchedules) proc(c.deluxeDetails.classSchedules);
-    });
-    return { globalCounts };
-  }, [allContracts, allManualEntries]);
-
-  useEffect(() => {
-    if (auth && !auth.currentUser) signInAnonymously(auth).catch(console.error);
-  }, [auth]);
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(enrollmentSchema),
-    defaultValues: {
-      clientName: '', clientEmail: '', idType: 'C.I.P.', studentIdNumber: '', studentAddress: '', studentPhone1: '',
-      vehicleTransmission: 'Automático', coursePlan: '', theoreticalClassSchedule: 'Sabados 3:00 pm a 5:00 pm',
-      theoreticalClassDates: [], practicalClassSchedules: [], paymentMethod: 'paypal', paymentReference: '', paymentAmount: 50,
-    },
+  // Disponibilidad en tiempo real desde la API de ContractTime
+  const [availability, setAvailability] = useState<{ 
+    globalCounts: Record<string, number>; 
+    blockedSlots?: Record<string, string>;
+    slotCapacities?: Record<string, number>;
+    transmissionCounts?: Record<string, Record<string, number>>;
+    activeVehiclesByTransmission?: Record<string, number>;
+    practicaSlots?: Record<string, boolean>;
+    teoricoSlots?: Record<string, boolean>;
+    practicaCapacities?: Record<string, number>;
+    teoricoCapacities?: Record<string, number>;
+  }>({ 
+    globalCounts: {}, 
+    blockedSlots: {}, 
+    slotCapacities: {}, 
+    transmissionCounts: {}, 
+    activeVehiclesByTransmission: {},
+    practicaSlots: {},
+    teoricoSlots: {},
+    practicaCapacities: {},
+    teoricoCapacities: {}
   });
 
-  // Restaurar formulario tras retorno de PayPal
   useEffect(() => {
-    const draft = sessionStorage.getItem('fw_enroll_draft');
-    if (draft && searchParams?.get('paypal') === 'success') {
-      try {
-        const saved = JSON.parse(draft);
-        Object.entries(saved).forEach(([k, v]) => form.setValue(k as any, v));
-        sessionStorage.removeItem('fw_enroll_draft');
-      } catch {}
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    fetch('/api/availability')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setAvailability({ 
+            globalCounts: data.globalCounts || {},
+            blockedSlots: data.blockedSlots || {},
+            slotCapacities: data.slotCapacities || {},
+            transmissionCounts: data.transmissionCounts || {},
+            activeVehiclesByTransmission: data.activeVehiclesByTransmission || {},
+            practicaSlots: data.practicaSlots || {},
+            teoricoSlots: data.teoricoSlots || {},
+            practicaCapacities: data.practicaCapacities || {},
+            teoricoCapacities: data.teoricoCapacities || {}
+          });
+        }
+      })
+      .catch(err => console.warn("Error fetching availability:", err));
   }, []);
 
-  const { fields: practicalFields, replace: replacePractical } = useFieldArray({ control: form.control, name: "practicalClassSchedules" });
-  const watchPlan = form.watch('coursePlan');
-  const watchTheorySchedule = form.watch('theoreticalClassSchedule');
-  const watchPaymentMethod = form.watch('paymentMethod');
+  // Lista dinámica de planes utilizando los precios oficiales configurados en ContractTime
+  const plansList = useMemo(() => {
+    const autoPrices = settingsPrices?.auto || {};
+    return [
+      {
+        title: "Básico (8 Hrs)",
+        name: "Curso Auto Básico (8 Hrs)",
+        hoursText: "8 Horas Prácticas",
+        classCount: 4,
+        price: autoPrices["Curso Auto Básico (8 Hrs)"] || 133,
+        tag: "",
+        desc: "4 clases prácticas de 2 horas cada una."
+      },
+      {
+        title: "Plus (10 Hrs)",
+        name: "Curso Auto Plus (10 Hrs)",
+        hoursText: "10 Horas Prácticas",
+        classCount: 5,
+        price: autoPrices["Curso Auto Plus (10 Hrs)"] || 155,
+        tag: "Más Popular",
+        desc: "5 clases prácticas de 2 horas cada una."
+      },
+      {
+        title: "Premium (12 Hrs)",
+        name: "Curso Auto Premium (12 Hrs)",
+        hoursText: "12 Horas Prácticas",
+        classCount: 6,
+        price: autoPrices["Curso Auto Premium (12 Hrs)"] || 180,
+        tag: "Recomendado",
+        desc: "6 clases prácticas de 2 horas cada una."
+      },
+      {
+        title: "Reforzamiento (4 Hrs)",
+        name: "Reforzamiento 4 Hrs",
+        hoursText: "4 Horas Prácticas",
+        classCount: 2,
+        price: autoPrices["Reforzamiento 4 Hrs"] || 95,
+        tag: "",
+        desc: "2 clases prácticas de 2 horas cada una."
+      },
+      {
+        title: "Reforzamiento (2 Hrs)",
+        name: "Reforzamiento 2 Hrs",
+        hoursText: "2 Horas Prácticas",
+        classCount: 1,
+        price: autoPrices["Reforzamiento 2 Hrs"] || 75,
+        tag: "",
+        desc: "1 clase práctica de 2 horas."
+      },
+      {
+        title: "Ya sé manejar",
+        name: "Ya se manejar",
+        hoursText: "Evaluación Práctica",
+        classCount: 1,
+        price: autoPrices["Ya se manejar"] || 57,
+        tag: "",
+        desc: "1 sesión de evaluación de maniobra y parqueo."
+      }
+    ];
+  }, [settingsPrices]);
 
+  const filteredTheoreticalSchedules = useMemo(() => {
+    const checkIsTeoricoActive = (day: string, slotId: string) => {
+      const bKey = `${day}|${slotId}`;
+      const defaultTeoricoActive = (day !== 'Lunes' && day !== 'Sábado' && slotId === '10am-12pm') || (day === 'Sábado' && slotId === '3pm-5pm') ? true : false;
+      
+      if (availability.teoricoSlots && availability.teoricoSlots[bKey] !== undefined) {
+        return availability.teoricoSlots[bKey];
+      } else if (availability.blockedSlots && availability.blockedSlots[bKey] !== undefined) {
+        return availability.blockedSlots[bKey] === 'teorico';
+      }
+      return defaultTeoricoActive;
+    };
+
+    return THEORETICAL_SCHEDULES.filter(sch => {
+      // 1. Sábados 3:00 pm a 5:00 pm
+      if (sch.id === 'Sabados 3:00 pm a 5:00 pm') {
+        return checkIsTeoricoActive('Sábado', '3pm-5pm');
+      }
+      
+      // 2. Semanal 10:00 am a 12:00 pm
+      if (sch.id === 'Semanal 10:00 am a 12:00 pm') {
+        const weekdays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+        return weekdays.some(day => checkIsTeoricoActive(day, '10am-12pm'));
+      }
+      
+      return true;
+    });
+  }, [availability.teoricoSlots, availability.blockedSlots]);
+
+  const form = useForm<z.infer<typeof enrollmentSchema>>({
+    resolver: zodResolver(enrollmentSchema),
+    defaultValues: {
+      clientName: '',
+      clientEmail: '',
+      studentIdNumber: '',
+      studentAddress: '',
+      studentPhone1: '',
+      vehicleTransmission: 'Automático',
+      coursePlan: '',
+      theoreticalClassSchedule: '',
+      theoreticalClassDates: [],
+      practicalClassSchedules: [],
+      practicalType: 'semanal',
+      paymentType: 'yappy',
+      yappyReference: ''
+    },
+    mode: "onChange"
+  });
+
+  const { watch, setValue, control } = form;
+  const currentValues = watch();
+
+  const { fields, replace } = useFieldArray({
+    control,
+    name: 'practicalClassSchedules'
+  });
+
+  const selectedPlan = plansList.find(p => p.name === currentValues.coursePlan);
+
+  // Al cambiar modalidad (semanal / sabatino), limpiar fechas inválidas
   useEffect(() => {
-    if (watchPlan && mounted) {
-      const count = PLAN_PRACTICAL_COUNTS[watchPlan] || 0;
-      const current = form.getValues('practicalClassSchedules') || [];
-      replacePractical(Array.from({ length: count }, (_, i) => current[i] || { date: new Date(), time: '08:00am a 10:00am' }));
-    }
-  }, [watchPlan, replacePractical, form, mounted]);
-
-  useEffect(() => {
-    if (watchPlan && watchTheorySchedule) {
-        // Placeholder for logic to generate dates based on schedule
-    }
-  }, [watchTheorySchedule, form, mounted]);
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      setIsReadingImage(true);
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64Ref = reader.result as string;
-        const mimeType = file.type;
-        const base64Image = base64Ref.split(',')[1];
-        
-        // Guardar imagen para enviar al asesor después
-        setReceiptBase64(base64Image);
-        setReceiptMime(mimeType);
-
-        toast({ title: 'Analizando Comprobante...', description: 'Nuestra Inteligencia Artificial está validando tu pago...' });
-
-        const result = await validatePaymentFlow({ base64Image, mimeType });
-        if (result.isValid) {
-          form.setValue('paymentAmount', result.amount || 50);
-          form.setValue('paymentReference', result.reference || '');
-          toast({ title: '✅ Comprobante Aprobado!', description: `Monto detectado: B/. ${result.amount}. Referencia: ${result.reference}`, duration: 7000 });
-        } else {
-          form.setValue('paymentReference', '');
-          toast({ variant: 'destructive', title: 'Comprobante Denegado', description: result.reason || 'Por favor sube una captura válida y exitosa.', duration: 7000 });
-        }
-        setIsReadingImage(false);
-      };
-      reader.readAsDataURL(file);
-    } catch (e) {
-      console.error(e);
-      toast({ variant: 'destructive', title: 'Error de IA', description: 'No pudimos analizar el comprobante. Por favor rellena los datos a mano.' });
-      setIsReadingImage(false);
-    }
-  };
-
-  const onSubmit = async (values: FormValues) => {
-    if (!db || !auth.currentUser) return;
+    const type = currentValues.practicalType || 'semanal';
+    const schedules = form.getValues('practicalClassSchedules') || [];
     
-    const hasInvalidSlot = values.practicalClassSchedules.some(s => {
-      const dObj = s.date;
-      if (!dObj || isNaN(dObj.getTime())) return false;
-      const slotId = TIME_STRING_TO_SLOT_MAP[s.time] || s.time;
-      const dateKey = format(dObj, 'yyyy-MM-dd');
-      const capacity = getGlobalCapacity(dObj, slotId);
-      const isFull = (availabilityData.globalCounts[`${dateKey}|${slotId}`] || 0) >= capacity;
-      return isFull || isPanamaHoliday(dObj) || dObj.getDay() === 0;
+    let changed = false;
+    const updated = schedules.map((s: any) => {
+      if (!s.date) return s;
+      const dateObj = new Date(s.date + 'T12:00:00');
+      const dayOfWeek = dateObj.getDay();
+      
+      let shouldReset = false;
+      if (dayOfWeek === 0) shouldReset = true;
+      else if (type === 'semanal' && dayOfWeek === 6) shouldReset = true;
+      else if (type === 'sabatino' && dayOfWeek !== 6) shouldReset = true;
+      
+      if (shouldReset) {
+        changed = true;
+        return { ...s, date: '', time: '' };
+      }
+      return s;
+    });
+    
+    if (changed) {
+      setValue('practicalClassSchedules', updated);
+      toast({
+        title: "Fechas restablecidas",
+        description: "Se han limpiado las fechas que no corresponden a la nueva modalidad del curso.",
+      });
+    }
+  }, [currentValues.practicalType, setValue, form]);
+
+  // Al cambiar de plan, crear dinámicamente las N clases requeridas
+  useEffect(() => {
+    if (!selectedPlan) return;
+
+    const count = selectedPlan.classCount || 1;
+    const baseDate = new Date();
+
+    const newSchedules = Array.from({ length: count }, (_, i) => {
+      const classDate = addDays(baseDate, i + 1);
+      return {
+        date: format(classDate, 'yyyy-MM-dd'),
+        time: ''
+      };
     });
 
-    if (hasInvalidSlot) {
-      toast({ variant: 'destructive', title: 'Horarios Inválidos', description: 'Uno o más horarios seleccionados están llenos, son Feriados o Domingo. Por favor ajusta las casillas marcadas en amarillo / rojo.', duration: 5000 });
+    replace(newSchedules);
+  }, [selectedPlan, replace]);
+
+  // Aplicar un mismo horario a todas las clases en 1 clic
+  const handleApplySameTime = (timeSlot: string) => {
+    const count = selectedPlan?.classCount || 1;
+    const baseDate = new Date();
+
+    const updated = fields.map((fieldItem: any, idx: number) => ({
+      date: fieldItem.date || format(addDays(baseDate, idx + 1), 'yyyy-MM-dd'),
+      time: timeSlot
+    }));
+
+    replace(updated);
+    toast({ title: "Horario Aplicado", description: `Asignado ${timeSlot} a las ${count} clases.` });
+  };
+
+  // Autogenerar 3 fechas de clases teóricas si selecciona horario
+  useEffect(() => {
+    if (!currentValues.theoreticalClassSchedule) return;
+
+    const dates: Date[] = [];
+    const today = new Date();
+
+    if (currentValues.theoreticalClassSchedule.includes('Sabados')) {
+      let d = new Date(today);
+      d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7 || 7));
+      for (let i = 0; i < 3; i++) {
+        const next = new Date(d);
+        next.setDate(d.getDate() + (i * 7));
+        dates.push(next);
+      }
+    } else {
+      let d = new Date(today);
+      d.setDate(d.getDate() + ((1 - d.getDay() + 7) % 7 || 7));
+      for (let i = 0; i < 3; i++) {
+        const next = new Date(d);
+        next.setDate(d.getDate() + i);
+        dates.push(next);
+      }
+    }
+
+    setValue('theoreticalClassDates', dates);
+  }, [currentValues.theoreticalClassSchedule, setValue]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Archivo muy grande",
+        description: "El comprobante debe pesar menos de 5MB",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setVoucherBase64(reader.result as string);
+      setVoucherMime(file.type);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const onSubmit = async (data: z.infer<typeof enrollmentSchema>) => {
+    if (data.paymentType === 'yappy' && !data.yappyReference) {
+      toast({
+        title: "Referencia de Yappy requerida",
+        description: "Por favor ingresa el número de referencia de tu pago por Yappy.",
+        variant: "destructive"
+      });
       return;
     }
 
-    setIsSaving(true);
-    try {
-      const qCheck = query(collection(db, 'contracts'), where('paymentReference', '==', values.paymentReference));
-      const snapCheck = await getDocs(qCheck);
-      
-      if (!snapCheck.empty) {
-        toast({ variant: 'destructive', title: 'Referencia Duplicada', description: 'Este número de confirmación ya ha sido validado anteriormente.' });
-        setIsSaving(false);
+    if (data.paymentType === 'cubo' && !data.yappyReference) {
+      toast({
+        title: "Referencia de pago requerida",
+        description: "Por favor ingresa el número de referencia de tu transacción por tarjeta / Cubo.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validar que no haya domingos y que todos los cupos seleccionados estén disponibles
+    const selectedSchedules = data.practicalClassSchedules || [];
+    for (let i = 0; i < selectedSchedules.length; i++) {
+      const s = selectedSchedules[i];
+      if (!s.date || !s.time) {
+        toast({
+          title: "Horario incompleto",
+          description: `Por favor selecciona la fecha y hora para la Clase ${i + 1}.`,
+          variant: "destructive"
+        });
         return;
       }
 
-      let finalFolio = 0;
+      const dateObj = new Date(s.date + 'T12:00:00');
+      if (dateObj.getDay() === 0) {
+        toast({
+          title: "Día no laborable",
+          description: `La Clase ${i + 1} está programada para un domingo. Por favor selecciona otro día.`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const occ = getSlotOccupancy(
+        s.date,
+        s.time,
+        availability.globalCounts,
+        availability.blockedSlots,
+        availability.slotCapacities,
+        availability.transmissionCounts,
+        availability.activeVehiclesByTransmission,
+        data.vehicleTransmission,
+        availability.practicaSlots,
+        availability.teoricoSlots,
+        availability.practicaCapacities,
+        availability.teoricoCapacities
+      );
+
+      if (occ.isFull) {
+        toast({
+          title: "Horario ya reservado",
+          description: `La Clase ${i + 1} (${s.date} a las ${s.time}) ya se encuentra llena o reservada. Por favor selecciona otro horario.`,
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
+    setIsSubmitting(true);
+    try {
+      if (!auth.currentUser) await signInAnonymously(auth);
+
+      const newContractRef = doc(collection(db, 'contracts'));
+      let assignedFolio = 18;
+
       await runTransaction(db, async (transaction) => {
         const counterRef = doc(db, 'counters', 'contracts_folio');
         const counterDoc = await transaction.get(counterRef);
-        let nextFolio = counterDoc.exists() ? Math.max(counterDoc.data().count + 1, 18) : 18;
-        transaction.set(counterRef, { count: nextFolio }, { merge: true });
-        finalFolio = nextFolio;
+        assignedFolio = counterDoc.exists() ? Math.max(counterDoc.data().count + 1, 18) : 18;
+        transaction.set(counterRef, { count: assignedFolio }, { merge: true });
 
-        const clientRef = doc(collection(db, 'clients'));
-        transaction.set(clientRef, {
-          name: values.clientName, email: values.clientEmail, idNumber: values.studentIdNumber,
-          phone: values.studentPhone1, createdAt: serverTimestamp(), userId: auth.currentUser?.uid,
-        });
+        const price = selectedPlan?.price || 0;
 
-        const courseValue = prices?.auto?.[values.coursePlan] || 0;
-        const balance = courseValue - values.paymentAmount;
-        const isPayPal = values.paymentMethod === 'paypal';
-        const isYappy = values.paymentMethod === 'yappy';
-        const paymentType = isYappy ? 'yappy' : isPayPal ? 'paypal' : 'credit';
+        const formattedPracticalSchedules = (data.practicalClassSchedules || []).map((s: any) => ({
+          date: Timestamp.fromDate(new Date(s.date)),
+          time: s.time
+        }));
 
-        const contractRef = doc(collection(db, 'contracts'));
-        transaction.set(contractRef, {
-          title: `Curso de Auto - Folio ${nextFolio}`,
-          clientName: values.clientName, 
-          clientEmail: values.clientEmail, 
-          clientId: clientRef.id,
-          folioNumber: nextFolio,
-          type: 'Curso Auto', 
+        const contractData = {
+          title: `Curso de Auto - Folio ${assignedFolio}`,
+          folioNumber: assignedFolio,
+          clientName: data.clientName,
+          clientEmail: data.clientEmail,
+          idType: 'C.I.P.',
+          studentIdNumber: data.studentIdNumber,
+          studentAddress: data.studentAddress,
+          studentPhone1: data.studentPhone1,
+          contractType: 'Curso Auto',
+          type: 'Curso Auto',
           status: 'active',
-          userId: auth.currentUser?.uid, 
-          createdBy: 'Web Pública', 
+          paymentStatus: 'pending',
+          paymentMethod: data.paymentType,
+          paymentReference: data.paymentType === 'yappy' ? (data.yappyReference || '') : '',
+          totalAmount: price,
+          pendingAmount: price,
+          payments: [],
           createdAt: serverTimestamp(),
           activatedAt: serverTimestamp(),
-          paymentReference: values.paymentReference,
-          // PayPal: pago ya confirmado electrónicamente por PayPal
-          ...(isPayPal && {
-            paypalConfirmed: true,
-            paypalCaptureId: values.paymentReference,
-            paymentVerified: true,
-          }),
+          createdBy: 'Inscripción Web',
+          isOnline: true,
+          source: 'online',
           autoMotoDetails: {
-            ...values, 
-            licenseCategory: 'A, C',
-            theoreticalClassDates: values.theoreticalClassDates.map(d => Timestamp.fromDate(d)),
-            practicalClassSchedules: values.practicalClassSchedules.map(s => ({ ...s, date: Timestamp.fromDate(s.date) })),
-            paymentType,
-            courseValue: courseValue, 
-            downPayment: values.paymentAmount, 
-            balance: balance,
-            paymentDeadline: serverTimestamp()
+            coursePlan: data.coursePlan,
+            courseValue: price,
+            downPayment: 0,
+            balance: price,
+            paidInFull: false,
+            vehicleTransmission: data.vehicleTransmission,
+            studentAddress: data.studentAddress,
+            studentIdNumber: data.studentIdNumber,
+            studentPhone1: data.studentPhone1,
+            theoreticalClassSchedule: data.theoreticalClassSchedule || '',
+            theoreticalClassDates: data.theoreticalClassDates ? data.theoreticalClassDates.map(d => Timestamp.fromDate(d)) : [],
+            practicalClassSchedules: formattedPracticalSchedules,
+            practicalType: data.practicalType
           }
-        });
-        // Guardar contractId para la notificación
-        (finalFolio as any)._contractId = contractRef.id;
+        };
+
+        transaction.set(newContractRef, contractData);
       });
-      
-      setSubmittedFolio(finalFolio);
-      toast({ title: '¡Inscripción Exitosa!', description: `Se ha generado el Folio ${finalFolio}` });
 
-      // 🔔 Notificar al asesor
-      const isPayPalPayment = values.paymentMethod === 'paypal';
-      try {
-        await fetch('/api/contracts/notify-advisor', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            folio: finalFolio,
-            clientName: values.clientName,
-            clientPhone: values.studentPhone1,
-            clientEmail: values.clientEmail,
-            coursePlan: values.coursePlan,
-            vehicleTransmission: values.vehicleTransmission,
-            paymentReference: values.paymentReference,
-            paymentAmount: values.paymentAmount,
-            paymentMethod: values.paymentMethod,
-            paypalConfirmed: isPayPalPayment, // PayPal ya confirmó el pago
-            base64Image: isPayPalPayment ? null : receiptBase64, // No hay imagen si pagó con PayPal
-            mimeType: receiptMime,
-          })
-        });
-      } catch (notifyErr) {
-        console.warn('Notificación al asesor falló (no crítico):', notifyErr);
-      }
-    } catch (error) { 
-      console.error(error);
-      toast({ variant: 'destructive', title: 'Error en el procesamiento' }); 
-    } finally { setIsSaving(false); }
+      // Notificación automática al WhatsApp del Asesor con referencia e imagen si hay
+      fetch('/api/contracts/notify-advisor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          folio: assignedFolio,
+          clientName: data.clientName,
+          clientPhone: data.studentPhone1,
+          clientEmail: data.clientEmail,
+          coursePlan: data.coursePlan,
+          vehicleTransmission: data.vehicleTransmission,
+          paymentAmount: selectedPlan?.price || 0,
+          paymentMethod: data.paymentType,
+          paymentReference: data.paymentType === 'yappy' ? data.yappyReference : '',
+          contractId: newContractRef.id,
+          base64Image: voucherBase64,
+          mimeType: voucherMime
+        })
+      }).catch(err => console.error("Error notify-advisor:", err));
+
+      setSuccessData({
+        folio: assignedFolio,
+        contractId: newContractRef.id,
+        clientName: data.clientName,
+        plan: data.coursePlan
+      });
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (error: any) {
+      console.error("Error al inscribir:", error);
+      toast({ title: "Error de Inscripción", description: "No se pudo guardar la matrícula. Revisa tu conexión.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleOpenCubo = () => {
-    window.open("https://link.cubopago.com/m_JPusnlxKnM", "_blank");
-  };
-
-  if (!mounted) return null;
-
-  if (submittedFolio) {
+  if (successData) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
-        <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-green-100 flex flex-col items-center">
-          <div className="h-20 w-20 bg-green-100 rounded-full flex items-center justify-center mb-6"><CheckCircle2 className="h-10 w-10 text-green-600" /></div>
-          <h1 className="text-2xl font-black text-slate-900 mb-2">¡Inscripción Completada!</h1>
-          <div className="bg-blue-50 p-4 rounded-2xl mb-6 w-full border border-blue-100">
-            <p className="text-[10px] font-black uppercase text-blue-600 tracking-widest mb-1">Tu Folio Oficial es:</p>
-            <p className="text-4xl font-black text-blue-900">{String(submittedFolio).padStart(6, '0')}</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
+        <div className="bg-white rounded-3xl p-8 sm:p-12 max-w-xl w-full text-center shadow-2xl border border-slate-100 space-y-6">
+          <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+            <CheckCircle2 className="w-10 h-10" />
           </div>
-          <p className="text-slate-600 mb-8 font-medium">Tu cupo ha sido reservado automáticamente. Por favor guarda tu número de folio para el día de inicio.</p>
-          <Button asChild className="w-full h-12 text-lg font-bold"><Link href="/">Volver al Inicio</Link></Button>
+          <div>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-blue-100 text-blue-800 uppercase tracking-widest mb-2">
+              <Globe className="w-3.5 h-3.5" /> Folio Oficial #{String(successData.folio).padStart(6, '0')}
+            </span>
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">¡Inscripción Confirmada!</h1>
+            <p className="text-slate-500 mt-2">
+              Bienvenido(a), <strong className="text-slate-800">{successData.clientName}</strong>. Tu contrato ya fue registrado formalmente en nuestro sistema.
+            </p>
+          </div>
+
+          <div className="bg-slate-50 rounded-2xl p-4 text-left border border-slate-200 text-sm space-y-2">
+            <div className="flex justify-between">
+              <span className="text-slate-500">Plan Seleccionado:</span>
+              <span className="font-bold text-slate-900">{successData.plan}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Número de Folio:</span>
+              <span className="font-bold text-blue-700">#{String(successData.folio).padStart(6, '0')}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Estado del Registro:</span>
+              <span className="font-bold text-green-600">Activo en Base de Datos</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <Link href={`/contracts/${successData.contractId}`} className="w-full">
+              <Button variant="default" className="w-full h-12 text-base font-bold rounded-xl bg-blue-600 hover:bg-blue-700">
+                <FileText className="w-5 h-5 mr-2" /> Ver Mi Contrato
+              </Button>
+            </Link>
+            <a href="https://wa.me/50763814115" target="_blank" rel="noreferrer" className="w-full">
+              <Button variant="outline" className="w-full h-12 text-base font-bold rounded-xl border-emerald-500 text-emerald-700 hover:bg-emerald-50">
+                <MessageCircle className="w-5 h-5 mr-2" /> Contactar por WhatsApp
+              </Button>
+            </a>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="h-16 bg-white border-b flex items-center px-6 sticky top-0 z-50">
-        <Link href="/" className="flex items-center gap-2 font-bold text-slate-900"><GanttChart className="h-6 w-6 text-primary" /><span>Freeway Escuela de Manejo</span></Link>
-      </header>
-      <main className="p-4 md:p-8 max-w-4xl mx-auto space-y-8">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-black text-slate-900 font-headline uppercase tracking-tight">Inscripción Online Directa</h1>
-          <p className="text-slate-500 font-medium">Automatiza tu ingreso: elige tu horario, paga y obtén tu folio oficial al instante.</p>
-        </div>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 pb-20">
-            <Card className="shadow-lg border-none overflow-hidden">
-              <CardHeader className="bg-primary text-white"><CardTitle className="text-lg font-bold uppercase">1. Información Personal</CardTitle></CardHeader>
-              <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField control={form.control} name="clientName" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Nombre Completo</FormLabel><FormControl><Input placeholder="Nombre..." {...field} className="h-11 uppercase font-bold" /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="clientEmail" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Email</FormLabel><FormControl><Input type="email" placeholder="ejemplo@correo.com" {...field} className="h-11" /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Cédula / ID</FormLabel><FormControl><Input placeholder="0-000-000" {...field} className="h-11" /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="studentPhone1" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Celular</FormLabel><FormControl><Input placeholder="6000-0000" {...field} className="h-11" /></FormControl><FormMessage /></FormItem>
-                )} />
-                <div className="md:col-span-2"><FormField control={form.control} name="studentAddress" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Dirección</FormLabel><FormControl><Input placeholder="Ubicación..." {...field} className="h-11" /></FormControl><FormMessage /></FormItem>
-                )} /></div>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-lg border-none">
-              <CardHeader className="bg-slate-800 text-white"><CardTitle className="text-lg font-bold uppercase flex items-center gap-2"><BookOpen className="h-5 w-5" /> 2. Capacitación Teórica</CardTitle></CardHeader>
-              <CardContent className="p-6 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <FormField control={form.control} name="coursePlan" render={({ field }) => (
-                    <FormItem><FormLabel className="text-[10px] font-bold uppercase">Plan Deseado</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11"><SelectValue placeholder="Elegir..." /></SelectTrigger></FormControl><SelectContent>{AUTO_PLANS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent></Select></FormItem>
-                  )} />
-                  <FormField control={form.control} name="vehicleTransmission" render={({ field }) => (
-                    <FormItem><FormLabel className="text-[10px] font-bold uppercase">Tipo de Transmisión</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}><FormControl><SelectTrigger className="h-11"><SelectValue placeholder="Elegir..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="Automático">Automático</SelectItem><SelectItem value="Manual">Manual</SelectItem></SelectContent></Select></FormItem>
-                  )} />
-                  <FormField control={form.control} name="theoreticalClassSchedule" render={({ field }) => (
-                    <FormItem><FormLabel className="text-[10px] font-bold uppercase">Horario Teórico</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11"><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Sabados 3:00 pm a 5:00 pm">Sábados 3:00 pm a 5:00 pm</SelectItem><SelectItem value="Semanal 8:00 am a 10:00 am">Semanal 8:00 am a 10:00 am</SelectItem></SelectContent></Select></FormItem>
-                  )} />
+    <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-200">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col lg:flex-row w-full max-w-[1600px] mx-auto">
+          
+          {/* COLUMNA IZQUIERDA: FORMULARIO INTERACTIVO */}
+          <div className="w-full lg:w-[65%] p-6 lg:p-12 xl:p-16">
+            <div className="max-w-3xl mx-auto space-y-12">
+              
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-blue-600 text-white font-bold text-xs gap-1">
+                    <Globe className="w-3.5 h-3.5" /> MATRÍCULA ONLINE CONTRACTTIME
+                  </Badge>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
-                  {(form.watch('theoreticalClassDates') || []).map((_, i) => (
-                    <FormField key={i} control={form.control} name={`theoreticalClassDates.${i}`} render={({ field }) => (
-                      <FormItem className="flex flex-col"><FormLabel className="text-[10px] font-black uppercase text-slate-500">Sesión {i + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className="h-10 text-xs text-left">{field.value ? format(toDate(field.value), "dd/MM/yy") : 'Elegir'}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value ? toDate(field.value) : undefined} onSelect={(date) => { if (date) field.onChange(date); }} initialFocus /></PopoverContent></Popover></FormItem>
-                    )} />
-                  ))}
+                <h1 className="text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight">Inscripción Online</h1>
+                <p className="text-lg text-slate-500">Selecciona tu plan y verifica disponibilidad de cupos por cada fecha en tiempo real.</p>
+              </div>
+
+              {/* SECCIÓN 1: DATOS PERSONALES */}
+              <section className="space-y-6">
+                <div className="flex items-center gap-3 pb-3 border-b border-slate-200">
+                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">1</div>
+                  <h2 className="text-lg font-bold text-slate-800">Tus Datos Personales</h2>
                 </div>
-              </CardContent>
-            </Card>
 
-            <Card className="shadow-lg border-none">
-              <CardHeader className="bg-blue-600 text-white"><CardTitle className="text-lg font-bold uppercase flex items-center gap-2"><Car className="h-5 w-5" /> 3. Propuesta Práctica</CardTitle></CardHeader>
-              <CardContent className="p-6 space-y-6">
-                {!watchPlan ? (
-                  <div className="p-12 text-center border-2 border-dashed rounded-xl text-slate-400 font-bold uppercase text-xs">Elige un plan arriba para programar horas</div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {practicalFields.map((field, index) => {
-                      const watchDate = form.watch(`practicalClassSchedules.${index}.date`);
-                      const watchTime = form.watch(`practicalClassSchedules.${index}.time`);
-                      const dObj = toDate(watchDate);
-                      const isValidDate = !isNaN(dObj.getTime());
-                      const holiday = isValidDate ? isPanamaHoliday(dObj) : null;
-                      const isSunday = isValidDate && dObj.getDay() === 0;
-                      const slotId = TIME_STRING_TO_SLOT_MAP[watchTime] || watchTime;
-                      const dateKey = isValidDate ? format(dObj, 'yyyy-MM-dd') : '';
-                      const isFull = (availabilityData.globalCounts[`${dateKey}|${slotId}`] || 0) >= (isValidDate ? getGlobalCapacity(dObj, slotId) : 3);
-
-                      return (
-                        <div key={field.id} className={cn("p-4 border rounded-2xl bg-white relative", (isFull || holiday || isSunday) ? "border-amber-500 bg-amber-50/10" : "border-slate-200")}>
-                          <div className="absolute -top-2 right-3 flex gap-1 z-10">
-                            {isSunday && <div className="bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Domingo</div>}
-                            {holiday && !isSunday && <div className="bg-orange-500 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Feriado</div>}
-                            {isFull && !holiday && !isSunday && <div className="bg-amber-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Lleno</div>}
-                          </div>
-                          <FormField control={form.control} name={`practicalClassSchedules.${index}.date`} render={({ field: f }) => (
-                            <FormItem><FormLabel className="text-[10px] font-black uppercase text-slate-500">Clase {index + 1}</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className="h-10 w-full text-xs text-left">{f.value ? format(toDate(f.value), "PPP", { locale: es }) : "Elegir día"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={f.value ? toDate(f.value) : undefined} onSelect={(date) => { if (date) f.onChange(date); }} initialFocus disabled={(d) => d < new Date() || d.getDay() === 0} /></PopoverContent></Popover></FormItem>
-                          )} />
-                          <FormField control={form.control} name={`practicalClassSchedules.${index}.time`} render={({ field: f }) => (
-                            <FormItem><Select onValueChange={f.onChange} value={f.value}><FormControl><SelectTrigger className="h-10 text-xs mt-2"><SelectValue /></SelectTrigger></FormControl><SelectContent>{TIME_OPTIONS.map(t => {
-                              const tSlotId = TIME_STRING_TO_SLOT_MAP[t] || t;
-                              const isSlotFull = isValidDate && (availabilityData.globalCounts[`${dateKey}|${tSlotId}`] || 0) >= getGlobalCapacity(dObj, tSlotId);
-                              return <SelectItem key={t} value={t} disabled={isSlotFull} className={cn("text-xs", isSlotFull && "text-red-500 font-bold")}>{t}{isSlotFull ? ' (Lleno)' : ''}</SelectItem>;
-                            })}</SelectContent></Select></FormItem>
-                          )} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField control={form.control} name="clientName" render={({ field }) => (
+                    <FormItem>
+                      <Label className="text-slate-600 font-semibold text-xs ml-1">Nombre Completo</Label>
+                      <FormControl>
+                        <div className="relative">
+                          <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                          <Input {...field} className="h-11 pl-10 rounded-xl bg-white border-slate-200 shadow-2xs focus-visible:ring-blue-600 text-sm" placeholder="Ej. Juan Pérez" />
                         </div>
-                      );
-                    })}
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
+                    <FormItem>
+                      <Label className="text-slate-600 font-semibold text-xs ml-1">Cédula / Pasaporte</Label>
+                      <FormControl>
+                        <div className="relative">
+                          <IdCard className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                          <Input {...field} className="h-11 pl-10 rounded-xl bg-white border-slate-200 shadow-2xs focus-visible:ring-blue-600 text-sm" placeholder="8-000-0000" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="clientEmail" render={({ field }) => (
+                    <FormItem>
+                      <Label className="text-slate-600 font-semibold text-xs ml-1">Correo Electrónico</Label>
+                      <FormControl>
+                        <div className="relative">
+                          <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                          <Input {...field} className="h-11 pl-10 rounded-xl bg-white border-slate-200 shadow-2xs focus-visible:ring-blue-600 text-sm" placeholder="correo@ejemplo.com" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="studentPhone1" render={({ field }) => (
+                    <FormItem>
+                      <Label className="text-slate-600 font-semibold text-xs ml-1">Celular (WhatsApp)</Label>
+                      <FormControl>
+                        <div className="relative">
+                          <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                          <Input {...field} className="h-11 pl-10 rounded-xl bg-white border-slate-200 shadow-2xs focus-visible:ring-blue-600 text-sm" placeholder="6000-0000" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="studentAddress" render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <Label className="text-slate-600 font-semibold text-xs ml-1">Dirección Residencial</Label>
+                      <FormControl>
+                        <div className="relative">
+                          <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                          <Input {...field} className="h-11 pl-10 rounded-xl bg-white border-slate-200 shadow-2xs focus-visible:ring-blue-600 text-sm" placeholder="Barrio, Calle, Casa..." />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+              </section>
+
+              {/* SECCIÓN 2: PLAN Y VEHÍCULO */}
+              <section className="space-y-4">
+                <div className="flex items-center gap-3 pb-3 border-b border-slate-200">
+                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">2</div>
+                  <h2 className="text-lg font-bold text-slate-800">Selección de Curso y Plan</h2>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-slate-600 font-semibold text-xs ml-1">Transmisión del Vehículo</Label>
+                  <div className="flex gap-3">
+                    {['Automático', 'Manual'].map((type) => (
+                      <div 
+                        key={type}
+                        onClick={() => setValue('vehicleTransmission', type as any)}
+                        className={`flex-1 py-2.5 px-4 rounded-xl border flex items-center justify-center gap-2 cursor-pointer transition-all duration-150 ${currentValues.vehicleTransmission === type ? 'border-blue-600 bg-blue-50/20 text-blue-900 font-bold shadow-2xs' : 'border-slate-200 bg-white hover:border-slate-300 text-slate-600 font-semibold'}`}
+                      >
+                        <Car className={`w-4 h-4 ${currentValues.vehicleTransmission === type ? 'text-blue-600' : 'text-slate-400'}`} />
+                        <span className="text-sm">{type}</span>
+                      </div>
+                    ))}
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </div>
 
-            <Card className="shadow-lg border-none overflow-hidden">
-              <CardHeader className="bg-slate-900 text-white"><CardTitle className="text-lg font-bold uppercase flex items-center gap-2"><CreditCard className="h-5 w-5" /> 4. Pago de Reserva Automatizado</CardTitle></CardHeader>
-              <CardContent className="p-6">
-                <Tabs value={watchPaymentMethod} onValueChange={(v: any) => form.setValue('paymentMethod', v)} className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 h-14 bg-slate-100 rounded-xl p-1">
-                    <TabsTrigger value="yappy" className="rounded-lg data-[state=active]:bg-[#004fb9] data-[state=active]:text-white font-bold gap-1 text-xs"><Smartphone className="h-4 w-4" /> Yappy</TabsTrigger>
-                    <TabsTrigger value="credit_card" className="rounded-lg data-[state=active]:bg-[#16a34a] data-[state=active]:text-white font-bold gap-1 text-xs"><CreditCard className="h-4 w-4" /> Tarjeta</TabsTrigger>
-                    <TabsTrigger value="paypal" className="rounded-lg data-[state=active]:bg-[#003087] data-[state=active]:text-white font-bold gap-1 text-xs"><Globe className="h-4 w-4" /> PayPal</TabsTrigger>
-                  </TabsList>
-                  
-                  <div className="mt-6 p-6 bg-slate-50 border rounded-2xl space-y-6">
-                    <TabsContent value="yappy" className="m-0 space-y-6">
-                      <div className="space-y-4">
-                        <h4 className="font-black text-[#004fb9] uppercase tracking-tight">Instrucciones Yappy:</h4>
-                        <ol className="text-xs space-y-2 text-slate-700 font-medium list-decimal pl-4">
-                            <li>Haz clic en el botón inferior para realizar tu pago de reserva.</li>
-                            <li>Al completar la transacción en tu App, **copia el número de confirmación**.</li>
-                            <li>Ingresa el número abajo para que el sistema valide tu inscripción.</li>
-                        </ol>
-                        <Button asChild className="w-full bg-[#004fb9] hover:bg-[#003a8c] font-bold h-12 shadow-md">
-                          <a href="https://link.yappy.com.pa/stc/dgXr5v%2BGA2xDgGKBkz%2BnBhSk16Vdr9BZvaim7nGhYrA%3D" target="_blank" rel="noopener noreferrer">
-                            <Smartphone className="mr-2 h-5 w-5" /> Pagar con Yappy
-                          </a>
-                        </Button>
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="credit_card" className="m-0 space-y-6">
-                      <div className="space-y-4">
-                        <h4 className="font-black text-[#16a34a] uppercase tracking-tight">Pago con Tarjeta (Cubo):</h4>
-                        <ol className="text-xs space-y-2 text-slate-700 font-medium list-decimal pl-4">
-                            <li>Haz clic en el botón inferior para pagar de forma segura.</li>
-                            <li>Al finalizar, copia el **Número de comprobante** que genera Cubo.</li>
-                            <li>Ingresa dicho número abajo para activar tu folio.</li>
-                        </ol>
-                        <Button type="button" onClick={() => setShowCuboModal(true)} className="w-full bg-[#16a34a] hover:bg-[#11823b] font-bold h-12 shadow-md">
-                          <CreditCard className="mr-2 h-5 w-5" /> Pagar con Tarjeta
-                        </Button>
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="paypal" className="m-0 space-y-4">
-                      <div className="flex items-center gap-3 bg-[#003087]/5 border border-[#003087]/20 rounded-xl p-4">
-                        <div className="w-10 h-10 rounded-lg bg-[#003087] flex items-center justify-center flex-shrink-0">
-                          <Globe className="h-5 w-5 text-white" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-black text-[#003087] text-sm uppercase">PayPal</p>
-                          <p className="text-xs text-slate-500">Tarjeta de crédito, débito o cuenta PayPal</p>
-                        </div>
-                        {watchPlan && prices?.auto?.[watchPlan] && (
-                          <div className="text-right">
-                            <p className="text-[10px] text-slate-400 uppercase font-bold">Total</p>
-                            <p className="text-xl font-black text-[#003087]">B/. {prices.auto[watchPlan].toFixed(2)}</p>
+                <div className="space-y-2">
+                  <Label className="text-slate-600 font-semibold text-xs ml-1">Planes Disponibles (Ajusta Clases Requeridas)</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {plansList.map((plan) => (
+                      <div 
+                        key={plan.name}
+                        onClick={() => setValue('coursePlan', plan.name)}
+                        className={`relative cursor-pointer rounded-xl border p-4 transition-all duration-200 flex flex-col ${currentValues.coursePlan === plan.name ? 'border-blue-600 bg-blue-50/5 ring-1 ring-blue-600/10' : 'border-slate-200 bg-white hover:border-slate-300'}`}
+                      >
+                        {plan.tag && (
+                          <div className={`absolute -top-2.5 left-4 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${currentValues.coursePlan === plan.name ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
+                            {plan.tag}
                           </div>
                         )}
-                      </div>
-
-                      {!watchPlan ? (
-                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 font-medium">
-                          ⚠ Selecciona un plan en la Sección 2 para continuar.
+                        <h3 className={`text-sm font-bold mb-0.5 mt-1.5 ${currentValues.coursePlan === plan.name ? 'text-blue-900' : 'text-slate-800'}`}>{plan.title}</h3>
+                        <p className="text-[11px] font-semibold text-blue-700 mb-2">{plan.hoursText} ({plan.classCount} Clases)</p>
+                        <div className="mt-auto">
+                          <span className="text-lg font-black text-slate-900">${plan.price}</span>
                         </div>
-                      ) : (
-                        <Button
-                          type="button"
-                          onClick={openPaypalModal}
-                          className="w-full h-12 bg-[#003087] hover:bg-[#002060] font-bold shadow-md text-white"
-                        >
-                          <Globe className="mr-2 h-5 w-5" />
-                          Continuar con PayPal →
-                        </Button>
-                      )}
-                      <p className="text-[9px] text-center text-slate-400 uppercase font-bold tracking-widest">🔒 Pago 100% seguro — Visa, Mastercard, PayPal</p>
-                    </TabsContent>
+                        <p className="text-[10px] text-slate-400 mt-2 leading-relaxed">{plan.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {form.formState.errors.coursePlan && <p className="text-red-500 text-xs font-medium mt-1">{form.formState.errors.coursePlan.message}</p>}
+                </div>
+              </section>
 
-                    <div className="pt-4 border-t border-slate-200">
-                      
-                      <div className="bg-gradient-to-br from-indigo-50 to-blue-50 border-2 border-indigo-200 rounded-xl p-4 mb-4 text-center">
-                        <Camera className="h-6 w-6 text-indigo-600 mx-auto mb-2" />
-                        <h4 className="font-black text-indigo-900 uppercase text-xs">Validación por Inteligencia Artificial</h4>
-                        <p className="text-[10px] text-indigo-700 font-medium mb-3">Sube la captura de pantalla de tu pago y la IA completará los datos.</p>
-                        
-                        <label className={cn("cursor-pointer bg-white hover:bg-slate-50 border-2 border-dashed border-indigo-300 rounded-lg h-12 flex items-center justify-center gap-2 font-bold text-xs uppercase text-indigo-700 transition", isReadingImage && "opacity-50 pointer-events-none")}>
-                            {isReadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-                            {isReadingImage ? 'Analizando...' : (form.watch('paymentReference') ? 'Subir Otra Captura' : 'Subir Screenshot de Pago')}
-                            <input type="file" accept="image/png, image/jpeg, image/webp" className="hidden" onChange={handleImageUpload} disabled={isReadingImage} />
-                        </label>
+              {/* SECCIÓN 3: AGENDA TEÓRICA */}
+              {!currentValues.coursePlan?.includes('Reforzamiento') && !currentValues.coursePlan?.includes('manejar') && filteredTheoreticalSchedules.length > 0 && (
+                <section className="space-y-4">
+                  <div className="flex items-center gap-3 pb-3 border-b border-slate-200">
+                    <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">3</div>
+                    <h2 className="text-lg font-bold text-slate-800">Horario Teórico Presencial</h2>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {filteredTheoreticalSchedules.map((sched) => (
+                      <div 
+                        key={sched.id}
+                        onClick={() => setValue('theoreticalClassSchedule', sched.id)}
+                        className={`cursor-pointer rounded-xl border p-4 transition-all duration-150 flex flex-col gap-1.5 ${currentValues.theoreticalClassSchedule === sched.id ? 'border-blue-600 bg-blue-50/20 shadow-2xs' : 'border-slate-200 bg-white hover:border-slate-300'}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Clock className={`w-4 h-4 ${currentValues.theoreticalClassSchedule === sched.id ? 'text-blue-600' : 'text-slate-400'}`} />
+                          <span className={`font-bold text-sm leading-tight ${currentValues.theoreticalClassSchedule === sched.id ? 'text-blue-900' : 'text-slate-700'}`}>{sched.label}</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 ml-7">{sched.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {currentValues.theoreticalClassDates && currentValues.theoreticalClassDates.length > 0 && (
+                    <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-4 flex gap-4 items-center">
+                      <div className="w-10 h-10 bg-white rounded-lg shadow-2xs border border-slate-200 flex items-center justify-center shrink-0">
+                        <CalendarIcon className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-700 text-xs mb-1.5">Fechas Teóricas Asignadas:</h4>
+                        <div className="flex flex-wrap gap-1.5">
+                          {currentValues.theoreticalClassDates.map((d, i) => (
+                            <span key={i} className="bg-white border border-slate-200 px-2 py-0.5 rounded-md text-[11px] font-semibold text-slate-600 shadow-2xs">
+                              {format(d, "EEE d MMM", { locale: es })}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {/* SECCIÓN 4: AGENDA DE CADA CLASE PRÁCTICA INDIVIDUAL */}
+              <section className="space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">4</div>
+                    <h2 className="text-lg font-bold text-slate-800">
+                      Agenda de Clases Prácticas ({selectedPlan ? `${selectedPlan.classCount} Clases` : 'Selecciona un Plan'})
+                    </h2>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const event = new CustomEvent('openAvailabilityWidget');
+                      window.dispatchEvent(event);
+                    }}
+                    className="gap-1.5 text-xs font-bold border-blue-200 text-blue-700 hover:bg-blue-50 h-8"
+                  >
+                    <CalendarSearch className="w-3.5 h-3.5 text-blue-600" /> Ver Libreta Completa en Vivo
+                  </Button>
+                </div>
+
+                {!selectedPlan ? (
+                  <div className="p-8 text-center bg-slate-100 rounded-2xl text-slate-500 font-medium border border-dashed border-slate-300">
+                    👆 Selecciona arriba un Plan de Curso para habilitar las fechas y horarios de cada clase.
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Selector de Modalidad (Semanal / Sabatino) */}
+                    <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 space-y-2 shadow-2xs">
+                      <Label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        📅 Modalidad del Curso Práctico
+                      </Label>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setValue('practicalType', 'semanal')}
+                          className={`flex-1 py-2 px-3 rounded-lg border font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
+                            currentValues.practicalType === 'semanal'
+                              ? 'border-blue-600 bg-blue-50/50 text-blue-800 shadow-2xs'
+                              : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          💼 Semanal (Lun a Vie)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setValue('practicalType', 'sabatino')}
+                          className={`flex-1 py-2 px-3 rounded-lg border font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
+                            currentValues.practicalType === 'sabatino'
+                              ? 'border-blue-600 bg-blue-50/50 text-blue-800 shadow-2xs'
+                              : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          🎉 Sabatino (Sábados)
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* ACORDEÓN DE CLASES PRÁCTICAS */}
+                    <Accordion type="single" collapsible defaultValue="class-0" className="space-y-2.5">
+                      {fields.map((fieldItem: any, index: number) => {
+                        const classDate = form.watch(`practicalClassSchedules.${index}.date`);
+                        const classTime = form.watch(`practicalClassSchedules.${index}.time`) || '';
+                        const chosenTransmission = form.watch('vehicleTransmission');
+                        const currentSlotOcc = getSlotOccupancy(
+                          classDate || '', 
+                          classTime, 
+                          availability.globalCounts, 
+                          availability.blockedSlots, 
+                          availability.slotCapacities,
+                          availability.transmissionCounts,
+                          availability.activeVehiclesByTransmission,
+                          chosenTransmission,
+                          availability.practicaSlots,
+                          availability.teoricoSlots,
+                          availability.practicaCapacities,
+                          availability.teoricoCapacities
+                        );
+
+                        const dateFormatted = classDate 
+                          ? format(new Date(classDate + 'T12:00:00'), "EEE dd/MM", { locale: es }) 
+                          : null;
+
+                        return (
+                          <AccordionItem 
+                            key={fieldItem.id} 
+                            value={`class-${index}`}
+                            className={`bg-white border rounded-xl shadow-2xs transition-colors overflow-hidden ${currentSlotOcc.isFull ? 'border-red-200 bg-red-50/5' : 'border-slate-200 hover:border-blue-200'}`}
+                          >
+                            <AccordionTrigger className="hover:no-underline px-4 py-3 text-left">
+                              <div className="flex items-center justify-between w-full pr-4 gap-4">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-5 h-5 rounded bg-blue-100 text-blue-800 font-bold text-[10px] flex items-center justify-center shrink-0">
+                                    #{index + 1}
+                                  </div>
+                                  <span className="font-bold text-slate-800 text-xs shrink-0">Clase {index + 1}</span>
+                                  {dateFormatted && classTime && (
+                                    <span className="text-[11px] text-slate-500 font-semibold bg-slate-100 px-2 py-0.5 rounded ml-2 hidden sm:inline-block">
+                                      📅 {dateFormatted} — ⏰ {classTime}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="shrink-0">
+                                  {currentSlotOcc.isEmpty ? (
+                                    <Badge variant="outline" className="bg-slate-50 text-slate-400 border-slate-200 text-[10px] font-medium px-1.5 py-0">
+                                      ⚪ Por programar
+                                    </Badge>
+                                  ) : currentSlotOcc.isFull ? (
+                                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-[10px] font-bold px-1.5 py-0">
+                                      {currentSlotOcc.label}
+                                    </Badge>
+                                  ) : currentSlotOcc.available === 1 ? (
+                                    <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200 text-[10px] font-bold px-1.5 py-0">
+                                      🟡 Último cupo
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-bold px-1.5 py-0">
+                                      {currentSlotOcc.label}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="px-4 pb-4 pt-1 border-t border-slate-100">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                                {/* Selector de Fecha */}
+                                <div className="space-y-1">
+                                  <Label className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Fecha</Label>
+                                  <Input
+                                    type="date"
+                                    className="h-10 rounded-lg border-slate-200 bg-slate-50/80 font-bold text-xs text-slate-800 focus:bg-white"
+                                    value={classDate || ''}
+                                    onChange={(e) => {
+                                      const selectedVal = e.target.value;
+                                      if (!selectedVal) {
+                                        form.setValue(`practicalClassSchedules.${index}.date`, '');
+                                        return;
+                                      }
+                                      
+                                      const dateObj = new Date(selectedVal + 'T12:00:00');
+                                      const dayOfWeek = dateObj.getDay();
+                                      const type = currentValues.practicalType || 'semanal';
+                                      
+                                      if (dayOfWeek === 0) {
+                                        toast({
+                                          title: "Día no laborable",
+                                          description: "La escuela de manejo no opera los domingos.",
+                                          variant: "destructive"
+                                        });
+                                        form.setValue(`practicalClassSchedules.${index}.date`, '');
+                                        return;
+                                      }
+                                      
+                                      if (type === 'semanal' && dayOfWeek === 6) {
+                                        toast({
+                                          title: "Horario Semanal Seleccionado",
+                                          description: "Has elegido la modalidad Semanal (Lunes a Viernes). Por favor selecciona un día de semana.",
+                                          variant: "destructive"
+                                        });
+                                        form.setValue(`practicalClassSchedules.${index}.date`, '');
+                                        return;
+                                      }
+                                      
+                                      if (type === 'sabatino' && dayOfWeek !== 6) {
+                                        toast({
+                                          title: "Horario Sabatino Seleccionado",
+                                          description: "Has elegido la modalidad Sabatina (Sábados). Por favor selecciona un día sábado.",
+                                          variant: "destructive"
+                                        });
+                                        form.setValue(`practicalClassSchedules.${index}.date`, '');
+                                        return;
+                                      }
+                                      
+                                      form.setValue(`practicalClassSchedules.${index}.date`, selectedVal);
+                                    }}
+                                  />
+                                </div>
+
+                                {/* Selector de Horario con Estatus en cada Opción */}
+                                <div className="space-y-1">
+                                  <Label className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Horario</Label>
+                                  <select
+                                    className={`w-full h-10 rounded-lg border px-2.5 font-bold text-xs outline-none focus:ring-1 focus:ring-blue-600 ${currentSlotOcc.isFull ? 'border-red-300 bg-red-50 text-red-900' : 'border-slate-200 bg-slate-50/80 text-slate-800 focus:bg-white'}`}
+                                    value={classTime}
+                                    onChange={(e) => {
+                                      form.setValue(`practicalClassSchedules.${index}.time`, e.target.value);
+                                    }}
+                                  >
+                                    <option value="" className="text-slate-500">-- Selecciona Horario --</option>
+                                    {TIME_SLOTS.map(t => {
+                                      const occ = getSlotOccupancy(
+                                        classDate || '', 
+                                        t.id, 
+                                        availability.globalCounts, 
+                                        availability.blockedSlots, 
+                                        availability.slotCapacities,
+                                        availability.transmissionCounts,
+                                        availability.activeVehiclesByTransmission,
+                                        chosenTransmission,
+                                        availability.practicaSlots,
+                                        availability.teoricoSlots,
+                                        availability.practicaCapacities,
+                                        availability.teoricoCapacities
+                                      );
+                                      return (
+                                        <option 
+                                          key={t.id} 
+                                          value={t.id}
+                                          disabled={occ.isFull}
+                                          className={occ.isFull ? 'text-red-600 font-bold bg-red-100' : 'text-slate-900'}
+                                        >
+                                          {t.label} — {occ.label}
+                                        </option>
+                                      );
+                                    })}
+                                  </select>
+                                </div>
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        );
+                      })}
+                    </Accordion>
+                  </div>
+                )}
+              </section>
+
+              {/* SECCIÓN 5: PAGO */}
+              <section className="space-y-5 pb-16">
+                <div className="flex items-center gap-3 pb-2 border-b border-slate-200">
+                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">5</div>
+                  <h2 className="text-lg font-bold text-slate-800">Método de Pago</h2>
+                </div>
+
+                {/* Selector de Método de Pago */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setValue('paymentType', 'yappy');
+                    }}
+                    className={`flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all ${
+                      currentValues.paymentType === 'yappy'
+                        ? 'border-[#004fb9] bg-[#004fb9]/5 ring-1 ring-[#004fb9] shadow-sm'
+                        : 'border-slate-200 bg-white hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${
+                      currentValues.paymentType === 'yappy' ? 'bg-[#004fb9] text-white' : 'bg-slate-100 text-slate-500'
+                    }`}>
+                      Y
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-[11px] flex items-center gap-1">
+                        Yappy
+                      </h4>
+                      <p className="text-[9px] text-slate-500 mt-0.5 leading-tight">Directo / Celular</p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setValue('paymentType', 'cubo');
+                    }}
+                    className={`flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all ${
+                      currentValues.paymentType === 'cubo'
+                        ? 'border-[#16a34a] bg-[#16a34a]/5 ring-1 ring-[#16a34a] shadow-sm'
+                        : 'border-slate-200 bg-white hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0 ${
+                      currentValues.paymentType === 'cubo' ? 'bg-[#16a34a] text-white' : 'bg-slate-100 text-slate-500'
+                    }`}>
+                      💳
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-[11px] flex items-center gap-1">
+                        Tarjeta (Cubo)
+                      </h4>
+                      <p className="text-[9px] text-slate-500 mt-0.5 leading-tight">Pago online seguro</p>
+                    </div>
+                  </button>
+                </div>
+
+                {currentValues.paymentType === 'yappy' && (
+                  <div className="bg-blue-50/30 border border-blue-100 rounded-xl p-4 space-y-4 animate-in fade-in duration-200">
+                    <div className="text-[11px] text-blue-950 leading-relaxed font-medium flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-blue-100/30 p-3 rounded-lg border border-blue-100/60">
+                      <span>
+                        📱 Envía tu pago por Yappy buscando al comercio: <span className="font-bold text-[#004fb9] bg-blue-100/60 px-1.5 py-0.5 rounded">Freeway Escuela de Manejo</span> (o al número celular <span className="font-bold text-[#004fb9] bg-blue-100/60 px-1.5 py-0.5 rounded">6381-4115</span>).
+                      </span>
+                      <Button
+                        type="button"
+                        onClick={() => window.open('https://link.yappy.com.pa/stc/dgXr5v%2BGA2xDgGKBkz%2BnBhSk16Vdr9BZvaim7nGhYrA%3D', '_blank')}
+                        className="bg-[#004fb9] hover:bg-[#003da1] text-white font-bold text-[11px] h-8 px-3 rounded-lg flex items-center gap-1 shrink-0 self-start sm:self-auto shadow-sm active:scale-95 transition-transform"
+                      >
+                        Pagar con Yappy 📱
+                      </Button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Campo de Referencia */}
+                      <div className="space-y-1.5">
+                        <Label htmlFor="yappyReference" className="text-[11px] font-bold text-slate-700">
+                          Número de Referencia de Yappy <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="yappyReference"
+                          type="text"
+                          placeholder="Ej. 12345678"
+                          {...form.register('yappyReference')}
+                          className="h-10 text-xs rounded-lg border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                        />
                       </div>
 
-                      {form.watch('paymentReference') ? (
-                         <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4 text-center mb-4 shadow-sm">
-                           <div className="flex items-center justify-center gap-2 text-green-700 font-black text-sm mb-1 uppercase tracking-tight">
-                             <ShieldCheck className="h-5 w-5" /> Comprobante Verificado
-                           </div>
-                           <p className="text-green-800 text-xs font-medium text-center">
-                             Depósito validado por <b>B/. {form.watch('paymentAmount')}</b> con la ref: <b className="font-mono">{form.watch('paymentReference')}</b>.
-                           </p>
-                         </div>
-                      ) : null}
-
-                      <div className="hidden">
-                      <FormField control={form.control} name="paymentAmount" render={({ field }) => (
-                          <FormItem><FormControl><Input type="number" step="0.01" min="50" {...field} /></FormControl></FormItem>
-                      )} />
-                      <FormField control={form.control} name="paymentReference" render={({ field }) => (
-                          <FormItem><FormControl><Input {...field} /></FormControl></FormItem>
-                      )} />
+                      {/* Adjuntar Comprobante */}
+                      <div className="space-y-1.5">
+                        <Label className="text-[11px] font-bold text-slate-700">
+                          Captura del Comprobante (Opcional)
+                        </Label>
+                        <div className="relative">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            id="voucherFile"
+                            onChange={handleFileChange}
+                            className="hidden"
+                          />
+                          {voucherBase64 ? (
+                            <div className="flex items-center justify-between border border-blue-200 bg-white p-2 rounded-lg text-xs">
+                              <span className="text-blue-700 font-semibold truncate max-w-[150px]">
+                                📸 Comprobante listo
+                              </span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => {
+                                  setVoucherBase64(null);
+                                  setVoucherMime(null);
+                                }}
+                                className="h-6 text-[10px] text-red-500 hover:text-red-700 p-1"
+                              >
+                                Quitar
+                              </Button>
+                            </div>
+                          ) : (
+                            <label
+                              htmlFor="voucherFile"
+                              className="flex items-center justify-center border border-dashed border-slate-300 bg-white hover:bg-slate-50 cursor-pointer p-2 rounded-lg text-xs text-slate-500 font-medium h-10 transition-all gap-1.5"
+                            >
+                              <span>Upload</span> Subir Comprobante
+                            </label>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </Tabs>
-              </CardContent>
-            </Card>
+                )}
 
-            <Button type="submit" disabled={isSaving || !watchPlan || !form.watch('paymentReference')} className="w-full h-16 text-xl font-black shadow-xl uppercase tracking-widest bg-blue-600 hover:bg-blue-700">
-              {isSaving ? <><Loader2 className="mr-2 h-6 w-6 animate-spin" /> Validando...</> : <><ShieldCheck className="mr-2 h-6 w-6" /> Finalizar Inscripción Ahora</>}
-            </Button>
-          </form>
-        </Form>
-      </main>
+                {currentValues.paymentType === 'cubo' && (
+                  <div className="bg-green-50/30 border border-green-100 rounded-xl p-4 space-y-4 animate-in fade-in duration-200">
+                    <div className="text-[11px] text-green-950 leading-relaxed font-medium flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-green-100/30 p-3 rounded-lg border border-green-100/60">
+                      <span>
+                        💳 Puedes pagar en línea con tu **tarjeta de crédito o débito** (Visa / Mastercard) a través del portal de procesamiento seguro de **Cubo**.
+                      </span>
+                      <Button
+                        type="button"
+                        onClick={() => window.open('https://link.cubopago.com/m_JPusnlxKnM', '_blank')}
+                        className="bg-[#16a34a] hover:bg-[#15803d] text-white font-bold text-[11px] h-8 px-3 rounded-lg flex items-center gap-1 shrink-0 self-start sm:self-auto shadow-sm active:scale-95 transition-transform"
+                      >
+                        Pagar con Tarjeta (Cubo) 💳
+                      </Button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Campo de Referencia */}
+                      <div className="space-y-1.5">
+                        <Label htmlFor="cuboReference" className="text-[11px] font-bold text-slate-700">
+                          Número de Confirmación / Referencia <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="cuboReference"
+                          type="text"
+                          placeholder="Ej. ID de Transacción / Referencia"
+                          {...form.register('yappyReference')}
+                          className="h-10 text-xs rounded-lg border-slate-200 focus:border-green-500 focus:ring-green-500"
+                        />
+                      </div>
 
-      <AlertDialog open={showCuboModal} onOpenChange={setShowCuboModal}>
-        <AlertDialogContent className="max-w-md">
-          <AlertDialogHeader>
-            <div className="mx-auto bg-green-100 p-3 rounded-full w-fit mb-2">
-              <Info className="h-8 w-8 text-green-600" />
-            </div>
-            <AlertDialogTitle className="text-center text-xl font-black uppercase text-slate-900">Instrucciones del Pago</AlertDialogTitle>
-            <AlertDialogDescription className="text-center space-y-4 pt-2">
-              <p className="font-medium text-slate-700">Para finalizar tu inscripción, el sistema te pedirá el <span className="font-bold text-green-700">Número de Comprobante</span> de Cubo.</p>
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-left text-xs space-y-2">
-                <p className="font-bold text-slate-900">¿Dónde encontrarlo?</p>
-                <ul className="list-disc pl-4 space-y-1 text-slate-600">
-                  <li>En la pantalla de <span className="font-bold">"Pago Exitoso"</span> al finalizar la transacción.</li>
-                  <li>En el <span className="font-bold">correo electrónico</span> de confirmación que te enviará Cubo.</li>
-                </ul>
-              </div>
-              <p className="text-xs text-muted-foreground italic">Por favor, cópialo antes de cerrar la pestaña de pago para pegarlo en esta página.</p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={handleOpenCubo} className="w-full h-12 bg-green-600 hover:bg-green-700 font-bold uppercase tracking-wider">
-              Entendido, ir a pagar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+                      {/* Adjuntar Comprobante */}
+                      <div className="space-y-1.5">
+                        <Label className="text-[11px] font-bold text-slate-700">
+                          Captura del Comprobante (Opcional)
+                        </Label>
+                        <div className="relative">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            id="voucherFileCubo"
+                            onChange={handleFileChange}
+                            className="hidden"
+                          />
+                          {voucherBase64 ? (
+                            <div className="flex items-center justify-between border border-green-200 bg-white p-2 rounded-lg text-xs">
+                              <span className="text-green-700 font-semibold truncate max-w-[150px]">
+                                📸 Comprobante listo
+                              </span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => {
+                                  setVoucherBase64(null);
+                                  setVoucherMime(null);
+                                }}
+                                className="h-6 text-[10px] text-red-500 hover:text-red-700 p-1"
+                              >
+                                Quitar
+                              </Button>
+                            </div>
+                          ) : (
+                            <label
+                              htmlFor="voucherFileCubo"
+                              className="flex items-center justify-center border border-dashed border-slate-300 bg-white hover:bg-slate-50 cursor-pointer p-2 rounded-lg text-xs text-slate-500 font-medium h-10 transition-all gap-1.5"
+                            >
+                              <span>Upload</span> Subir Comprobante
+                            </label>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-      {/* ── Modal PayPal ─────────────────────────────────────────── */}
-      {showPaypalModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.55)', backdropFilter:'blur(4px)'}}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative animate-in fade-in zoom-in-95 duration-200">
-            {/* Cerrar */}
-            <button onClick={() => { setShowPaypalModal(false); setPaypalError(''); setPaypalLoading(false); }}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 text-xl font-bold leading-none">&times;</button>
 
-            {/* Header */}
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Pago de Inscripción</p>
-            <h2 className="text-xl font-black text-slate-900 mb-4">{watchPlan || 'Curso de Manejo'}</h2>
+              </section>
 
-            {/* Precio */}
-            <div className="flex justify-between items-center bg-slate-50 rounded-xl px-4 py-3 mb-5">
-              <span className="text-sm text-slate-600 font-medium">Total del curso</span>
-              <span className="text-xl font-black text-slate-900">
-                ${watchPlan && prices?.auto?.[watchPlan] ? prices.auto[watchPlan].toFixed(2) : '0.00'} <span className="text-xs font-bold text-slate-400">USD</span>
-              </span>
-            </div>
-
-            {/* PayPal badge */}
-            <div className="flex items-center gap-3 border border-slate-200 rounded-xl px-4 py-3 mb-5">
-              <div className="w-8 h-8 rounded-lg bg-[#003087] flex items-center justify-center flex-shrink-0">
-                <Globe className="h-4 w-4 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-black text-[#003087]">PayPal</p>
-                <p className="text-[10px] text-slate-400">Serás redirigido a PayPal para completar el pago</p>
-              </div>
-            </div>
-
-            {/* Email */}
-            <div className="mb-4 space-y-1">
-              <label className="text-[10px] font-bold uppercase text-slate-500">Tu email de contacto <span className="text-red-500">*</span></label>
-              <input
-                type="email"
-                placeholder="correo@tuempresa.com"
-                value={paypalEmail}
-                onChange={e => { setPaypalEmail(e.target.value); setPaypalError(''); }}
-                className="w-full h-11 rounded-xl border border-slate-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#003087]/30 bg-slate-50"
-              />
-              <p className="text-[10px] text-slate-400">Lo usamos para enviarte el recibo de tu inscripción.</p>
-            </div>
-
-            {paypalError && (
-              <div className="mb-3 bg-red-50 border border-red-200 rounded-lg p-2 text-xs text-red-700 font-medium">{paypalError}</div>
-            )}
-
-            {/* Botón */}
-            <button
-              onClick={handlePayPal}
-              disabled={paypalLoading}
-              className="w-full h-12 rounded-xl bg-[#003087] hover:bg-[#002060] text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg transition disabled:opacity-70"
-            >
-              {paypalLoading
-                ? <><Loader2 className="h-4 w-4 animate-spin" /> Conectando...</>
-                : <><Globe className="h-4 w-4" /> Continuar con PayPal →</>
-              }
-            </button>
-
-            <div className="mt-3 flex items-center justify-center gap-4 text-[10px] text-slate-400 font-medium">
-              <span>🔒 Pago 100% seguro</span>
-              <span>✓ Cancela cuando quieras</span>
             </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
-export default function PublicEnrollmentPage() {
-  return (
-    <Suspense fallback={<div className="flex min-h-screen items-center justify-center"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>}>
-      <EnrollmentContent />
-    </Suspense>
+          {/* COLUMNA DERECHA: RESUMEN FIJO Y DINÁMICO */}
+          <div className="w-full lg:w-[32%] bg-slate-900 lg:min-h-screen p-6 lg:p-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+            
+            <div className="sticky top-8 z-10 space-y-6">
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl">
+                <h3 className="text-white font-bold text-lg mb-4">Tu Resumen</h3>
+                
+                <div className="space-y-4">
+                  {/* Vehículo */}
+                  <div className="flex justify-between items-center pb-3 border-b border-white/10">
+                    <div>
+                      <p className="text-slate-400 text-xs font-medium">Vehículo</p>
+                      <p className="text-white font-semibold text-sm">{currentValues.vehicleTransmission}</p>
+                    </div>
+                    <Car className="text-blue-400 w-4 h-4" />
+                  </div>
+
+                  {/* Plan */}
+                  <div className="flex justify-between items-center pb-3 border-b border-white/10">
+                    <div>
+                      <p className="text-slate-400 text-xs font-medium">Plan Seleccionado</p>
+                      {selectedPlan ? (
+                        <p className="text-white font-semibold text-sm">{selectedPlan.title} ({selectedPlan.hoursText})</p>
+                      ) : (
+                        <p className="text-slate-500 italic text-xs">Pendiente...</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Teoría */}
+                  <div className="flex justify-between items-center pb-3 border-b border-white/10">
+                    <div>
+                      <p className="text-slate-400 text-xs font-medium">Teoría</p>
+                      {!currentValues.coursePlan?.includes('Reforzamiento') && !currentValues.coursePlan?.includes('manejar') ? (
+                        currentValues.theoreticalClassSchedule ? (
+                          <p className="text-white font-semibold text-xs mt-0.5">{currentValues.theoreticalClassSchedule}</p>
+                        ) : (
+                          <p className="text-slate-500 italic text-xs">Pendiente...</p>
+                        )
+                      ) : (
+                        <p className="text-white font-semibold text-xs mt-0.5">No aplica</p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Práctica */}
+                  <div className="flex justify-between items-center pb-3 border-b border-white/10">
+                    <div>
+                      <p className="text-slate-400 text-xs font-medium">Clases Prácticas ({selectedPlan ? `${selectedPlan.classCount} Clases` : 'Pref.'})</p>
+                      {fields.length > 0 ? (
+                        <p className="text-white font-semibold text-xs mt-0.5">{fields.length} Sesiones Agendadas</p>
+                      ) : (
+                        <p className="text-slate-500 italic text-xs">Pendiente...</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Total */}
+                  <div className="pt-3">
+                    <p className="text-slate-400 text-xs font-medium mb-0.5">Total a pagar</p>
+                    <p className="text-white font-black text-3xl">
+                      ${selectedPlan?.price || '0'}<span className="text-sm text-slate-400 font-normal">.00</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-8">
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting || !currentValues.coursePlan || (!currentValues.coursePlan?.includes('Reforzamiento') && !currentValues.coursePlan?.includes('manejar') && filteredTheoreticalSchedules.length > 0 && !currentValues.theoreticalClassSchedule)}
+                    className="w-full h-12 text-sm font-bold rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-lg transition-all active:scale-[0.98] disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'Procesando...' : 'Completar Inscripción'}
+                    {!isSubmitting && <ChevronRight className="w-4 h-4 ml-2" />}
+                  </Button>
+                  <p className="text-center text-slate-400 text-xs mt-3 flex items-center justify-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5" /> Genera Contrato en Tiempo Real
+                  </p>
+                </div>
+              </div>
+
+              {/* Trust Badge */}
+              <div className="bg-blue-950/40 border border-blue-900/40 rounded-xl p-4 backdrop-blur-sm flex items-start gap-3">
+                <Info className="text-blue-400 w-4.5 h-4.5 shrink-0 mt-0.5" />
+                <p className="text-xs text-blue-200 leading-normal">
+                  Al completar tu inscripción, tu cupo quedará reservado inmediatamente en nuestro sistema y se asignará tu Folio Oficial.
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </form>
+      </Form>
+    </div>
   );
 }

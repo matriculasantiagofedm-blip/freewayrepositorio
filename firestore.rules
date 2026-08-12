@@ -7,37 +7,42 @@ service cloud.firestore {
     }
 
     match /contracts/{id} {
-      allow read, write: if isSignedIn();
+      allow read, create: if true;
+      allow update, delete: if isSignedIn();
+    }
+    
+    match /manual_schedules/{id} {
+      allow read, write: if true;
     }
     
     match /cancellation_payments/{id} {
-      allow read, write: if isSignedIn();
+      allow read, write: if true;
     }
     
     match /update_payments/{id} {
-      allow read, write: if isSignedIn();
+      allow read, write: if true;
     }
     
     match /book_sale_payments/{id} {
-      allow read, write: if isSignedIn();
+      allow read, write: if true;
     }
     
     match /counters/{id} {
-      allow read, write: if isSignedIn();
+      allow read, write: if true;
     }
 
     match /users/{userId} {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow write: if isSignedIn() && request.auth.uid == userId;
     }
 
     match /clients/{clientId} {
-      allow read, write: if isSignedIn();
+      allow read, write: if true;
     }
 
     match /users_crm/{userId} {
       allow read: if true;
-      allow write: if isSignedIn();
+      allow write: if true;
     }
 
     match /leads/{leadId} {
@@ -47,18 +52,16 @@ service cloud.firestore {
       }
     }
 
-    match /settings/{id} {
-      allow read: if true;
-      allow write: if isSignedIn();
+    match /surveys/{surveyId} {
+      allow read, write: if true;
     }
 
-    match /expenses/{id} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn() || request.resource.data.source == 'TimeWise Integration';
+    match /settings/{document=**} {
+      allow read, write: if true;
     }
 
-    match /{path=**} {
-      allow read, write: if isSignedIn();
+    match /{document=**} {
+      allow read, write: if true;
     }
   }
 }

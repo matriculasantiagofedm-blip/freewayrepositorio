@@ -20,7 +20,8 @@ import {
   Timestamp,
   query,
   where,
-  updateDoc
+  updateDoc,
+  onSnapshot
 } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
@@ -202,6 +203,38 @@ export function SoloPracticaContractForm({ contract, initialData }: { contract?:
     control: form.control,
     name: "practicalClassSchedules"
   });
+
+  const [dynamicFleet, setDynamicFleet] = useState<{ instructors: string[]; vehicles: any[] }>({
+    instructors: INSTRUCTORS,
+    vehicles: []
+  });
+
+  useEffect(() => {
+    if (!db) return;
+    const unsub = onSnapshot(doc(db, 'settings', 'fleet'), snap => {
+      if (snap.exists()) {
+        const data = snap.data();
+        const instList = (data.instructors || []).map((i: any) => typeof i === 'string' ? i : i.name);
+        const vehList = data.vehicles || [];
+        setDynamicFleet({
+          instructors: instList.length > 0 ? instList : INSTRUCTORS,
+          vehicles: vehList
+        });
+      }
+    });
+    return () => unsub();
+  }, [db]);
+
+  const watchTransmission = form.watch('vehicleTransmission');
+
+  const vehiclesForTransmission = useMemo(() => {
+    if (dynamicFleet.vehicles.length === 0) {
+      return ALL_VEHICLES;
+    }
+    return dynamicFleet.vehicles
+      .filter((v: any) => v.transmission === watchTransmission && v.status !== 'Mantenimiento')
+      .map((v: any) => v.name);
+  }, [dynamicFleet.vehicles, watchTransmission]);
 
   const availabilityData = useMemo(() => {
     const vehicleOccupancy: Record<string, string[]> = {};
@@ -630,7 +663,7 @@ export function SoloPracticaContractForm({ contract, initialData }: { contract?:
                             <FormItem>
                               <Select onValueChange={f.onChange} value={f.value}>
                                 <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
-                                <SelectContent>{ALL_VEHICLES.map(v => <SelectItem key={v} value={v} className="text-[10px]">{v}</SelectItem>)}</SelectContent>
+                                <SelectContent>{vehiclesForTransmission.map(v => <SelectItem key={v} value={v} className="text-[10px]">{v}</SelectItem>)}</SelectContent>
                               </Select>
                             </FormItem>
                           )} />
@@ -638,7 +671,7 @@ export function SoloPracticaContractForm({ contract, initialData }: { contract?:
                             <FormItem>
                               <Select onValueChange={f.onChange} value={f.value}>
                                 <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
-                                <SelectContent>{INSTRUCTORS.map(i => <SelectItem key={i} value={i} className="text-[10px]">{i}</SelectItem>)}</SelectContent>
+                                <SelectContent>{dynamicFleet.instructors.map(i => <SelectItem key={i} value={i} className="text-[10px]">{i}</SelectItem>)}</SelectContent>
                               </Select>
                             </FormItem>
                           )} />

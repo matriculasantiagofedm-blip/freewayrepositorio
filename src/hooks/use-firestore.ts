@@ -9,6 +9,7 @@ import {
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { useUser } from '@/firebase/provider';
 
 export type WithId<T> = T & { id: string };
 
@@ -19,6 +20,10 @@ export function useDoc<T>(ref: DocumentReference<DocumentData> | null | undefine
   const [data, setData] = useState<WithId<T> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+
+  // Re-suscribir cuando cambie el usuario auth (el listener muere en permission-denied)
+  const { user } = useUser();
+  const userUid = user?.uid ?? null;
 
   useEffect(() => {
     if (!ref) {
@@ -55,7 +60,8 @@ export function useDoc<T>(ref: DocumentReference<DocumentData> | null | undefine
     );
 
     return () => unsubscribe();
-  }, [ref]);
+    // userUid: cuando el usuario se autentica, re-suscribir con token válido
+  }, [ref, userUid]);
 
   return { data, isLoading, error };
 }
@@ -67,6 +73,10 @@ export function useCollection<T>(q: (Query<DocumentData> | CollectionReference<D
   const [data, setData] = useState<WithId<T>[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+
+  // Re-suscribir cuando cambie el usuario auth (el listener muere en permission-denied)
+  const { user } = useUser();
+  const userUid = user?.uid ?? null;
 
   useEffect(() => {
     if (!q) {
@@ -115,7 +125,8 @@ export function useCollection<T>(q: (Query<DocumentData> | CollectionReference<D
     );
 
     return () => unsubscribe();
-  }, [q]);
+    // userUid: cuando el usuario se autentica, re-suscribir con token válido
+  }, [q, userUid]);
 
   return { data, isLoading, error };
 }

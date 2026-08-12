@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { isPanamaHoliday } from '@/lib/holidays';
@@ -53,7 +54,7 @@ export function LiveAvailabilityWidget() {
   const [open, setOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const isAllowedPath = pathname?.includes('/contracts') || pathname?.includes('/informes/vehicle-schedule') || pathname?.includes('/manual-schedule') || false;
+  const isAllowedPath = pathname?.includes('/contracts') || pathname?.includes('/informes/vehicle-schedule') || pathname?.includes('/manual-schedule') || pathname?.includes('/enroll') || pathname === '/' || false;
 
   useEffect(() => {
     const handleOpen = () => setOpen(true);
@@ -73,8 +74,26 @@ export function LiveAvailabilityWidget() {
 
   const shouldFetch = isAllowedPath || open;
 
-  const activeContractsQuery = useMemoQuery(() => (db && user && shouldFetch) ? query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed'])) : null, [db, user, shouldFetch]);
-  const manualEntriesQuery = useMemoQuery(() => (db && user && shouldFetch) ? query(collection(db, 'manual_schedules')) : null, [db, user, shouldFetch]);
+  const [apiData, setApiData] = useState<{ globalCounts: Record<string, number>; vehicleOccupancy: Record<string, string[]> } | null>(null);
+
+  useEffect(() => {
+    if (shouldFetch) {
+      fetch('/api/availability')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setApiData({
+              globalCounts: data.globalCounts || {},
+              vehicleOccupancy: data.vehicleOccupancy || {}
+            });
+          }
+        })
+        .catch(console.error);
+    }
+  }, [shouldFetch]);
+
+  const activeContractsQuery = useMemoQuery(() => (db && shouldFetch) ? query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed'])) : null, [db, shouldFetch]);
+  const manualEntriesQuery = useMemoQuery(() => (db && shouldFetch) ? query(collection(db, 'manual_schedules')) : null, [db, shouldFetch]);
   
   const { data: allContracts } = useCollection<any>(activeContractsQuery);
   const { data: allManualEntries } = useCollection<any>(manualEntriesQuery);
@@ -84,6 +103,11 @@ export function LiveAvailabilityWidget() {
     const globalCounts: Record<string, number> = {};
     
     if (!shouldFetch) return { vehicleOccupancy, globalCounts };
+
+    if (apiData) {
+      Object.assign(globalCounts, apiData.globalCounts);
+      Object.assign(vehicleOccupancy, apiData.vehicleOccupancy);
+    }
 
     const processEntry = (date: any, slotString: string, vehicle: string, name: string) => {
         if (!date || !slotString || !vehicle) return;
@@ -119,7 +143,7 @@ export function LiveAvailabilityWidget() {
     });
 
     return { vehicleOccupancy, globalCounts };
-  }, [allContracts, allManualEntries, shouldFetch]);
+  }, [allContracts, allManualEntries, shouldFetch, apiData]);
 
   // Generar próximos días filtrando domingos y aplicando filtro de días
   const futureDays = useMemo(() => {
@@ -160,9 +184,10 @@ export function LiveAvailabilityWidget() {
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-[7xl] w-[95vw] h-[90vh] md:h-[85vh] p-0 overflow-hidden bg-slate-50/95 flex flex-col rounded-[2rem] shadow-2xl border border-white/40 backdrop-blur-xl">
-         
-         {/* HEADER PREMIUM */}
+        <DialogContent className="max-w-[7xl] w-[95vw] h-[90vh] md:h-[85vh] p-0 overflow-hidden bg-slate-50/95 flex flex-col rounded-[2rem] shadow-2xl border border-white/40 backdrop-blur-xl z-[200]">
+          <VisuallyHidden>
+            <DialogTitle>Radar de Disponibilidad</DialogTitle>
+          </VisuallyHidden>
          <div className="px-6 md:px-10 py-6 bg-white/70 backdrop-blur-2xl border-b border-slate-200/50 flex flex-col md:flex-row items-center justify-between sticky top-0 z-50">
             <div className="flex items-center gap-5">
                <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-4 rounded-3xl shadow-lg shadow-indigo-500/30 ring-1 ring-white/50">

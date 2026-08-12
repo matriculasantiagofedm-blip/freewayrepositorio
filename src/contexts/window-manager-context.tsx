@@ -33,12 +33,17 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
   const idCounter = useRef(0);
 
   const openWindow = useCallback((url: string, title: string, icon?: string) => {
-    // Append ?embed=1 so the layout hides the full app shell inside the iframe
-    const embedUrl = url.includes('?') ? `${url}&embed=1` : `${url}?embed=1`;
+    // Build embed URL with a unique timestamp so every window open bypasses
+    // ALL layers of caching (browser, CDN, service worker) unconditionally.
+    const sep = url.includes('?') ? '&' : '?';
+    const embedUrl = `${url}${sep}embed=1&_ts=${Date.now()}`;
 
-    // Si ya existe una ventana con esa URL, solo la enfoca/restaura
+    // Base path used for window-reuse check (ignore query params)
+    const basePath = url.split('?')[0];
+
+    // Si ya existe una ventana con esa ruta base, solo la enfoca/restaura
     setWindows(prev => {
-      const existing = prev.find(w => w.url === embedUrl);
+      const existing = prev.find(w => w.url.split('?')[0] === basePath);
       if (existing) {
         zCounter++;
         return prev.map(w =>

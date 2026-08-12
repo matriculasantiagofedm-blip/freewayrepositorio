@@ -6,7 +6,7 @@
  * Soporta descarga de PDF en tiempo real e integración de combo con Auto.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -21,7 +21,8 @@ import {
   Timestamp,
   updateDoc,
   query,
-  where
+  where,
+  onSnapshot
 } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
@@ -58,12 +59,14 @@ import {
   BookOpen,
   Download,
   Car,
-  Plus
+  Plus,
+  CalendarSearch
 } from 'lucide-react';
 import { cn, toDate } from '@/lib/utils';
 import { useDb, useUser } from '@/components/firebase-provider';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
+import { isPanamaHoliday } from '@/lib/holidays';
 import type { Contract } from '@/lib/types';
 import { AutoMotoContractTemplate } from '@/components/auto-moto-contract';
 import { CameraCapture } from '@/components/camera-capture';
@@ -98,6 +101,22 @@ const TIME_OPTIONS = [
 const VEHICLES_MOTO = ['Moto Roja', 'Moto Negra'];
 const VEHICLES_AUTO = ['Picanto Blanco', 'Picanto Bronce', 'Skoda Automatico', 'Spark', 'Hyundai Manual', 'Skoda Manual', 'Pick Up'];
 const INSTRUCTORS = ['Emmanuel Camargo', 'Adrian Gordon', 'Roberto Brown', 'Marco Franco'];
+
+const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
+    '08:00am a 10:00am': '8am-10am',
+    '10:00am a 12:00pm': '10am-12pm',
+    '01:00pm a 03:00pm': '1pm-3pm',
+    '03:00pm a 05:00pm': '3pm-5pm',
+    '10 minutos': '10min',
+};
+
+const getGlobalCapacity = (date: Date, slotId: string) => {
+    const day = date.getDay();
+    if (day === 0) return 0;                                    // Domingo cerrado
+    if (day >= 2 && day <= 5 && slotId === '8am-10am') return 3; // Mar-Vie 8am = Teoría
+    if (day === 6 && slotId === '3pm-5pm') return 3;           // Sáb 3pm = Teoría
+    return 4;                                                   // Normal: 4 instructores
+};
 
 const motoContractSchema = z.object({
   clientName: z.string().min(3, 'El nombre es requerido'),
@@ -210,11 +229,89 @@ export function MotoContractForm({ contract, initialData }: { contract?: Contrac
     name: "autoPracticalClassSchedules" 
   });
 
+  const [dynamicFleet, setDynamicFleet] = useState<{ instructors: string[]; vehicles: any[] }>({
+    instructors: INSTRUCTORS,
+    vehicles: []
+  });
+
+  useEffect(() => {
+    if (!db) return;
+    const unsub = onSnapshot(doc(db, 'settings', 'fleet'), snap => {
+      if (snap.exists()) {
+        const data = snap.data();
+        const instList = (data.instructors || []).map((i: any) => typeof i === 'string' ? i : i.name);
+        const vehList = data.vehicles || [];
+        setDynamicFleet({
+          instructors: instList.length > 0 ? instList : INSTRUCTORS,
+          vehicles: vehList
+        });
+      }
+    });
+    return () => unsub();
+  }, [db]);
+
+  const watchTransmission = 'Automático'; // para auto clases en Combo
+
+  const vehiclesForTransmission = useMemo(() => {
+    if (dynamicFleet.vehicles.length === 0) {
+      return VEHICLES_AUTO;
+    }
+    return dynamicFleet.vehicles
+      .filter((v: any) => v.transmission === watchTransmission && v.status !== 'Mantenimiento')
+      .map((v: any) => v.name);
+  }, [dynamicFleet.vehicles, watchTransmission]);
+
+  const vehiclesMoto = useMemo(() => {
+    if (dynamicFleet.vehicles.length === 0) {
+      return VEHICLES_MOTO;
+    }
+    return dynamicFleet.vehicles
+      .filter((v: any) => v.transmission === 'Moto' && v.status !== 'Mantenimiento')
+      .map((v: any) => v.name);
+  }, [dynamicFleet.vehicles]);
+
   const watchPlan = form.watch('coursePlan');
   const watchAdditional = form.watch('additionalService');
   const watchTheorySchedule = form.watch('theoreticalClassSchedule');
   const theoryDates = form.watch('theoreticalClassDates') || [];
   const currentBalance = (Number(form.watch('courseValue')) || 0) - (Number(form.watch('downPayment')) || 0);
+  const watchAll = form.watch();
+
+  const activeContractsQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'contracts'), where('status', 'in', ['active', 'completed'])) : null, [db, user]);
+  const manualEntriesQuery = useMemoQuery(() => (db && user) ? query(collection(db, 'manual_schedules')) : null, [db, user]);
+  const { data: allContracts } = useCollection<any>(activeContractsQuery);
+  const { data: allManualEntries } = useCollection<any>(manualEntriesQuery);
+
+  const availabilityData = useMemo(() => {
+    const vehicleOccupancy: Record<string, string[]> = {};
+    const globalCounts: Record<string, number> = {};
+    const processEntry = (date: any, slotString: string, vehicle: string, name: string) => {
+        if (!date || !slotString || !vehicle) return;
+        const dObj = toDate(date);
+        if (isNaN(dObj.getTime())) return;
+        const dateKey = format(dObj, 'yyyy-MM-dd');
+        const slotId = TIME_STRING_TO_SLOT_MAP[slotString] || slotString;
+        const vKey = `${dateKey}|${slotId}|${vehicle}`;
+        if (!vehicleOccupancy[vKey]) vehicleOccupancy[vKey] = [];
+        if (!vehicleOccupancy[vKey].includes(name)) vehicleOccupancy[vKey].push(name);
+    };
+    allManualEntries?.forEach(entry => {
+        if (entry.classType === 'Teórica') return;
+        processEntry(entry.date, entry.timeSlot, entry.vehicle, entry.studentName);
+    });
+    allContracts?.forEach(c => {
+        if (isEdit && contract && c.id === contract.id) return;
+        if (c.autoMotoDetails?.practicalClassSchedules) c.autoMotoDetails.practicalClassSchedules.forEach((s: any) => processEntry(s.date, s.time, s.vehicle, c.clientName));
+        if (c.autoMotoDetails?.motoPracticalClassSchedules) c.autoMotoDetails.motoPracticalClassSchedules.forEach((s: any) => processEntry(s.date, s.time, s.vehicle, c.clientName));
+        if (c.deluxeDetails?.classSchedules) c.deluxeDetails.classSchedules.forEach((s: any) => processEntry(s.date, s.time, s.vehicle, c.clientName));
+    });
+    Object.keys(vehicleOccupancy).forEach(vKey => {
+        const [dateKey, slotId] = vKey.split('|');
+        const sKey = `${dateKey}|${slotId}`;
+        globalCounts[sKey] = (globalCounts[sKey] || 0) + 1;
+    });
+    return { vehicleOccupancy, globalCounts };
+  }, [allContracts, allManualEntries, isEdit, contract?.id]);
 
   useEffect(() => {
     if (watchTheorySchedule && !isEdit) {
@@ -366,19 +463,19 @@ export function MotoContractForm({ contract, initialData }: { contract?: Contrac
     } finally { setIsSaving(false); }
   };
 
-  const watchAll = form.watch();
+  const watchAll2 = form.watch();
   const dummyContractForPdf: any = {
-    clientName: watchAll.clientName,
-    clientEmail: watchAll.clientEmail,
+    clientName: watchAll2.clientName,
+    clientEmail: watchAll2.clientEmail,
     type: 'Curso Moto',
     folioNumber: contract?.folioNumber || 0,
     createdAt: contract?.createdAt || new Date(),
     createdBy: role || 'Sistema',
     autoMotoDetails: {
-        ...watchAll,
+        ...watchAll2,
         balance: currentBalance,
-        motoPracticalClassSchedules: watchAll.practicalClassSchedules,
-        practicalClassSchedules: watchAll.autoPracticalClassSchedules
+        motoPracticalClassSchedules: watchAll2.practicalClassSchedules,
+        practicalClassSchedules: watchAll2.autoPracticalClassSchedules,
     }
   };
 
@@ -679,57 +776,100 @@ export function MotoContractForm({ contract, initialData }: { contract?: Contrac
                 <p className="text-center text-muted-foreground italic py-4">Seleccione un plan de curso para programar.</p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {practicalFields.map((field, index) => (
-                    <div key={field.id} className="p-4 border rounded-xl space-y-3 bg-white border-slate-200">
-                      <div className="flex gap-4">
-                        <FormField control={form.control} name={`practicalClassSchedules.${index}.date`} render={({ field: f }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel className="text-[10px] font-black uppercase text-slate-500">Sesión Moto {index + 1}</FormLabel>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : 'Fecha'}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0">
-                                <Calendar 
-                                  mode="single" 
-                                  selected={f.value ? toDate(f.value) : undefined} 
-                                  onSelect={(date) => { if (date) f.onChange(date); }} 
-                                  initialFocus 
-                                />
-                              </PopoverContent>
-                            </Popover>
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name={`practicalClassSchedules.${index}.time`} render={({ field: f }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel className="text-[10px] font-black uppercase text-slate-500">Horario</FormLabel>
-                            <Select onValueChange={f.onChange} value={f.value}>
-                              <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
-                              <SelectContent>{TIME_OPTIONS.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent>
-                            </Select>
-                          </FormItem>
-                        )} />
+                  {practicalFields.map((field, index) => {
+                    const watchDate = watchAll2.practicalClassSchedules?.[index]?.date;
+                    const watchTime = watchAll2.practicalClassSchedules?.[index]?.time;
+                    const dObj = toDate(watchDate);
+                    const isValidDate = !isNaN(dObj.getTime());
+                    const holiday = isValidDate ? isPanamaHoliday(dObj) : null;
+                    const isSunday = isValidDate && dObj.getDay() === 0;
+                    const safeTime = String(watchTime || '');
+                    const slotId = TIME_STRING_TO_SLOT_MAP[safeTime] || safeTime;
+                    const dateKey = isValidDate ? format(dObj, 'yyyy-MM-dd') : '';
+                    const occupancy = availabilityData?.globalCounts?.[`${dateKey}|${slotId}`] || 0;
+                    const capacity = isValidDate ? getGlobalCapacity(dObj, slotId) : 4;
+                    const isFull = occupancy >= capacity;
+                    const slotKey = dateKey && slotId ? `${dateKey}|${slotId}` : '';
+                    const isDuplicate = slotKey !== '' && (watchAll2.practicalClassSchedules || []).filter((s: any, i: number) => {
+                      if (i === index || !s?.date || !s?.time) return false;
+                      const d = toDate(s.date);
+                      const sk = `${format(d, 'yyyy-MM-dd')}|${TIME_STRING_TO_SLOT_MAP[s.time] || s.time}`;
+                      return sk === slotKey;
+                    }).length > 0;
+
+                    return (
+                      <div key={field.id} className={cn(
+                        "p-4 border rounded-xl space-y-3 bg-white relative",
+                        (isFull || holiday || isSunday || isDuplicate) ? "border-amber-500 bg-amber-50/10" : "border-slate-200"
+                      )}>
+                        <div className="absolute -top-2 right-3 flex gap-1 z-10">
+                          {isSunday && <div className="bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Domingo</div>}
+                          {holiday && !isSunday && <div className="bg-orange-500 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Feriado</div>}
+                          {isFull && !holiday && !isSunday && <div className="bg-amber-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Lleno</div>}
+                          {isDuplicate && <div className="bg-red-500 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Duplicado</div>}
+                        </div>
+                        <div className="flex gap-4">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <FormLabel className="text-[10px] font-black uppercase text-slate-500">Sesión Moto {index + 1}</FormLabel>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-[10px] px-2 text-orange-600 hover:text-orange-800 hover:bg-orange-50"
+                                onClick={() => {
+                                  // @ts-ignore
+                                  window.__ACTIVE_SLOT_INDEX__ = index;
+                                  window.dispatchEvent(new Event('openAvailabilityWidget'));
+                                }}
+                              >
+                                <CalendarSearch className="h-3 w-3 mr-1" /> Libreta
+                              </Button>
+                            </div>
+                            <FormField control={form.control} name={`practicalClassSchedules.${index}.date`} render={({ field: f }) => (
+                              <FormItem>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : 'Fecha'}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0">
+                                    <Calendar mode="single" selected={f.value ? toDate(f.value) : undefined} onSelect={(date) => { if (date) f.onChange(date); }} initialFocus />
+                                  </PopoverContent>
+                                </Popover>
+                              </FormItem>
+                            )} />
+                          </div>
+                          <FormField control={form.control} name={`practicalClassSchedules.${index}.time`} render={({ field: f }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel className="text-[10px] font-black uppercase text-slate-500 pt-1 block">Horario</FormLabel>
+                              <Select onValueChange={f.onChange} value={f.value}>
+                                <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
+                                <SelectContent>{TIME_OPTIONS.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </FormItem>
+                          )} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <FormField control={form.control} name={`practicalClassSchedules.${index}.vehicle`} render={({ field: f }) => (
+                            <FormItem>
+                              <Select onValueChange={f.onChange} value={f.value}>
+                                <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
+                                <SelectContent>{vehiclesMoto.map(v => <SelectItem key={v} value={v} className="text-[10px]">{v}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </FormItem>
+                          )} />
+                          <FormField control={form.control} name={`practicalClassSchedules.${index}.instructor`} render={({ field: f }) => (
+                            <FormItem>
+                              <Select onValueChange={f.onChange} value={f.value}>
+                                <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
+                                <SelectContent>{dynamicFleet.instructors.map(i => <SelectItem key={i} value={i} className="text-[10px]">{i}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </FormItem>
+                          )} />
+                        </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <FormField control={form.control} name={`practicalClassSchedules.${index}.vehicle`} render={({ field: f }) => (
-                          <FormItem>
-                            <Select onValueChange={f.onChange} value={f.value}>
-                              <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
-                              <SelectContent>{VEHICLES_MOTO.map(v => <SelectItem key={v} value={v} className="text-[10px]">{v}</SelectItem>)}</SelectContent>
-                            </Select>
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name={`practicalClassSchedules.${index}.instructor`} render={({ field: f }) => (
-                          <FormItem>
-                            <Select onValueChange={f.onChange} value={f.value}>
-                              <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
-                              <SelectContent>{INSTRUCTORS.map(i => <SelectItem key={i} value={i} className="text-[10px]">{i}</SelectItem>)}</SelectContent>
-                            </Select>
-                          </FormItem>
-                        )} />
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
@@ -746,52 +886,100 @@ export function MotoContractForm({ contract, initialData }: { contract?: Contrac
               </CardHeader>
               <CardContent className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {autoFields.map((field, index) => (
-                    <div key={field.id} className="p-4 border rounded-xl space-y-3 bg-white border-slate-200">
-                      <div className="flex gap-4">
-                        <FormField control={form.control} name={`autoPracticalClassSchedules.${index}.date`} render={({ field: f }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel className="text-[10px] font-black uppercase text-slate-500">Sesión Auto {index + 1}</FormLabel>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : 'Fecha'}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0">
-                                <Calendar mode="single" selected={f.value ? toDate(f.value) : undefined} onSelect={(date) => { if (date) f.onChange(date); }} initialFocus />
-                              </PopoverContent>
-                            </Popover>
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name={`autoPracticalClassSchedules.${index}.time`} render={({ field: f }) => (
-                          <FormItem className="flex-1">
-                            <FormLabel className="text-[10px] font-black uppercase text-slate-500">Horario</FormLabel>
-                            <Select onValueChange={f.onChange} value={f.value}>
-                              <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
-                              <SelectContent>{TIME_OPTIONS.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent>
-                            </Select>
-                          </FormItem>
-                        )} />
+                  {autoFields.map((field, index) => {
+                    const watchAutoDate = watchAll2.autoPracticalClassSchedules?.[index]?.date;
+                    const watchAutoTime = watchAll2.autoPracticalClassSchedules?.[index]?.time;
+                    const dObjAuto = toDate(watchAutoDate);
+                    const isValidAutoDate = !isNaN(dObjAuto.getTime());
+                    const holidayAuto = isValidAutoDate ? isPanamaHoliday(dObjAuto) : null;
+                    const isSundayAuto = isValidAutoDate && dObjAuto.getDay() === 0;
+                    const safeAutoTime = String(watchAutoTime || '');
+                    const autoSlotId = TIME_STRING_TO_SLOT_MAP[safeAutoTime] || safeAutoTime;
+                    const autoDateKey = isValidAutoDate ? format(dObjAuto, 'yyyy-MM-dd') : '';
+                    const autoOccupancy = availabilityData?.globalCounts?.[`${autoDateKey}|${autoSlotId}`] || 0;
+                    const autoCapacity = isValidAutoDate ? getGlobalCapacity(dObjAuto, autoSlotId) : 4;
+                    const isAutoFull = autoOccupancy >= autoCapacity;
+                    const autoSlotKey = autoDateKey && autoSlotId ? `${autoDateKey}|${autoSlotId}` : '';
+                    const isAutoDuplicate = autoSlotKey !== '' && (watchAll2.autoPracticalClassSchedules || []).filter((s: any, i: number) => {
+                      if (i === index || !s?.date || !s?.time) return false;
+                      const d = toDate(s.date);
+                      const sk = `${format(d, 'yyyy-MM-dd')}|${TIME_STRING_TO_SLOT_MAP[s.time] || s.time}`;
+                      return sk === autoSlotKey;
+                    }).length > 0;
+
+                    return (
+                      <div key={field.id} className={cn(
+                        "p-4 border rounded-xl space-y-3 bg-white relative",
+                        (isAutoFull || holidayAuto || isSundayAuto || isAutoDuplicate) ? "border-amber-500 bg-amber-50/10" : "border-slate-200"
+                      )}>
+                        <div className="absolute -top-2 right-3 flex gap-1 z-10">
+                          {isSundayAuto && <div className="bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Domingo</div>}
+                          {holidayAuto && !isSundayAuto && <div className="bg-orange-500 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Feriado</div>}
+                          {isAutoFull && !holidayAuto && !isSundayAuto && <div className="bg-amber-600 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Lleno</div>}
+                          {isAutoDuplicate && <div className="bg-red-500 text-white text-[8px] font-black px-2 py-0.5 rounded shadow-sm uppercase">Duplicado</div>}
+                        </div>
+                        <div className="flex gap-4">
+                          <div className="flex-1 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <FormLabel className="text-[10px] font-black uppercase text-slate-500">Sesión Auto {index + 1}</FormLabel>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-[10px] px-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                                onClick={() => {
+                                  // @ts-ignore
+                                  window.__ACTIVE_SLOT_INDEX__ = index;
+                                  window.dispatchEvent(new Event('openAvailabilityWidget'));
+                                }}
+                              >
+                                <CalendarSearch className="h-3 w-3 mr-1" /> Libreta
+                              </Button>
+                            </div>
+                            <FormField control={form.control} name={`autoPracticalClassSchedules.${index}.date`} render={({ field: f }) => (
+                              <FormItem>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : 'Fecha'}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0">
+                                    <Calendar mode="single" selected={f.value ? toDate(f.value) : undefined} onSelect={(date) => { if (date) f.onChange(date); }} initialFocus />
+                                  </PopoverContent>
+                                </Popover>
+                              </FormItem>
+                            )} />
+                          </div>
+                          <FormField control={form.control} name={`autoPracticalClassSchedules.${index}.time`} render={({ field: f }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel className="text-[10px] font-black uppercase text-slate-500 pt-1 block">Horario</FormLabel>
+                              <Select onValueChange={f.onChange} value={f.value}>
+                                <FormControl><SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger></FormControl>
+                                <SelectContent>{TIME_OPTIONS.map(t => <SelectItem key={t} value={t} className="text-xs">{t}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </FormItem>
+                          )} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <FormField control={form.control} name={`autoPracticalClassSchedules.${index}.vehicle`} render={({ field: f }) => (
+                            <FormItem>
+                              <Select onValueChange={f.onChange} value={f.value}>
+                                <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
+                                <SelectContent>{vehiclesForTransmission.map(v => <SelectItem key={v} value={v} className="text-[10px]">{v}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </FormItem>
+                          )} />
+                          <FormField control={form.control} name={`autoPracticalClassSchedules.${index}.instructor`} render={({ field: f }) => (
+                            <FormItem>
+                              <Select onValueChange={f.onChange} value={f.value}>
+                                <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
+                                <SelectContent>{dynamicFleet.instructors.map(i => <SelectItem key={i} value={i} className="text-[10px]">{i}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </FormItem>
+                          )} />
+                        </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <FormField control={form.control} name={`autoPracticalClassSchedules.${index}.vehicle`} render={({ field: f }) => (
-                          <FormItem>
-                            <Select onValueChange={f.onChange} value={f.value}>
-                              <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Vehículo" /></SelectTrigger></FormControl>
-                              <SelectContent>{VEHICLES_AUTO.map(v => <SelectItem key={v} value={v} className="text-[10px]">{v}</SelectItem>)}</SelectContent>
-                            </Select>
-                          </FormItem>
-                        )} />
-                        <FormField control={form.control} name={`autoPracticalClassSchedules.${index}.instructor`} render={({ field: f }) => (
-                          <FormItem>
-                            <Select onValueChange={f.onChange} value={f.value}>
-                              <FormControl><SelectTrigger className="h-8 text-[10px]"><SelectValue placeholder="Instructor" /></SelectTrigger></FormControl>
-                              <SelectContent>{INSTRUCTORS.map(i => <SelectItem key={i} value={i} className="text-[10px]">{i}</SelectItem>)}</SelectContent>
-                            </Select>
-                          </FormItem>
-                        )} />
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>

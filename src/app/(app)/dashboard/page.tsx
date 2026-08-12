@@ -5,12 +5,13 @@ import { useState, useEffect, useMemo } from 'react';
 import { useDb, useUser } from '@/firebase';
 import { useCurrentRole } from '@/hooks/use-current-role';
 import { useCollection } from '@/hooks/use-firestore';
-import { collection } from 'firebase/firestore';
+import { collection, doc, onSnapshot } from 'firebase/firestore';
 import Link from 'next/link';
 import { cn, toDate } from '@/lib/utils';
 import { useWindowManager } from '@/contexts/window-manager-context';
 import type { Contract } from '@/lib/types';
 import { 
+  User,
   UserPlus, 
   Receipt, 
   RefreshCw, 
@@ -41,6 +42,8 @@ import {
   Bot,
   Building2,
   Star,
+  Monitor,
+  GraduationCap,
   Unlock
 } from 'lucide-react';
 import { isToday, format } from 'date-fns';
@@ -70,8 +73,44 @@ export default function DashboardPage() {
   const { openWindow } = useWindowManager();
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState('comercial');
+  const [freewayStats, setFreewayStats] = useState({ simulador: 0, alumnos: 0 });
+  const [fleetData, setFleetData] = useState<{ instructors: any[], vehicles: any[] }>({
+    instructors: [
+      { id: 'inst-1', name: 'Julisse Alonso', phone: '6000-0000', vehicle: 'Picanto Blanco' },
+      { id: 'inst-2', name: 'Marco Franco', phone: '6000-0000', vehicle: 'Picanto Bronce' },
+      { id: 'inst-3', name: 'Emmanuel Camargo', phone: '6000-0000', vehicle: 'Spark' },
+      { id: 'inst-4', name: 'Adrian Gordon', phone: '6000-0000', vehicle: 'Moto / Auxiliar' }
+    ],
+    vehicles: [
+      { id: 'veh-1', name: 'Picanto Blanco', transmission: 'Automático', plate: 'PA-1234' },
+      { id: 'veh-2', name: 'Picanto Bronce', transmission: 'Automático', plate: 'PA-5678' },
+      { id: 'veh-3', name: 'Spark', transmission: 'Manual', plate: 'PA-9012' },
+      { id: 'veh-4', name: 'Moto Roja', transmission: 'Moto', plate: 'M-3456' }
+    ]
+  });
 
   useEffect(() => { setMounted(true); }, []);
+
+  // Escuchar en tiempo real los contadores y la flota/instructores
+  useEffect(() => {
+    if (!db) return;
+    const unsubSim = onSnapshot(doc(db, 'stats', 'simulador'), snap => {
+      if (snap.exists()) setFreewayStats(prev => ({ ...prev, simulador: snap.data().visitas ?? 0 }));
+    });
+    const unsubAlu = onSnapshot(doc(db, 'stats', 'alumnos'), snap => {
+      if (snap.exists()) setFreewayStats(prev => ({ ...prev, alumnos: snap.data().visitas ?? 0 }));
+    });
+    const unsubFleet = onSnapshot(doc(db, 'settings', 'fleet'), snap => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setFleetData({
+          instructors: data.instructors || [],
+          vehicles: data.vehicles || []
+        });
+      }
+    });
+    return () => { unsubSim(); unsubAlu(); unsubFleet(); };
+  }, [db]);
 
   const contractsQuery = useMemo(() => (db && user) ? collection(db, 'contracts') : null, [db, user]);
   const { data: allContracts, isLoading: isContractsLoading } = useCollection<Contract>(contractsQuery);
@@ -229,18 +268,93 @@ export default function DashboardPage() {
                                 <WorkflowItem icon={Library} label="Tienda" sub="Venta Libros" onClick={() => openWindow('/book-sales', 'Venta de Libros')} color="text-orange-600" />
                             </div>
                         ) : activeTab === 'operativo' ? (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 pt-2">
-                                <WorkflowItem icon={CalendarClock} label="Práctica" sub="Turnos" onClick={() => openWindow('/manual-schedule', 'Agenda Práctica')} color="text-amber-600" />
-                                <WorkflowItem icon={FileSignature} label="Certificados" sub="Físicos" onClick={() => openWindow('/certificates', 'Certificados')} color="text-purple-600" />
-                                <WorkflowItem icon={BookOpen} label="Exámenes" sub="Teoría" onClick={() => openWindow('/exams', 'Exámenes')} color="text-violet-600" />
-                                <WorkflowItem icon={TrendingUp} label="ATTT" sub="Evaluación" onClick={() => openWindow('/att-evaluations', 'Evaluaciones ATTT')} color="text-indigo-600" />
-                                <WorkflowItem icon={ShieldCheck} label="Seguridad" sub="Vehicular" onClick={() => openWindow('/mileage-log', 'Kilometraje')} color="text-slate-600" />
-                                {isAdmin && (
-                                  <WorkflowItem icon={DollarSign} label="Precios" sub="Ajustes" onClick={() => openWindow('/settings/prices', 'Precios')} color="text-red-600" />
-                                )}
-                                {isAdmin && (
-                                  <WorkflowItem icon={Unlock} label="Acceso" sub="Digital" onClick={() => openWindow('/digital-access', 'Acceso Digital')} color="text-emerald-600" />
-                                )}
+                            <div className="space-y-6 pt-2 pb-6">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+                                    <WorkflowItem icon={CalendarClock} label="Práctica" sub="Turnos" onClick={() => openWindow('/manual-schedule', 'Agenda Práctica')} color="text-amber-600" />
+                                    <WorkflowItem icon={Car} label="Flota & Instructores" sub="Gestión" onClick={() => openWindow('/settings/fleet', 'Control de Instructores y Flota')} color="text-blue-600" />
+                                    <WorkflowItem icon={FileSignature} label="Certificados" sub="Físicos" onClick={() => openWindow('/certificates', 'Certificados')} color="text-purple-600" />
+                                    <WorkflowItem icon={BookOpen} label="Exámenes" sub="Teoría" onClick={() => openWindow('/exams', 'Exámenes')} color="text-violet-600" />
+                                    <WorkflowItem icon={TrendingUp} label="ATTT" sub="Evaluación" onClick={() => openWindow('/att-evaluations', 'Evaluaciones ATTT')} color="text-indigo-600" />
+                                    <WorkflowItem icon={ShieldCheck} label="Seguridad" sub="Vehicular" onClick={() => openWindow('/mileage-log', 'Kilometraje')} color="text-slate-600" />
+                                    {isAdmin && (
+                                      <WorkflowItem icon={DollarSign} label="Precios" sub="Ajustes" onClick={() => openWindow('/settings/prices', 'Precios')} color="text-red-600" />
+                                    )}
+                                    {isAdmin && (
+                                      <WorkflowItem icon={Unlock} label="Acceso" sub="Digital" onClick={() => openWindow('/digital-access', 'Acceso Digital')} color="text-emerald-600" />
+                                    )}
+                                </div>
+
+                                {/* SECCIÓN 1: CONTROL DE INSTRUCTORES (SEPARADO) */}
+                                <div className="border-t border-slate-200 pt-5 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <User className="h-4 w-4 text-blue-600" />
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-700">Control de Instructores</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="bg-blue-600 text-white px-2.5 py-1 rounded-full text-[10px] font-black tracking-wide shadow-sm">
+                                                TOTAL: {fleetData.instructors.length} INSTRUCTORES
+                                            </span>
+                                            <button 
+                                                onClick={() => openWindow('/settings/fleet', 'Control de Instructores y Flota')}
+                                                className="bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-bold px-2.5 py-1 rounded-full text-[10px] transition-colors"
+                                            >
+                                                + Agregar / Eliminar
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                                        {fleetData.instructors.map((inst: any) => (
+                                            <div key={inst.id} className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1 hover:border-blue-400 transition-all shadow-2xs">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-[11px] font-bold text-slate-900">{inst.name}</span>
+                                                    <span className="text-[9px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded">Activo</span>
+                                                </div>
+                                                <p className="text-[10px] text-slate-500 flex items-center gap-1">
+                                                    <Car className="h-3 w-3 text-slate-400" /> {inst.vehicle || 'Sin vehículo'}
+                                                </p>
+                                                <p className="text-[9px] text-slate-400">Tel: {inst.phone || 'N/A'}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* SECCIÓN 2: CONTROL DE VEHÍCULOS DE LA FLOTA (SEPARADO) */}
+                                <div className="border-t border-slate-200 pt-5 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Car className="h-4 w-4 text-emerald-600" />
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-700">Flota de Vehículos</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="bg-emerald-600 text-white px-2.5 py-1 rounded-full text-[10px] font-black tracking-wide shadow-sm">
+                                                TOTAL: {fleetData.vehicles.length} VEHÍCULOS
+                                            </span>
+                                            <button 
+                                                onClick={() => openWindow('/settings/fleet', 'Control de Instructores y Flota')}
+                                                className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold px-2.5 py-1 rounded-full text-[10px] transition-colors"
+                                            >
+                                                + Agregar / Eliminar
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                                        {fleetData.vehicles.map((veh: any) => (
+                                            <div key={veh.id} className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1 hover:border-emerald-400 transition-all shadow-2xs">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-[11px] font-bold text-slate-900">{veh.name}</span>
+                                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${veh.transmission === 'Automático' ? 'bg-blue-100 text-blue-700' : veh.transmission === 'Manual' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                        {veh.transmission}
+                                                    </span>
+                                                </div>
+                                                <p className="text-[10px] text-slate-500">Placa: {veh.plate || 'S/P'}</p>
+                                                <p className="text-[9px] text-emerald-600 font-semibold">🟢 Disponible para clases</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         ) : activeTab === 'contabilidad' ? (
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 pt-2">
@@ -278,7 +392,7 @@ export default function DashboardPage() {
                             <div className="grid grid-cols-1 gap-1">
                                 <QuickReportLink onClick={() => openWindow('/informes/vehicle-schedule', 'Agenda de Vehículos')} label="Agenda de Vehículos" />
                                 <QuickReportLink onClick={() => openWindow('/informes/theoretical-schedule', 'Agenda Teórica Semanal')} label="Agenda Teórica Semanal" />
-                                <QuickReportLink onClick={() => openWindow('/informes/cancellation-payments', 'Resumen de Cobranza')} label="Resumen de Cobranza" />
+                                <QuickReportLink onClick={() => openWindow('/certificates/delivery', 'Entrega de Certificados')} label="Entrega de Certificados" />
                             </div>
                         </CardContent>
                     </Card>
@@ -293,6 +407,36 @@ export default function DashboardPage() {
                             </div>
                             <div className="bg-red-50 p-2 rounded-full border border-red-100">
                                 <ArrowDown className="h-5 w-5 text-red-600" />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* ESTADÍSTICAS FREEWAY WEB */}
+                <div className="grid grid-cols-2 gap-4">
+                    <Card className="shadow-sm border-slate-300 bg-gradient-to-br from-violet-50 to-white">
+                        <CardContent className="p-4 flex items-center gap-3">
+                            <div className="bg-violet-100 p-2.5 rounded-xl flex-shrink-0">
+                                <Monitor className="h-5 w-5 text-violet-600" />
+                            </div>
+                            <div>
+                                <p className="text-[8px] font-black uppercase text-slate-400 leading-none">Simulador</p>
+                                <p className="text-[8px] text-slate-400 leading-none mb-1">freeway-web.com</p>
+                                <p className="text-2xl font-black text-violet-700 leading-none">{freewayStats.simulador.toLocaleString()}</p>
+                                <p className="text-[8px] text-slate-400 mt-0.5">usuarios totales</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="shadow-sm border-slate-300 bg-gradient-to-br from-emerald-50 to-white">
+                        <CardContent className="p-4 flex items-center gap-3">
+                            <div className="bg-emerald-100 p-2.5 rounded-xl flex-shrink-0">
+                                <GraduationCap className="h-5 w-5 text-emerald-600" />
+                            </div>
+                            <div>
+                                <p className="text-[8px] font-black uppercase text-slate-400 leading-none">Centro Estudio</p>
+                                <p className="text-[8px] text-slate-400 leading-none mb-1">Portal de Alumnos</p>
+                                <p className="text-2xl font-black text-emerald-700 leading-none">{freewayStats.alumnos.toLocaleString()}</p>
+                                <p className="text-[8px] text-slate-400 mt-0.5">búsquedas totales</p>
                             </div>
                         </CardContent>
                     </Card>

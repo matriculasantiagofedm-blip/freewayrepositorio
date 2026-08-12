@@ -39,29 +39,33 @@ export default function AdminAccessPage() {
 
       if (roleMapping[accessKey]) {
         const assignedRole = roleMapping[accessKey];
-        
-        // Registrar perfil de usuario para el chat
-        if (currentUser) {
-          await setDoc(doc(firestore, 'users', currentUser.uid), {
-            uid: currentUser.uid,
-            role: assignedRole,
-            name: assignedRole, // Nombre por defecto es el rol
-            lastActive: serverTimestamp(),
-          }, { merge: true });
-        }
 
+        // Navegar inmediatamente — escribir perfil en background
         setRole(accessKey);
         router.push('/dashboard');
+
+        // Escribir perfil en Firestore de forma no bloqueante
+        currentUser.getIdToken(true)
+          .then(() => setDoc(doc(firestore, 'users', currentUser!.uid), {
+            uid: currentUser!.uid,
+            role: assignedRole,
+            name: assignedRole,
+            lastActive: serverTimestamp(),
+          }, { merge: true }))
+          .catch((e) => console.error('[Profile write] Error:', e));
+
       } else {
         setError('Contraseña incorrecta.');
       }
-    } catch (err) {
-      console.error(err);
-      setError('Error de conexión.');
+    } catch (err: any) {
+      console.error('[Login acceso-privado] Error:', err?.code, err);
+      setError('Error de conexión. Intenta de nuevo.');
     } finally {
       setIsLoading(false);
     }
   };
+
+
 
   return (
     <main className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6">

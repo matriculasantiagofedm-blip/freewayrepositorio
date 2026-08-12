@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useDb } from '@/firebase';
-import { collection, query, where, Timestamp, doc, runTransaction, updateDoc } from 'firebase/firestore';
+import { collection, query, where, Timestamp, doc, runTransaction, updateDoc, onSnapshot } from 'firebase/firestore';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { 
   format, 
@@ -62,12 +62,65 @@ const TIME_STRING_MAP: Record<string, string> = {
   '1:00pm a 3:00pm': '1pm-3pm',
 };
 
-const getGlobalCapacity = (date: Date, slotId: string) => {
+const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+const getGlobalCapacity = (
+  date: Date, 
+  slotId: string, 
+  blockedSlots?: Record<string, string>, 
+  slotCapacities?: Record<string, number>,
+  practicaSlots?: Record<string, boolean>,
+  teoricoSlots?: Record<string, boolean>,
+  practicaCapacities?: Record<string, number>,
+  teoricoCapacities?: Record<string, number>
+) => {
     const day = date.getDay(); 
     if (day === 0) return 0; 
-    if (day >= 2 && day <= 5 && slotId === '8am-10am') return 3; // M-V 8am-10am (Teoría)
-    if (day === 6 && slotId === '3pm-5pm') return 3; // Sábado 3pm-5pm (Teoría)
-    return 4; // Resto de horarios
+    
+    const dayName = DAY_NAMES[day];
+    const bKey = `${dayName}|${slotId}`;
+
+    // Comportamiento por defecto
+    const defaultPracticaActive = (dayName !== 'Lunes' && dayName !== 'Sábado' && slotId === '8am-10am') || (dayName === 'Sábado' && slotId === '3pm-5pm') ? false : true;
+
+    // Determinar si Práctica está activo
+    let isPracticaActive = defaultPracticaActive;
+    if (practicaSlots && practicaSlots[bKey] !== undefined) {
+      isPracticaActive = practicaSlots[bKey];
+    } else if (blockedSlots && blockedSlots[bKey] !== undefined) {
+      isPracticaActive = blockedSlots[bKey] === 'practica';
+    }
+
+    if (!isPracticaActive) {
+      // Si no es práctico, ver si es teoría
+      const defaultTeoricoActive = (dayName !== 'Lunes' && dayName !== 'Sábado' && slotId === '8am-10am') || (dayName === 'Sábado' && slotId === '3pm-5pm') ? true : false;
+      let isTeoricoActive = defaultTeoricoActive;
+      if (teoricoSlots && teoricoSlots[bKey] !== undefined) {
+        isTeoricoActive = teoricoSlots[bKey];
+      } else if (blockedSlots && blockedSlots[bKey] !== undefined) {
+        isTeoricoActive = blockedSlots[bKey] === 'teorico';
+      }
+      
+      if (isTeoricoActive) {
+        let teoricoCap = 3;
+        if (teoricoCapacities && teoricoCapacities[bKey] !== undefined) {
+          teoricoCap = teoricoCapacities[bKey];
+        } else if (slotCapacities && slotCapacities[bKey] !== undefined) {
+          teoricoCap = slotCapacities[bKey];
+        }
+        return teoricoCap;
+      }
+      return 0;
+    }
+
+    // Capacidad práctica activa
+    let practicaCap = 4;
+    if (practicaCapacities && practicaCapacities[bKey] !== undefined) {
+      practicaCap = practicaCapacities[bKey];
+    } else if (slotCapacities && slotCapacities[bKey] !== undefined) {
+      practicaCap = slotCapacities[bKey];
+    }
+    return practicaCap;
 };
 
 const getVehicleColor = (vehicleName: string = '', status?: ClassStatus, transmission?: string) => {
@@ -108,6 +161,40 @@ export default function WeeklyScheduleReport() {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [isDownloading, setIsDownloading] = useState(false);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
+
+  const [fleetSettings, setFleetSettings] = useState<{ 
+    blockedSlots: Record<string, string>; 
+    slotCapacities: Record<string, number>;
+    practicaSlots: Record<string, boolean>;
+    teoricoSlots: Record<string, boolean>;
+    practicaCapacities: Record<string, number>;
+    teoricoCapacities: Record<string, number>;
+  }>({
+    blockedSlots: {},
+    slotCapacities: {},
+    practicaSlots: {},
+    teoricoSlots: {},
+    practicaCapacities: {},
+    teoricoCapacities: {}
+  });
+
+  useEffect(() => {
+    if (!db) return;
+    const unsub = onSnapshot(doc(db, 'settings', 'fleet'), snap => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setFleetSettings({
+          blockedSlots: data.blockedSlots || {},
+          slotCapacities: data.slotCapacities || {},
+          practicaSlots: data.practicaSlots || {},
+          teoricoSlots: data.teoricoSlots || {},
+          practicaCapacities: data.practicaCapacities || {},
+          teoricoCapacities: data.teoricoCapacities || {}
+        });
+      }
+    });
+    return () => unsub();
+  }, [db]);
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
@@ -329,8 +416,30 @@ export default function WeeklyScheduleReport() {
                   {weekDays.map(day => {
                     const dateKey = format(day, 'yyyy-MM-dd');
                     const sessions = scheduleData[`${dateKey}|${slot.id}`] || [];
-                    const capacity = getGlobalCapacity(day, slot.id);
+                    const capacity = getGlobalCapacity(
+                      day, 
+                      slot.id, 
+                      fleetSettings.blockedSlots, 
+                      fleetSettings.slotCapacities,
+                      fleetSettings.practicaSlots,
+                      fleetSettings.teoricoSlots,
+                      fleetSettings.practicaCapacities,
+                      fleetSettings.teoricoCapacities
+                    );
                     const isClosed = isSunday(day);
+                    const isBlocked = capacity === 0 && !isClosed;
+
+                    const isTeoricoActiveInSlot = (() => {
+                      const dayName = DAY_NAMES[day.getDay()];
+                      const bKey = `${dayName}|${slot.id}`;
+                      if (fleetSettings.teoricoSlots[bKey] !== undefined) {
+                        return fleetSettings.teoricoSlots[bKey];
+                      }
+                      if (fleetSettings.blockedSlots[bKey] !== undefined) {
+                        return fleetSettings.blockedSlots[bKey] === 'teorico';
+                      }
+                      return (dayName !== 'Lunes' && dayName !== 'Sábado' && slot.id === '8am-10am') || (dayName === 'Sábado' && slot.id === '3pm-5pm');
+                    })();
 
                     return (
                       <td key={dateKey} className={cn(
@@ -343,6 +452,18 @@ export default function WeeklyScheduleReport() {
                           </div>
                         ) : (
                           <div className="space-y-2">
+                            {isBlocked && (
+                              <div className="bg-red-50 border border-red-200 text-red-700 text-[8px] font-black py-0.5 px-1.5 rounded-sm flex items-center justify-center gap-1 uppercase tracking-wider">
+                                <span>🔴 No Disponible</span>
+                              </div>
+                            )}
+
+                            {isTeoricoActiveInSlot && (
+                              <div className="bg-blue-50 border border-blue-200 text-blue-800 text-[8px] font-black py-0.5 px-1.5 rounded-sm flex items-center justify-center gap-1 uppercase">
+                                <span>📘 Aula Teórica</span>
+                              </div>
+                            )}
+
                             {sessions.map((s, idx) => {
                               const SessionCard = (
                                 <div className={cn(

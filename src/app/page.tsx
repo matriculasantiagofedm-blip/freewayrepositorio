@@ -44,27 +44,33 @@ export default function Home() {
 
       if (roleMapping[accessKey]) {
         const assignedRole = roleMapping[accessKey];
-        
-        if (currentUser) {
-          await setDoc(doc(firestore, 'users', currentUser.uid), {
-            uid: currentUser.uid,
+
+        // Navegar inmediatamente — escribir perfil en background
+        setRole(accessKey);
+        router.push('/dashboard');
+
+        // Escribir perfil en Firestore de forma no bloqueante
+        currentUser.getIdToken(true)
+          .then(() => setDoc(doc(firestore, 'users', currentUser!.uid), {
+            uid: currentUser!.uid,
             role: assignedRole,
             name: assignedRole,
             lastActive: serverTimestamp(),
-          }, { merge: true });
-        }
+          }, { merge: true }))
+          .catch((e) => console.error('[Profile write] Error:', e));
 
-        setRole(accessKey);
-        router.push('/dashboard');
       } else {
         setError('Contraseña incorrecta.');
       }
-    } catch (err) {
-      setError('Error de conexión.');
+    } catch (err: any) {
+      console.error('[Login] Error:', err?.code, err);
+      setError('Error de conexión. Intenta de nuevo.');
     } finally {
       setIsLoading(false);
     }
   };
+
+
 
   if (!mounted) return null;
 

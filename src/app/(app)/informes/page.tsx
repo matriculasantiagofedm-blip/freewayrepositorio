@@ -15,7 +15,8 @@ import {
   BookOpen,
   ClipboardList,
   Package,
-  Landmark
+  Landmark,
+  Globe
 } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 
@@ -24,6 +25,15 @@ export default function ReportsIndexPage() {
   const isAdmin = role === 'Administrador';
 
   const reportCards = [
+    {
+      title: 'Inscripciones Web Directas',
+      description: 'Reporte exclusivo de matrículas recibidas desde la página web (PayPal/Yappy/Web).',
+      href: '/informes/online-contracts',
+      icon: Globe,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+      roles: ['Administrador', 'Ventas', 'Ventas Externas', 'SuperAdmin', 'Owner', 'Dueño']
+    },
     {
       title: 'Catálogo de Planes',
       description: 'Guía oficial de precios y paquetes comerciales de la escuela.',

@@ -18,6 +18,7 @@ import Link from 'next/link';
 
 const navLinks = [
   { href: '/dashboard', label: 'Panel de Control', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+  { href: '/contracts', label: 'Contratos', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
   { href: '/clients', label: 'Clientes', roles: ['Administrador'] },
   { href: '/informes/packages', label: 'Catálogo de Precios', roles: ['Ventas Externas'] },
   {
@@ -50,6 +51,7 @@ const navLinks = [
       { href: '/informes', label: 'Centro de Informes', roles: ['Administrador', 'Ventas', 'Ventas Externas', 'SuperAdmin', 'Owner', 'Dueño'] },
       { separator: true, roles: ['Administrador', 'Ventas', 'Ventas Externas', 'SuperAdmin', 'Owner', 'Dueño'] },
       { href: '/informes/packages', label: 'Catálogo de Planes', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
+      { href: '/informes/online-contracts', label: '🌐 Contratos Online (Web)', roles: ['Administrador', 'Ventas', 'Ventas Externas', 'SuperAdmin', 'Owner', 'Dueño'] },
       { href: '/informes/vehicle-schedule', label: 'Agenda Práctica Semanal', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { href: '/informes/theoretical-schedule', label: 'Agenda Teórica Semanal', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
       { href: '/informes/practical-starts', label: 'Inicios Prácticos', roles: ['Administrador', 'Ventas'] },

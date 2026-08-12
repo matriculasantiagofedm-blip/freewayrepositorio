@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Smartphone, QrCode, CheckCircle2, XCircle, RefreshCw, Loader2,
-  Wifi, WifiOff, AlertCircle, ArrowLeft, Info, Zap, Plus,
+  Wifi, WifiOff, AlertCircle, ArrowLeft, Info, Zap, Link2, ShieldCheck, TriangleAlert,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -216,6 +216,134 @@ function InstancePanel({ inst }: { inst: WaInstance }) {
   );
 }
 
+// ── Panel de diagnóstico de webhooks ───────────────────────────────────────
+
+interface DiagnosticResult {
+  instance: string;
+  phone: string;
+  status: string;
+  webhookOk?: boolean;
+}
+
+function WebhookDiagnosticPanel() {
+  const [instances, setInstances] = useState<DiagnosticResult[]>([]);
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState('');
+  const [lastCheck, setLastCheck] = useState<Date | null>(null);
+
+  const fetchDiagnostic = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/whatsapp-instance/sync-webhooks');
+      const data = await res.json();
+      setInstances(data.instances || []);
+      setWebhookUrl(data.webhookUrl || '');
+      setLastCheck(new Date());
+    } catch { /* silencioso */ }
+    finally { setLoading(false); }
+  }, []);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    setSyncMsg('');
+    try {
+      const res = await fetch('/api/whatsapp-instance/sync-webhooks', { method: 'POST' });
+      const data = await res.json();
+      setSyncMsg(data.message || 'Sincronizado');
+      setInstances(data.results || []);
+      setWebhookUrl(data.webhookUrl || webhookUrl);
+      setLastCheck(new Date());
+    } catch { setSyncMsg('Error al sincronizar'); }
+    finally { setSyncing(false); }
+  };
+
+  useEffect(() => { fetchDiagnostic(); }, [fetchDiagnostic]);
+
+  return (
+    <Card className="border-slate-200 shadow-sm">
+      <CardHeader className="pb-2 pt-5 px-6 border-b">
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center">
+              <Link2 className="h-4 w-4 text-amber-400" />
+            </div>
+            <div>
+              <p className="text-sm font-black uppercase text-slate-900">Diagnóstico de Webhook</p>
+              <p className="text-[10px] text-slate-400 font-medium">
+                {lastCheck ? `Última revisión: ${lastCheck.toLocaleTimeString('es-PA')}` : 'Cargando...'}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={fetchDiagnostic} disabled={loading} className="text-xs font-bold h-8">
+              <RefreshCw className={`h-3 w-3 mr-1 ${loading ? 'animate-spin' : ''}`} />
+              Revisar
+            </Button>
+            <Button size="sm" onClick={handleSync} disabled={syncing} className="text-xs font-bold h-8 bg-amber-500 hover:bg-amber-600 text-white">
+              {syncing ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <ShieldCheck className="h-3 w-3 mr-1" />}
+              Re-sincronizar Webhook
+            </Button>
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="px-6 py-4 space-y-4">
+        {/* URL del webhook */}
+        {webhookUrl && (
+          <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <Link2 className="h-4 w-4 text-slate-400 mt-0.5 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[9px] font-black uppercase text-slate-400 mb-0.5">URL del Webhook activo</p>
+              <p className="text-xs font-mono text-slate-800 break-all">{webhookUrl}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Estado por instancia */}
+        {instances.length === 0 && !loading && (
+          <p className="text-xs text-slate-400 text-center py-4">No se encontraron instancias en Evolution API</p>
+        )}
+        {instances.map(inst => (
+          <div key={inst.instance} className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
+            <Smartphone className="h-4 w-4 text-slate-400 shrink-0" />
+            <div className="flex-1">
+              <p className="text-[11px] font-black text-slate-800">{inst.instance}</p>
+              {inst.phone && <p className="text-[10px] text-slate-400 font-mono">+{inst.phone}</p>}
+            </div>
+            <Badge className={`text-[9px] font-bold uppercase ${
+              inst.status === 'open' ? 'bg-emerald-100 text-emerald-700' :
+              inst.status === 'connecting' ? 'bg-blue-100 text-blue-700' :
+              'bg-slate-100 text-slate-500'
+            }`}>
+              {inst.status === 'open' ? '🟢 Conectado' : inst.status === 'connecting' ? '🟡 Conectando' : '⚫ Desconectado'}
+            </Badge>
+            {inst.webhookOk !== undefined && (
+              inst.webhookOk
+                ? <Badge className="text-[9px] bg-emerald-100 text-emerald-700"><ShieldCheck className="h-3 w-3 mr-1" />Webhook OK</Badge>
+                : <Badge className="text-[9px] bg-red-100 text-red-700"><TriangleAlert className="h-3 w-3 mr-1" />Webhook Error</Badge>
+            )}
+          </div>
+        ))}
+
+        {/* Mensaje tras sincronizar */}
+        {syncMsg && (
+          <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold ${
+            syncMsg.includes('Error') ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+          }`}>
+            {syncMsg.includes('Error') ? <TriangleAlert className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+            {syncMsg}
+          </div>
+        )}
+
+        <p className="text-[9px] text-slate-400 leading-relaxed">
+          Si los mensajes de WhatsApp no llegan al CRM aunque el número esté conectado, haz clic en <strong>Re-sincronizar Webhook</strong>. Esto reregistra la URL del webhook en Evolution API para todas las instancias.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ── Página principal ────────────────────────────────────────────────────────
 export default function WhatsAppSettingsPage() {
   return (
@@ -256,6 +384,9 @@ export default function WhatsAppSettingsPage() {
           <InstancePanel key={inst.id} inst={inst} />
         ))}
       </div>
+
+      {/* Panel de diagnóstico de webhook */}
+      <WebhookDiagnosticPanel />
 
       {/* Evolution API status */}
       <Card className="border-slate-200 shadow-sm">

@@ -1,3 +1,4 @@
+export const dynamic = 'force-static';
 import { NextResponse } from 'next/server';
 
 /**
@@ -91,7 +92,7 @@ export async function POST(req: Request) {
 📧 *Email:* ${clientEmail || 'N/A'}
 🚗 *Plan:* ${coursePlan || 'N/A'}
 ⚙️ *Transmisión:* ${vehicleTransmission || 'N/A'}
-💳 *Método de pago:* ${paymentMethod === 'yappy' ? 'Yappy' : 'Tarjeta/Cubo'}
+💳 *Método de pago:* ${paymentMethod === 'yappy' ? 'Yappy' : paymentMethod === 'cubo' ? 'Tarjeta (Cubo)' : 'Efectivo / Transferencia'}
 🔢 *Referencia:* ${paymentReference || 'N/A'}
 💰 *Abono pagado:* $${paymentAmount || 'N/A'}
 

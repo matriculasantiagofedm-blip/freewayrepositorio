@@ -55,13 +55,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // When embedded inside a floating window, skip the full shell (header/nav)
+  // When embedded inside a floating window (iframe), skip the full shell (header/nav)
+  // but still mount LiveAvailabilityWidget so the Libreta button works inside the iframe
   if (isEmbedded) {
     return (
       <WindowManagerProvider>
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 print:p-0 print:m-0 print:block min-h-screen bg-[#eef2f6]">
           {children}
         </main>
+        {/* Widget de disponibilidad — necesario aquí porque el iframe tiene su propio window */}
+        <LiveAvailabilityWidget />
       </WindowManagerProvider>
     );
   }

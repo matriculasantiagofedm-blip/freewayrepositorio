@@ -3,21 +3,34 @@
 import { useEffect } from 'react';
 
 /**
- * Desregistra automáticamente cualquier service worker antiguo que pueda estar
- * interceptando la navegación y causando redirecciones incorrectas (ej: /dashboard → /leads).
- * Esto es necesario cuando la app fue instalada como PWA con una versión anterior.
+ * Desregistra automáticamente cualquier service worker antiguo Y limpia todo
+ * el Cache Storage para garantizar que el navegador siempre cargue la versión
+ * más reciente de la app — especialmente crítico en PWA o después de un deploy.
  */
 export function ServiceWorkerCleanup() {
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+    if (typeof window === 'undefined') return;
+
+    // 1. Desregistrar todos los service workers activos
+    if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then((registrations) => {
-        for (const registration of registrations) {
-          registration.unregister().then((success) => {
-            if (success) {
-              console.log('[SW] Service worker desregistrado:', registration.scope);
-            }
+        registrations.forEach((reg) => {
+          reg.unregister().then((ok) => {
+            if (ok) console.log('[SW] Desregistrado:', reg.scope);
           });
-        }
+        });
+      });
+    }
+
+    // 2. Borrar TODAS las entradas de Cache Storage
+    //    (residuos de service workers anteriores de next-pwa u otros)
+    if ('caches' in window) {
+      caches.keys().then((names) => {
+        names.forEach((name) => {
+          caches.delete(name).then((ok) => {
+            if (ok) console.log('[SW] Cache eliminado:', name);
+          });
+        });
       });
     }
   }, []);

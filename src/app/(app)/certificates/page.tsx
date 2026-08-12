@@ -607,32 +607,18 @@ function CertificatesContent() {
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-xs uppercase font-bold text-muted-foreground">Fecha de Emisión</Label>
-                                <Popover modal={true}>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className={cn(
-                                                "w-full h-10 justify-start text-left font-normal bg-white",
-                                                !certificateData.issueDate && "text-muted-foreground"
-                                            )}
-                                        >
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {certificateData.issueDate ? format(certificateData.issueDate, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start" side="bottom">
-                                        <Calendar
-                                            mode="single"
-                                            selected={certificateData.issueDate}
-                                            onSelect={(date) => {
-                                                if (date) {
-                                                    handleCertDataChange('issueDate', date);
-                                                }
-                                            }}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
+                                <Input 
+                                    type="date"
+                                    value={certificateData.issueDate ? format(certificateData.issueDate, 'yyyy-MM-dd') : ''}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val) {
+                                            const [year, month, day] = val.split('-').map(Number);
+                                            handleCertDataChange('issueDate', new Date(year, month - 1, day));
+                                        }
+                                    }}
+                                    className="bg-white h-10 w-full"
+                                />
                             </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">

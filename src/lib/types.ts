@@ -142,6 +142,7 @@ export interface Contract {
   userId: string;
   createdAt: any;
   createdBy?: string;
+  isOnline?: boolean;
   deluxeDetails?: Partial<DeluxeContractDetails>;
   autoMotoDetails?: Partial<AutoMotoContractDetails>;
   ampliacionesDetails?: Partial<AmpliacionesContractDetails>;

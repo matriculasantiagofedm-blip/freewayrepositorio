@@ -28,7 +28,7 @@ export default function EditContractPage() {
 
   if (isLoading || isUserLoading || isRoleLoading) return <div className="p-24 text-center"><Loader2 className="animate-spin h-12 w-12 mx-auto" /></div>;
 
-  if (role !== 'Administrador') return <div className="p-12 text-center">Acceso restringido. Solo el Administrador puede editar registros.</div>;
+  if (role !== 'Administrador' && role !== 'Ventas' && role !== 'Ventas Externas') return <div className="p-12 text-center">Acceso restringido. Solo el Administrador o personal de Ventas pueden editar registros.</div>;
 
   if (error || !contract) return <div className="p-8 text-center">Error: Contrato no encontrado.</div>;
 

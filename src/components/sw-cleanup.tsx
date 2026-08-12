@@ -2,6 +2,8 @@
 
 import { useEffect } from 'react';
 
+const APP_CACHE_VERSION = 'v5_cert_delivery_2026_v2';
+
 /**
  * Desregistra automáticamente cualquier service worker antiguo Y limpia todo
  * el Cache Storage para garantizar que el navegador siempre cargue la versión
@@ -23,7 +25,6 @@ export function ServiceWorkerCleanup() {
     }
 
     // 2. Borrar TODAS las entradas de Cache Storage
-    //    (residuos de service workers anteriores de next-pwa u otros)
     if ('caches' in window) {
       caches.keys().then((names) => {
         names.forEach((name) => {
@@ -32,6 +33,13 @@ export function ServiceWorkerCleanup() {
           });
         });
       });
+    }
+
+    // 3. Forzar recarga una sola vez para romper el caché del PWA de Chrome
+    const currentVersion = sessionStorage.getItem('ct_app_version');
+    if (currentVersion !== APP_CACHE_VERSION) {
+      sessionStorage.setItem('ct_app_version', APP_CACHE_VERSION);
+      window.location.reload();
     }
   }, []);
 

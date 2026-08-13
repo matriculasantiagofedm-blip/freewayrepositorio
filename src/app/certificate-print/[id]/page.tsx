@@ -23,7 +23,7 @@ function CertificatePrintContent() {
   const { auth } = useFirebase();
   const [isReady, setIsReady] = useState(false);
 
-  const contractId = Array.isArray(id) ? id[0] : id;
+  const contractId = (Array.isArray(id) ? id[0] : id) || '';
   const isManual = contractId === 'manual';
 
   const contractRef = useMemoDoc(() => {
@@ -47,8 +47,8 @@ function CertificatePrintContent() {
       const clientName = searchParams.get('clientName');
       const cip = searchParams.get('cip');
       const idType = searchParams.get('idType') || 'C.I.P.';
-      const licenseType = searchParams.get('licenseType');
-      const courseName = searchParams.get('courseName');
+      const licenseType = searchParams.get('licenseType') || '';
+      const courseName = searchParams.get('courseName') || '';
       const issueDateStr = searchParams.get('issueDate');
       const firstName = searchParams.get('firstName');
       const middleName = searchParams.get('middleName');
@@ -60,7 +60,7 @@ function CertificatePrintContent() {
       const phone2 = searchParams.get('phone2');
       const manualType = searchParams.get('manualType');
       
-      if (!folio || !clientName || !cip || !licenseType || !courseName || !issueDateStr) return;
+      if (!folio || !clientName || !cip || !issueDateStr) return;
 
       // Siempre se priorizan los datos del formulario (address, phone1, phone2)
       // sobre lo que haya en Firestore. Esto permite certificados de actualización
@@ -102,6 +102,14 @@ function CertificatePrintContent() {
           try { cachedPhotos = JSON.parse(cachedStr); } catch(e){}
       }
 
+      let issueDateObj = new Date();
+      try {
+        const parsed = new Date(issueDateStr);
+        if (!isNaN(parsed.getTime())) {
+          issueDateObj = parsed;
+        }
+      } catch (e) {}
+
       const certificateData: Certificate = {
         id: contractId,
         contractId: contractId,
@@ -110,7 +118,7 @@ function CertificatePrintContent() {
         folio: folio,
         clientName: clientName,
         courseName: courseName,
-        issueDate: Timestamp.fromDate(new Date(issueDateStr)),
+        issueDate: Timestamp.fromDate(issueDateObj),
         cip: cip,
         idType: idType,
         licenseType: licenseType,
@@ -128,7 +136,7 @@ function CertificatePrintContent() {
 
       const timer = setTimeout(() => {
         setIsReady(true);
-      }, 8000);
+      }, 3000);
       
       return () => clearTimeout(timer);
     }

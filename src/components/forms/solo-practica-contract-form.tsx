@@ -123,7 +123,7 @@ const soloPracticaSchema = z.object({
   paymentDeadline: z.date({ required_error: 'Fecha límite requerida' }).optional().nullable(),
   paymentType: z.string().default('cash'),
   practicalClassSchedules: z.array(z.object({
-    date: z.date({ required_error: 'Fecha requerida' }),
+    date: z.any().optional().nullable(),
     time: z.string().min(1, 'Hora requerida'),
     vehicle: z.string().optional(),
     instructor: z.string().optional(),
@@ -180,8 +180,8 @@ export function SoloPracticaContractForm({ contract, initialData }: { contract?:
       paymentDeadline: contract.autoMotoDetails?.paymentDeadline ? toDate(contract.autoMotoDetails.paymentDeadline) : null,
       practicalClassSchedules: (contract.autoMotoDetails?.practicalClassSchedules || []).map(s => ({
         ...s,
-        date: toDate(s.date)
-      })).filter(s => !isNaN(s.date.getTime())),
+        date: s.date ? toDate(s.date) : null
+      })),
       photoDataUri: (contract.autoMotoDetails as any)?.photoDataUri || '',
       idCardDataUri: (contract.autoMotoDetails as any)?.idCardDataUri || '',
       licenseDataUri: (contract.autoMotoDetails as any)?.licenseDataUri || '',
@@ -198,6 +198,18 @@ export function SoloPracticaContractForm({ contract, initialData }: { contract?:
       licenseDataUri: '',
     },
   });
+
+  const initialInstallment = useMemo(() => {
+    if (!contract) return '2_installments';
+    const dp = contract.autoMotoDetails?.downPayment || 0;
+    const cv = contract.autoMotoDetails?.courseValue || 0;
+    if (dp === cv) return 'full';
+    if (Math.abs(dp - cv * 0.5) < 0.01) return '2_installments';
+    if (Math.abs(dp - cv * 0.2) < 0.01) return '5_installments';
+    return 'custom';
+  }, [contract]);
+
+  const [selectedInstallment, setSelectedInstallment] = useState<'full' | '2_installments' | '5_installments' | 'custom'>(initialInstallment);
 
   const { fields: practicalFields, replace: replacePractical } = useFieldArray({
     control: form.control,
@@ -285,9 +297,47 @@ export function SoloPracticaContractForm({ contract, initialData }: { contract?:
     if (watchPlan && !isEdit) {
       form.setValue('courseValue', planPrices[watchPlan] || 0);
       const count = PLAN_PRACTICAL_COUNTS[watchPlan] || 0;
-      replacePractical(Array.from({ length: count }, () => ({ date: new Date(), time: '08:00am a 10:00am', vehicle: '', instructor: '' })));
+      replacePractical(Array.from({ length: count }, () => ({ date: null, time: '08:00am a 10:00am', vehicle: '', instructor: '' })));
     }
   }, [watchPlan, replacePractical, form, isEdit, planPrices]);
+
+  const watchCourseValue = form.watch('courseValue');
+
+  useEffect(() => {
+    const cv = Number(watchCourseValue) || 0;
+    let dp = 0;
+    if (selectedInstallment === 'full') dp = cv;
+    else if (selectedInstallment === '2_installments') dp = cv * 0.5;
+    else if (selectedInstallment === '5_installments') dp = cv * 0.2;
+    form.setValue('downPayment', dp);
+  }, [watchCourseValue, selectedInstallment, form]);
+
+  const watchDownPayment = form.watch('downPayment');
+
+  useEffect(() => {
+    const dp = Number(watchDownPayment) || 0;
+    const cv = Number(watchCourseValue) || 0;
+    if (dp === cv && cv > 0) {
+      setSelectedInstallment('full');
+    } else if (cv > 0 && Math.abs(dp - cv * 0.5) < 0.01) {
+      setSelectedInstallment('2_installments');
+    } else if (cv > 0 && Math.abs(dp - cv * 0.2) < 0.01) {
+      setSelectedInstallment('5_installments');
+    } else {
+      setSelectedInstallment('custom');
+    }
+  }, [watchDownPayment, watchCourseValue]);
+
+  const handleInstallmentChange = (value: 'full' | '2_installments' | '5_installments' | 'custom') => {
+    setSelectedInstallment(value);
+    if (value === 'custom') return;
+    const cv = Number(form.getValues('courseValue')) || 0;
+    let dp = 0;
+    if (value === 'full') dp = cv;
+    else if (value === '2_installments') dp = cv * 0.5;
+    else if (value === '5_installments') dp = cv * 0.2;
+    form.setValue('downPayment', dp);
+  };
 
   const handleDownloadPdf = async () => {
     const element = document.getElementById('contract-preview-hidden');
@@ -324,7 +374,7 @@ export function SoloPracticaContractForm({ contract, initialData }: { contract?:
     try {
       const balance = values.courseValue - values.downPayment;
       const { clientName, clientEmail, ...detailsOnly } = values;
-      const formattedPracticalSchedules = (values.practicalClassSchedules || []).map(s => ({ ...s, date: Timestamp.fromDate(s.date) }));
+      const formattedPracticalSchedules = (values.practicalClassSchedules || []).map(s => ({ ...s, date: s.date ? Timestamp.fromDate(s.date) : null }));
       const finalRole = role || 'Sistema';
 
       if (isEdit) {
@@ -560,15 +610,37 @@ export function SoloPracticaContractForm({ contract, initialData }: { contract?:
               </div>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                 <FormField control={form.control} name="coursePlan" render={({ field }) => (
                   <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Paquete</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-10"><SelectValue placeholder="Elegir..." /></SelectTrigger></FormControl><SelectContent>{PRACTICE_PLANS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent></Select></FormItem>
                 )} />
                 <FormField control={form.control} name="courseValue" render={({ field }) => (
                   <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Valor (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold bg-muted/30" readOnly={!isEdit} /></FormControl></FormItem>
                 )} />
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Cuotas de Pagos</Label>
+                  <Select 
+                    onValueChange={(val: any) => handleInstallmentChange(val)} 
+                    value={selectedInstallment}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="h-10 font-bold">
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="full">1 Pago (Completo)</SelectItem>
+                      <SelectItem value="2_installments">2 Cuotas (Abono del 50%)</SelectItem>
+                      <SelectItem value="5_installments">5 Cuotas (Abono del 20%)</SelectItem>
+                      <SelectItem value="custom" disabled>Personalizado (Editado)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <FormField control={form.control} name="downPayment" render={({ field }) => (
-                  <FormItem><FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Abono (B/.)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold text-green-600" /></FormControl></FormItem>
+                  <FormItem>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Abono Inicial (B/.)</FormLabel>
+                    <FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold text-green-600" /></FormControl>
+                  </FormItem>
                 )} />
               </div>
               <div className="h-10 flex items-center px-4 bg-red-50 rounded-md border border-red-100"><span className="text-lg font-black text-red-900">Saldo Pendiente: B/. {currentBalance.toFixed(2)}</span></div>
@@ -612,7 +684,7 @@ export function SoloPracticaContractForm({ contract, initialData }: { contract?:
                     const holiday = isValidDate ? isPanamaHoliday(dObj) : null;
                     const isSunday = isValidDate && dObj.getDay() === 0;
                     
-                    const slotId = TIME_STRING_TO_SLOT_MAP[watchTime] || watchTime;
+                    const slotId = watchTime ? (TIME_STRING_TO_SLOT_MAP[watchTime] || watchTime) : '';
                     const dateKey = isValidDate ? format(dObj, 'yyyy-MM-dd') : '';
                     const occupancy = availabilityData.globalCounts[`${dateKey}|${slotId}`] || 0;
                     const capacity = isValidDate ? getGlobalCapacity(dObj, slotId) : 3;
@@ -635,7 +707,7 @@ export function SoloPracticaContractForm({ contract, initialData }: { contract?:
                               <FormLabel className="text-[10px] font-black uppercase text-slate-500">Sesión {index + 1}</FormLabel>
                               <Popover>
                                 <PopoverTrigger asChild>
-                                  <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : "Fecha"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
+                                  <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value && !isNaN(toDate(f.value).getTime()) ? format(toDate(f.value), "dd/MM/yy") : "Elegir clase"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0">
                                   <Calendar 

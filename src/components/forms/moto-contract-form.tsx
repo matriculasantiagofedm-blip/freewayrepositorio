@@ -142,13 +142,13 @@ const motoContractSchema = z.object({
   theoreticalClassSchedule: z.enum(['Sabados 3:00 pm a 5:00 pm', 'Semanal 8:00 am a 10:00 am', 'Semanal 10:00 am a 12:00 pm'], { required_error: "Seleccione un horario" }),
   theoreticalClassDates: z.array(z.date()).optional(),
   practicalClassSchedules: z.array(z.object({
-    date: z.date({ required_error: 'Fecha requerida' }),
+    date: z.any().optional().nullable(),
     time: z.string().min(1, 'Hora requerida'),
     vehicle: z.string().optional(),
     instructor: z.string().optional(),
   })).optional(),
   autoPracticalClassSchedules: z.array(z.object({
-    date: z.date({ required_error: 'Fecha requerida' }),
+    date: z.any().optional().nullable(),
     time: z.string().min(1, 'Hora requerida'),
     vehicle: z.string().optional(),
     instructor: z.string().optional(),
@@ -200,8 +200,8 @@ export function MotoContractForm({ contract, initialData }: { contract?: Contrac
       theoreticalClassSchedule: (contract.autoMotoDetails?.theoreticalClassSchedule as any) || 'Sabados 3:00 pm a 5:00 pm',
       paymentDeadline: contract.autoMotoDetails?.paymentDeadline ? toDate(contract.autoMotoDetails.paymentDeadline) : null,
       theoreticalClassDates: (contract.autoMotoDetails?.theoreticalClassDates || []).map(d => toDate(d)).filter(d => !isNaN(d.getTime())),
-      practicalClassSchedules: (contract.autoMotoDetails?.motoPracticalClassSchedules || (!contract.autoMotoDetails?.motoPracticalClassSchedules ? contract.autoMotoDetails?.practicalClassSchedules : []) || []).map(s => ({ ...s, date: toDate(s.date) })).filter(s => !isNaN(s.date.getTime())),
-      autoPracticalClassSchedules: (!contract.autoMotoDetails?.motoPracticalClassSchedules ? [] : (contract.autoMotoDetails?.practicalClassSchedules || [])).map(s => ({ ...s, date: toDate(s.date) })).filter(s => !isNaN(s.date.getTime())),
+      practicalClassSchedules: (contract.autoMotoDetails?.motoPracticalClassSchedules || (!contract.autoMotoDetails?.motoPracticalClassSchedules ? contract.autoMotoDetails?.practicalClassSchedules : []) || []).map(s => ({ ...s, date: s.date ? toDate(s.date) : null })),
+      autoPracticalClassSchedules: (!contract.autoMotoDetails?.motoPracticalClassSchedules ? [] : (contract.autoMotoDetails?.practicalClassSchedules || [])).map(s => ({ ...s, date: s.date ? toDate(s.date) : null })),
       photoDataUri: (contract.autoMotoDetails as any)?.photoDataUri || '',
       idCardDataUri: (contract.autoMotoDetails as any)?.idCardDataUri || '',
       licenseDataUri: (contract.autoMotoDetails as any)?.licenseDataUri || '',
@@ -218,6 +218,18 @@ export function MotoContractForm({ contract, initialData }: { contract?: Contrac
       licenseDataUri: '',
     },
   });
+
+  const initialInstallment = useMemo(() => {
+    if (!contract) return '2_installments';
+    const dp = contract.autoMotoDetails?.downPayment || 0;
+    const cv = contract.autoMotoDetails?.courseValue || 0;
+    if (dp === cv) return 'full';
+    if (Math.abs(dp - cv * 0.5) < 0.01) return '2_installments';
+    if (Math.abs(dp - cv * 0.2) < 0.01) return '5_installments';
+    return 'custom';
+  }, [contract]);
+
+  const [selectedInstallment, setSelectedInstallment] = useState<'full' | '2_installments' | '5_installments' | 'custom'>(initialInstallment);
 
   const { fields: practicalFields, replace: replacePractical } = useFieldArray({ 
     control: form.control, 
@@ -335,7 +347,7 @@ export function MotoContractForm({ contract, initialData }: { contract?: Contrac
         price = settingsPrices?.combos?.["Combo Plus Auto + Moto"] || 310.00;
         // Inicializar agenda de auto (5 sesiones / 10 horas)
         replaceAuto(Array.from({ length: 5 }, () => ({ 
-          date: new Date(), 
+          date: null, 
           time: '08:00am a 10:00am', 
           vehicle: '', 
           instructor: '' 
@@ -353,13 +365,51 @@ export function MotoContractForm({ contract, initialData }: { contract?: Contrac
       const count = PLAN_PRACTICAL_COUNTS[watchPlan] || 0;
       const defaultTime = watchPlan === 'Ya se manejar (Moto)' ? '10 minutos' : '08:00am a 10:00am';
       replacePractical(Array.from({ length: count }, () => ({ 
-        date: new Date(), 
+        date: null, 
         time: defaultTime, 
         vehicle: 'Moto Roja', 
         instructor: '' 
       })));
     }
   }, [watchPlan, watchAdditional, isEdit, replacePractical, replaceAuto, form, planPrices, settingsPrices]);
+
+  const watchCourseValue = form.watch('courseValue');
+
+  useEffect(() => {
+    const cv = Number(watchCourseValue) || 0;
+    let dp = 0;
+    if (selectedInstallment === 'full') dp = cv;
+    else if (selectedInstallment === '2_installments') dp = cv * 0.5;
+    else if (selectedInstallment === '5_installments') dp = cv * 0.2;
+    form.setValue('downPayment', dp);
+  }, [watchCourseValue, selectedInstallment, form]);
+
+  const watchDownPayment = form.watch('downPayment');
+
+  useEffect(() => {
+    const dp = Number(watchDownPayment) || 0;
+    const cv = Number(watchCourseValue) || 0;
+    if (dp === cv && cv > 0) {
+      setSelectedInstallment('full');
+    } else if (cv > 0 && Math.abs(dp - cv * 0.5) < 0.01) {
+      setSelectedInstallment('2_installments');
+    } else if (cv > 0 && Math.abs(dp - cv * 0.2) < 0.01) {
+      setSelectedInstallment('5_installments');
+    } else {
+      setSelectedInstallment('custom');
+    }
+  }, [watchDownPayment, watchCourseValue]);
+
+  const handleInstallmentChange = (value: 'full' | '2_installments' | '5_installments' | 'custom') => {
+    setSelectedInstallment(value);
+    if (value === 'custom') return;
+    const cv = Number(form.getValues('courseValue')) || 0;
+    let dp = 0;
+    if (value === 'full') dp = cv;
+    else if (value === '2_installments') dp = cv * 0.5;
+    else if (value === '5_installments') dp = cv * 0.2;
+    form.setValue('downPayment', dp);
+  };
 
   const handleDownloadPdf = async () => {
     const element = document.getElementById('contract-preview-hidden');
@@ -397,8 +447,8 @@ export function MotoContractForm({ contract, initialData }: { contract?: Contrac
       const { clientName, clientEmail, ...detailsOnly } = values;
       
       const formattedTheoryDates = (values.theoreticalClassDates || []).map(d => Timestamp.fromDate(d));
-      const formattedMotoPracticalSchedules = (values.practicalClassSchedules || []).map(s => ({ ...s, date: Timestamp.fromDate(s.date) }));
-      const formattedAutoPracticalSchedules = (values.autoPracticalClassSchedules || []).map(s => ({ ...s, date: Timestamp.fromDate(s.date) }));
+      const formattedMotoPracticalSchedules = (values.practicalClassSchedules || []).map(s => ({ ...s, date: s.date ? Timestamp.fromDate(s.date) : null }));
+      const formattedAutoPracticalSchedules = (values.autoPracticalClassSchedules || []).map(s => ({ ...s, date: s.date ? Timestamp.fromDate(s.date) : null }));
 
       const finalRole = role || 'Sistema';
 
@@ -715,16 +765,35 @@ export function MotoContractForm({ contract, initialData }: { contract?: Contrac
                 )} />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                 <FormField control={form.control} name="courseValue" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-[10px] font-bold uppercase">Valor (B/.)</FormLabel>
                     <FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold bg-muted/30" readOnly={!isEdit} /></FormControl>
                   </FormItem>
                 )} />
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Cuotas de Pagos</Label>
+                  <Select 
+                    onValueChange={(val: any) => handleInstallmentChange(val)} 
+                    value={selectedInstallment}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="h-10 font-bold">
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="full">1 Pago (Completo)</SelectItem>
+                      <SelectItem value="2_installments">2 Cuotas (Abono del 50%)</SelectItem>
+                      <SelectItem value="5_installments">5 Cuotas (Abono del 20%)</SelectItem>
+                      <SelectItem value="custom" disabled>Personalizado (Editado)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <FormField control={form.control} name="downPayment" render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-[10px] font-bold uppercase">Abono (B/.)</FormLabel>
+                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Abono Inicial (B/.)</FormLabel>
                     <FormControl><Input type="number" step="0.01" {...field} className="h-10 font-bold text-green-600" /></FormControl>
                   </FormItem>
                 )} />
@@ -830,7 +899,7 @@ export function MotoContractForm({ contract, initialData }: { contract?: Contrac
                               <FormItem>
                                 <Popover>
                                   <PopoverTrigger asChild>
-                                    <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : 'Fecha'}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
+                                    <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value && !isNaN(toDate(f.value).getTime()) ? format(toDate(f.value), "dd/MM/yy") : "Elegir clase"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
                                   </PopoverTrigger>
                                   <PopoverContent className="w-auto p-0">
                                     <Calendar mode="single" selected={f.value ? toDate(f.value) : undefined} onSelect={(date) => { if (date) f.onChange(date); }} initialFocus />
@@ -940,7 +1009,7 @@ export function MotoContractForm({ contract, initialData }: { contract?: Contrac
                               <FormItem>
                                 <Popover>
                                   <PopoverTrigger asChild>
-                                    <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value ? format(toDate(f.value), "dd/MM/yy") : 'Fecha'}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
+                                    <FormControl><Button variant="outline" className="h-9 w-full text-left font-normal text-xs">{f.value && !isNaN(toDate(f.value).getTime()) ? format(toDate(f.value), "dd/MM/yy") : "Elegir clase"}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl>
                                   </PopoverTrigger>
                                   <PopoverContent className="w-auto p-0">
                                     <Calendar mode="single" selected={f.value ? toDate(f.value) : undefined} onSelect={(date) => { if (date) f.onChange(date); }} initialFocus />

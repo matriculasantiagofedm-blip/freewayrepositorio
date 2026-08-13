@@ -11,7 +11,8 @@ import {
   doc, 
   runTransaction, 
   serverTimestamp, 
-  Timestamp
+  Timestamp,
+  updateDoc
 } from 'firebase/firestore';
 import { signInAnonymously } from 'firebase/auth';
 import { db, auth } from '@/firebase/client';
@@ -195,7 +196,7 @@ const enrollmentSchema = z.object({
   studentIdNumber: z.string().min(5, 'Cédula / ID requerido'),
   studentAddress: z.string().min(5, 'Dirección requerida'),
   studentPhone1: z.string().min(7, 'Teléfono requerido'),
-  vehicleTransmission: z.enum(['Automático', 'Manual']).default('Automático'),
+  vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).default('Automático'),
   coursePlan: z.string().min(1, "Selecciona un plan"),
   theoreticalClassSchedule: z.string().optional(),
   theoreticalClassDates: z.array(z.date()).optional(),
@@ -229,6 +230,9 @@ export default function DynamicEnrollPage() {
   const [successData, setSuccessData] = useState<{ folio: number; contractId: string; clientName: string; plan: string } | null>(null);
   const [voucherBase64, setVoucherBase64] = useState<string | null>(null);
   const [voucherMime, setVoucherMime] = useState<string | null>(null);
+  const [step, setStep] = useState<1 | 2>(1);
+  const [savedContractId, setSavedContractId] = useState<string | null>(null);
+  const [savedFolio, setSavedFolio] = useState<number | null>(null);
 
   // Disponibilidad en tiempo real desde la API de ContractTime
   const [availability, setAvailability] = useState<{ 
@@ -274,66 +278,155 @@ export default function DynamicEnrollPage() {
       .catch(err => console.warn("Error fetching availability:", err));
   }, []);
 
+  const form = useForm<z.infer<typeof enrollmentSchema>>({
+    resolver: zodResolver(enrollmentSchema),
+    defaultValues: {
+      clientName: '',
+      clientEmail: '',
+      studentIdNumber: '',
+      studentAddress: '',
+      studentPhone1: '',
+      vehicleTransmission: 'Automático',
+      coursePlan: '',
+      theoreticalClassSchedule: '',
+      theoreticalClassDates: [],
+      practicalClassSchedules: [],
+      practicalType: 'semanal',
+      paymentType: 'yappy',
+      yappyReference: ''
+    },
+    mode: "onChange"
+  });
+
+  const { watch, setValue, control } = form;
+  const currentValues = watch();
+
+  const { fields, replace } = useFieldArray({
+    control,
+    name: 'practicalClassSchedules'
+  });
+
   // Lista dinámica de planes utilizando los precios oficiales configurados en ContractTime
   const plansList = useMemo(() => {
-    const autoPrices = settingsPrices?.auto || {};
-    return [
-      {
-        title: "Básico (8 Hrs)",
-        name: "Curso Auto Básico (8 Hrs)",
-        hoursText: "8 Horas Prácticas",
-        classCount: 4,
-        price: autoPrices["Curso Auto Básico (8 Hrs)"] || 133,
-        tag: "",
-        desc: "4 clases prácticas de 2 horas cada una."
-      },
-      {
-        title: "Plus (10 Hrs)",
-        name: "Curso Auto Plus (10 Hrs)",
-        hoursText: "10 Horas Prácticas",
-        classCount: 5,
-        price: autoPrices["Curso Auto Plus (10 Hrs)"] || 155,
-        tag: "Más Popular",
-        desc: "5 clases prácticas de 2 horas cada una."
-      },
-      {
-        title: "Premium (12 Hrs)",
-        name: "Curso Auto Premium (12 Hrs)",
-        hoursText: "12 Horas Prácticas",
-        classCount: 6,
-        price: autoPrices["Curso Auto Premium (12 Hrs)"] || 180,
-        tag: "Recomendado",
-        desc: "6 clases prácticas de 2 horas cada una."
-      },
-      {
-        title: "Reforzamiento (4 Hrs)",
-        name: "Reforzamiento 4 Hrs",
-        hoursText: "4 Horas Prácticas",
-        classCount: 2,
-        price: autoPrices["Reforzamiento 4 Hrs"] || 95,
-        tag: "",
-        desc: "2 clases prácticas de 2 horas cada una."
-      },
-      {
-        title: "Reforzamiento (2 Hrs)",
-        name: "Reforzamiento 2 Hrs",
-        hoursText: "2 Horas Prácticas",
-        classCount: 1,
-        price: autoPrices["Reforzamiento 2 Hrs"] || 75,
-        tag: "",
-        desc: "1 clase práctica de 2 horas."
-      },
-      {
-        title: "Ya sé manejar",
-        name: "Ya se manejar",
-        hoursText: "Evaluación Práctica",
-        classCount: 1,
-        price: autoPrices["Ya se manejar"] || 57,
-        tag: "",
-        desc: "1 sesión de evaluación de maniobra y parqueo."
-      }
-    ];
-  }, [settingsPrices]);
+    const isMoto = currentValues.vehicleTransmission === 'Moto';
+    if (isMoto) {
+      const motoPrices = settingsPrices?.moto || {};
+      return [
+        {
+          title: "Básico (8 Hrs)",
+          name: "Curso Moto Básico (8 Hrs)",
+          hoursText: "8 Horas Prácticas",
+          classCount: 4,
+          price: motoPrices["Curso Moto Básico (8 Hrs)"] || 115,
+          tag: "",
+          desc: "4 clases prácticas de 2 horas cada una."
+        },
+        {
+          title: "Plus (10 Hrs)",
+          name: "Curso Moto Plus (10 Hrs)",
+          hoursText: "10 Horas Prácticas",
+          classCount: 5,
+          price: motoPrices["Curso Moto Plus (10 Hrs)"] || 135,
+          tag: "Más Popular",
+          desc: "5 clases prácticas de 2 horas cada una."
+        },
+        {
+          title: "Premium (12 Hrs)",
+          name: "Curso Moto Premium (12 Hrs)",
+          hoursText: "12 Horas Prácticas",
+          classCount: 6,
+          price: motoPrices["Curso Moto Premium (12 Hrs)"] || 155,
+          tag: "Recomendado",
+          desc: "6 clases prácticas de 2 horas cada una."
+        },
+        {
+          title: "Reforzamiento (4 Hrs)",
+          name: "Moto Reforzamiento 4 Hrs",
+          hoursText: "4 Horas Prácticas",
+          classCount: 2,
+          price: motoPrices["Moto Reforzamiento 4 Hrs"] || 95,
+          tag: "",
+          desc: "2 clases prácticas de 2 horas."
+        },
+        {
+          title: "Reforzamiento (2 Hrs)",
+          name: "Moto Reforzamiento 2 Hrs",
+          hoursText: "2 Horas Prácticas",
+          classCount: 1,
+          price: motoPrices["Moto Reforzamiento 2 Hrs"] || 75,
+          tag: "",
+          desc: "1 clase práctica de 2 horas."
+        },
+        {
+          title: "Ya sé manejar",
+          name: "Ya se manejar (Moto)",
+          hoursText: "Evaluación Práctica",
+          classCount: 1,
+          price: motoPrices["Ya se manejar (Moto)"] || 57,
+          tag: "",
+          desc: "1 sesión de evaluación de maniobra y parqueo."
+        }
+      ];
+    } else {
+      const autoPrices = settingsPrices?.auto || {};
+      return [
+        {
+          title: "Básico (8 Hrs)",
+          name: "Curso Auto Básico (8 Hrs)",
+          hoursText: "8 Horas Prácticas",
+          classCount: 4,
+          price: autoPrices["Curso Auto Básico (8 Hrs)"] || 133,
+          tag: "",
+          desc: "4 clases prácticas de 2 horas cada una."
+        },
+        {
+          title: "Plus (10 Hrs)",
+          name: "Curso Auto Plus (10 Hrs)",
+          hoursText: "10 Horas Prácticas",
+          classCount: 5,
+          price: autoPrices["Curso Auto Plus (10 Hrs)"] || 155,
+          tag: "Más Popular",
+          desc: "5 clases prácticas de 2 horas cada una."
+        },
+        {
+          title: "Premium (12 Hrs)",
+          name: "Curso Auto Premium (12 Hrs)",
+          hoursText: "12 Horas Prácticas",
+          classCount: 6,
+          price: autoPrices["Curso Auto Premium (12 Hrs)"] || 180,
+          tag: "Recomendado",
+          desc: "6 clases prácticas de 2 horas cada una."
+        },
+        {
+          title: "Reforzamiento (4 Hrs)",
+          name: "Reforzamiento 4 Hrs",
+          hoursText: "4 Horas Prácticas",
+          classCount: 2,
+          price: autoPrices["Reforzamiento 4 Hrs"] || 95,
+          tag: "",
+          desc: "2 clases prácticas de 2 horas cada una."
+        },
+        {
+          title: "Reforzamiento (2 Hrs)",
+          name: "Reforzamiento 2 Hrs",
+          hoursText: "2 Horas Prácticas",
+          classCount: 1,
+          price: autoPrices["Reforzamiento 2 Hrs"] || 75,
+          tag: "",
+          desc: "1 clase práctica de 2 horas."
+        },
+        {
+          title: "Ya sé manejar",
+          name: "Ya se manejar",
+          hoursText: "Evaluación Práctica",
+          classCount: 1,
+          price: autoPrices["Ya se manejar"] || 57,
+          tag: "",
+          desc: "1 sesión de evaluación de maniobra y parqueo."
+        }
+      ];
+    }
+  }, [settingsPrices, currentValues.vehicleTransmission]);
 
   const filteredTheoreticalSchedules = useMemo(() => {
     const checkIsTeoricoActive = (day: string, slotId: string) => {
@@ -363,34 +456,6 @@ export default function DynamicEnrollPage() {
       return true;
     });
   }, [availability.teoricoSlots, availability.blockedSlots]);
-
-  const form = useForm<z.infer<typeof enrollmentSchema>>({
-    resolver: zodResolver(enrollmentSchema),
-    defaultValues: {
-      clientName: '',
-      clientEmail: '',
-      studentIdNumber: '',
-      studentAddress: '',
-      studentPhone1: '',
-      vehicleTransmission: 'Automático',
-      coursePlan: '',
-      theoreticalClassSchedule: '',
-      theoreticalClassDates: [],
-      practicalClassSchedules: [],
-      practicalType: 'semanal',
-      paymentType: 'yappy',
-      yappyReference: ''
-    },
-    mode: "onChange"
-  });
-
-  const { watch, setValue, control } = form;
-  const currentValues = watch();
-
-  const { fields, replace } = useFieldArray({
-    control,
-    name: 'practicalClassSchedules'
-  });
 
   const selectedPlan = plansList.find(p => p.name === currentValues.coursePlan);
 
@@ -508,168 +573,299 @@ export default function DynamicEnrollPage() {
   };
 
   const onSubmit = async (data: z.infer<typeof enrollmentSchema>) => {
-    if (data.paymentType === 'yappy' && !data.yappyReference) {
-      toast({
-        title: "Referencia de Yappy requerida",
-        description: "Por favor ingresa el número de referencia de tu pago por Yappy.",
-        variant: "destructive"
-      });
-      return;
-    }
+    if (step === 1) {
+      // Validar que no haya domingos y que todos los cupos seleccionados estén disponibles
+      const selectedSchedules = data.practicalClassSchedules || [];
+      for (let i = 0; i < selectedSchedules.length; i++) {
+        const s = selectedSchedules[i];
+        if (!s.date || !s.time) {
+          toast({
+            title: "Horario incompleto",
+            description: `Por favor selecciona la fecha y hora para la Clase ${i + 1}.`,
+            variant: "destructive"
+          });
+          return;
+        }
 
-    if (data.paymentType === 'cubo' && !data.yappyReference) {
-      toast({
-        title: "Referencia de pago requerida",
-        description: "Por favor ingresa el número de referencia de tu transacción por tarjeta / Cubo.",
-        variant: "destructive"
-      });
-      return;
-    }
+        const dateObj = new Date(s.date + 'T12:00:00');
+        if (dateObj.getDay() === 0) {
+          toast({
+            title: "Día no laborable",
+            description: `La Clase ${i + 1} está programada para un domingo. Por favor selecciona otro día.`,
+            variant: "destructive"
+          });
+          return;
+        }
 
-    // Validar que no haya domingos y que todos los cupos seleccionados estén disponibles
-    const selectedSchedules = data.practicalClassSchedules || [];
-    for (let i = 0; i < selectedSchedules.length; i++) {
-      const s = selectedSchedules[i];
-      if (!s.date || !s.time) {
-        toast({
-          title: "Horario incompleto",
-          description: `Por favor selecciona la fecha y hora para la Clase ${i + 1}.`,
-          variant: "destructive"
-        });
-        return;
+        const occ = getSlotOccupancy(
+          s.date,
+          s.time,
+          availability.globalCounts,
+          availability.blockedSlots,
+          availability.slotCapacities,
+          availability.transmissionCounts,
+          availability.activeVehiclesByTransmission,
+          data.vehicleTransmission,
+          availability.practicaSlots,
+          availability.teoricoSlots,
+          availability.practicaCapacities,
+          availability.teoricoCapacities
+        );
+
+        if (occ.isFull) {
+          toast({
+            title: "Horario ya reservado",
+            description: `La Clase ${i + 1} (${s.date} a las ${s.time}) ya se encuentra llena o reservada. Por favor selecciona otro horario.`,
+            variant: "destructive"
+          });
+          return;
+        }
       }
 
-      const dateObj = new Date(s.date + 'T12:00:00');
-      if (dateObj.getDay() === 0) {
-        toast({
-          title: "Día no laborable",
-          description: `La Clase ${i + 1} está programada para un domingo. Por favor selecciona otro día.`,
-          variant: "destructive"
-        });
-        return;
-      }
+      setIsSubmitting(true);
+      try {
+        if (!auth.currentUser) await signInAnonymously(auth);
 
-      const occ = getSlotOccupancy(
-        s.date,
-        s.time,
-        availability.globalCounts,
-        availability.blockedSlots,
-        availability.slotCapacities,
-        availability.transmissionCounts,
-        availability.activeVehiclesByTransmission,
-        data.vehicleTransmission,
-        availability.practicaSlots,
-        availability.teoricoSlots,
-        availability.practicaCapacities,
-        availability.teoricoCapacities
-      );
+        const isMoto = data.vehicleTransmission === 'Moto';
 
-      if (occ.isFull) {
-        toast({
-          title: "Horario ya reservado",
-          description: `La Clase ${i + 1} (${s.date} a las ${s.time}) ya se encuentra llena o reservada. Por favor selecciona otro horario.`,
-          variant: "destructive"
-        });
-        return;
-      }
-    }
+        if (savedContractId) {
+          // El contrato ya existe en borrador, simplemente lo actualizamos
+          const contractRef = doc(db, 'contracts', savedContractId);
+          
+          const price = selectedPlan?.price || 0;
+          const formattedPracticalSchedules = (data.practicalClassSchedules || []).map((s: any, idx: number) => ({
+            classNumber: idx + 1,
+            date: Timestamp.fromDate(new Date(s.date + 'T12:00:00')),
+            time: s.time,
+            instructor: '',
+            vehicle: '',
+            status: 'pending'
+          }));
 
-    setIsSubmitting(true);
-    try {
-      if (!auth.currentUser) await signInAnonymously(auth);
-
-      const newContractRef = doc(collection(db, 'contracts'));
-      let assignedFolio = 18;
-
-      await runTransaction(db, async (transaction) => {
-        const counterRef = doc(db, 'counters', 'contracts_folio');
-        const counterDoc = await transaction.get(counterRef);
-        assignedFolio = counterDoc.exists() ? Math.max(counterDoc.data().count + 1, 18) : 18;
-        transaction.set(counterRef, { count: assignedFolio }, { merge: true });
-
-        const price = selectedPlan?.price || 0;
-
-        const formattedPracticalSchedules = (data.practicalClassSchedules || []).map((s: any) => ({
-          date: Timestamp.fromDate(new Date(s.date)),
-          time: s.time
-        }));
-
-        const contractData = {
-          title: `Curso de Auto - Folio ${assignedFolio}`,
-          folioNumber: assignedFolio,
-          clientName: data.clientName,
-          clientEmail: data.clientEmail,
-          idType: 'C.I.P.',
-          studentIdNumber: data.studentIdNumber,
-          studentAddress: data.studentAddress,
-          studentPhone1: data.studentPhone1,
-          contractType: 'Curso Auto',
-          type: 'Curso Auto',
-          status: 'active',
-          paymentStatus: 'pending',
-          paymentMethod: data.paymentType,
-          paymentReference: data.paymentType === 'yappy' ? (data.yappyReference || '') : '',
-          totalAmount: price,
-          pendingAmount: price,
-          payments: [],
-          createdAt: serverTimestamp(),
-          activatedAt: serverTimestamp(),
-          createdBy: 'Inscripción Web',
-          isOnline: true,
-          source: 'online',
-          autoMotoDetails: {
-            coursePlan: data.coursePlan,
-            courseValue: price,
-            downPayment: 0,
-            balance: price,
-            paidInFull: false,
-            vehicleTransmission: data.vehicleTransmission,
-            studentAddress: data.studentAddress,
+          await updateDoc(contractRef, {
+            title: `${isMoto ? 'Curso de Moto' : 'Curso de Auto'} - Folio ${savedFolio}`,
+            clientName: data.clientName,
+            clientEmail: data.clientEmail,
             studentIdNumber: data.studentIdNumber,
+            studentAddress: data.studentAddress,
             studentPhone1: data.studentPhone1,
-            theoreticalClassSchedule: data.theoreticalClassSchedule || '',
-            theoreticalClassDates: data.theoreticalClassDates ? data.theoreticalClassDates.map(d => Timestamp.fromDate(d)) : [],
-            practicalClassSchedules: formattedPracticalSchedules,
-            practicalType: data.practicalType
-          }
-        };
+            contractType: isMoto ? 'Curso Moto' : 'Curso Auto',
+            type: isMoto ? 'Curso Moto' : 'Curso Auto',
+            totalAmount: price,
+            pendingAmount: price,
+            'autoMotoDetails.coursePlan': data.coursePlan,
+            'autoMotoDetails.courseValue': price,
+            'autoMotoDetails.balance': price,
+            'autoMotoDetails.vehicleTransmission': data.vehicleTransmission,
+            'autoMotoDetails.studentAddress': data.studentAddress,
+            'autoMotoDetails.studentIdNumber': data.studentIdNumber,
+            'autoMotoDetails.studentPhone1': data.studentPhone1,
+            'autoMotoDetails.theoreticalClassSchedule': data.theoreticalClassSchedule || '',
+            'autoMotoDetails.theoreticalClassDates': data.theoreticalClassDates ? data.theoreticalClassDates.map(d => Timestamp.fromDate(d)) : [],
+            'autoMotoDetails.practicalClassSchedules': formattedPracticalSchedules,
+            'autoMotoDetails.practicalType': data.practicalType
+          });
 
-        transaction.set(newContractRef, contractData);
-      });
+          setStep(2);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          toast({
+            title: "Inscripción Actualizada",
+            description: "Tus datos y horarios han sido actualizados en la reserva.",
+          });
+          setIsSubmitting(false);
+          return;
+        }
 
-      // Notificación automática al WhatsApp del Asesor con referencia e imagen si hay
-      fetch('/api/contracts/notify-advisor', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          folio: assignedFolio,
-          clientName: data.clientName,
-          clientPhone: data.studentPhone1,
-          clientEmail: data.clientEmail,
-          coursePlan: data.coursePlan,
-          vehicleTransmission: data.vehicleTransmission,
-          paymentAmount: selectedPlan?.price || 0,
+        const newContractRef = doc(collection(db, 'contracts'));
+        let assignedFolio = 18;
+
+        await runTransaction(db, async (transaction) => {
+          const counterRef = doc(db, 'counters', 'contracts_folio');
+          const counterDoc = await transaction.get(counterRef);
+          assignedFolio = counterDoc.exists() ? Math.max(counterDoc.data().count + 1, 18) : 18;
+          transaction.set(counterRef, { count: assignedFolio }, { merge: true });
+
+          const price = selectedPlan?.price || 0;
+
+          const formattedPracticalSchedules = (data.practicalClassSchedules || []).map((s: any, idx: number) => ({
+            classNumber: idx + 1,
+            date: Timestamp.fromDate(new Date(s.date + 'T12:00:00')),
+            time: s.time,
+            instructor: '',
+            vehicle: '',
+            status: 'pending'
+          }));
+
+          const contractData = {
+            title: `${isMoto ? 'Curso de Moto' : 'Curso de Auto'} - Folio ${assignedFolio}`,
+            folioNumber: assignedFolio,
+            clientName: data.clientName,
+            clientEmail: data.clientEmail,
+            idType: 'C.I.P.',
+            studentIdNumber: data.studentIdNumber,
+            studentAddress: data.studentAddress,
+            studentPhone1: data.studentPhone1,
+            contractType: isMoto ? 'Curso Moto' : 'Curso Auto',
+            type: isMoto ? 'Curso Moto' : 'Curso Auto',
+            status: 'active',
+            paymentStatus: 'pending',
+            paymentMethod: data.paymentType,
+            paymentReference: '',
+            totalAmount: price,
+            pendingAmount: price,
+            payments: [],
+            createdAt: serverTimestamp(),
+            activatedAt: serverTimestamp(),
+            createdBy: 'Inscripción Web',
+            isOnline: true,
+            source: 'online',
+            autoMotoDetails: {
+              coursePlan: data.coursePlan,
+              courseValue: price,
+              downPayment: 0,
+              balance: price,
+              paidInFull: false,
+              vehicleTransmission: data.vehicleTransmission,
+              studentAddress: data.studentAddress,
+              studentIdNumber: data.studentIdNumber,
+              studentPhone1: data.studentPhone1,
+              theoreticalClassSchedule: data.theoreticalClassSchedule || '',
+              theoreticalClassDates: data.theoreticalClassDates ? data.theoreticalClassDates.map(d => Timestamp.fromDate(d)) : [],
+              practicalClassSchedules: formattedPracticalSchedules,
+              practicalType: data.practicalType
+            }
+          };
+
+          transaction.set(newContractRef, contractData);
+        });
+
+        setSavedContractId(newContractRef.id);
+        setSavedFolio(assignedFolio);
+        setStep(2);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        toast({
+          title: "¡Cupo Reservado!",
+          description: "Tu cupo ha sido pre-registrado en el sistema. Procede a realizar tu pago.",
+        });
+      } catch (error: any) {
+        console.error("Error al pre-registrar cupo:", error);
+        toast({ title: "Error de Inscripción", description: "No se pudo guardar la matrícula. Revisa tu conexión.", variant: "destructive" });
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      // step === 2
+      if (data.paymentType === 'yappy' && !data.yappyReference) {
+        toast({
+          title: "Referencia de Yappy requerida",
+          description: "Por favor ingresa el número de referencia de tu pago por Yappy.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (data.paymentType === 'cubo' && !data.yappyReference) {
+        toast({
+          title: "Referencia de pago requerida",
+          description: "Por favor ingresa el número de referencia de tu transacción por tarjeta / Cubo.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (!savedContractId) {
+        toast({
+          title: "Contrato no encontrado",
+          description: "No encontramos tu número de registro previo. Por favor contacta soporte.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setIsSubmitting(true);
+      try {
+        const contractRef = doc(db, 'contracts', savedContractId);
+        await updateDoc(contractRef, {
           paymentMethod: data.paymentType,
-          paymentReference: data.paymentType === 'yappy' ? data.yappyReference : '',
-          contractId: newContractRef.id,
-          base64Image: voucherBase64,
-          mimeType: voucherMime
-        })
-      }).catch(err => console.error("Error notify-advisor:", err));
+          paymentReference: data.yappyReference || '',
+          'autoMotoDetails.paymentReference': data.yappyReference || ''
+        });
 
-      setSuccessData({
-        folio: assignedFolio,
-        contractId: newContractRef.id,
-        clientName: data.clientName,
-        plan: data.coursePlan
+        // Notificación automática al WhatsApp del Asesor con referencia e imagen si hay
+        fetch('/api/contracts/notify-advisor', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            folio: savedFolio,
+            clientName: data.clientName,
+            clientPhone: data.studentPhone1,
+            clientEmail: data.clientEmail,
+            coursePlan: data.coursePlan,
+            vehicleTransmission: data.vehicleTransmission,
+            paymentAmount: selectedPlan?.price || 0,
+            paymentMethod: data.paymentType,
+            paymentReference: data.yappyReference || '',
+            contractId: savedContractId,
+            base64Image: voucherBase64,
+            mimeType: voucherMime
+          })
+        }).catch(err => console.error("Error notify-advisor:", err));
+
+        setSuccessData({
+          folio: savedFolio || 0,
+          contractId: savedContractId,
+          clientName: data.clientName,
+          plan: data.coursePlan
+        });
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } catch (error: any) {
+        console.error("Error al registrar pago:", error);
+        toast({ title: "Error de Registro", description: "No se pudo actualizar el pago del contrato.", variant: "destructive" });
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+  };
+
+  const onInvalid = (errors: any) => {
+    console.warn("Validation errors on submit:", errors);
+    const errorKeys = Object.keys(errors);
+    if (errorKeys.length > 0) {
+      const firstError = errors[errorKeys[0]];
+      let message = "Por favor revisa todos los campos obligatorios.";
+      
+      if (firstError.message) {
+        message = firstError.message;
+      } else if (firstError.root?.message) {
+        message = firstError.root.message;
+      } else if (typeof firstError === 'object') {
+        const subKeys = Object.keys(firstError);
+        if (subKeys.length > 0 && firstError[subKeys[0]]?.message) {
+          message = firstError[subKeys[0]].message;
+        } else if (Array.isArray(firstError)) {
+          const firstElem = firstError.find(Boolean);
+          if (firstElem) {
+            const innerKeys = Object.keys(firstElem);
+            if (innerKeys.length > 0 && firstElem[innerKeys[0]]?.message) {
+              message = firstElem[innerKeys[0]].message;
+            }
+          }
+        }
+      }
+      
+      toast({
+        title: "Formulario Incompleto",
+        description: message,
+        variant: "destructive"
       });
 
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (error: any) {
-      console.error("Error al inscribir:", error);
-      toast({ title: "Error de Inscripción", description: "No se pudo guardar la matrícula. Revisa tu conexión.", variant: "destructive" });
-    } finally {
-      setIsSubmitting(false);
+      setTimeout(() => {
+        const firstInvalidElement = document.querySelector('[aria-invalid="true"], .text-destructive, input[required]:invalid');
+        if (firstInvalidElement) {
+          firstInvalidElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
     }
   };
 
@@ -705,13 +901,17 @@ export default function DynamicEnrollPage() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <Link href={`/contracts/${successData.contractId}`} className="w-full">
-              <Button variant="default" className="w-full h-12 text-base font-bold rounded-xl bg-blue-600 hover:bg-blue-700">
-                <FileText className="w-5 h-5 mr-2" /> Ver Mi Contrato
-              </Button>
-            </Link>
-            <a href="https://wa.me/50763814115" target="_blank" rel="noreferrer" className="w-full">
+          <div className="space-y-3 pt-2">
+            <p className="text-xs text-slate-400 font-medium">
+              Por favor, ponte en contacto con tu asesor por WhatsApp para activar tu plan y coordinar el inicio de tus clases.
+            </p>
+            <a
+              href={`https://wa.me/50763814115?text=${encodeURIComponent(
+                `Hola, acabo de inscribirme en la web. Mi folio es el #${String(successData.folio).padStart(6, '0')} a nombre de ${successData.clientName} para el ${successData.plan}.`
+              )}`}
+              target="_blank"
+              rel="noreferrer"
+            >
               <Button variant="outline" className="w-full h-12 text-base font-bold rounded-xl border-emerald-500 text-emerald-700 hover:bg-emerald-50">
                 <MessageCircle className="w-5 h-5 mr-2" /> Contactar por WhatsApp
               </Button>
@@ -725,7 +925,7 @@ export default function DynamicEnrollPage() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-200">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col lg:flex-row w-full max-w-[1600px] mx-auto">
+        <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="flex flex-col lg:flex-row w-full max-w-[1600px] mx-auto">
           
           {/* COLUMNA IZQUIERDA: FORMULARIO INTERACTIVO */}
           <div className="w-full lg:w-[65%] p-6 lg:p-12 xl:p-16">
@@ -741,7 +941,9 @@ export default function DynamicEnrollPage() {
                 <p className="text-lg text-slate-500">Selecciona tu plan y verifica disponibilidad de cupos por cada fecha en tiempo real.</p>
               </div>
 
-              {/* SECCIÓN 1: DATOS PERSONALES */}
+              {step === 1 && (
+                <>
+                  {/* SECCIÓN 1: DATOS PERSONALES */}
               <section className="space-y-6">
                 <div className="flex items-center gap-3 pb-3 border-b border-slate-200">
                   <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">1</div>
@@ -822,10 +1024,13 @@ export default function DynamicEnrollPage() {
                 <div className="space-y-2">
                   <Label className="text-slate-600 font-semibold text-xs ml-1">Transmisión del Vehículo</Label>
                   <div className="flex gap-3">
-                    {['Automático', 'Manual'].map((type) => (
+                    {['Automático', 'Manual', 'Moto'].map((type) => (
                       <div 
                         key={type}
-                        onClick={() => setValue('vehicleTransmission', type as any)}
+                        onClick={() => {
+                          setValue('vehicleTransmission', type as any);
+                          setValue('coursePlan', ''); // Limpiar para obligar a elegir un plan correcto
+                        }}
                         className={`flex-1 py-2.5 px-4 rounded-xl border flex items-center justify-center gap-2 cursor-pointer transition-all duration-150 ${currentValues.vehicleTransmission === type ? 'border-blue-600 bg-blue-50/20 text-blue-900 font-bold shadow-2xs' : 'border-slate-200 bg-white hover:border-slate-300 text-slate-600 font-semibold'}`}
                       >
                         <Car className={`w-4 h-4 ${currentValues.vehicleTransmission === type ? 'text-blue-600' : 'text-slate-400'}`} />
@@ -1135,6 +1340,39 @@ export default function DynamicEnrollPage() {
                   </div>
                 )}
               </section>
+            </>
+          )}
+
+          {step === 2 && (
+            <>
+              {/* SECCIÓN DE AVISO DE RESERVA EXITOSA */}
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-slate-800 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <div className="flex items-center gap-3 animate-pulse">
+                    <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-lg shrink-0 shadow-inner">
+                      🎉
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-emerald-950 text-sm">¡Cupo Reservado con Éxito!</h3>
+                      <p className="text-xs text-emerald-700">Folio Oficial Provisional: <strong className="text-emerald-950">#{String(savedFolio).padStart(6, '0')}</strong></p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => {
+                      setStep(1);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="h-8 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900 border border-emerald-200 bg-white"
+                  >
+                    ✏️ Modificar Registro
+                  </Button>
+                </div>
+                <p className="text-xs text-emerald-800 leading-relaxed pt-1.5 border-t border-emerald-100">
+                  Tus horarios de clases prácticas y teóricas han sido bloqueados y reservados en nuestro sistema. Para activar formalmente tu matrícula, por favor realiza tu pago a continuación e ingresa el número de referencia.
+                </p>
+              </div>
 
               {/* SECCIÓN 5: PAGO */}
               <section className="space-y-5 pb-16">
@@ -1344,7 +1582,8 @@ export default function DynamicEnrollPage() {
 
 
               </section>
-
+            </>
+          )}
             </div>
           </div>
 
@@ -1418,10 +1657,12 @@ export default function DynamicEnrollPage() {
                 <div className="mt-8">
                   <Button 
                     type="submit" 
-                    disabled={isSubmitting || !currentValues.coursePlan || (!currentValues.coursePlan?.includes('Reforzamiento') && !currentValues.coursePlan?.includes('manejar') && filteredTheoreticalSchedules.length > 0 && !currentValues.theoreticalClassSchedule)}
-                    className="w-full h-12 text-sm font-bold rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-lg transition-all active:scale-[0.98] disabled:opacity-50"
+                    disabled={isSubmitting || (step === 1 && (!currentValues.coursePlan || (!currentValues.coursePlan?.includes('Reforzamiento') && !currentValues.coursePlan?.includes('manejar') && filteredTheoreticalSchedules.length > 0 && !currentValues.theoreticalClassSchedule)))}
+                    className={`w-full h-12 text-sm font-bold rounded-xl text-white shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 ${step === 2 ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-blue-600 hover:bg-blue-500'}`}
                   >
-                    {isSubmitting ? 'Procesando...' : 'Completar Inscripción'}
+                    {isSubmitting 
+                      ? (step === 1 ? 'Reservando...' : 'Procesando...') 
+                      : (step === 1 ? 'Reservar Cupo y Proceder al Pago' : 'Confirmar y Completar Inscripción')}
                     {!isSubmitting && <ChevronRight className="w-4 h-4 ml-2" />}
                   </Button>
                   <p className="text-center text-slate-400 text-xs mt-3 flex items-center justify-center gap-1.5">
@@ -1434,7 +1675,9 @@ export default function DynamicEnrollPage() {
               <div className="bg-blue-950/40 border border-blue-900/40 rounded-xl p-4 backdrop-blur-sm flex items-start gap-3">
                 <Info className="text-blue-400 w-4.5 h-4.5 shrink-0 mt-0.5" />
                 <p className="text-xs text-blue-200 leading-normal">
-                  Al completar tu inscripción, tu cupo quedará reservado inmediatamente en nuestro sistema y se asignará tu Folio Oficial.
+                  {step === 1 
+                    ? "Al reservar tu cupo, tus horarios quedarán bloqueados y se asignará tu Folio Oficial provisional en nuestra base de datos."
+                    : "Al confirmar tu pago, tu matrícula quedará formalmente activada y se enviará la notificación a tu asesor asignado."}
                 </p>
               </div>
             </div>

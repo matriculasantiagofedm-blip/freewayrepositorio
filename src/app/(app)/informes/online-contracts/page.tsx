@@ -31,6 +31,8 @@ interface Contract {
   activatedAt?: any;
   createdBy?: string;
   autoMotoDetails?: any;
+  isOnline?: boolean;
+  source?: string;
 }
 
 function toDate(val: any): Date {
@@ -44,7 +46,7 @@ export default function OnlineContractsReportPage() {
   const db = useDb();
   const { user } = useUser();
   const [searchTerm, setSearchTerm] = useState('');
-  const [methodFilter, setMethodFilter] = useState<'all' | 'paypal' | 'yappy' | 'cash'>('all');
+  const [methodFilter, setMethodFilter] = useState<'all' | 'yappy' | 'cubo' | 'paypal'>('all');
 
   const contractsQuery = useMemo(() => {
     if (!db || !user) return null;
@@ -59,13 +61,11 @@ export default function OnlineContractsReportPage() {
 
     return rawContracts
       .filter((c) => {
-        // Es online si tiene clientEmail, paymentMethod, o fue creado mediante la ruta web/enroll
+        // Es online si fue marcado explícitamente como online, proviene de 'online' o fue creado por 'Inscripción Web'
         const isOnline = 
-          c.clientEmail || 
-          c.paymentMethod || 
-          c.createdBy === 'Inscripción Web' || 
-          !c.createdBy ||
-          (c.autoMotoDetails && c.autoMotoDetails.coursePlan);
+          c.isOnline === true || 
+          c.source === 'online' || 
+          c.createdBy === 'Inscripción Web';
 
         if (!isOnline) return false;
 
@@ -102,16 +102,22 @@ export default function OnlineContractsReportPage() {
     const totalCount = onlineContracts.length;
     let totalRevenue = 0;
     let paypalCount = 0;
+    let yappyCount = 0;
+    let cuboCount = 0;
     let todayCount = 0;
 
     onlineContracts.forEach((c) => {
       const amount = c.totalAmount || 0;
       totalRevenue += amount;
       if (c.paymentMethod === 'paypal') paypalCount++;
+      if (c.paymentMethod === 'yappy') yappyCount++;
+      if (c.paymentMethod === 'cubo') cuboCount++;
       if (isToday(toDate(c.createdAt))) todayCount++;
     });
 
-    return { totalCount, totalRevenue, paypalCount, todayCount };
+    const autoPaymentsCount = paypalCount + yappyCount + cuboCount;
+
+    return { totalCount, totalRevenue, autoPaymentsCount, todayCount };
   }, [onlineContracts]);
 
   return (
@@ -164,12 +170,12 @@ export default function OnlineContractsReportPage() {
 
         <Card className="bg-white border-slate-200/80 shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-500">Pagos PayPal / Tarjeta</CardTitle>
+            <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-500">Pagos Realizados Web</CardTitle>
             <CreditCard className="h-4 w-4 text-indigo-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-black text-indigo-600">{stats.paypalCount}</div>
-            <p className="text-xs text-slate-400 mt-1">Verificados automáticamente</p>
+            <div className="text-2xl font-black text-indigo-600">{stats.autoPaymentsCount}</div>
+            <p className="text-xs text-slate-400 mt-1">Transacciones procesadas</p>
           </CardContent>
         </Card>
 
@@ -201,7 +207,7 @@ export default function OnlineContractsReportPage() {
               />
             </div>
 
-            <div className="flex items-center gap-2 w-full md:w-auto">
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
               <Button
                 variant={methodFilter === 'all' ? 'default' : 'outline'}
                 size="sm"
@@ -211,20 +217,28 @@ export default function OnlineContractsReportPage() {
                 Todos
               </Button>
               <Button
+                variant={methodFilter === 'yappy' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setMethodFilter('yappy')}
+                className="text-xs gap-1 border-[#004fb9] text-[#004fb9] hover:bg-blue-50"
+              >
+                🔵 Yappy
+              </Button>
+              <Button
+                variant={methodFilter === 'cubo' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setMethodFilter('cubo')}
+                className="text-xs gap-1 border-[#16a34a] text-[#16a34a] hover:bg-green-50"
+              >
+                🟢 Tarjeta (Cubo)
+              </Button>
+              <Button
                 variant={methodFilter === 'paypal' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setMethodFilter('paypal')}
                 className="text-xs gap-1"
               >
-                <CreditCard className="h-3 w-3" /> PayPal / Tarjeta
-              </Button>
-              <Button
-                variant={methodFilter === 'cash' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setMethodFilter('cash')}
-                className="text-xs gap-1"
-              >
-                <DollarSign className="h-3 w-3" /> Directo / Yappy
+                <CreditCard className="h-3 w-3" /> PayPal
               </Button>
             </div>
           </div>
@@ -283,13 +297,21 @@ export default function OnlineContractsReportPage() {
                           {planName}
                         </TableCell>
                         <TableCell>
-                          {contract.paymentMethod === 'paypal' ? (
-                            <Badge className="bg-indigo-100 text-indigo-800 hover:bg-indigo-100 border-indigo-200 text-[10px] gap-1 font-bold">
-                              <CreditCard className="h-3 w-3 text-indigo-600" /> PayPal / Tarjeta
+                          {contract.paymentMethod === 'yappy' ? (
+                            <Badge className="bg-[#004fb9] text-white hover:bg-[#004fb9] text-[10px] gap-1 font-bold">
+                              🔵 Yappy
+                            </Badge>
+                          ) : contract.paymentMethod === 'cubo' ? (
+                            <Badge className="bg-[#16a34a] text-white hover:bg-[#16a34a] text-[10px] gap-1 font-bold">
+                              🟢 Tarjeta (Cubo)
+                            </Badge>
+                          ) : contract.paymentMethod === 'paypal' ? (
+                            <Badge className="bg-indigo-600 text-white hover:bg-indigo-700 text-[10px] gap-1 font-bold">
+                              <CreditCard className="h-3 w-3" /> PayPal
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] gap-1 font-bold">
-                              <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Web Directo
+                            <Badge variant="outline" className="bg-slate-50 text-slate-700 border-slate-200 text-[10px] gap-1 font-bold">
+                              {contract.paymentMethod || 'Web Directo'}
                             </Badge>
                           )}
                         </TableCell>

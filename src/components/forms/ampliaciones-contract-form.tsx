@@ -6,7 +6,7 @@
  * Soporta descarga de PDF en tiempo real.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -153,6 +153,18 @@ export function AmpliacionesContractForm({ contract, initialData }: { contract?:
     },
   });
 
+  const initialInstallment = useMemo(() => {
+    if (!contract) return '2_installments';
+    const dp = contract.ampliacionesDetails?.downPayment || 0;
+    const cv = contract.ampliacionesDetails?.courseValue || 0;
+    if (dp === cv) return 'full';
+    if (Math.abs(dp - cv * 0.5) < 0.01) return '2_installments';
+    if (Math.abs(dp - cv * 0.2) < 0.01) return '5_installments';
+    return 'custom';
+  }, [contract]);
+
+  const [selectedInstallment, setSelectedInstallment] = useState<'full' | '2_installments' | '5_installments' | 'custom'>(initialInstallment);
+
   const watchCategories = form.watch('licenseCategory');
 
   useEffect(() => {
@@ -175,6 +187,44 @@ export function AmpliacionesContractForm({ contract, initialData }: { contract?:
         }
     }
   }, [watchCategories, form, isEdit, categoryPrices, comboPrices]);
+
+  const watchCourseValue = form.watch('courseValue');
+
+  useEffect(() => {
+    const cv = Number(watchCourseValue) || 0;
+    let dp = 0;
+    if (selectedInstallment === 'full') dp = cv;
+    else if (selectedInstallment === '2_installments') dp = cv * 0.5;
+    else if (selectedInstallment === '5_installments') dp = cv * 0.2;
+    form.setValue('downPayment', dp);
+  }, [watchCourseValue, selectedInstallment, form]);
+
+  const watchDownPayment = form.watch('downPayment');
+
+  useEffect(() => {
+    const dp = Number(watchDownPayment) || 0;
+    const cv = Number(watchCourseValue) || 0;
+    if (dp === cv && cv > 0) {
+      setSelectedInstallment('full');
+    } else if (cv > 0 && Math.abs(dp - cv * 0.5) < 0.01) {
+      setSelectedInstallment('2_installments');
+    } else if (cv > 0 && Math.abs(dp - cv * 0.2) < 0.01) {
+      setSelectedInstallment('5_installments');
+    } else {
+      setSelectedInstallment('custom');
+    }
+  }, [watchDownPayment, watchCourseValue]);
+
+  const handleInstallmentChange = (value: 'full' | '2_installments' | '5_installments' | 'custom') => {
+    setSelectedInstallment(value);
+    if (value === 'custom') return;
+    const cv = Number(form.getValues('courseValue')) || 0;
+    let dp = 0;
+    if (value === 'full') dp = cv;
+    else if (value === '2_installments') dp = cv * 0.5;
+    else if (value === '5_installments') dp = cv * 0.2;
+    form.setValue('downPayment', dp);
+  };
 
   const toggleCategory = (category: string) => {
     const current = form.getValues('licenseCategory');
@@ -494,13 +544,32 @@ export function AmpliacionesContractForm({ contract, initialData }: { contract?:
               </div>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                 <FormField control={form.control} name="courseValue" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Valor Total (B/.)</FormLabel>
                     <FormControl><Input type="number" step="0.01" {...field} className="h-10 font-black text-amber-900 bg-amber-50/30" readOnly={!isEdit} /></FormControl>
                   </FormItem>
                 )} />
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Cuotas de Pagos</Label>
+                  <Select 
+                    onValueChange={(val: any) => handleInstallmentChange(val)} 
+                    value={selectedInstallment}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="h-10 font-bold">
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="full">1 Pago (Completo)</SelectItem>
+                      <SelectItem value="2_installments">2 Cuotas (Abono del 50%)</SelectItem>
+                      <SelectItem value="5_installments">5 Cuotas (Abono del 20%)</SelectItem>
+                      <SelectItem value="custom" disabled>Personalizado (Editado)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <FormField control={form.control} name="downPayment" render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Abono Inicial (B/.)</FormLabel>

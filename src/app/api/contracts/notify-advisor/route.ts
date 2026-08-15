@@ -1,4 +1,4 @@
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 
 /**
@@ -63,6 +63,8 @@ export async function POST(req: Request) {
       contractId,
       base64Image,
       mimeType,
+      theoreticalSchedule,
+      practicalSchedules,
     } = await req.json();
 
     const isPayPal = paymentMethod === 'paypal' || paypalConfirmed === true;
@@ -92,12 +94,15 @@ export async function POST(req: Request) {
 📧 *Email:* ${clientEmail || 'N/A'}
 🚗 *Plan:* ${coursePlan || 'N/A'}
 ⚙️ *Transmisión:* ${vehicleTransmission || 'N/A'}
+📚 *Horario Teórico:* ${theoreticalSchedule || 'N/A'}
+${practicalSchedules && practicalSchedules.length > 0 ? `🕐 *Clases Prácticas:*
+${practicalSchedules.map((s: any, i: number) => `  • Clase ${i + 1}: ${s.date || 'N/A'} a las ${s.time || 'N/A'}`).join('\n')}` : ''}
 💳 *Método de pago:* ${paymentMethod === 'yappy' ? 'Yappy' : paymentMethod === 'cubo' ? 'Tarjeta (Cubo)' : 'Efectivo / Transferencia'}
 🔢 *Referencia:* ${paymentReference || 'N/A'}
 💰 *Abono pagado:* $${paymentAmount || 'N/A'}
 
 ⬇️ *El comprobante está abajo. Valida y activa el contrato.*
-🔗 Ver en sistema: https://contracttime3-15048626-b65e6.web.app/contracts/${contractId || ''}`;
+🔗 Ver en sistema: https://www.contractimefedm.online/contracts/${contractId || ''}`;
 
     await sendEvoText(ADVISOR_NUMBER, alertMsg);
 

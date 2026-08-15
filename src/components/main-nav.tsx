@@ -15,6 +15,26 @@ import {
 import { Separator } from './ui/separator';
 import { useWindowManager } from '@/contexts/window-manager-context';
 import Link from 'next/link';
+import { db } from '@/lib/firebase';
+import { collection, query, where, Timestamp, onSnapshot } from 'firebase/firestore';
+
+/** Cuenta contratos online con pago pendiente en las últimas 48 horas */
+function useOnlinePendingCount() {
+  const [count, setCount] = React.useState(0);
+  React.useEffect(() => {
+    const since = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    const q = query(
+      collection(db, 'contracts'),
+      where('isOnline', '==', true),
+      where('paymentStatus', '==', 'pending'),
+      where('createdAt', '>=', Timestamp.fromDate(since))
+    );
+    const unsub = onSnapshot(q, snap => setCount(snap.size), () => setCount(0));
+    return () => unsub();
+  }, []);
+  return count;
+}
+
 
 const navLinks = [
   { href: '/dashboard', label: 'Panel de Control', roles: ['Administrador', 'Ventas', 'Ventas Externas'] },
@@ -81,7 +101,7 @@ const navLinks = [
 ];
 
 // ── Dropdown menu that opens items as floating windows ─────────────────────────
-function HoverDropdownMenu({ link, visibleChildren, linkClass }: any) {
+function HoverDropdownMenu({ link, visibleChildren, linkClass, onlinePendingCount }: any) {
   const [open, setOpen] = React.useState(false);
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const { openWindow } = useWindowManager();
@@ -105,6 +125,7 @@ function HoverDropdownMenu({ link, visibleChildren, linkClass }: any) {
       <DropdownMenuContent align="start" onMouseEnter={handleOpen} onMouseLeave={handleClose}>
         {visibleChildren.map((child: any, index: number) => {
           if (child.separator) return <DropdownMenuSeparator key={`sep-${index}`} />;
+          const isOnlineContracts = child.href === '/informes/online-contracts';
           return (
             <DropdownMenuItem
               key={child.href}
@@ -114,7 +135,14 @@ function HoverDropdownMenu({ link, visibleChildren, linkClass }: any) {
                 openWindow(child.href!, child.label);
               }}
             >
-              {child.label}
+              <span className="flex items-center gap-2 w-full">
+                {child.label}
+                {isOnlineContracts && onlinePendingCount > 0 && (
+                  <span className="ml-auto inline-flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1">
+                    {onlinePendingCount}
+                  </span>
+                )}
+              </span>
             </DropdownMenuItem>
           );
         })}
@@ -128,6 +156,7 @@ export function MainNav({ className, isMobile = false }: { className?: string, i
   const pathname = usePathname();
   const { role } = useCurrentRole();
   const { openWindow } = useWindowManager();
+  const onlinePendingCount = useOnlinePendingCount();
 
   if (!role) return null;
 
@@ -177,6 +206,7 @@ export function MainNav({ className, isMobile = false }: { className?: string, i
               visibleChildren={visibleChildren}
               pathname={pathname}
               linkClass={linkClass}
+              onlinePendingCount={onlinePendingCount}
             />
           );
         }

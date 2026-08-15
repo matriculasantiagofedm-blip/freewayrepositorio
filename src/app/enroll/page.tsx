@@ -747,6 +747,27 @@ export default function DynamicEnrollPage() {
           title: "¡Cupo Reservado!",
           description: "Tu cupo ha sido pre-registrado en el sistema. Procede a realizar tu pago.",
         });
+
+        // Notificar al asesor vía WhatsApp que hay una nueva pre-inscripción
+        fetch('/api/contracts/notify-new-enrollment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            folio: assignedFolio,
+            clientName: data.clientName,
+            clientPhone: data.studentPhone1,
+            clientEmail: data.clientEmail,
+            coursePlan: data.coursePlan,
+            vehicleTransmission: data.vehicleTransmission,
+            theoreticalSchedule: data.theoreticalClassSchedule || '',
+            practicalSchedules: (data.practicalClassSchedules || []).map((s: any, idx: number) => ({
+              date: s.date,
+              time: s.time,
+            })),
+            contractId: newContractRef.id,
+          })
+        }).catch(err => console.error('Error notify-new-enrollment:', err));
+
       } catch (error: any) {
         console.error("Error al pre-registrar cupo:", error);
         toast({ title: "Error de Inscripción", description: "No se pudo guardar la matrícula. Revisa tu conexión.", variant: "destructive" });
@@ -805,6 +826,11 @@ export default function DynamicEnrollPage() {
             paymentAmount: selectedPlan?.price || 0,
             paymentMethod: data.paymentType,
             paymentReference: data.yappyReference || '',
+            theoreticalSchedule: data.theoreticalClassSchedule || '',
+            practicalSchedules: (data.practicalClassSchedules || []).map((s: any) => ({
+              date: s.date,
+              time: s.time,
+            })),
             contractId: savedContractId,
             base64Image: voucherBase64,
             mimeType: voucherMime

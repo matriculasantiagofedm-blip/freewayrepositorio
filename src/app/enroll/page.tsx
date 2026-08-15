@@ -707,7 +707,7 @@ export default function DynamicEnrollPage() {
             studentPhone1: data.studentPhone1,
             contractType: isMoto ? 'Curso Moto' : 'Curso Auto',
             type: isMoto ? 'Curso Moto' : 'Curso Auto',
-            status: 'active',
+            status: 'pending',
             paymentStatus: 'pending',
             paymentMethod: data.paymentType,
             paymentReference: '',
@@ -807,6 +807,7 @@ export default function DynamicEnrollPage() {
       try {
         const contractRef = doc(db, 'contracts', savedContractId);
         await updateDoc(contractRef, {
+          status: 'active',
           paymentMethod: data.paymentType,
           paymentReference: data.yappyReference || '',
           'autoMotoDetails.paymentReference': data.yappyReference || ''

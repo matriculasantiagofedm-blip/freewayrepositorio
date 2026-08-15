@@ -357,9 +357,31 @@ export function AutoContractForm({ contract, initialData }: { contract?: Contrac
 
   useEffect(() => {
     if (watchTheorySchedule && !isEdit) {
-      const count = (watchTheorySchedule === 'Semanal 8:00 am a 10:00 am' || watchTheorySchedule === 'Semanal 10:00 am a 12:00 pm') ? 4 : 3;
+      const isSemanal = watchTheorySchedule.includes('Semanal');
+      const count = isSemanal ? 4 : 3;
       const current = form.getValues('theoreticalClassDates') || [];
-      const newDates = Array.from({ length: count }, (_, i) => current[i] || new Date());
+      
+      const generatedDates: Date[] = [];
+      const today = new Date();
+      if (isSemanal) {
+        let d = new Date(today);
+        d.setDate(d.getDate() + ((2 - d.getDay() + 7) % 7 || 7));
+        for (let i = 0; i < 4; i++) {
+          const next = new Date(d);
+          next.setDate(d.getDate() + i);
+          generatedDates.push(next);
+        }
+      } else {
+        let d = new Date(today);
+        d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7 || 7));
+        for (let i = 0; i < 3; i++) {
+          const next = new Date(d);
+          next.setDate(d.getDate() + (i * 7));
+          generatedDates.push(next);
+        }
+      }
+      
+      const newDates = Array.from({ length: count }, (_, i) => current[i] || generatedDates[i]);
       form.setValue('theoreticalClassDates', newDates);
     }
   }, [watchTheorySchedule, form, isEdit]);
@@ -745,8 +767,8 @@ export function AutoContractForm({ contract, initialData }: { contract?: Contrac
                       <FormControl><SelectTrigger className="h-10"><SelectValue /></SelectTrigger></FormControl>
                       <SelectContent>
                         <SelectItem value="Sabados 3:00 pm a 5:00 pm">Sábados 3:00 pm a 5:00 pm</SelectItem>
-                        <SelectItem value="Semanal 8:00 am a 10:00 am">Semanal 8:00 am a 10:00 am</SelectItem>
-                        <SelectItem value="Semanal 10:00 am a 12:00 pm">Semanal 10:00 am a 12:00 pm</SelectItem>
+                        <SelectItem value="Semanal 8:00 am a 10:00 am">Semanal 8:00 am a 10:00 am (Martes a Viernes)</SelectItem>
+                        <SelectItem value="Semanal 10:00 am a 12:00 pm">Semanal 10:00 am a 12:00 pm (Martes a Viernes)</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormItem>

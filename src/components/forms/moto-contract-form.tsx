@@ -327,9 +327,32 @@ export function MotoContractForm({ contract, initialData }: { contract?: Contrac
 
   useEffect(() => {
     if (watchTheorySchedule && !isEdit) {
-      const count = (watchTheorySchedule === 'Semanal 8:00 am a 10:00 am' || watchTheorySchedule === 'Semanal 10:00 am a 12:00 pm') ? 4 : 3;
+      const isSemanal = watchTheorySchedule.includes('Semanal');
+      const count = isSemanal ? 4 : 3;
       const current = form.getValues('theoreticalClassDates') || [];
-      form.setValue('theoreticalClassDates', Array.from({ length: count }, (_, i) => current[i] || new Date()));
+      
+      const generatedDates: Date[] = [];
+      const today = new Date();
+      if (isSemanal) {
+        let d = new Date(today);
+        d.setDate(d.getDate() + ((2 - d.getDay() + 7) % 7 || 7));
+        for (let i = 0; i < 4; i++) {
+          const next = new Date(d);
+          next.setDate(d.getDate() + i);
+          generatedDates.push(next);
+        }
+      } else {
+        let d = new Date(today);
+        d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7 || 7));
+        for (let i = 0; i < 3; i++) {
+          const next = new Date(d);
+          next.setDate(d.getDate() + (i * 7));
+          generatedDates.push(next);
+        }
+      }
+      
+      const newDates = Array.from({ length: count }, (_, i) => current[i] || generatedDates[i]);
+      form.setValue('theoreticalClassDates', newDates);
     }
   }, [watchTheorySchedule, isEdit, form]);
 

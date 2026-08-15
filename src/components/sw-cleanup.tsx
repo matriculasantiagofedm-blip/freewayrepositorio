@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-const APP_CACHE_VERSION = 'v5_cert_delivery_2026_v2';
+const APP_CACHE_VERSION = 'v6_theoretical_mar_vie_2026';
 
 /**
  * Desregistra automáticamente cualquier service worker antiguo Y limpia todo

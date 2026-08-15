@@ -213,7 +213,8 @@ const enrollmentSchema = z.object({
 
 const THEORETICAL_SCHEDULES = [
   { id: 'Sabados 3:00 pm a 5:00 pm', label: 'Sábados (3:00 PM - 5:00 PM)', desc: '3 sábados consecutivos' },
-  { id: 'Semanal 10:00 am a 12:00 pm', label: 'Semanal (10:00 AM - 12:00 PM)', desc: 'Lunes a Miércoles' }
+  { id: 'Semanal 8:00 am a 10:00 am', label: 'Semanal (8:00 AM - 10:00 AM)', desc: 'Martes a Viernes' },
+  { id: 'Semanal 10:00 am a 12:00 pm', label: 'Semanal (10:00 AM - 12:00 PM)', desc: 'Martes a Viernes' }
 ];
 
 const TIME_SLOTS = [
@@ -431,7 +432,7 @@ export default function DynamicEnrollPage() {
   const filteredTheoreticalSchedules = useMemo(() => {
     const checkIsTeoricoActive = (day: string, slotId: string) => {
       const bKey = `${day}|${slotId}`;
-      const defaultTeoricoActive = (day !== 'Lunes' && day !== 'Sábado' && slotId === '10am-12pm') || (day === 'Sábado' && slotId === '3pm-5pm') ? true : false;
+      const defaultTeoricoActive = (day !== 'Lunes' && day !== 'Sábado' && (slotId === '10am-12pm' || slotId === '8am-10am')) || (day === 'Sábado' && slotId === '3pm-5pm') ? true : false;
       
       if (availability.teoricoSlots && availability.teoricoSlots[bKey] !== undefined) {
         return availability.teoricoSlots[bKey];
@@ -446,10 +447,16 @@ export default function DynamicEnrollPage() {
       if (sch.id === 'Sabados 3:00 pm a 5:00 pm') {
         return checkIsTeoricoActive('Sábado', '3pm-5pm');
       }
+
+      // 2. Semanal 8:00 am a 10:00 am
+      if (sch.id === 'Semanal 8:00 am a 10:00 am') {
+        const weekdays = ['Martes', 'Miércoles', 'Jueves', 'Viernes'];
+        return weekdays.some(day => checkIsTeoricoActive(day, '8am-10am'));
+      }
       
-      // 2. Semanal 10:00 am a 12:00 pm
+      // 3. Semanal 10:00 am a 12:00 pm
       if (sch.id === 'Semanal 10:00 am a 12:00 pm') {
-        const weekdays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+        const weekdays = ['Martes', 'Miércoles', 'Jueves', 'Viernes'];
         return weekdays.some(day => checkIsTeoricoActive(day, '10am-12pm'));
       }
       
@@ -540,8 +547,8 @@ export default function DynamicEnrollPage() {
       }
     } else {
       let d = new Date(today);
-      d.setDate(d.getDate() + ((1 - d.getDay() + 7) % 7 || 7));
-      for (let i = 0; i < 3; i++) {
+      d.setDate(d.getDate() + ((2 - d.getDay() + 7) % 7 || 7));
+      for (let i = 0; i < 4; i++) {
         const next = new Date(d);
         next.setDate(d.getDate() + i);
         dates.push(next);

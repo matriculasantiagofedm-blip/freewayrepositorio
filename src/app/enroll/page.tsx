@@ -986,6 +986,7 @@ export default function DynamicEnrollPage() {
 
   const currentPlanObj = plansList.find(p => p.name === currentValues.coursePlan);
   const total = currentPlanObj ? currentPlanObj.price : 0;
+  const practicalDays = currentValues.theoreticalClassDates || [];
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-200">

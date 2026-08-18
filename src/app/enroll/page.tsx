@@ -18,6 +18,12 @@ import { signInAnonymously } from 'firebase/auth';
 import { db, auth } from '@/firebase/client';
 import { useSettingsPrices } from '@/hooks/use-settings-prices';
 
+import { StepPersonalInfo } from '@/components/enroll/step-personal-info';
+import { StepCourseSelection } from '@/components/enroll/step-course-selection';
+import { StepScheduleBooking } from '@/components/enroll/step-schedule-booking';
+import { StepPayment } from '@/components/enroll/step-payment';
+import { OrderSummarySidebar } from '@/components/enroll/order-summary-sidebar';
+import { AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -54,7 +60,7 @@ import {
 import Link from 'next/link';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 
-// --- Mapeo de slots y ocupación ---
+// --- Mapeo de slots y ocupaciÃ³n ---
 const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
   '08:00am a 10:00am': '8am-10am',
   '8:00am a 10:00am': '8am-10am',
@@ -65,7 +71,7 @@ const TIME_STRING_TO_SLOT_MAP: { [key: string]: string } = {
   '3:00pm a 5:00pm': '3pm-5pm',
 };
 
-const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+const DAY_NAMES = ['Domingo', 'Lunes', 'Martes', 'MiÃ©rcoles', 'Jueves', 'Viernes', 'SÃ¡bado'];
 
 const getGlobalCapacity = (dObj: Date, slotId: string, blockedSlots?: Record<string, string>, slotCapacities?: Record<string, number>) => {
   const day = dObj.getDay(); 
@@ -81,11 +87,11 @@ const getGlobalCapacity = (dObj: Date, slotId: string, blockedSlots?: Record<str
   const customStatus = blockedSlots?.[bKey];
 
   if (customStatus === 'bloqueado') return 0; // Bloqueado / No disponible
-  if (customStatus === 'teorico') return 3; // Clase Teórica (1 instructor ocupado)
-  if (customStatus === 'practica') return 4; // Práctica normal
+  if (customStatus === 'teorico') return 3; // Clase TeÃ³rica (1 instructor ocupado)
+  if (customStatus === 'practica') return 4; // PrÃ¡ctica normal
 
-  if (day >= 2 && day <= 5 && slotId === '10am-12pm') return 3; // Martes a Viernes 10am-12pm (Teoría)
-  if (day === 6 && slotId === '3pm-5pm') return 3; // Sábado 3pm-5pm (Teoría)
+  if (day >= 2 && day <= 5 && slotId === '10am-12pm') return 3; // Martes a Viernes 10am-12pm (TeorÃ­a)
+  if (day === 6 && slotId === '3pm-5pm') return 3; // SÃ¡bado 3pm-5pm (TeorÃ­a)
   return 4; 
 };
 
@@ -114,16 +120,16 @@ function getSlotOccupancy(
   const dObj = new Date(dateStr + 'T12:00:00');
   const day = dObj.getDay();
   if (day === 0) {
-    return { count, max: 0, available: 0, isFull: true, label: '🔴 (CERRADO - Domingo)' };
+    return { count, max: 0, available: 0, isFull: true, label: 'ðŸ”´ (CERRADO - Domingo)' };
   }
 
   const dayName = DAY_NAMES[day];
   const bKey = `${dayName}|${slotKey}`;
 
   // Comportamiento por defecto
-  const defaultPracticaActive = (dayName !== 'Lunes' && dayName !== 'Sábado' && slotKey === '10am-12pm') || (dayName === 'Sábado' && slotKey === '3pm-5pm') ? false : true;
+  const defaultPracticaActive = (dayName !== 'Lunes' && dayName !== 'SÃ¡bado' && slotKey === '10am-12pm') || (dayName === 'SÃ¡bado' && slotKey === '3pm-5pm') ? false : true;
 
-  // Determinar si Práctica está activo para este bloque
+  // Determinar si PrÃ¡ctica estÃ¡ activo para este bloque
   let isPracticaActive = defaultPracticaActive;
   if (practicaSlots && practicaSlots[bKey] !== undefined) {
     isPracticaActive = practicaSlots[bKey];
@@ -132,7 +138,7 @@ function getSlotOccupancy(
   }
 
   if (!isPracticaActive) {
-    const defaultTeoricoActive = (dayName !== 'Lunes' && dayName !== 'Sábado' && slotKey === '10am-12pm') || (dayName === 'Sábado' && slotKey === '3pm-5pm') ? true : false;
+    const defaultTeoricoActive = (dayName !== 'Lunes' && dayName !== 'SÃ¡bado' && slotKey === '10am-12pm') || (dayName === 'SÃ¡bado' && slotKey === '3pm-5pm') ? true : false;
     let isTeoricoActive = defaultTeoricoActive;
     if (teoricoSlots && teoricoSlots[bKey] !== undefined) {
       isTeoricoActive = teoricoSlots[bKey];
@@ -140,11 +146,11 @@ function getSlotOccupancy(
       isTeoricoActive = blockedSlots[bKey] === 'teorico';
     }
 
-    const label = isTeoricoActive ? '🔴 (RESERVADO PARA CLASE TEÓRICA)' : '🔴 (NO DISPONIBLE / BLOQUEADO)';
+    const label = isTeoricoActive ? 'ðŸ”´ (RESERVADO PARA CLASE TEÃ“RICA)' : 'ðŸ”´ (NO DISPONIBLE / BLOQUEADO)';
     return { count, max: 0, available: 0, isFull: true, label };
   }
 
-  // Determinar capacidad de Práctica
+  // Determinar capacidad de PrÃ¡ctica
   let max = 4;
   if (practicaCapacities && practicaCapacities[bKey] !== undefined) {
     max = practicaCapacities[bKey];
@@ -152,21 +158,21 @@ function getSlotOccupancy(
     max = slotCapacities[bKey];
   }
 
-  // VALIDACIÓN POR TRANSMISIÓN ESPECÍFICA (AUTOMÁTICO / MANUAL / MOTO)
+  // VALIDACIÃ“N POR TRANSMISIÃ“N ESPECÃFICA (AUTOMÃTICO / MANUAL / MOTO)
   if (chosenTransmission && activeVehiclesByTransmission && transmissionCounts) {
     const maxTrans = activeVehiclesByTransmission[chosenTransmission] || 99;
     const countTrans = transmissionCounts[gKey]?.[chosenTransmission] || 0;
     
     if (countTrans >= maxTrans) {
       let suffix = '';
-      if (chosenTransmission === 'Automático') {
-        suffix = '🔴 (SIN CARROS AUTOMÁTICOS DISPONIBLES)';
+      if (chosenTransmission === 'AutomÃ¡tico') {
+        suffix = 'ðŸ”´ (SIN CARROS AUTOMÃTICOS DISPONIBLES)';
       } else if (chosenTransmission === 'Manual') {
-        suffix = '🔴 (SIN CARROS MANUALES DISPONIBLES)';
+        suffix = 'ðŸ”´ (SIN CARROS MANUALES DISPONIBLES)';
       } else if (chosenTransmission === 'Moto') {
-        suffix = '🔴 (SIN MOTOS DISPONIBLES)';
+        suffix = 'ðŸ”´ (SIN MOTOS DISPONIBLES)';
       } else {
-        suffix = `🔴 (SIN ${chosenTransmission.toUpperCase()}S DISPONIBLES)`;
+        suffix = `ðŸ”´ (SIN ${chosenTransmission.toUpperCase()}S DISPONIBLES)`;
       }
 
       return { 
@@ -182,9 +188,9 @@ function getSlotOccupancy(
   const available = Math.max(0, max - count);
   const isFull = available === 0;
 
-  let label = `🟢 (${available} de ${max} cupos libres)`;
-  if (isFull) label = `🔴 (LLENO - 0 cupos)`;
-  else if (available === 1) label = `🟡 (Último cupo de ${max})`;
+  let label = `ðŸŸ¢ (${available} de ${max} cupos libres)`;
+  if (isFull) label = `ðŸ”´ (LLENO - 0 cupos)`;
+  else if (available === 1) label = `ðŸŸ¡ (Ãšltimo cupo de ${max})`;
 
   return { count, max, available, isFull, label, isEmpty: false };
 }
@@ -192,11 +198,11 @@ function getSlotOccupancy(
 // --- Esquema Zod ---
 const enrollmentSchema = z.object({
   clientName: z.string().min(3, 'Ingresa tu nombre completo'),
-  clientEmail: z.string().email('Email inválido'),
-  studentIdNumber: z.string().min(5, 'Cédula / ID requerido'),
-  studentAddress: z.string().min(5, 'Dirección requerida'),
-  studentPhone1: z.string().min(7, 'Teléfono requerido'),
-  vehicleTransmission: z.enum(['Automático', 'Manual', 'Moto']).default('Automático'),
+  clientEmail: z.string().email('Email invÃ¡lido'),
+  studentIdNumber: z.string().min(5, 'CÃ©dula / ID requerido'),
+  studentAddress: z.string().min(5, 'DirecciÃ³n requerida'),
+  studentPhone1: z.string().min(7, 'TelÃ©fono requerido'),
+  vehicleTransmission: z.enum(['AutomÃ¡tico', 'Manual', 'Moto']).default('AutomÃ¡tico'),
   coursePlan: z.string().min(1, "Selecciona un plan"),
   theoreticalClassSchedule: z.string().optional(),
   theoreticalClassDates: z.array(z.date()).optional(),
@@ -212,7 +218,7 @@ const enrollmentSchema = z.object({
 });
 
 const THEORETICAL_SCHEDULES = [
-  { id: 'Sabados 3:00 pm a 5:00 pm', label: 'Sábados (3:00 PM - 5:00 PM)', desc: '3 sábados consecutivos' },
+  { id: 'Sabados 3:00 pm a 5:00 pm', label: 'SÃ¡bados (3:00 PM - 5:00 PM)', desc: '3 sÃ¡bados consecutivos' },
   { id: 'Semanal 10:00 am a 12:00 pm', label: 'Semanal (10:00 AM - 12:00 PM)', desc: 'Martes a Viernes' }
 ];
 
@@ -286,7 +292,7 @@ export default function DynamicEnrollPage() {
       studentIdNumber: '',
       studentAddress: '',
       studentPhone1: '',
-      vehicleTransmission: 'Automático',
+      vehicleTransmission: 'AutomÃ¡tico',
       coursePlan: '',
       theoreticalClassSchedule: '',
       theoreticalClassDates: [],
@@ -306,123 +312,123 @@ export default function DynamicEnrollPage() {
     name: 'practicalClassSchedules'
   });
 
-  // Lista dinámica de planes utilizando los precios oficiales configurados en ContractTime
+  // Lista dinÃ¡mica de planes utilizando los precios oficiales configurados en ContractTime
   const plansList = useMemo(() => {
     const isMoto = currentValues.vehicleTransmission === 'Moto';
     if (isMoto) {
       const motoPrices = settingsPrices?.moto || {};
       return [
         {
-          title: "Básico (8 Hrs)",
-          name: "Curso Moto Básico (8 Hrs)",
-          hoursText: "8 Horas Prácticas",
+          title: "BÃ¡sico (8 Hrs)",
+          name: "Curso Moto BÃ¡sico (8 Hrs)",
+          hoursText: "8 Horas PrÃ¡cticas",
           classCount: 4,
-          price: motoPrices["Curso Moto Básico (8 Hrs)"] || 115,
+          price: motoPrices["Curso Moto BÃ¡sico (8 Hrs)"] || 115,
           tag: "",
-          desc: "4 clases prácticas de 2 horas cada una."
+          desc: "4 clases prÃ¡cticas de 2 horas cada una."
         },
         {
           title: "Plus (10 Hrs)",
           name: "Curso Moto Plus (10 Hrs)",
-          hoursText: "10 Horas Prácticas",
+          hoursText: "10 Horas PrÃ¡cticas",
           classCount: 5,
           price: motoPrices["Curso Moto Plus (10 Hrs)"] || 135,
-          tag: "Más Popular",
-          desc: "5 clases prácticas de 2 horas cada una."
+          tag: "MÃ¡s Popular",
+          desc: "5 clases prÃ¡cticas de 2 horas cada una."
         },
         {
           title: "Premium (12 Hrs)",
           name: "Curso Moto Premium (12 Hrs)",
-          hoursText: "12 Horas Prácticas",
+          hoursText: "12 Horas PrÃ¡cticas",
           classCount: 6,
           price: motoPrices["Curso Moto Premium (12 Hrs)"] || 155,
           tag: "Recomendado",
-          desc: "6 clases prácticas de 2 horas cada una."
+          desc: "6 clases prÃ¡cticas de 2 horas cada una."
         },
         {
           title: "Reforzamiento (4 Hrs)",
           name: "Moto Reforzamiento 4 Hrs",
-          hoursText: "4 Horas Prácticas",
+          hoursText: "4 Horas PrÃ¡cticas",
           classCount: 2,
           price: motoPrices["Moto Reforzamiento 4 Hrs"] || 95,
           tag: "",
-          desc: "2 clases prácticas de 2 horas."
+          desc: "2 clases prÃ¡cticas de 2 horas."
         },
         {
           title: "Reforzamiento (2 Hrs)",
           name: "Moto Reforzamiento 2 Hrs",
-          hoursText: "2 Horas Prácticas",
+          hoursText: "2 Horas PrÃ¡cticas",
           classCount: 1,
           price: motoPrices["Moto Reforzamiento 2 Hrs"] || 75,
           tag: "",
-          desc: "1 clase práctica de 2 horas."
+          desc: "1 clase prÃ¡ctica de 2 horas."
         },
         {
-          title: "Ya sé manejar",
+          title: "Ya sÃ© manejar",
           name: "Ya se manejar (Moto)",
-          hoursText: "Evaluación Práctica",
+          hoursText: "EvaluaciÃ³n PrÃ¡ctica",
           classCount: 1,
           price: motoPrices["Ya se manejar (Moto)"] || 57,
           tag: "",
-          desc: "1 sesión de evaluación de maniobra y parqueo."
+          desc: "1 sesiÃ³n de evaluaciÃ³n de maniobra y parqueo."
         }
       ];
     } else {
       const autoPrices = settingsPrices?.auto || {};
       return [
         {
-          title: "Básico (8 Hrs)",
-          name: "Curso Auto Básico (8 Hrs)",
-          hoursText: "8 Horas Prácticas",
+          title: "BÃ¡sico (8 Hrs)",
+          name: "Curso Auto BÃ¡sico (8 Hrs)",
+          hoursText: "8 Horas PrÃ¡cticas",
           classCount: 4,
-          price: autoPrices["Curso Auto Básico (8 Hrs)"] || 133,
+          price: autoPrices["Curso Auto BÃ¡sico (8 Hrs)"] || 133,
           tag: "",
-          desc: "4 clases prácticas de 2 horas cada una."
+          desc: "4 clases prÃ¡cticas de 2 horas cada una."
         },
         {
           title: "Plus (10 Hrs)",
           name: "Curso Auto Plus (10 Hrs)",
-          hoursText: "10 Horas Prácticas",
+          hoursText: "10 Horas PrÃ¡cticas",
           classCount: 5,
           price: autoPrices["Curso Auto Plus (10 Hrs)"] || 155,
-          tag: "Más Popular",
-          desc: "5 clases prácticas de 2 horas cada una."
+          tag: "MÃ¡s Popular",
+          desc: "5 clases prÃ¡cticas de 2 horas cada una."
         },
         {
           title: "Premium (12 Hrs)",
           name: "Curso Auto Premium (12 Hrs)",
-          hoursText: "12 Horas Prácticas",
+          hoursText: "12 Horas PrÃ¡cticas",
           classCount: 6,
           price: autoPrices["Curso Auto Premium (12 Hrs)"] || 180,
           tag: "Recomendado",
-          desc: "6 clases prácticas de 2 horas cada una."
+          desc: "6 clases prÃ¡cticas de 2 horas cada una."
         },
         {
           title: "Reforzamiento (4 Hrs)",
           name: "Reforzamiento 4 Hrs",
-          hoursText: "4 Horas Prácticas",
+          hoursText: "4 Horas PrÃ¡cticas",
           classCount: 2,
           price: autoPrices["Reforzamiento 4 Hrs"] || 95,
           tag: "",
-          desc: "2 clases prácticas de 2 horas cada una."
+          desc: "2 clases prÃ¡cticas de 2 horas cada una."
         },
         {
           title: "Reforzamiento (2 Hrs)",
           name: "Reforzamiento 2 Hrs",
-          hoursText: "2 Horas Prácticas",
+          hoursText: "2 Horas PrÃ¡cticas",
           classCount: 1,
           price: autoPrices["Reforzamiento 2 Hrs"] || 75,
           tag: "",
-          desc: "1 clase práctica de 2 horas."
+          desc: "1 clase prÃ¡ctica de 2 horas."
         },
         {
-          title: "Ya sé manejar",
+          title: "Ya sÃ© manejar",
           name: "Ya se manejar",
-          hoursText: "Evaluación Práctica",
+          hoursText: "EvaluaciÃ³n PrÃ¡ctica",
           classCount: 1,
           price: autoPrices["Ya se manejar"] || 57,
           tag: "",
-          desc: "1 sesión de evaluación de maniobra y parqueo."
+          desc: "1 sesiÃ³n de evaluaciÃ³n de maniobra y parqueo."
         }
       ];
     }
@@ -431,7 +437,7 @@ export default function DynamicEnrollPage() {
   const filteredTheoreticalSchedules = useMemo(() => {
     const checkIsTeoricoActive = (day: string, slotId: string) => {
       const bKey = `${day}|${slotId}`;
-      const defaultTeoricoActive = (day !== 'Lunes' && day !== 'Sábado' && slotId === '10am-12pm') || (day === 'Sábado' && slotId === '3pm-5pm') ? true : false;
+      const defaultTeoricoActive = (day !== 'Lunes' && day !== 'SÃ¡bado' && slotId === '10am-12pm') || (day === 'SÃ¡bado' && slotId === '3pm-5pm') ? true : false;
       
       if (availability.teoricoSlots && availability.teoricoSlots[bKey] !== undefined) {
         return availability.teoricoSlots[bKey];
@@ -442,14 +448,14 @@ export default function DynamicEnrollPage() {
     };
 
     return THEORETICAL_SCHEDULES.filter(sch => {
-      // 1. Sábados 3:00 pm a 5:00 pm
+      // 1. SÃ¡bados 3:00 pm a 5:00 pm
       if (sch.id === 'Sabados 3:00 pm a 5:00 pm') {
-        return checkIsTeoricoActive('Sábado', '3pm-5pm');
+        return checkIsTeoricoActive('SÃ¡bado', '3pm-5pm');
       }
       
       // 2. Semanal 10:00 am a 12:00 pm
       if (sch.id === 'Semanal 10:00 am a 12:00 pm') {
-        const weekdays = ['Martes', 'Miércoles', 'Jueves', 'Viernes'];
+        const weekdays = ['Martes', 'MiÃ©rcoles', 'Jueves', 'Viernes'];
         return weekdays.some(day => checkIsTeoricoActive(day, '10am-12pm'));
       }
       
@@ -459,7 +465,7 @@ export default function DynamicEnrollPage() {
 
   const selectedPlan = plansList.find(p => p.name === currentValues.coursePlan);
 
-  // Al cambiar modalidad (semanal / sabatino), limpiar fechas inválidas
+  // Al cambiar modalidad (semanal / sabatino), limpiar fechas invÃ¡lidas
   useEffect(() => {
     const type = currentValues.practicalType || 'semanal';
     const schedules = form.getValues('practicalClassSchedules') || [];
@@ -491,7 +497,7 @@ export default function DynamicEnrollPage() {
     }
   }, [currentValues.practicalType, setValue, form]);
 
-  // Al cambiar de plan, crear dinámicamente las N clases requeridas
+  // Al cambiar de plan, crear dinÃ¡micamente las N clases requeridas
   useEffect(() => {
     if (!selectedPlan) return;
 
@@ -523,7 +529,7 @@ export default function DynamicEnrollPage() {
     toast({ title: "Horario Aplicado", description: `Asignado ${timeSlot} a las ${count} clases.` });
   };
 
-  // Autogenerar 3 fechas de clases teóricas si selecciona horario
+  // Autogenerar 3 fechas de clases teÃ³ricas si selecciona horario
   useEffect(() => {
     if (!currentValues.theoreticalClassSchedule) return;
 
@@ -574,7 +580,7 @@ export default function DynamicEnrollPage() {
 
   const onSubmit = async (data: z.infer<typeof enrollmentSchema>) => {
     if (step === 1) {
-      // Validar que no haya domingos y que todos los cupos seleccionados estén disponibles
+      // Validar que no haya domingos y que todos los cupos seleccionados estÃ©n disponibles
       const selectedSchedules = data.practicalClassSchedules || [];
       for (let i = 0; i < selectedSchedules.length; i++) {
         const s = selectedSchedules[i];
@@ -590,8 +596,8 @@ export default function DynamicEnrollPage() {
         const dateObj = new Date(s.date + 'T12:00:00');
         if (dateObj.getDay() === 0) {
           toast({
-            title: "Día no laborable",
-            description: `La Clase ${i + 1} está programada para un domingo. Por favor selecciona otro día.`,
+            title: "DÃ­a no laborable",
+            description: `La Clase ${i + 1} estÃ¡ programada para un domingo. Por favor selecciona otro dÃ­a.`,
             variant: "destructive"
           });
           return;
@@ -669,7 +675,7 @@ export default function DynamicEnrollPage() {
           setStep(2);
           window.scrollTo({ top: 0, behavior: 'smooth' });
           toast({
-            title: "Inscripción Actualizada",
+            title: "InscripciÃ³n Actualizada",
             description: "Tus datos y horarios han sido actualizados en la reserva.",
           });
           setIsSubmitting(false);
@@ -716,7 +722,7 @@ export default function DynamicEnrollPage() {
             payments: [],
             createdAt: serverTimestamp(),
             activatedAt: serverTimestamp(),
-            createdBy: 'Inscripción Web',
+            createdBy: 'InscripciÃ³n Web',
             isOnline: true,
             source: 'online',
             autoMotoDetails: {
@@ -744,11 +750,11 @@ export default function DynamicEnrollPage() {
         setStep(2);
         window.scrollTo({ top: 0, behavior: 'smooth' });
         toast({
-          title: "¡Cupo Reservado!",
+          title: "Â¡Cupo Reservado!",
           description: "Tu cupo ha sido pre-registrado en el sistema. Procede a realizar tu pago.",
         });
 
-        // Notificar al asesor vía WhatsApp que hay una nueva pre-inscripción
+        // Notificar al asesor vÃ­a WhatsApp que hay una nueva pre-inscripciÃ³n
         fetch('/api/contracts/notify-new-enrollment', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -770,7 +776,7 @@ export default function DynamicEnrollPage() {
 
       } catch (error: any) {
         console.error("Error al pre-registrar cupo:", error);
-        toast({ title: "Error de Inscripción", description: "No se pudo guardar la matrícula. Revisa tu conexión.", variant: "destructive" });
+        toast({ title: "Error de InscripciÃ³n", description: "No se pudo guardar la matrÃ­cula. Revisa tu conexiÃ³n.", variant: "destructive" });
       } finally {
         setIsSubmitting(false);
       }
@@ -779,7 +785,7 @@ export default function DynamicEnrollPage() {
       if (data.paymentType === 'yappy' && !data.yappyReference) {
         toast({
           title: "Referencia de Yappy requerida",
-          description: "Por favor ingresa el número de referencia de tu pago por Yappy.",
+          description: "Por favor ingresa el nÃºmero de referencia de tu pago por Yappy.",
           variant: "destructive"
         });
         return;
@@ -788,7 +794,7 @@ export default function DynamicEnrollPage() {
       if (data.paymentType === 'cubo' && !data.yappyReference) {
         toast({
           title: "Referencia de pago requerida",
-          description: "Por favor ingresa el número de referencia de tu transacción por tarjeta / Cubo.",
+          description: "Por favor ingresa el nÃºmero de referencia de tu transacciÃ³n por tarjeta / Cubo.",
           variant: "destructive"
         });
         return;
@@ -797,7 +803,7 @@ export default function DynamicEnrollPage() {
       if (!savedContractId) {
         toast({
           title: "Contrato no encontrado",
-          description: "No encontramos tu número de registro previo. Por favor contacta soporte.",
+          description: "No encontramos tu nÃºmero de registro previo. Por favor contacta soporte.",
           variant: "destructive"
         });
         return;
@@ -813,7 +819,7 @@ export default function DynamicEnrollPage() {
           'autoMotoDetails.paymentReference': data.yappyReference || ''
         });
 
-        // Notificación automática al WhatsApp del Asesor con referencia e imagen si hay
+        // NotificaciÃ³n automÃ¡tica al WhatsApp del Asesor con referencia e imagen si hay
         fetch('/api/contracts/notify-advisor', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -907,7 +913,7 @@ export default function DynamicEnrollPage() {
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-blue-100 text-blue-800 uppercase tracking-widest mb-2">
               <Globe className="w-3.5 h-3.5" /> Folio Oficial #{String(successData.folio).padStart(6, '0')}
             </span>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">¡Inscripción Confirmada!</h1>
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Â¡InscripciÃ³n Confirmada!</h1>
             <p className="text-slate-500 mt-2">
               Bienvenido(a), <strong className="text-slate-800">{successData.clientName}</strong>. Tu contrato ya fue registrado formalmente en nuestro sistema.
             </p>
@@ -919,7 +925,7 @@ export default function DynamicEnrollPage() {
               <span className="font-bold text-slate-900">{successData.plan}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">Número de Folio:</span>
+              <span className="text-slate-500">NÃºmero de Folio:</span>
               <span className="font-bold text-blue-700">#{String(successData.folio).padStart(6, '0')}</span>
             </div>
             <div className="flex justify-between">
@@ -949,764 +955,134 @@ export default function DynamicEnrollPage() {
     );
   }
 
+
+  const handleNextStep = async () => {
+    let isValid = false;
+    if (step === 1) {
+      isValid = await form.trigger(['clientName', 'studentIdNumber', 'clientEmail', 'studentPhone1', 'studentAddress']);
+    } else if (step === 2) {
+      isValid = await form.trigger(['vehicleTransmission', 'coursePlan']);
+      if (!currentValues.coursePlan) {
+        toast({ title: "Atención", description: "Debes seleccionar un plan.", variant: "destructive" });
+        isValid = false;
+      }
+    } else if (step === 3) {
+      isValid = await form.trigger(['theoreticalClassSchedule', 'practicalClassSchedules']);
+      if (!currentValues.theoreticalClassSchedule) {
+        toast({ title: "Atención", description: "Selecciona el horario teórico.", variant: "destructive" });
+        isValid = false;
+      } else if (practicalDays.length > 0 && currentValues.practicalClassSchedules?.length !== practicalDays.length) {
+        toast({ title: "Atención", description: "Asigna horarios a todas tus clases prácticas.", variant: "destructive" });
+        isValid = false;
+      }
+    }
+
+    if (isValid) setStep(s => (s + 1) as any);
+  };
+
+  const handlePrevStep = () => {
+    setStep(s => (s - 1) as any);
+  };
+
+  const currentPlanObj = currentPricingPlans.find(p => p.name === currentValues.coursePlan);
+  const total = currentPlanObj ? currentPlanObj.price : 0;
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-200">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="flex flex-col lg:flex-row w-full max-w-[1600px] mx-auto">
+        <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="flex flex-col lg:flex-row w-full max-w-[1400px] mx-auto min-h-screen relative">
           
-          {/* COLUMNA IZQUIERDA: FORMULARIO INTERACTIVO */}
-          <div className="w-full lg:w-[65%] p-6 lg:p-12 xl:p-16">
-            <div className="max-w-3xl mx-auto space-y-12">
+          {/* Main Content Area */}
+          <div className="w-full lg:w-[65%] p-6 lg:p-12 xl:p-16 flex flex-col min-h-screen">
+            
+            {/* Header / Logo */}
+            <div className="mb-12 flex items-center gap-3">
+              <div className="bg-blue-600 text-white p-2 rounded-xl shadow-lg">
+                <Car className="w-6 h-6" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-black tracking-tight text-slate-900 leading-none">ContractTime</h1>
+                <p className="text-xs font-semibold text-blue-600 tracking-wider uppercase mt-1">Matrícula Online</p>
+              </div>
+            </div>
+
+            {/* Stepper indicator */}
+            <div className="flex items-center gap-2 mb-8">
+              {[1, 2, 3, 4].map(num => (
+                <div key={num} className="flex items-center gap-2">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${step === num ? 'bg-blue-600 text-white shadow-md' : step > num ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-400'}`}>
+                    {step > num ? <CheckCircle2 className="w-4 h-4" /> : num}
+                  </div>
+                  {num < 4 && <div className={`h-1 w-8 sm:w-16 rounded-full ${step > num ? 'bg-emerald-500' : 'bg-slate-200'}`}></div>}
+                </div>
+              ))}
+            </div>
+
+            {/* Step Content */}
+            <div className="flex-1">
+              <AnimatePresence mode="wait">
+                {step === 1 && <StepPersonalInfo key="step1" />}
+                {step === 2 && <StepCourseSelection key="step2" plans={currentPricingPlans} />}
+                {step === 3 && (
+                  <StepScheduleBooking 
+                    key="step3" 
+                    filteredTheoreticalSchedules={filteredTheoreticalSchedules}
+                    currentValues={currentValues}
+                    practicalDays={practicalDays}
+                    timeSlots={TIME_SLOTS}
+                    getSlotOccupancy={(d, s) => getSlotOccupancy(d, s, availability.globalCounts, availability.blockedSlots, availability.slotCapacities, availability.transmissionCounts, availability.activeVehiclesByTransmission, currentValues.vehicleTransmission)}
+                    handleAssignAll={handleAssignAll}
+                    getAssignedSlotForDate={getAssignedSlotForDate}
+                    handleSlotSelection={handleSlotSelection}
+                  />
+                )}
+                {step === 4 && (
+                  <StepPayment 
+                    key="step4"
+                    total={total}
+                    handleFileChange={handleFileChange}
+                    voucherBase64={voucherBase64}
+                    setVoucherBase64={setVoucherBase64}
+                    setVoucherMime={setVoucherMime}
+                    isSubmitting={isSubmitting}
+                    submitForm={form.handleSubmit(onSubmit, onInvalid)}
+                  />
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Navigation Buttons */}
+            <div className="mt-12 pt-6 border-t border-slate-200 flex items-center justify-between">
+              {step > 1 ? (
+                <Button type="button" variant="outline" onClick={handlePrevStep} className="h-12 px-6 rounded-xl font-bold">
+                  Atrás
+                </Button>
+              ) : <div></div>}
               
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Badge className="bg-blue-600 text-white font-bold text-xs gap-1">
-                    <Globe className="w-3.5 h-3.5" /> MATRÍCULA ONLINE CONTRACTTIME
-                  </Badge>
-                </div>
-                <h1 className="text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight">Inscripción Online</h1>
-                <p className="text-lg text-slate-500">Selecciona tu plan y verifica disponibilidad de cupos por cada fecha en tiempo real.</p>
-              </div>
-
-              {step === 1 && (
-                <>
-                  {/* SECCIÓN 1: DATOS PERSONALES */}
-              <section className="space-y-6">
-                <div className="flex items-center gap-3 pb-3 border-b border-slate-200">
-                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">1</div>
-                  <h2 className="text-lg font-bold text-slate-800">Tus Datos Personales</h2>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField control={form.control} name="clientName" render={({ field }) => (
-                    <FormItem>
-                      <Label className="text-slate-600 font-semibold text-xs ml-1">Nombre Completo</Label>
-                      <FormControl>
-                        <div className="relative">
-                          <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                          <Input {...field} className="h-11 pl-10 rounded-xl bg-white border-slate-200 shadow-2xs focus-visible:ring-blue-600 text-sm" placeholder="Ej. Juan Pérez" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="studentIdNumber" render={({ field }) => (
-                    <FormItem>
-                      <Label className="text-slate-600 font-semibold text-xs ml-1">Cédula / Pasaporte</Label>
-                      <FormControl>
-                        <div className="relative">
-                          <IdCard className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                          <Input {...field} className="h-11 pl-10 rounded-xl bg-white border-slate-200 shadow-2xs focus-visible:ring-blue-600 text-sm" placeholder="8-000-0000" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="clientEmail" render={({ field }) => (
-                    <FormItem>
-                      <Label className="text-slate-600 font-semibold text-xs ml-1">Correo Electrónico</Label>
-                      <FormControl>
-                        <div className="relative">
-                          <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                          <Input {...field} className="h-11 pl-10 rounded-xl bg-white border-slate-200 shadow-2xs focus-visible:ring-blue-600 text-sm" placeholder="correo@ejemplo.com" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="studentPhone1" render={({ field }) => (
-                    <FormItem>
-                      <Label className="text-slate-600 font-semibold text-xs ml-1">Celular (WhatsApp)</Label>
-                      <FormControl>
-                        <div className="relative">
-                          <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                          <Input {...field} className="h-11 pl-10 rounded-xl bg-white border-slate-200 shadow-2xs focus-visible:ring-blue-600 text-sm" placeholder="6000-0000" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <FormField control={form.control} name="studentAddress" render={({ field }) => (
-                    <FormItem className="md:col-span-2">
-                      <Label className="text-slate-600 font-semibold text-xs ml-1">Dirección Residencial</Label>
-                      <FormControl>
-                        <div className="relative">
-                          <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                          <Input {...field} className="h-11 pl-10 rounded-xl bg-white border-slate-200 shadow-2xs focus-visible:ring-blue-600 text-sm" placeholder="Barrio, Calle, Casa..." />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                </div>
-              </section>
-
-              {/* SECCIÓN 2: PLAN Y VEHÍCULO */}
-              <section className="space-y-4">
-                <div className="flex items-center gap-3 pb-3 border-b border-slate-200">
-                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">2</div>
-                  <h2 className="text-lg font-bold text-slate-800">Selección de Curso y Plan</h2>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-slate-600 font-semibold text-xs ml-1">Transmisión del Vehículo</Label>
-                  <div className="flex gap-3">
-                    {['Automático', 'Manual', 'Moto'].map((type) => (
-                      <div 
-                        key={type}
-                        onClick={() => {
-                          setValue('vehicleTransmission', type as any);
-                          setValue('coursePlan', ''); // Limpiar para obligar a elegir un plan correcto
-                        }}
-                        className={`flex-1 py-2.5 px-4 rounded-xl border flex items-center justify-center gap-2 cursor-pointer transition-all duration-150 ${currentValues.vehicleTransmission === type ? 'border-blue-600 bg-blue-50/20 text-blue-900 font-bold shadow-2xs' : 'border-slate-200 bg-white hover:border-slate-300 text-slate-600 font-semibold'}`}
-                      >
-                        <Car className={`w-4 h-4 ${currentValues.vehicleTransmission === type ? 'text-blue-600' : 'text-slate-400'}`} />
-                        <span className="text-sm">{type}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-slate-600 font-semibold text-xs ml-1">Planes Disponibles (Ajusta Clases Requeridas)</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {plansList.map((plan) => (
-                      <div 
-                        key={plan.name}
-                        onClick={() => setValue('coursePlan', plan.name)}
-                        className={`relative cursor-pointer rounded-xl border p-4 transition-all duration-200 flex flex-col ${currentValues.coursePlan === plan.name ? 'border-blue-600 bg-blue-50/5 ring-1 ring-blue-600/10' : 'border-slate-200 bg-white hover:border-slate-300'}`}
-                      >
-                        {plan.tag && (
-                          <div className={`absolute -top-2.5 left-4 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${currentValues.coursePlan === plan.name ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
-                            {plan.tag}
-                          </div>
-                        )}
-                        <h3 className={`text-sm font-bold mb-0.5 mt-1.5 ${currentValues.coursePlan === plan.name ? 'text-blue-900' : 'text-slate-800'}`}>{plan.title}</h3>
-                        <p className="text-[11px] font-semibold text-blue-700 mb-2">{plan.hoursText} ({plan.classCount} Clases)</p>
-                        <div className="mt-auto">
-                          <span className="text-lg font-black text-slate-900">${plan.price}</span>
-                        </div>
-                        <p className="text-[10px] text-slate-400 mt-2 leading-relaxed">{plan.desc}</p>
-                      </div>
-                    ))}
-                  </div>
-                  {form.formState.errors.coursePlan && <p className="text-red-500 text-xs font-medium mt-1">{form.formState.errors.coursePlan.message}</p>}
-                </div>
-              </section>
-
-              {/* SECCIÓN 3: AGENDA TEÓRICA */}
-              {!currentValues.coursePlan?.includes('Reforzamiento') && !currentValues.coursePlan?.includes('manejar') && filteredTheoreticalSchedules.length > 0 && (
-                <section className="space-y-4">
-                  <div className="flex items-center gap-3 pb-3 border-b border-slate-200">
-                    <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">3</div>
-                    <h2 className="text-lg font-bold text-slate-800">Horario Teórico Presencial</h2>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {filteredTheoreticalSchedules.map((sched) => (
-                      <div 
-                        key={sched.id}
-                        onClick={() => setValue('theoreticalClassSchedule', sched.id)}
-                        className={`cursor-pointer rounded-xl border p-4 transition-all duration-150 flex flex-col gap-1.5 ${currentValues.theoreticalClassSchedule === sched.id ? 'border-blue-600 bg-blue-50/20 shadow-2xs' : 'border-slate-200 bg-white hover:border-slate-300'}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Clock className={`w-4 h-4 ${currentValues.theoreticalClassSchedule === sched.id ? 'text-blue-600' : 'text-slate-400'}`} />
-                          <span className={`font-bold text-sm leading-tight ${currentValues.theoreticalClassSchedule === sched.id ? 'text-blue-900' : 'text-slate-700'}`}>{sched.label}</span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 ml-7">{sched.desc}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  {currentValues.theoreticalClassDates && currentValues.theoreticalClassDates.length > 0 && (
-                    <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-4 flex gap-4 items-center">
-                      <div className="w-10 h-10 bg-white rounded-lg shadow-2xs border border-slate-200 flex items-center justify-center shrink-0">
-                        <CalendarIcon className="w-4 h-4 text-blue-600" />
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-slate-700 text-xs mb-1.5">Fechas Teóricas Asignadas:</h4>
-                        <div className="flex flex-wrap gap-1.5">
-                          {currentValues.theoreticalClassDates.map((d, i) => (
-                            <span key={i} className="bg-white border border-slate-200 px-2 py-0.5 rounded-md text-[11px] font-semibold text-slate-600 shadow-2xs">
-                              {format(d, "EEE d MMM", { locale: es })}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </section>
-              )}
-
-              {/* SECCIÓN 4: AGENDA DE CADA CLASE PRÁCTICA INDIVIDUAL */}
-              <section className="space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">4</div>
-                    <h2 className="text-lg font-bold text-slate-800">
-                      Agenda de Clases Prácticas ({selectedPlan ? `${selectedPlan.classCount} Clases` : 'Selecciona un Plan'})
-                    </h2>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const event = new CustomEvent('openAvailabilityWidget');
-                      window.dispatchEvent(event);
-                    }}
-                    className="gap-1.5 text-xs font-bold border-blue-200 text-blue-700 hover:bg-blue-50 h-8"
-                  >
-                    <CalendarSearch className="w-3.5 h-3.5 text-blue-600" /> Ver Libreta Completa en Vivo
-                  </Button>
-                </div>
-
-                {!selectedPlan ? (
-                  <div className="p-8 text-center bg-slate-100 rounded-2xl text-slate-500 font-medium border border-dashed border-slate-300">
-                    👆 Selecciona arriba un Plan de Curso para habilitar las fechas y horarios de cada clase.
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {/* Selector de Modalidad (Semanal / Sabatino) */}
-                    <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 space-y-2 shadow-2xs">
-                      <Label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        📅 Modalidad del Curso Práctico
-                      </Label>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setValue('practicalType', 'semanal')}
-                          className={`flex-1 py-2 px-3 rounded-lg border font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
-                            currentValues.practicalType === 'semanal'
-                              ? 'border-blue-600 bg-blue-50/50 text-blue-800 shadow-2xs'
-                              : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                          }`}
-                        >
-                          💼 Semanal (Lun a Vie)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setValue('practicalType', 'sabatino')}
-                          className={`flex-1 py-2 px-3 rounded-lg border font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
-                            currentValues.practicalType === 'sabatino'
-                              ? 'border-blue-600 bg-blue-50/50 text-blue-800 shadow-2xs'
-                              : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                          }`}
-                        >
-                          🎉 Sabatino (Sábados)
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* ACORDEÓN DE CLASES PRÁCTICAS */}
-                    <Accordion type="single" collapsible defaultValue="class-0" className="space-y-2.5">
-                      {fields.map((fieldItem: any, index: number) => {
-                        const classDate = form.watch(`practicalClassSchedules.${index}.date`);
-                        const classTime = form.watch(`practicalClassSchedules.${index}.time`) || '';
-                        const chosenTransmission = form.watch('vehicleTransmission');
-                        const currentSlotOcc = getSlotOccupancy(
-                          classDate || '', 
-                          classTime, 
-                          availability.globalCounts, 
-                          availability.blockedSlots, 
-                          availability.slotCapacities,
-                          availability.transmissionCounts,
-                          availability.activeVehiclesByTransmission,
-                          chosenTransmission,
-                          availability.practicaSlots,
-                          availability.teoricoSlots,
-                          availability.practicaCapacities,
-                          availability.teoricoCapacities
-                        );
-
-                        const dateFormatted = classDate 
-                          ? format(new Date(classDate + 'T12:00:00'), "EEE dd/MM", { locale: es }) 
-                          : null;
-
-                        return (
-                          <AccordionItem 
-                            key={fieldItem.id} 
-                            value={`class-${index}`}
-                            className={`bg-white border rounded-xl shadow-2xs transition-colors overflow-hidden ${currentSlotOcc.isFull ? 'border-red-200 bg-red-50/5' : 'border-slate-200 hover:border-blue-200'}`}
-                          >
-                            <AccordionTrigger className="hover:no-underline px-4 py-3 text-left">
-                              <div className="flex items-center justify-between w-full pr-4 gap-4">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-5 h-5 rounded bg-blue-100 text-blue-800 font-bold text-[10px] flex items-center justify-center shrink-0">
-                                    #{index + 1}
-                                  </div>
-                                  <span className="font-bold text-slate-800 text-xs shrink-0">Clase {index + 1}</span>
-                                  {dateFormatted && classTime && (
-                                    <span className="text-[11px] text-slate-500 font-semibold bg-slate-100 px-2 py-0.5 rounded ml-2 hidden sm:inline-block">
-                                      📅 {dateFormatted} — ⏰ {classTime}
-                                    </span>
-                                  )}
-                                </div>
-
-                                <div className="shrink-0">
-                                  {currentSlotOcc.isEmpty ? (
-                                    <Badge variant="outline" className="bg-slate-50 text-slate-400 border-slate-200 text-[10px] font-medium px-1.5 py-0">
-                                      ⚪ Por programar
-                                    </Badge>
-                                  ) : currentSlotOcc.isFull ? (
-                                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-[10px] font-bold px-1.5 py-0">
-                                      {currentSlotOcc.label}
-                                    </Badge>
-                                  ) : currentSlotOcc.available === 1 ? (
-                                    <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200 text-[10px] font-bold px-1.5 py-0">
-                                      🟡 Último cupo
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] font-bold px-1.5 py-0">
-                                      {currentSlotOcc.label}
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="px-4 pb-4 pt-1 border-t border-slate-100">
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                                {/* Selector de Fecha */}
-                                <div className="space-y-1">
-                                  <Label className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Fecha</Label>
-                                  <Input
-                                    type="date"
-                                    className="h-10 rounded-lg border-slate-200 bg-slate-50/80 font-bold text-xs text-slate-800 focus:bg-white"
-                                    value={classDate || ''}
-                                    onChange={(e) => {
-                                      const selectedVal = e.target.value;
-                                      if (!selectedVal) {
-                                        form.setValue(`practicalClassSchedules.${index}.date`, '');
-                                        return;
-                                      }
-                                      
-                                      const dateObj = new Date(selectedVal + 'T12:00:00');
-                                      const dayOfWeek = dateObj.getDay();
-                                      const type = currentValues.practicalType || 'semanal';
-                                      
-                                      if (dayOfWeek === 0) {
-                                        toast({
-                                          title: "Día no laborable",
-                                          description: "La escuela de manejo no opera los domingos.",
-                                          variant: "destructive"
-                                        });
-                                        form.setValue(`practicalClassSchedules.${index}.date`, '');
-                                        return;
-                                      }
-                                      
-                                      if (type === 'semanal' && dayOfWeek === 6) {
-                                        toast({
-                                          title: "Horario Semanal Seleccionado",
-                                          description: "Has elegido la modalidad Semanal (Lunes a Viernes). Por favor selecciona un día de semana.",
-                                          variant: "destructive"
-                                        });
-                                        form.setValue(`practicalClassSchedules.${index}.date`, '');
-                                        return;
-                                      }
-                                      
-                                      if (type === 'sabatino' && dayOfWeek !== 6) {
-                                        toast({
-                                          title: "Horario Sabatino Seleccionado",
-                                          description: "Has elegido la modalidad Sabatina (Sábados). Por favor selecciona un día sábado.",
-                                          variant: "destructive"
-                                        });
-                                        form.setValue(`practicalClassSchedules.${index}.date`, '');
-                                        return;
-                                      }
-                                      
-                                      form.setValue(`practicalClassSchedules.${index}.date`, selectedVal);
-                                    }}
-                                  />
-                                </div>
-
-                                {/* Selector de Horario con Estatus en cada Opción */}
-                                <div className="space-y-1">
-                                  <Label className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">Horario</Label>
-                                  <select
-                                    className={`w-full h-10 rounded-lg border px-2.5 font-bold text-xs outline-none focus:ring-1 focus:ring-blue-600 ${currentSlotOcc.isFull ? 'border-red-300 bg-red-50 text-red-900' : 'border-slate-200 bg-slate-50/80 text-slate-800 focus:bg-white'}`}
-                                    value={classTime}
-                                    onChange={(e) => {
-                                      form.setValue(`practicalClassSchedules.${index}.time`, e.target.value);
-                                    }}
-                                  >
-                                    <option value="" className="text-slate-500">-- Selecciona Horario --</option>
-                                    {TIME_SLOTS.map(t => {
-                                      const occ = getSlotOccupancy(
-                                        classDate || '', 
-                                        t.id, 
-                                        availability.globalCounts, 
-                                        availability.blockedSlots, 
-                                        availability.slotCapacities,
-                                        availability.transmissionCounts,
-                                        availability.activeVehiclesByTransmission,
-                                        chosenTransmission,
-                                        availability.practicaSlots,
-                                        availability.teoricoSlots,
-                                        availability.practicaCapacities,
-                                        availability.teoricoCapacities
-                                      );
-                                      return (
-                                        <option 
-                                          key={t.id} 
-                                          value={t.id}
-                                          disabled={occ.isFull}
-                                          className={occ.isFull ? 'text-red-600 font-bold bg-red-100' : 'text-slate-900'}
-                                        >
-                                          {t.label} — {occ.label}
-                                        </option>
-                                      );
-                                    })}
-                                  </select>
-                                </div>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        );
-                      })}
-                    </Accordion>
-                  </div>
-                )}
-              </section>
-            </>
-          )}
-
-          {step === 2 && (
-            <>
-              {/* SECCIÓN DE AVISO DE RESERVA EXITOSA */}
-              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-slate-800 space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                  <div className="flex items-center gap-3 animate-pulse">
-                    <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-lg shrink-0 shadow-inner">
-                      🎉
-                    </div>
-                    <div>
-                      <h3 className="font-extrabold text-emerald-950 text-sm">¡Cupo Reservado con Éxito!</h3>
-                      <p className="text-xs text-emerald-700">Folio Oficial Provisional: <strong className="text-emerald-950">#{String(savedFolio).padStart(6, '0')}</strong></p>
-                    </div>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => {
-                      setStep(1);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    className="h-8 px-2.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900 border border-emerald-200 bg-white"
-                  >
-                    ✏️ Modificar Registro
-                  </Button>
-                </div>
-                <p className="text-xs text-emerald-800 leading-relaxed pt-1.5 border-t border-emerald-100">
-                  Tus horarios de clases prácticas y teóricas han sido bloqueados y reservados en nuestro sistema. Para activar formalmente tu matrícula, por favor realiza tu pago a continuación e ingresa el número de referencia.
-                </p>
-              </div>
-
-              {/* SECCIÓN 5: PAGO */}
-              <section className="space-y-5 pb-16">
-                <div className="flex items-center gap-3 pb-2 border-b border-slate-200">
-                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">5</div>
-                  <h2 className="text-lg font-bold text-slate-800">Método de Pago</h2>
-                </div>
-
-                {/* Selector de Método de Pago */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setValue('paymentType', 'yappy');
-                    }}
-                    className={`flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all ${
-                      currentValues.paymentType === 'yappy'
-                        ? 'border-[#004fb9] bg-[#004fb9]/5 ring-1 ring-[#004fb9] shadow-sm'
-                        : 'border-slate-200 bg-white hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${
-                      currentValues.paymentType === 'yappy' ? 'bg-[#004fb9] text-white' : 'bg-slate-100 text-slate-500'
-                    }`}>
-                      Y
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-[11px] flex items-center gap-1">
-                        Yappy
-                      </h4>
-                      <p className="text-[9px] text-slate-500 mt-0.5 leading-tight">Directo / Celular</p>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setValue('paymentType', 'cubo');
-                    }}
-                    className={`flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all ${
-                      currentValues.paymentType === 'cubo'
-                        ? 'border-[#16a34a] bg-[#16a34a]/5 ring-1 ring-[#16a34a] shadow-sm'
-                        : 'border-slate-200 bg-white hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs shrink-0 ${
-                      currentValues.paymentType === 'cubo' ? 'bg-[#16a34a] text-white' : 'bg-slate-100 text-slate-500'
-                    }`}>
-                      💳
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-[11px] flex items-center gap-1">
-                        Tarjeta (Cubo)
-                      </h4>
-                      <p className="text-[9px] text-slate-500 mt-0.5 leading-tight">Pago online seguro</p>
-                    </div>
-                  </button>
-                </div>
-
-                {currentValues.paymentType === 'yappy' && (
-                  <div className="bg-blue-50/30 border border-blue-100 rounded-xl p-4 space-y-4 animate-in fade-in duration-200">
-                    <div className="text-[11px] text-blue-950 leading-relaxed font-medium flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-blue-100/30 p-3 rounded-lg border border-blue-100/60">
-                      <span>
-                        📱 Envía tu pago por Yappy buscando al comercio: <span className="font-bold text-[#004fb9] bg-blue-100/60 px-1.5 py-0.5 rounded">Freeway Escuela de Manejo</span> (o al número celular <span className="font-bold text-[#004fb9] bg-blue-100/60 px-1.5 py-0.5 rounded">6381-4115</span>).
-                      </span>
-                      <Button
-                        type="button"
-                        onClick={() => window.open('https://link.yappy.com.pa/stc/dgXr5v%2BGA2xDgGKBkz%2BnBhSk16Vdr9BZvaim7nGhYrA%3D', '_blank')}
-                        className="bg-[#004fb9] hover:bg-[#003da1] text-white font-bold text-[11px] h-8 px-3 rounded-lg flex items-center gap-1 shrink-0 self-start sm:self-auto shadow-sm active:scale-95 transition-transform"
-                      >
-                        Pagar con Yappy 📱
-                      </Button>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Campo de Referencia */}
-                      <div className="space-y-1.5">
-                        <Label htmlFor="yappyReference" className="text-[11px] font-bold text-slate-700">
-                          Número de Referencia de Yappy <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          id="yappyReference"
-                          type="text"
-                          placeholder="Ej. 12345678"
-                          {...form.register('yappyReference')}
-                          className="h-10 text-xs rounded-lg border-slate-200 focus:border-blue-500 focus:ring-blue-500"
-                        />
-                      </div>
-
-                      {/* Adjuntar Comprobante */}
-                      <div className="space-y-1.5">
-                        <Label className="text-[11px] font-bold text-slate-700">
-                          Captura del Comprobante (Opcional)
-                        </Label>
-                        <div className="relative">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            id="voucherFile"
-                            onChange={handleFileChange}
-                            className="hidden"
-                          />
-                          {voucherBase64 ? (
-                            <div className="flex items-center justify-between border border-blue-200 bg-white p-2 rounded-lg text-xs">
-                              <span className="text-blue-700 font-semibold truncate max-w-[150px]">
-                                📸 Comprobante listo
-                              </span>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                onClick={() => {
-                                  setVoucherBase64(null);
-                                  setVoucherMime(null);
-                                }}
-                                className="h-6 text-[10px] text-red-500 hover:text-red-700 p-1"
-                              >
-                                Quitar
-                              </Button>
-                            </div>
-                          ) : (
-                            <label
-                              htmlFor="voucherFile"
-                              className="flex items-center justify-center border border-dashed border-slate-300 bg-white hover:bg-slate-50 cursor-pointer p-2 rounded-lg text-xs text-slate-500 font-medium h-10 transition-all gap-1.5"
-                            >
-                              <span>Upload</span> Subir Comprobante
-                            </label>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {currentValues.paymentType === 'cubo' && (
-                  <div className="bg-green-50/30 border border-green-100 rounded-xl p-4 space-y-4 animate-in fade-in duration-200">
-                    <div className="text-[11px] text-green-950 leading-relaxed font-medium flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-green-100/30 p-3 rounded-lg border border-green-100/60">
-                      <span>
-                        💳 Puedes pagar en línea con tu **tarjeta de crédito o débito** (Visa / Mastercard) a través del portal de procesamiento seguro de **Cubo**.
-                      </span>
-                      <Button
-                        type="button"
-                        onClick={() => window.open('https://link.cubopago.com/m_JPusnlxKnM', '_blank')}
-                        className="bg-[#16a34a] hover:bg-[#15803d] text-white font-bold text-[11px] h-8 px-3 rounded-lg flex items-center gap-1 shrink-0 self-start sm:self-auto shadow-sm active:scale-95 transition-transform"
-                      >
-                        Pagar con Tarjeta (Cubo) 💳
-                      </Button>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Campo de Referencia */}
-                      <div className="space-y-1.5">
-                        <Label htmlFor="cuboReference" className="text-[11px] font-bold text-slate-700">
-                          Número de Confirmación / Referencia <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          id="cuboReference"
-                          type="text"
-                          placeholder="Ej. ID de Transacción / Referencia"
-                          {...form.register('yappyReference')}
-                          className="h-10 text-xs rounded-lg border-slate-200 focus:border-green-500 focus:ring-green-500"
-                        />
-                      </div>
-
-                      {/* Adjuntar Comprobante */}
-                      <div className="space-y-1.5">
-                        <Label className="text-[11px] font-bold text-slate-700">
-                          Captura del Comprobante (Opcional)
-                        </Label>
-                        <div className="relative">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            id="voucherFileCubo"
-                            onChange={handleFileChange}
-                            className="hidden"
-                          />
-                          {voucherBase64 ? (
-                            <div className="flex items-center justify-between border border-green-200 bg-white p-2 rounded-lg text-xs">
-                              <span className="text-green-700 font-semibold truncate max-w-[150px]">
-                                📸 Comprobante listo
-                              </span>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                onClick={() => {
-                                  setVoucherBase64(null);
-                                  setVoucherMime(null);
-                                }}
-                                className="h-6 text-[10px] text-red-500 hover:text-red-700 p-1"
-                              >
-                                Quitar
-                              </Button>
-                            </div>
-                          ) : (
-                            <label
-                              htmlFor="voucherFileCubo"
-                              className="flex items-center justify-center border border-dashed border-slate-300 bg-white hover:bg-slate-50 cursor-pointer p-2 rounded-lg text-xs text-slate-500 font-medium h-10 transition-all gap-1.5"
-                            >
-                              <span>Upload</span> Subir Comprobante
-                            </label>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-
-              </section>
-            </>
-          )}
+              {step < 4 ? (
+                <Button type="button" onClick={handleNextStep} className="h-12 px-8 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 shadow-md">
+                  Siguiente <ChevronRight className="w-5 h-5 ml-1" />
+                </Button>
+              ) : null}
+            </div>
+            
+            {/* Footer */}
+            <div className="mt-16 text-center pb-8">
+              <p className="text-xs font-medium text-slate-400">© 2026 Freeway Escuela de Manejo.</p>
+              <p className="text-[10px] text-slate-300 mt-1 flex items-center justify-center gap-1">
+                <ShieldCheck className="w-3 h-3" /> Transacciones encriptadas de extremo a extremo
+              </p>
             </div>
           </div>
 
-          {/* COLUMNA DERECHA: RESUMEN FIJO Y DINÁMICO */}
-          <div className="w-full lg:w-[32%] bg-slate-900 lg:min-h-screen p-6 lg:p-8 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-            
-            <div className="sticky top-8 z-10 space-y-6">
-              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-2xl">
-                <h3 className="text-white font-bold text-lg mb-4">Tu Resumen</h3>
-                
-                <div className="space-y-4">
-                  {/* Vehículo */}
-                  <div className="flex justify-between items-center pb-3 border-b border-white/10">
-                    <div>
-                      <p className="text-slate-400 text-xs font-medium">Vehículo</p>
-                      <p className="text-white font-semibold text-sm">{currentValues.vehicleTransmission}</p>
-                    </div>
-                    <Car className="text-blue-400 w-4 h-4" />
-                  </div>
-
-                  {/* Plan */}
-                  <div className="flex justify-between items-center pb-3 border-b border-white/10">
-                    <div>
-                      <p className="text-slate-400 text-xs font-medium">Plan Seleccionado</p>
-                      {selectedPlan ? (
-                        <p className="text-white font-semibold text-sm">{selectedPlan.title} ({selectedPlan.hoursText})</p>
-                      ) : (
-                        <p className="text-slate-500 italic text-xs">Pendiente...</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Teoría */}
-                  <div className="flex justify-between items-center pb-3 border-b border-white/10">
-                    <div>
-                      <p className="text-slate-400 text-xs font-medium">Teoría</p>
-                      {!currentValues.coursePlan?.includes('Reforzamiento') && !currentValues.coursePlan?.includes('manejar') ? (
-                        currentValues.theoreticalClassSchedule ? (
-                          <p className="text-white font-semibold text-xs mt-0.5">{currentValues.theoreticalClassSchedule}</p>
-                        ) : (
-                          <p className="text-slate-500 italic text-xs">Pendiente...</p>
-                        )
-                      ) : (
-                        <p className="text-white font-semibold text-xs mt-0.5">No aplica</p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Práctica */}
-                  <div className="flex justify-between items-center pb-3 border-b border-white/10">
-                    <div>
-                      <p className="text-slate-400 text-xs font-medium">Clases Prácticas ({selectedPlan ? `${selectedPlan.classCount} Clases` : 'Pref.'})</p>
-                      {fields.length > 0 ? (
-                        <p className="text-white font-semibold text-xs mt-0.5">{fields.length} Sesiones Agendadas</p>
-                      ) : (
-                        <p className="text-slate-500 italic text-xs">Pendiente...</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Total */}
-                  <div className="pt-3">
-                    <p className="text-slate-400 text-xs font-medium mb-0.5">Total a pagar</p>
-                    <p className="text-white font-black text-3xl">
-                      ${selectedPlan?.price || '0'}<span className="text-sm text-slate-400 font-normal">.00</span>
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-8">
-                  <Button 
-                    type="submit" 
-                    disabled={isSubmitting || (step === 1 && (!currentValues.coursePlan || (!currentValues.coursePlan?.includes('Reforzamiento') && !currentValues.coursePlan?.includes('manejar') && filteredTheoreticalSchedules.length > 0 && !currentValues.theoreticalClassSchedule)))}
-                    className={`w-full h-12 text-sm font-bold rounded-xl text-white shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 ${step === 2 ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-blue-600 hover:bg-blue-500'}`}
-                  >
-                    {isSubmitting 
-                      ? (step === 1 ? 'Reservando...' : 'Procesando...') 
-                      : (step === 1 ? 'Reservar Cupo y Proceder al Pago' : 'Confirmar y Completar Inscripción')}
-                    {!isSubmitting && <ChevronRight className="w-4 h-4 ml-2" />}
-                  </Button>
-                  <p className="text-center text-slate-400 text-xs mt-3 flex items-center justify-center gap-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5" /> Genera Contrato en Tiempo Real
-                  </p>
-                </div>
-              </div>
-
-              {/* Trust Badge */}
-              <div className="bg-blue-950/40 border border-blue-900/40 rounded-xl p-4 backdrop-blur-sm flex items-start gap-3">
-                <Info className="text-blue-400 w-4.5 h-4.5 shrink-0 mt-0.5" />
-                <p className="text-xs text-blue-200 leading-normal">
-                  {step === 1 
-                    ? "Al reservar tu cupo, tus horarios quedarán bloqueados y se asignará tu Folio Oficial provisional en nuestra base de datos."
-                    : "Al confirmar tu pago, tu matrícula quedará formalmente activada y se enviará la notificación a tu asesor asignado."}
-                </p>
-              </div>
+          {/* Sidebar Area */}
+          <div className="w-full lg:w-[35%] bg-slate-900 lg:min-h-screen p-6 lg:p-12 relative overflow-hidden">
+            <div className="lg:sticky lg:top-12">
+              <OrderSummarySidebar 
+                total={total}
+                plans={currentPricingPlans}
+                filteredTheoreticalSchedules={filteredTheoreticalSchedules}
+              />
             </div>
           </div>
 

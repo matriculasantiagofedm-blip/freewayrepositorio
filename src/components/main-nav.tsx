@@ -15,7 +15,7 @@ import {
 import { Separator } from './ui/separator';
 import { useWindowManager } from '@/contexts/window-manager-context';
 import Link from 'next/link';
-import { db } from '@/lib/firebase';
+import { db } from '@/firebase/client';
 import { collection, query, where, Timestamp, onSnapshot } from 'firebase/firestore';
 
 /** Cuenta contratos online con pago pendiente en las últimas 48 horas */

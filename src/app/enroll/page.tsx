@@ -35,7 +35,6 @@ import {
   MessageCircle, 
   Globe, 
   ShieldCheck, 
-  Sparkles,
   Loader2
 } from 'lucide-react';
 
@@ -418,35 +417,7 @@ export default function DynamicEnrollPage() {
 
   const selectedPlan = plansList.find(p => p.name === currentValues.coursePlan);
 
-  // Al cambiar modalidad (semanal / sabatino), limpiar fechas inválidas
-  useEffect(() => {
-    const type = currentValues.practicalType || 'semanal';
-    const schedules = form.getValues('practicalClassSchedules') || [];
-    
-    let changed = false;
-    const updated = schedules.map((s: any) => {
-      if (!s.date) return s;
-      const dateObj = new Date(s.date + 'T12:00:00');
-      const dayOfWeek = dateObj.getDay();
-      
-      let shouldReset = false;
-      if (dayOfWeek === 0) shouldReset = true;
-      else if (type === 'semanal' && dayOfWeek === 6) shouldReset = true;
-      else if (type === 'sabatino' && dayOfWeek !== 6) shouldReset = true;
-      
-      if (shouldReset) {
-        changed = true;
-        return { ...s, date: '', time: '' };
-      }
-      return s;
-    });
-    
-    if (changed) {
-      setValue('practicalClassSchedules', updated);
-    }
-  }, [currentValues.practicalType, setValue, form]);
-
-  // Al cambiar de plan, crear dinámicamente las N clases requeridas
+  // Al cambiar de plan, inicializar la cantidad requerida de clases prácticas
   useEffect(() => {
     if (!selectedPlan) return;
 
@@ -573,7 +544,7 @@ export default function DynamicEnrollPage() {
       }));
 
       if (savedContractId) {
-        // Actualizar borrador ya creado
+        // Actualizar borrador existente
         const contractRef = doc(db, 'contracts', savedContractId);
         await updateDoc(contractRef, {
           title: `${isMoto ? 'Curso de Moto' : 'Curso de Auto'} - Folio ${savedFolio}`,
@@ -601,7 +572,7 @@ export default function DynamicEnrollPage() {
         return true;
       }
 
-      // Crear nuevo contrato con Folio Oficial
+      // Crear nuevo contrato en Firestore con Folio Oficial
       const newContractRef = doc(collection(db, 'contracts'));
       let assignedFolio = 18;
 
@@ -699,7 +670,7 @@ export default function DynamicEnrollPage() {
     } else if (step === 2) {
       const chosenPlan = form.getValues('coursePlan');
       if (!chosenPlan) {
-        toast({ title: "Selecciona un plan", description: "Debes seleccionar uno de los planes de clases para continuar.", variant: "destructive" });
+        toast({ title: "Selecciona un plan", description: "Debes seleccionar uno de los planes disponibles para continuar.", variant: "destructive" });
         return;
       }
       setStep(3);
@@ -707,7 +678,7 @@ export default function DynamicEnrollPage() {
     } else if (step === 3) {
       const theoSchedule = form.getValues('theoreticalClassSchedule');
       if (!theoSchedule) {
-        toast({ title: "Horario teórico requerido", description: "Por favor selecciona un horario para tus clases teóricas.", variant: "destructive" });
+        toast({ title: "Horario teórico requerido", description: "Por favor selecciona un horario para tus clases teóricas en el Punto 1.", variant: "destructive" });
         return;
       }
 
@@ -716,7 +687,7 @@ export default function DynamicEnrollPage() {
 
       const unassigned = practicalSchedules.some(s => !s.date || !s.time);
       if (unassigned || practicalSchedules.length < requiredCount) {
-        toast({ title: "Horarios prácticos incompletos", description: `Debes asignar el horario para las ${requiredCount} clases prácticas.`, variant: "destructive" });
+        toast({ title: "Horarios prácticos incompletos", description: `Debes asignar el horario para las ${requiredCount} clases prácticas en el Punto 2.`, variant: "destructive" });
         return;
       }
 
@@ -753,8 +724,8 @@ export default function DynamicEnrollPage() {
         setStep(4);
         window.scrollTo({ top: 0, behavior: 'smooth' });
         toast({
-          title: "¡Cupo Reservado!",
-          description: "Tu cupo quedó registrado. Procede a adjuntar tu comprobante de pago.",
+          title: "¡Cupo Reservado con Éxito!",
+          description: "Tu cupo quedó registrado. Ahora adjunta tu comprobante de pago.",
         });
       }
     }
@@ -833,7 +804,7 @@ export default function DynamicEnrollPage() {
     console.warn("Validation errors on submit:", errors);
     toast({
       title: "Formulario Incompleto",
-      description: "Por favor revisa todos los campos obligatorios.",
+      description: "Por favor completa todos los campos requeridos.",
       variant: "destructive"
     });
   };
@@ -896,7 +867,7 @@ export default function DynamicEnrollPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-200">
+    <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-200 pb-24 lg:pb-0">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="flex flex-col lg:flex-row w-full max-w-[1400px] mx-auto min-h-screen relative">
           
@@ -904,7 +875,7 @@ export default function DynamicEnrollPage() {
           <div className="w-full lg:w-[65%] p-6 lg:p-12 xl:p-16 flex flex-col justify-between min-h-screen">
             <div>
               {/* Header / Logo */}
-              <div className="mb-10 flex items-center gap-3">
+              <div className="mb-8 flex items-center gap-3">
                 <div className="bg-blue-600 text-white p-2.5 rounded-2xl shadow-lg shadow-blue-600/25">
                   <Car className="w-6 h-6" />
                 </div>
@@ -945,7 +916,7 @@ export default function DynamicEnrollPage() {
               </div>
 
               {/* Step Content */}
-              <div className="flex-1">
+              <div className="flex-1 pb-12">
                 <AnimatePresence mode="wait">
                   {step === 1 && <StepPersonalInfo key="step1" />}
                   {step === 2 && <StepCourseSelection key="step2" plans={plansList} />}
@@ -991,8 +962,8 @@ export default function DynamicEnrollPage() {
               </div>
             </div>
 
-            {/* Navigation Buttons (Sticky at bottom on mobile/desktop) */}
-            <div className="mt-12 pt-6 border-t border-slate-200 flex items-center justify-between">
+            {/* STICKY BOTTOM NAVIGATION BAR (Always visible on any screen size) */}
+            <div className="sticky bottom-0 bg-white/95 backdrop-blur-md border-t border-slate-200 py-4 px-6 -mx-6 -mb-6 lg:-mx-12 lg:-mb-12 xl:-mx-16 xl:-mb-16 z-40 flex items-center justify-between shadow-lg">
               {step > 1 ? (
                 <Button 
                   type="button" 
@@ -1009,19 +980,23 @@ export default function DynamicEnrollPage() {
                   type="button" 
                   onClick={handleNextStep} 
                   disabled={isSubmitting}
-                  className="h-12 px-8 rounded-2xl font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/25 cursor-pointer"
+                  className="h-12 px-8 rounded-2xl font-black bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/30 text-sm tracking-wide cursor-pointer transition-all active:scale-95"
                 >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Guardando...
                     </>
-                  ) : step === 3 ? (
+                  ) : step === 1 ? (
                     <>
-                      Continuar al Pago <ChevronRight className="w-5 h-5 ml-1" />
+                      Siguiente: Elegir Plan <ChevronRight className="w-5 h-5 ml-1.5" />
+                    </>
+                  ) : step === 2 ? (
+                    <>
+                      Siguiente: Elegir Horarios <ChevronRight className="w-5 h-5 ml-1.5" />
                     </>
                   ) : (
                     <>
-                      Siguiente <ChevronRight className="w-5 h-5 ml-1" />
+                      Continuar al Pago <ChevronRight className="w-5 h-5 ml-1.5" />
                     </>
                   )}
                 </Button>
@@ -1029,9 +1004,9 @@ export default function DynamicEnrollPage() {
             </div>
             
             {/* Footer */}
-            <div className="mt-12 text-center pb-4 border-t border-slate-100 pt-6">
-              <p className="text-xs font-semibold text-slate-400">© 2026 Freeway Escuela de Manejo. Todos los derechos reservados.</p>
-              <p className="text-[11px] text-slate-400 mt-1 flex items-center justify-center gap-1">
+            <div className="mt-8 text-center pb-4 text-slate-400">
+              <p className="text-xs font-semibold">© 2026 Freeway Escuela de Manejo. Todos los derechos reservados.</p>
+              <p className="text-[11px] mt-1 flex items-center justify-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Transacciones seguras y encriptadas de extremo a extremo
               </p>
             </div>

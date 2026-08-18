@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-const APP_CACHE_VERSION = 'v7_theoretical_mar_vie_force_reload';
+const APP_CACHE_VERSION = 'v9_fresh_ui_wizard_no_encoding_issues_2026';
 
 /**
  * Desregistra automáticamente cualquier service worker antiguo Y limpia todo

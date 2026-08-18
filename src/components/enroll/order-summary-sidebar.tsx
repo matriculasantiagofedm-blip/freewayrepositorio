@@ -1,6 +1,6 @@
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
-import { Car, Clock, Calendar, ShieldCheck, Tag, CheckCircle2 } from 'lucide-react';
+import { Car, Clock, Calendar, ShieldCheck, Tag, CheckCircle2, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -25,10 +25,14 @@ export function OrderSummarySidebar({ total, plans, filteredTheoreticalSchedules
   const transmission = watch('vehicleTransmission') || 'Automático';
   const coursePlan = watch('coursePlan');
   const theoreticalClassSchedule = watch('theoreticalClassSchedule');
-  const practicalClassSchedules = watch('practicalClassSchedules');
+  const practicalClassSchedules = watch('practicalClassSchedules') || [];
 
   const selectedPlanObj = plans.find(p => p.name === coursePlan);
   const selectedTeóricoObj = filteredTheoreticalSchedules.find(t => t.id === theoreticalClassSchedule);
+
+  // Solo consideramos como asignadas aquellas clases que tengan fecha y hora
+  const validPracticalSchedules = practicalClassSchedules.filter((s: any) => s && s.date && s.time);
+  const requiredClassCount = selectedPlanObj?.classCount || 0;
 
   return (
     <div className="bg-slate-900 text-white rounded-3xl p-6 lg:p-8 shadow-2xl overflow-hidden relative border border-slate-800">
@@ -46,7 +50,7 @@ export function OrderSummarySidebar({ total, plans, filteredTheoreticalSchedules
         <div className="flex items-start justify-between border-b border-slate-800 pb-4">
           <div>
             <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider mb-1">Vehículo / Transmisión</p>
-            <p className="font-extrabold text-slate-100 text-sm">{transmission || 'Pendiente...'}</p>
+            <p className="font-extrabold text-slate-100 text-sm">{transmission || 'Automático'}</p>
           </div>
           <div className="p-2 bg-slate-800 rounded-xl text-blue-400">
             <Car className="w-4 h-4" />
@@ -58,14 +62,14 @@ export function OrderSummarySidebar({ total, plans, filteredTheoreticalSchedules
           <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider mb-1">Plan Seleccionado</p>
           <div className="flex justify-between items-start w-full">
             <p className={`font-extrabold text-sm ${selectedPlanObj ? 'text-slate-100' : 'text-slate-500 italic'}`}>
-              {selectedPlanObj?.title || 'Pendiente de elegir...'}
+              {selectedPlanObj?.title || 'Por favor elige un plan...'}
             </p>
             {selectedPlanObj && (
               <span className="font-black text-blue-400 text-base">${selectedPlanObj.price}</span>
             )}
           </div>
           {selectedPlanObj && (
-            <p className="text-xs text-slate-400 mt-1">{selectedPlanObj.hoursText}</p>
+            <p className="text-xs text-slate-400 mt-1">{selectedPlanObj.hoursText} ({selectedPlanObj.classCount} clases de 2h)</p>
           )}
         </div>
 
@@ -73,7 +77,7 @@ export function OrderSummarySidebar({ total, plans, filteredTheoreticalSchedules
         <div className="border-b border-slate-800 pb-4">
           <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider mb-1">Clases Teóricas</p>
           <p className={`font-bold text-sm ${selectedTeóricoObj ? 'text-slate-100' : 'text-slate-500 italic'}`}>
-            {selectedTeóricoObj?.label || 'Pendiente de elegir...'}
+            {selectedTeóricoObj?.label || 'Pendiente de elegir en Paso 3...'}
           </p>
           {selectedTeóricoObj && (
             <p className="text-xs text-slate-400 mt-0.5">{selectedTeóricoObj.desc}</p>
@@ -85,27 +89,31 @@ export function OrderSummarySidebar({ total, plans, filteredTheoreticalSchedules
           <div className="flex justify-between items-center mb-2">
             <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Clases Prácticas</p>
             {selectedPlanObj && (
-              <span className="text-[10px] font-extrabold bg-blue-950 text-blue-400 border border-blue-800/60 px-2 py-0.5 rounded-full">
-                {practicalClassSchedules?.filter((s: any) => s.date && s.time)?.length || 0} de {selectedPlanObj.classCount}
+              <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                validPracticalSchedules.length === requiredClassCount && requiredClassCount > 0
+                  ? 'bg-emerald-950 text-emerald-400 border border-emerald-800/60'
+                  : 'bg-blue-950 text-blue-400 border border-blue-800/60'
+              }`}>
+                {validPracticalSchedules.length} de {requiredClassCount} agendadas
               </span>
             )}
           </div>
           
-          {!practicalClassSchedules || practicalClassSchedules.length === 0 ? (
-            <p className="font-bold text-sm text-slate-500 italic">Pendiente de elegir...</p>
+          {validPracticalSchedules.length === 0 ? (
+            <p className="text-xs text-slate-500 italic">Se agendan en el Paso 3 (Horarios)...</p>
           ) : (
             <div className="space-y-1.5 mt-2">
-              {practicalClassSchedules.map((s: any, i: number) => {
-                if (!s.date) return null;
-                return (
-                  <div key={i} className="flex justify-between items-center text-xs bg-slate-800/60 rounded-xl px-3 py-2 border border-slate-700/60">
+              {validPracticalSchedules.map((s: any, i: number) => (
+                <div key={i} className="flex justify-between items-center text-xs bg-slate-800/60 rounded-xl px-3 py-2 border border-slate-700/60">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold text-blue-400">#{i + 1}</span>
                     <span className="text-slate-300 font-medium capitalize">
                       {format(new Date(s.date + 'T12:00:00'), "EEE d 'de' MMM", { locale: es })}
                     </span>
-                    <span className="text-blue-300 font-bold">{s.time ? s.time.split(' ')[0] : 'Sin hora'}</span>
                   </div>
-                );
-              })}
+                  <span className="text-blue-300 font-bold">{s.time.split(' ')[0]}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -115,7 +123,7 @@ export function OrderSummarySidebar({ total, plans, filteredTheoreticalSchedules
           <div className="flex justify-between items-end bg-gradient-to-br from-blue-900/40 to-blue-950/80 p-5 rounded-2xl border border-blue-500/30 shadow-inner">
             <div>
               <p className="text-xs font-bold text-blue-300 uppercase tracking-wider">Total a pagar</p>
-              <p className="text-[11px] text-slate-400 mt-0.5">Incluye IVA y matrícula</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Incluye matrícula e impuestos</p>
             </div>
             <div className="flex items-baseline gap-1">
               <span className="text-4xl font-black text-white">${total.toFixed(0)}</span>

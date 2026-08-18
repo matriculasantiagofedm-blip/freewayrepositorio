@@ -984,7 +984,7 @@ export default function DynamicEnrollPage() {
     setStep(s => (s - 1) as any);
   };
 
-  const currentPlanObj = currentPricingPlans.find(p => p.name === currentValues.coursePlan);
+  const currentPlanObj = plansList.find(p => p.name === currentValues.coursePlan);
   const total = currentPlanObj ? currentPlanObj.price : 0;
 
   return (
@@ -1022,7 +1022,7 @@ export default function DynamicEnrollPage() {
             <div className="flex-1">
               <AnimatePresence mode="wait">
                 {step === 1 && <StepPersonalInfo key="step1" />}
-                {step === 2 && <StepCourseSelection key="step2" plans={currentPricingPlans} />}
+                {step === 2 && <StepCourseSelection key="step2" plans={plansList} />}
                 {step === 3 && (
                   <StepScheduleBooking 
                     key="step3" 
@@ -1080,7 +1080,7 @@ export default function DynamicEnrollPage() {
             <div className="lg:sticky lg:top-12">
               <OrderSummarySidebar 
                 total={total}
-                plans={currentPricingPlans}
+                plans={plansList}
                 filteredTheoreticalSchedules={filteredTheoreticalSchedules}
               />
             </div>

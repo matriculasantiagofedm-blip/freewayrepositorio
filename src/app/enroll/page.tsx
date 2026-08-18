@@ -394,9 +394,10 @@ export default function DynamicEnrollPage() {
 
   const selectedPlan = plansList.find(p => p.name === currentValues.coursePlan);
 
-  const [startWeekOffset, setStartWeekOffset] = useState<number>(0);
+  // --- GESTIÓN DE FECHAS TEÓRICAS (INDEPENDIENTES) ---
+  const [theoWeekOffset, setTheoWeekOffset] = useState<number>(0);
 
-  const availableStartDates = useMemo(() => {
+  const availableTheoStartDates = useMemo(() => {
     const scheduleId = currentValues.theoreticalClassSchedule;
     const today = new Date();
     const list: Date[] = [];
@@ -406,7 +407,6 @@ export default function DynamicEnrollPage() {
     let d = new Date(today);
     d.setDate(d.getDate() + ((targetDay - d.getDay() + 7) % 7 || 7));
 
-    // Generar las próximas 16 semanas de inicio disponibles (4 meses en adelante)
     for (let i = 0; i < 16; i++) {
       const next = new Date(d);
       next.setDate(d.getDate() + (i * 7));
@@ -415,47 +415,84 @@ export default function DynamicEnrollPage() {
     return list;
   }, [currentValues.theoreticalClassSchedule]);
 
-  const selectedStartDate = availableStartDates[startWeekOffset] || availableStartDates[0] || new Date();
+  const selectedTheoStartDate = availableTheoStartDates[theoWeekOffset] || availableTheoStartDates[0] || new Date();
 
-  const onSelectStartDate = (date: Date, offset: number) => {
-    setStartWeekOffset(offset);
-  };
-
-  // Resetear offset a 0 si cambia entre Semanal y Sabatino
+  // Resetear offset teórico al cambiar modalidad
   useEffect(() => {
-    setStartWeekOffset(0);
+    setTheoWeekOffset(0);
   }, [currentValues.theoreticalClassSchedule]);
 
-  // Generar las fechas para las N clases prácticas según el horario teórico seleccionado y la fecha de inicio
-  const practicalDays: Date[] = useMemo(() => {
-    const count = selectedPlan?.classCount || 4;
-    const scheduleId = currentValues.theoreticalClassSchedule;
+  // Autogenerar fechas de clases teóricas a partir de selectedTheoStartDate (4 días si semanal, 3 si sabatino)
+  useEffect(() => {
+    if (!currentValues.theoreticalClassSchedule || !selectedTheoStartDate) return;
+
     const dates: Date[] = [];
 
-    if (!scheduleId) {
-      // Si aún no elige teoría, generar días hábiles a partir de mañana (sin domingos)
-      let current = new Date();
-      while (dates.length < count) {
-        current = addDays(current, 1);
-        const dayOfWeek = current.getDay();
-        if (dayOfWeek !== 0) {
-          dates.push(new Date(current));
-        }
+    if (currentValues.theoreticalClassSchedule.includes('Sabados')) {
+      let d = new Date(selectedTheoStartDate);
+      for (let i = 0; i < 3; i++) {
+        const next = new Date(d);
+        next.setDate(d.getDate() + (i * 7));
+        dates.push(next);
       }
-      return dates;
+    } else {
+      // Martes a Viernes (4 días consecutivos)
+      let d = new Date(selectedTheoStartDate);
+      for (let i = 0; i < 4; i++) {
+        const next = new Date(d);
+        next.setDate(d.getDate() + i);
+        dates.push(next);
+      }
     }
 
-    if (scheduleId.includes('Sabados')) {
-      // Modalidad Sabatina: N sábados consecutivos a partir de selectedStartDate
-      let d = new Date(selectedStartDate);
+    setValue('theoreticalClassDates', dates, { shouldValidate: true });
+  }, [currentValues.theoreticalClassSchedule, selectedTheoStartDate, setValue]);
+
+  // --- GESTIÓN DE FECHAS PRÁCTICAS (TOTALMENTE INDEPENDIENTES) ---
+  const [practicalWeekOffset, setPracticalWeekOffset] = useState<number>(0);
+
+  const practicalType = currentValues.practicalType || 'semanal';
+
+  const availablePracticalStartDates = useMemo(() => {
+    const today = new Date();
+    const list: Date[] = [];
+    const isSabatino = practicalType === 'sabatino';
+    const targetDay = isSabatino ? 6 : 2; // Sábado (6) o Martes (2)
+
+    let d = new Date(today);
+    d.setDate(d.getDate() + ((targetDay - d.getDay() + 7) % 7 || 7));
+
+    for (let i = 0; i < 16; i++) {
+      const next = new Date(d);
+      next.setDate(d.getDate() + (i * 7));
+      list.push(next);
+    }
+    return list;
+  }, [practicalType]);
+
+  const selectedPracticalStartDate = availablePracticalStartDates[practicalWeekOffset] || availablePracticalStartDates[0] || new Date();
+
+  // Resetear offset práctico al cambiar tipo de práctica
+  useEffect(() => {
+    setPracticalWeekOffset(0);
+  }, [practicalType]);
+
+  // Generar las fechas para las N clases prácticas según la semana práctica elegida
+  const practicalDays: Date[] = useMemo(() => {
+    const count = selectedPlan?.classCount || 4;
+    const dates: Date[] = [];
+
+    if (practicalType === 'sabatino') {
+      // Modalidad Sabatina: N sábados consecutivos a partir de selectedPracticalStartDate
+      let d = new Date(selectedPracticalStartDate);
       for (let i = 0; i < count; i++) {
         const next = new Date(d);
         next.setDate(d.getDate() + (i * 7));
         dates.push(next);
       }
     } else {
-      // Modalidad Semanal: N días de Martes a Viernes a partir de selectedStartDate
-      let current = new Date(selectedStartDate);
+      // Modalidad Semanal: N días de Martes a Viernes a partir de selectedPracticalStartDate
+      let current = new Date(selectedPracticalStartDate);
       while (dates.length < count) {
         const dayOfWeek = current.getDay();
         if (dayOfWeek >= 2 && dayOfWeek <= 5) {
@@ -466,7 +503,7 @@ export default function DynamicEnrollPage() {
     }
 
     return dates;
-  }, [selectedPlan, currentValues.theoreticalClassSchedule, selectedStartDate]);
+  }, [selectedPlan, practicalType, selectedPracticalStartDate]);
 
   // Al cambiar de plan o días prácticos, inicializar la cantidad requerida de clases prácticas
   useEffect(() => {
@@ -484,32 +521,6 @@ export default function DynamicEnrollPage() {
 
     replace(newSchedules);
   }, [selectedPlan, practicalDays, replace, form]);
-
-  // Autogenerar fechas de clases teóricas a partir de selectedStartDate (4 días si semanal, 3 si sabatino)
-  useEffect(() => {
-    if (!currentValues.theoreticalClassSchedule || !selectedStartDate) return;
-
-    const dates: Date[] = [];
-
-    if (currentValues.theoreticalClassSchedule.includes('Sabados')) {
-      let d = new Date(selectedStartDate);
-      for (let i = 0; i < 3; i++) {
-        const next = new Date(d);
-        next.setDate(d.getDate() + (i * 7));
-        dates.push(next);
-      }
-    } else {
-      // Martes a Viernes (4 días consecutivos)
-      let d = new Date(selectedStartDate);
-      for (let i = 0; i < 4; i++) {
-        const next = new Date(d);
-        next.setDate(d.getDate() + i);
-        dates.push(next);
-      }
-    }
-
-    setValue('theoreticalClassDates', dates, { shouldValidate: true });
-  }, [currentValues.theoreticalClassSchedule, selectedStartDate, setValue]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -953,10 +964,15 @@ export default function DynamicEnrollPage() {
                       currentValues={currentValues}
                       practicalDays={practicalDays}
                       timeSlots={TIME_SLOTS}
-                      availableStartDates={availableStartDates}
-                      selectedStartDate={selectedStartDate}
-                      onSelectStartDate={onSelectStartDate}
-                      startWeekOffset={startWeekOffset}
+                      availableTheoStartDates={availableTheoStartDates}
+                      selectedTheoStartDate={selectedTheoStartDate}
+                      onSelectTheoStartDate={(date, offset) => setTheoWeekOffset(offset)}
+                      theoWeekOffset={theoWeekOffset}
+                      availablePracticalStartDates={availablePracticalStartDates}
+                      selectedPracticalStartDate={selectedPracticalStartDate}
+                      onSelectPracticalStartDate={(date, offset) => setPracticalWeekOffset(offset)}
+                      practicalWeekOffset={practicalWeekOffset}
+                      practicalType={practicalType}
                       getSlotOccupancy={(d, s) => getSlotOccupancy(
                         d, 
                         s, 

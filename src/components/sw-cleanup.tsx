@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-const APP_CACHE_VERSION = 'v13_advance_and_back_buttons_both_sections_2026';
+const APP_CACHE_VERSION = 'v14_fully_independent_theory_and_practice_2026';
 
 /**
  * Desregistra automáticamente cualquier service worker antiguo Y limpia todo

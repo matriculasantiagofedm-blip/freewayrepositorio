@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-const APP_CACHE_VERSION = 'v15_mon_to_fri_practical_and_clean_typography_2026';
+const APP_CACHE_VERSION = 'v16_no_db_write_until_payment_confirmed_2026';
 
 /**
  * Desregistra automáticamente cualquier service worker antiguo Y limpia todo

@@ -457,7 +457,7 @@ export default function DynamicEnrollPage() {
     const today = new Date();
     const list: Date[] = [];
     const isSabatino = practicalType === 'sabatino';
-    const targetDay = isSabatino ? 6 : 2; // Sábado (6) o Martes (2)
+    const targetDay = isSabatino ? 6 : 1; // Sábado (6) o Lunes (1)
 
     let d = new Date(today);
     d.setDate(d.getDate() + ((targetDay - d.getDay() + 7) % 7 || 7));
@@ -477,7 +477,7 @@ export default function DynamicEnrollPage() {
     setPracticalWeekOffset(0);
   }, [practicalType]);
 
-  // Generar las fechas para las N clases prácticas según la semana práctica elegida
+  // Generar las fechas para las N clases prácticas según la semana práctica elegida (Lunes a Viernes o Sábados)
   const practicalDays: Date[] = useMemo(() => {
     const count = selectedPlan?.classCount || 4;
     const dates: Date[] = [];
@@ -491,11 +491,11 @@ export default function DynamicEnrollPage() {
         dates.push(next);
       }
     } else {
-      // Modalidad Semanal: N días de Martes a Viernes a partir de selectedPracticalStartDate
+      // Modalidad Semanal: N días de Lunes a Viernes a partir de selectedPracticalStartDate
       let current = new Date(selectedPracticalStartDate);
       while (dates.length < count) {
         const dayOfWeek = current.getDay();
-        if (dayOfWeek >= 2 && dayOfWeek <= 5) {
+        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
           dates.push(new Date(current));
         }
         current = addDays(current, 1);

@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-const APP_CACHE_VERSION = 'v9_fresh_ui_wizard_no_encoding_issues_2026';
+const APP_CACHE_VERSION = 'v10_both_schedules_and_exact_class_counts_2026';
 
 /**
  * Desregistra automáticamente cualquier service worker antiguo Y limpia todo

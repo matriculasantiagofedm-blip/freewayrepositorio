@@ -174,8 +174,8 @@ const enrollmentSchema = z.object({
 });
 
 const THEORETICAL_SCHEDULES = [
-  { id: 'Sabados 3:00 pm a 5:00 pm', label: 'Sábados (3:00 PM - 5:00 PM)', desc: '3 sábados consecutivos' },
-  { id: 'Semanal 10:00 am a 12:00 pm', label: 'Semanal (10:00 AM - 12:00 PM)', desc: 'Martes a Viernes (4 días)' }
+  { id: 'Semanal 10:00 am a 12:00 pm', label: 'Semanal (10:00 AM - 12:00 PM)', desc: 'Martes a Viernes (4 días consecutivos)' },
+  { id: 'Sabados 3:00 pm a 5:00 pm', label: 'Sábados (3:00 PM - 5:00 PM)', desc: '3 sábados consecutivos' }
 ];
 
 const TIME_SLOTS = [
@@ -390,72 +390,85 @@ export default function DynamicEnrollPage() {
     }
   }, [settingsPrices, currentValues.vehicleTransmission]);
 
-  const filteredTheoreticalSchedules = useMemo(() => {
-    const checkIsTeóricoActive = (day: string, slotId: string) => {
-      const bKey = `${day}|${slotId}`;
-      const defaultTeóricoActive = (day !== 'Lunes' && day !== 'Sábado' && slotId === '10am-12pm') || (day === 'Sábado' && slotId === '3pm-5pm') ? true : false;
-      
-      if (availability.teóricoSlots && availability.teóricoSlots[bKey] !== undefined) {
-        return availability.teóricoSlots[bKey];
-      } else if (availability.blockedSlots && availability.blockedSlots[bKey] !== undefined) {
-        return availability.blockedSlots[bKey] === 'teórico';
-      }
-      return defaultTeóricoActive;
-    };
-
-    return THEORETICAL_SCHEDULES.filter(sch => {
-      if (sch.id === 'Sabados 3:00 pm a 5:00 pm') {
-        return checkIsTeóricoActive('Sábado', '3pm-5pm');
-      }
-      if (sch.id === 'Semanal 10:00 am a 12:00 pm') {
-        const weekdays = ['Martes', 'Miércoles', 'Jueves', 'Viernes'];
-        return weekdays.some(day => checkIsTeóricoActive(day, '10am-12pm'));
-      }
-      return true;
-    });
-  }, [availability.teóricoSlots, availability.blockedSlots]);
+  const filteredTheoreticalSchedules = THEORETICAL_SCHEDULES;
 
   const selectedPlan = plansList.find(p => p.name === currentValues.coursePlan);
 
-  // Al cambiar de plan, inicializar la cantidad requerida de clases prácticas
+  // Generar las fechas para las N clases prácticas según el horario teórico seleccionado y la cantidad de clases del plan
+  const practicalDays: Date[] = useMemo(() => {
+    const count = selectedPlan?.classCount || 4;
+    const scheduleId = currentValues.theoreticalClassSchedule;
+    const dates: Date[] = [];
+    const today = new Date();
+
+    if (!scheduleId) {
+      // Si aún no elige teoría, generar días hábiles a partir de mañana (sin domingos)
+      let current = new Date(today);
+      while (dates.length < count) {
+        current = addDays(current, 1);
+        const dayOfWeek = current.getDay();
+        if (dayOfWeek !== 0) {
+          dates.push(new Date(current));
+        }
+      }
+      return dates;
+    }
+
+    if (scheduleId.includes('Sabados')) {
+      // Modalidad Sabatina: N sábados consecutivos
+      let d = new Date(today);
+      d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7 || 7));
+      for (let i = 0; i < count; i++) {
+        const next = new Date(d);
+        next.setDate(d.getDate() + (i * 7));
+        dates.push(next);
+      }
+    } else {
+      // Modalidad Semanal: N días de Martes a Viernes
+      let d = new Date(today);
+      d.setDate(d.getDate() + ((2 - d.getDay() + 7) % 7 || 7));
+      let current = new Date(d);
+      while (dates.length < count) {
+        const dayOfWeek = current.getDay();
+        if (dayOfWeek >= 2 && dayOfWeek <= 5) {
+          dates.push(new Date(current));
+        }
+        current = addDays(current, 1);
+      }
+    }
+
+    return dates;
+  }, [selectedPlan, currentValues.theoreticalClassSchedule]);
+
+  // Al cambiar de plan o días prácticos, inicializar la cantidad requerida de clases prácticas
   useEffect(() => {
-    if (!selectedPlan) return;
+    if (!selectedPlan || practicalDays.length === 0) return;
 
-    const count = selectedPlan.classCount || 1;
-    const baseDate = new Date();
-
-    const newSchedules = Array.from({ length: count }, (_, i) => {
-      const classDate = addDays(baseDate, i + 1);
+    const currentSchedules = form.getValues('practicalClassSchedules') || [];
+    const newSchedules = practicalDays.map((dateObj, i) => {
+      const dateStr = format(dateObj, 'yyyy-MM-dd');
+      const existing = currentSchedules.find((s: any) => s.date === dateStr);
       return {
-        date: format(classDate, 'yyyy-MM-dd'),
-        time: ''
+        date: dateStr,
+        time: existing?.time || ''
       };
     });
 
     replace(newSchedules);
-  }, [selectedPlan, replace]);
+  }, [selectedPlan, practicalDays, replace, form]);
 
   // Asignar un horario a todas las clases en 1 clic
   const handleAssignAll = (slotId: string, count: number) => {
-    const currentSchedules = form.getValues('practicalClassSchedules') || [];
-    const practicalDates = currentValues.theoreticalClassDates || [];
-
-    const updated = Array.from({ length: count }, (_, idx) => {
-      const dateStr = practicalDates[idx] 
-        ? format(practicalDates[idx], 'yyyy-MM-dd')
-        : (currentSchedules[idx]?.date || format(addDays(new Date(), idx + 1), 'yyyy-MM-dd'));
-
-      return {
-        date: dateStr,
-        time: slotId
-      };
-    });
+    const updated = practicalDays.map((dateObj) => ({
+      date: format(dateObj, 'yyyy-MM-dd'),
+      time: slotId
+    }));
 
     setValue('practicalClassSchedules', updated, { shouldValidate: true, shouldDirty: true });
     toast({ title: "Horario Aplicado", description: `Se asignó el horario ${slotId} a tus ${count} clases prácticas.` });
   };
 
-  // Autogenerar fechas de clases según horario teórico
+  // Autogenerar fechas de clases teóricas (4 días si semanal, 3 si sabatino)
   useEffect(() => {
     if (!currentValues.theoreticalClassSchedule) return;
 
@@ -811,7 +824,6 @@ export default function DynamicEnrollPage() {
 
   const currentPlanObj = plansList.find(p => p.name === currentValues.coursePlan);
   const total = currentPlanObj ? currentPlanObj.price : 0;
-  const practicalDays = currentValues.theoreticalClassDates || [];
 
   if (successData) {
     return (

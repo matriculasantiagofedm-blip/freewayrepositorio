@@ -80,8 +80,8 @@ const getGlobalCapacity = (
     const dayName = DAY_NAMES[day];
     const bKey = `${dayName}|${slotId}`;
 
-    // Comportamiento por defecto
-    const defaultPracticaActive = (dayName !== 'Lunes' && dayName !== 'Sábado' && slotId === '8am-10am') || (dayName === 'Sábado' && slotId === '3pm-5pm') ? false : true;
+    // Comportamiento por defecto: Martes a Viernes 10am-12pm y Sábados 3pm-5pm son para Teoría
+    const defaultPracticaActive = (dayName !== 'Lunes' && dayName !== 'Sábado' && slotId === '10am-12pm') || (dayName === 'Sábado' && slotId === '3pm-5pm') ? false : true;
 
     // Determinar si Práctica está activo
     let isPracticaActive = defaultPracticaActive;
@@ -93,7 +93,7 @@ const getGlobalCapacity = (
 
     if (!isPracticaActive) {
       // Si no es práctico, ver si es teoría
-      const defaultTeoricoActive = (dayName !== 'Lunes' && dayName !== 'Sábado' && slotId === '8am-10am') || (dayName === 'Sábado' && slotId === '3pm-5pm') ? true : false;
+      const defaultTeoricoActive = (dayName !== 'Lunes' && dayName !== 'Sábado' && slotId === '10am-12pm') || (dayName === 'Sábado' && slotId === '3pm-5pm') ? true : false;
       let isTeoricoActive = defaultTeoricoActive;
       if (teoricoSlots && teoricoSlots[bKey] !== undefined) {
         isTeoricoActive = teoricoSlots[bKey];

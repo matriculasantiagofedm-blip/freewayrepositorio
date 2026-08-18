@@ -1,7 +1,7 @@
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import { motion } from 'framer-motion';
-import { Clock, Calendar as CalendarIcon, CheckCircle2, AlertCircle, Zap, ShieldAlert, Sparkles } from 'lucide-react';
+import { Clock, Calendar as CalendarIcon, CheckCircle2, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -11,7 +11,7 @@ interface StepScheduleProps {
   practicalDays: Date[];
   timeSlots: { id: string; label: string }[];
   getSlotOccupancy: (dateStr: string, slotId: string) => { available: number; max: number; label: string; isFull: boolean };
-  handleAssignAll: (slotId: string, count: number) => void;
+  handleAssignAll?: (slotId: string, count: number) => void;
   getAssignedSlotForDate: (dateStr: string) => string | undefined;
   handleSlotSelection: (dateStr: string, timeSlot: string) => void;
 }
@@ -22,14 +22,12 @@ export function StepScheduleBooking({
   practicalDays, 
   timeSlots, 
   getSlotOccupancy,
-  handleAssignAll,
   getAssignedSlotForDate,
   handleSlotSelection
 }: StepScheduleProps) {
   const { setValue } = useFormContext();
 
   const isTheoreticalSelected = !!currentValues.theoreticalClassSchedule;
-  const isSemanalTheo = currentValues.theoreticalClassSchedule?.includes('Semanal');
 
   return (
     <motion.div 
@@ -122,118 +120,86 @@ export function StepScheduleBooking({
             Horarios de tus Clases Prácticas de Manejo
           </h3>
           {practicalDays.length > 0 && (
-            <span className="text-xs font-bold text-slate-600">
+            <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg">
               {practicalDays.length} clases de 2 horas
             </span>
           )}
         </div>
 
         {isTheoreticalSelected && practicalDays.length > 0 ? (
-          <div className="space-y-4">
-            {/* Atajo rápido */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50/50 p-4 rounded-2xl border border-blue-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-amber-500 shrink-0" />
-                <p className="text-xs font-bold text-blue-950">
-                  ¿Quieres el mismo horario para todas tus clases?
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {timeSlots.map(slot => {
-                  const isConflictWithSemanalTheo = isSemanalTheo && slot.id.includes('10:00am');
-                  return (
-                    <button
-                      key={slot.id}
-                      type="button"
-                      disabled={isConflictWithSemanalTheo}
-                      onClick={() => handleAssignAll(slot.id, practicalDays.length)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer ${
-                        isConflictWithSemanalTheo
-                          ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-200'
-                          : 'bg-white text-slate-800 hover:bg-blue-600 hover:text-white border border-slate-200 hover:border-blue-600 active:scale-95'
-                      }`}
-                    >
-                      {slot.id.split(' ')[0]}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+          <div className="space-y-3">
+            {/* Listado de Clases Prácticas Individuales */}
+            {practicalDays.map((dateObj, idx) => {
+              const dateStr = format(dateObj, 'yyyy-MM-dd');
+              const assignedSlot = getAssignedSlotForDate(dateStr);
+              const hasAssigned = !!assignedSlot;
 
-            {/* Listado de Clases Prácticas */}
-            <div className="space-y-3">
-              {practicalDays.map((dateObj, idx) => {
-                const dateStr = format(dateObj, 'yyyy-MM-dd');
-                const assignedSlot = getAssignedSlotForDate(dateStr);
-                const hasAssigned = !!assignedSlot;
-
-                return (
-                  <div 
-                    key={dateStr}
-                    className={`p-4 rounded-2xl border transition-all duration-200 ${
-                      hasAssigned 
-                        ? 'border-blue-300 bg-white shadow-sm ring-1 ring-blue-100' 
-                        : 'border-slate-200 bg-slate-50/50'
-                    }`}
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      {/* Fecha y Número de Clase */}
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs ${
-                          hasAssigned ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'
-                        }`}>
-                          #{idx + 1}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-black text-slate-900 capitalize">
-                              {format(dateObj, "EEEE d 'de' MMMM", { locale: es })}
-                            </span>
-                            {hasAssigned && (
-                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                                Asignada ✓
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-slate-500 mt-0.5">Clase Práctica #{idx + 1} (2 Horas)</p>
-                        </div>
+              return (
+                <div 
+                  key={dateStr}
+                  className={`p-4 rounded-2xl border transition-all duration-200 ${
+                    hasAssigned 
+                      ? 'border-blue-400 bg-white shadow-sm ring-1 ring-blue-100' 
+                      : 'border-slate-200 bg-white hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    {/* Fecha y Número de Clase */}
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs ${
+                        hasAssigned ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'
+                      }`}>
+                        #{idx + 1}
                       </div>
-
-                      {/* Selector de Horarios en Pills */}
-                      <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-1.5">
-                        {timeSlots.map(slot => {
-                          const occ = getSlotOccupancy(dateStr, slot.id);
-                          const isSelected = assignedSlot === slot.id;
-                          const disabled = occ.isFull && !isSelected;
-
-                          return (
-                            <button
-                              key={slot.id}
-                              type="button"
-                              disabled={disabled}
-                              onClick={() => handleSlotSelection(dateStr, slot.id)}
-                              className={`
-                                px-3 py-2 rounded-xl text-xs font-bold transition-all text-center flex flex-col justify-center items-center cursor-pointer
-                                ${isSelected 
-                                  ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-600/30' 
-                                  : disabled 
-                                    ? 'bg-slate-100 border border-slate-200 text-slate-400 opacity-50 cursor-not-allowed' 
-                                    : 'bg-white border border-slate-200 text-slate-700 hover:border-blue-300 hover:bg-blue-50/50'}
-                              `}
-                            >
-                              <span>{slot.id.split(' ')[0]}</span>
-                              <span className={`text-[9px] font-semibold mt-0.5 ${isSelected ? 'text-blue-100' : occ.isFull ? 'text-red-500' : 'text-slate-400'}`}>
-                                {isSelected ? 'Elegido' : occ.isFull ? 'Lleno' : `${occ.available} cupos`}
-                              </span>
-                            </button>
-                          );
-                        })}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-black text-slate-900 capitalize">
+                            {format(dateObj, "EEEE d 'de' MMMM", { locale: es })}
+                          </span>
+                          {hasAssigned && (
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                              Asignada ✓
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">Clase Práctica #{idx + 1} (2 Horas)</p>
                       </div>
                     </div>
+
+                    {/* Selector de Horarios en Botones Pills */}
+                    <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-1.5">
+                      {timeSlots.map(slot => {
+                        const occ = getSlotOccupancy(dateStr, slot.id);
+                        const isSelected = assignedSlot === slot.id;
+                        const disabled = occ.isFull && !isSelected;
+
+                        return (
+                          <button
+                            key={slot.id}
+                            type="button"
+                            disabled={disabled}
+                            onClick={() => handleSlotSelection(dateStr, slot.id)}
+                            className={`
+                              px-3.5 py-2 rounded-xl text-xs font-bold transition-all text-center flex flex-col justify-center items-center cursor-pointer min-w-[90px]
+                              ${isSelected 
+                                ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-600/30' 
+                                : disabled 
+                                  ? 'bg-slate-100 border border-slate-200 text-slate-400 opacity-50 cursor-not-allowed' 
+                                  : 'bg-slate-50 border border-slate-200 text-slate-700 hover:border-blue-400 hover:bg-blue-50/50'}
+                            `}
+                          >
+                            <span>{slot.id.split(' ')[0]}</span>
+                            <span className={`text-[9px] font-semibold mt-0.5 ${isSelected ? 'text-blue-100' : occ.isFull ? 'text-red-500' : 'text-slate-400'}`}>
+                              {isSelected ? 'Elegido ✓' : occ.isFull ? 'Lleno' : `${occ.available} cupos`}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl text-center space-y-2">

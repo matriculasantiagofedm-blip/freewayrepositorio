@@ -17,7 +17,7 @@ export function StepPersonalInfo() {
     >
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Tus Datos Personales</h2>
-        <p className="text-slate-500 mt-1 text-sm">Por favor completa tu información para la creación del contrato.</p>
+        <p className="text-slate-500 mt-1 text-sm">Por favor completa tu información para la creación del contrato oficial.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -29,8 +29,8 @@ export function StepPersonalInfo() {
               <FormLabel className="text-slate-700 font-semibold text-sm">Nombre Completo</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <User className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                  <Input placeholder="Ej. Juan Pérez" className="pl-9 bg-slate-50 border-slate-200 focus-visible:ring-blue-600 shadow-sm rounded-xl" {...field} />
+                  <User className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                  <Input placeholder="Ej. Juan Pérez González" className="pl-9 h-11 bg-slate-50 border-slate-200 focus-visible:ring-blue-600 shadow-sm rounded-xl" {...field} />
                 </div>
               </FormControl>
               <FormMessage className="text-xs" />
@@ -43,11 +43,11 @@ export function StepPersonalInfo() {
           name="studentIdNumber"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-slate-700 font-semibold text-sm">Cédula / Pasaporte</FormLabel>
+              <FormLabel className="text-slate-700 font-semibold text-sm">Cédula o Pasaporte</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <IdCard className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                  <Input placeholder="Ej. 8-000-0000" className="pl-9 bg-slate-50 border-slate-200 focus-visible:ring-blue-600 shadow-sm rounded-xl" {...field} />
+                  <IdCard className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                  <Input placeholder="Ej. 8-765-4321" className="pl-9 h-11 bg-slate-50 border-slate-200 focus-visible:ring-blue-600 shadow-sm rounded-xl" {...field} />
                 </div>
               </FormControl>
               <FormMessage className="text-xs" />
@@ -63,8 +63,8 @@ export function StepPersonalInfo() {
               <FormLabel className="text-slate-700 font-semibold text-sm">Correo Electrónico</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                  <Input placeholder="correo@ejemplo.com" type="email" className="pl-9 bg-slate-50 border-slate-200 focus-visible:ring-blue-600 shadow-sm rounded-xl" {...field} />
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                  <Input placeholder="correo@ejemplo.com" type="email" className="pl-9 h-11 bg-slate-50 border-slate-200 focus-visible:ring-blue-600 shadow-sm rounded-xl" {...field} />
                 </div>
               </FormControl>
               <FormMessage className="text-xs" />
@@ -80,8 +80,8 @@ export function StepPersonalInfo() {
               <FormLabel className="text-slate-700 font-semibold text-sm">Celular (WhatsApp)</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <Phone className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                  <Input placeholder="6000-0000" type="tel" className="pl-9 bg-slate-50 border-slate-200 focus-visible:ring-blue-600 shadow-sm rounded-xl" {...field} />
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                  <Input placeholder="Ej. 6123-4567" type="tel" className="pl-9 h-11 bg-slate-50 border-slate-200 focus-visible:ring-blue-600 shadow-sm rounded-xl" {...field} />
                 </div>
               </FormControl>
               <FormMessage className="text-xs" />
@@ -98,8 +98,8 @@ export function StepPersonalInfo() {
             <FormLabel className="text-slate-700 font-semibold text-sm">Dirección Residencial</FormLabel>
             <FormControl>
               <div className="relative">
-                <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                <Input placeholder="Barrio, Calle, Casa/Apto..." className="pl-9 bg-slate-50 border-slate-200 focus-visible:ring-blue-600 shadow-sm rounded-xl" {...field} />
+                <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                <Input placeholder="Ej. Ciudad de Panamá, Betania, Calle 5ta" className="pl-9 h-11 bg-slate-50 border-slate-200 focus-visible:ring-blue-600 shadow-sm rounded-xl" {...field} />
               </div>
             </FormControl>
             <FormMessage className="text-xs" />

@@ -406,8 +406,8 @@ export default function DynamicEnrollPage() {
     let d = new Date(today);
     d.setDate(d.getDate() + ((targetDay - d.getDay() + 7) % 7 || 7));
 
-    // Generar las próximas 8 semanas de inicio disponibles
-    for (let i = 0; i < 8; i++) {
+    // Generar las próximas 16 semanas de inicio disponibles (4 meses en adelante)
+    for (let i = 0; i < 16; i++) {
       const next = new Date(d);
       next.setDate(d.getDate() + (i * 7));
       list.push(next);

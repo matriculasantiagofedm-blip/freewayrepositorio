@@ -1,7 +1,7 @@
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import { motion } from 'framer-motion';
-import { Clock, Calendar as CalendarIcon, CheckCircle2, AlertCircle, CalendarSearch, ChevronRight } from 'lucide-react';
+import { Clock, Calendar as CalendarIcon, CheckCircle2, AlertCircle, CalendarSearch, ChevronRight, ChevronLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -35,7 +35,18 @@ export function StepScheduleBooking({
   const { setValue } = useFormContext();
 
   const isTheoreticalSelected = !!currentValues.theoreticalClassSchedule;
-  const isSemanal = currentValues.theoreticalClassSchedule?.includes('Semanal');
+
+  const handlePrevWeek = () => {
+    if (startWeekOffset > 0 && availableStartDates[startWeekOffset - 1]) {
+      onSelectStartDate(availableStartDates[startWeekOffset - 1], startWeekOffset - 1);
+    }
+  };
+
+  const handleNextWeek = () => {
+    if (startWeekOffset < availableStartDates.length - 1 && availableStartDates[startWeekOffset + 1]) {
+      onSelectStartDate(availableStartDates[startWeekOffset + 1], startWeekOffset + 1);
+    }
+  };
 
   return (
     <motion.div 
@@ -46,7 +57,7 @@ export function StepScheduleBooking({
     >
       <div>
         <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Horarios de Clases</h2>
-        <p className="text-slate-500 mt-1 text-sm">Organiza fácilmente la fecha de inicio y los horarios de tus clases.</p>
+        <p className="text-slate-500 mt-1 text-sm">Organiza la fecha de inicio y los horarios de tus clases teóricas y prácticas.</p>
       </div>
 
       {/* BLOQUE 1: TEORÍA */}
@@ -98,57 +109,63 @@ export function StepScheduleBooking({
           })}
         </div>
 
-        {/* SELECTOR DE FECHA DE INICIO (¿CUÁNDO DESEAS INICIAR?) */}
+        {/* NAVEGADOR DE FECHA DE INICIO PARA TEORÍA (AVANZAR Y RETROCEDER) */}
         {isTheoreticalSelected && availableStartDates.length > 0 && (
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4.5 space-y-3 animate-in fade-in duration-300">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4.5 space-y-3.5 animate-in fade-in duration-300">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <CalendarSearch className="w-4 h-4 text-blue-600" />
+                <CalendarSearch className="w-4 h-4 text-blue-600 shrink-0" />
                 <h4 className="font-bold text-slate-800 text-xs">
-                  ¿En qué fecha deseas iniciar tu curso?
+                  Semana de Inicio del Curso:
                 </h4>
               </div>
-              <span className="text-[11px] text-slate-500">
-                Puedes iniciar en semanas próximas o el siguiente mes
+              
+              {/* Botones de Retroceder y Avanzar Semana */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={startWeekOffset === 0}
+                  onClick={handlePrevWeek}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-sm transition-all"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" /> ‹ Anterior
+                </button>
+                <button
+                  type="button"
+                  disabled={startWeekOffset >= availableStartDates.length - 1}
+                  onClick={handleNextWeek}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-sm transition-all"
+                >
+                  Siguiente › <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Fecha de Inicio Destacada */}
+            <div className="bg-white border border-blue-200 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-sm">
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 block">
+                  {startWeekOffset === 0 ? 'Semana de Inicio Más Próxima' : `Semana de Inicio Futura (+${startWeekOffset} semanas)`}
+                </span>
+                <span className="text-sm font-black text-slate-900 capitalize">
+                  Inicio: {format(selectedStartDate, "EEEE d 'de' MMMM yyyy", { locale: es })}
+                </span>
+              </div>
+              <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg self-start sm:self-auto">
+                Opción #{startWeekOffset + 1} de {availableStartDates.length}
               </span>
             </div>
 
-            {/* Carrusel / Grid de Fechas de Inicio */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-              {availableStartDates.map((dateObj, idx) => {
-                const isSelected = startWeekOffset === idx;
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => onSelectStartDate(dateObj, idx)}
-                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                      isSelected 
-                        ? 'border-blue-600 bg-blue-600 text-white shadow-md ring-2 ring-blue-600/30' 
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50/30'
-                    }`}
-                  >
-                    <span className={`text-[10px] font-extrabold uppercase tracking-wider ${isSelected ? 'text-blue-100' : 'text-blue-600'}`}>
-                      {idx === 0 ? 'Próxima Fecha' : `Semana +${idx}`}
-                    </span>
-                    <span className="text-xs font-black mt-0.5 capitalize leading-tight">
-                      {format(dateObj, "EEE d 'de' MMM", { locale: es })}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Fechas de Teoría Confirmadas */}
+            {/* Fechas de Clases Teóricas Confirmadas */}
             {currentValues.theoreticalClassDates?.length > 0 && (
-              <div className="bg-white border border-slate-200 rounded-xl p-3.5 flex flex-col sm:flex-row gap-2.5 sm:items-center mt-2">
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-700 shrink-0">
-                  <CalendarIcon className="w-4 h-4 text-blue-600" />
-                  <span>Días de Clases Teóricas:</span>
+              <div className="pt-2 border-t border-slate-200/80">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-700 mb-2">
+                  <CalendarIcon className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Días de Clases Teóricas para esta semana:</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {currentValues.theoreticalClassDates.map((d: Date, i: number) => (
-                    <span key={i} className="bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md text-[11px] font-bold text-blue-900 capitalize">
+                    <span key={i} className="bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-lg text-xs font-bold text-blue-900 capitalize shadow-xs">
                       {format(d, "EEEE d 'de' MMMM", { locale: es })}
                     </span>
                   ))}
@@ -174,6 +191,35 @@ export function StepScheduleBooking({
             </span>
           )}
         </div>
+
+        {/* NAVEGADOR DE FECHAS PARA PRÁCTICA (AVANZAR Y RETROCEDER) */}
+        {isTheoreticalSelected && practicalDays.length > 0 && (
+          <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-2xl p-3.5 px-4 shadow-sm">
+            <button
+              type="button"
+              disabled={startWeekOffset === 0}
+              onClick={handlePrevWeek}
+              className="flex items-center gap-1 px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-xs transition-all"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" /> ‹ Fechas Anteriores
+            </button>
+
+            <div className="text-center px-2">
+              <p className="text-xs font-bold text-slate-800">
+                Periodo: Del <strong className="text-blue-600 capitalize">{format(practicalDays[0], "d 'de' MMM", { locale: es })}</strong> al <strong className="text-blue-600 capitalize">{format(practicalDays[practicalDays.length - 1], "d 'de' MMM", { locale: es })}</strong>
+              </p>
+            </div>
+
+            <button
+              type="button"
+              disabled={startWeekOffset >= availableStartDates.length - 1}
+              onClick={handleNextWeek}
+              className="flex items-center gap-1 px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-xs transition-all"
+            >
+              Fechas Más Adelante › <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
 
         {isTheoreticalSelected && practicalDays.length > 0 ? (
           <div className="space-y-3">

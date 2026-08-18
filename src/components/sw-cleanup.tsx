@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-const APP_CACHE_VERSION = 'v16_no_db_write_until_payment_confirmed_2026';
+const APP_CACHE_VERSION = 'v17_official_yappy_and_cubo_links_restored_2026';
 
 /**
  * Desregistra automáticamente cualquier service worker antiguo Y limpia todo

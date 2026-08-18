@@ -1,7 +1,7 @@
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import { motion } from 'framer-motion';
-import { Clock, Calendar as CalendarIcon, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Clock, Calendar as CalendarIcon, CheckCircle2, AlertCircle, CalendarSearch, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -10,8 +10,11 @@ interface StepScheduleProps {
   currentValues: any;
   practicalDays: Date[];
   timeSlots: { id: string; label: string }[];
+  availableStartDates: Date[];
+  selectedStartDate: Date;
+  onSelectStartDate: (date: Date, offset: number) => void;
+  startWeekOffset: number;
   getSlotOccupancy: (dateStr: string, slotId: string) => { available: number; max: number; label: string; isFull: boolean };
-  handleAssignAll?: (slotId: string, count: number) => void;
   getAssignedSlotForDate: (dateStr: string) => string | undefined;
   handleSlotSelection: (dateStr: string, timeSlot: string) => void;
 }
@@ -21,6 +24,10 @@ export function StepScheduleBooking({
   currentValues, 
   practicalDays, 
   timeSlots, 
+  availableStartDates,
+  selectedStartDate,
+  onSelectStartDate,
+  startWeekOffset,
   getSlotOccupancy,
   getAssignedSlotForDate,
   handleSlotSelection
@@ -28,6 +35,7 @@ export function StepScheduleBooking({
   const { setValue } = useFormContext();
 
   const isTheoreticalSelected = !!currentValues.theoreticalClassSchedule;
+  const isSemanal = currentValues.theoreticalClassSchedule?.includes('Semanal');
 
   return (
     <motion.div 
@@ -38,11 +46,11 @@ export function StepScheduleBooking({
     >
       <div>
         <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Horarios de Clases</h2>
-        <p className="text-slate-500 mt-1 text-sm">Organiza fácilmente tus clases teóricas y prácticas de manejo.</p>
+        <p className="text-slate-500 mt-1 text-sm">Organiza fácilmente la fecha de inicio y los horarios de tus clases.</p>
       </div>
 
       {/* BLOQUE 1: TEORÍA */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-black text-white shadow-md shadow-blue-600/20">
@@ -50,11 +58,12 @@ export function StepScheduleBooking({
             </span>
             Horario de Clases Teóricas Presenciales
           </h3>
-          <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">
+          <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-md">
             Obligatorio
           </span>
         </div>
         
+        {/* Selector de Modalidad */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           {filteredTheoreticalSchedules.map((sched) => {
             const isSelected = currentValues.theoreticalClassSchedule === sched.id;
@@ -89,23 +98,63 @@ export function StepScheduleBooking({
           })}
         </div>
 
-        {currentValues.theoreticalClassDates?.length > 0 && (
-          <div className="bg-blue-50/50 border border-blue-200/80 rounded-2xl p-4 flex flex-col sm:flex-row gap-3 sm:items-center animate-in fade-in duration-300">
-            <div className="w-10 h-10 bg-blue-600 text-white rounded-xl shadow-sm flex items-center justify-center shrink-0">
-              <CalendarIcon className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="font-bold text-blue-950 text-xs mb-1">
-                Fechas de tus Clases Teóricas:
-              </h4>
-              <div className="flex flex-wrap gap-1.5">
-                {currentValues.theoreticalClassDates.map((d: Date, i: number) => (
-                  <span key={i} className="bg-white border border-blue-200 px-2.5 py-0.5 rounded-lg text-xs font-bold text-blue-900 shadow-sm capitalize">
-                    {format(d, "EEEE d 'de' MMMM", { locale: es })}
-                  </span>
-                ))}
+        {/* SELECTOR DE FECHA DE INICIO (¿CUÁNDO DESEAS INICIAR?) */}
+        {isTheoreticalSelected && availableStartDates.length > 0 && (
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4.5 space-y-3 animate-in fade-in duration-300">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+              <div className="flex items-center gap-2">
+                <CalendarSearch className="w-4 h-4 text-blue-600" />
+                <h4 className="font-bold text-slate-800 text-xs">
+                  ¿En qué fecha deseas iniciar tu curso?
+                </h4>
               </div>
+              <span className="text-[11px] text-slate-500">
+                Puedes iniciar en semanas próximas o el siguiente mes
+              </span>
             </div>
+
+            {/* Carrusel / Grid de Fechas de Inicio */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+              {availableStartDates.map((dateObj, idx) => {
+                const isSelected = startWeekOffset === idx;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => onSelectStartDate(dateObj, idx)}
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                      isSelected 
+                        ? 'border-blue-600 bg-blue-600 text-white shadow-md ring-2 ring-blue-600/30' 
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50/30'
+                    }`}
+                  >
+                    <span className={`text-[10px] font-extrabold uppercase tracking-wider ${isSelected ? 'text-blue-100' : 'text-blue-600'}`}>
+                      {idx === 0 ? 'Próxima Fecha' : `Semana +${idx}`}
+                    </span>
+                    <span className="text-xs font-black mt-0.5 capitalize leading-tight">
+                      {format(dateObj, "EEE d 'de' MMM", { locale: es })}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Fechas de Teoría Confirmadas */}
+            {currentValues.theoreticalClassDates?.length > 0 && (
+              <div className="bg-white border border-slate-200 rounded-xl p-3.5 flex flex-col sm:flex-row gap-2.5 sm:items-center mt-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-700 shrink-0">
+                  <CalendarIcon className="w-4 h-4 text-blue-600" />
+                  <span>Días de Clases Teóricas:</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {currentValues.theoreticalClassDates.map((d: Date, i: number) => (
+                    <span key={i} className="bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-md text-[11px] font-bold text-blue-900 capitalize">
+                      {format(d, "EEEE d 'de' MMMM", { locale: es })}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -206,7 +255,7 @@ export function StepScheduleBooking({
             <AlertCircle className="w-8 h-8 text-blue-500 mx-auto" />
             <h4 className="font-bold text-slate-800 text-sm">Primero elige tu horario teórico en el Punto 1 arriba</h4>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              Una vez seleccionada tu teoría, se habilitará inmediatamente el calendario de tus clases prácticas.
+              Una vez seleccionada tu teoría y fecha de inicio, se habilitará inmediatamente el calendario de tus clases prácticas.
             </p>
           </div>
         )}

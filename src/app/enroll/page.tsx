@@ -394,16 +394,47 @@ export default function DynamicEnrollPage() {
 
   const selectedPlan = plansList.find(p => p.name === currentValues.coursePlan);
 
-  // Generar las fechas para las N clases prácticas según el horario teórico seleccionado y la cantidad de clases del plan
+  const [startWeekOffset, setStartWeekOffset] = useState<number>(0);
+
+  const availableStartDates = useMemo(() => {
+    const scheduleId = currentValues.theoreticalClassSchedule;
+    const today = new Date();
+    const list: Date[] = [];
+    const isSabatino = scheduleId?.includes('Sabados');
+    const targetDay = isSabatino ? 6 : 2; // Sábado (6) o Martes (2)
+
+    let d = new Date(today);
+    d.setDate(d.getDate() + ((targetDay - d.getDay() + 7) % 7 || 7));
+
+    // Generar las próximas 8 semanas de inicio disponibles
+    for (let i = 0; i < 8; i++) {
+      const next = new Date(d);
+      next.setDate(d.getDate() + (i * 7));
+      list.push(next);
+    }
+    return list;
+  }, [currentValues.theoreticalClassSchedule]);
+
+  const selectedStartDate = availableStartDates[startWeekOffset] || availableStartDates[0] || new Date();
+
+  const onSelectStartDate = (date: Date, offset: number) => {
+    setStartWeekOffset(offset);
+  };
+
+  // Resetear offset a 0 si cambia entre Semanal y Sabatino
+  useEffect(() => {
+    setStartWeekOffset(0);
+  }, [currentValues.theoreticalClassSchedule]);
+
+  // Generar las fechas para las N clases prácticas según el horario teórico seleccionado y la fecha de inicio
   const practicalDays: Date[] = useMemo(() => {
     const count = selectedPlan?.classCount || 4;
     const scheduleId = currentValues.theoreticalClassSchedule;
     const dates: Date[] = [];
-    const today = new Date();
 
     if (!scheduleId) {
       // Si aún no elige teoría, generar días hábiles a partir de mañana (sin domingos)
-      let current = new Date(today);
+      let current = new Date();
       while (dates.length < count) {
         current = addDays(current, 1);
         const dayOfWeek = current.getDay();
@@ -415,19 +446,16 @@ export default function DynamicEnrollPage() {
     }
 
     if (scheduleId.includes('Sabados')) {
-      // Modalidad Sabatina: N sábados consecutivos
-      let d = new Date(today);
-      d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7 || 7));
+      // Modalidad Sabatina: N sábados consecutivos a partir de selectedStartDate
+      let d = new Date(selectedStartDate);
       for (let i = 0; i < count; i++) {
         const next = new Date(d);
         next.setDate(d.getDate() + (i * 7));
         dates.push(next);
       }
     } else {
-      // Modalidad Semanal: N días de Martes a Viernes
-      let d = new Date(today);
-      d.setDate(d.getDate() + ((2 - d.getDay() + 7) % 7 || 7));
-      let current = new Date(d);
+      // Modalidad Semanal: N días de Martes a Viernes a partir de selectedStartDate
+      let current = new Date(selectedStartDate);
       while (dates.length < count) {
         const dayOfWeek = current.getDay();
         if (dayOfWeek >= 2 && dayOfWeek <= 5) {
@@ -438,7 +466,7 @@ export default function DynamicEnrollPage() {
     }
 
     return dates;
-  }, [selectedPlan, currentValues.theoreticalClassSchedule]);
+  }, [selectedPlan, currentValues.theoreticalClassSchedule, selectedStartDate]);
 
   // Al cambiar de plan o días prácticos, inicializar la cantidad requerida de clases prácticas
   useEffect(() => {
@@ -457,36 +485,22 @@ export default function DynamicEnrollPage() {
     replace(newSchedules);
   }, [selectedPlan, practicalDays, replace, form]);
 
-  // Asignar un horario a todas las clases en 1 clic
-  const handleAssignAll = (slotId: string, count: number) => {
-    const updated = practicalDays.map((dateObj) => ({
-      date: format(dateObj, 'yyyy-MM-dd'),
-      time: slotId
-    }));
-
-    setValue('practicalClassSchedules', updated, { shouldValidate: true, shouldDirty: true });
-    toast({ title: "Horario Aplicado", description: `Se asignó el horario ${slotId} a tus ${count} clases prácticas.` });
-  };
-
-  // Autogenerar fechas de clases teóricas (4 días si semanal, 3 si sabatino)
+  // Autogenerar fechas de clases teóricas a partir de selectedStartDate (4 días si semanal, 3 si sabatino)
   useEffect(() => {
-    if (!currentValues.theoreticalClassSchedule) return;
+    if (!currentValues.theoreticalClassSchedule || !selectedStartDate) return;
 
     const dates: Date[] = [];
-    const today = new Date();
 
     if (currentValues.theoreticalClassSchedule.includes('Sabados')) {
-      let d = new Date(today);
-      d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7 || 7));
+      let d = new Date(selectedStartDate);
       for (let i = 0; i < 3; i++) {
         const next = new Date(d);
         next.setDate(d.getDate() + (i * 7));
         dates.push(next);
       }
     } else {
-      // Martes a Viernes (4 días)
-      let d = new Date(today);
-      d.setDate(d.getDate() + ((2 - d.getDay() + 7) % 7 || 7));
+      // Martes a Viernes (4 días consecutivos)
+      let d = new Date(selectedStartDate);
       for (let i = 0; i < 4; i++) {
         const next = new Date(d);
         next.setDate(d.getDate() + i);
@@ -495,7 +509,7 @@ export default function DynamicEnrollPage() {
     }
 
     setValue('theoreticalClassDates', dates, { shouldValidate: true });
-  }, [currentValues.theoreticalClassSchedule, setValue]);
+  }, [currentValues.theoreticalClassSchedule, selectedStartDate, setValue]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -939,6 +953,10 @@ export default function DynamicEnrollPage() {
                       currentValues={currentValues}
                       practicalDays={practicalDays}
                       timeSlots={TIME_SLOTS}
+                      availableStartDates={availableStartDates}
+                      selectedStartDate={selectedStartDate}
+                      onSelectStartDate={onSelectStartDate}
+                      startWeekOffset={startWeekOffset}
                       getSlotOccupancy={(d, s) => getSlotOccupancy(
                         d, 
                         s, 
@@ -953,7 +971,6 @@ export default function DynamicEnrollPage() {
                         availability.prácticaCapacities,
                         availability.teóricoCapacities
                       )}
-                      handleAssignAll={handleAssignAll}
                       getAssignedSlotForDate={getAssignedSlotForDate}
                       handleSlotSelection={handleSlotSelection}
                     />

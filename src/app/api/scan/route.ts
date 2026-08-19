@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
+const DEFAULT_FALLBACK_KEY = 'AIzaSyCqW5aoIkWl4Nv3ZmWbvgtIsCJ3Um9mugw';
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -11,31 +13,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'No se proporcionó ninguna imagen.' }, { status: 400 });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Configuración: No se encontró la clave de API (GEMINI_API_KEY) en las variables de entorno de Vercel/Servidor.' 
-      }, { status: 500 });
-    }
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY || DEFAULT_FALLBACK_KEY;
 
-    const base64Data = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
+    // Limpiar el prefijo data:image/...;base64, de forma segura
+    const base64Data = base64Image.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '').trim();
 
     const requestBody = {
       contents: [{
         parts: [
-          { text: `Eres un asistente contable experto procesando facturas y recibos de Panamá.
-Analiza la siguiente imagen de una factura/recibo y extrae los datos con precisión.
+          { text: `Eres un asistente contable experto procesando facturas, comprobantes de pago y recibos de Panamá.
+Analiza la siguiente imagen de una factura/recibo y extrae los datos con mucha precisión.
 Responde ÚNICAMENTE con un objeto JSON válido que contenga estas propiedades exactas (sin comillas invertidas extra ni texto fuera del JSON):
 {
-  "amount": (número decimal, el total exacto pagado en la factura, o 0),
-  "date": (texto, "YYYY-MM-DD", la fecha de la factura o la fecha actual),
-  "provider": (texto, el nombre comercial o razón social principal),
-  "providerRuc": (texto opcional, el RUC),
-  "providerDv": (texto opcional, el DV),
-  "invoiceNumber": (texto opcional, el número único impreso de factura/recibo/documento),
+  "amount": (número decimal con el total exacto pagado en la factura, o 0),
+  "date": (texto en formato "YYYY-MM-DD" con la fecha de la factura, o la fecha de hoy),
+  "provider": (texto con el nombre comercial o razón social del emisor de la factura),
+  "providerRuc": (texto opcional con el RUC si aparece),
+  "providerDv": (texto opcional con el DV si aparece),
+  "invoiceNumber": (texto opcional con el número de factura/recibo/documento),
   "category": (elige estrictamente una de: "Combustible", "Alquiler", "Salarios", "Mantenimiento", "Insumos", "Otros"),
-  "description": (texto breve, lo que se pagó o compró)
+  "description": (texto breve describiendo el gasto o producto comprado)
 }` },
           {
             inline_data: {
@@ -70,29 +67,33 @@ Responde ÚNICAMENTE con un objeto JSON válido que contenga estas propiedades e
           if (candidateText) break;
         } else {
           const errBody = await fetchRes.text();
-          lastError = `Modelo ${model} retornó ${fetchRes.status}: ${errBody.substring(0, 150)}`;
-          console.warn(`[AI Scan] Error con ${model}:`, lastError);
+          lastError = `Modelo ${model} (${fetchRes.status}): ${errBody.substring(0, 150)}`;
+          console.warn(`[AI Scan] Falló con ${model}:`, lastError);
         }
       } catch (err: any) {
-        lastError = err.message || 'Error de red con Gemini';
+        lastError = err.message || 'Error de conexión con Gemini';
       }
     }
 
     if (!candidateText) {
       return NextResponse.json({ 
         success: false, 
-        error: `No se pudo procesar la factura con la IA. Detalle: ${lastError}` 
+        error: `No se pudo analizar la factura con la IA. Detalle: ${lastError}` 
       }, { status: 500 });
     }
 
     try {
-      const parsedOutput = JSON.parse(candidateText);
+      // Limpiar posibles bloques ```json ... ``` si la IA los incluye
+      const cleaned = candidateText.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
+      const parsedOutput = JSON.parse(cleaned);
       return NextResponse.json({ success: true, data: parsedOutput });
     } catch (parseError) {
-      return NextResponse.json({ success: false, error: 'No se pudo leer la respuesta JSON devuelta por la IA.' }, { status: 500 });
+      console.error("[AI Scan] Error parsing JSON candidate:", candidateText);
+      return NextResponse.json({ success: false, error: 'No se pudo estructurar el JSON devuelto por la IA.' }, { status: 500 });
     }
 
   } catch (error: any) {
+    console.error("[AI Scan] Exception:", error);
     return NextResponse.json({ success: false, error: error.message || 'Ocurrió un error inesperado al procesar la factura.' }, { status: 500 });
   }
 }

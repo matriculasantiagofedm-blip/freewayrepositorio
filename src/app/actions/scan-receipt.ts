@@ -1,13 +1,12 @@
 'use server';
 
+const DEFAULT_FALLBACK_KEY = 'AIzaSyCqW5aoIkWl4Nv3ZmWbvgtIsCJ3Um9mugw';
+
 export async function scanReceipt(base64Image: string) {
   try {
-    const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return { success: false, error: 'No se encontró la clave de API (GEMINI_API_KEY) en el servidor.' };
-    }
+    const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GEMINI_API_KEY || DEFAULT_FALLBACK_KEY;
 
-    const base64Data = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
+    const base64Data = base64Image.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '').trim();
 
     const requestBody = {
       contents: [{
@@ -67,7 +66,8 @@ Responde ÚNICAMENTE con un objeto JSON válido que contenga estas propiedades e
       return { success: false, error: `La IA no pudo procesar la imagen. Detalle: ${lastError.substring(0, 100)}` };
     }
 
-    const parsedOutput = JSON.parse(candidateText);
+    const cleaned = candidateText.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
+    const parsedOutput = JSON.parse(cleaned);
 
     return { 
       success: true, 

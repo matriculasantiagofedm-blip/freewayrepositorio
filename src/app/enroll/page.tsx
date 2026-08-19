@@ -189,7 +189,18 @@ export default function DynamicEnrollPage() {
   const { toast } = useToast();
   const { prices: settingsPrices } = useSettingsPrices();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successData, setSuccessData] = useState<{ folio: number; contractId: string; clientName: string; plan: string } | null>(null);
+  const [successData, setSuccessData] = useState<{ 
+    folio: number; 
+    contractId: string; 
+    clientName: string; 
+    studentIdNumber: string;
+    plan: string;
+    vehicleTransmission: string;
+    totalAmount: number;
+    theoreticalSchedule?: string;
+    theoreticalDates?: Date[];
+    practicalSchedules?: { date: string; time: string }[];
+  } | null>(null);
   const [voucherBase64, setVoucherBase64] = useState<string | null>(null);
   const [voucherMime, setVoucherMime] = useState<string | null>(null);
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
@@ -733,7 +744,16 @@ export default function DynamicEnrollPage() {
         folio: assignedFolio,
         contractId: newContractRef.id,
         clientName: data.clientName,
-        plan: data.coursePlan
+        studentIdNumber: data.studentIdNumber,
+        plan: data.coursePlan,
+        vehicleTransmission: data.vehicleTransmission,
+        totalAmount: price,
+        theoreticalSchedule: data.theoreticalClassSchedule || '',
+        theoreticalDates: data.theoreticalClassDates || [],
+        practicalSchedules: (data.practicalClassSchedules || []).map((s: any) => ({
+          date: s.date,
+          time: s.time,
+        }))
       });
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -759,51 +779,115 @@ export default function DynamicEnrollPage() {
 
   if (successData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900 p-4">
-        <div className="bg-white rounded-3xl p-8 sm:p-12 max-w-xl w-full text-center shadow-2xl border border-slate-100 space-y-6">
-          <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
-            <CheckCircle2 className="w-10 h-10" />
+      <div className="min-h-screen bg-slate-900 py-10 px-4 sm:px-6 flex items-center justify-center">
+        <div className="bg-white rounded-3xl p-6 sm:p-10 max-w-2xl w-full text-center shadow-2xl border border-slate-100 space-y-6">
+          
+          {/* Header de Éxito */}
+          <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
+            <CheckCircle2 className="w-9 h-9" />
           </div>
+
           <div>
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-black bg-blue-100 text-blue-800 uppercase tracking-widest mb-2">
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 uppercase tracking-widest mb-2">
               <Globe className="w-3.5 h-3.5" /> Folio Oficial #{String(successData.folio).padStart(6, '0')}
             </span>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">¡Inscripción Confirmada!</h1>
-            <p className="text-slate-500 mt-2">
-              Bienvenido(a), <strong className="text-slate-800">{successData.clientName}</strong>. Tu contrato ya fue registrado formalmente en nuestro sistema.
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">¡Inscripción y Pago Confirmados!</h1>
+            <p className="text-slate-500 mt-1.5 text-xs sm:text-sm">
+              Bienvenido(a), <strong className="text-slate-800">{successData.clientName}</strong> (C.I.P. {successData.studentIdNumber}). Tu contrato ya fue registrado formalmente en nuestro sistema.
             </p>
           </div>
 
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 text-left text-sm space-y-2 text-slate-700">
-            <div className="flex justify-between">
-              <span className="text-slate-500 font-medium">Plan Inscrito:</span>
-              <strong className="text-slate-900">{successData.plan}</strong>
+          {/* Tarjeta de Resumen Oficial */}
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 text-left text-xs sm:text-sm space-y-3 text-slate-700">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+              <span className="text-slate-500 font-medium">Plan y Transmisión:</span>
+              <strong className="text-slate-900 font-bold">{successData.plan} ({successData.vehicleTransmission})</strong>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500 font-medium">Estado:</span>
-              <strong className="text-emerald-600 font-bold">Activo / En Verificación</strong>
+
+            <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+              <span className="text-slate-500 font-medium">Monto Pagado:</span>
+              <strong className="text-emerald-700 font-bold">${successData.totalAmount.toFixed(2)} USD</strong>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500 font-medium">Asesor Asignado:</span>
-              <strong className="text-slate-900">Freeway Central</strong>
+
+            <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+              <span className="text-slate-500 font-medium">Estado del Contrato:</span>
+              <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md font-bold text-xs">
+                Activo / Verificado ✓
+              </span>
             </div>
+
+            {/* Desglose de Clases Teóricas */}
+            {successData.theoreticalSchedule && (
+              <div className="pt-1">
+                <p className="text-slate-500 font-medium text-xs mb-1">Horario Teórico Presencial:</p>
+                <div className="bg-white border border-slate-200 rounded-xl p-2.5 space-y-1">
+                  <p className="font-semibold text-slate-800 text-xs">{successData.theoreticalSchedule}</p>
+                  {successData.theoreticalDates && successData.theoreticalDates.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {successData.theoreticalDates.map((d: Date, idx: number) => (
+                        <span key={idx} className="bg-blue-50 border border-blue-100 text-blue-900 text-[10px] font-medium px-2 py-0.5 rounded-md capitalize">
+                          {format(d, "EEE d 'de' MMM", { locale: es })}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Desglose de Clases Prácticas */}
+            {successData.practicalSchedules && successData.practicalSchedules.length > 0 && (
+              <div className="pt-1">
+                <p className="text-slate-500 font-medium text-xs mb-1">Clases Prácticas de Manejo Agendadas ({successData.practicalSchedules.length} sesiones):</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  {successData.practicalSchedules.map((s, idx) => (
+                    <div key={idx} className="bg-white border border-slate-200 rounded-xl p-2 flex items-center justify-between text-xs">
+                      <span className="text-slate-700 font-medium">
+                        Clase #{idx + 1}: <strong className="text-slate-900 capitalize">{format(new Date(s.date + 'T12:00:00'), "EEE d 'de' MMM", { locale: es })}</strong>
+                      </span>
+                      <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md font-semibold text-[10px]">
+                        {s.time.split(' ')[0]}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
+          {/* Botones de Acción (Descargar Contrato PDF y Contactar Asesor) */}
           <div className="space-y-3 pt-2">
-            <p className="text-xs text-slate-400">
-              Un asesor se comunicará contigo vía WhatsApp para confirmar los detalles de tu primera clase.
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Botón Descargar Contrato Oficial PDF */}
+              <a
+                href={`/print-contract/${successData.contractId}`}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full"
+              >
+                <Button className="w-full h-11 text-xs sm:text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md cursor-pointer flex items-center justify-center gap-1.5">
+                  <FileText className="w-4 h-4" /> Descargar Contrato Oficial (PDF)
+                </Button>
+              </a>
+
+              {/* Botón Contactar Asesor por WhatsApp */}
+              <a
+                href={`https://wa.me/50763814115?text=${encodeURIComponent(
+                  `Hola, acabo de inscribirme y realizar mi pago en la web. Mi folio oficial es el #${String(successData.folio).padStart(6, '0')} a nombre de ${successData.clientName} (Cédula: ${successData.studentIdNumber}) para el ${successData.plan}.`
+                )}`}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full"
+              >
+                <Button variant="outline" className="w-full h-11 text-xs sm:text-sm font-semibold rounded-xl border-emerald-500 text-emerald-700 hover:bg-emerald-50 cursor-pointer flex items-center justify-center gap-1.5">
+                  <MessageCircle className="w-4 h-4 text-emerald-600" /> Contactar al Asesor por WhatsApp
+                </Button>
+              </a>
+            </div>
+
+            <p className="text-[11px] text-slate-400 text-center">
+              Guarda tu número de folio o descarga tu contrato en PDF. Nuestro equipo administrativo te contactará para coordinar tu primera clase.
             </p>
-            <a
-              href={`https://wa.me/50763814115?text=${encodeURIComponent(
-                `Hola, acabo de inscribirme en la web. Mi folio es el #${String(successData.folio).padStart(6, '0')} a nombre de ${successData.clientName} para el ${successData.plan}.`
-              )}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <Button variant="outline" className="w-full h-12 text-base font-bold rounded-2xl border-emerald-500 text-emerald-700 hover:bg-emerald-50 cursor-pointer">
-                <MessageCircle className="w-5 h-5 mr-2" /> Contactar al Asesor por WhatsApp
-              </Button>
-            </a>
           </div>
         </div>
       </div>

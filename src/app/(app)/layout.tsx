@@ -108,24 +108,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Button
                 variant="outline"
                 size="icon"
-                className="shrink-0 md:hidden"
+                className="shrink-0 md:hidden cursor-pointer"
               >
                 <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle navigation menu</span>
+                <span className="sr-only">Abrir menú de navegación</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left">
+            <SheetContent side="left" className="w-[85vw] max-w-[340px] p-0 flex flex-col h-full max-h-[100dvh] bg-white shadow-2xl">
               <SheetTitle className="sr-only">Menú de Navegación</SheetTitle>
-              <nav className="grid gap-6 text-lg font-medium p-6">
-                <Link
-                  href="/dashboard"
-                  className="flex items-center gap-2 text-lg font-semibold"
-                >
-                  <Image src="/logo.png" alt="ContractTime Logo" width={40} height={40} className="rounded-lg shadow-sm" />
-                  <span className="font-headline">ContractTime</span>
-                </Link>
+              <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center gap-3 shrink-0 bg-slate-50">
+                <Image src="/logo.png" alt="ContractTime Logo" width={36} height={36} className="rounded-lg shadow-sm" />
+                <div>
+                  <span className="font-headline text-base font-bold text-slate-900 block">ContractTime</span>
+                  <span className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">Menú Principal</span>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto overscroll-contain p-4 pb-16">
                 <MainNav isMobile={true} />
-              </nav>
+              </div>
             </SheetContent>
           </Sheet>
         </div>

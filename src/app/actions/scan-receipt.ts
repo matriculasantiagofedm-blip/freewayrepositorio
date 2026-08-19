@@ -4,10 +4,9 @@ export async function scanReceipt(base64Image: string) {
   try {
     const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return { success: false, error: 'No se encontró la clave de API en el servidor.' };
+      return { success: false, error: 'No se encontró la clave de API (GEMINI_API_KEY) en el servidor.' };
     }
 
-    // Extraer solo la data base64 si incluye el prefijo "data:image/jpeg;base64,"
     const base64Data = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
 
     const requestBody = {
@@ -22,6 +21,7 @@ Responde ÚNICAMENTE con un objeto JSON válido que contenga estas propiedades e
   "provider": (texto, el nombre comercial principal arriba en el recibo),
   "providerRuc": (texto opcional, el RUC),
   "providerDv": (texto opcional, el DV o dígito verificador),
+  "invoiceNumber": (texto opcional, el número de factura),
   "category": (elige estrictamente una de: "Combustible", "Alquiler", "Salarios", "Mantenimiento", "Insumos", "Otros"),
   "description": (texto breve, lo que se pagó o compró)
 }` },
@@ -39,23 +39,32 @@ Responde ÚNICAMENTE con un objeto JSON válido que contenga estas propiedades e
       }
     };
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody)
-    });
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-flash-latest'];
+    let candidateText: string | null = null;
+    let lastError = '';
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Gemini API Error:", response.status, errorText);
-      return { success: false, error: `Error conectando a la IA: ${response.statusText}` };
+    for (const model of modelsToTry) {
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text || null;
+          if (candidateText) break;
+        } else {
+          lastError = await response.text();
+        }
+      } catch (e: any) {
+        lastError = e.message;
+      }
     }
 
-    const data = await response.json();
-    const candidateText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
     if (!candidateText) {
-      return { success: false, error: 'La IA no devolvió un formato válido.' };
+      return { success: false, error: `La IA no pudo procesar la imagen. Detalle: ${lastError.substring(0, 100)}` };
     }
 
     const parsedOutput = JSON.parse(candidateText);

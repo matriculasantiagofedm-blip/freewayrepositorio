@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-const APP_CACHE_VERSION = 'v18_pdf_contract_download_and_schedule_summary_2026';
+const APP_CACHE_VERSION = 'v19_mobile_pwa_and_gemini_2_5_flash_invoice_scan_2026';
 
 /**
  * Desregistra automáticamente cualquier service worker antiguo Y limpia todo

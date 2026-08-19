@@ -1,10 +1,18 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Poppins, PT_Sans } from "next/font/google";
 import "./globals.css";
 // build: 2026-05-16-v5
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from "@/firebase";
 import { ServiceWorkerCleanup } from "@/components/sw-cleanup";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: "#1d4ed8",
+};
 
 const poppins = Poppins({
   subsets: ["latin"],

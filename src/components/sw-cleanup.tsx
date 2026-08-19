@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-const APP_CACHE_VERSION = 'v21_mobile_menu_scroll_and_high_res_ai_scan_2026';
+const APP_CACHE_VERSION = 'v22_full_mobile_experience_direct_routes_2026';
 
 /**
  * Desregistra automáticamente cualquier service worker antiguo Y limpia todo

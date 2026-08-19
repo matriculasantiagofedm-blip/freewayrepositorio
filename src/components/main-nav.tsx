@@ -152,7 +152,15 @@ function HoverDropdownMenu({ link, visibleChildren, linkClass, onlinePendingCoun
 }
 
 // ── Main navigation ────────────────────────────────────────────────────────────
-export function MainNav({ className, isMobile = false }: { className?: string, isMobile?: boolean }) {
+export function MainNav({ 
+  className, 
+  isMobile = false,
+  onNavigate 
+}: { 
+  className?: string; 
+  isMobile?: boolean;
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
   const { role } = useCurrentRole();
   const { openWindow } = useWindowManager();
@@ -176,21 +184,30 @@ export function MainNav({ className, isMobile = false }: { className?: string, i
           );
           if (visibleChildren.length === 0) return null;
 
-          // Mobile: show items as buttons that open windows
+          // Mobile: show items as buttons that navigate directly and close sheet
           if (isMobile) {
             return (
               <React.Fragment key={link.label}>
-                <span className={cn(linkClass, 'font-semibold text-foreground')}>{link.label}</span>
-                <div className="grid auto-rows-auto items-start pl-7 text-base">
+                <span className={cn(linkClass, 'font-bold text-slate-800 text-xs uppercase tracking-wider mt-2')}>{link.label}</span>
+                <div className="grid auto-rows-auto items-start pl-3 text-sm space-y-1">
                   {visibleChildren.map((child, index) => {
-                    if (child.separator) return <Separator key={`sep-mobile-${index}`} className="my-2" />;
+                    if (child.separator) return <Separator key={`sep-mobile-${index}`} className="my-1.5" />;
                     return (
                       <Link
                         key={child.href}
                         href={child.href!}
-                        className="rounded-lg py-2 text-muted-foreground hover:text-primary flex items-center text-left"
+                        onClick={onNavigate}
+                        className={cn(
+                          "rounded-lg px-3 py-2 text-slate-600 hover:text-blue-600 hover:bg-blue-50/60 flex items-center justify-between text-left font-medium transition-colors",
+                          pathname === child.href && "bg-blue-50 text-blue-600 font-bold"
+                        )}
                       >
-                        {child.label}
+                        <span>{child.label}</span>
+                        {child.href === '/informes/online-contracts' && onlinePendingCount > 0 && (
+                          <span className="inline-flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold min-w-[18px] h-[18px] px-1">
+                            {onlinePendingCount}
+                          </span>
+                        )}
                       </Link>
                     );
                   })}
@@ -211,16 +228,16 @@ export function MainNav({ className, isMobile = false }: { className?: string, i
           );
         }
 
-        // Top-level links (Panel de Control, Clientes, etc.) — keep as normal navigation
-        // since these are "home bases", not module windows
+        // Top-level links (Panel de Control, Clientes, etc.)
         return (
           <Link
             key={link.href}
             href={link.href!}
+            onClick={onNavigate}
             className={cn(
               linkClass,
               (pathname === link.href || (link.href !== '/dashboard' && pathname.startsWith(link.href!))) &&
-                (isMobile ? 'bg-muted text-primary' : 'text-foreground font-semibold')
+                (isMobile ? 'bg-blue-50 text-blue-600 font-bold' : 'text-foreground font-semibold')
             )}
           >
             {link.label}

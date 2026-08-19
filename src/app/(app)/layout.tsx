@@ -14,11 +14,11 @@ import { WindowManagerProvider } from '@/contexts/window-manager-context';
 import { WindowLayer } from '@/components/window-layer';
 import { WindowTaskbar } from '@/components/window-taskbar';
 
-
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { role, isUserLoading } = useFirebase();
   const router = useRouter();
   const [isEmbedded, setIsEmbedded] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   /**
    * GUARDIA DE SEGURIDAD ADMINISTRATIVA
@@ -38,10 +38,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     setIsEmbedded(params.get('embed') === '1');
   }, []);
 
-  // NOTA: WindowManagerProvider siempre envuelve el contenido, incluso durante
-  // la pantalla de carga, para que useWindowManager() nunca falle en páginas
-  // como el dashboard que lo usan incondicionalmente.
-
   if (isUserLoading || !role) {
     return (
       <WindowManagerProvider>
@@ -55,15 +51,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // When embedded inside a floating window (iframe), skip the full shell (header/nav)
-  // but still mount LiveAvailabilityWidget so the Libreta button works inside the iframe
   if (isEmbedded) {
     return (
       <WindowManagerProvider>
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 print:p-0 print:m-0 print:block min-h-screen bg-[#eef2f6]">
           {children}
         </main>
-        {/* Widget de disponibilidad — necesario aquí porque el iframe tiene su propio window */}
         <LiveAvailabilityWidget />
       </WindowManagerProvider>
     );
@@ -74,16 +67,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen w-full flex-col relative bg-[#eef2f6] selection:bg-primary/20">
       {/* --- EL FONDO INCREÍBLE ANIMADO (IMPRESSIVE ANIMATED MESH BACKGROUND) --- */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-blue-50">
-        {/* Orbe Azul Principal (Arriba) */}
         <div className="absolute -top-[30%] -right-[10%] w-[80vw] h-[80vh] rounded-[100%] bg-blue-500/[0.12] blur-[100px] animate-mesh-1 mix-blend-multiply" />
-        
-        {/* Orbe Esmeralda (Abajo Izquierda) */}
         <div className="absolute -bottom-[20%] -left-[10%] w-[70vw] h-[70vh] rounded-[100%] bg-emerald-400/[0.15] blur-[120px] animate-mesh-2 mix-blend-multiply" />
-        
-        {/* Orbe Índigo Profundo (Medio) */}
         <div className="absolute top-[20%] left-[20%] w-[60vw] h-[60vh] rounded-[100%] bg-indigo-500/[0.1] blur-[110px] animate-mesh-3 mix-blend-multiply" />
-        
-        {/* Textura de Cristal (Ruido Sutil) */}
         <div className="absolute inset-0 bg-[url('https://i.imgur.com/3F9j5V1.png')] opacity-[0.03] mix-blend-overlay" />
       </div>
 
@@ -103,7 +89,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         
         <div className="ml-auto flex items-center gap-2">
           <UserNav />
-          <Sheet>
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button
                 variant="outline"
@@ -124,7 +110,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto overscroll-contain p-4 pb-16">
-                <MainNav isMobile={true} />
+                <MainNav isMobile={true} onNavigate={() => setIsMobileMenuOpen(false)} />
               </div>
             </SheetContent>
           </Sheet>
@@ -146,5 +132,4 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </div>
     </WindowManagerProvider>
   );
-
 }

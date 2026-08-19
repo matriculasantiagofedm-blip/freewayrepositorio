@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useCallback, useContext, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export interface AppWindowState {
   id: string;
@@ -31,8 +32,15 @@ let zCounter = 100;
 export function WindowManagerProvider({ children }: { children: React.ReactNode }) {
   const [windows, setWindows] = useState<AppWindowState[]>([]);
   const idCounter = useRef(0);
+  const router = useRouter();
 
   const openWindow = useCallback((url: string, title: string, icon?: string) => {
+    // Si estamos en un celular (< 768px de ancho), navegar de forma nativa a la ruta completa
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      router.push(url);
+      return;
+    }
+
     // Build embed URL with a unique timestamp so every window open bypasses
     // ALL layers of caching (browser, CDN, service worker) unconditionally.
     const sep = url.includes('?') ? '&' : '?';
@@ -67,7 +75,7 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
       };
       return [...prev, newWin];
     });
-  }, []);
+  }, [router]);
 
   const closeWindow = useCallback((id: string) => {
     setWindows(prev => prev.filter(w => w.id !== id));
@@ -100,10 +108,18 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
   }, []);
 
   return (
-    <WindowManagerContext.Provider value={{
-      windows, openWindow, closeWindow, minimizeWindow,
-      restoreWindow, focusWindow, updatePosition, updateSize,
-    }}>
+    <WindowManagerContext.Provider
+      value={{
+        windows,
+        openWindow,
+        closeWindow,
+        minimizeWindow,
+        restoreWindow,
+        focusWindow,
+        updatePosition,
+        updateSize,
+      }}
+    >
       {children}
     </WindowManagerContext.Provider>
   );
@@ -111,6 +127,8 @@ export function WindowManagerProvider({ children }: { children: React.ReactNode 
 
 export function useWindowManager() {
   const ctx = useContext(WindowManagerContext);
-  if (!ctx) throw new Error('useWindowManager must be used inside WindowManagerProvider');
+  if (!ctx) {
+    throw new Error('useWindowManager must be used within a WindowManagerProvider');
+  }
   return ctx;
 }

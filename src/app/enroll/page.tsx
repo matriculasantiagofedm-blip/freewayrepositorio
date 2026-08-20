@@ -671,15 +671,21 @@ export default function DynamicEnrollPage() {
         assignedFolio = counterDoc.exists() ? Math.max(counterDoc.data().count + 1, 18) : 18;
         transaction.set(counterRef, { count: assignedFolio }, { merge: true });
 
+        const cleanStudentId = data.studentIdNumber.trim();
+        const cleanName = data.clientName.trim();
+        const cleanEmail = (data.clientEmail || '').trim();
+        const cleanPhone = (data.studentPhone1 || '').trim();
+        const cleanAddress = (data.studentAddress || '').trim();
+
         const contractData = {
           title: `${isMoto ? 'Curso de Moto' : 'Curso de Auto'} - Folio ${assignedFolio}`,
           folioNumber: assignedFolio,
-          clientName: data.clientName,
-          clientEmail: data.clientEmail,
+          clientName: cleanName,
+          clientEmail: cleanEmail,
           idType: 'C.I.P.',
-          studentIdNumber: data.studentIdNumber,
-          studentAddress: data.studentAddress,
-          studentPhone1: data.studentPhone1,
+          studentIdNumber: cleanStudentId,
+          studentAddress: cleanAddress,
+          studentPhone1: cleanPhone,
           contractType: isMoto ? 'Curso Moto' : 'Curso Auto',
           type: isMoto ? 'Curso Moto' : 'Curso Auto',
           status: 'active',
@@ -701,9 +707,9 @@ export default function DynamicEnrollPage() {
             balance: price,
             paidInFull: false,
             vehicleTransmission: data.vehicleTransmission,
-            studentAddress: data.studentAddress,
-            studentIdNumber: data.studentIdNumber,
-            studentPhone1: data.studentPhone1,
+            studentAddress: cleanAddress,
+            studentIdNumber: cleanStudentId,
+            studentPhone1: cleanPhone,
             theoreticalClassSchedule: data.theoreticalClassSchedule || '',
             theoreticalClassDates: data.theoreticalClassDates ? data.theoreticalClassDates.map(d => Timestamp.fromDate(d)) : [],
             practicalClassSchedules: formattedPracticalSchedules,

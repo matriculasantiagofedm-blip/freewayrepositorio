@@ -1,10 +1,10 @@
 'use server';
 
-const DEFAULT_FALLBACK_KEY = 'AIzaSyCqW5aoIkWl4Nv3ZmWbvgtIsCJ3Um9mugw';
+import { getGeminiApiKey } from '@/lib/gemini-config';
 
 export async function scanReceipt(base64Image: string) {
   try {
-    const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GEMINI_API_KEY || DEFAULT_FALLBACK_KEY;
+    const apiKey = getGeminiApiKey();
 
     const base64Data = base64Image.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '').trim();
 

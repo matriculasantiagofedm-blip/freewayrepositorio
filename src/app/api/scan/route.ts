@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
+import { getGeminiApiKey } from '@/lib/gemini-config';
 
 export const dynamic = 'force-dynamic';
-
-const DEFAULT_FALLBACK_KEY = 'AIzaSyCqW5aoIkWl4Nv3ZmWbvgtIsCJ3Um9mugw';
 
 export async function POST(req: Request) {
   try {
@@ -13,7 +12,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'No se proporcionó ninguna imagen.' }, { status: 400 });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY || DEFAULT_FALLBACK_KEY;
+    const apiKey = getGeminiApiKey();
 
     // Limpiar el prefijo data:image/...;base64, de forma segura
     const base64Data = base64Image.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '').trim();

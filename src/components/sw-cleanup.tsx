@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 
-const APP_CACHE_VERSION = 'v24_paid_gemini_api_key_active_2026';
+const APP_CACHE_VERSION = 'v25_ignore_revoked_keys_and_use_paid_gemini_2026';
 
 /**
  * Desregistra automáticamente cualquier service worker antiguo Y limpia todo

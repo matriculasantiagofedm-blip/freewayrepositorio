@@ -33,25 +33,30 @@ export default function EditContractPage() {
   if (error || !contract) return <div className="p-8 text-center">Error: Contrato no encontrado.</div>;
 
   const renderForm = () => {
-    switch (contract.type) {
-        case 'Curso Auto':
-        case 'Curso Mixto':
-            return <AutoContractForm contract={contract} />;
-        case 'Curso Moto':
-            return <MotoContractForm contract={contract} />;
-        case 'Ampliaciones':
-            return <AmpliacionesContractForm contract={contract} />;
-        case 'Curso Solo Practica':
-            return <SoloPracticaContractForm contract={contract} />;
-        case 'Curso Deluxe':
-            return <DeluxeContractForm contract={contract} />;
-        default:
-            return (
-                <div className="p-12 text-center border-2 border-dashed rounded-lg">
-                    <p className="text-muted-foreground">No hay formularios de edición activos para el tipo: {contract.type}</p>
-                </div>
-            );
+    const rawType = (contract.type || (contract as any).contractType || '').trim();
+    const normalizedType = rawType.toLowerCase();
+
+    if (normalizedType.includes('auto') || normalizedType.includes('mixto')) {
+      return <AutoContractForm contract={contract} />;
     }
+    if (normalizedType.includes('moto')) {
+      return <MotoContractForm contract={contract} />;
+    }
+    if (normalizedType.includes('amplia')) {
+      return <AmpliacionesContractForm contract={contract} />;
+    }
+    if (normalizedType.includes('practica')) {
+      return <SoloPracticaContractForm contract={contract} />;
+    }
+    if (normalizedType.includes('deluxe') || normalizedType.includes('premium')) {
+      return <DeluxeContractForm contract={contract} />;
+    }
+
+    return (
+      <div className="p-12 text-center border-2 border-dashed rounded-lg">
+        <p className="text-muted-foreground">No hay formularios de edición activos para el tipo: {contract.type}</p>
+      </div>
+    );
   };
 
   return (

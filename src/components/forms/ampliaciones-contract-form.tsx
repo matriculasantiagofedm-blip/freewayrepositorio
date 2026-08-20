@@ -126,22 +126,41 @@ export function AmpliacionesContractForm({ contract, initialData }: { contract?:
   const categoryPrices = settingsPrices?.ampliaciones || CATEGORY_PRICES;
   const comboPrices = settingsPrices?.combos || COMBINATION_PRICES;
 
+  const details = contract?.ampliacionesDetails || (contract as any)?.ampliacionDetails || (contract as any)?.autoMotoDetails || {};
+
+  const toValidDateOrNull = (val: any): Date | null => {
+    if (!val) return null;
+    const d = toDate(val);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
   const form = useForm<FormValues>({
     resolver: zodResolver(ampliacionesSchema),
     defaultValues: isEdit ? {
-      ...contract.ampliacionesDetails,
-      clientName: contract.clientName,
-      firstName: (contract as any)?.ampliacionDetails?.firstName || (contract as any)?.autoMotoDetails?.firstName || '',
-      secondName: (contract as any)?.ampliacionDetails?.secondName || '',
-      firstLastName: (contract as any)?.ampliacionDetails?.firstLastName || '',
-      secondLastName: (contract as any)?.ampliacionDetails?.secondLastName || '',
-      marriedLastName: (contract as any)?.ampliacionDetails?.marriedLastName || '',
-      clientEmail: contract.clientEmail,
-      paymentDeadline: toDate(contract.ampliacionesDetails?.paymentDeadline),
-      theoreticalClassDate: toDate(contract.ampliacionesDetails?.theoreticalClassDate),
-      photoDataUri: (contract.ampliacionesDetails as any)?.photoDataUri || '',
-      idCardDataUri: (contract.ampliacionesDetails as any)?.idCardDataUri || '',
-      licenseDataUri: (contract.ampliacionesDetails as any)?.licenseDataUri || '',
+      ...details,
+      clientName: contract.clientName || '',
+      firstName: (contract as any)?.firstName || (contract as any)?.ampliacionDetails?.firstName || (contract as any)?.autoMotoDetails?.firstName || details?.firstName || '',
+      secondName: (contract as any)?.secondName || (contract as any)?.ampliacionDetails?.secondName || details?.secondName || '',
+      firstLastName: (contract as any)?.firstLastName || (contract as any)?.ampliacionDetails?.firstLastName || details?.firstLastName || '',
+      secondLastName: (contract as any)?.secondLastName || (contract as any)?.ampliacionDetails?.secondLastName || details?.secondLastName || '',
+      marriedLastName: (contract as any)?.marriedLastName || (contract as any)?.ampliacionDetails?.marriedLastName || details?.marriedLastName || '',
+      clientEmail: contract.clientEmail || details?.clientEmail || '',
+      idType: details?.idType || (contract as any)?.idType || 'C.I.P.',
+      studentIdNumber: details?.studentIdNumber || (contract as any)?.studentIdNumber || (contract as any)?.cip || '',
+      studentAddress: details?.studentAddress || (contract as any)?.studentAddress || '',
+      studentAddressLocality: details?.studentAddressLocality || '',
+      studentPhone1: details?.studentPhone1 || (contract as any)?.studentPhone1 || (contract as any)?.phone || '',
+      studentPhone2: details?.studentPhone2 || (contract as any)?.studentPhone2 || '',
+      licenseCategory: details?.licenseCategory || (contract as any)?.licenseCategory || (contract as any)?.licenseType || '',
+      courseValue: Number(details?.courseValue ?? (contract as any)?.courseValue ?? 0),
+      downPayment: Number(details?.downPayment ?? (contract as any)?.downPayment ?? 0),
+      paymentType: details?.paymentType || (contract as any)?.paymentType || 'cash',
+      paymentDeadline: toValidDateOrNull(details?.paymentDeadline),
+      theoreticalClassDate: toValidDateOrNull(details?.theoreticalClassDate),
+      theoreticalClassTime: details?.theoreticalClassTime || 'Semanal 8:00 am a 10:00 am',
+      photoDataUri: (contract as any)?.photoDataUri || details?.photoDataUri || '',
+      idCardDataUri: (contract as any)?.idCardDataUri || details?.idCardDataUri || '',
+      licenseDataUri: (contract as any)?.licenseDataUri || details?.licenseDataUri || '',
     } : {
       clientName: initialData?.name || '', clientEmail: '', idType: 'C.I.P.', studentIdNumber: '',
       studentAddress: '', studentPhone1: initialData?.phone || '', studentPhone2: '', licenseCategory: '',
@@ -155,13 +174,13 @@ export function AmpliacionesContractForm({ contract, initialData }: { contract?:
 
   const initialInstallment = useMemo(() => {
     if (!contract) return '2_installments';
-    const dp = contract.ampliacionesDetails?.downPayment || 0;
-    const cv = contract.ampliacionesDetails?.courseValue || 0;
-    if (dp === cv) return 'full';
-    if (Math.abs(dp - cv * 0.5) < 0.01) return '2_installments';
-    if (Math.abs(dp - cv * 0.2) < 0.01) return '5_installments';
+    const dp = Number(details?.downPayment ?? (contract as any)?.downPayment ?? 0);
+    const cv = Number(details?.courseValue ?? (contract as any)?.courseValue ?? 0);
+    if (dp === cv && cv > 0) return 'full';
+    if (cv > 0 && Math.abs(dp - cv * 0.5) < 0.01) return '2_installments';
+    if (cv > 0 && Math.abs(dp - cv * 0.2) < 0.01) return '5_installments';
     return 'custom';
-  }, [contract]);
+  }, [contract, details]);
 
   const [selectedInstallment, setSelectedInstallment] = useState<'full' | '2_installments' | '5_installments' | 'custom'>(initialInstallment);
 
@@ -191,13 +210,15 @@ export function AmpliacionesContractForm({ contract, initialData }: { contract?:
   const watchCourseValue = form.watch('courseValue');
 
   useEffect(() => {
+    if (isEdit) return;
+    if (selectedInstallment === 'custom') return;
     const cv = Number(watchCourseValue) || 0;
     let dp = 0;
     if (selectedInstallment === 'full') dp = cv;
     else if (selectedInstallment === '2_installments') dp = cv * 0.5;
     else if (selectedInstallment === '5_installments') dp = cv * 0.2;
     form.setValue('downPayment', dp);
-  }, [watchCourseValue, selectedInstallment, form]);
+  }, [watchCourseValue, selectedInstallment, form, isEdit]);
 
   const watchDownPayment = form.watch('downPayment');
 
@@ -592,7 +613,7 @@ export function AmpliacionesContractForm({ contract, initialData }: { contract?:
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button variant="outline" className={cn("w-full h-10 pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                            {field.value ? format(toDate(field.value), "PPP", { locale: es }) : <span>Seleccionar día</span>}
+                            {field.value && !isNaN(toDate(field.value).getTime()) ? format(toDate(field.value), "PPP", { locale: es }) : <span>Seleccionar día</span>}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
                         </FormControl>
@@ -600,8 +621,8 @@ export function AmpliacionesContractForm({ contract, initialData }: { contract?:
                       <PopoverContent className="w-auto p-0" align="start">
                         <Calendar 
                           mode="single" 
-                          selected={field.value ? toDate(field.value) : undefined} 
-                          onSelect={(date) => { if (date) field.onChange(date); }} 
+                          selected={field.value && !isNaN(toDate(field.value).getTime()) ? toDate(field.value) : undefined} 
+                          onSelect={(date) => { field.onChange(date || null); }} 
                           initialFocus 
                         />
                       </PopoverContent>
@@ -643,7 +664,7 @@ export function AmpliacionesContractForm({ contract, initialData }: { contract?:
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button variant="outline" className={cn("w-full h-10 pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                          {field.value ? format(toDate(field.value), "PPP", { locale: es }) : <span>Elegir fecha</span>}
+                          {field.value && !isNaN(toDate(field.value).getTime()) ? format(toDate(field.value), "PPP", { locale: es }) : <span>Elegir fecha</span>}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
                       </FormControl>
@@ -651,8 +672,8 @@ export function AmpliacionesContractForm({ contract, initialData }: { contract?:
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar 
                         mode="single" 
-                        selected={field.value ? toDate(field.value) : undefined} 
-                        onSelect={(date) => { if (date) field.onChange(date); }} 
+                        selected={field.value && !isNaN(toDate(field.value).getTime()) ? toDate(field.value) : undefined} 
+                        onSelect={(date) => { field.onChange(date || null); }} 
                         initialFocus 
                       />
                     </PopoverContent>

@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useDb } from '@/firebase';
-import { collection, query, where, Timestamp } from 'firebase/firestore';
+import { collection, query, where, Timestamp, doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { format, startOfDay, endOfDay, addDays, subDays, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -31,7 +31,9 @@ import {
   AlertCircle,
   FileText,
   Layers,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Save,
+  Check
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -85,9 +87,112 @@ export default function DailyCashReport() {
   const [billCounts, setBillCounts] = useState<Record<number, number>>({});
   const [coinCounts, setCoinCounts] = useState<Record<number, number>>({});
   const [expenses, setExpenses] = useState<{ id: string; desc: string; amount: number }[]>([]);
+  const [isSavingArqueo, setIsSavingArqueo] = useState(false);
+  const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   const start = startOfDay(selectedDate);
   const end = endOfDay(selectedDate);
+  const dateKey = format(selectedDate, 'yyyy-MM-dd');
+  const arqueoDocId = `${dateKey}_${filterRole}`;
+
+  // Suscripción y carga automática del arqueo guardado en Firestore
+  useEffect(() => {
+    if (!db) return;
+    setSaveStatus('idle');
+
+    const docRef = doc(db, 'daily_cash_arqueos', arqueoDocId);
+    const unsubscribe = onSnapshot(docRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setBillCounts(data.billCounts || {});
+        setCoinCounts(data.coinCounts || {});
+        setExpenses(data.expenses || []);
+        if (data.updatedAt) {
+          setLastSavedTime(toDate(data.updatedAt));
+        }
+      } else {
+        setBillCounts({});
+        setCoinCounts({});
+        setExpenses([]);
+        setLastSavedTime(null);
+      }
+    }, (err) => {
+      console.error("Error al cargar arqueo de caja:", err);
+    });
+
+    return () => unsubscribe();
+  }, [db, arqueoDocId]);
+
+  // Guardar arqueo y gastos en Firestore
+  const saveArqueoToFirestore = async (
+    b = billCounts, 
+    c = coinCounts, 
+    e = expenses
+  ) => {
+    if (!db) return;
+    setIsSavingArqueo(true);
+    setSaveStatus('saving');
+    try {
+      const docRef = doc(db, 'daily_cash_arqueos', arqueoDocId);
+      const calcTotalFisico = BILLS.reduce((sum, item) => sum + (b[item.val] || 0) * item.val, 0) + 
+                              COINS.reduce((sum, item) => sum + (c[item.val] || 0) * item.val, 0);
+      const calcTotalGastos = e.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+
+      await setDoc(docRef, {
+        date: dateKey,
+        filterRole,
+        billCounts: b,
+        coinCounts: c,
+        expenses: e,
+        totalFisico: calcTotalFisico,
+        totalGastos: calcTotalGastos,
+        updatedAt: Timestamp.now(),
+        updatedBy: userRole || 'Usuario'
+      }, { merge: true });
+
+      setLastSavedTime(new Date());
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 3500);
+    } catch (err) {
+      console.error("Error al guardar arqueo de caja:", err);
+      setSaveStatus('idle');
+    } finally {
+      setIsSavingArqueo(false);
+    }
+  };
+
+  const handleBillChange = (val: number, count: number) => {
+    const updated = { ...billCounts, [val]: count };
+    setBillCounts(updated);
+  };
+
+  const handleCoinChange = (val: number, count: number) => {
+    const updated = { ...coinCounts, [val]: count };
+    setCoinCounts(updated);
+  };
+
+  const handleAddExpense = () => {
+    const updated = [...expenses, { id: Math.random().toString(), desc: '', amount: 0 }];
+    setExpenses(updated);
+    saveArqueoToFirestore(billCounts, coinCounts, updated);
+  };
+
+  const handleDeleteExpense = (id: string) => {
+    const updated = expenses.filter(ex => ex.id !== id);
+    setExpenses(updated);
+    saveArqueoToFirestore(billCounts, coinCounts, updated);
+  };
+
+  const handleExpenseDescChange = (id: string, desc: string) => {
+    const updated = expenses.map(ex => ex.id === id ? { ...ex, desc } : ex);
+    setExpenses(updated);
+  };
+
+  const handleExpenseAmountChange = (id: string, amount: number) => {
+    const updated = expenses.map(ex => ex.id === id ? { ...ex, amount } : ex);
+    setExpenses(updated);
+  };
 
   // Consultas de Firestore
   const contractsQuery = useMemoQuery(
@@ -773,7 +878,29 @@ export default function DailyCashReport() {
                       <DollarSign className="w-3.5 h-3.5 text-blue-600" />
                       Arqueo de Efectivo Físico
                     </span>
-                    <span className="text-slate-400 font-bold text-[7pt] tracking-wider uppercase">(Conteo Manual)</span>
+                    <div className="flex items-center gap-1.5">
+                      {saveStatus === 'saved' ? (
+                        <span className="text-[7pt] text-emerald-700 font-bold flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 print:hidden animate-in fade-in duration-200">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" /> 
+                          ¡Guardado!
+                        </span>
+                      ) : lastSavedTime ? (
+                        <span className="text-[6.5pt] text-slate-500 font-bold hidden sm:inline-block print:hidden">
+                          Guardado: {format(lastSavedTime, 'HH:mm:ss')}
+                        </span>
+                      ) : null}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => saveArqueoToFirestore()}
+                        disabled={isSavingArqueo}
+                        className="h-6 px-2.5 text-[7pt] font-black uppercase rounded-lg border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 flex items-center gap-1 cursor-pointer print:hidden shadow-xs"
+                        title="Guardar arqueo de caja"
+                      >
+                        {isSavingArqueo ? <Loader2 className="w-3 h-3 animate-spin text-blue-600" /> : <Save className="w-3 h-3 text-blue-600" />}
+                        <span>{isSavingArqueo ? 'Guardando...' : 'Guardar Arqueo'}</span>
+                      </Button>
+                    </div>
                   </h3>
                   
                   <div className="grid grid-cols-2 gap-3">
@@ -788,7 +915,8 @@ export default function DailyCashReport() {
                             min="0"
                             className="w-12 h-5 border border-slate-200 rounded text-center text-[8pt] font-black focus:border-blue-600 focus:ring-1 focus:ring-blue-600 bg-white"
                             value={billCounts[b.val] || ''}
-                            onChange={(e) => setBillCounts({ ...billCounts, [b.val]: parseInt(e.target.value) || 0 })}
+                            onChange={(e) => handleBillChange(b.val, parseInt(e.target.value) || 0)}
+                            onBlur={() => saveArqueoToFirestore()}
                           />
                         </div>
                       ))}
@@ -805,7 +933,8 @@ export default function DailyCashReport() {
                             min="0"
                             className="w-12 h-5 border border-slate-200 rounded text-center text-[8pt] font-black focus:border-blue-600 focus:ring-1 focus:ring-blue-600 bg-white"
                             value={coinCounts[c.val] || ''}
-                            onChange={(e) => setCoinCounts({ ...coinCounts, [c.val]: parseInt(e.target.value) || 0 })}
+                            onChange={(e) => handleCoinChange(c.val, parseInt(e.target.value) || 0)}
+                            onBlur={() => saveArqueoToFirestore()}
                           />
                         </div>
                       ))}
@@ -831,7 +960,7 @@ export default function DailyCashReport() {
                         variant="ghost" 
                         size="sm" 
                         className="h-6 px-2 text-[7pt] font-black border border-slate-200 rounded-lg hover:bg-slate-100 print:hidden cursor-pointer" 
-                        onClick={() => setExpenses([...expenses, { id: Math.random().toString(), desc: '', amount: 0 }])}
+                        onClick={handleAddExpense}
                       >
                         <Plus className="h-3 w-3 mr-1 text-blue-600" /> Añadir Gasto
                       </Button>
@@ -847,19 +976,21 @@ export default function DailyCashReport() {
                               className="flex-1 h-6 border-b border-slate-200 text-[7.5pt] font-semibold uppercase placeholder:text-slate-300 px-1 focus:border-slate-800 bg-transparent"
                               placeholder="Concepto del gasto..."
                               value={e.desc}
-                              onChange={(v) => setExpenses(expenses.map(ex => ex.id === e.id ? { ...ex, desc: v.target.value } : ex))}
+                              onChange={(v) => handleExpenseDescChange(e.id, v.target.value)}
+                              onBlur={() => saveArqueoToFirestore()}
                             />
                             <input 
                               type="number"
                               className="w-16 h-6 border border-slate-200 rounded text-right pr-1 text-[7.5pt] font-black focus:border-slate-800 bg-white"
                               value={e.amount || ''}
-                              onChange={(v) => setExpenses(expenses.map(ex => ex.id === e.id ? { ...ex, amount: parseFloat(v.target.value) || 0 } : ex))}
+                              onChange={(v) => handleExpenseAmountChange(e.id, parseFloat(v.target.value) || 0)}
+                              onBlur={() => saveArqueoToFirestore()}
                             />
                             <Button 
                               variant="ghost" 
                               size="icon" 
                               className="h-5 w-5 text-red-500 opacity-60 group-hover:opacity-100 print:hidden shrink-0 cursor-pointer" 
-                              onClick={() => setExpenses(expenses.filter(ex => ex.id !== e.id))}
+                              onClick={() => handleDeleteExpense(e.id)}
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>

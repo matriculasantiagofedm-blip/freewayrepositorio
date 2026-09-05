@@ -17,7 +17,7 @@ interface StepPaymentProps {
 }
 
 const YAPPY_OFFICIAL_LINK = 'https://link.yappy.com.pa/stc/dgXr5v%2BGA2xDgGKBkz%2BnBhSk16Vdr9BZvaim7nGhYrA%3D';
-const CUBO_OFFICIAL_LINK = 'https://link.cubopago.com/m_JPusnlxKnM';
+const CUBO_OFFICIAL_LINK = 'https://link.cubopago.com/VloWHLdDc4c3';
 
 export function StepPayment({
   total,

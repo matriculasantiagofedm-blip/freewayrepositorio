@@ -35,7 +35,8 @@ import {
   MessageCircle, 
   Globe, 
   ShieldCheck, 
-  Loader2
+  Loader2,
+  FileText
 } from 'lucide-react';
 
 // --- Mapeo de slots y ocupación ---

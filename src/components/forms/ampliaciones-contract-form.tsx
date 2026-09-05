@@ -317,6 +317,7 @@ export function AmpliacionesContractForm({ contract, initialData }: { contract?:
 
       const ampliacionesDetailsPayload = {
         ...cleanDetails,
+        initialDownPayment: isEdit ? ((contract?.ampliacionesDetails as any)?.initialDownPayment ?? (contract?.ampliacionesDetails as any)?.downPayment ?? values.downPayment) : values.downPayment,
         paymentDeadline: paymentDeadline ? Timestamp.fromDate(paymentDeadline) : null,
         theoreticalClassDate: theoreticalClassDate ? Timestamp.fromDate(theoreticalClassDate) : null,
         balance: balance,

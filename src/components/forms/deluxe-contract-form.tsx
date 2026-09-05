@@ -498,6 +498,7 @@ export function DeluxeContractForm({ contract, initialData }: { contract?: Contr
             activatedAt: serverTimestamp(), // Vital para reportes inmediatos
             deluxeDetails: {
               ...detailsOnly,
+              initialDownPayment: values.downPayment,
               paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null,
               theoreticalClasses: formattedTheoryDates,
               classSchedules: formattedPracticalSchedules,

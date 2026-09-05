@@ -168,6 +168,7 @@ export default function CancellationsPage() {
               paymentDate: serverTimestamp() as any,
               userId: user.uid,
               type: 'cancelacion',
+              contractType: contract?.type || 'Curso Auto',
               paymentType: paymentType,
               clientAddress: contract ? (contract.autoMotoDetails?.studentAddress || contract.ampliacionesDetails?.studentAddress || contract.deluxeDetails?.studentAddress || '') : manualAddress,
               createdBy: role || undefined,
@@ -185,12 +186,21 @@ export default function CancellationsPage() {
               if (contract.autoMotoDetails) {
                   contractUpdateForTransaction['autoMotoDetails.balance'] = newBalance;
                   contractUpdateForTransaction['autoMotoDetails.downPayment'] = (contract.autoMotoDetails.downPayment || 0) + paymentAmount;
+                  if (contract.autoMotoDetails.initialDownPayment === undefined) {
+                      contractUpdateForTransaction['autoMotoDetails.initialDownPayment'] = contract.autoMotoDetails.downPayment || 0;
+                  }
               } else if (contract.ampliacionesDetails) {
                   contractUpdateForTransaction['ampliacionesDetails.balance'] = newBalance;
                   contractUpdateForTransaction['ampliacionesDetails.downPayment'] = (contract.ampliacionesDetails.downPayment || 0) + paymentAmount;
+                  if (contract.ampliacionesDetails.initialDownPayment === undefined) {
+                      contractUpdateForTransaction['ampliacionesDetails.initialDownPayment'] = contract.ampliacionesDetails.downPayment || 0;
+                  }
               } else if (contract.deluxeDetails) {
                   contractUpdateForTransaction['deluxeDetails.balance'] = newBalance;
                   contractUpdateForTransaction['deluxeDetails.downPayment'] = (contract.deluxeDetails.downPayment || 0) + paymentAmount;
+                  if (contract.deluxeDetails.initialDownPayment === undefined) {
+                      contractUpdateForTransaction['deluxeDetails.initialDownPayment'] = contract.deluxeDetails.downPayment || 0;
+                  }
               }
               transaction.update(contractRef, contractUpdateForTransaction);
           }

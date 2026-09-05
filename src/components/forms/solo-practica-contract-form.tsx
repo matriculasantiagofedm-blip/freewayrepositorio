@@ -426,6 +426,7 @@ export function SoloPracticaContractForm({ contract, initialData }: { contract?:
             activatedAt: serverTimestamp(), // Vital para reportes de caja
             autoMotoDetails: {
               ...detailsOnly,
+              initialDownPayment: values.downPayment,
               paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null,
               practicalClassSchedules: formattedPracticalSchedules,
               balance: balance,

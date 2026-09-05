@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
@@ -1541,7 +1541,7 @@ export default function DynamicEnrollPage() {
                       </span>
                       <Button
                         type="button"
-                        onClick={() => window.open('https://link.cubopago.com/m_JPusnlxKnM', '_blank')}
+                        onClick={() => window.open('https://link.cubopago.com/VloWHLdDc4c3', '_blank')}
                         className="bg-[#16a34a] hover:bg-[#15803d] text-white font-bold text-[11px] h-8 px-3 rounded-lg flex items-center gap-1 shrink-0 self-start sm:self-auto shadow-sm active:scale-95 transition-transform"
                       >
                         Pagar con Tarjeta (Cubo) ðŸ’³

@@ -586,6 +586,7 @@ export function AutoContractForm({ contract, initialData }: { contract?: Contrac
             activatedAt: serverTimestamp(), // Vital para reportes inmediatos
             autoMotoDetails: {
               ...detailsOnly,
+              initialDownPayment: values.downPayment,
               paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null,
               theoreticalClassDates: formattedTheoryDates,
               practicalClassSchedules: formattedPracticalSchedules,

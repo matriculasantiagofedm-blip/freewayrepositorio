@@ -80,6 +80,7 @@ export interface DeluxeContractDetails {
   courseValue?: number;
   enrollmentFee?: number;
   downPayment?: number;
+  initialDownPayment?: number;
   balance?: number;
   paymentDeadline?: any;
 }
@@ -93,6 +94,7 @@ export interface AutoMotoContractDetails {
   coursePlan?: string;
   courseValue?: number;
   downPayment?: number;
+  initialDownPayment?: number;
   balance?: number;
   paymentDeadline?: any;
   vehicle?: VehicleName;
@@ -119,6 +121,7 @@ export interface AmpliacionesContractDetails {
   studentPhone2?: string;
   courseValue: number;
   downPayment: number;
+  initialDownPayment?: number;
   balance: number;
   paymentDeadline?: any;
   licenseCategory: string;

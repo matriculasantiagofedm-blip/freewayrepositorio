@@ -519,6 +519,7 @@ export function MotoContractForm({ contract, initialData }: { contract?: Contrac
             activatedAt: serverTimestamp(), // Vital para reportes de caja
             autoMotoDetails: { 
               ...detailsOnly, 
+              initialDownPayment: values.downPayment,
               paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null, 
               theoreticalClassDates: formattedTheoryDates, 
               motoPracticalClassSchedules: formattedMotoPracticalSchedules,

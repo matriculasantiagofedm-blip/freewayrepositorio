@@ -363,7 +363,7 @@ export default function DailyCashReport() {
       
       {/* ── BARRA SUPERIOR DE CONTROL Y FILTROS ── */}
       <div className="sticky top-0 z-40 bg-white border-b border-slate-200/90 px-4 py-3 shadow-sm print:hidden">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+        <div className="w-full mx-auto flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           
           {/* Título y Navegación rápida */}
           <div className="flex items-center gap-3">
@@ -480,7 +480,7 @@ export default function DailyCashReport() {
       </div>
 
       {/* ── CUERPO PRINCIPAL DEL PANEL ── */}
-      <div className="max-w-7xl mx-auto px-4 w-full flex flex-col gap-6">
+      <div className="w-full px-4 sm:px-6 lg:px-8 flex flex-col gap-6">
 
         {/* ── TARJETAS DE RESUMEN EJECUTIVO (KPIs) ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 print:hidden">
@@ -615,7 +615,7 @@ export default function DailyCashReport() {
         <div className="w-full flex justify-center print:p-0">
           <div 
             id="report-to-print" 
-            className="bg-white w-full max-w-[8.5in] p-6 sm:p-8 flex flex-col font-sans text-slate-900 min-h-[10.5in] rounded-2xl shadow-sm border border-slate-200 print:border-none print:shadow-none print:m-0 print:p-0 box-border overflow-hidden"
+            className="bg-white w-full max-w-full p-6 sm:p-8 flex flex-col font-sans text-slate-900 min-h-[10.5in] rounded-2xl shadow-sm border border-slate-200 print:border-none print:shadow-none print:m-0 print:p-0 box-border overflow-hidden"
           >
             
             {/* Membrete Oficial */}
@@ -644,17 +644,17 @@ export default function DailyCashReport() {
 
             {/* TABLA PRINCIPAL DE TRANSACCIONES */}
             <div className="mb-6 overflow-x-auto">
-              <table className="w-full border-collapse border border-slate-300 text-[7.5pt]">
+              <table className="w-full border-collapse border border-slate-300 text-[8pt]">
                 <thead>
                   <tr className="bg-slate-100 text-slate-800 border-b border-slate-300">
-                    <th className="border border-slate-300 p-1.5 text-center w-[75px] font-black uppercase">Operación</th>
-                    <th className="border border-slate-300 p-1.5 text-center w-[55px] font-black uppercase">Servicio</th>
-                    <th className="border border-slate-300 p-1.5 text-left w-[50px] font-black uppercase">Folio</th>
-                    <th className="border border-slate-300 p-1.5 text-left w-[75px] font-black uppercase">Cédula</th>
-                    <th className="border border-slate-300 p-1.5 text-left font-black uppercase">Cliente</th>
-                    <th className="border border-slate-300 p-1.5 text-left w-[60px] font-black uppercase">Rol</th>
+                    <th className="border border-slate-300 p-2 text-left w-[65px] font-black uppercase">Folio</th>
+                    <th className="border border-slate-300 p-2 text-left w-[90px] font-black uppercase">Cédula</th>
+                    <th className="border border-slate-300 p-2 text-left font-black uppercase">Cliente</th>
+                    <th className="border border-slate-300 p-2 text-left w-[90px] font-black uppercase">Rol</th>
+                    <th className="border border-slate-300 p-2 text-center w-[95px] font-black uppercase">Servicio</th>
+                    <th className="border border-slate-300 p-2 text-center w-[100px] font-black uppercase">Operación</th>
                     {COLUMNS.map(c => (
-                      <th key={c.id} className="border border-slate-300 p-1.5 text-right w-[50px] font-black uppercase">
+                      <th key={c.id} className="border border-slate-300 p-2 text-right w-[65px] font-black uppercase">
                         {c.label}
                       </th>
                     ))}
@@ -677,10 +677,41 @@ export default function DailyCashReport() {
                       return (
                         <tr key={t.id || i} className="hover:bg-slate-50 transition-colors border-b border-slate-200">
                           
-                          {/* Columna 1: Tipo de Operación (Contrato vs Cancelación) */}
-                          <td className="border border-slate-300 p-1 text-center font-bold">
+                          {/* Columna 1: Folio */}
+                          <td className="border border-slate-300 p-1.5 font-mono font-bold text-slate-700">
+                            {t.folio}
+                          </td>
+
+                          {/* Columna 2: Cédula */}
+                          <td className="border border-slate-300 p-1.5 font-mono text-slate-700">
+                            {t.cedula}
+                          </td>
+
+                          {/* Columna 3: Cliente */}
+                          <td className="border border-slate-300 p-1.5 font-bold uppercase text-slate-900" title={t.client}>
+                            {t.client}
+                          </td>
+
+                          {/* Columna 4: Asesor / Rol */}
+                          <td className="border border-slate-300 p-1.5 font-semibold uppercase text-slate-600" title={t.seller}>
+                            {t.seller}
+                          </td>
+
+                          {/* Columna 5: Tipo de Servicio (Auto, Moto, Ampliación, etc.) */}
+                          <td className="border border-slate-300 p-1.5 text-center">
                             <span className={cn(
-                              "inline-block px-1.5 py-0.5 rounded text-[6.5pt] font-black uppercase border",
+                              "inline-flex items-center justify-center gap-1 px-2 py-0.5 rounded text-[7pt] font-bold uppercase border",
+                              t.serviceBadgeClass
+                            )}>
+                              <ServiceIcon className="w-3 h-3 shrink-0" />
+                              <span>{t.serviceType}</span>
+                            </span>
+                          </td>
+
+                          {/* Columna 6: Tipo de Operación (Contrato vs Cancelación) */}
+                          <td className="border border-slate-300 p-1.5 text-center font-bold">
+                            <span className={cn(
+                              "inline-block px-2 py-0.5 rounded text-[7pt] font-black uppercase border",
                               isContrato 
                                 ? "bg-blue-100 text-blue-800 border-blue-200" 
                                 : isCancelacion 
@@ -693,43 +724,12 @@ export default function DailyCashReport() {
                             </span>
                           </td>
 
-                          {/* Columna 2: Tipo de Servicio (Auto, Moto, Ampliación, etc.) */}
-                          <td className="border border-slate-300 p-1 text-center">
-                            <span className={cn(
-                              "inline-flex items-center justify-center gap-1 px-1.5 py-0.5 rounded text-[6.5pt] font-bold uppercase border",
-                              t.serviceBadgeClass
-                            )}>
-                              <ServiceIcon className="w-2.5 h-2.5 shrink-0" />
-                              <span>{t.serviceType}</span>
-                            </span>
-                          </td>
-
-                          {/* Columna 3: Folio */}
-                          <td className="border border-slate-300 p-1 font-mono font-bold text-slate-700">
-                            {t.folio}
-                          </td>
-
-                          {/* Columna 4: Cédula */}
-                          <td className="border border-slate-300 p-1 font-mono text-slate-700">
-                            {t.cedula}
-                          </td>
-
-                          {/* Columna 5: Cliente */}
-                          <td className="border border-slate-300 p-1 font-bold uppercase text-slate-900 truncate max-w-[140px]" title={t.client}>
-                            {t.client}
-                          </td>
-
-                          {/* Columna 6: Asesor / Rol */}
-                          <td className="border border-slate-300 p-1 font-semibold uppercase text-slate-600 truncate max-w-[65px]" title={t.seller}>
-                            {t.seller}
-                          </td>
-
                           {/* Columnas de Métodos de Pago */}
                           {COLUMNS.map(c => (
                             <td 
                               key={c.id} 
                               className={cn(
-                                "border border-slate-300 p-1 text-right font-mono",
+                                "border border-slate-300 p-1.5 text-right font-mono",
                                 t.method === c.id ? "font-bold bg-slate-50 text-slate-950" : "text-slate-300"
                               )}
                             >

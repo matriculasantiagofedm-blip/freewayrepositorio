@@ -1,8 +1,10 @@
 export const firebaseConfig = {
-  "projectId": "contracttime3-15048626-b65e6",
-  "appId": "1:1087853695018:web:49ad6d6c26a5a1afde7353",
-  "apiKey": "AIzaSyAQp8xKoYHcggEnssiUmEiBV8rRYyC_89A",
-  "authDomain": "contracttime3-15048626-b65e6.firebaseapp.com",
-  "measurementId": "",
-  "messagingSenderId": "1087853695018"
+  "projectId": "freeway-2026",
+  "appId": "1:37131856187:web:9325e86a93e87ab1fa2f1e",
+  "apiKey": "AIzaSyAZ07JzWNiz433CClPtC6Gjif3tTWp1x0Q",
+  "authDomain": "freeway-2026.firebaseapp.com",
+  "measurementId": "G-R5B5GT0W4F",
+  "messagingSenderId": "37131856187",
+  "storageBucket": "freeway-2026.firebasestorage.app"
 };
+

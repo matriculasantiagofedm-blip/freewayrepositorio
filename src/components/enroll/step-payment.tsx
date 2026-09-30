@@ -45,6 +45,7 @@ export function StepPayment({
   const [yappyLoading, setYappyLoading] = useState(false);
   const [yappyError, setYappyError] = useState<string | null>(null);
   const [scriptLoaded, setScriptLoaded] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Cargar el script del web component de Yappy
   useEffect(() => {
@@ -155,21 +156,46 @@ export function StepPayment({
               <p className="text-xs">Conectando con Yappy...</p>
             </div>
           ) : yappyError ? (
-            <div className="flex flex-col items-center gap-3 text-center">
-              <p className="text-xs text-slate-500 font-medium">
-                📱 Toca el botón para pagar <strong className="text-[#004fb9]">${total.toFixed(2)}</strong> con Yappy
-              </p>
+            <div className="w-full space-y-4">
+              {/* Monto con botón copiar */}
+              <div className="text-center">
+                <p className="text-[11px] text-slate-500 uppercase tracking-wide font-semibold mb-1.5">
+                  Tu monto a pagar
+                </p>
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-4xl font-black text-[#004fb9]">${total.toFixed(2)}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(total.toFixed(2));
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className="flex items-center gap-1 text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 px-2.5 py-1.5 rounded-lg transition-colors"
+                  >
+                    {copied ? '✅ Copiado' : '📋 Copiar'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Instrucciones */}
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 space-y-1.5 text-xs text-slate-600">
+                <p className="font-semibold text-slate-700 mb-1">📋 Pasos para pagar:</p>
+                <p>1. Toca <strong>"Abrir Yappy"</strong> abajo</p>
+                <p>2. En Yappy, <strong>borra el $0.00</strong> y escribe <strong className="text-[#004fb9]">${total.toFixed(2)}</strong></p>
+                <p>3. Ingresa tu celular Yappy y confirma</p>
+                <p>4. Adjunta el comprobante aquí abajo ↓</p>
+              </div>
+
+              {/* Botón abrir Yappy */}
               <a
                 href={yappyDirectLink}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 bg-[#004fb9] hover:bg-[#003da1] text-white font-bold text-sm h-12 px-8 rounded-2xl transition-colors shadow-md"
+                className="flex items-center justify-center gap-2 bg-[#004fb9] hover:bg-[#003da1] text-white font-bold text-sm h-12 rounded-2xl transition-colors shadow-md w-full"
               >
-                💙 Pagar ${total.toFixed(2)} con Yappy
+                💙 Abrir Yappy
               </a>
-              <p className="text-[11px] text-slate-400">
-                Se abrirá Yappy con el monto pre-cargado
-              </p>
             </div>
           ) : yappyToken ? (
             <div className="w-full flex flex-col items-center gap-2">

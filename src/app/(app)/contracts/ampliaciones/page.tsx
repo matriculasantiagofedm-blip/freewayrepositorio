@@ -5,31 +5,36 @@
  * Esta página consulta la colección 'contracts' filtrando por type === 'Ampliaciones'.
  */
 
+import { useMemo } from 'react';
 import { ContractCard } from '@/components/contract-card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft, Repeat, Plus } from 'lucide-react';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
-import { useDb, useUser } from '@/components/firebase-provider';
+import { useDb } from '@/components/firebase-provider';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 import { cn } from '@/lib/utils';
 
 export default function ContractsAmpliacionesPage() {
   const db = useDb();
-  const { user } = useUser();
 
-  // AQUÍ ES DONDE SE RECUPERAN LOS CONTRATOS GUARDADOS
   const contractsQuery = useMemoQuery(() => {
-    if (!db || !user) return null;
-    return query(
-      collection(db, 'contracts'),
-      where('type', '==', 'Ampliaciones'),
-      orderBy('folioNumber', 'desc')
-    );
-  }, [db, user]);
+    if (!db) return null;
+    return query(collection(db, 'contracts'));
+  }, [db]);
 
-  const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
+  const { data: rawContracts, isLoading } = useCollection<Contract>(contractsQuery);
+
+  const contracts = useMemo(() => {
+    if (!rawContracts) return [];
+    return rawContracts
+      .filter((c) => {
+        const t = (c.type || (c as any).contractType || '').trim().toLowerCase();
+        return t.includes('ampliacion') || t.includes('ampliación');
+      })
+      .sort((a, b) => (Number(b.folioNumber) || 0) - (Number(a.folioNumber) || 0));
+  }, [rawContracts]);
 
   return (
     <div className="flex flex-col gap-8">

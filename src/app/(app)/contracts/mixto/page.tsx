@@ -1,27 +1,33 @@
 'use client';
+import { useMemo } from 'react';
 import { ContractCard } from '@/components/contract-card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
 import type { Contract } from '@/lib/types';
-import { useDb, useUser } from '@/components/firebase-provider';
+import { useDb } from '@/components/firebase-provider';
 import { useCollection, useMemoQuery } from '@/hooks/use-firestore';
 
 export default function ContractsMixtoPage() {
   const db = useDb();
-  const { user } = useUser();
 
   const contractsQuery = useMemoQuery(() => {
-    if (!db || !user) return null;
-    return query(
-      collection(db, 'contracts'),
-      where('type', '==', 'Curso Mixto'),
-      orderBy('folioNumber', 'desc')
-    );
-  }, [db, user]);
+    if (!db) return null;
+    return query(collection(db, 'contracts'));
+  }, [db]);
 
-  const { data: contracts, isLoading } = useCollection<Contract>(contractsQuery);
+  const { data: rawContracts, isLoading } = useCollection<Contract>(contractsQuery);
+
+  const contracts = useMemo(() => {
+    if (!rawContracts) return [];
+    return rawContracts
+      .filter((c) => {
+        const t = (c.type || (c as any).contractType || '').trim().toLowerCase();
+        return t.includes('mixto');
+      })
+      .sort((a, b) => (Number(b.folioNumber) || 0) - (Number(a.folioNumber) || 0));
+  }, [rawContracts]);
 
   return (
     <div className="flex flex-col gap-8">

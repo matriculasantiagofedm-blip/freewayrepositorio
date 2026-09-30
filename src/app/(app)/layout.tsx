@@ -80,8 +80,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             href="/dashboard"
             className="flex items-center gap-2 font-semibold"
           >
-            <Image src="/logo.png" alt="ContractTime Logo" width={40} height={40} className="rounded-lg shadow-sm" />
-            <span className="font-headline text-base">ContractTime</span>
+            <Image src="/logo.png" alt="DriveWise Logo" width={40} height={40} className="rounded-lg shadow-sm" />
+            <span className="font-headline text-base">DriveWise</span>
         </Link>
         <nav className="hidden md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6 ml-6">
           <MainNav />
@@ -103,9 +103,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <SheetContent side="left" className="w-[85vw] max-w-[340px] p-0 flex flex-col h-full max-h-[100dvh] bg-white shadow-2xl">
               <SheetTitle className="sr-only">Menú de Navegación</SheetTitle>
               <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center gap-3 shrink-0 bg-slate-50">
-                <Image src="/logo.png" alt="ContractTime Logo" width={36} height={36} className="rounded-lg shadow-sm" />
+                <Image src="/logo.png" alt="DriveWise Logo" width={36} height={36} className="rounded-lg shadow-sm" />
                 <div>
-                  <span className="font-headline text-base font-bold text-slate-900 block">ContractTime</span>
+                  <span className="font-headline text-base font-bold text-slate-900 block">DriveWise</span>
                   <span className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">Menú Principal</span>
                 </div>
               </div>

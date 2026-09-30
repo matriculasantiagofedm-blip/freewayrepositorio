@@ -769,7 +769,6 @@ export function AutoContractForm({ contract, initialData }: { contract?: Contrac
                       <SelectContent>
                         <SelectItem value="Sabados 3:00 pm a 5:00 pm">Sábados 3:00 pm a 5:00 pm</SelectItem>
                         <SelectItem value="Semanal 8:00 am a 10:00 am">Semanal 8:00 am a 10:00 am (Martes a Viernes)</SelectItem>
-                        <SelectItem value="Semanal 10:00 am a 12:00 pm">Semanal 10:00 am a 12:00 pm (Martes a Viernes)</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormItem>

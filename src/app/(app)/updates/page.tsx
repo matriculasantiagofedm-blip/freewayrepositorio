@@ -102,9 +102,16 @@ export default function UpdatesPage() {
     setIsSaving(true);
     try {
       const savedPaymentDataResult = await runTransaction(db, async (transaction) => {
-        const counterRef = doc(db, 'counters', 'update_folio');
+        const counterRef = doc(db, 'counters', 'receipt_folio');
         const counterDoc = await transaction.get(counterRef);
-        let newUpdateFolio = counterDoc.exists() ? counterDoc.data().count + 1 : 1;
+        let newUpdateFolio: number;
+        if (counterDoc.exists()) {
+          newUpdateFolio = counterDoc.data().count + 1;
+        } else {
+          const oldRef = doc(db, 'counters', 'update_folio');
+          const oldDoc = await transaction.get(oldRef);
+          newUpdateFolio = (oldDoc.exists() ? oldDoc.data().count : 0) + 1;
+        }
         transaction.set(counterRef, { count: newUpdateFolio }, { merge: true });
 
         const paymentRef = doc(collection(db, 'update_payments'));

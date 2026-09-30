@@ -1,4 +1,7 @@
+'use client';
 
-// Archivo neutralizado para evitar conflictos de rutas paralelas.
-// El nuevo reporte se encuentra en /informes/daily-cash
-export default function InactivePage() { return null; }
+import DailyCashReport from '../../informes/daily-cash/page';
+
+export default function ReportesNuevosDailyCashPage() {
+  return <DailyCashReport />;
+}

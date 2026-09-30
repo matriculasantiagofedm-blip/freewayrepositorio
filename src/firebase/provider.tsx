@@ -45,8 +45,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   const [role, setRoleState] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
       const storedRoleKey = window.localStorage.getItem('userRoleKey');
-      if (storedRoleKey && roleMapping[storedRoleKey]) {
-        return roleMapping[storedRoleKey];
+      if (storedRoleKey) {
+        return roleMapping[storedRoleKey] || storedRoleKey;
       }
     }
     return null;
@@ -118,7 +118,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   }, [user, role, isUserLoading, firestore]);
 
   const setRole = (roleKey: string) => {
-    const assignedRole = roleMapping[roleKey] || null;
+    const assignedRole = roleMapping[roleKey] || roleKey || null;
     setRoleState(assignedRole);
     if (assignedRole && typeof window !== 'undefined') {
       window.localStorage.setItem('userRoleKey', roleKey);

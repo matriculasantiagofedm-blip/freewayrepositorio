@@ -175,7 +175,7 @@ const enrollmentSchema = z.object({
 });
 
 const THEORETICAL_SCHEDULES = [
-  { id: 'Semanal 10:00 am a 12:00 pm', label: 'Semanal (10:00 AM - 12:00 PM)', desc: 'Martes a Viernes (4 días consecutivos)' },
+  { id: 'Semanal 8:00 am a 10:00 am', label: 'Semanal (8:00 AM - 10:00 AM)', desc: 'Martes a Viernes (4 días consecutivos)' },
   { id: 'Sabados 3:00 pm a 5:00 pm', label: 'Sábados (3:00 PM - 5:00 PM)', desc: '3 sábados consecutivos' }
 ];
 

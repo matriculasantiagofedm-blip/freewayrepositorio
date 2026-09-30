@@ -33,22 +33,28 @@ export default function EditContractPage() {
   if (error || !contract) return <div className="p-8 text-center">Error: Contrato no encontrado.</div>;
 
   const renderForm = () => {
-    const rawType = (contract.type || (contract as any).contractType || '').trim();
-    const normalizedType = rawType.toLowerCase();
+    const rawType = String(
+      contract.type ||
+      (contract as any).contractType ||
+      contract.title ||
+      ''
+    ).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-    if (normalizedType.includes('auto') || normalizedType.includes('mixto')) {
-      return <AutoContractForm contract={contract} />;
-    }
-    if (normalizedType.includes('moto')) {
-      return <MotoContractForm contract={contract} />;
-    }
-    if (normalizedType.includes('amplia')) {
-      return <AmpliacionesContractForm contract={contract} />;
-    }
-    if (normalizedType.includes('practica')) {
+    const rawPlan = String(contract.autoMotoDetails?.coursePlan || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    if (rawType.includes('practica') || rawPlan.includes('basico 8') || rawPlan.includes('plus 10') || rawPlan.includes('premium 12') || rawPlan.includes('reforzamiento')) {
       return <SoloPracticaContractForm contract={contract} />;
     }
-    if (normalizedType.includes('deluxe') || normalizedType.includes('premium')) {
+    if (rawType.includes('auto') || rawType.includes('mixto')) {
+      return <AutoContractForm contract={contract} />;
+    }
+    if (rawType.includes('moto')) {
+      return <MotoContractForm contract={contract} />;
+    }
+    if (rawType.includes('amplia')) {
+      return <AmpliacionesContractForm contract={contract} />;
+    }
+    if (rawType.includes('deluxe') || rawType.includes('premium')) {
       return <DeluxeContractForm contract={contract} />;
     }
 

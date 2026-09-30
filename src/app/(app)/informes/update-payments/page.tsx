@@ -70,7 +70,7 @@ export default function UpdatePaymentsReport() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50">
-                    <TableHead className="text-[10px] font-black uppercase">Folio</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase">Recibo Cobro</TableHead>
                     <TableHead className="text-[10px] font-black uppercase">Cliente</TableHead>
                     <TableHead className="text-[10px] font-black uppercase">Tipo Pago</TableHead>
                     <TableHead className="text-[10px] font-black uppercase text-right">Monto</TableHead>
@@ -79,7 +79,7 @@ export default function UpdatePaymentsReport() {
                 <TableBody>
                   {payments.map((p) => (
                     <TableRow key={p.id} className="border-b">
-                      <TableCell className="text-xs font-black text-purple-600">#{String(p.updateFolio).padStart(6, '0')}</TableCell>
+                      <TableCell className="text-xs font-mono font-black text-purple-600">REC-{String(p.updateFolio).padStart(6, '0')}</TableCell>
                       <TableCell className="text-[10px] font-bold uppercase">{p.clientName}</TableCell>
                       <TableCell className="text-[9px] font-black uppercase">{p.paymentType}</TableCell>
                       <TableCell className="text-xs font-black text-right text-green-600">B/. {Number(p.amount).toFixed(2)}</TableCell>

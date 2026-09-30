@@ -8,38 +8,37 @@ import { DeluxePremiumContractTemplatePreview } from './deluxe-premium-contract-
 export function ContractView({ contract, type }: { contract: Contract, type?: ContractType }) {
 
   const renderContractTemplate = () => {
-    const contractType = type || contract.type;
-    switch(contractType) {
-      case 'Ampliaciones':
-        return <AmpliacionesContractTemplate contract={contract} />;
-      case 'Curso Deluxe':
-        return <DeluxePremiumContractTemplatePreview contract={contract} />;
-      case 'Curso Solo Practica':
-      case 'Curso Auto':
-      case 'Curso Moto':
-      case 'Curso Mixto':
-        return <AutoMotoContractTemplate contract={contract} />;
-      default:
-        return (
-          <Card className="print:shadow-none print:border-none">
-            <CardHeader>
-                <CardTitle className="font-headline text-2xl pt-8">{contract.title || 'Contrato de Servicio'}</CardTitle>
-            </CardHeader>
-            <CardContent className="text-foreground leading-relaxed p-6">
-                <p>Tipo de trámite: {contract.type}</p>
-                <p>Cliente: {contract.clientName}</p>
-                <p>Estado: {contract.status}</p>
-            </CardContent>
-             {contract.createdBy && (
-              <CardFooter className="print:block hidden">
-                  <div className="text-xs text-muted-foreground mt-8">
-                  Confeccionado por: {contract.createdBy}
-                  </div>
-              </CardFooter>
-            )}
-          </Card>
-        );
+    const rawType = String(
+      type ||
+      contract.type ||
+      (contract as any).contractType ||
+      contract.title ||
+      ''
+    ).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    const planStr = String(
+      contract.autoMotoDetails?.coursePlan ||
+      (contract as any).details?.coursePlan ||
+      (contract as any).coursePlan ||
+      ''
+    ).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    const isSoloPractica = 
+      rawType.includes('practica') ||
+      planStr.includes('practica') ||
+      planStr.includes('basico 8') ||
+      planStr.includes('plus 10') ||
+      planStr.includes('reforzamiento') ||
+      (contract.autoMotoDetails as any)?.isSoloPractica === true ||
+      (contract as any)?.isSoloPractica === true;
+
+    if (rawType.includes('amplia')) {
+      return <AmpliacionesContractTemplate contract={contract} />;
     }
+    if (!isSoloPractica && (rawType.includes('deluxe') || rawType.includes('premium'))) {
+      return <DeluxePremiumContractTemplatePreview contract={contract} />;
+    }
+    return <AutoMotoContractTemplate contract={contract} />;
   }
 
   return (

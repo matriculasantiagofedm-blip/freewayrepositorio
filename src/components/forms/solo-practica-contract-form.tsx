@@ -380,11 +380,13 @@ export function SoloPracticaContractForm({ contract, initialData }: { contract?:
       if (isEdit) {
         const contractRef = doc(db, 'contracts', contract.id);
         const updateData = {
+          type: 'Curso Solo Practica',
           clientName: clientName,
           clientEmail: clientEmail,
           status: balance <= 0 ? 'completed' : contract.status,
           autoMotoDetails: {
             ...detailsOnly,
+            isSoloPractica: true,
             paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null,
             practicalClassSchedules: formattedPracticalSchedules,
             balance: balance,
@@ -426,6 +428,7 @@ export function SoloPracticaContractForm({ contract, initialData }: { contract?:
             activatedAt: serverTimestamp(), // Vital para reportes de caja
             autoMotoDetails: {
               ...detailsOnly,
+              isSoloPractica: true,
               initialDownPayment: values.downPayment,
               paymentDeadline: values.paymentDeadline ? Timestamp.fromDate(values.paymentDeadline) : null,
               practicalClassSchedules: formattedPracticalSchedules,

@@ -27,7 +27,7 @@ const ptSans = PT_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "ContractTime - Freeway Escuela de Manejo",
+  title: "DriveWise - Freeway Escuela de Manejo",
   description: "Gestión inteligente de contratos y servicios viales",
   icons: {
     icon: "/logo.png",
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "ContractTime",
+    title: "DriveWise",
   },
   other: {
     "mobile-web-app-capable": "yes",

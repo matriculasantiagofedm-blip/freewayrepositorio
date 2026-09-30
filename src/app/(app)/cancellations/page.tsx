@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useDb, useUser } from '@/components/firebase-provider';
-import { collection, query, where, getDocs, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, getDoc, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import type { Contract, Payment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Search, Printer, Save, PlusCircle, UserPlus } from 'lucide-react';
@@ -53,10 +53,25 @@ export default function CancellationsPage() {
   const [manualPaymentMethod, setManualPaymentMethod] = useState('cash');
   const [manualPaymentSaved, setManualPaymentSaved] = useState(false);
   const [manualSavedPaymentData, setManualSavedPaymentData] = useState<Partial<Payment> | null>(null);
+  const [nextReceiptNo, setNextReceiptNo] = useState<string>('');
+
+  const fetchNextReceipt = async () => {
+    if (!db) return;
+    try {
+      const snap = await getDoc(doc(db, 'counters', 'receipt_folio'));
+      let nextNum = snap.exists() ? (snap.data().count || 0) + 1 : 1;
+      setNextReceiptNo(`REC-${String(nextNum).padStart(6, '0')}`);
+    } catch (e) {
+      console.error('Error al obtener próximo recibo:', e);
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (db) {
+      fetchNextReceipt();
+    }
+  }, [db]);
   
   const resetForm = () => {
     setStudentIdNumber('');
@@ -150,10 +165,17 @@ export default function CancellationsPage() {
     setIsSaving(true);
     try {
       const savedPaymentDataResult = await runTransaction(db, async (transaction) => {
-          const counterRef = doc(db, 'counters', 'cancellation_folio');
+          const counterRef = doc(db, 'counters', 'receipt_folio');
           const counterDoc = await transaction.get(counterRef);
           
-          let newCancellationFolio = counterDoc.exists() ? counterDoc.data().count + 1 : 1;
+          let newCancellationFolio: number;
+          if (counterDoc.exists()) {
+            newCancellationFolio = counterDoc.data().count + 1;
+          } else {
+            const oldRef = doc(db, 'counters', 'cancellation_folio');
+            const oldDoc = await transaction.get(oldRef);
+            newCancellationFolio = (oldDoc.exists() ? oldDoc.data().count : 0) + 1;
+          }
           transaction.set(counterRef, { count: newCancellationFolio }, { merge: true });
 
           const paymentRef = doc(collection(db, 'cancellation_payments'));
@@ -214,6 +236,7 @@ export default function CancellationsPage() {
       } else if (contract) {
           setSavedPayments(prev => ({ ...prev, [contract.id]: savedPaymentDataResult }));
       }
+      fetchNextReceipt();
       toast({ title: 'Pago Registrado', description: 'El pago ha sido guardado exitosamente.' });
 
     } catch (error) {
@@ -292,14 +315,28 @@ export default function CancellationsPage() {
               <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {foundContracts.map(contract => (
                       <div key={contract.id} className="animate-in fade-in-50 space-y-4 border p-4 rounded-lg">
-                          <div className='flex flex-col gap-1'>
-                            <p className="font-bold">Contrato N° {String(contract.folioNumber).padStart(6, '0')}</p>
-                            <p className="text-xs text-muted-foreground">{contract.type}</p>
+                          <div className='flex flex-col gap-1 border-b pb-2'>
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-black uppercase text-slate-500">Folio Contrato:</span>
+                              <span className="font-mono font-extrabold text-xs text-slate-800">CONTRATO-{String(contract.folioNumber).padStart(6, '0')}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-black uppercase text-blue-600">N° Recibo Cobro:</span>
+                              <span className="font-mono font-black text-xs text-blue-700">{savedPayments[contract.id]?.cancellationFolio ? `REC-${String(savedPayments[contract.id].cancellationFolio).padStart(6, '0')}` : (nextReceiptNo || 'Generando...')}</span>
+                            </div>
+                            <p className="text-xs font-semibold text-slate-600 mt-1">{contract.type}</p>
                           </div>
                           
-                          <div className="bg-muted/30 p-2 rounded-md">
-                              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Saldo Pendiente</p>
-                              <p className="font-bold text-xl text-destructive">B/. {getBalance(contract).toFixed(2)}</p>
+                          <div className="bg-muted/30 p-2 rounded-md flex justify-between items-center">
+                              <div>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Saldo Pendiente</p>
+                                <p className="font-black text-lg text-destructive">B/. {getBalance(contract).toFixed(2)}</p>
+                              </div>
+                              {savedPayments[contract.id] && (
+                                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-1 rounded">
+                                  Guardado: REC-{String(savedPayments[contract.id].cancellationFolio).padStart(6, '0')}
+                                </span>
+                              )}
                           </div>
 
                           <div className='space-y-3'>

@@ -19,7 +19,7 @@ const Checkbox = ({ checked }: { checked: boolean }) => (
 );
 
 export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
-  const details = contract.autoMotoDetails;
+  const details = contract.autoMotoDetails || (contract as any).details || (contract as any).soloPracticaDetails;
   const creationDate = toDate(contract.createdAt);
   const paymentDeadline = toDate(details?.paymentDeadline);
   
@@ -30,15 +30,42 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
     return format(d, 'dd/MM/yyyy', { locale: es });
   };
 
-  const isSoloPractica = contract.type === 'Curso Solo Practica';
-  const isAutoContract = contract.type === 'Curso Auto';
-  const isMotoContract = contract.type === 'Curso Moto';
-  const isMixtoContract = contract.type === 'Curso Mixto';
+  const typeStr = String(
+    contract.type ||
+    (contract as any).contractType ||
+    contract.title ||
+    ''
+  ).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  const planStr = String(
+    details?.coursePlan ||
+    (contract as any).coursePlan ||
+    ''
+  ).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  const isSoloPractica = 
+    typeStr.includes('practica') || 
+    typeStr.includes('solo practica') ||
+    planStr.includes('practica') ||
+    planStr.includes('basico') ||
+    planStr.includes('plus') ||
+    planStr.includes('reforzamiento') ||
+    planStr.includes('8 hrs') ||
+    planStr.includes('10 hrs') ||
+    planStr.includes('12 hrs') ||
+    planStr.includes('2 hrs') ||
+    planStr.includes('4 hrs') ||
+    (details as any)?.isSoloPractica === true ||
+    (contract as any)?.isSoloPractica === true;
+
+  const isAutoContract = !isSoloPractica && typeStr.includes('auto');
+  const isMotoContract = !isSoloPractica && typeStr.includes('moto');
+  const isMixtoContract = !isSoloPractica && typeStr.includes('mixto');
   
   const licenseStr = details?.licenseCategory || '';
 
   // Lógica de validación de servicios para evitar duplicidad o errores de agenda
-  const showAutoSessions = isAutoContract || isMixtoContract || (isMotoContract && details?.additionalService === 'Curso Plus Auto 10Hrs') || (isSoloPractica && (details as any)?.vehicleType === 'Auto');
+  const showAutoSessions = isAutoContract || isMixtoContract || (isMotoContract && details?.additionalService === 'Curso Plus Auto 10Hrs') || (isSoloPractica && (details as any)?.vehicleType !== 'Motocicleta');
   const showMotoSessions = isMotoContract || isMixtoContract || (isAutoContract && details?.additionalService === 'Plus Moto 10Hrs') || (isSoloPractica && (details as any)?.vehicleType === 'Motocicleta');
 
   return (
@@ -49,7 +76,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
             <p className="text-[7pt] font-bold uppercase tracking-[0.2em]">Escuela de Manejo, S.A.</p>
         </div>
         <div className="text-center flex-1 px-4">
-            <h2 className="font-bold text-[11pt] uppercase">CONTRATO POR SERVICIO DE CURSO DE MANEJO</h2>
+            <h2 className="font-bold text-[11pt] uppercase">{isSoloPractica ? 'CONTRATO DE CAPACITACIÓN PRÁCTICA DE MANEJO' : 'CONTRATO POR SERVICIO DE CURSO DE MANEJO'}</h2>
         </div>
         <div className="text-right">
           <p className="text-[7pt] uppercase font-bold text-gray-500">Folio de Registro</p>
@@ -60,11 +87,11 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
 
 
       <div className="text-justify mb-3">
-        La empresa <Value>FREEWAY ESCUELA DE MANEJO S.A.</Value>, con ubicación en La Chorrera, Vía Interamericana, Costa Verde, PH Green Plaza, Local #20, debidamente inscrita <Value>RUC 155628022-2-2016 DV 2</Value>, en adelante denominada <Value>LA EMPRESA</Value>, se compromete a brindar a EL ESTUDIANTE la capacitación teórico-práctica del curso “CURSO DE MANEJO”, que incluye la Certificación según la categoría seleccionada. Entre <Value>{contract.clientName?.toUpperCase()}</Value>, identificado con <Value>{details?.idType || 'C.I.P.'}</Value> N.° <Value>{details?.studentIdNumber}</Value>, con domicilio en <Value>{details?.studentAddress?.toUpperCase()}</Value>, teléfonos: <Value>{details?.studentPhone1}</Value> / <Value>{details?.studentPhone2 || '---'}</Value>, correo electrónico: <Value>{contract.clientEmail}</Value>, en adelante denominado <Value>EL ESTUDIANTE</Value>.
+        La empresa <Value>FREEWAY ESCUELA DE MANEJO S.A.</Value>, con ubicación en La Chorrera, Vía Interamericana, Costa Verde, PH Green Plaza, Local #20, debidamente inscrita <Value>RUC 155628022-2-2016 DV 2</Value>, en adelante denominada <Value>LA EMPRESA</Value>, se compromete a brindar a EL ESTUDIANTE {isSoloPractica ? <>la capacitación práctica de conducción del <Value>CURSO DE SOLO PRÁCTICA{details?.coursePlan ? ` (${details.coursePlan.toUpperCase()})` : ''}</Value>.</> : <>la capacitación teórico-práctica del curso “CURSO DE MANEJO”, que incluye la Certificación según la categoría seleccionada.</>} Entre <Value>{contract.clientName?.toUpperCase()}</Value>, identificado con <Value>{details?.idType || 'C.I.P.'}</Value> N.° <Value>{details?.studentIdNumber}</Value>, con domicilio en <Value>{details?.studentAddress?.toUpperCase()}</Value>, teléfonos: <Value>{details?.studentPhone1}</Value> / <Value>{details?.studentPhone2 || '---'}</Value>, correo electrónico: <Value>{contract.clientEmail}</Value>, en adelante denominado <Value>EL ESTUDIANTE</Value>.
       </div>
 
       <h3 className="text-center font-bold text-[9pt] mb-1 uppercase tracking-widest bg-gray-100 py-0.5">DECLARAN:</h3>
-      <p className="text-justify mb-2">Ambas partes convienen celebrar este contrato en el cual la empresa se compromete a brindar al cliente, un servicio de capacitación y adiestramiento teórico y práctico relacionado con el aprendizaje de conducción de vehículos a motor. El mismo se regirá bajo los términos y condiciones que se detallan en las siguientes cláusulas:</p>
+      <p className="text-justify mb-2">Ambas partes convienen celebrar este contrato en el cual la empresa se compromete a brindar al cliente, un servicio de capacitación y adiestramiento {isSoloPractica ? 'práctico' : 'teórico y práctico'} relacionado con el aprendizaje de conducción de vehículos a motor. El mismo se regirá bajo los términos y condiciones que se detallan en las siguientes cláusulas:</p>
 
       <div className="space-y-2">
         <section>
@@ -77,7 +104,13 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
         <section className="border border-gray-200 p-2 rounded-sm">
           <h4 className="font-bold uppercase mb-1 border-b border-gray-200 pb-0.5">CLÁUSULA SEGUNDA - DETALLES DEL CURSO</h4>
           <div className="grid grid-cols-1 gap-y-1 text-[8pt]">
-            <div className="space-y-1">
+            {isSoloPractica ? (
+              <div className="space-y-1">
+                <p>1. Paquete / Plan Seleccionado: <Value>{details?.coursePlan || 'Solo Práctica'}</Value></p>
+                <p>2. Tipo de Vehículo: <Value>{(details as any)?.vehicleType || 'Auto'}</Value> | Transmisión del vehículo: Automático <Checkbox checked={details?.vehicleTransmission === 'Automático'} /> Manual <Checkbox checked={details?.vehicleTransmission === 'Manual' || details?.vehicleTransmission === 'Moto'} /></p>
+              </div>
+            ) : (
+              <div className="space-y-1">
                 <p>1. Categoría de licencia a aplicar: 
                     A, B <Checkbox checked={licenseStr === 'A, B'} /> 
                     A, C <Checkbox checked={licenseStr === 'A, C'} /> 
@@ -90,15 +123,18 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                       Automático <Checkbox checked={details?.vehicleTransmission === 'Automático'} /> 
                       Manual <Checkbox checked={details?.vehicleTransmission === 'Manual' || details?.vehicleTransmission === 'Moto'} />
                   </p>
-                  {!isSoloPractica && <p>3. Horario clases teóricas: <span className="font-semibold underline uppercase">{details?.theoreticalClassSchedule || 'PENDIENTE'}</span></p>}
+                  <p>3. Horario clases teóricas: <span className="font-semibold underline uppercase">{details?.theoreticalClassSchedule || 'PENDIENTE'}</span></p>
                 </div>
-            </div>
-            <div className="space-y-1">
-                {!isSoloPractica && <div className="text-[7.5pt] text-gray-600">{(details?.theoreticalClassDates || []).map((d, i) => formatDateStr(d)).join(' | ')}</div>}
-            </div>
+              </div>
+            )}
+            {!isSoloPractica && (
+              <div className="space-y-1">
+                <div className="text-[7.5pt] text-gray-600">{(details?.theoreticalClassDates || []).map((d: any, i: number) => formatDateStr(d)).join(' | ')}</div>
+              </div>
+            )}
           </div>
           <div className="mt-2 pt-1 border-t border-gray-200">
-            <p className="font-bold mb-1 uppercase text-[7.5pt]">4. Propuesta de Horario Práctico:</p>
+            <p className="font-bold mb-1 uppercase text-[7.5pt]">{isSoloPractica ? '3.' : '4.'} Propuesta de Horario Práctico:</p>
             
             {/* AGENDA DE AUTO - Filtrada por servicio */}
             {showAutoSessions && details?.practicalClassSchedules && details.practicalClassSchedules.length > 0 && (
@@ -107,7 +143,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                         <p className="text-[7pt] font-black italic underline mb-0.5 uppercase">Sesiones de Auto:</p>
                     )}
                     <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 text-[8pt]">
-                        {details.practicalClassSchedules.map((s, index) => (
+                        {details.practicalClassSchedules.map((s: any, index: number) => (
                             <div key={index} className="flex items-center justify-between border-b border-dotted border-gray-300">
                                 <span className="font-bold">Sesión {index + 1}:</span>
                                 <span>{formatDateStr(s.date)}</span>
@@ -125,7 +161,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                         <p className="text-[7pt] font-black italic underline mb-0.5 uppercase">Sesiones de Moto:</p>
                     )}
                     <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 text-[8pt]">
-                        {details.motoPracticalClassSchedules.map((s, index) => (
+                        {details.motoPracticalClassSchedules.map((s: any, index: number) => (
                             <div key={index} className="flex items-center justify-between border-b border-dotted border-gray-300">
                                 <span className="font-bold">Sesión {index + 1}:</span>
                                 <span>{formatDateStr(s.date)}</span>
@@ -154,7 +190,7 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
               </li>
               <li className="flex items-start gap-1.5">
                 <span className="mt-0.5 shrink-0">▪</span>
-                <span>Si EL ESTUDIANTE falta a una o más de una clase práctica sin justificar médicamente, <strong>no tendrá derecho a certificado</strong> y deberá pagar un <strong>recargo de $20.00 por cada clase perdida</strong> para poder reprogramarla.</span>
+                <span>Si EL ESTUDIANTE falta a una o más de una clase práctica sin justificar médicamente, {isSoloPractica ? 'perderá la clase' : 'no tendrá derecho a certificado'} y deberá pagar un <strong>recargo de $20.00 por cada clase perdida</strong> para poder reprogramarla.</span>
               </li>
             </ul>
           </div>
@@ -210,25 +246,27 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
             </ul>
           </div>
 
-          {/* CLÁUSULA DÉCIMA */}
-          <div>
-            <p className="font-bold uppercase mb-0.5">CLÁUSULA DÉCIMA - CERTIFICACIÓN</p>
-            <p className="mb-0.5">El certificado de aprobación del curso será entregado únicamente si EL ESTUDIANTE:</p>
-            <ol className="list-decimal pl-5 space-y-0.5">
-              <li>Está paz y salvo en sus pagos.</li>
-              <li>Ha completado la totalidad del curso teórico y práctico.</li>
-            </ol>
-          </div>
+          {/* CLÁUSULA DÉCIMA (o DÉCIMA PRIMERA en estándar) */}
+          {!isSoloPractica && (
+            <div>
+              <p className="font-bold uppercase mb-0.5">CLÁUSULA DÉCIMA - CERTIFICACIÓN</p>
+              <p className="mb-0.5">El certificado de aprobación del curso será entregado únicamente si EL ESTUDIANTE:</p>
+              <ol className="list-decimal pl-5 space-y-0.5">
+                <li>Está paz y salvo en sus pagos.</li>
+                <li>Ha completado la totalidad del curso teórico y práctico.</li>
+              </ol>
+            </div>
+          )}
 
-          {/* CLÁUSULA DÉCIMA PRIMERA */}
+          {/* VIGENCIA DEL CURSO */}
           <div>
-            <p className="font-bold uppercase mb-0.5">CLÁUSULA DÉCIMA PRIMERA - VIGENCIA DEL CURSO</p>
+            <p className="font-bold uppercase mb-0.5">{isSoloPractica ? 'CLÁUSULA DÉCIMA' : 'CLÁUSULA DÉCIMA PRIMERA'} - VIGENCIA DEL CURSO</p>
             <p>Si EL ESTUDIANTE no establece contacto para finalizar su curso en un plazo de <strong>tres (3) meses</strong> desde la fecha de inicio, se entenderá que renuncia a continuar, sin derecho a devolución del dinero ni a reclamos posteriores.</p>
           </div>
         </div>
 
         <section className="mt-2 pt-2 border-t-2 border-black">
-            <h3 className="font-bold uppercase text-center mb-1 text-[8.5pt]">CLÁUSULA DÉCIMA SEGUNDA - ACEPTACIÓN</h3>
+            <h3 className="font-bold uppercase text-center mb-1 text-[8.5pt]">{isSoloPractica ? 'CLÁUSULA DÉCIMA PRIMERA' : 'CLÁUSULA DÉCIMA SEGUNDA'} - ACEPTACIÓN</h3>
             <p className="text-justify text-[8pt] mb-2">Ambas partes declaran haber leído, entendido y aceptado el presente contrato, firmándolo en señal de conformidad.</p>
             <p className="text-[8pt] mb-6">
               En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de panamá, a los{' '}

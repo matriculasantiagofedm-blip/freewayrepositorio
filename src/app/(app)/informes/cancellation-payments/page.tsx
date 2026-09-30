@@ -70,18 +70,18 @@ export default function CancellationPaymentsReport() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50">
-                    <TableHead className="text-[10px] font-black uppercase">Folio</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase">Recibo Cobro</TableHead>
                     <TableHead className="text-[10px] font-black uppercase">Estudiante</TableHead>
-                    <TableHead className="text-[10px] font-black uppercase">Contrato</TableHead>
+                    <TableHead className="text-[10px] font-black uppercase">Folio Contrato</TableHead>
                     <TableHead className="text-[10px] font-black uppercase text-right">Cobro</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {payments.map((p) => (
                     <TableRow key={p.id} className="border-b">
-                      <TableCell className="text-xs font-black text-amber-600">#{String(p.cancellationFolio).padStart(6, '0')}</TableCell>
+                      <TableCell className="text-xs font-mono font-black text-amber-600">REC-{String(p.cancellationFolio).padStart(6, '0')}</TableCell>
                       <TableCell className="text-[10px] font-bold uppercase truncate max-w-[150px]">{p.clientName}</TableCell>
-                      <TableCell className="text-[9px] font-bold text-slate-400">Ref: {String(p.contractFolio || 'MANUAL').padStart(6, '0')}</TableCell>
+                      <TableCell className="text-[10px] font-mono font-bold text-slate-600">CONTRATO-{String(p.contractFolio || 'S-N').padStart(6, '0')}</TableCell>
                       <TableCell className="text-xs font-black text-right text-green-600">B/. {Number(p.amount).toFixed(2)}</TableCell>
                     </TableRow>
                   ))}

@@ -58,10 +58,10 @@ function AllContractsContent() {
     setMounted(true);
   }, []);
 
-  const contractsQuery = useMemo(() => {
-    if (!db || !user) return null;
+  const contractsQuery = useMemoQuery(() => {
+    if (!db) return null;
     return query(collection(db, 'contracts'));
-  }, [db, user]);
+  }, [db]);
 
   const { data: rawContracts, isLoading } = useCollection<Contract>(contractsQuery);
 
@@ -78,7 +78,7 @@ function AllContractsContent() {
   }, [rawContracts]);
 
   const filteredContracts = useMemo(() => {
-    if (!allContracts || !mounted) return [];
+    if (!allContracts) return [];
     return allContracts.filter((contract) => {
       if (contract.isManualPrint) return false;
 
@@ -98,9 +98,7 @@ function AllContractsContent() {
       }
       return true;
     });
-  }, [allContracts, searchTerm, filter, selectedDate, mounted]);
-
-  if (!mounted) return null;
+  }, [allContracts, searchTerm, filter, selectedDate]);
 
   const getTitle = () => {
       if (filter === 'overdue') return 'Contratos por Cobrar (Saldos)';
@@ -108,7 +106,7 @@ function AllContractsContent() {
       return 'Listado Global de Contratos';
   };
 
-  const showActions = role === 'Administrador' || role === 'Ventas' || role === 'Ventas Externas';
+  const showActions = true;
 
   return (
     <div className="flex flex-col gap-8">

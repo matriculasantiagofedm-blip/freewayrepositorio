@@ -84,7 +84,7 @@ export default function Home() {
             </div>
           </div>
           <h1 className="font-headline text-4xl font-bold tracking-tight text-slate-900">
-            Contract<span className="text-primary">Time</span>
+            Drive<span className="text-primary">Wise</span>
           </h1>
           <p className="text-lg font-medium text-slate-600 uppercase tracking-tighter">
             Freeway Escuela de Manejo, S.A.

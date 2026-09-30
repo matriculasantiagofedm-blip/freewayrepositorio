@@ -16,7 +16,8 @@ import {
   ClipboardList,
   Package,
   Landmark,
-  Globe
+  Globe,
+  Receipt
 } from 'lucide-react';
 import { useCurrentRole } from '@/hooks/use-current-role';
 
@@ -25,6 +26,15 @@ export default function ReportsIndexPage() {
   const isAdmin = role === 'Administrador';
 
   const reportCards = [
+    {
+      title: 'Listado de Recibos',
+      description: 'Registro unificado de todos los recibos emitidos (Contratos, Abonos, Trámites y Libros).',
+      href: '/informes/recibos',
+      icon: Receipt,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+      roles: ['Administrador', 'Ventas', 'Ventas Externas', 'SuperAdmin', 'Owner', 'Dueño']
+    },
     {
       title: 'Inscripciones Web Directas',
       description: 'Reporte exclusivo de matrículas recibidas desde la página web (PayPal/Yappy/Web).',

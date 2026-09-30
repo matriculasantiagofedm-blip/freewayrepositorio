@@ -82,17 +82,18 @@ export default function BookSalesPage() {
       const paymentDataToSave: Partial<BookSalePayment> = {};
 
       await runTransaction(db, async (transaction) => {
-        const counterRef = doc(db, 'counters', 'book_sale_folio');
+        const counterRef = doc(db, 'counters', 'receipt_folio');
         const counterDoc = await transaction.get(counterRef);
         
-        let newBookSaleFolio;
-        if (!counterDoc.exists()) {
-          newBookSaleFolio = 1;
-          transaction.set(counterRef, { count: newBookSaleFolio });
-        } else {
+        let newBookSaleFolio: number;
+        if (counterDoc.exists()) {
           newBookSaleFolio = counterDoc.data().count + 1;
-          transaction.update(counterRef, { count: newBookSaleFolio });
+        } else {
+          const oldRef = doc(db, 'counters', 'book_sale_folio');
+          const oldDoc = await transaction.get(oldRef);
+          newBookSaleFolio = (oldDoc.exists() ? oldDoc.data().count : 0) + 1;
         }
+        transaction.set(counterRef, { count: newBookSaleFolio }, { merge: true });
 
         const paymentRef = doc(collection(db, 'book_sale_payments'));
         const paymentData = {

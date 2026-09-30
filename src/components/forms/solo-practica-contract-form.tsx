@@ -415,7 +415,7 @@ export function SoloPracticaContractForm({ contract, initialData }: { contract?:
           const contractRef = doc(collection(db, 'contracts'));
           createdId = contractRef.id;
           transaction.set(contractRef, {
-            title: `Solo Práctica - Folio ${nextFolio}`,
+            title: `${values.coursePlan || 'Solo Práctica'} - Folio ${nextFolio}`,
             clientName: clientName,
             clientEmail: clientEmail,
             clientId: clientRef.id,

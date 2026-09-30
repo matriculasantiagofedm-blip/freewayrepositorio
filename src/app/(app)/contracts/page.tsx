@@ -58,7 +58,7 @@ function AllContractsContent() {
     setMounted(true);
   }, []);
 
-  const contractsQuery = useMemoQuery(() => {
+  const contractsQuery = useMemo(() => {
     if (!db) return null;
     return query(collection(db, 'contracts'));
   }, [db]);

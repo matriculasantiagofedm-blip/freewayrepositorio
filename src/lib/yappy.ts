@@ -8,8 +8,8 @@
  */
 
 const YAPPY_API_URL = process.env.YAPPY_API_URL || 'https://apipagosbg.bgeneral.cloud';
-const YAPPY_MERCHANT_ID = process.env.YAPPY_MERCHANT_ID || '';
-const YAPPY_SECRET_KEY = process.env.YAPPY_SECRET_KEY || '';
+const YAPPY_MERCHANT_ID = process.env.YAPPY_MERCHANT_ID || '4ef48e87-9b32-4360-a3be-f0190f678cb2';
+const YAPPY_SECRET_KEY = process.env.YAPPY_SECRET_KEY || 'WVBfRkQ0QkU4Q0UtQkU2Qy0zQThDLUJGQjctQkREQjI3ODdGRjFFLjRlZjQ4ZTg3LTliMzItNDM2MC1hM2JlLWYwMTkwZjY3OGNiMg==';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://contractimefedm.online';
 
 // ─── Paso 1: Validar comercio y obtener token de autenticación ────────────────

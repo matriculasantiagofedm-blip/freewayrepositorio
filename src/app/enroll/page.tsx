@@ -170,7 +170,7 @@ const enrollmentSchema = z.object({
     })
   ).optional(),
   practicalType: z.enum(['semanal', 'sabatino']).default('semanal'),
-  paymentType: z.enum(['cash', 'yappy', 'cubo']).default('yappy'),
+  paymentType: z.enum(['yappy']).default('yappy'),
   yappyReference: z.string().optional(),
 });
 

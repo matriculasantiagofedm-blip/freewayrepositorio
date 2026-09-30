@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { motion } from 'framer-motion';
-import { UploadCloud, FileImage, Trash2, Smartphone, ShieldCheck, Loader2, AlertCircle } from 'lucide-react';
+import { UploadCloud, FileImage, Trash2, Smartphone, ShieldCheck, Loader2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
@@ -59,10 +59,15 @@ export function StepPayment({
     };
   }, []);
 
+  // Link directo con monto pre-cargado (fallback si API no está disponible)
+  const yappyDirectLink = `https://link.yappy.com.pa/stc/dgXr5v%2BGA2xDgGKBkz%2BnBhSk16Vdr9BZvaim7nGhYrA%3D?amount=${total.toFixed(2)}`;
+
   // Obtener token de Yappy al montar el componente
   useEffect(() => {
-    if (!total || !folioNumber) return;
-    const orderId = String(folioNumber).padStart(6, '0');
+    if (!total) return;
+    const orderId = folioNumber
+      ? String(folioNumber).padStart(6, '0')
+      : `WEB-${Date.now()}`;
 
     setYappyLoading(true);
     setYappyError(null);
@@ -86,7 +91,7 @@ export function StepPayment({
       })
       .catch((err) => {
         console.error('[Yappy]', err);
-        setYappyError('No se pudo conectar con Yappy. Usa el enlace directo abajo.');
+        setYappyError('fallback');
       })
       .finally(() => setYappyLoading(false));
   }, [total, folioNumber]);
@@ -150,17 +155,21 @@ export function StepPayment({
               <p className="text-xs">Conectando con Yappy...</p>
             </div>
           ) : yappyError ? (
-            <div className="flex flex-col items-center gap-2 text-center">
-              <AlertCircle className="w-5 h-5 text-amber-500" />
-              <p className="text-xs text-slate-600">{yappyError}</p>
+            <div className="flex flex-col items-center gap-3 text-center">
+              <p className="text-xs text-slate-500 font-medium">
+                📱 Toca el botón para pagar <strong className="text-[#004fb9]">${total.toFixed(2)}</strong> con Yappy
+              </p>
               <a
-                href="https://link.yappy.com.pa/stc/dgXr5v%2BGA2xDgGKBkz%2BnBhSk16Vdr9BZvaim7nGhYrA%3D"
+                href={yappyDirectLink}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 bg-[#004fb9] hover:bg-[#003da1] text-white font-semibold text-xs h-10 px-5 rounded-xl transition-colors"
+                className="inline-flex items-center gap-2 bg-[#004fb9] hover:bg-[#003da1] text-white font-bold text-sm h-12 px-8 rounded-2xl transition-colors shadow-md"
               >
-                Pagar con Yappy →
+                💙 Pagar ${total.toFixed(2)} con Yappy
               </a>
+              <p className="text-[11px] text-slate-400">
+                Se abrirá Yappy con el monto pre-cargado
+              </p>
             </div>
           ) : yappyToken ? (
             <div className="w-full flex flex-col items-center gap-2">

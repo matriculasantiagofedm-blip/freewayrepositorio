@@ -2,6 +2,9 @@
  * Yappy Botón de Pago — Banco General
  * API: https://apipagosbg.bgeneral.cloud
  * Docs: comercial.yappy.com.pa
+ *
+ * Respuesta validate/merchant:
+ * { status: { code, description }, body: { token, epochTime } }
  */
 
 const YAPPY_API_URL = process.env.YAPPY_API_URL || 'https://apipagosbg.bgeneral.cloud';
@@ -9,8 +12,8 @@ const YAPPY_MERCHANT_ID = process.env.YAPPY_MERCHANT_ID || '';
 const YAPPY_SECRET_KEY = process.env.YAPPY_SECRET_KEY || '';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://contractimefedm.online';
 
-// ─── Validar comercio y obtener token ────────────────────────────────────────
-export async function yappyValidateMerchant(): Promise<string> {
+// ─── Paso 1: Validar comercio y obtener token de autenticación ────────────────
+export async function yappyValidateMerchant(): Promise<{ token: string; epochTime: number }> {
   const res = await fetch(`${YAPPY_API_URL}/payments/validate/merchant`, {
     method: 'POST',
     headers: {
@@ -21,6 +24,7 @@ export async function yappyValidateMerchant(): Promise<string> {
       merchantId: YAPPY_MERCHANT_ID,
       urlDomain: APP_URL,
     }),
+    cache: 'no-store',
   });
 
   if (!res.ok) {
@@ -29,77 +33,80 @@ export async function yappyValidateMerchant(): Promise<string> {
   }
 
   const data = await res.json();
-  // El token puede venir como data.token o data.access_token
-  const token = data.token || data.access_token || data.data?.token;
-  if (!token) throw new Error('Yappy no devolvió token de autenticación');
-  return token;
+  // La respuesta tiene estructura: { status, body: { token, epochTime } }
+  const token = data?.body?.token;
+  const epochTime = data?.body?.epochTime ?? Math.floor(Date.now() / 1000);
+
+  if (!token) throw new Error(`Yappy no devolvió token. Respuesta: ${JSON.stringify(data)}`);
+  return { token, epochTime };
 }
 
-// ─── Crear orden de pago ──────────────────────────────────────────────────────
+// ─── Paso 2: Crear orden de pago (payment-wc) ─────────────────────────────────
 export interface YappyOrderPayload {
-  orderId: string;       // Folio del contrato (ej: "000520")
-  amount: number;        // Monto en USD (ej: 65.00)
-  description: string;   // Descripción del servicio
-  successUrl?: string;   // URL de retorno al completar
-  failureUrl?: string;   // URL de retorno al cancelar
+  orderId: string;      // Folio (alfanumérico, max 15 chars)
+  amount: number;       // Monto en USD
+  description?: string;
+  aliasYappy?: string;  // Celular Yappy del cliente (opcional en producción)
 }
 
 export interface YappyOrderResponse {
-  token: string;         // Token para el web component
-  redirectUrl?: string;  // URL de pago alternativa
-  orderId: string;
+  token: string;        // Token para el web component btn-yappy
+  transactionId?: string;
+  documentName?: string;
 }
 
 export async function yappyCreateOrder(payload: YappyOrderPayload): Promise<YappyOrderResponse> {
-  // 1. Obtener token de autenticación
-  const authToken = await yappyValidateMerchant();
+  // Paso 1: obtener token de auth
+  const { token: authToken, epochTime } = await yappyValidateMerchant();
 
-  // 2. Crear la orden de pago
-  const res = await fetch(`${YAPPY_API_URL}/payments/order`, {
+  // Paso 2: crear la orden con el endpoint correcto
+  const orderBody: Record<string, string | number | null | undefined> = {
+    merchantId: YAPPY_MERCHANT_ID,
+    orderId: payload.orderId.slice(0, 15), // máx 15 chars
+    domain: APP_URL,
+    paymentDate: epochTime,
+    ipnUrl: `${APP_URL}/api/yappy/webhook`,
+    discount: '0.00',
+    taxes: '0.00',
+    subtotal: payload.amount.toFixed(2),
+    total: payload.amount.toFixed(2),
+  };
+
+  if (payload.aliasYappy) {
+    orderBody.aliasYappy = payload.aliasYappy;
+  }
+
+  const res = await fetch(`${YAPPY_API_URL}/payments/payment-wc`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${authToken}`,
+      'Authorization': authToken,   // Sin "Bearer"
     },
-    body: JSON.stringify({
-      merchantId: YAPPY_MERCHANT_ID,
-      orderId: payload.orderId,
-      amount: payload.amount.toFixed(2),
-      description: payload.description,
-      successUrl: payload.successUrl || `${APP_URL}/enroll?status=success`,
-      failureUrl: payload.failureUrl || `${APP_URL}/enroll?status=error`,
-      webhookUrl: `${APP_URL}/api/yappy/webhook`,
-    }),
+    body: JSON.stringify(orderBody),
+    cache: 'no-store',
   });
 
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`Yappy create order error (${res.status}): ${err}`);
+    throw new Error(`Yappy payment-wc error (${res.status}): ${err}`);
   }
 
   const data = await res.json();
-  const token = data.token || data.data?.token || data.checkoutToken;
-  if (!token) throw new Error('Yappy no devolvió token de checkout');
+  const orderToken = data?.body?.token || data?.body?.documentName;
+  if (!orderToken) throw new Error(`Yappy payment-wc sin token. Respuesta: ${JSON.stringify(data)}`);
 
   return {
-    token,
-    redirectUrl: data.redirectUrl || data.data?.redirectUrl,
-    orderId: payload.orderId,
+    token: orderToken,
+    transactionId: data?.body?.transactionId,
+    documentName: data?.body?.documentName,
   };
 }
 
 // ─── Verificar firma del webhook ──────────────────────────────────────────────
-export function yappyVerifyWebhook(
-  body: string,
-  signature: string | null
-): boolean {
+export function yappyVerifyWebhook(body: string, signature: string | null): boolean {
   if (!signature) return false;
-  // Yappy firma con HMAC-SHA256 usando la secret key decodificada
   const crypto = require('crypto');
   const secret = Buffer.from(YAPPY_SECRET_KEY, 'base64').toString('utf-8');
-  const expected = crypto
-    .createHmac('sha256', secret)
-    .update(body)
-    .digest('hex');
+  const expected = crypto.createHmac('sha256', secret).update(body).digest('hex');
   return expected === signature;
 }

@@ -16,3 +16,9 @@ env:
     value: https://api-m.paypal.com
   - variable: NEXT_PUBLIC_APP_URL
     value: https://contractimefedm.online
+  - variable: YAPPY_MERCHANT_ID
+    value: 4ef48e87-9b32-4360-a3be-f0190f678cb2
+  - variable: YAPPY_SECRET_KEY
+    value: WVBfRkQ0QkU4Q0UtQkU2Qy0zQThDLUJGQjctQkREQjI3ODdGRjFFLjRlZjQ4ZTg3LTliMzItNDM2MC1hM2JlLWYwMTkwZjY3OGNiMg==
+  - variable: YAPPY_API_URL
+    value: https://apipagosbg.bgeneral.cloud

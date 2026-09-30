@@ -59,8 +59,8 @@ export function StepPayment({
     };
   }, []);
 
-  // Link directo con monto pre-cargado (fallback si API no está disponible)
-  const yappyDirectLink = `https://link.yappy.com.pa/stc/dgXr5v%2BGA2xDgGKBkz%2BnBhSk16Vdr9BZvaim7nGhYrA%3D?amount=${total.toFixed(2)}`;
+  // Link directo al directorio comercial de Yappy (sin parámetros — Yappy no los acepta)
+  const yappyDirectLink = `https://link.yappy.com.pa/stc/dgXr5v%2BGA2xDgGKBkz%2BnBhSk16Vdr9BZvaim7nGhYrA%3D`;
 
   // Obtener token de Yappy al montar el componente
   useEffect(() => {

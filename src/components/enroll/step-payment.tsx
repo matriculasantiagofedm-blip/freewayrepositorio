@@ -12,6 +12,11 @@ declare global {
     interface IntrinsicElements {
       'btn-yappy': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
         token?: string;
+        amount?: string;
+        'order-id'?: string;
+        description?: string;
+        'success-url'?: string;
+        'failure-url'?: string;
         lang?: string;
       }, HTMLElement>;
     }
@@ -60,6 +65,9 @@ export function StepPayment({
     };
   }, []);
 
+  const [yappyOrderId, setYappyOrderId] = useState<string>('');
+  const [yappyAmount, setYappyAmount] = useState<string>('');
+
   // Link directo al directorio comercial de Yappy (sin parámetros — Yappy no los acepta)
   const yappyDirectLink = `https://link.yappy.com.pa/stc/dgXr5v%2BGA2xDgGKBkz%2BnBhSk16Vdr9BZvaim7nGhYrA%3D`;
 
@@ -86,8 +94,10 @@ export function StepPayment({
       .then((data) => {
         if (data.token) {
           setYappyToken(data.token);
+          setYappyOrderId(data.orderId || orderId);
+          setYappyAmount(data.amount || total.toFixed(2));
         } else {
-          throw new Error(data.error || 'No se obtuvo token de Yappy');
+          throw new Error(data.error || 'No se obtuvo token');
         }
       })
       .catch((err) => {
@@ -198,15 +208,21 @@ export function StepPayment({
               </a>
             </div>
           ) : yappyToken ? (
-            <div className="w-full flex flex-col items-center gap-2">
+            <div className="w-full flex flex-col items-center gap-3">
               <p className="text-xs text-slate-500 font-medium">
                 📱 Toca el botón y confirma en tu app Yappy
               </p>
-              {/* Web Component oficial de Yappy */}
+              <p className="text-3xl font-black text-[#004fb9]">${total.toFixed(2)}</p>
+              {/* Web Component oficial de Yappy con monto pre-cargado */}
               <btn-yappy
                 token={yappyToken}
+                amount={yappyAmount || total.toFixed(2)}
+                order-id={yappyOrderId}
+                description={`Matrícula Freeway`}
+                success-url={`https://contractimefedm.online/enroll?status=success`}
+                failure-url={`https://contractimefedm.online/enroll?status=error`}
                 lang="es"
-                style={{ display: 'block', width: '100%', maxWidth: '300px' }}
+                style={{ display: 'block', width: '100%', maxWidth: '320px' }}
               />
             </div>
           ) : (

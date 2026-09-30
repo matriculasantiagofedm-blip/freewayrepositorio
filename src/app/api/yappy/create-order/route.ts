@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { yappyCreateOrder } from '@/lib/yappy';
+import { yappyValidateMerchant } from '@/lib/yappy';
 
 export const dynamic = 'force-dynamic';
 
 // POST /api/yappy/create-order
-// Crea una orden de pago en Yappy y retorna el token para el web component
+// Obtiene el token de autenticación de Yappy para el web component
 export async function POST(req: NextRequest) {
   try {
     const { amount, orderId, description } = await req.json();
@@ -16,16 +16,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const order = await yappyCreateOrder({
-      orderId: String(orderId),
-      amount: Number(amount),
-      description: description || `Matrícula Freeway - Folio ${orderId}`,
-    });
+    // El token de validate/merchant se pasa directo al web component
+    const token = await yappyValidateMerchant();
 
     return NextResponse.json({
-      token: order.token,
-      redirectUrl: order.redirectUrl,
-      orderId: order.orderId,
+      token,
+      orderId: String(orderId),
+      amount: Number(amount).toFixed(2),
+      description: description || `Matrícula Freeway - Folio ${orderId}`,
     });
   } catch (err: any) {
     console.error('[Yappy] create-order error:', err.message);

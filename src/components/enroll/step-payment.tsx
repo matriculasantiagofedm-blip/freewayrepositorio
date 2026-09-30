@@ -1,10 +1,10 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
-import { motion } from 'framer-motion';
-import { UploadCloud, FileImage, Trash2, Smartphone, ShieldCheck, Loader2 } from 'lucide-react';
-import { Label } from '@/components/ui/label';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Smartphone, ShieldCheck, Loader2, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 // Declaración para el web component de Yappy
 declare global {
@@ -34,20 +34,19 @@ interface StepPaymentProps {
   folioNumber?: number | string;
 }
 
+const TIMER_SECONDS = 5 * 60; // 5 minutos
+
 export function StepPayment({
   total,
-  handleFileChange,
-  voucherBase64,
-  setVoucherBase64,
-  setVoucherMime,
-  isSubmitting,
   submitForm,
   folioNumber,
+  setVoucherBase64,
+  setVoucherMime,
 }: StepPaymentProps) {
-  const { register } = useFormContext();
+  const { toast } = useToast();
   const [scriptLoaded, setScriptLoaded] = useState(false);
 
-  // Estado de la sesión Yappy
+  // Estado de sesión Yappy
   const [yappyPhone, setYappyPhone] = useState('');
   const [yappyToken, setYappyToken] = useState<string | null>(null);
   const [yappyOrderId, setYappyOrderId] = useState('');
@@ -56,31 +55,38 @@ export function StepPayment({
   const [yappyLoading, setYappyLoading] = useState(false);
   const [yappyError, setYappyError] = useState<string | null>(null);
 
-  // Cargar el script del web component de Yappy
+  // Cronómetro
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Cargar script CDN de Yappy
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (document.querySelector('script[data-yappy]')) {
-      setScriptLoaded(true);
-      return;
-    }
+    if (document.querySelector('script[data-yappy]')) { setScriptLoaded(true); return; }
     const script = document.createElement('script');
     script.src = 'https://bt-cdn.yappy.cloud/v1/cdn/web-component-btn-yappy.js';
     script.async = true;
     script.setAttribute('data-yappy', '1');
     script.onload = () => setScriptLoaded(true);
-    script.onerror = () => console.warn('[Yappy] Script CDN no cargó');
     document.head.appendChild(script);
   }, []);
 
-  // Escuchar eventos del web component
+  // Escuchar evento de pago exitoso del web component
   useEffect(() => {
     const handleSuccess = (e: Event) => {
       console.log('[Yappy] Pago exitoso:', (e as CustomEvent).detail);
+      if (timerRef.current) clearInterval(timerRef.current);
+      toast({
+        title: '✅ ¡Pago confirmado!',
+        description: 'Yappy confirmó tu pago. Creando tu contrato...',
+      });
       submitForm();
     };
     const handleError = (e: Event) => {
-      console.error('[Yappy] Error en pago:', (e as CustomEvent).detail);
-      setYappyError('El pago fue rechazado. Adjunta el comprobante manualmente.');
+      console.error('[Yappy] Error:', (e as CustomEvent).detail);
+      setYappyError('El pago fue rechazado o cancelado. Intenta de nuevo.');
+      if (timerRef.current) clearInterval(timerRef.current);
+      setTimeLeft(null);
     };
     window.addEventListener('yappy-payment-success', handleSuccess);
     window.addEventListener('yappy-payment-error', handleError);
@@ -88,11 +94,34 @@ export function StepPayment({
       window.removeEventListener('yappy-payment-success', handleSuccess);
       window.removeEventListener('yappy-payment-error', handleError);
     };
-  }, [submitForm]);
+  }, [submitForm, toast]);
 
-  // Preparar la orden Yappy con el celular del cliente
+  // Limpiar cronómetro al desmontar
+  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+
+  const iniciarCronometro = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setTimeLeft(TIMER_SECONDS);
+    timerRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(timerRef.current!);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
+  // Preparar orden Yappy con el celular del cliente
   const handlePrepararPago = () => {
-    const phone = yappyPhone.replace(/\D/g, ''); // solo dígitos
+    const phone = yappyPhone.replace(/\D/g, '');
     if (phone.length < 7) {
       setYappyError('Ingresa tu número Yappy válido (Ej: 6234-5678)');
       return;
@@ -123,16 +152,26 @@ export function StepPayment({
           setYappyOrderId(data.orderId || orderId);
           setYappyAmount(data.amount || total.toFixed(2));
           setYappySource(data.source || 'auth-only');
+
+          // Toast verde + iniciar cronómetro
+          iniciarCronometro();
+          toast({
+            title: '✅ ¡Todo listo! Ve a Yappy ahora',
+            description: `Tienes 5 minutos para confirmar tu pago de $${total.toFixed(2)}`,
+            className: 'border-green-500 bg-green-50 text-green-900',
+          });
         } else {
           throw new Error(data.error || 'No se obtuvo token de Yappy');
         }
       })
       .catch((err) => {
         console.error('[Yappy]', err);
-        setYappyError('No se pudo conectar con Yappy. Adjunta el comprobante manualmente.');
+        setYappyError('No se pudo conectar con Yappy. Intenta de nuevo.');
       })
       .finally(() => setYappyLoading(false));
   };
+
+  const timerExpired = timeLeft === 0;
 
   return (
     <motion.div
@@ -163,16 +202,17 @@ export function StepPayment({
         </div>
       </div>
 
-      {/* Sección del botón de pago */}
-      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-5">
+      {/* Sección principal de pago */}
+      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-4">
 
-        {/* Estado: mostrando web component */}
+        {/* Botón web component activo */}
         {yappyToken && scriptLoaded && yappySource === 'payment-wc' ? (
           <div className="flex flex-col items-center gap-3">
             <p className="text-xs text-slate-500 font-medium">
               📱 Toca el botón y confirma en tu app Yappy
             </p>
             <p className="text-3xl font-black text-[#004fb9]">${total.toFixed(2)}</p>
+
             <btn-yappy
               token={yappyToken}
               amount={yappyAmount || total.toFixed(2)}
@@ -183,6 +223,28 @@ export function StepPayment({
               lang="es"
               style={{ display: 'block', width: '100%', maxWidth: '320px' }}
             />
+
+            {/* Cronómetro */}
+            {timeLeft !== null && (
+              <AnimatePresence>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold ${
+                    timerExpired
+                      ? 'bg-red-50 text-red-600 border border-red-200'
+                      : timeLeft < 60
+                      ? 'bg-orange-50 text-orange-600 border border-orange-200'
+                      : 'bg-green-50 text-green-700 border border-green-200'
+                  }`}
+                >
+                  <Clock className="w-4 h-4" />
+                  {timerExpired
+                    ? '⏰ Tiempo expirado — recarga la página'
+                    : `Tiempo para pagar: ${formatTime(timeLeft)}`}
+                </motion.div>
+              </AnimatePresence>
+            )}
           </div>
 
         ) : yappyLoading ? (
@@ -192,121 +254,83 @@ export function StepPayment({
           </div>
 
         ) : (
-          /* Estado: pedir celular Yappy */
+          /* Ingreso del número Yappy */
           <div className="space-y-4">
-            <div className="text-center space-y-1">
-              <p className="text-sm font-semibold text-slate-700">Ingresa tu número Yappy</p>
-              <p className="text-[11px] text-slate-400">
-                El número de celular registrado en tu app Yappy
-              </p>
-            </div>
+            {/* Si ya tiene token (auth-only) mostrar el componente con cronómetro */}
+            {yappyToken && yappySource === 'auth-only' && (
+              <div className="flex flex-col items-center gap-3 mb-2">
+                <p className="text-xs text-slate-500 font-medium">
+                  📱 Toca el botón y confirma en tu app Yappy
+                </p>
+                <p className="text-3xl font-black text-[#004fb9]">${total.toFixed(2)}</p>
+                <btn-yappy
+                  token={yappyToken}
+                  amount={yappyAmount || total.toFixed(2)}
+                  order-id={yappyOrderId}
+                  description="Matrícula Freeway"
+                  success-url="https://contractimefedm.online/enroll?status=success"
+                  failure-url="https://contractimefedm.online/enroll?status=error"
+                  lang="es"
+                  style={{ display: 'block', width: '100%', maxWidth: '320px' }}
+                />
+                {timeLeft !== null && (
+                  <div className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold ${
+                    timerExpired
+                      ? 'bg-red-50 text-red-600 border border-red-200'
+                      : timeLeft < 60
+                      ? 'bg-orange-50 text-orange-600 border border-orange-200'
+                      : 'bg-green-50 text-green-700 border border-green-200'
+                  }`}>
+                    <Clock className="w-4 h-4" />
+                    {timerExpired ? '⏰ Tiempo expirado — intenta de nuevo' : `Tiempo para pagar: ${formatTime(timeLeft)}`}
+                  </div>
+                )}
+              </div>
+            )}
 
-            <div className="flex gap-2 max-w-sm mx-auto">
-              <Input
-                type="tel"
-                placeholder="Ej. 6234-5678"
-                value={yappyPhone}
-                onChange={(e) => {
-                  setYappyPhone(e.target.value);
-                  setYappyError(null);
-                }}
-                onKeyDown={(e) => e.key === 'Enter' && handlePrepararPago()}
-                className="bg-white border-slate-300 rounded-xl text-sm h-11 flex-1"
-                maxLength={10}
-              />
-              <button
-                type="button"
-                onClick={handlePrepararPago}
-                disabled={!yappyPhone || yappyPhone.replace(/\D/g, '').length < 7}
-                className="h-11 px-4 bg-[#004fb9] hover:bg-[#003da1] text-white text-sm font-bold rounded-xl transition-colors disabled:opacity-40 shrink-0"
-              >
-                💙 Pagar
-              </button>
-            </div>
+            {!yappyToken && (
+              <>
+                <div className="text-center space-y-1">
+                  <p className="text-sm font-semibold text-slate-700">Ingresa tu número Yappy</p>
+                  <p className="text-[11px] text-slate-400">
+                    El número de celular registrado en tu app Yappy
+                  </p>
+                </div>
+
+                <div className="flex gap-2 max-w-sm mx-auto">
+                  <Input
+                    type="tel"
+                    placeholder="Ej. 6234-5678"
+                    value={yappyPhone}
+                    onChange={(e) => { setYappyPhone(e.target.value); setYappyError(null); }}
+                    onKeyDown={(e) => e.key === 'Enter' && handlePrepararPago()}
+                    className="bg-white border-slate-300 rounded-xl text-sm h-11 flex-1"
+                    maxLength={10}
+                  />
+                  <button
+                    type="button"
+                    onClick={handlePrepararPago}
+                    disabled={!yappyPhone || yappyPhone.replace(/\D/g, '').length < 7}
+                    className="h-11 px-4 bg-[#004fb9] hover:bg-[#003da1] text-white text-sm font-bold rounded-xl transition-colors disabled:opacity-40 shrink-0"
+                  >
+                    💙 Pagar
+                  </button>
+                </div>
+              </>
+            )}
 
             {yappyError && (
               <p className="text-xs text-red-500 text-center">{yappyError}</p>
-            )}
-
-            {yappyToken && !scriptLoaded && (
-              <p className="text-xs text-amber-600 text-center">
-                Cargando botón de Yappy...
-              </p>
             )}
           </div>
         )}
       </div>
 
-      {/* Referencia manual y comprobante (respaldo) */}
-      <div className="space-y-4 pt-4 border-t border-slate-200 max-w-md mx-auto">
-        <p className="text-[11px] text-slate-400 text-center italic">
-          ¿Ya realizaste el pago? Ingresa la referencia y adjunta el comprobante.
-        </p>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="yappyReference" className="text-xs font-medium text-slate-700 block">
-            Número de Referencia / Confirmación
-          </Label>
-          <Input
-            id="yappyReference"
-            placeholder="Ej. #12345678 o ID de Transacción"
-            {...register('yappyReference')}
-            className="w-full bg-white h-10 text-xs rounded-xl border-slate-200"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-slate-700 block">
-            Comprobante de Pago
-          </Label>
-          {!voucherBase64 ? (
-            <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-slate-200 border-dashed rounded-2xl cursor-pointer bg-white hover:bg-slate-50 transition-colors p-4">
-              <UploadCloud className="w-6 h-6 text-slate-400 mb-1.5" />
-              <p className="text-xs font-medium text-slate-700">Subir captura del pago</p>
-              <p className="text-[10px] text-slate-400 mt-0.5">JPG, PNG o PDF (Máx. 5MB)</p>
-              <input
-                type="file"
-                accept="image/png, image/jpeg, image/webp, application/pdf"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-            </label>
-          ) : (
-            <div className="flex items-center justify-between p-3.5 bg-white border border-blue-200 rounded-2xl shadow-xs">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
-                  <FileImage className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-slate-800">Comprobante adjunto</p>
-                  <p className="text-[10px] text-emerald-600 font-medium">Listo ✓</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => { setVoucherBase64(null); setVoucherMime(null); }}
-                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-        </div>
-
-        <button
-          type="button"
-          onClick={submitForm}
-          disabled={isSubmitting}
-          className="w-full h-11 text-sm font-semibold bg-slate-700 hover:bg-slate-800 text-white shadow-md rounded-xl cursor-pointer transition-colors disabled:opacity-50"
-        >
-          {isSubmitting ? 'Procesando...' : 'Confirmar Matrícula'}
-        </button>
-
-        <p className="text-[11px] text-slate-400 text-center flex items-center justify-center gap-1.5">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-          Registro oficial con Folio y validación de asesor
-        </p>
-      </div>
+      {/* Footer de seguridad */}
+      <p className="text-[11px] text-slate-400 text-center flex items-center justify-center gap-1.5">
+        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+        Tu contrato se genera automáticamente al confirmar el pago en Yappy
+      </p>
     </motion.div>
   );
 }

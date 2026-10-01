@@ -19,8 +19,18 @@ export function toDate(date: any): Date {
   if (date instanceof Date) {
     return date;
   }
-  if (date instanceof Timestamp) {
-    return date.toDate();
+  if (typeof date?.toDate === 'function') {
+    try {
+      return date.toDate();
+    } catch {
+      // fallback
+    }
+  }
+  if (typeof date?.seconds === 'number') {
+    return new Date(date.seconds * 1000);
+  }
+  if (typeof date?._seconds === 'number') {
+    return new Date(date._seconds * 1000);
   }
   if (typeof date === 'string' || typeof date === 'number') {
     const parsed = new Date(date);

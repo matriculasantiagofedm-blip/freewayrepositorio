@@ -44,29 +44,26 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
   ).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
   const isSoloPractica = 
-    typeStr.includes('practica') || 
     typeStr.includes('solo practica') ||
-    planStr.includes('practica') ||
-    planStr.includes('basico') ||
-    planStr.includes('plus') ||
-    planStr.includes('reforzamiento') ||
-    planStr.includes('8 hrs') ||
-    planStr.includes('10 hrs') ||
-    planStr.includes('12 hrs') ||
-    planStr.includes('2 hrs') ||
-    planStr.includes('4 hrs') ||
+    typeStr.includes('solo-practica') ||
+    (typeStr.includes('practica') && !typeStr.includes('auto') && !typeStr.includes('moto') && !typeStr.includes('mixto') && !typeStr.includes('deluxe')) ||
+    contract.type === 'Curso Solo Practica' ||
     (details as any)?.isSoloPractica === true ||
     (contract as any)?.isSoloPractica === true;
 
-  const isAutoContract = !isSoloPractica && typeStr.includes('auto');
-  const isMotoContract = !isSoloPractica && typeStr.includes('moto');
-  const isMixtoContract = !isSoloPractica && typeStr.includes('mixto');
+  const isAutoContract = !isSoloPractica && (typeStr.includes('auto') || contract.type === 'Curso Auto');
+  const isMotoContract = !isSoloPractica && (typeStr.includes('moto') || contract.type === 'Curso Moto');
+  const isMixtoContract = !isSoloPractica && (typeStr.includes('mixto') || contract.type === 'Curso Mixto');
   
   const licenseStr = details?.licenseCategory || '';
 
-  // Lógica de validación de servicios para evitar duplicidad o errores de agenda
-  const showAutoSessions = isAutoContract || isMixtoContract || (isMotoContract && details?.additionalService === 'Curso Plus Auto 10Hrs') || (isSoloPractica && (details as any)?.vehicleType !== 'Motocicleta');
-  const showMotoSessions = isMotoContract || isMixtoContract || (isAutoContract && details?.additionalService === 'Plus Moto 10Hrs') || (isSoloPractica && (details as any)?.vehicleType === 'Motocicleta');
+  // Horarios y fechas teóricas
+  const theoreticalSchedule = details?.theoreticalClassSchedule || (contract as any)?.theoreticalClassSchedule || '';
+  const theoreticalDates = details?.theoreticalClassDates || (details as any)?.theoreticalClasses || (contract as any)?.theoreticalClassDates || [];
+
+  // Sesiones prácticas (Auto y Moto)
+  const autoSessions: any[] = (details?.practicalClassSchedules || (details as any)?.classSchedules || []).filter((s: any) => s && (s.date || s.time));
+  const motoSessions: any[] = (details?.motoPracticalClassSchedules || []).filter((s: any) => s && (s.date || s.time));
 
   return (
     <div className="max-w-[8.5in] mx-auto bg-white p-10 font-serif text-[8.5pt] leading-[1.15] text-black print:p-0 print:m-0">
@@ -123,53 +120,90 @@ export function AutoMotoContractTemplate({ contract }: { contract: Contract }) {
                       Automático <Checkbox checked={details?.vehicleTransmission === 'Automático'} /> 
                       Manual <Checkbox checked={details?.vehicleTransmission === 'Manual' || details?.vehicleTransmission === 'Moto'} />
                   </p>
-                  <p>3. Horario clases teóricas: <span className="font-semibold underline uppercase">{details?.theoreticalClassSchedule || 'PENDIENTE'}</span></p>
+                  <p>3. Horario clases teóricas: <span className="font-semibold underline uppercase">{theoreticalSchedule || 'PENDIENTE'}</span></p>
                 </div>
-              </div>
-            )}
-            {!isSoloPractica && (
-              <div className="space-y-1">
-                <div className="text-[7.5pt] text-gray-600">{(details?.theoreticalClassDates || []).map((d: any, i: number) => formatDateStr(d)).join(' | ')}</div>
+                {theoreticalDates && theoreticalDates.length > 0 && (
+                  <div className="text-[7.5pt] text-gray-600 mt-0.5">
+                    <span className="font-bold uppercase text-black mr-1">Fechas teóricas:</span>
+                    {theoreticalDates.map((d: any, i: number) => formatDateStr(d)).join(' | ')}
+                  </div>
+                )}
               </div>
             )}
           </div>
           <div className="mt-2 pt-1 border-t border-gray-200">
             <p className="font-bold mb-1 uppercase text-[7.5pt]">{isSoloPractica ? '3.' : '4.'} Propuesta de Horario Práctico:</p>
             
-            {/* AGENDA DE AUTO - Filtrada por servicio */}
-            {showAutoSessions && details?.practicalClassSchedules && details.practicalClassSchedules.length > 0 && (
-                <div className="mb-2">
-                    {showMotoSessions && (
-                        <p className="text-[7pt] font-black italic underline mb-0.5 uppercase">Sesiones de Auto:</p>
-                    )}
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 text-[8pt]">
-                        {details.practicalClassSchedules.map((s: any, index: number) => (
-                            <div key={index} className="flex items-center justify-between border-b border-dotted border-gray-300">
-                                <span className="font-bold">Sesión {index + 1}:</span>
-                                <span>{formatDateStr(s.date)}</span>
-                                <span className="font-semibold">{s.time}</span>
-                            </div>
-                        ))}
+            {/* Si es Solo Práctica, mostramos todas las sesiones prácticas */}
+            {isSoloPractica && (
+              autoSessions.length > 0 ? (
+                <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 text-[8pt]">
+                  {autoSessions.map((s: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between border-b border-dotted border-gray-300 py-0.5">
+                      <span className="font-bold">Sesión {index + 1}:</span>
+                      <span>{formatDateStr(s.date)}</span>
+                      <span className="font-semibold">{s.time || '---'}</span>
                     </div>
+                  ))}
                 </div>
+              ) : motoSessions.length > 0 ? (
+                <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 text-[8pt]">
+                  {motoSessions.map((s: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between border-b border-dotted border-gray-300 py-0.5">
+                      <span className="font-bold">Sesión {index + 1}:</span>
+                      <span>{formatDateStr(s.date)}</span>
+                      <span className="font-semibold">{s.time || '---'}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[7.5pt] italic text-gray-500">Horarios prácticos por coordinar con administración.</p>
+              )
             )}
 
-            {/* AGENDA DE MOTO - Filtrada por servicio */}
-            {showMotoSessions && details?.motoPracticalClassSchedules && details.motoPracticalClassSchedules.length > 0 && (
-                <div>
-                    {showAutoSessions && (
-                        <p className="text-[7pt] font-black italic underline mb-0.5 uppercase">Sesiones de Moto:</p>
+            {/* Si es curso regular (Auto, Moto, Mixto) */}
+            {!isSoloPractica && (
+              <>
+                {/* AGENDA DE AUTO */}
+                {autoSessions.length > 0 && (
+                  <div className="mb-2">
+                    {(motoSessions.length > 0 || isMixtoContract) && (
+                      <p className="text-[7pt] font-black italic underline mb-0.5 uppercase">Sesiones de Auto:</p>
                     )}
                     <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 text-[8pt]">
-                        {details.motoPracticalClassSchedules.map((s: any, index: number) => (
-                            <div key={index} className="flex items-center justify-between border-b border-dotted border-gray-300">
-                                <span className="font-bold">Sesión {index + 1}:</span>
-                                <span>{formatDateStr(s.date)}</span>
-                                <span className="font-semibold">{s.time}</span>
-                            </div>
-                        ))}
+                      {autoSessions.map((s: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between border-b border-dotted border-gray-300 py-0.5">
+                          <span className="font-bold">Sesión {index + 1}:</span>
+                          <span>{formatDateStr(s.date)}</span>
+                          <span className="font-semibold">{s.time || '---'}</span>
+                        </div>
+                      ))}
                     </div>
-                </div>
+                  </div>
+                )}
+
+                {/* AGENDA DE MOTO */}
+                {motoSessions.length > 0 && (
+                  <div className="mb-2">
+                    {(autoSessions.length > 0 || isMixtoContract) && (
+                      <p className="text-[7pt] font-black italic underline mb-0.5 uppercase">Sesiones de Moto:</p>
+                    )}
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-0.5 text-[8pt]">
+                      {motoSessions.map((s: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between border-b border-dotted border-gray-300 py-0.5">
+                          <span className="font-bold">Sesión {index + 1}:</span>
+                          <span>{formatDateStr(s.date)}</span>
+                          <span className="font-semibold">{s.time || '---'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {autoSessions.length === 0 && motoSessions.length === 0 && (
+                  <p className="text-[7.5pt] italic text-gray-500">Horarios prácticos por coordinar con administración.</p>
+                )}
+              </>
             )}
           </div>
         </section>

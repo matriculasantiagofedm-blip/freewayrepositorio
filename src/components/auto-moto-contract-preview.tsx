@@ -52,33 +52,28 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, idTyp
   ).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
   const isSoloPractica = 
-    typeStr.includes('practica') || 
-    typeStr.includes('solo practica') ||
-    planStr.includes('practica') ||
-    planStr.includes('basico') ||
-    planStr.includes('plus') ||
-    planStr.includes('reforzamiento') ||
-    planStr.includes('8 hrs') ||
-    planStr.includes('10 hrs') ||
-    planStr.includes('12 hrs') ||
-    planStr.includes('2 hrs') ||
-    planStr.includes('4 hrs') ||
+    typeStr.includes('solo practica') || 
+    typeStr.includes('solo-practica') ||
+    (typeStr.includes('practica') && !typeStr.includes('auto') && !typeStr.includes('moto') && !typeStr.includes('mixto') && !typeStr.includes('deluxe')) ||
     (autoMotoDetails as any)?.isSoloPractica === true;
 
-  const isAutoContract = !isSoloPractica && typeStr.includes('auto');
-  const isMotoContract = !isSoloPractica && typeStr.includes('moto');
-  const isMixtoContract = !isSoloPractica && typeStr.includes('mixto');
+  const isAutoContract = !isSoloPractica && (typeStr.includes('auto') || type === 'Curso Auto');
+  const isMotoContract = !isSoloPractica && (typeStr.includes('moto') || type === 'Curso Moto');
+  const isMixtoContract = !isSoloPractica && (typeStr.includes('mixto') || type === 'Curso Mixto');
   const licenseStr = autoMotoDetails?.licenseCategory || '';
 
-  const showAutoSessions = isAutoContract || isMixtoContract || (isMotoContract && (autoMotoDetails as any)?.additionalService === 'Curso Plus Auto 10Hrs') || (isSoloPractica && (autoMotoDetails as any)?.vehicleType !== 'Motocicleta');
-  const showMotoSessions = isMotoContract || isMixtoContract || (isAutoContract && (autoMotoDetails as any)?.additionalService === 'Plus Moto 10Hrs') || (isSoloPractica && (autoMotoDetails as any)?.vehicleType === 'Motocicleta');
+  const autoSessions: any[] = (autoMotoDetails?.practicalClassSchedules || (autoMotoDetails as any)?.classSchedules || []).filter((s: any) => s && (s.date || s.time));
+  const motoSessions: any[] = (autoMotoDetails?.motoPracticalClassSchedules || []).filter((s: any) => s && (s.date || s.time));
+
+  const theoreticalSchedule = autoMotoDetails?.theoreticalClassSchedule || '';
+  const theoreticalDates = autoMotoDetails?.theoreticalClassDates || (autoMotoDetails as any)?.theoreticalClasses || [];
 
   const formatDate = (dateString?: string | Date) => {
     if (!dateString) return <Line />;
     const date = toDate(dateString);
     if (isNaN(date.getTime())) return <Line />;
     try {
-        return <Value>{format(date, 'P', { locale: es })}</Value>;
+        return <Value>{format(date, 'dd/MM/yyyy', { locale: es })}</Value>;
     } catch {
         return <Line />;
     }
@@ -126,42 +121,77 @@ export function AutoMotoContractTemplatePreview({ clientName, clientEmail, idTyp
                       A, B, C, D <Checkbox checked={licenseStr === 'A, B, C, D' || licenseStr === 'A, C, B, D'} />
                   </p>
                   <p>2. Transmisión del vehículo: Automático <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Automático'} /> / Manual <Checkbox checked={autoMotoDetails?.vehicleTransmission === 'Manual' || autoMotoDetails?.vehicleTransmission === 'Moto'} /></p>
-                  <div className="flex items-center gap-2">3. Horario para clases teóricas: <Value>{autoMotoDetails?.theoreticalClassSchedule}</Value></div>
+                  <div className="flex items-center gap-2">3. Horario para clases teóricas: <Value>{theoreticalSchedule || 'PENDIENTE'}</Value></div>
+                  {theoreticalDates && theoreticalDates.length > 0 && (
+                    <div className="text-[9px] text-gray-700 mt-0.5">
+                      <span className="font-bold">Fechas teóricas:</span> {theoreticalDates.map((d: any) => formatDate(d)).join(' | ')}
+                    </div>
+                  )}
                 </>
             )}
 
             <p className="font-semibold underline mt-1">{isSoloPractica ? '3.' : '4.'} Propuesta de Horario Práctico:</p>
             
-            {/* AGENDA DE AUTO - Filtrada en preview */}
-            {showAutoSessions && autoMotoDetails?.practicalClassSchedules && autoMotoDetails.practicalClassSchedules.length > 0 && (
-                <div className="mb-1">
-                    {showMotoSessions && (
-                        <p className="text-[8px] font-bold italic">Auto:</p>
-                    )}
-                    <div className="grid grid-cols-2 gap-x-4 pl-2">
-                        {autoMotoDetails.practicalClassSchedules.map((s, index) => (
-                            <div key={index} className="text-[9px]">
-                                ○ Clase {index + 1}: {s.date ? formatDate(s.date) : ''} - {s.time}
-                            </div>
-                        ))}
+            {/* Si es Solo Práctica */}
+            {isSoloPractica && (
+              autoSessions.length > 0 ? (
+                <div className="grid grid-cols-2 gap-x-4 pl-2">
+                  {autoSessions.map((s: any, index: number) => (
+                    <div key={index} className="text-[9px]">
+                      ○ Sesión {index + 1}: {formatDate(s.date)} - {s.time || '---'}
                     </div>
+                  ))}
                 </div>
+              ) : motoSessions.length > 0 ? (
+                <div className="grid grid-cols-2 gap-x-4 pl-2">
+                  {motoSessions.map((s: any, index: number) => (
+                    <div key={index} className="text-[9px]">
+                      ○ Sesión {index + 1}: {formatDate(s.date)} - {s.time || '---'}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[9px] italic text-gray-500">Horarios prácticos por coordinar.</p>
+              )
             )}
 
-            {/* AGENDA DE MOTO - Filtrada en preview */}
-            {showMotoSessions && autoMotoDetails?.motoPracticalClassSchedules && autoMotoDetails.motoPracticalClassSchedules.length > 0 && (
-                <div>
-                    {showAutoSessions && (
-                        <p className="text-[8px] font-bold italic">Moto:</p>
+            {/* Si es curso regular */}
+            {!isSoloPractica && (
+              <>
+                {autoSessions.length > 0 && (
+                  <div className="mb-1">
+                    {(motoSessions.length > 0 || isMixtoContract) && (
+                      <p className="text-[8px] font-bold italic">Auto:</p>
                     )}
                     <div className="grid grid-cols-2 gap-x-4 pl-2">
-                        {autoMotoDetails.motoPracticalClassSchedules.map((s, index) => (
-                            <div key={index} className="text-[9px]">
-                                ○ Clase {index + 1}: {s.date ? formatDate(s.date) : ''} - {s.time}
-                            </div>
-                        ))}
+                      {autoSessions.map((s: any, index: number) => (
+                        <div key={index} className="text-[9px]">
+                          ○ Clase {index + 1}: {formatDate(s.date)} - {s.time || '---'}
+                        </div>
+                      ))}
                     </div>
-                </div>
+                  </div>
+                )}
+
+                {motoSessions.length > 0 && (
+                  <div>
+                    {(autoSessions.length > 0 || isMixtoContract) && (
+                      <p className="text-[8px] font-bold italic">Moto:</p>
+                    )}
+                    <div className="grid grid-cols-2 gap-x-4 pl-2">
+                      {motoSessions.map((s: any, index: number) => (
+                        <div key={index} className="text-[9px]">
+                          ○ Clase {index + 1}: {formatDate(s.date)} - {s.time || '---'}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {autoSessions.length === 0 && motoSessions.length === 0 && (
+                  <p className="text-[9px] italic text-gray-500">Horarios prácticos por coordinar.</p>
+                )}
+              </>
             )}
         </div>
 

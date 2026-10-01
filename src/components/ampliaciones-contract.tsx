@@ -16,7 +16,7 @@ const Line = ({ children, className }: { children?: React.ReactNode, className?:
 const Value = ({ children }: { children: React.ReactNode }) => <span className="font-bold text-black">{children}</span>;
 
 export function AmpliacionesContractTemplate({ contract }: { contract: Contract }) {
-  const details = contract.ampliacionesDetails;
+  const details = contract.ampliacionesDetails || (contract as any).details;
   const creationDate = toDate(contract.createdAt);
   const theoryDate = toDate(details?.theoreticalClassDate);
   const paymentDeadline = toDate(details?.paymentDeadline);

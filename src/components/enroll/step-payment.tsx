@@ -311,9 +311,26 @@ export function StepPayment({
                     type="button"
                     onClick={handlePrepararPago}
                     disabled={!yappyPhone || yappyPhone.replace(/\D/g, '').length < 7}
-                    className="h-11 px-4 bg-[#004fb9] hover:bg-[#003da1] text-white text-sm font-bold rounded-xl transition-colors disabled:opacity-40 shrink-0"
+                    className="h-12 px-5 bg-[#004fb9] hover:bg-[#003da1] active:scale-95 text-white text-sm font-bold rounded-2xl transition-all disabled:opacity-40 shrink-0 flex items-center gap-2.5 shadow-md shadow-blue-200"
                   >
-                    💙 Pagar
+                    {/* Logo Yappy SVG */}
+                    <svg width="26" height="18" viewBox="0 0 52 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      {/* Burbuja azul (izquierda) */}
+                      <ellipse cx="16" cy="22" rx="13" ry="13" fill="url(#yb)" />
+                      {/* Burbuja naranja (derecha, encima) */}
+                      <circle cx="30" cy="17" r="16" fill="url(#yo)" />
+                      <defs>
+                        <radialGradient id="yb" cx="35%" cy="30%" r="65%" gradientUnits="objectBoundingBox">
+                          <stop offset="0%" stopColor="#5BC8F5" />
+                          <stop offset="100%" stopColor="#1A8FD1" />
+                        </radialGradient>
+                        <radialGradient id="yo" cx="35%" cy="25%" r="65%" gradientUnits="objectBoundingBox">
+                          <stop offset="0%" stopColor="#FFB347" />
+                          <stop offset="100%" stopColor="#F47C20" />
+                        </radialGradient>
+                      </defs>
+                    </svg>
+                    <span className="tracking-wide">Pagar</span>
                   </button>
                 </div>
               </>

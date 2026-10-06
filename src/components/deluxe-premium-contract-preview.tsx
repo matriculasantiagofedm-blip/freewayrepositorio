@@ -295,16 +295,31 @@ export function DeluxePremiumContractTemplatePreview({ contract }: { contract: C
           <p className="text-center italic mb-8">
             En fe de lo cual, se suscribe el presente contrato en la ciudad de Panamá, República de Panamá.
           </p>
-          <div className="flex justify-around px-8 pt-4">
+          <div className="flex justify-around px-8 pt-2 items-end">
             <div className="text-center w-[200px]">
+              <div className="h-14 flex items-end justify-center"></div>
               <div className="border-t border-black mb-1"></div>
               <p className="font-bold uppercase text-[7pt]">Por la Empresa</p>
               <p className="text-[7pt]">FREEWAY ESCUELA DE MANEJO S.A.</p>
             </div>
             <div className="text-center w-[200px]">
+              <div className="h-14 flex items-end justify-center">
+                {(contract.signatureDataUri || d?.signatureDataUri || (contract as any)?.signature) ? (
+                  <img 
+                    src={contract.signatureDataUri || d?.signatureDataUri || (contract as any)?.signature} 
+                    alt="Firma del Estudiante" 
+                    className="max-h-14 max-w-[180px] object-contain mb-0.5" 
+                  />
+                ) : null}
+              </div>
               <div className="border-t border-black mb-1"></div>
               <p className="font-bold uppercase text-[7pt]">Firma del Estudiante</p>
               <p className="text-[7pt]">{d?.idType || 'C.I.P.'} N.° {d?.studentIdNumber || '__________'}</p>
+              {(contract.signatureDataUri || d?.signatureDataUri) && (
+                <p className="text-[5.5pt] text-emerald-700 font-bold uppercase mt-0.5">
+                  ✓ Firmado Digitalmente
+                </p>
+              )}
             </div>
           </div>
         </section>

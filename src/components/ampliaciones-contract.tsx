@@ -99,16 +99,31 @@ export function AmpliacionesContractTemplate({ contract }: { contract: Contract 
                 Suscrito en la ciudad de Panamá, el día <Value>{!isNaN(creationDate.getTime()) ? format(creationDate, 'd', { locale: es }) : '---'}</Value> de <Value>{!isNaN(creationDate.getTime()) ? format(creationDate, 'MMMM', { locale: es }) : '---'}</Value> de <Value>{!isNaN(creationDate.getTime()) ? format(creationDate, 'yyyy', { locale: es }) : '---'}</Value>.
             </p>
             
-            <div className="flex justify-between px-12 pt-12">
+            <div className="flex justify-between px-12 pt-6 items-end">
                 <div className="text-center w-[220px]">
+                    <div className="h-14 flex items-end justify-center"></div>
                     <div className="border-t border-black mb-1"></div>
                     <p className="font-bold uppercase text-[8.5pt]">Representante Legal</p>
                     <p className="text-[7pt] text-gray-500 italic">Freeway Escuela de Manejo S.A.</p>
                 </div>
                 <div className="text-center w-[220px]">
+                    <div className="h-14 flex items-end justify-center">
+                        {(contract.signatureDataUri || details?.signatureDataUri || (contract as any)?.signature) ? (
+                            <img 
+                                src={contract.signatureDataUri || details?.signatureDataUri || (contract as any)?.signature} 
+                                alt="Firma del Estudiante" 
+                                className="max-h-14 max-w-[190px] object-contain mb-0.5" 
+                            />
+                        ) : null}
+                    </div>
                     <div className="border-t border-black mb-1"></div>
                     <p className="font-bold uppercase text-[8.5pt]">Firma del Estudiante</p>
                     <p className="text-[9pt] font-bold">ID: {details?.studentIdNumber}</p>
+                    {(contract.signatureDataUri || details?.signatureDataUri) && (
+                        <p className="text-[6pt] text-emerald-700 font-bold uppercase mt-0.5">
+                            ✓ Firmado Digitalmente {contract.signedAt ? `• ${formatDateStr(contract.signedAt)}` : ''}
+                        </p>
+                    )}
                 </div>
             </div>
         </section>

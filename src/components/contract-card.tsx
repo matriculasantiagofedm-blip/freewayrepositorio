@@ -37,8 +37,15 @@ export function ContractCard({ contract }: { contract: Contract }) {
                 {statusTranslations[contract.status]}
             </Badge>
         </div>
-        <CardDescription className="flex items-center gap-2 pt-2">
+        <CardDescription className="flex items-center justify-between gap-2 pt-2">
            <span>{contract.clientName}</span>
+           {(contract.isSigned || contract.signatureDataUri || (contract.autoMotoDetails as any)?.signatureDataUri) ? (
+             <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 text-[10px] font-bold">
+               ✓ Firmado
+             </Badge>
+           ) : (
+             <span className="text-[10px] text-muted-foreground italic">Sin firmar</span>
+           )}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">

@@ -486,6 +486,31 @@ export default function ContractDetailPage() {
         </div>
       )}
 
+      {(contract?.isSigned || contract?.signatureDataUri || (contract?.autoMotoDetails as any)?.signatureDataUri) ? (
+        <div className="bg-emerald-50 border-l-4 border-emerald-500 p-4 print-hide rounded-r-lg shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+              <div>
+                <p className="font-bold text-emerald-900 uppercase text-xs">Contrato Firmado Digitalmente por el Estudiante</p>
+                <p className="text-[11px] text-emerald-700">
+                  Firmado por: <span className="font-semibold">{contract.signedBy || contract.clientName}</span>
+                  {contract.signedAt && ` • ${new Date((contract.signedAt?.seconds || 0) * 1000 || contract.signedAt).toLocaleDateString('es-PA')}`}
+                </p>
+              </div>
+            </div>
+            <span className="bg-emerald-200/60 text-emerald-800 text-[10px] font-black px-2.5 py-1 rounded-full uppercase">LMS Sincronizado</span>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-slate-100 border-l-4 border-slate-400 p-3 print-hide rounded-r-lg">
+          <div className="flex items-center gap-2 text-slate-600 text-xs font-medium">
+            <AlertCircle className="h-4 w-4 text-slate-500" />
+            <span>Pendiente de firma digital por el estudiante en el portal LMS.</span>
+          </div>
+        </div>
+      )}
+
       {(isLoading || isUserLoading) && <p className="print-hide">Cargando contrato...</p>}
       {error && <p className="text-destructive print-hide">Error: {error.message}</p>}
       
